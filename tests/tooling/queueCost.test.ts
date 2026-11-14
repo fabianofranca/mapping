@@ -1,7 +1,7 @@
 // @vitest-environment node
-// Fase FM3 (etapa #1532, decisões 5, 6 e 26): o painel guarda o custo, o contexto, o modelo e o
-// esforço de cada sessão da fila (`session kind=`, `cost`, `costs`, linha `custo:` do `show`, card
-// "Custo da fila"), e as filhas nascem com o esforço da tabela, conferido depois da criação.
+// Phase FM3 (stage #1532, decisions 5, 6 and 26): the panel keeps the cost, the context, the model and the
+// effort of each session of the queue (`session kind=`, `cost`, `costs`, `custo:` line of `show`, card
+// "Queue cost"), and the child sessions are born with the table's effort, checked after creation.
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -40,18 +40,18 @@ function sessions(): Entry[] {
 }
 
 beforeEach(() => {
-  dir = mkdtempSync(path.join(tmpdir(), 'painel-custo-'));
+  dir = mkdtempSync(path.join(tmpdir(), 'painel-cost-'));
   runAt('2026-11-11T10:00:00Z', 'init', dir);
-  runAt('2026-11-11T10:00:00Z', 'row', dir, '#10', 'title=Etapa dez');
-  runAt('2026-11-11T10:00:00Z', 'row', dir, '#20', 'title=Etapa vinte');
+  runAt('2026-11-11T10:00:00Z', 'row', dir, '#10', 'title=Stage ten');
+  runAt('2026-11-11T10:00:00Z', 'row', dir, '#20', 'title=Stage twenty');
 });
 
 afterEach(() => {
   rmSync(dir, { recursive: true, force: true });
 });
 
-describe('painel.py session com kind= (FM3, decisão 5)', () => {
-  it('com kind= e label=, acrescenta a meta.sessions sem repetir, com created', () => {
+describe('painel.py session with kind= (FM3, decision 5)', () => {
+  it('with kind= and label=, adds to meta.sessions without repeating, with created', () => {
     runAt(
       '2026-11-11T11:00:00Z',
       'session',
@@ -82,7 +82,7 @@ describe('painel.py session com kind= (FM3, decisão 5)', () => {
     expect(json('queue')[0]!.sessions).toBe('sess_a');
   });
 
-  it('aceita os sete tipos e recusa outro com código 2', () => {
+  it('accepts the seven kinds and refuses another with code 2', () => {
     for (const kind of [
       'fase',
       'correção',
@@ -101,19 +101,19 @@ describe('painel.py session com kind= (FM3, decisão 5)', () => {
     expect(sessions()).toHaveLength(7);
   });
 
-  it('sem kind, continua gravando só o sessions da linha, como hoje', () => {
+  it("without kind, it still writes only the row's sessions, as today", () => {
     run('session', dir, '#10', 'sess_a');
     expect(json('queue')[0]!.sessions).toBe('sess_a');
     expect(json('meta')[0]!.sessions).toBeUndefined();
   });
 
-  it('campo desconhecido sai com código 2', () => {
+  it('an unknown field exits with code 2', () => {
     expect(tryRun('session', dir, '#10', 'sess_a', 'kind=fase', 'foo=1').code).toBe(2);
   });
 });
 
-describe('painel.py cost (FM3, decisão 5)', () => {
-  it('atualiza a entrada pelo id e grava at', () => {
+describe('painel.py cost (FM3, decision 5)', () => {
+  it('updates the entry by id and writes at', () => {
     runAt(
       '2026-11-11T11:00:00Z',
       'session',
@@ -149,7 +149,7 @@ describe('painel.py cost (FM3, decisão 5)', () => {
     expect((sessions()[0]!.cost as Entry).at).toBe('2026-11-11T13:00:00Z');
   });
 
-  it('cria a entrada com issue= e kind=, e guarda served= quando vem', () => {
+  it('creates the entry with issue= and kind=, and keeps served= when it comes', () => {
     runAt(
       '2026-11-11T12:00:00Z',
       'cost',
@@ -169,7 +169,7 @@ describe('painel.py cost (FM3, decisão 5)', () => {
     expect((e.cost as Entry).served).toBe('claude-opus-5-5');
   });
 
-  it('o kind é obrigatório quando o id é novo', () => {
+  it('kind is required when the id is new', () => {
     const r = tryRun('cost', dir, 'sess_c', 'usd=1', 'ctx=10');
     expect(r.code).toBe(2);
     expect(r.err).toMatch(/kind/);
@@ -177,16 +177,16 @@ describe('painel.py cost (FM3, decisão 5)', () => {
   });
 
   it.each([
-    ['usd', ['usd=caro', 'ctx=10']],
-    ['ctx', ['usd=1', 'ctx=muito']],
-    ['usd ausente', ['ctx=10']],
-  ])('%s não numérico ou ausente sai com código 2 e não grava', (_n, args) => {
+    ['usd', ['usd=expensive', 'ctx=10']],
+    ['ctx', ['usd=1', 'ctx=lots']],
+    ['usd missing', ['ctx=10']],
+  ])('%s non-numeric or missing exits with code 2 and writes nothing', (_n, args) => {
     const r = tryRun('cost', dir, 'sess_d', ...args, 'kind=fase');
     expect(r.code).toBe(2);
     expect(sessions()).toHaveLength(0);
   });
 
-  it('entra num apply, e costs não entra', () => {
+  it('goes in an apply, and costs does not', () => {
     const ok = spawnSync('python3', [SCRIPT, 'apply', dir, '-'], {
       encoding: 'utf8',
       input: 'cost sess_e usd=1 ctx=5 kind=coordenador\n',
@@ -200,8 +200,8 @@ describe('painel.py cost (FM3, decisão 5)', () => {
   });
 });
 
-describe('achados da revisão (FM3)', () => {
-  it('ctx infinito ou enorme sai com código 2, sem traceback', () => {
+describe('review findings (FM3)', () => {
+  it('infinite or huge ctx exits with code 2, with no traceback', () => {
     for (const ctx of ['inf', 'nan', '1e999']) {
       const r = tryRun('cost', dir, 'sess_i', 'usd=1', `ctx=${ctx}`, 'kind=fase');
       expect(r.code).toBe(2);
@@ -209,7 +209,7 @@ describe('achados da revisão (FM3)', () => {
     }
   });
 
-  it('um cost novo não apaga model, effort e served já gravados', () => {
+  it('a new cost does not erase the model, effort and served already written', () => {
     runAt(
       '2026-11-11T12:00:00Z',
       'cost',
@@ -233,13 +233,13 @@ describe('achados da revisão (FM3)', () => {
     });
   });
 
-  it('registrar de novo a sessão sem label não apaga o label', () => {
-    run('session', dir, '#10', 'sess_l', 'kind=testador', 'label=bloco2');
+  it('registering the session again without label does not erase the label', () => {
+    run('session', dir, '#10', 'sess_l', 'kind=testador', 'label=block2');
     run('session', dir, '#10', 'sess_l', 'kind=testador');
-    expect(sessions()[0]!.label).toBe('bloco2');
+    expect(sessions()[0]!.label).toBe('block2');
   });
 
-  it('entrada com cost sem usd não derruba o show nem o costs', () => {
+  it('an entry with cost but no usd does not break show or costs', () => {
     run('session', dir, '#10', 'sess_p', 'kind=fase');
     const file = path.join(dir, 'meta.json');
     const m = json('meta');
@@ -249,7 +249,7 @@ describe('achados da revisão (FM3)', () => {
     expect(run('costs', dir)).toMatch(/^custo total: US\$ 0\.00 em 1 sessões$/m);
   });
 
-  it('o costs ordena as etapas pelo número e os tipos pela ordem do fluxo', () => {
+  it('costs sorts the stages by number and the kinds by flow order', () => {
     for (const [issue, id] of [
       ['#1000', 'a'],
       ['#999', 'b'],
@@ -266,22 +266,22 @@ describe('achados da revisão (FM3)', () => {
     expect(out.indexOf('  fase:')).toBeLessThan(out.indexOf('  testador:'));
   });
 
-  it('a página ordena como o costs (tipos do fluxo, etapas pelo número)', () => {
+  it('the page sorts like costs (flow kinds, stages by number)', () => {
     const page = readFileSync(`${BASE}/painel/index.html`, 'utf8');
     expect(page).toMatch(/KINDS\s*=\s*\[\s*'fase',\s*'correção',\s*'testador'/);
     expect(page).toMatch(/localeCompare\([^)]*numeric/);
   });
 
-  it('o SKILL manda gravar o custo em todo caminho que arquiva', () => {
+  it('the SKILL says to record the cost on every path that archives', () => {
     const skill = readFileSync(`${BASE}/SKILL.md`, 'utf8');
-    const porEtapa = section(skill, '## 3. Por etapa');
-    const fim = section(skill, '## Fim');
-    expect(porEtapa.split('\n').find((l) => l.includes('arquive o que sobrou'))).toMatch(
+    const perStage = section(skill, '## 3. Per stage');
+    const end = section(skill, '## End');
+    expect(perStage.split('\n').find((l) => l.includes('archive what is left'))).toMatch(
       /painel\.py cost/,
     );
-    expect(fim.split('\n').find((l) => l.startsWith('4. '))).toMatch(/painel\.py cost/);
+    expect(end.split('\n').find((l) => l.startsWith('4. '))).toMatch(/painel\.py cost/);
     expect(
-      porEtapa.split('\n').find((l) => l.includes('Quando um testador avisar')),
+      perStage.split('\n').find((l) => l.includes('When a tester notifies')),
     ).toMatch(/painel\.py cost/);
   });
 });
@@ -298,8 +298,8 @@ function seed(): void {
   c('t1', '5');
 }
 
-describe('painel.py costs e a linha custo: do show (FM3, decisões 5 e 26)', () => {
-  it('imprime o total, uma linha por tipo (sessões, US$ e mediana) e uma por etapa', () => {
+describe('painel.py costs and the custo: line of show (FM3, decisions 5 and 26)', () => {
+  it('prints the total, one line per kind (sessions, US$ and median) and one per stage', () => {
     seed();
     const out = run('costs', dir);
     expect(out).toMatch(/^custo total: US\$ 11\.00 em 3 sessões$/m);
@@ -310,13 +310,13 @@ describe('painel.py costs e a linha custo: do show (FM3, decisões 5 e 26)', () 
     expect(out).not.toMatch(/correção:/);
   });
 
-  it('com --desde, conta só as com created a partir da data; cost sem session fica fora', () => {
+  it('with --desde, counts only those with created from the date; a cost without a session stays out', () => {
     seed();
     runAt(
       '2026-11-11T09:00:00Z',
       'cost',
       dir,
-      'velha',
+      'old',
       'usd=50',
       'ctx=1',
       'kind=fase',
@@ -324,42 +324,42 @@ describe('painel.py costs e a linha custo: do show (FM3, decisões 5 e 26)', () 
     );
     runAt('2026-11-11T14:00:00Z', 'session', dir, '#20', 'f3', 'kind=fase');
     runAt('2026-11-11T14:30:00Z', 'cost', dir, 'f3', 'usd=1', 'ctx=1');
-    const todas = run('costs', dir);
-    expect(todas).toMatch(/US\$ 62\.00 em 5 sessões/);
-    const desde = run('costs', '--desde', '2026-11-11T11:00:00Z', dir);
-    expect(desde).toMatch(/^custo total: US\$ 12\.00 em 4 sessões$/m);
-    expect(desde).not.toMatch(/50\.00/);
-    const depois = run('costs', '--desde', '2026-11-11T13:00:00Z', dir);
-    expect(depois).toMatch(/^custo total: US\$ 1\.00 em 1 sessões$/m);
+    const all = run('costs', dir);
+    expect(all).toMatch(/US\$ 62\.00 em 5 sessões/);
+    const since = run('costs', '--desde', '2026-11-11T11:00:00Z', dir);
+    expect(since).toMatch(/^custo total: US\$ 12\.00 em 4 sessões$/m);
+    expect(since).not.toMatch(/50\.00/);
+    const after = run('costs', '--desde', '2026-11-11T13:00:00Z', dir);
+    expect(after).toMatch(/^custo total: US\$ 1\.00 em 1 sessões$/m);
   });
 
-  it('sem custo gravado, costs e show dizem "—"', () => {
+  it('with no cost recorded, costs and show say "—"', () => {
     expect(run('costs', dir)).toMatch(/^custo total: —$/m);
     expect(run('show', dir)).toMatch(/^custo: —$/m);
   });
 
-  it('o show imprime custo: US$ <total> em <k> sessões', () => {
+  it('show prints custo: US$ <total> em <k> sessões', () => {
     seed();
     expect(run('show', dir)).toMatch(/^custo: US\$ 11\.00 em 3 sessões$/m);
   });
 
-  it('costs não grava nada', () => {
+  it('costs writes nothing', () => {
     seed();
-    const antes = readFileSync(path.join(dir, 'meta.json'), 'utf8');
+    const before = readFileSync(path.join(dir, 'meta.json'), 'utf8');
     run('costs', dir);
-    expect(readFileSync(path.join(dir, 'meta.json'), 'utf8')).toBe(antes);
+    expect(readFileSync(path.join(dir, 'meta.json'), 'utf8')).toBe(before);
   });
 
-  it('--desde inválido sai com código 2', () => {
-    expect(tryRun('costs', '--desde', 'ontem', dir).code).toBe(2);
+  it('an invalid --desde exits with code 2', () => {
+    expect(tryRun('costs', '--desde', 'yesterday', dir).code).toBe(2);
   });
 });
 
-describe('página: o card "Custo da fila" (FM3, decisão 5)', () => {
+describe('page: the "Queue cost" card (FM3, decision 5)', () => {
   const page = readFileSync(`${BASE}/painel/index.html`, 'utf8');
 
-  it('lê meta.sessions num dash.calc e mostra "—" sem ele', () => {
-    expect(page).toContain('Custo da fila');
+  it('reads meta.sessions in a dash.calc and shows "—" without it', () => {
+    expect(page).toContain('Queue cost');
     expect(page).toMatch(/dash\.calc\('custo'/);
     expect(page).toMatch(/dash\.calc\('custoResumo'/);
     expect(page).toMatch(/dash\.calc\('custoDia'/);
@@ -367,108 +367,108 @@ describe('página: o card "Custo da fila" (FM3, decisão 5)', () => {
     expect(page).toMatch(/'—'/);
   });
 
-  it('o texto do card vai por textContent, sem innerHTML', () => {
+  it('the card text goes through textContent, without innerHTML', () => {
     const script = page.slice(page.indexOf('<script>'));
     expect(script).toMatch(/mp-custo/);
     expect(script).toMatch(/textContent/);
     expect(script).not.toMatch(/innerHTML|insertAdjacentHTML/);
   });
 
-  it('os gráficos levam data-source e a tabela de hoje fica recolhida num details (PA2)', () => {
+  it('the charts carry data-source and the table of today stays collapsed in a details (PA2)', () => {
     expect(page).toMatch(/id="mp-custo-dias"[^>]*data-source="custoDia"/);
     expect(page).toMatch(/id="mp-custo-tipo"[^>]*data-source="custo"/);
     expect(page).toMatch(/id="mp-custo-etapas"[^>]*data-source="custo"/);
     expect(page).toMatch(
-      /<details[^>]*>\s*<summary>Ver a tabela de todas as etapas e tipos/,
+      /<details[^>]*>\s*<summary>Show the table of all stages and kinds/,
     );
   });
 });
 
-describe('implementar-fila/SKILL.md: esforço e custo (FM3, decisões 5 e 6)', () => {
+describe('implementar-fila/SKILL.md: effort and cost (FM3, decisions 5 and 6)', () => {
   const skill = readFileSync(`${BASE}/SKILL.md`, 'utf8');
-  const porEtapa = section(skill, '## 3. Por etapa');
+  const perStage = section(skill, '## 3. Per stage');
 
-  it('o passo 2 manda o effort da linha do coordenador no create_session', () => {
-    expect(porEtapa).toMatch(/`effort`/);
-    expect(porEtapa).toMatch(/`fases=` da ficha/);
-    expect(porEtapa).toMatch(/com ou sem `modelo=tabela`/);
+  it("step 2 sends the coordinator row's effort in create_session", () => {
+    expect(perStage).toMatch(/`effort`/);
+    expect(perStage).toMatch(/`fases=` of the ficha/);
+    expect(perStage).toMatch(/with or without `modelo=tabela`/);
   });
 
-  it('o testador e o reteste levam o esforço da coluna Testador, e a correção, medium', () => {
-    expect(porEtapa).toMatch(/coluna Testador/);
-    expect(porEtapa).toMatch(/correção[^\n]*`medium`/);
+  it('the tester and the retest take the effort of the Tester column, and the fix, medium', () => {
+    expect(perStage).toMatch(/Tester column/);
+    expect(perStage).toMatch(/fix[^\n]*`medium`/);
   });
 
-  it('o subagente do ciclo confere o effort_level; se diferir, log, e a fila segue', () => {
-    expect(porEtapa).toMatch(/`effort_level`/);
-    expect(porEtapa).toMatch(/diferir[^\n]*`log`/);
+  it('the cycle subagent checks the effort_level; if it differs, log, and the queue goes on', () => {
+    expect(perStage).toMatch(/`effort_level`/);
+    expect(perStage).toMatch(/differs[^\n]*`log`/);
   });
 
-  it('recusa por causa do effort: cria a sessão sem ele e põe o caso no log', () => {
-    expect(porEtapa).toMatch(/recusad[ao][^\n]*`effort`[^\n]*sem ele[^\n]*`log`/);
+  it('refusal because of the effort: creates the session without it and puts the case in the log', () => {
+    expect(perStage).toMatch(/refused[^\n]*`effort`[^\n]*without it[^\n]*`log`/);
   });
 
-  it('o "Arquivar as sessões" grava o custo da filha no mesmo apply', () => {
-    const arquivar = skill.slice(skill.indexOf('**Arquivar as sessões**'));
-    const bloco = arquivar.slice(0, arquivar.indexOf('**Conferências de reserva:**'));
-    expect(bloco).toMatch(/painel\.py cost/);
-    expect(bloco).toMatch(/mesmo subagente/);
-    expect(bloco).toMatch(/mesmo `apply`/);
+  it('"Archive the sessions" records the child\'s cost in the same apply', () => {
+    const archive = skill.slice(skill.indexOf('**Archive the sessions**'));
+    const block = archive.slice(0, archive.indexOf('**Fallback checks:**'));
+    expect(block).toMatch(/painel\.py cost/);
+    expect(block).toMatch(/same subagent/);
+    expect(block).toMatch(/same `apply`/);
   });
 
-  it('a "Troca de sessão" grava o custo do coordenador antes do sucessor', () => {
-    const troca = section(skill, '## Troca de sessão');
-    expect(troca).toMatch(/painel\.py cost[^\n]*kind=coordenador/);
-    expect(troca).toMatch(/antes de criar o sucessor/);
+  it('the "Session switch" records the coordinator\'s cost before the successor', () => {
+    const switchSection = section(skill, '## Session switch');
+    expect(switchSection).toMatch(/painel\.py cost[^\n]*kind=coordenador/);
+    expect(switchSection).toMatch(/before creating the successor/);
   });
 
-  it('o "Fim" ganha a coluna US$ e o total', () => {
-    const fim = section(skill, '## Fim');
-    expect(fim).toMatch(/coluna US\$/);
-    expect(fim).toMatch(/painel\.py costs/);
+  it('the "End" gets the US$ column and the total', () => {
+    const end = section(skill, '## End');
+    expect(end).toMatch(/US\$ column/);
+    expect(end).toMatch(/painel\.py costs/);
   });
 
-  it('o "Painel" lista session com kind=, cost e costs, e a linha custo: do show', () => {
-    const painel = section(skill, '## Painel');
-    expect(painel).toMatch(/painel\.py session <pasta> '#n' <id> kind=/);
-    expect(painel).toMatch(/painel\.py cost <pasta> <id> usd=/);
-    expect(painel).toMatch(/painel\.py costs \[--desde <ISO>\] <pasta>/);
-    expect(painel).toMatch(/`custo:`/);
-    expect(painel).toMatch(/costs --desde <hora da troca a quente>/);
+  it('the "Panel" lists session with kind=, cost and costs, and the custo: line of show', () => {
+    const panel = section(skill, '## Panel');
+    expect(panel).toMatch(/painel\.py session <folder> '#n' <id> kind=/);
+    expect(panel).toMatch(/painel\.py cost <folder> <id> usd=/);
+    expect(panel).toMatch(/painel\.py costs \[--desde <ISO>\] <folder>/);
+    expect(panel).toMatch(/`custo:`/);
+    expect(panel).toMatch(/costs --desde <time of the hot switch>/);
   });
 
-  it('a comparação com a linha de base é costs --desde da hora da troca a quente', () => {
-    expect(skill).toMatch(/costs --desde <hora da troca a quente>/);
+  it('the comparison with the baseline is costs --desde of the hot switch time', () => {
+    expect(skill).toMatch(/costs --desde <time of the hot switch>/);
   });
 });
 
-describe('docs: o effort do create_session (FM3, decisão 6)', () => {
-  it('docs/PROCESS.md não diz mais "escolhe o modelo e não o esforço"', () => {
+describe('docs: the effort of create_session (FM3, decision 6)', () => {
+  it('docs/PROCESS.md no longer says "chooses the model and not the effort"', () => {
     const process = readFileSync('docs/PROCESS.md', 'utf8');
-    expect(process).not.toMatch(/escolhe o modelo e não o esforço/);
-    expect(process).toMatch(/`effort` do `create_session`/);
+    expect(process).not.toMatch(/chooses the model and not the effort/);
+    expect(process).toMatch(/`effort` of `create_session`/);
   });
 
-  it('docs/FLOW.md manda o effort da tabela no create_session', () => {
+  it("docs/FLOW.md sends the table's effort in create_session", () => {
     const flow = readFileSync('docs/FLOW.md', 'utf8');
-    const passo = section(flow, '## Orquestrador — passo a passo');
-    expect(passo).toMatch(/`effort`[^\n]*tabela/);
+    const step = section(flow, '## Orchestrator — step by step');
+    expect(step).toMatch(/`effort`[^\n]*table/);
   });
 
-  it('detalhar-backlog não diz mais "só aceitaria o modelo"', () => {
+  it('detalhar-backlog no longer says "would only accept the model"', () => {
     const skill = readFileSync('.claude/skills/detalhar-backlog/SKILL.md', 'utf8');
-    expect(skill).not.toMatch(/só aceitaria o modelo/);
+    expect(skill).not.toMatch(/would only accept the model/);
   });
 });
 
-describe('painel.py cost e upgrade (achados da revisão do fechamento)', () => {
-  it('cost de sessão nova (sem created) entra em costs --desde pela hora do custo', () => {
+describe('painel.py cost and upgrade (findings of the closing review)', () => {
+  it('the cost of a new session (without created) enters costs --desde by the cost time', () => {
     runAt('2026-11-11T10:00:00Z', 'cost', dir, 's1', 'usd=1', 'ctx=10', 'kind=fase');
     const out = run('costs', dir, '--desde', '2026-11-11T00:00:00Z');
     expect(out).toMatch(/1[,.]00/);
   });
 
-  it('cost guarda a issue normalizada (sem espaços)', () => {
+  it('cost keeps the normalized issue (no spaces)', () => {
     runAt(
       '2026-11-11T10:00:00Z',
       'cost',
@@ -482,7 +482,7 @@ describe('painel.py cost e upgrade (achados da revisão do fechamento)', () => {
     expect(sessions()[0]!.issue).toBe('#10');
   });
 
-  it('upgrade sem mudança dentro do apply não imprime alterados: duas vezes', () => {
+  it('an upgrade with no change inside apply does not print alterados: twice', () => {
     const r = spawnSync('python3', [SCRIPT, 'apply', dir, '-'], {
       encoding: 'utf8',
       input: 'upgrade\nlog "x"\n',
@@ -491,10 +491,10 @@ describe('painel.py cost e upgrade (achados da revisão do fechamento)', () => {
   });
 });
 
-describe('painel.py: o teto de 300 mil do testador (TC2, decisão 9 da #1639)', () => {
+describe('painel.py: the tester ceiling of 300 thousand (TC2, decision 9 of #1639)', () => {
   const at = '2026-11-11T12:00:00Z';
 
-  function custo(id: string, kind: string, ctx: number, issue = '#20', label = '') {
+  function recordCost(id: string, kind: string, ctx: number, issue = '#20', label = '') {
     runAt(
       at,
       'session',
@@ -508,9 +508,9 @@ describe('painel.py: o teto de 300 mil do testador (TC2, decisão 9 da #1639)', 
   }
 
   it.each(['testador', 'reteste'])(
-    'cost de %s com ctx=300001 grava, sai com 0 e avisa o excesso',
+    'cost of %s with ctx=300001 writes, exits with 0 and warns about the excess',
     (kind) => {
-      runAt(at, 'session', dir, '#20', 'sess_t', `kind=${kind}`, 'label=grupo1-R25');
+      runAt(at, 'session', dir, '#20', 'sess_t', `kind=${kind}`, 'label=group1-R25');
       const r = tryRun('--now', at, 'cost', dir, 'sess_t', 'usd=3', 'ctx=300001');
       expect(r.code).toBe(0);
       expect(r.out).toMatch(/^acima do teto do testador \(300 mil\): sess_t 300001$/m);
@@ -518,18 +518,18 @@ describe('painel.py: o teto de 300 mil do testador (TC2, decisão 9 da #1639)', 
     },
   );
 
-  it('cost de sessão nova com kind=testador na própria chamada também avisa', () => {
+  it('cost of a new session with kind=testador in the same call also warns', () => {
     const out = runAt(at, 'cost', dir, 'sess_n', 'usd=1', 'ctx=400000', 'kind=testador');
     expect(out).toMatch(/acima do teto do testador \(300 mil\): sess_n 400000/);
   });
 
-  it('com ctx=300000, ou com kind=fase acima do teto, não avisa', () => {
-    expect(custo('sess_a', 'testador', 300000)).not.toMatch(/acima do teto/);
-    expect(custo('sess_b', 'fase', 450000)).not.toMatch(/acima do teto/);
-    expect(custo('sess_c', 'coordenador', 450000)).not.toMatch(/acima do teto/);
+  it('with ctx=300000, or with kind=fase above the ceiling, it does not warn', () => {
+    expect(recordCost('sess_a', 'testador', 300000)).not.toMatch(/acima do teto/);
+    expect(recordCost('sess_b', 'fase', 450000)).not.toMatch(/acima do teto/);
+    expect(recordCost('sess_c', 'coordenador', 450000)).not.toMatch(/acima do teto/);
   });
 
-  it('o aviso sai dentro de um apply, sem impedir a gravação', () => {
+  it('the warning comes out inside an apply, without preventing the write', () => {
     const r = spawnSync('python3', [SCRIPT, 'apply', dir, '-'], {
       encoding: 'utf8',
       input: 'cost sess_e usd=1 ctx=350000 kind=testador\n',
@@ -539,119 +539,123 @@ describe('painel.py: o teto de 300 mil do testador (TC2, decisão 9 da #1639)', 
     expect((sessions()[0]!.cost as Entry).ctx).toBe(350000);
   });
 
-  it('o show lista testador acima do teto: etapa, rótulo e ctx em mil', () => {
-    custo('sess_a', 'testador', 339000, '#20', 'grupo2-R3-R13');
-    custo('sess_b', 'reteste', 523000, '#10', 'reteste1');
-    custo('sess_c', 'testador', 271000, '#10', 'grupo3-R17');
-    custo('sess_d', 'fase', 600000, '#10', 'TC2');
-    const linha = run('show', dir).match(/^testador acima do teto: (.*)$/m);
-    expect(linha).not.toBeNull();
-    expect(linha![1]).toContain('#20 grupo2-R3-R13 339k');
-    expect(linha![1]).toContain('#10 reteste1 523k');
-    expect(linha![1]).not.toContain('grupo3-R17');
-    expect(linha![1]).not.toContain('TC2');
+  it('show lists testador acima do teto: stage, label and ctx in thousands', () => {
+    recordCost('sess_a', 'testador', 339000, '#20', 'group2-R3-R13');
+    recordCost('sess_b', 'reteste', 523000, '#10', 'retest1');
+    recordCost('sess_c', 'testador', 271000, '#10', 'group3-R17');
+    recordCost('sess_d', 'fase', 600000, '#10', 'TC2');
+    const line = run('show', dir).match(/^testador acima do teto: (.*)$/m);
+    expect(line).not.toBeNull();
+    expect(line![1]).toContain('#20 group2-R3-R13 339k');
+    expect(line![1]).toContain('#10 retest1 523k');
+    expect(line![1]).not.toContain('group3-R17');
+    expect(line![1]).not.toContain('TC2');
   });
 
-  it('o show não lista etapa concluída nem a que está em meta.merged', () => {
-    custo('sess_a', 'testador', 339000, '#20', 'grupo2');
-    custo('sess_b', 'testador', 523000, '#10', 'grupo1');
-    expect(run('show', dir)).toMatch(/^testador acima do teto: .*#20 grupo2 339k/m);
+  it('show does not list a concluída stage nor one in meta.merged', () => {
+    recordCost('sess_a', 'testador', 339000, '#20', 'group2');
+    recordCost('sess_b', 'testador', 523000, '#10', 'group1');
+    expect(run('show', dir)).toMatch(/^testador acima do teto: .*#20 group2 339k/m);
     runAt(at, 'row', dir, '#20', 'status=concluída');
-    const depois = run('show', dir);
-    expect(depois).not.toMatch(/#20 grupo2/);
-    expect(depois).toMatch(/#10 grupo1 523k/);
+    const after = run('show', dir);
+    expect(after).not.toMatch(/#20 group2/);
+    expect(after).toMatch(/#10 group1 523k/);
     runAt(at, 'merged', dir, '#10');
     expect(run('show', dir)).toMatch(/^testador acima do teto: nenhum$/m);
   });
 
-  it('o show não prende para sempre o testador acima do teto sem etapa registrada', () => {
+  it('show does not trap forever the tester above the ceiling with no registered stage', () => {
     runAt(at, 'cost', dir, 'sess_n', 'usd=1', 'ctx=400000', 'kind=testador');
     expect(run('show', dir)).toMatch(/^testador acima do teto: nenhum$/m);
   });
 
-  it('o show diz nenhum sem excesso e com o custo sem rótulo usa o id', () => {
+  it('show says nenhum with no excess and, with the cost without a label, uses the id', () => {
     expect(run('show', dir)).toMatch(/^testador acima do teto: nenhum$/m);
-    custo('sess_a', 'testador', 300000);
+    recordCost('sess_a', 'testador', 300000);
     expect(run('show', dir)).toMatch(/^testador acima do teto: nenhum$/m);
-    custo('sess_semrotulo', 'testador', 310000);
-    expect(run('show', dir)).toMatch(
-      /^testador acima do teto: #20 sess_semrotulo 310k$/m,
-    );
+    recordCost('sess_nolabel', 'testador', 310000);
+    expect(run('show', dir)).toMatch(/^testador acima do teto: #20 sess_nolabel 310k$/m);
   });
 
-  it('o show arredonda o contexto para cima: acima do teto nunca aparece como 300k', () => {
-    custo('sess_a', 'testador', 300001, '#20', 'grupo2');
-    expect(run('show', dir)).toMatch(/^testador acima do teto: #20 grupo2 301k$/m);
+  it('show rounds the context up: above the ceiling never appears as 300k', () => {
+    recordCost('sess_a', 'testador', 300001, '#20', 'group2');
+    expect(run('show', dir)).toMatch(/^testador acima do teto: #20 group2 301k$/m);
   });
 
-  it('o show não grava nada e a página index.html não muda', () => {
-    custo('sess_a', 'testador', 339000, '#20', 'grupo2');
-    const antes = JSON.stringify(json('meta'));
+  it('show writes nothing and the index.html page does not change', () => {
+    recordCost('sess_a', 'testador', 339000, '#20', 'group2');
+    const before = JSON.stringify(json('meta'));
     run('show', dir);
-    expect(JSON.stringify(json('meta'))).toBe(antes);
-    const pagina = readFileSync(`${BASE}/painel/index.html`, 'utf8');
-    expect(pagina).not.toMatch(/acima do teto/);
+    expect(JSON.stringify(json('meta'))).toBe(before);
+    const pageHtml = readFileSync(`${BASE}/painel/index.html`, 'utf8');
+    expect(pageHtml).not.toMatch(/acima do teto/);
   });
 });
 
-describe('docs e skill: o teto do testador conferido pela fila (TC2, decisões 8 a 10)', () => {
+describe('docs and skill: the tester ceiling checked by the queue (TC2, decisions 8 to 10)', () => {
   const skill = readFileSync(`${BASE}/SKILL.md`, 'utf8');
-  const nuvem = readFileSync('docs/TESTING-NUVEM.md', 'utf8');
+  const cloud = readFileSync('docs/TESTING-NUVEM.md', 'utf8');
   const flow = readFileSync('docs/FLOW.md', 'utf8');
 
-  it('o item Testador e o "Arquivar as sessões" gravam o excesso no log, no mesmo apply do custo', () => {
-    const porEtapa = section(skill, '## 3. Por etapa');
-    const testador = porEtapa.slice(
-      porEtapa.indexOf('3. **Testador.**'),
-      porEtapa.indexOf('4. **Correção**'),
+  it('the Tester item and "Archive the sessions" record the excess in the log, in the same apply as the cost', () => {
+    const perStage = section(skill, '## 3. Per stage');
+    const tester = perStage.slice(
+      perStage.indexOf('3. **Tester.**'),
+      perStage.indexOf('4. **Fix**'),
     );
-    expect(testador).toMatch(/contexto <ctx>k acima do teto do testador/);
-    expect(testador).toMatch(/mesmo `apply`/);
-    const arquivar = skill.slice(skill.indexOf('**Arquivar as sessões**'));
-    const custoItem = arquivar.slice(0, arquivar.indexOf('**Conferências de reserva:**'));
-    expect(custoItem).toMatch(/<label>: contexto <ctx>k acima do teto do testador/);
-    expect(custoItem).toMatch(/acima do teto do testador \(300 mil\)/);
-    expect(custoItem).toMatch(/arredondado para cima/);
-    expect(custoItem).toMatch(/sem rótulo, o id/);
+    expect(tester).toMatch(/contexto <ctx>k acima do teto do testador/);
+    expect(tester).toMatch(/same `apply`/);
+    const archive = skill.slice(skill.indexOf('**Archive the sessions**'));
+    const costItem = archive.slice(0, archive.indexOf('**Fallback checks:**'));
+    expect(costItem).toMatch(/<label>: contexto <ctx>k acima do teto do testador/);
+    expect(costItem).toMatch(/acima do teto do testador \(300 mil\)/);
+    expect(costItem).toMatch(/rounded up/);
+    expect(costItem).toMatch(/without a label, the session id/);
   });
 
-  it('o fechamento comenta cada excesso na roadmap fixa "Teto de contexto do testador"', () => {
-    const porEtapa = section(skill, '## 3. Por etapa');
-    const fechamento = porEtapa.slice(
-      porEtapa.indexOf('5. **Fechamento**'),
-      porEtapa.indexOf('6. **Merge**'),
+  it('the closing comments each excess on the fixed roadmap "Teto de contexto do testador"', () => {
+    const perStage = section(skill, '## 3. Per stage');
+    const closing = perStage.slice(
+      perStage.indexOf('5. **Closing**'),
+      perStage.indexOf('6. **Merge**'),
     );
-    expect(fechamento).toMatch(/"Teto de contexto do testador"/);
-    expect(fechamento).toMatch(/no primeiro excesso/);
-    expect(fechamento).toMatch(/Impacto: medium — menos custo recorrente do testador/);
-    expect(fechamento).toMatch(/fica aberta/);
-    expect(fechamento).toMatch(/antes de comentar ou criar, procure/);
+    expect(closing).toMatch(/"Teto de contexto do testador"/);
+    expect(closing).toMatch(/at the first excess/);
+    expect(closing).toMatch(/Impacto: medium — menos custo recorrente do testador/);
+    expect(closing).toMatch(/stays open/);
+    expect(closing).toMatch(/before commenting or creating, look for/);
   });
 
-  it('o "Painel" documenta a linha nova do show e a saída do cost', () => {
-    const painel = section(skill, '## Painel');
-    expect(painel).toMatch(/`testador acima do teto:`/);
-    expect(painel).toMatch(/acima do teto do testador \(300 mil\): <id> <ctx>/);
+  it('the "Panel" documents the new show line and the cost output', () => {
+    const panel = section(skill, '## Panel');
+    expect(panel).toMatch(/`testador acima do teto:`/);
+    expect(panel).toMatch(/acima do teto do testador \(300 mil\): <id> <ctx>/);
   });
 
   it('the "Context up to 300 thousand" paragraph no longer says to move scripts or call the owner', () => {
-    const i = nuvem.indexOf('**Context up to 300 thousand.**');
-    const trecho = nuvem.slice(i, nuvem.indexOf('\n\n', i));
-    expect(trecho).not.toMatch(/move (test )?scripts between the (5 )?blocks/);
-    expect(trecho).not.toMatch(/\bcalls? the owner/);
-    expect(trecho).toMatch(/every tester session/);
-    expect(trecho).toMatch(/main session/);
-    expect(trecho).toMatch(/subagents? per batch/);
-    expect(trecho).toMatch(/without holding up the stage/);
-    expect(trecho).toMatch(/Teto de contexto do testador/);
+    const i = cloud.indexOf('**Context up to 300 thousand.**');
+    const excerpt = cloud.slice(i, cloud.indexOf('\n\n', i));
+    expect(excerpt).not.toMatch(/move (test )?scripts between the (5 )?blocks/);
+    expect(excerpt).not.toMatch(/\bcalls? the owner/);
+    expect(excerpt).toMatch(/every tester session/);
+    expect(excerpt).toMatch(/main session/);
+    expect(excerpt).toMatch(/subagents? per batch/);
+    expect(excerpt).toMatch(/without holding up the stage/);
+    expect(excerpt).toMatch(/Teto de contexto do testador/);
   });
 
-  it('o modelo do resumo ganha a coluna Contexto e a linha Contexto:', () => {
-    const resumo = between(flow, '## Resumo da rodada em blocos', '## Notificação final');
-    expect(resumo).toMatch(
-      /\| Bloco \| ✅ +\| ❌ +\| não executado \| Tempo +\| Contexto +\|/,
+  it('the summary template gets the Context column and the Contexto: line', () => {
+    const summary = between(
+      flow,
+      '## Summary of the round in blocks',
+      '## Final notification',
     );
-    expect(resumo).toMatch(/\*\*Contexto:\*\* acima do teto \(300 mil\): .* ou nenhum/);
-    expect(resumo).toMatch(/grupos/);
+    expect(summary).toMatch(
+      /\| Block \| ✅ +\| ❌ +\| not executed \| Time +\| Context +\|/,
+    );
+    expect(summary).toMatch(
+      /\*\*Context:\*\* above the ceiling \(300 thousand\): .* or none/,
+    );
+    expect(summary).toMatch(/groups/);
   });
 });

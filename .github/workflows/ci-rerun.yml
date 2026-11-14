@@ -1,31 +1,31 @@
-name: 'CI: reexecução de runner abandonado'
+name: 'CI: rerun after an abandoned runner'
 
-# Quando o CI de um PR termina vermelho porque o GitHub abandonou um runner (o job some da
-# lista de jobs da execução; ex.: runs 42672468793 e 42672325637), roda de novo os jobs
-# falhos/ausentes, uma vez, sem sessão nem dono no meio (etapa #1325). A regra "morreu por
-# runner abandonado" está em `scripts/ci/ciRerun.mjs` (testada em `tests/tooling/ciRerun.test.ts`):
-# falha legítima (teste, lint, build) não é reexecutada, porque a fase precisa corrigir o código
-# de qualquer forma. O timeout tem dois casos:
-#   - No timeout sozinho, o job termina `cancelled` e a execução do CI também (não `failure`):
-#     este workflow nem roda, pulado pelo `if:` do job `rerun`.
-#   - Numa execução `failure` por outro motivo, o job `cancelled` conta como falha legítima no
-#     `decide`, como confere o teste "job cancelado conta como falha legítima" de
-#     `tests/tooling/ciRerun.test.ts`.
+# When a PR's CI ends red because GitHub abandoned a runner (the job disappears from the
+# run's job list; e.g. runs 42672468793 and 42672325637), it reruns the failed/missing
+# jobs, once, with no session or owner in between (stage #1325). The rule "died from an
+# abandoned runner" lives in `scripts/ci/ciRerun.mjs` (tested in `tests/tooling/ciRerun.test.ts`):
+# a legitimate failure (test, lint, build) is not rerun, because the phase has to fix the code
+# anyway. The timeout has two cases:
+#   - On a timeout alone, the job ends `cancelled` and so does the CI run (not `failure`):
+#     this workflow does not even run, skipped by the `if:` of the `rerun` job.
+#   - In a run that is `failure` for another reason, the `cancelled` job counts as a legitimate failure in
+#     `decide`, as the test "a cancelled job counts as a legitimate failure" in
+#     `tests/tooling/ciRerun.test.ts` checks.
 #
-# A demonstração real foi feita na etapa #1532, com os PRs #1586 e #1587 (registro em
-# https://github.com/fabianofranca/mapping/issues/1532#issuecomment-6787509092). Para simular o
-# abandono num branch descartável, além de tirar o job `epic`, é preciso fazer o `check` falhar
-# só na tentativa 1 e trocar o vitest dos `test`, do `coverage` e do `e2e` por `echo`, porque os
-# testes de `tests/tooling` leem o `ci.yml` do branch.
+# The real demonstration was done in stage #1532, with PRs #1586 and #1587 (record in
+# https://github.com/fabianofranca/mapping/issues/1532#issuecomment-6787509092). To simulate
+# the abandonment on a throwaway branch, besides removing the `epic` job, you must make `check` fail
+# only on attempt 1 and replace the vitest of `test`, `coverage` and `e2e` with `echo`, because the
+# `tests/tooling` tests read the branch's `ci.yml`.
 #
-# Só a tentativa 1 (`run_attempt == 1`): uma reexecução por commit, nunca em laço. A tentativa 2
-# nunca dispara outra; se houver uma segunda reexecução, ela é da fase. Fork e Dependabot ficam
-# de fora (o `workflow_run` deles recebe token só de leitura e a reexecução falharia à toa).
+# Only attempt 1 (`run_attempt == 1`): one rerun per commit, never in a loop. Attempt 2
+# never triggers another; if there is a second rerun, it belongs to the phase. Forks and Dependabot are
+# left out (their `workflow_run` gets a read-only token and the rerun would fail for nothing).
 #
-# Os jobs esperados vêm do `ci.yml` da `main` (checkout sparse, sem código do PR, que não é
-# confiável). `workflow_run` roda sempre a versão deste arquivo no branch padrão: mudanças aqui
-# só valem depois do merge na `main`. Este workflow não é check obrigatório: nunca deixa check
-# pendente.
+# The expected jobs come from the `ci.yml` of `main` (sparse checkout, without PR code, which is not
+# trusted). `workflow_run` always runs this file's version on the default branch: changes here
+# only take effect after the merge into `main`. This workflow is not a required check: it never leaves a check
+# pending.
 on:
   workflow_run:
     workflows: [CI]
@@ -56,7 +56,7 @@ jobs:
             .github/workflows/ci.yml
             scripts/ci
           sparse-checkout-cone-mode: false
-      - name: Decide se reexecuta
+      - name: Decide whether to rerun
         id: decide
         env:
           GH_TOKEN: ${{ github.token }}
@@ -65,14 +65,14 @@ jobs:
         run: |
           gh api "repos/$REPO/actions/runs/$RUN_ID/jobs?filter=latest&per_page=100" > "$RUNNER_TEMP/jobs.json"
           node scripts/ci/ciRerun.mjs decide --ci .github/workflows/ci.yml --jobs "$RUNNER_TEMP/jobs.json" --output "$GITHUB_OUTPUT"
-      - name: Reexecuta os jobs abandonados
+      - name: Rerun the abandoned jobs
         if: steps.decide.outputs.rerun == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           RUN_ID: ${{ github.event.workflow_run.id }}
         run: gh run rerun "$RUN_ID" --failed --repo "$REPO"
-      - name: Resumo
+      - name: Summary
         if: always()
         env:
           OUTCOME: ${{ steps.decide.outcome }}

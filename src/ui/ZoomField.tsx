@@ -12,7 +12,7 @@ export function ZoomField({ class: extra }: { readonly class?: string }) {
   const { view, canvas } = useEditor();
   const percent = zoomPercent(view.viewport.value.scale);
   return (
-    /* Exception to Button: zoom field (shows the value and goes back to 100%) (docs/DESIGN-SYSTEM.md, "Standalone buttons") */
+    /* Exception to Button: zoom field (shows the value and goes back to 100%) (docs/DESIGN-SYSTEM.md, "Loose buttons") */
     <button
       type="button"
       class={extra ? `zoom-field ${extra}` : 'zoom-field'}

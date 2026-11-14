@@ -1,9 +1,9 @@
 // @vitest-environment node
-// Etapa #1856, fases GC1 (decisões 1 a 8, 10 e 12a) e GC2 (o texto do `docs/FLOW.md`, decisões 9 e 10): o gancho `PostToolUse` que mede o contexto da
-// sessão de fase depois de cada chamada de ferramenta e avisa a troca acima do gatilho
-// (`scripts/ci/contextGuard.mjs`), e a entrada dele no `.claude/settings.json`. O gancho roda como
-// processo (`spawnSync`), com a entrada no stdin e `CLAUDE_CODE_REMOTE` e `TMPDIR` no `env`; o
-// transcript é uma fixture `.jsonl` no formato do `contextUsage.test.ts`.
+// Stage #1856, phases GC1 (decisions 1 to 8, 10 and 12a) and GC2 (the text of `docs/FLOW.md`, decisions 9 and 10): the `PostToolUse` hook that measures the
+// context of the phase session after each tool call and warns of the switch above the trigger
+// (`scripts/ci/contextGuard.mjs`), and its entry in `.claude/settings.json`. The hook runs as a
+// process (`spawnSync`), with the input on stdin and `CLAUDE_CODE_REMOTE` and `TMPDIR` in the `env`; the
+// transcript is a `.jsonl` fixture in the format of `contextUsage.test.ts`.
 import { spawnSync } from 'node:child_process';
 import {
   appendFileSync,
@@ -18,7 +18,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { between, section } from '../support/textSlice';
-// @ts-expect-error módulo .mjs sem declaração de tipos
+// @ts-expect-error .mjs module without type declarations
 import { GATILHO, MARCADOR } from '../../scripts/ci/contextGuard.mjs';
 
 const TRIGGER = GATILHO as number;
@@ -26,11 +26,11 @@ const MARK = MARCADOR as string;
 const TAIL = 2 * 1024 * 1024;
 
 const phasePrompt = `${MARK}GC1 — o gancho da etapa #1856 do repositório \`fabianofranca/mapping\`.`;
-// O que o coordenador manda de fato (skill `implementar-fila`, "Por etapa"): abre por `Fase <código> —`.
+// What the coordinator actually sends (skill `implementar-fila`, "Per stage"): it opens with `Fase <código> —`.
 const queuePrompt =
   'Fase GC1 — Gancho de contexto da fase da etapa #1856 (sub-issue #1882), do repositório `fabianofranca/mapping`, no fluxo automatizado.';
 
-/** Linha `user` com o prompt em string. */
+/** `user` line with the prompt as a string. */
 const userLine = (content: unknown): string =>
   JSON.stringify({
     type: 'user',
@@ -38,7 +38,7 @@ const userLine = (content: unknown): string =>
     message: { role: 'user', content },
   });
 
-/** Linha do assistente com a soma `n` de contexto, no formato real do transcript. */
+/** Assistant line with the context sum `n`, in the real transcript format. */
 const measure = (n: number, extra: Record<string, unknown> = {}): string =>
   JSON.stringify({
     type: 'assistant',
@@ -66,7 +66,7 @@ afterAll(() => {
 });
 
 interface Sandbox {
-  /** `TMPDIR` do gancho. */
+  /** The hook's `TMPDIR`. */
   tmp: string;
   transcript: string;
   sessionId: string;
@@ -149,40 +149,40 @@ const warningOf = (r: Result): Warning => {
   return JSON.parse(r.stdout) as Warning;
 };
 
-describe('GC1 — contextGuard.mjs: as constantes (decisões 1 e 4)', () => {
-  it('o gatilho é 270.000 e o marcador é a primeira frase da mensagem da fase', () => {
+describe('GC1 — contextGuard.mjs: the constants (decisions 1 and 4)', () => {
+  it('the trigger is 270,000 and the marker is the first sentence of the phase message', () => {
     expect(TRIGGER).toBe(270_000);
     expect(MARK).toBe('Você é o agente da fase ');
   });
 });
 
-describe('GC1 — contextGuard.mjs: as saídas em silêncio (decisão 4)', () => {
-  it('sem CLAUDE_CODE_REMOTE: código 0, sem saída, sem estado', () => {
+describe('GC1 — contextGuard.mjs: the silent outputs (decision 4)', () => {
+  it('without CLAUDE_CODE_REMOTE: code 0, no output, no state', () => {
     const box = sandbox([userLine(phasePrompt), measure(300_000)]);
     silent(hook(box, {}, { remote: false }));
     expect(existsSync(box.state)).toBe(false);
   });
 
-  it('com agent_id (chamada de subagente): sem saída e nem o estado é gravado', () => {
+  it('with agent_id (a subagent call): no output and the state is not even written', () => {
     const box = sandbox([userLine(phasePrompt), measure(300_000)]);
     silent(hook(box, { agent_id: 'agent-1' }));
     expect(existsSync(box.state)).toBe(false);
   });
 
-  it('transcript_path vazio ou inexistente: sem saída', () => {
+  it('empty or missing transcript_path: no output', () => {
     const box = sandbox([userLine(phasePrompt), measure(300_000)]);
     silent(hook(box, { transcript_path: '' }));
-    silent(hook(box, { transcript_path: join(box.tmp, 'nao-existe.jsonl') }));
+    silent(hook(box, { transcript_path: join(box.tmp, 'does-not-exist.jsonl') }));
   });
 
-  it('sessão que não é de fase: sem saída, fase=false no estado e sem reler o prompt', () => {
+  it('a session that is not a phase one: no output, fase=false in the state and no rereading of the prompt', () => {
     const box = sandbox([
-      userLine('Oi, pode me ajudar com o projeto?'),
+      userLine('Hi, can you help me with the project?'),
       measure(300_000),
     ]);
     silent(hook(box));
     expect(stateOf(box).fase).toBe(false);
-    // A segunda chamada reaproveita o estado: trocar o prompt por um de fase não muda a decisão.
+    // The second call reuses the state: swapping the prompt for a phase one does not change the decision.
     writeFileSync(
       box.transcript,
       [userLine(phasePrompt), measure(300_000)].join('\n') + '\n',
@@ -191,7 +191,7 @@ describe('GC1 — contextGuard.mjs: as saídas em silêncio (decisão 4)', () =>
     expect(stateOf(box).fase).toBe(false);
   });
 
-  it('o coordenador, o testador e a supervisão ficam de fora', () => {
+  it('the coordinator, the tester and the supervision stay out', () => {
     for (const prompt of [
       '/implementar-fila #1856',
       'Você é o testador da etapa #1856.',
@@ -204,20 +204,20 @@ describe('GC1 — contextGuard.mjs: as saídas em silêncio (decisão 4)', () =>
   });
 });
 
-describe('GC1 — contextGuard.mjs: o prompt da sessão de fase (decisão 4)', () => {
-  it('a mensagem de "Para a sessão da fase" do docs/FLOW.md vale', () => {
+describe('GC1 — contextGuard.mjs: the phase session prompt (decision 4)', () => {
+  it('the "For the phase session" message of docs/FLOW.md counts', () => {
     const box = sandbox([userLine(phasePrompt), measure(100_000)]);
     silent(hook(box));
     expect(stateOf(box).fase).toBe(true);
   });
 
-  it('o prompt curto do coordenador (`Fase <código> — … (sub-issue #n)`) também vale', () => {
+  it('the short prompt of the coordinator (`Fase <código> — … (sub-issue #n)`) counts too', () => {
     const box = sandbox([userLine(queuePrompt), measure(100_000)]);
     silent(hook(box));
     expect(stateOf(box).fase).toBe(true);
   });
 
-  it('`Fase` solta, sem a etapa e a sub-issue, não vale', () => {
+  it('a bare `Fase`, without the stage and the sub-issue, does not count', () => {
     const box = sandbox([
       userLine('Fase de testes do projeto: me ajude a revisar.'),
       measure(100_000),
@@ -226,12 +226,12 @@ describe('GC1 — contextGuard.mjs: o prompt da sessão de fase (decisão 4)', (
     expect(stateOf(box).fase).toBe(false);
   });
 
-  it('a primeira linha user em lista de blocos vale pelo primeiro bloco text', () => {
+  it('the first user line as a list of blocks counts through its first text block', () => {
     const box = sandbox([
       userLine([
         { type: 'image', source: {} },
         { type: 'text', text: phasePrompt },
-        { type: 'text', text: 'outro bloco' },
+        { type: 'text', text: 'another block' },
       ]),
       measure(100_000),
     ]);
@@ -239,7 +239,7 @@ describe('GC1 — contextGuard.mjs: o prompt da sessão de fase (decisão 4)', (
     expect(stateOf(box).fase).toBe(true);
   });
 
-  it('um bloco text de lembrete antes do prompt não esconde a sessão de fase', () => {
+  it('a reminder text block before the prompt does not hide the phase session', () => {
     const box = sandbox([
       userLine([
         { type: 'text', text: '<system-reminder>CLAUDE.md …</system-reminder>' },
@@ -251,12 +251,12 @@ describe('GC1 — contextGuard.mjs: o prompt da sessão de fase (decisão 4)', (
     expect(stateOf(box).fase).toBe(true);
   });
 
-  it('a primeira linha user vale, mesmo com outras linhas antes dela e uma user depois', () => {
+  it('the first user line counts, even with other lines before it and a user line after', () => {
     const box = sandbox([
       JSON.stringify({ type: 'queue-operation', operation: 'enqueue' }),
       JSON.stringify({ type: 'attachment', isSidechain: false }),
       userLine(phasePrompt),
-      userLine('Oi'),
+      userLine('Hi'),
       measure(100_000),
     ]);
     silent(hook(box));
@@ -264,8 +264,8 @@ describe('GC1 — contextGuard.mjs: o prompt da sessão de fase (decisão 4)', (
   });
 });
 
-describe('GC1 — contextGuard.mjs: o estado e o gatilho (decisões 5, 6 e 8)', () => {
-  it('abaixo do gatilho: sem saída; o estado traz fase, contexto e a ferramenta da chamada', () => {
+describe('GC1 — contextGuard.mjs: the state and the trigger (decisions 5, 6 and 8)', () => {
+  it('below the trigger: no output; the state carries fase, contexto and the tool of the call', () => {
     const box = sandbox([userLine(phasePrompt), measure(120_345)]);
     silent(hook(box, { tool_name: 'Bash', tool_input: { command: 'npm test' } }));
     expect(stateOf(box)).toMatchObject({
@@ -277,7 +277,7 @@ describe('GC1 — contextGuard.mjs: o estado e o gatilho (decisões 5, 6 e 8)', 
     });
   });
 
-  it('270.000 não avisa; 270.001 avisa, com o JSON da decisão 8', () => {
+  it('270,000 does not warn; 270,001 warns, with the JSON of decision 8', () => {
     const a = sandbox([userLine(phasePrompt), measure(TRIGGER)]);
     silent(hook(a));
     expect(stateOf(a).ultimoAviso).toBeNull();
@@ -296,7 +296,7 @@ describe('GC1 — contextGuard.mjs: o estado e o gatilho (decisões 5, 6 e 8)', 
     expect(stateOf(b).ultimoAviso).toBe(TRIGGER + 1);
   });
 
-  it('a repetição: depois do aviso em 270.001, 279.999 não repete e 280.001 repete', () => {
+  it('the repetition: after the warning at 270,001, 279,999 does not repeat and 280,001 does', () => {
     const box = sandbox([userLine(phasePrompt), measure(TRIGGER + 1)]);
     warningOf(hook(box));
 
@@ -311,13 +311,13 @@ describe('GC1 — contextGuard.mjs: o estado e o gatilho (decisões 5, 6 e 8)', 
   });
 });
 
-describe('GC1 — contextGuard.mjs: a medida cai depois de uma compactação (achado da revisão)', () => {
-  it('o contexto que volta ao gatilho ou abaixo zera o último aviso: o próximo cruzamento avisa', () => {
+describe('GC1 — contextGuard.mjs: the measure drops after a compaction (review finding)', () => {
+  it('the context that returns to the trigger or below resets the last warning: the next crossing warns', () => {
     const box = sandbox([userLine(phasePrompt), measure(290_000)]);
     warningOf(hook(box));
     expect(stateOf(box).ultimoAviso).toBe(290_000);
 
-    appendFileSync(box.transcript, measure(100_000) + '\n'); // compactação
+    appendFileSync(box.transcript, measure(100_000) + '\n'); // compaction
     silent(hook(box));
     expect(stateOf(box).ultimoAviso).toBeNull();
 
@@ -327,7 +327,7 @@ describe('GC1 — contextGuard.mjs: a medida cai depois de uma compactação (ac
     expect(stateOf(box).ultimoAviso).toBe(275_000);
   });
 
-  it('exatamente no gatilho também zera o último aviso', () => {
+  it('exactly at the trigger also resets the last warning', () => {
     const box = sandbox([userLine(phasePrompt), measure(TRIGGER + 1)]);
     warningOf(hook(box));
     appendFileSync(box.transcript, measure(TRIGGER) + '\n');
@@ -336,28 +336,28 @@ describe('GC1 — contextGuard.mjs: a medida cai depois de uma compactação (ac
   });
 });
 
-describe('GC1 — contextGuard.mjs: os saltos (decisão 7)', () => {
-  it('o salto vai para a ferramenta da chamada anterior, e o aviso lista os 3 maiores', () => {
+describe('GC1 — contextGuard.mjs: the jumps (decision 7)', () => {
+  it('the jump goes to the tool of the previous call, and the warning lists the 3 biggest', () => {
     const box = sandbox([userLine(phasePrompt), measure(100_000)]);
     const command = 'npm run lint && npm run typecheck && npm test && npm run build';
     silent(hook(box, { tool_name: 'Bash', tool_input: { command } }));
 
-    appendFileSync(box.transcript, measure(130_500) + '\n'); // +30,5 mil para o Bash
+    appendFileSync(box.transcript, measure(130_500) + '\n'); // +30.5 thousand for the Bash
     silent(hook(box, { tool_name: 'Read', tool_input: { file_path: 'docs/FLOW.md' } }));
 
-    appendFileSync(box.transcript, measure(200_000) + '\n'); // +69,5 mil para o Read
+    appendFileSync(box.transcript, measure(200_000) + '\n'); // +69.5 thousand for the Read
     silent(
-      hook(box, { tool_name: 'Agent', tool_input: { description: 'Escrever o teste' } }),
+      hook(box, { tool_name: 'Agent', tool_input: { description: 'Write the test' } }),
     );
 
-    appendFileSync(box.transcript, measure(290_000) + '\n'); // +90 mil para o Agent
+    appendFileSync(box.transcript, measure(290_000) + '\n'); // +90 thousand for the Agent
     const out = warningOf(hook(box, { tool_name: 'Grep', tool_input: { pattern: 'x' } }));
     const text = out.hookSpecificOutput.additionalContext;
 
     const bash = `Bash: ${command.slice(0, 40)}`;
     expect(bash).toBe('Bash: npm run lint && npm run typecheck && npm');
     expect(text).toContain('290 mil');
-    const agent = text.indexOf('Agent: Escrever o teste +90 mil');
+    const agent = text.indexOf('Agent: Write the test +90 mil');
     const read = text.indexOf('Read: docs/FLOW.md +70 mil');
     const first = text.indexOf(`${bash} +31 mil`);
     expect(agent).toBeGreaterThan(-1);
@@ -366,14 +366,14 @@ describe('GC1 — contextGuard.mjs: os saltos (decisão 7)', () => {
     expect(stateOf(box)).toMatchObject({
       ferramenta: 'Grep',
       saltos: [
-        { rotulo: 'Agent: Escrever o teste', mil: 90 },
+        { rotulo: 'Agent: Write the test', mil: 90 },
         { rotulo: 'Read: docs/FLOW.md', mil: 70 },
         { rotulo: bash, mil: 31 },
       ],
     });
   });
 
-  it('o rótulo de um comando com quebras de linha vira uma linha só (o aviso é uma linha)', () => {
+  it('the label of a command with line breaks becomes a single line (the warning is one line)', () => {
     const box = sandbox([userLine(phasePrompt), measure(100_000)]);
     const command = "python3 - <<'EOF'\n\timport re\n  p='x'\nEOF";
     silent(hook(box, { tool_name: 'Bash', tool_input: { command } }));
@@ -387,7 +387,7 @@ describe('GC1 — contextGuard.mjs: os saltos (decisão 7)', () => {
     expect(out.hookSpecificOutput.additionalContext).not.toMatch(/\s{2}|[\n\t]/);
   });
 
-  it('só os 3 maiores ficam no estado, e uma medida que não cresce não gera salto', () => {
+  it('only the 3 biggest stay in the state, and a measure that does not grow produces no jump', () => {
     const box = sandbox([userLine(phasePrompt), measure(10_000)]);
     const steps = [5_000, 40_000, 10_000, 70_000, 0, 20_000];
     let total = 10_000;
@@ -397,21 +397,21 @@ describe('GC1 — contextGuard.mjs: os saltos (decisão 7)', () => {
       appendFileSync(box.transcript, measure(total) + '\n');
       silent(hook(box, { tool_name: `T${i + 1}` }));
     });
-    // Saltos: T0 +5, T1 +40, T2 +10, T3 +70, T4 +0 (medida igual: nada), T5 +20. Ficam os 3 maiores.
+    // Jumps: T0 +5, T1 +40, T2 +10, T3 +70, T4 +0 (same measure: nothing), T5 +20. The 3 biggest stay.
     expect(stateOf(box).saltos).toEqual([
       { rotulo: 'T3', mil: 70 },
       { rotulo: 'T1', mil: 40 },
       { rotulo: 'T5', mil: 20 },
     ]);
 
-    // Contexto que cai (compactação) não vira salto negativo.
+    // A context that drops (compaction) does not become a negative jump.
     appendFileSync(box.transcript, measure(30_000) + '\n');
     silent(hook(box, { tool_name: 'T7' }));
     expect(stateOf(box).saltos.every((s) => s.mil > 0)).toBe(true);
     expect(stateOf(box).contexto).toBe(30_000);
   });
 
-  it('outra ferramenta usa o tool_name como rótulo; sem o campo do rótulo, também', () => {
+  it('another tool uses the tool_name as the label; without the label field, too', () => {
     const box = sandbox([userLine(phasePrompt), measure(10_000)]);
     silent(hook(box, { tool_name: 'Edit', tool_input: { file_path: 'a.ts' } }));
     appendFileSync(box.transcript, measure(60_000) + '\n');
@@ -425,14 +425,14 @@ describe('GC1 — contextGuard.mjs: os saltos (decisão 7)', () => {
   });
 });
 
-describe('GC1 — contextGuard.mjs: a leitura do transcript (decisão 5)', () => {
+describe('GC1 — contextGuard.mjs: reading the transcript (decision 5)', () => {
   const filler = (bytes: number): string[] => {
     const line = userLine('x'.repeat(900));
     return Array.from({ length: Math.ceil(bytes / (line.length + 1)) }, () => line);
   };
 
-  it('transcript maior que 2 MiB com a última medida no fim: vale a do fim, e a linha cortada não quebra', () => {
-    // A linha de 4.000 bytes atravessa o limite dos 2 MiB finais: o começo dela fica de fora.
+  it('a transcript larger than 2 MiB with the last measure at the end: the end one counts, and the cut line does not break', () => {
+    // The 4,000-byte line straddles the limit of the final 2 MiB: its beginning is left out.
     const straddle = measure(999_000, { pad: 'y'.repeat(4000) });
     const end = [measure(150_000)];
     const tailBytes = (lines: string[]): number =>
@@ -446,7 +446,7 @@ describe('GC1 — contextGuard.mjs: a leitura do transcript (decisão 5)', () =>
     expect(stateOf(box)).toMatchObject({ fase: true, contexto: 150_000 });
   });
 
-  it('a última medida antes dos 2 MiB finais: cai na leitura inteira', () => {
+  it('the last measure before the final 2 MiB: falls back to the full read', () => {
     const lines = [userLine(phasePrompt), measure(123_456), ...filler(TAIL + 200_000)];
     const box = sandbox(lines);
     expect(readFileSync(box.transcript).length).toBeGreaterThan(TAIL);
@@ -454,14 +454,14 @@ describe('GC1 — contextGuard.mjs: a leitura do transcript (decisão 5)', () =>
     expect(stateOf(box)).toMatchObject({ fase: true, contexto: 123_456 });
   });
 
-  it('sem nenhuma medida no transcript: sem saída', () => {
+  it('no measure at all in the transcript: no output', () => {
     const box = sandbox([userLine(phasePrompt)]);
     silent(hook(box));
   });
 });
 
-describe('GC1 — contextGuard.mjs: as falhas nunca travam a chamada (decisão 6)', () => {
-  it('estado corrompido: código 0 e sem saída, e o estado volta a ser um JSON com o erro', () => {
+describe('GC1 — contextGuard.mjs: failures never block the call (decision 6)', () => {
+  it('corrupted state: code 0 and no output, and the state becomes a JSON with the error again', () => {
     const box = sandbox([userLine(phasePrompt), measure(120_000)]);
     mkdirSync(join(box.tmp, 'context-guard'), { recursive: true });
     writeFileSync(box.state, '{"fase": tr');
@@ -471,29 +471,29 @@ describe('GC1 — contextGuard.mjs: as falhas nunca travam a chamada (decisão 6
     expect(state.erro?.em).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
   });
 
-  it('entrada que não é JSON: código 0 e sem saída', () => {
+  it('input that is not JSON: code 0 and no output', () => {
     const box = sandbox([userLine(phasePrompt), measure(300_000)]);
-    silent(hook(box, {}, { raw: 'isto não é json' }));
+    silent(hook(box, {}, { raw: 'this is not json' }));
     silent(hook(box, {}, { raw: '' }));
     silent(hook(box, {}, { raw: '[1,2]' }));
     expect(existsSync(box.state)).toBe(false);
   });
 
-  it('session_id que escaparia da pasta do estado: sem saída e sem gravar fora dela', () => {
+  it('session_id that would escape the state folder: no output and nothing written outside it', () => {
     const box = sandbox([userLine(phasePrompt), measure(300_000)]);
-    box.sessionId = '../fora';
+    box.sessionId = '../outside';
     silent(hook(box));
-    expect(existsSync(join(box.tmp, 'fora.json'))).toBe(false);
+    expect(existsSync(join(box.tmp, 'outside.json'))).toBe(false);
   });
 });
 
-describe('GC1 — .claude/settings.json (decisão 10)', () => {
+describe('GC1 — .claude/settings.json (decision 10)', () => {
   const settings = JSON.parse(readFileSync('.claude/settings.json', 'utf8')) as {
     permissions: { allow: string[]; deny: string[] };
     hooks: Record<string, { matcher?: string; hooks: Record<string, unknown>[] }[]>;
   };
 
-  it('PostToolUse tem uma entrada com matcher * e o comando do gancho, com timeout 10', () => {
+  it('PostToolUse has one entry with matcher * and the command of the hook, with timeout 10', () => {
     expect(settings.hooks.PostToolUse).toEqual([
       {
         matcher: '*',
@@ -508,7 +508,7 @@ describe('GC1 — .claude/settings.json (decisão 10)', () => {
     ]);
   });
 
-  it('o SessionStart continua igual e as permissões não mudam', () => {
+  it('SessionStart stays the same and the permissions do not change', () => {
     expect(settings.hooks.SessionStart).toEqual([
       {
         hooks: [
@@ -532,58 +532,54 @@ describe('GC1 — .claude/settings.json (decisão 10)', () => {
   });
 });
 
-describe('GC2 — docs/FLOW.md: a regra do gancho na sessão da fase (decisões 9 e 10)', () => {
+describe('GC2 — docs/FLOW.md: the hook rule in the phase session (decisions 9 and 10)', () => {
   const flow = readFileSync('docs/FLOW.md', 'utf8');
-  const phase = section(flow, '## Para a sessão da fase');
-  const teto = between(
+  const phase = section(flow, '## For the phase session');
+  const ceiling = between(
     phase,
-    '   - **Teto de contexto da fase:**',
-    '4. Todo briefing de mudança',
+    '   - **Phase context ceiling:**',
+    '4. Every briefing for a behavior change',
   );
-  const mil = `${TRIGGER / 1000} mil`;
+  const thousand = `${TRIGGER / 1000} thousand`;
 
-  it('o sub-item "Teto de contexto da fase" cita o gancho, o PostToolUse e o gatilho do script', () => {
-    expect(teto).toContain('**Gancho:**');
-    expect(teto).toContain('scripts/ci/contextGuard.mjs');
-    expect(teto).toContain('PostToolUse');
-    expect(teto).toContain(`gatilho de ${mil}`);
+  it('the sub-item "Phase context ceiling" cites the hook, the PostToolUse and the trigger of the script', () => {
+    expect(ceiling).toContain('**Hook:**');
+    expect(ceiling).toContain('scripts/ci/contextGuard.mjs');
+    expect(ceiling).toContain('PostToolUse');
+    expect(ceiling).toContain(`trigger of ${thousand}`);
   });
 
-  it('as conferências (a) e (b) rodam o script com --teto igual ao gatilho', () => {
-    expect(teto).toContain(`node scripts/ci/contextUsage.mjs --teto ${TRIGGER}`);
-    const conferencias = between(
-      teto,
-      'Confira em dois pontos',
-      'Depois que o PR da fase',
+  it('checks (a) and (b) run the script with --teto equal to the trigger', () => {
+    expect(ceiling).toContain(`node scripts/ci/contextUsage.mjs --teto ${TRIGGER}`);
+    const checks = between(ceiling, 'Check at two points', 'Once the phase PR');
+    expect(checks).toContain(`--teto ${TRIGGER}`);
+    expect(checks.indexOf('(a)')).toBeGreaterThan(checks.indexOf('--teto'));
+    expect(checks.indexOf('(b)')).toBeGreaterThan(checks.indexOf('(a)'));
+    // Without `--teto`, `acima=true` holds only for the 300 thousand: the text says so, and the stage is cited by number.
+    expect(ceiling).toContain('Without `--teto`');
+    expect(ceiling).toContain('#1856');
+    expect(ceiling).not.toContain('of this stage');
+  });
+
+  it('hands over above the trigger, and the 300 thousand ceiling remains', () => {
+    expect(ceiling).toContain(`Above the trigger of ${thousand}`);
+    expect(ceiling).not.toContain('With more than 300 thousand, the phase hands over:');
+    expect(ceiling).toContain('300 thousand');
+    expect(ceiling).toContain('300,000');
+  });
+
+  it('step 3 of the handoff cites the biggest jumps of the last notice of the hook', () => {
+    const step3 = between(
+      ceiling,
+      '     3. comments on the phase sub-issue',
+      '     4. sends the coordinator',
     );
-    expect(conferencias).toContain(`--teto ${TRIGGER}`);
-    expect(conferencias.indexOf('(a)')).toBeGreaterThan(conferencias.indexOf('--teto'));
-    expect(conferencias.indexOf('(b)')).toBeGreaterThan(conferencias.indexOf('(a)'));
-    // Sem o `--teto`, o `acima=true` vale só para os 300 mil: o texto diz isso, e a etapa é citada pelo número.
-    expect(teto).toContain('Sem `--teto`');
-    expect(teto).toContain('#1856');
-    expect(teto).not.toContain('desta etapa');
+    expect(step3).toContain("the biggest jumps of the hook's last notice");
+    expect(step3).toContain('no hook notice');
   });
 
-  it('passa a vez acima do gatilho, e o teto de 300 mil continua', () => {
-    expect(teto).toContain(`Acima do gatilho de ${mil}`);
-    expect(teto).not.toContain('Com mais de 300 mil, a fase passa a vez:');
-    expect(teto).toContain('300 mil');
-    expect(teto).toContain('300.000');
-  });
-
-  it('o passo 3 da passagem cita os maiores saltos do último aviso do gancho', () => {
-    const passo3 = between(
-      teto,
-      '     3. comenta na sub-issue',
-      '     4. manda ao coordenador',
-    );
-    expect(passo3).toContain('maiores saltos do último aviso do gancho');
-    expect(passo3).toContain('sem aviso do gancho');
-  });
-
-  it('a mensagem da fase (o primeiro bloco text) começa pelo MARCADOR', () => {
-    const bloco = between(phase, '```text\n', '\n```').slice('```text\n'.length);
-    expect(bloco.startsWith(MARK)).toBe(true);
+  it('the phase message (the first text block) starts with the MARKER', () => {
+    const block = between(phase, '```text\n', '\n```').slice('```text\n'.length);
+    expect(block.startsWith(MARK)).toBe(true);
   });
 });

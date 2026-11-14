@@ -1,6 +1,6 @@
 // @vitest-environment node
-// Fase RS1 (etapa #1384, decisões 1, 2 e 4): os gatilhos da `/code-review high` no Fechamento saem
-// de um script testado num repositório git de rascunho.
+// Phase RS1 (stage #1384, decisions 1, 2 and 4): the `/code-review high` triggers at the Closing come
+// from a script tested in a scratch git repository.
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -37,11 +37,11 @@ function run(...args: string[]): { out: string; err: string; code: number } {
   return { out: r.stdout.trim(), err: r.stderr.trim(), code: r.status ?? -1 };
 }
 
-/** Muda o arquivo num commit novo e roda o script contra o commit-base. */
+/** Changes the file in a new commit and runs the script against the base commit. */
 function changed(file: string, from: string, to: string): string {
   const p = path.join(repo, file);
   writeFileSync(p, readFileSync(p, 'utf8').replace(from, to));
-  git('commit', '-qam', 'muda');
+  git('commit', '-qam', 'change');
   return run('--base', 'base').out;
 }
 
@@ -54,7 +54,7 @@ describe('riskTriggers.mjs (RS1)', () => {
       'export const SPEC_FORMAT_VERSION = 15;\nexport const X = 1;\n',
     );
     write('libraries/a.json', '{ "formatVersion": 3 }\n');
-    write('docs/FLOW.md', 'Uma frase.\n');
+    write('docs/FLOW.md', 'One sentence.\n');
     write('.claude/skills/implementar-fila/painel/painel.py', 'x = 1\n');
     write('README.md', 'a\n');
     git('add', '-A');
@@ -66,39 +66,39 @@ describe('riskTriggers.mjs (RS1)', () => {
     rmSync(repo, { recursive: true, force: true });
   });
 
-  it('SPEC_FORMAT_VERSION 15 → 16 em src/model/spec.ts é o gatilho formatVersion', () => {
+  it('SPEC_FORMAT_VERSION 15 → 16 in src/model/spec.ts is the formatVersion trigger', () => {
     expect(changed('src/model/spec.ts', '= 15', '= 16')).toBe(
       'gatilho: formatVersion: src/model/spec.ts',
     );
   });
 
-  it('o formatVersion de um JSON de libraries/ não conta', () => {
+  it('the formatVersion of a libraries/ JSON does not count', () => {
     expect(changed('libraries/a.json', '3', '4')).toBe('nenhum gatilho');
   });
 
-  it('outra linha de src/model/spec.ts, sem a constante, não conta', () => {
+  it('another line of src/model/spec.ts, without the constant, does not count', () => {
     expect(changed('src/model/spec.ts', 'X = 1', 'X = 2')).toBe('nenhum gatilho');
   });
 
-  it('qualquer mudança no docs/FLOW.md conta', () => {
-    expect(changed('docs/FLOW.md', 'Uma frase.', 'Outra frase.')).toBe(
+  it('any change to docs/FLOW.md counts', () => {
+    expect(changed('docs/FLOW.md', 'One sentence.', 'Another sentence.')).toBe(
       'gatilho: docs/FLOW.md: docs/FLOW.md',
     );
   });
 
-  it('o painel.py é do gatilho implementar-fila', () => {
+  it('painel.py belongs to the implementar-fila trigger', () => {
     expect(changed('.claude/skills/implementar-fila/painel/painel.py', '1', '2')).toBe(
       'gatilho: implementar-fila: .claude/skills/implementar-fila/painel/painel.py',
     );
   });
 
-  it('constante de versão com sufixo ou tipada também conta; o array de versões aceitas não', () => {
+  it('a version constant with a suffix or typed also counts; the array of accepted versions does not', () => {
     write(
       'src/model/components/componentFormat.ts',
       'export const COMPONENT_FORMAT_VERSION_REPEAT = 2;\nexport const COMPONENT_FORMAT_VERSIONS = [1, 2] as const;\n',
     );
     git('add', '-A');
-    git('commit', '-qm', 'componente');
+    git('commit', '-qm', 'component');
     git('tag', '-f', 'base');
     expect(
       changed('src/model/components/componentFormat.ts', 'REPEAT = 2', 'REPEAT = 3'),
@@ -121,15 +121,15 @@ describe('riskTriggers.mjs (RS1)', () => {
     ['mcp/version.ts', 'mcp/version.ts'],
     ['src/store/session.ts', 'src/store/session.ts'],
     ['pwa/csp.ts', 'pwa/csp.ts'],
-  ])('%s é o gatilho %s', (file, id) => {
+  ])('%s is the %s trigger', (file, id) => {
     write(file, 'a\n');
     git('add', '-A');
-    git('commit', '-qm', 'gatilho');
+    git('commit', '-qm', 'trigger');
     git('tag', '-f', 'base');
     expect(changed(file, 'a', 'b')).toBe(`gatilho: ${id}: ${file}`);
   });
 
-  it('o scripts/ci/dist-budget.json, que a subida grava, não é gatilho (etapa #1594, decisão 3)', () => {
+  it('scripts/ci/dist-budget.json, which the raise writes, is not a trigger (stage #1594, decision 3)', () => {
     write('scripts/ci/dist-budget.json', '{"indexHtmlMaxBytes": 1}\n');
     git('add', '-A');
     git('commit', '-qm', 'json');
@@ -137,14 +137,14 @@ describe('riskTriggers.mjs (RS1)', () => {
     expect(changed('scripts/ci/dist-budget.json', '1', '2')).toBe('nenhum gatilho');
   });
 
-  it('arquivo de gatilho renomeado para fora do caminho ainda conta', () => {
-    git('mv', 'docs/FLOW.md', 'docs/OUTRO.md');
-    git('commit', '-qm', 'renomeia');
+  it('a trigger file renamed out of the path still counts', () => {
+    git('mv', 'docs/FLOW.md', 'docs/OTHER.md');
+    git('commit', '-qm', 'rename');
     expect(run('--base', 'base').out).toBe('gatilho: docs/FLOW.md: docs/FLOW.md');
   });
 
-  it('erro de uso sai com 2 e a mensagem no stderr', () => {
-    for (const args of [[], ['--base'], ['--outra', 'x'], ['--base', 'x', 'y']]) {
+  it('a usage error exits with 2 and the message on stderr', () => {
+    for (const args of [[], ['--base'], ['--other', 'x'], ['--base', 'x', 'y']]) {
       const r = run(...args);
       expect(r.code).toBe(2);
       expect(r.err).not.toBe('');
@@ -152,17 +152,17 @@ describe('riskTriggers.mjs (RS1)', () => {
   });
 });
 
-describe('riskTriggers.mjs: TRIGGERS e o detalhar-backlog (decisão 4)', () => {
-  it('cada id de TRIGGERS aparece em "Esforço do detalhamento", que cita o script', async () => {
+describe('riskTriggers.mjs: TRIGGERS and the detalhar-backlog (decision 4)', () => {
+  it('each TRIGGERS id appears in "Detailing effort", which cites the script', async () => {
     const { TRIGGERS } = (await import(path.resolve('scripts/ci/riskTriggers.mjs'))) as {
       TRIGGERS: Array<{ id: string }>;
     };
     expect(TRIGGERS.length).toBeGreaterThan(0);
-    const esforco = section(
+    const effort = section(
       readFileSync('.claude/skills/detalhar-backlog/SKILL.md', 'utf8'),
-      '## Esforço do detalhamento',
+      '## Detailing effort',
     );
-    for (const { id } of TRIGGERS) expect(esforco).toContain(id);
-    expect(esforco).toContain('scripts/ci/riskTriggers.mjs');
+    for (const { id } of TRIGGERS) expect(effort).toContain(id);
+    expect(effort).toContain('scripts/ci/riskTriggers.mjs');
   });
 });

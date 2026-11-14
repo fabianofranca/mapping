@@ -1,12 +1,12 @@
 // @vitest-environment node
-// Etapa #1325, fase CA1 (decisão 5): a regra "o job morreu por runner abandonado" do
-// `ci-rerun.yml`, com as listas de jobs reais de 2026-11-09 como fixtures.
+// Stage #1325, phase CA1 (decision 5): the rule "the job died from an abandoned runner" of
+// `ci-rerun.yml`, with the real job lists of 2026-11-09 as fixtures.
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-// @ts-expect-error módulo .mjs sem declaração de tipos
+// @ts-expect-error .mjs module without type declarations
 import { decideQueued, decideRerun, expectedJobs } from '../../scripts/ci/ciRerun.mjs';
 
 interface Job {
@@ -31,8 +31,8 @@ const without = (jobs: Job[], ...names: string[]): Job[] =>
 const replace = (jobs: Job[], job: Job): Job[] =>
   jobs.map((other) => (other.name === job.name ? job : other));
 
-describe('jobs esperados, lidos do ci.yml', () => {
-  it('o ci.yml atual se lê inteiro, com a matriz do test expandida', () => {
+describe('expected jobs, read from ci.yml', () => {
+  it('the current ci.yml reads whole, with the test matrix expanded', () => {
     expect(expected).toEqual([
       'epic',
       'static',
@@ -47,31 +47,31 @@ describe('jobs esperados, lidos do ci.yml', () => {
     ]);
   });
 
-  it('comentário na coluna 0 entre jobs não trunca a lista', () => {
+  it('a comment at column 0 between jobs does not truncate the list', () => {
     const yaml = 'jobs:\n  a:\n    runs-on: x\n# solto\n\n  b:\n    runs-on: x\n';
     expect(expectedOf(yaml)).toEqual(['a', 'b']);
   });
 
-  it('chave de topo depois de jobs: encerra a lista', () => {
+  it('a top-level key after jobs: ends the list', () => {
     const yaml = 'jobs:\n  a:\n    runs-on: x\nenv:\n  b:\n';
     expect(expectedOf(yaml)).toEqual(['a']);
   });
 
-  it('job com name: próprio faz o script falhar', () => {
-    const yaml = 'jobs:\n  static:\n    name: Estático\n    runs-on: ubuntu-latest\n';
+  it('a job with its own name: makes the script fail', () => {
+    const yaml = 'jobs:\n  static:\n    name: Static\n    runs-on: ubuntu-latest\n';
     expect(() => expectedOf(yaml)).toThrow(/name:/);
   });
 
-  it('matriz de outro formato faz o script falhar', () => {
+  it('a matrix of another format makes the script fail', () => {
     const yaml =
       'jobs:\n  test:\n    strategy:\n      matrix:\n        os: [a, b]\n        node: [1, 2]\n    runs-on: x\n';
     expect(() => expectedOf(yaml)).toThrow(/matriz/);
   });
 });
 
-describe('decisão de reexecução', () => {
-  // Run 42672468793, tentativa 1 (#925): só test (3), coverage e check aparecem.
-  it('run 42672468793 (tentativa 1): reexecuta os abandonados', () => {
+describe('rerun decision', () => {
+  // Run 42672468793, attempt 1 (#925): only test (3), coverage and check appear.
+  it('run 42672468793 (attempt 1): reruns the abandoned ones', () => {
     const jobs = [ok('test (3)'), ok('coverage'), bad('check')];
     const decision = decide({ expected, jobs });
     expect(decision.rerun).toBe(true);
@@ -86,29 +86,29 @@ describe('decisão de reexecução', () => {
     ]);
   });
 
-  // Run 42672325637, tentativa 1 (#971): só o check existe.
-  it('run 42672325637 (tentativa 1): reexecuta os abandonados', () => {
+  // Run 42672325637, attempt 1 (#971): only the check exists.
+  it('run 42672325637 (attempt 1): reruns the abandoned ones', () => {
     const decision = decide({ expected, jobs: [bad('check')] });
     expect(decision.rerun).toBe(true);
     expect(decision.abandoned).toHaveLength(expected.length - 1);
     expect(decision.reason).toContain('epic');
   });
 
-  it('falha de teste comum não reexecuta', () => {
+  it('an ordinary test failure does not rerun', () => {
     const jobs = replace(allOk, bad('test (2)'));
     const decision = decide({ expected, jobs: replace(jobs, bad('check')) });
     expect(decision.rerun).toBe(false);
     expect(decision.reason).toBe('falha legítima (test (2))');
   });
 
-  it('timeout (job presente com falha) não reexecuta', () => {
+  it('a timeout (job present with a failure) does not rerun', () => {
     const jobs = replace(replace(allOk, bad('static')), bad('check'));
     const decision = decide({ expected, jobs });
     expect(decision.rerun).toBe(false);
     expect(decision.reason).toBe('falha legítima (static)');
   });
 
-  it('job cancelado conta como falha legítima', () => {
+  it('a cancelled job counts as a legitimate failure', () => {
     const decision = decide({
       expected,
       jobs: replace(allOk, bad('build', 'cancelled')),
@@ -116,8 +116,8 @@ describe('decisão de reexecução', () => {
     expect(decision.rerun).toBe(false);
   });
 
-  it('test (n) abandonado com o coverage vermelho reexecuta', () => {
-    // Como na tentativa 3 do run 42672468793: o coverage falha por falta dos blobs.
+  it('an abandoned test (n) with a red coverage reruns', () => {
+    // As in attempt 3 of run 42672468793: the coverage fails for lack of the blobs.
     const jobs = replace(
       replace(without(allOk, 'test (4)'), bad('coverage')),
       bad('check'),
@@ -128,40 +128,40 @@ describe('decisão de reexecução', () => {
     expect(decision.reason).toBe('abandonados test (4)');
   });
 
-  it('coverage vermelho sem test abandonado é falha legítima', () => {
+  it('a red coverage with no abandoned test is a legitimate failure', () => {
     const decision = decide({ expected, jobs: replace(allOk, bad('coverage')) });
     expect(decision.rerun).toBe(false);
     expect(decision.reason).toBe('falha legítima (coverage)');
   });
 
-  it('falha legítima não reexecuta mesmo havendo abandonados', () => {
+  it('a legitimate failure does not rerun even with abandoned jobs', () => {
     const jobs = [bad('static'), bad('check')];
     const decision = decide({ expected, jobs });
     expect(decision.rerun).toBe(false);
     expect(decision.reason).toBe('falha legítima (static)');
   });
 
-  it('sem abandonados não reexecuta', () => {
+  it('with no abandoned jobs, does not rerun', () => {
     const decision = decide({ expected, jobs: allOk });
     expect(decision.rerun).toBe(false);
     expect(decision.abandoned).toEqual([]);
     expect(decision.reason).toBe('nenhum job abandonado');
   });
 
-  it('job pulado não é falha', () => {
+  it('a skipped job is not a failure', () => {
     const jobs = replace(allOk, bad('epic', 'skipped'));
     expect(decide({ expected, jobs }).reason).toBe('nenhum job abandonado');
   });
 
-  it('um job a mais no PR (fora da main) não conta', () => {
-    const jobs = [...allOk, bad('novo-job')];
+  it('an extra job in the PR (outside main) does not count', () => {
+    const jobs = [...allOk, bad('new-job')];
     const decision = decide({ expected, jobs });
     expect(decision.rerun).toBe(false);
     expect(decision.abandoned).toEqual([]);
   });
 });
 
-describe('comando decide', () => {
+describe('decide command', () => {
   const run = (jobs: Job[], extra: string[] = []) => {
     const dir = mkdtempSync(join(tmpdir(), 'ci-rerun-'));
     const jobsFile = join(dir, 'jobs.json');
@@ -185,7 +185,7 @@ describe('comando decide', () => {
     return { result, output: readFileSync(output, 'utf8') };
   };
 
-  it('escreve rerun, abandoned e reason no --output', () => {
+  it('writes rerun, abandoned and reason to --output', () => {
     const { result, output } = run([bad('check')]);
     expect(result.status).toBe(0);
     expect(output).toContain('rerun=true\n');
@@ -193,14 +193,14 @@ describe('comando decide', () => {
     expect(output).toContain('reason=abandonados epic, static');
   });
 
-  it('não reexecuta falha legítima', () => {
+  it('does not rerun a legitimate failure', () => {
     const { output } = run(replace(allOk, bad('static')));
     expect(output).toContain('rerun=false\n');
     expect(output).toContain('abandoned=\n');
     expect(output).toContain('reason=falha legítima (static)');
   });
 
-  it('sai com erro quando o ci.yml não se lê', () => {
+  it('exits with an error when ci.yml cannot be read', () => {
     const dir = mkdtempSync(join(tmpdir(), 'ci-rerun-'));
     const ci = join(dir, 'ci.yml');
     writeFileSync(ci, 'jobs:\n  a:\n    name: x\n');
@@ -216,8 +216,8 @@ describe('comando decide', () => {
   });
 });
 
-// Etapa #1669 (QF1): execução do CI presa em `queued` sem jobs, com as execuções reais de
-// 2026-11-11 (PR #1664) como fixtures.
+// Stage #1669 (QF1): a CI run stuck in `queued` with no jobs, with the real runs of
+// 2026-11-11 (PR #1664) as fixtures.
 interface Run {
   id: number;
   head_sha: string;
@@ -254,8 +254,8 @@ const r2676 = run(43095704874, OLD, '2026-11-11T20:22:56Z');
 const r2677 = run(43097220825, HEAD, '2026-11-11T20:38:06Z');
 const r2678 = run(43103790776, HEAD, '2026-11-11T21:31:27Z');
 
-describe('decideQueued: execução presa na fila (#1669)', () => {
-  it('a 2677 sozinha no commit, às 20:57Z, está presa e ainda não foi reaberta', () => {
+describe('decideQueued: run stuck in the queue (#1669)', () => {
+  it('the 2677 alone on the commit, at 20:57Z, is stuck and has not been reopened yet', () => {
     const d = decideQ({
       runs: [r2677],
       jobsTotal: 0,
@@ -273,7 +273,7 @@ describe('decideQueued: execução presa na fila (#1669)', () => {
     });
   });
 
-  it('exatamente 15 min não é preso; 15 min e 1 s é', () => {
+  it('exactly 15 min is not stuck; 15 min and 1 s is', () => {
     const at15 = decideQ({
       runs: [r2677],
       jobsTotal: 0,
@@ -293,7 +293,7 @@ describe('decideQueued: execução presa na fila (#1669)', () => {
     expect(over.reason).toBe('na fila sem jobs há 15 min');
   });
 
-  it('a mais recente com jobs não está presa', () => {
+  it('the latest one with jobs is not stuck', () => {
     const d = decideQ({
       runs: [r2677, r2678],
       jobsTotal: 10,
@@ -307,7 +307,7 @@ describe('decideQueued: execução presa na fila (#1669)', () => {
     expect(d.reaberto).toBe(true);
   });
 
-  it.each(['in_progress', 'waiting'])('a mais recente %s não está presa', (status) => {
+  it.each(['in_progress', 'waiting'])('the latest one %s is not stuck', (status) => {
     const d = decideQ({
       runs: [run(43097220825, HEAD, '2026-11-11T20:38:06Z', status)],
       jobsTotal: 0,
@@ -318,7 +318,7 @@ describe('decideQueued: execução presa na fila (#1669)', () => {
     expect(d.reason).toBe(`status ${status}`);
   });
 
-  it('presa de um commit anterior não conta: sem execução do commit atual', () => {
+  it('a stuck run of an earlier commit does not count: no run of the current commit', () => {
     const d = decideQ({
       runs: [r2676],
       jobsTotal: 0,
@@ -336,7 +336,7 @@ describe('decideQueued: execução presa na fila (#1669)', () => {
     });
   });
 
-  it('2677 e 2678 no mesmo commit com a 2678 presa: preso de novo, já reaberto', () => {
+  it('2677 and 2678 on the same commit with the 2678 stuck: stuck again, already reopened', () => {
     const d = decideQ({
       runs: [r2677, r2678],
       jobsTotal: 0,
@@ -350,7 +350,7 @@ describe('decideQueued: execução presa na fila (#1669)', () => {
     expect(d.minutos).toBe(18);
   });
 
-  it('a mais recente sai do created_at, não da ordem da lista', () => {
+  it('the latest one comes from created_at, not from the list order', () => {
     const d = decideQ({
       runs: [r2678, r2676, r2677],
       jobsTotal: 0,
@@ -362,17 +362,17 @@ describe('decideQueued: execução presa na fila (#1669)', () => {
   });
 });
 
-describe('decideQueued: entrada inválida (#1669, revisão)', () => {
-  it('now inválido é erro, não preso=true com NaN', () => {
+describe('decideQueued: invalid input (#1669, review)', () => {
+  it('an invalid now is an error, not preso=true with NaN', () => {
     expect(() =>
-      decideQ({ runs: [r2677], jobsTotal: 0, head: HEAD, now: 'amanha' }),
+      decideQ({ runs: [r2677], jobsTotal: 0, head: HEAD, now: 'tomorrow' }),
     ).toThrow(/now/);
   });
 
-  it('created_at ilegível é erro', () => {
+  it('an unreadable created_at is an error', () => {
     expect(() =>
       decideQ({
-        runs: [run(1, HEAD, 'ontem')],
+        runs: [run(1, HEAD, 'yesterday')],
         jobsTotal: 0,
         head: HEAD,
         now: '2026-11-11T21:50:00Z',
@@ -381,7 +381,7 @@ describe('decideQueued: entrada inválida (#1669, revisão)', () => {
   });
 });
 
-describe('comando queued (#1669)', () => {
+describe('queued command (#1669)', () => {
   const dir = mkdtempSync(join(tmpdir(), 'ci-queued-'));
   const write = (name: string, value: unknown): string => {
     const file = join(dir, name);
@@ -393,7 +393,7 @@ describe('comando queued (#1669)', () => {
       encoding: 'utf8',
     });
 
-  it('escreve as sete linhas no --output', () => {
+  it('writes the seven lines to --output', () => {
     const runs = write('runs.json', { total_count: 2, workflow_runs: [r2676, r2677] });
     const jobs = write('jobs.json', { total_count: 0, jobs: [] });
     const output = join(dir, 'out-file');
@@ -421,7 +421,7 @@ describe('comando queued (#1669)', () => {
     );
   });
 
-  it('sem --output escreve as mesmas linhas no stdout', () => {
+  it('without --output writes the same lines to stdout', () => {
     const runs = write('runs2.json', { workflow_runs: [r2677, r2678] });
     const jobs = write('jobs2.json', {
       total_count: 10,
@@ -435,13 +435,13 @@ describe('comando queued (#1669)', () => {
     expect(result.stdout).toContain('reason=10 jobs\n');
   });
 
-  it('sem execução do commit o --jobs não é lido', () => {
+  it('with no run of the commit, --jobs is not read', () => {
     const runs = write('runs3.json', { workflow_runs: [r2676] });
     const result = exec([
       '--runs',
       runs,
       '--jobs',
-      join(dir, 'nao-existe.json'),
+      join(dir, 'missing.json'),
       '--head',
       HEAD,
     ]);
@@ -450,7 +450,7 @@ describe('comando queued (#1669)', () => {
     expect(result.stdout).toContain('reason=sem execução do CI no commit\n');
   });
 
-  it('job de outro run_id é erro', () => {
+  it('a job of another run_id is an error', () => {
     const runs = write('runs4.json', { workflow_runs: [r2677, r2678] });
     const jobs = write('jobs4.json', {
       total_count: 1,
@@ -461,7 +461,7 @@ describe('comando queued (#1669)', () => {
     expect(result.stderr).toContain('run_id');
   });
 
-  it('--now ilegível sai com erro', () => {
+  it('an unreadable --now exits with an error', () => {
     const runs = write('runs6.json', { workflow_runs: [r2677] });
     const jobs = write('jobs6.json', { total_count: 0, jobs: [] });
     const result = exec([
@@ -472,13 +472,13 @@ describe('comando queued (#1669)', () => {
       '--head',
       HEAD,
       '--now',
-      'amanha',
+      'tomorrow',
     ]);
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('--now');
   });
 
-  it('valor de opção que é outra flag conta como argumento faltando', () => {
+  it('an option value that is another flag counts as a missing argument', () => {
     const runs = write('runs7.json', { workflow_runs: [r2677] });
     const jobs = write('jobs7.json', { total_count: 0, jobs: [] });
     const result = exec(['--runs', runs, '--jobs', jobs, '--head', '--now', 'x']);
@@ -486,7 +486,7 @@ describe('comando queued (#1669)', () => {
     expect(result.stderr).toContain('Uso: node scripts/ci/ciRerun.mjs queued');
   });
 
-  it('argumento faltando sai com erro e a mensagem de uso', () => {
+  it('a missing argument exits with an error and the usage message', () => {
     const result = exec(['--runs', write('runs5.json', { workflow_runs: [] })]);
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('Uso: node scripts/ci/ciRerun.mjs queued');

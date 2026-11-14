@@ -1,5 +1,5 @@
 // @vitest-environment node
-// Etapa #478, fase RE3: o registro do DS é um arquivo por épico em docs/design-system/.
+// Stage #478, phase RE3: the DS log is one file per epic in docs/design-system/.
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
@@ -13,49 +13,55 @@ const TITLE =
 const SECTIONS = new Set(['## Pendências', '## Sincronização', '## Ficou sem gravar']);
 
 describe('docs/design-system/', () => {
-  it('a pasta existe e tem registros', () => {
+  it('the folder exists and has records', () => {
     expect(existsSync(DIR)).toBe(true);
     expect(entries.length).toBeGreaterThan(0);
   });
 
-  it.each(entries)('%s: nome AAAA-MM-DD-<slug>.md ou <slug>.md', (f) => {
+  it.each(entries)('%s: name YYYY-MM-DD-<slug>.md or <slug>.md', (f) => {
     expect(f).toMatch(NAME);
   });
 
-  it.each(entries)('%s: primeira linha no formato e data igual à do nome', (f) => {
-    const first = read(f).split('\n')[0] ?? '';
-    expect(first).toMatch(TITLE);
-    const m = TITLE.exec(first);
-    const [, date, slug] = NAME.exec(f) ?? [];
-    expect(m?.[2]).toBe(NAME.exec(f)?.[2]);
-    if (date) expect(m?.[1]).toBe(date);
-    else expect(m?.[1]).toBe('[Não lançado]');
-    expect(slug).toBeDefined();
-  });
+  it.each(entries)(
+    '%s: first line in the format and date equal to that of the name',
+    (f) => {
+      const first = read(f).split('\n')[0] ?? '';
+      expect(first).toMatch(TITLE);
+      const m = TITLE.exec(first);
+      const [, date, slug] = NAME.exec(f) ?? [];
+      expect(m?.[2]).toBe(NAME.exec(f)?.[2]);
+      if (date) expect(m?.[1]).toBe(date);
+      else expect(m?.[1]).toBe('[Não lançado]');
+      expect(slug).toBeDefined();
+    },
+  );
 
-  it.each(entries)('%s: seções só Pendências, Sincronização e Ficou sem gravar', (f) => {
-    const sections = read(f)
-      .split('\n')
-      .filter((l) => /^## /.test(l));
-    for (const s of sections) expect(SECTIONS.has(s)).toBe(true);
-  });
+  it.each(entries)(
+    '%s: sections only Pendências, Sincronização and Ficou sem gravar',
+    (f) => {
+      const sections = read(f)
+        .split('\n')
+        .filter((l) => /^## /.test(l));
+      for (const s of sections) expect(SECTIONS.has(s)).toBe(true);
+    },
+  );
 
   it.each(entries.filter((f) => /^\d{4}-/.test(f)))(
-    '%s: o registro com data tem Sincronização',
+    '%s: the dated record has Sincronização',
     (f) => {
       expect(read(f)).toMatch(/^## Sincronização$/m);
     },
   );
 
-  it('o DESIGN-SYSTEM.md não guarda histórico nem pendência de épico', () => {
+  it('DESIGN-SYSTEM.md keeps no epic history or pending items', () => {
     const ds = readFileSync('docs/DESIGN-SYSTEM.md', 'utf8');
     expect(ds).not.toMatch(/^\| 20\d\d-/m);
     expect(ds).not.toMatch(/^### .*\(`epic\/.*`\)/m);
   });
 });
 
-// Etapa #1390, fase DS2 (decisões 11 e 12): o fechamento grava no artefato. O registro com
-// data que tem `## Pendências` reais e não diz que gravou precisa explicar cada item sem gravar.
+// Stage #1390, phase DS2 (decisions 11 and 12): the closing writes to the artifact. A dated
+// record that has real `## Pendências` and does not say it wrote must explain each unwritten item.
 const sectionOf = (text: string, heading: string): string[] | null => {
   const lines = text.split('\n');
   const at = lines.findIndex((l) => l.trimEnd() === heading);
@@ -65,7 +71,7 @@ const sectionOf = (text: string, heading: string): string[] | null => {
   return end < 0 ? rest : rest.slice(0, end);
 };
 
-// Item de lista de primeiro nível, com as linhas de continuação.
+// First-level list item, with its continuation lines.
 const listItems = (lines: string[]): string[] => {
   const items: string[] = [];
   for (const l of lines) {
@@ -75,16 +81,16 @@ const listItems = (lines: string[]): string[] => {
   return items;
 };
 
-// "- AB1: nenhuma (…)" ou "- Nada." não são pendência real.
-// "nenhuma"/"nada" sozinho (ponto, parêntese ou fim): "- Nada gravado ainda: …" é pendência real.
+// "- AB1: nenhuma (…)" or "- Nada." are not a real pending item.
+// "nenhuma"/"nada" alone (period, parenthesis or end): "- Nada gravado ainda: …" is a real pending item.
 const NO_ITEM =
   /^[-*] (?:[A-Za-z]{1,4}\d+:\s*)?(?:\*\*)?(?:nenhuma|nada)(?:\*\*)?\s*(?:[.(]|$)/i;
-// "Sem impacto" é resultado válido do fechamento (docs/DESIGN-SYSTEM.md); "Versão N não foi gravada" não.
+// "Sem impacto" is a valid closing result (docs/DESIGN-SYSTEM.md); "Versão N não foi gravada" is not.
 const WROTE =
   /^(?:Gravado no artefato|Vers(?:ão|ões) \d(?!.*não foi gravada)|Sem impacto)/;
 const MOVED = /Passou para o registro do épico `epic\/([a-z0-9-]+)`/;
 
-/** A regra da decisão 12; devolve o motivo da reprovação, ou null se o registro passa. */
+/** The rule of decision 12; returns the reason for the failure, or null if the record passes. */
 function ruleViolation(
   name: string,
   text: string,
@@ -102,14 +108,14 @@ function ruleViolation(
   if (WROTE.test(firstSync)) return null;
   const left = listItems(sectionOf(text, '## Ficou sem gravar') ?? []);
   if (left.length === 0) {
-    return `${name}: tem Pendências reais e não diz que gravou, mas "Ficou sem gravar" não tem item`;
+    return `${name}: has real Pendências and does not say it wrote, but "Ficou sem gravar" has no item`;
   }
   for (const item of left) {
     const moved = MOVED.exec(item);
     if (moved) {
       const slug = moved[1];
       const own = NAME.exec(name);
-      // O destino é outro registro, sem data ou de data não anterior à deste (épico ainda aberto).
+      // The target is another record, undated or dated no earlier than this one (epic still open).
       const target = files.some((f) => {
         const m = NAME.exec(f);
         return (
@@ -120,22 +126,26 @@ function ruleViolation(
         );
       });
       if (!target) {
-        return `${name}: "Passou para o registro do épico" aponta para epic/${slug}, que não tem registro na pasta`;
+        return `${name}: "Passou para o registro do épico" points to epic/${slug}, which has no record in the folder`;
       }
     } else if (!/Motivo:/.test(item)) {
-      return `${name}: item de "Ficou sem gravar" sem "Motivo:" nem "Passou para o registro do épico": ${item.slice(0, 60)}`;
+      return `${name}: "Ficou sem gravar" item with neither "Motivo:" nor "Passou para o registro do épico": ${item.slice(0, 60)}`;
     }
   }
   return null;
 }
 
-const base = (sync: string, left: string, pending = '- **Guia:** algo novo.'): string =>
+const base = (
+  sync: string,
+  left: string,
+  pending = '- **Guide:** something new.',
+): string =>
   `# X — 2026-11-10 (épico \`epic/x\`)\n\n## Pendências\n\n${pending}\n\n## Sincronização\n\n${sync}\n\n## Ficou sem gravar\n\n${left}\n`;
 
-describe('regra do registro: o fechamento grava no artefato (#1390, DS2)', () => {
+describe('log rule: the closing writes to the artifact (#1390, DS2)', () => {
   const NAME_ = '2026-11-10-x.md';
-  it('reprova o texto de 2026-11-10-barra-canvas-estreita.md de antes da DS1 (commit cf50aaec)', () => {
-    // Texto das seções que decidem, como estava em `cf50aaec` (antes da DS1), sem depender do git.
+  it('fails the text of 2026-11-10-barra-canvas-estreita.md from before DS1 (commit cf50aaec)', () => {
+    // Text of the deciding sections, as it was in `cf50aaec` (before DS1), without depending on git.
     const old = [
       '# Barra do canvas estreita — 2026-11-10 (épico `epic/barra-canvas-estreita`)',
       '',
@@ -163,29 +173,29 @@ describe('regra do registro: o fechamento grava no artefato (#1390, DS2)', () =>
     ['Versões', 'Versões 53 (conteúdo) e 54 (índice) do artefato.'],
     ['Versão', 'Versão 34 (conteúdo e índice) do artefato.'],
     ['Sem impacto', 'Sem impacto no DS: só documentação.'],
-  ])('passa com a Sincronização aberta por "%s"', (_n, sync) => {
-    expect(ruleViolation(NAME_, base(sync, '- Nada.'), [])).toBeNull();
+  ])('passes with the Sincronização opened by "%s"', (_n, sync) => {
+    expect(ruleViolation(NAME_, base(sync, '- Nothing.'), [])).toBeNull();
   });
 
-  it('passa com item que traz Motivo:', () => {
+  it('passes with an item that carries Motivo:', () => {
     const t = base(
-      'Nenhuma gravação.',
-      '- **Guia:** a ferramenta falhou. **Motivo:** recusa repetida.',
+      'No recording.',
+      '- **Guide:** the tool failed. **Motivo:** repeated refusal.',
     );
     expect(ruleViolation(NAME_, t, [])).toBeNull();
   });
 
-  it('passa com item que passou para o registro de outro épico existente', () => {
+  it('passes with an item that moved to the record of another existing epic', () => {
     const t = base(
-      'Nenhuma gravação.',
+      'No recording.',
       '- Passou para o registro do épico `epic/outro`: guia do X.',
     );
     expect(ruleViolation(NAME_, t, ['outro.md'])).toBeNull();
     expect(ruleViolation(NAME_, t, ['2026-11-11-outro.md'])).toBeNull();
     expect(ruleViolation(NAME_, t, [])).toContain('epic/outro');
-    // o registro de `epic/barra-canvas` não é o de `epic/canvas`
+    // the record of `epic/barra-canvas` is not that of `epic/canvas`
     const other = base(
-      'Nenhuma gravação.',
+      'No recording.',
       '- Passou para o registro do épico `epic/canvas`: guia.',
     );
     expect(ruleViolation(NAME_, other, ['2026-11-09-barra-canvas.md'])).toContain(
@@ -193,30 +203,34 @@ describe('regra do registro: o fechamento grava no artefato (#1390, DS2)', () =>
     );
   });
 
-  it('passa com Pendências só "- XX1: nenhuma (…)"', () => {
-    const t = base('Nenhuma gravação.', '', '- XX1: nenhuma (nada mudou no DS).');
+  it('passes with Pendências only "- XX1: nenhuma (…)"', () => {
+    const t = base('No recording.', '', '- XX1: nenhuma (nothing changed in the DS).');
     expect(ruleViolation(NAME_, t, [])).toBeNull();
   });
 
   // DS7 (#1472, achados 5 a 7)
-  it('"Versão N não foi gravada" não vale como gravação', () => {
+  it('"Versão N não foi gravada" does not count as a recording', () => {
     const b = base('Versão 3 não foi gravada.', '');
-    expect(ruleViolation(NAME_, b, [])).toContain('não tem item');
+    expect(ruleViolation(NAME_, b, [])).toContain('has no item');
   });
 
-  it('"- Nada gravado ainda: …" é pendência real', () => {
-    const t = base('Nenhuma gravação.', '', '- Nada gravado ainda: falta o guia de X.');
-    expect(ruleViolation(NAME_, t, [])).toContain('não tem item');
+  it('"- Nada gravado ainda: …" is a real pending item', () => {
+    const t = base(
+      'No recording.',
+      '',
+      '- Nada gravado ainda: the guide of X is missing.',
+    );
+    expect(ruleViolation(NAME_, t, [])).toContain('has no item');
   });
 
-  it('"Passou para" não aponta para o próprio registro nem para épico já fechado', () => {
+  it('"Passou para" does not point to its own record nor to an already closed epic', () => {
     const own = base(
-      'Nenhuma gravação.',
+      'No recording.',
       '- Passou para o registro do épico `epic/x`: guia.',
     );
     expect(ruleViolation(NAME_, own, ['2026-11-10-x.md'])).toContain('epic/x');
     const t = base(
-      'Nenhuma gravação.',
+      'No recording.',
       '- Passou para o registro do épico `epic/velho`: guia.',
     );
     expect(ruleViolation(NAME_, t, ['2026-11-01-velho.md'])).toContain('epic/velho');
@@ -224,29 +238,35 @@ describe('regra do registro: o fechamento grava no artefato (#1390, DS2)', () =>
     expect(ruleViolation(NAME_, t, ['velho.md'])).toBeNull();
   });
 
-  it('reprova sem item em "Ficou sem gravar" e com item sem motivo', () => {
-    expect(ruleViolation(NAME_, base('Nada gravado.', ''), [])).toContain('não tem item');
-    const why = ruleViolation(NAME_, base('Nada gravado.', '- Para aplicar à mão.'), []);
+  it('fails with no item in "Ficou sem gravar" and with an item without a reason', () => {
+    expect(ruleViolation(NAME_, base('Nothing recorded.', ''), [])).toContain(
+      'has no item',
+    );
+    const why = ruleViolation(
+      NAME_,
+      base('Nothing recorded.', '- To apply by hand.'),
+      [],
+    );
     expect(why).toContain(NAME_);
     expect(why).toContain('Motivo:');
   });
 
-  it('não vale para registro sem data', () => {
-    expect(ruleViolation('x.md', base('Nada gravado.', ''), [])).toBeNull();
+  it('does not apply to an undated record', () => {
+    expect(ruleViolation('x.md', base('Nothing recorded.', ''), [])).toBeNull();
   });
 
   it.each(entries.filter((f) => /^\d{4}-/.test(f)))(
-    '%s: grava, ou diz por que não',
+    '%s: writes, or says why not',
     (f) => {
       expect(ruleViolation(f, read(f), entries)).toBeNull();
     },
   );
 });
 
-describe('textos da regra: o fechamento grava no artefato (#1390, DS2)', () => {
+describe('rule texts: the closing writes to the artifact (#1390, DS2)', () => {
   const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
   const ds = readFileSync('docs/DESIGN-SYSTEM.md', 'utf8');
-  // Do começo de `from` até `to`; sem `to`, até o fim. O título final que sumir reprova.
+  // From the start of `from` up to `to`; without `to`, up to the end. A final heading that vanishes fails.
   const part = (text: string, from: RegExp, to?: RegExp): string => {
     const a = text.search(from);
     expect(a).toBeGreaterThanOrEqual(0);
@@ -257,43 +277,47 @@ describe('textos da regra: o fechamento grava no artefato (#1390, DS2)', () => {
     return rest.slice(0, b);
   };
 
-  it('o passo "Fechamento" do SKILL.md manda gravar, cita "Ao gravar" e nega "curado à mão"', () => {
-    const step = part(skill, /^5\. \*\*Fechamento\*\*/m, /^6\. \*\*Merge\*\*/m);
+  it('the "Closing" step of SKILL.md orders the recording, cites "When writing" and denies "curated by hand"', () => {
+    const step = part(skill, /^5\. \*\*Closing\*\*/m, /^6\. \*\*Merge\*\*/m);
     expect(step).toContain('docs/DESIGN-SYSTEM.md');
-    expect(step).toContain('Ao gravar');
-    expect(step).toMatch(/Curado à mão. não é motivo/);
+    expect(step).toContain('When writing');
+    expect(step).toMatch(/Curated by hand. is no reason/);
     expect(step).toContain('## Ficou sem gravar');
     expect(step).toContain('Motivo');
-    expect(step).toContain('subagente');
+    expect(step).toContain('subagent');
     expect(step).toContain('Artifact');
-    expect(step).not.toContain('pendências aplicadas no artefato do DS');
+    expect(step).not.toContain('pending items applied in the DS artifact');
   });
 
-  it('a seção "Merge" do SKILL.md segura o épico que não gravou', () => {
-    const merge = part(skill, /^## Merge$/m, /^## Paralelo$/m);
+  it('the "Merge" section of SKILL.md holds the epic that did not write', () => {
+    const merge = part(skill, /^## Merge$/m, /^## Parallel$/m);
     expect(merge).toContain('## Pendências');
-    expect(merge).toContain('defeito pendente');
+    expect(merge).toContain('pending defect');
     expect(merge).toContain('esperando dono');
     expect(merge).toContain('PushNotification');
     expect(merge).toMatch(/sem acesso/i);
   });
 
-  it('"É curado à mão" do DESIGN-SYSTEM.md não impede o fechamento de gravar', () => {
-    const item = part(ds, /^- \*\*É curado à mão\.\*\*/m, /^- \*\*Não é gerado/m);
-    expect(item).toContain('não impede o fechamento de gravar');
+  it('"It is hand-curated" of DESIGN-SYSTEM.md does not stop the closing from writing', () => {
+    const item = part(
+      ds,
+      /^- \*\*It is hand-curated\.\*\*/m,
+      /^- \*\*It is not generated/m,
+    );
+    expect(item).toContain('does not stop the closing from writing');
     expect(item).toContain('/design-sync');
   });
 
-  it('"Ao gravar" cita a ferramenta Artifact e as três aberturas da Sincronização', () => {
-    const rec = part(ds, /^Ao gravar:/m, /^## Mapa$/m);
+  it('"When writing" cites the Artifact tool and the three openings of Sincronização', () => {
+    const rec = part(ds, /^When writing:/m, /^## Map$/m);
     expect(rec).toContain('`Artifact`');
     expect(rec).toContain('Gravado no artefato');
     expect(rec).toMatch(/Versões? <n>/);
     expect(rec).toContain('Sem impacto');
   });
 
-  it('"Histórico de sincronização" traz o formato do item de "Ficou sem gravar"', () => {
-    const log = part(ds, /^## Histórico de sincronização$/m);
+  it('"Sync history" carries the format of the "Ficou sem gravar" item', () => {
+    const log = part(ds, /^## Sync history$/m);
     expect(log).toContain('Motivo:');
     expect(log).toContain('Passou para o registro do épico');
   });

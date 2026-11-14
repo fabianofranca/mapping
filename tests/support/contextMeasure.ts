@@ -12,10 +12,10 @@ export function scriptMeasureProblems(text: string): string[] {
   const cites = text.split(/\.\s+/).filter((sentence) => sentence.includes(OLD_MEASURE));
   if (cites.length === 0) problems.push(`missing the prohibition of ${OLD_MEASURE}`);
   for (const sentence of cites) {
-    // pt-BR kept: the regexes match the Portuguese protocol text of docs/FLOW.md and the skills
-    if (!/\b(não|nunca)\b/i.test(sentence))
+    // the regexes match the English text of docs/FLOW.md and the skills
+    if (!/\b(not|never)\b/i.test(sentence))
       problems.push(`${OLD_MEASURE} cited without negation: ${sentence.slice(0, 80)}`);
-    if (!/só muda no fim/.test(sentence))
+    if (!/only changes at the end/.test(sentence))
       problems.push(
         `${OLD_MEASURE} without the reason (only changes at the end of the turn)`,
       );

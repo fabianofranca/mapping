@@ -1,18 +1,18 @@
-name: Preview do PR
+name: PR preview
 
-# Quando o CI de um PR termina verde, publica o commit validado em `/preview/`, sem
-# `workflow_dispatch` manual. Este workflow só dispara o Deploy
-# (`gh workflow run deploy.yml --ref main -f branch=<branch do PR> -f sha=<commit>`); quem
-# publica é o `deploy.yml`, que roda na `main` (o ambiente `github-pages` costuma aceitar
-# deploy só a partir dela). Com o `sha`, o Deploy confere os check runs `check` e `e2e`
-# desse commit e, verdes, não roda o ci.yml do preview de novo (etapa #375): cada commit é
-# validado uma vez, pelo CI do PR. Commit superado (CI cancelado) não gera preview.
+# When a PR's CI ends green, publishes the validated commit at `/preview/`, with no
+# manual `workflow_dispatch`. This workflow only triggers the Deploy
+# (`gh workflow run deploy.yml --ref main -f branch=<PR branch> -f sha=<commit>`); what
+# publishes is `deploy.yml`, which runs on `main` (the `github-pages` environment usually accepts
+# deploys only from it). With the `sha`, the Deploy checks the `check` and `e2e` check runs
+# of that commit and, if green, does not run the preview's ci.yml again (stage #375): each commit is
+# validated once, by the PR's CI. A superseded commit (cancelled CI) generates no preview.
 #
-# `workflow_run` roda sempre a versão deste arquivo no branch padrão: mudanças aqui só
-# valem depois do merge na `main`.
+# `workflow_run` always runs this file's version on the default branch: changes here only
+# take effect after the merge into `main`.
 #
-# O `GITHUB_TOKEN` pode disparar `workflow_dispatch` (exceção documentada do GitHub).
-# PR de fork fica de fora: o token dele não tem escrita.
+# The `GITHUB_TOKEN` can trigger `workflow_dispatch` (a documented GitHub exception).
+# A fork PR is left out: its token has no write access.
 on:
   workflow_run:
     workflows: [CI]
@@ -33,14 +33,14 @@ jobs:
       github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
-      - name: Dispara o Deploy do commit validado
+      - name: Trigger the Deploy of the validated commit
         env:
           GH_TOKEN: ${{ github.token }}
           HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: gh workflow run deploy.yml --repo "$GITHUB_REPOSITORY" --ref main -f branch="$HEAD_BRANCH" -f sha="$HEAD_SHA"
 
-      - name: Links no resumo
+      - name: Links in the summary
         env:
           HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
@@ -49,10 +49,10 @@ jobs:
         run: |
           repo="${GITHUB_REPOSITORY#*/}"
           {
-            echo "Deploy disparado para o branch \`$HEAD_BRANCH\` no commit \`$HEAD_SHA\`, validado pelo CI: $CI_RUN"
+            echo "Deploy triggered for branch \`$HEAD_BRANCH\` at commit \`$HEAD_SHA\`, validated by the CI: $CI_RUN"
             echo
             echo "- Preview: https://${OWNER}.github.io/${repo}/preview/"
-            echo "- Execuções do Deploy: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/workflows/deploy.yml"
+            echo "- Deploy runs: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/workflows/deploy.yml"
             echo
-            echo "Há um preview só: o último PR com CI verde ganha o \`/preview/\`."
+            echo "There is only one preview: the latest PR with a green CI gets \`/preview/\`."
           } >> "$GITHUB_STEP_SUMMARY"

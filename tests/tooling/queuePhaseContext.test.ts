@@ -1,9 +1,9 @@
 // @vitest-environment node
-// Fase CX1 (etapa #1638): teto de contexto da sessão da fase. Teste só de texto (leitura dos
-// arquivos do fluxo de entrega): a fase confere o próprio contexto a 300 mil, passa a vez por uma
-// passagem na sub-issue, o coordenador (ou o orquestrador de uma etapa só) cria a sucessora e
-// arquiva a anterior, e a quinta sessão não troca (PP2, etapa #1595: linha de retomada numa fonte
-// só, squash do WIP e até 5 sessões).
+// Phase CX1 (stage #1638): context ceiling of the phase session. Text-only test (reads the
+// delivery flow files): the phase checks its own context at 300 thousand, hands over through a
+// handoff on the sub-issue, the coordinator (or the orchestrator of a single stage) creates the
+// successor and archives the previous one, and the fifth session does not switch (PP2, stage
+// #1595: resume line in a single source, squash of the WIP and up to 5 sessions).
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -15,305 +15,304 @@ import { between, section } from '../support/textSlice';
 const flow = readFileSync('docs/FLOW.md', 'utf8');
 const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
 
-const phase = section(flow, '## Para a sessão da fase');
-const item3 = between(phase, '3. Subagentes e esforço', '4. Todo briefing');
-const ancora = item3.indexOf('   - **Teto de contexto da fase:**');
-if (ancora < 0)
-  throw new Error('âncora não achada: sub-item "Teto de contexto da fase" do item 3');
-const teto = item3.slice(ancora);
-const porEtapa = section(skill, '## 3. Por etapa');
-const troca = between(
-  porEtapa,
-  '**Fase que passa a vez por contexto**',
-  '**PR que espera o coordenador:**',
+const phase = section(flow, '## For the phase session');
+const item3 = between(phase, '3. Subagents and effort', '4. Every briefing');
+const anchor = item3.indexOf('   - **Phase context ceiling:**');
+if (anchor < 0)
+  throw new Error('anchor not found: sub-item "Phase context ceiling" of item 3');
+const ceiling = item3.slice(anchor);
+const perStage = section(skill, '## 3. Per stage');
+const handover = between(
+  perStage,
+  '**Phase that hands over by context**',
+  '**PR that waits for the coordinator:**',
 );
-const avisou = between(porEtapa, 'Quando a fase avisar (', '3. **Testador.**');
-const item6 = between(phase, '6. Acompanhe o PR', '7. Ao terminar, avise');
-const LINHA =
+const notified = between(perStage, 'When the phase notifies (', '3. **Tester.**');
+const item6 = between(phase, '6. Follow the PR', '7. When done, notify');
+const LINE =
   'Retomada por contexto (<k> de 5): a sessão anterior (<id>) passou a vez com <n> mil; a passagem está em <link>. Continue no branch <branch>, que já existe (não o recrie da origin/epic/<nome>), e não refaça o que a passagem dá como feito.';
-const ocorrencias = (texto: string, trecho: string): number =>
-  texto.split(trecho).length - 1;
+const occurrences = (text: string, piece: string): number => text.split(piece).length - 1;
 
-describe('CX1 — "Para a sessão da fase" do docs/FLOW.md, sub-item do item 3', () => {
-  it('o sub-item fica debaixo do item 3, sem mudar a primeira linha nem a numeração', () => {
+describe('CX1 — "For the phase session" of docs/FLOW.md, sub-item of item 3', () => {
+  it('the sub-item sits under item 3, without changing the first line or the numbering', () => {
     expect(item3.split('\n')[0]).toMatch(
-      /^3\. Subagentes e esforço: <da sub-issue, ex\.: /,
+      /^3\. Subagents and effort: <from the sub-issue, e\.g\.: /,
     );
     expect(item3).toContain('~200k');
-    expect(phase).toContain('\n4. Todo briefing');
-    expect(phase).toContain('\n9. Defeito achado no caminho');
+    expect(phase).toContain('\n4. Every briefing');
+    expect(phase).toContain('\n9. A defect found along the way');
   });
 
-  it('o teto é 300 mil, medido pelo scripts/ci/contextUsage.mjs (não pelo used_tokens do get_session)', () => {
-    expect(teto).toContain('300 mil');
-    expect(teto).toContain('300.000');
-    expect(teto).toContain('`acima=true`');
-    expect(teto).toContain('`get_session` sem `session_id`');
-    // Achado CL1.5: o script como instrução e o `used_tokens` só como proibição.
-    expect(scriptMeasureProblems(teto)).toEqual([]);
-    expect(teto).toMatch(/só muda no fim de um turno/);
+  it('the ceiling is 300 thousand, measured by scripts/ci/contextUsage.mjs (not by the used_tokens of get_session)', () => {
+    expect(ceiling).toContain('300 thousand');
+    expect(ceiling).toContain('300,000');
+    expect(ceiling).toContain('`acima=true`');
+    expect(ceiling).toContain('`get_session` without `session_id`');
+    // Finding CL1.5: the script as an instruction and `used_tokens` only as a prohibition.
+    expect(scriptMeasureProblems(ceiling)).toEqual([]);
+    expect(ceiling).toMatch(/only changes at the end of a turn/);
   });
 
-  it('CL1.4: script ausente na transição (git show falha ou arquivo vazio) vale como "sem medida"', () => {
-    const transicao = between(teto, '**Transição:**', '**Sem medida**');
-    expect(transicao).toContain('git show origin/main:scripts/ci/contextUsage.mjs');
-    expect(transicao).toContain('script ausente');
-    expect(transicao).toContain('sem medida');
-    expect(transicao).toContain('`contexto=`');
-    expect(transicao).toMatch(/código fora de 0 e 1|código diferente de 0 e 1/);
+  it('CL1.4: a missing script in the transition (git show fails or empty file) counts as "no measurement"', () => {
+    const transition = between(ceiling, '**Transition:**', '**No measurement**');
+    expect(transition).toContain('git show origin/main:scripts/ci/contextUsage.mjs');
+    expect(transition).toContain('script ausente');
+    expect(transition).toContain('no measurement');
+    expect(transition).toContain('`contexto=`');
+    expect(transition).toMatch(/code other than 0 and 1/);
   });
 
-  it('a conferência é antes de tarefa nova de subagente e antes dos gates do item 5', () => {
-    expect(teto).toMatch(/antes de mandar uma tarefa nova a um subagente/);
-    expect(teto).toMatch(/antes de rodar os gates do item 5/);
+  it('the check is before a new subagent task and before the gates of item 5', () => {
+    expect(ceiling).toMatch(/before sending a new task to a subagent/);
+    expect(ceiling).toMatch(/before running the gates of item 5/);
   });
 
-  it('depois do PR aberto não há troca: a fase termina na mesma sessão', () => {
-    expect(teto).toMatch(/Depois que o PR da fase está aberto[^.]*não há troca/);
-    expect(teto).toContain('termina na mesma sessão');
+  it('after the PR is open there is no switch: the phase ends in the same session', () => {
+    expect(ceiling).toMatch(/Once the phase PR is open[^.]*there is no switch/);
+    expect(ceiling).toContain('ends in the same session');
   });
 
-  it('a passagem: espera os subagentes, WIP com push, comentário na sub-issue, sem PR', () => {
-    expect(teto).toContain('espera os subagentes em curso');
-    expect(teto).toContain('`WIP <código>: passagem por contexto`');
-    expect(teto).toContain('`git push -u origin <branch>`');
-    expect(teto).toMatch(/Não abre PR/);
-    expect(teto).toContain('`Passagem da fase <código> (contexto <n> mil):`');
-    for (const campo of [
-      'o branch e o commit',
-      'os checkboxes feitos e os que faltam',
-      'os testes vistos falhando antes do código',
-      'as decisões tomadas fora da sub-issue',
-      'os defeitos pendentes',
-      'o próximo passo',
+  it('the handoff: waits for the subagents, WIP with push, comment on the sub-issue, no PR', () => {
+    expect(ceiling).toContain('waits for the running subagents');
+    expect(ceiling).toContain('`WIP <código>: passagem por contexto`');
+    expect(ceiling).toContain('`git push -u origin <branch>`');
+    expect(ceiling).toMatch(/Does not open a PR/);
+    expect(ceiling).toContain('`Passagem da fase <código> (contexto <n> mil):`');
+    for (const field of [
+      'the branch and the commit',
+      'the checkboxes done and those missing',
+      'the tests seen failing before the code',
+      'the decisions made outside the sub-issue',
+      'the pending defects',
+      'the next step',
     ]) {
-      expect(teto).toContain(campo);
+      expect(ceiling).toContain(field);
     }
   });
 
-  it('a mensagem ao coordenador vai pelo Canal do item 7, e a fase termina o turno', () => {
-    expect(teto).toContain(
+  it('the message to the coordinator goes through the Channel of item 7, and the phase ends the turn', () => {
+    expect(ceiling).toContain(
       '`Troca de sessão da fase <código>: contexto <n> mil; passagem em <link do comentário>.`',
     );
-    expect(teto).toContain('pelo Canal do item 7');
-    expect(teto).toContain('Termina o turno');
+    expect(ceiling).toContain('through the Channel of item 7');
+    expect(ceiling).toContain('Ends the turn');
   });
 
-  it('a sucessora lê a passagem no item 1 e continua no branch que já existe', () => {
-    expect(teto).toContain(`\`${LINHA}\``);
-    expect(teto).toContain('no item 1 (');
-    expect(teto).toContain('`git switch <branch>`');
-    expect(teto).toMatch(/continua no branch que já existe/);
-    expect(teto).toMatch(/não o recria/);
+  it('the successor reads the handoff in item 1 and continues on the branch that already exists', () => {
+    expect(ceiling).toContain(`\`${LINE}\``);
+    expect(ceiling).toContain('in item 1 (');
+    expect(ceiling).toContain('`git switch <branch>`');
+    expect(ceiling).toMatch(/continues on the branch that already exists/);
+    expect(ceiling).toMatch(/does not recreate it/);
   });
 
-  it('PP2: a linha de retomada inteira aparece uma vez só no FLOW + skill, e é no sub-item do item 3', () => {
-    expect(ocorrencias(flow + skill, LINHA)).toBe(1);
-    expect(ocorrencias(teto, LINHA)).toBe(1);
-    // Nenhuma cópia parcial da linha nos outros lugares (o "de 3" antigo inclusive).
-    expect(ocorrencias(flow + skill, 'Retomada por contexto (<k> de')).toBe(1);
+  it('PP2: the whole resume line appears only once in FLOW + skill, and it is in the sub-item of item 3', () => {
+    expect(occurrences(flow + skill, LINE)).toBe(1);
+    expect(occurrences(ceiling, LINE)).toBe(1);
+    // No partial copy of the line elsewhere (the old "de 3" included).
+    expect(occurrences(flow + skill, 'Retomada por contexto (<k> de')).toBe(1);
   });
 
-  it('PP2: no máximo 4 trocas (5 sessões); a quinta não troca e avisa "passou de 300 mil na quinta sessão"', () => {
-    expect(teto).toContain('4 trocas');
-    expect(teto).toContain('5 sessões');
-    expect(teto).toContain('`5 de 5`');
-    expect(teto).toContain('passou de 300 mil na quinta sessão');
-    for (const velho of ['2 trocas', '3 sessões', 'terceira sessão', '3 de 3'])
-      expect(teto).not.toContain(velho);
+  it('PP2: at most 4 switches (5 sessions); the fifth does not switch and says "passou de 300 mil na quinta sessão"', () => {
+    expect(ceiling).toContain('4 switches');
+    expect(ceiling).toContain('5 sessions');
+    expect(ceiling).toContain('`5 de 5`');
+    expect(ceiling).toContain('passou de 300 mil na quinta sessão');
+    for (const old of ['2 switches', '3 sessions', 'third session', '3 de 3'])
+      expect(ceiling).not.toContain(old);
   });
 
-  it('PP2: o squash do item 6 tira o WIP do histórico do épico (passo 2 da passagem)', () => {
-    const passo2 = between(teto, '2. faz commit', '3. comenta');
-    expect(passo2).toContain('o squash do item 6 tira o WIP do histórico do épico');
+  it('PP2: the squash of item 6 takes the WIP out of the epic history (step 2 of the handoff)', () => {
+    const step2 = between(ceiling, '2. commits', '3. comments');
+    expect(step2).toContain('the squash of item 6 takes the WIP out of the epic history');
   });
 
-  it('vale também para a fase de correção e não cita send_later, ci-rerun.yml nem distBudget.mjs', () => {
-    expect(teto).toContain('fase de correção');
-    expect(teto).not.toContain('send_later');
-    expect(teto).not.toContain('ci-rerun.yml');
-    expect(teto).not.toContain('distBudget.mjs');
+  it('it also holds for the fix phase and does not cite send_later, ci-rerun.yml or distBudget.mjs', () => {
+    expect(ceiling).toContain('fix phase');
+    expect(ceiling).not.toContain('send_later');
+    expect(ceiling).not.toContain('ci-rerun.yml');
+    expect(ceiling).not.toContain('distBudget.mjs');
   });
 });
 
-describe('PP2 — item 6 de "Para a sessão da fase": squash do PR com commit WIP', () => {
-  it('o PR de fase ou de correção com o commit WIP se mescla com merge_method squash; os outros com merge', () => {
+describe('PP2 — item 6 of "For the phase session": squash of the PR with a WIP commit', () => {
+  it('the phase or fix PR with the WIP commit is merged with merge_method squash; the others with merge', () => {
     expect(item6).toContain('`WIP <código>: passagem por contexto`');
-    expect(item6).toContain('`git log --format=%s origin/epic/<nome>..HEAD`');
+    expect(item6).toContain('`git log --format=%s origin/epic/<name>..HEAD`');
     expect(item6).toContain('`merge_pull_request` `merge_method: squash`');
-    expect(item6).toMatch(/Os outros PRs continuam com `merge`/);
-    expect(item6).toMatch(/o commit vermelho não entra no histórico do épico/);
-    expect(item6).toMatch(/de correção/);
-    // A frase do merge no épico continua.
-    expect(item6).toMatch(/mescle o próprio PR no épico/);
+    expect(item6).toMatch(/The other PRs stay with `merge`/);
+    expect(item6).toMatch(/the red commit does not enter the epic history/);
+    expect(item6).toMatch(/fix/);
+    // The merge-into-the-epic sentence stays.
+    expect(item6).toMatch(/merge your own PR into the epic/);
   });
 });
 
-describe('CX1 — "Orquestrador — passo a passo" do docs/FLOW.md, parágrafo "Limites"', () => {
-  const passo = section(flow, '## Orquestrador — passo a passo');
-  const limites = passo.slice(passo.indexOf('**Limites:**'));
+describe('CX1 — "Orchestrator — step by step" of docs/FLOW.md, "Limits" paragraph', () => {
+  const step = section(flow, '## Orchestrator — step by step');
+  const limits = step.slice(step.indexOf('**Limits:**'));
 
-  it('o orquestrador responde ao pedido de troca criando a sucessora e arquivando a anterior', () => {
-    expect(limites).toContain('Troca de sessão da fase <código>');
-    expect(limites).toContain('sucessora');
-    expect(limites).toContain('arquiva a anterior');
-    expect(limites).toContain('Teto de contexto da fase');
+  it('the orchestrator answers the switch request by creating the successor and archiving the previous one', () => {
+    expect(limits).toContain('Troca de sessão da fase <código>');
+    expect(limits).toContain('successor');
+    expect(limits).toContain('archives the previous one');
+    expect(limits).toContain('Phase context ceiling');
   });
 
-  it('PP2: cita a linha de retomada do sub-item, sem copiá-la', () => {
-    expect(limites).toContain(
-      'a linha de retomada do sub-item "Teto de contexto da fase" (item 3 da "Para a sessão da fase")',
+  it('PP2: cites the resume line of the sub-item, without copying it', () => {
+    expect(limits).toContain(
+      'the resume line of the sub-item "Phase context ceiling" (item 3 of "For the phase session")',
     );
-    expect(limites).not.toContain('Retomada por contexto (');
-    expect(limites).not.toContain(
+    expect(limits).not.toContain('Retomada por contexto (');
+    expect(limits).not.toContain(
       'passou a vez com <n> mil; a passagem está em <link>. Continue',
     );
   });
 
-  it('PP2: no máximo 4 trocas, a quinta sessão não troca e o aviso ao dono vai na 4ª e na 5ª', () => {
-    expect(limites).toContain('no máximo 4 trocas por fase');
-    expect(limites).toContain('a quinta sessão não troca');
-    expect(limites).toMatch(/(4ª|quarta)[^.]*(5ª|quinta)[^.]*`PushNotification`/);
-    expect(limites).toContain('Fase <código> da #<n> na sessão <k> de 5 por contexto');
-    for (const velho of ['2 trocas', 'terceira sessão', '<k> de 3'])
-      expect(limites).not.toContain(velho);
+  it('PP2: at most 4 switches, the fifth session does not switch and the owner notice goes on the 4th and 5th', () => {
+    expect(limits).toContain('at most 4 switches per phase');
+    expect(limits).toContain('the fifth session does not switch');
+    expect(limits).toMatch(/(4th|fourth)[^.]*(5th|fifth)[^.]*`PushNotification`/);
+    expect(limits).toContain('Fase <código> da #<n> na sessão <k> de 5 por contexto');
+    for (const old of ['2 switches', 'third session', '<k> de 3'])
+      expect(limits).not.toContain(old);
   });
 });
 
-describe('CX1 — skill implementar-fila, "3. Por etapa"', () => {
-  it('o parágrafo vem no passo 2, depois de "Filha que espera o dono"', () => {
-    const dono = porEtapa.indexOf('**Filha que espera o dono**');
-    const contexto = porEtapa.indexOf('**Fase que passa a vez por contexto**');
-    expect(dono).toBeGreaterThan(0);
-    expect(contexto).toBeGreaterThan(dono);
+describe('CX1 — implementar-fila skill, "3. Per stage"', () => {
+  it('the paragraph comes in step 2, after "Child that waits for the owner"', () => {
+    const owner = perStage.indexOf('**Child that waits for the owner**');
+    const context = perStage.indexOf('**Phase that hands over by context**');
+    expect(owner).toBeGreaterThan(0);
+    expect(context).toBeGreaterThan(owner);
   });
 
-  it('o coordenador cria a sucessora com o mesmo model, effort e source_revision', () => {
-    expect(troca).toContain('quem cria a sucessora é o coordenador');
-    expect(troca).toContain('`create_session`');
-    expect(troca).toMatch(/mesmo `model`, `effort` e `source_revision`/);
-    expect(troca).toContain(' · retomada <k>');
+  it('the coordinator creates the successor with the same model, effort and source_revision', () => {
+    expect(handover).toContain('whoever creates the successor is the coordinator');
+    expect(handover).toContain('`create_session`');
+    expect(handover).toMatch(/same `model`, `effort` and `source_revision`/);
+    expect(handover).toContain(' · retomada <k>');
   });
 
-  it('PP2: a mensagem é a curta do passo 2 com a linha de retomada do FLOW, lida pelo nome da seção, sem cópia', () => {
-    expect(troca).toContain('a curta do passo 2');
-    expect(troca).toContain('a linha de retomada do sub-item "Teto de contexto da fase"');
-    expect(troca).toContain('antes de "Coordenador"');
-    expect(troca).toContain('item 9 de "Economia de contexto"');
-    expect(troca).toContain('"Para a sessão da fase"');
-    // Onde a linha começa e termina, e o que se preenche (achado da revisão: extração sem ambiguidade).
-    expect(troca).toContain(
-      'o trecho entre crases do sub-item que começa por `Retomada por contexto`',
+  it('PP2: the message is the short one of step 2 with the resume line of the FLOW, read by section name, without a copy', () => {
+    expect(handover).toContain('the short one of step 2');
+    expect(handover).toContain('the resume line of the sub-item "Phase context ceiling"');
+    expect(handover).toContain('before "Coordenador"');
+    expect(handover).toContain('item 9 of "Context economy"');
+    expect(handover).toContain('"For the phase session"');
+    // Where the line starts and ends, and what is filled in (review finding: unambiguous extraction).
+    expect(handover).toContain(
+      'the part between backticks of the sub-item that starts with `Retomada por contexto`',
     );
-    expect(troca).toContain('com os campos `<…>` preenchidos');
-    expect(troca).not.toContain('Retomada por contexto (');
-    expect(troca).not.toContain('Continue no branch <branch>');
+    expect(handover).toContain('with the `<…>` fields filled in');
+    expect(handover).not.toContain('Retomada por contexto (');
+    expect(handover).not.toContain('Continue no branch <branch>');
   });
 
-  it('o painel recebe o child=, o session com o mesmo label e o log, num apply só', () => {
-    expect(troca).toContain("row '#n' child=<novo> childAt=now");
-    expect(troca).toContain("session <pasta> '#n' <novo> kind=fase label=<código>");
-    expect(troca).toContain('<código>: troca por contexto (<n> mil) → <id novo>');
-    expect(troca).toContain('`apply`');
+  it('the panel gets the child=, the session with the same label and the log, in a single apply', () => {
+    expect(handover).toContain("row '#n' child=<new> childAt=now");
+    expect(handover).toContain("session <folder> '#n' <new> kind=fase label=<code>");
+    expect(handover).toContain('<código>: troca por contexto (<n> mil) → <id novo>');
+    expect(handover).toContain('`apply`');
   });
 
-  it('a anterior é arquivada no mesmo ciclo, pelo subagente do ciclo, com o custo antes', () => {
-    expect(troca).toContain('subagente do ciclo');
-    expect(troca).toContain('`painel.py cost`');
-    expect(troca).toContain('"Arquivar as sessões" › "Custo"');
-    expect(troca).toContain('`archive_session`');
+  it('the previous one is archived in the same cycle, by the cycle subagent, with the cost first', () => {
+    expect(handover).toContain("the cycle's subagent");
+    expect(handover).toContain('`painel.py cost`');
+    expect(handover).toContain('"Archive the sessions" › "Cost"');
+    expect(handover).toContain('`archive_session`');
   });
 
-  it('PP2: no máximo 4 trocas: a sessão 5 de 5 não troca e o log registra o caso', () => {
-    expect(troca).toContain('No máximo 4 trocas por fase (5 sessões)');
-    expect(troca).toContain('a sessão `5 de 5` não troca');
-    expect(troca).toContain('passou de 300 mil na quinta sessão');
-    expect(troca).toContain('<código>: passou de 300 mil na quinta sessão');
-    expect(troca).toContain('o log registra o caso');
-    expect(troca).toContain('A sessão da filha é a `<k-1>` de 5');
-    for (const velho of ['2 trocas', '3 sessões', 'terceira sessão', '3 de 3', '` de 3'])
-      expect(troca).not.toContain(velho);
+  it('PP2: at most 4 switches: the `5 de 5` session does not switch and the log records the case', () => {
+    expect(handover).toContain('At most 4 switches per phase (5 sessions)');
+    expect(handover).toContain('the `5 de 5` session does not switch');
+    expect(handover).toContain('passou de 300 mil na quinta sessão');
+    expect(handover).toContain('<código>: passou de 300 mil na quinta sessão');
+    expect(handover).toContain('the log records the case');
+    expect(handover).toContain("The child's session is `<k-1>` of 5");
+    for (const old of ['2 switches', '3 sessions', 'third session', '3 de 3', '` de 3'])
+      expect(handover).not.toContain(old);
   });
 
-  it('PP2: a 4ª e a 5ª sessões mandam PushNotification ao dono e gravam o aviso no log, sem esperar resposta', () => {
-    expect(troca).toContain('`k` igual a 4 ou 5');
-    expect(troca).toContain('`PushNotification`');
-    expect(troca).toContain('Fase <código> da #<n> na sessão <k> de 5 por contexto');
-    expect(troca).toContain('<código>: sessão <k> de 5 (aviso ao dono)');
-    expect(troca).toContain('sem esperar resposta (regra 1 da fila)');
+  it('PP2: the 4th and 5th sessions send PushNotification to the owner and write the notice in the log, without waiting for an answer', () => {
+    expect(handover).toContain('`k` equal to 4 or 5');
+    expect(handover).toContain('`PushNotification`');
+    expect(handover).toContain('Fase <código> da #<n> na sessão <k> de 5 por contexto');
+    expect(handover).toContain('<código>: sessão <k> de 5 (aviso ao dono)');
+    expect(handover).toContain('without waiting for an answer (rule 1 of the queue)');
   });
 
-  it('PP2: o PR de fase com commit WIP se mescla com squash, também quando é o coordenador que mescla', () => {
-    expect(avisou).toContain('avisou sem ter mesclado');
-    expect(avisou).toContain('`WIP <código>: passagem por contexto`');
-    // O clone do coordenador não está no branch da fase: o `HEAD` do item 6 vira o branch da origin.
-    expect(avisou).toContain(
-      '`git log --format=%s origin/epic/<nome>..origin/<branch da fase>`',
+  it('PP2: the phase PR with a WIP commit is merged with squash, also when the coordinator merges', () => {
+    expect(notified).toContain('notified without having merged');
+    expect(notified).toContain('`WIP <código>: passagem por contexto`');
+    // The coordinator's clone is not on the phase branch: the `HEAD` of item 6 becomes the origin branch.
+    expect(notified).toContain(
+      '`git log --format=%s origin/epic/<name>..origin/<phase branch>`',
     );
-    expect(avisou).not.toContain('..HEAD`');
-    // O ref da origin pode faltar ou estar velho no clone do coordenador: busca antes do `git log`.
-    expect(avisou).toMatch(
-      /`git fetch origin <branch da fase>`[^]*?`git log --format=%s origin\/epic\/<nome>\.\.origin\/<branch da fase>`/,
+    expect(notified).not.toContain('..HEAD`');
+    // The origin ref may be missing or stale in the coordinator's clone: fetch before the `git log`.
+    expect(notified).toMatch(
+      /`git fetch origin <phase branch>`[^]*?`git log --format=%s origin\/epic\/<name>\.\.origin\/<phase branch>`/,
     );
-    expect(avisou).toContain('`merge_method: squash`');
-    expect(avisou).toContain('item 6');
-    expect(avisou).toMatch(/Os outros PRs continuam com `merge`/);
+    expect(notified).toContain('`merge_method: squash`');
+    expect(notified).toContain('item 6');
+    expect(notified).toMatch(/The other PRs keep `merge`/);
   });
 
-  it('"O que não se arquiva" tem a exceção da filha que passou a vez por contexto', () => {
-    const arquivar = between(
-      section(skill, '## 3. Por etapa'),
-      '- **O que não se arquiva:**',
-      '- **Registro:**',
+  it('"What is not archived" has the exception of the child that handed over by context', () => {
+    const toArchive = between(
+      section(skill, '## 3. Per stage'),
+      '- **What is not archived:**',
+      '- **Record:**',
     );
-    expect(arquivar).toContain('passou a vez por contexto');
-    expect(arquivar).toMatch(/se arquiva/);
+    expect(toArchive).toContain('handed over by context');
+    expect(toArchive).toMatch(/is archived/);
   });
 
-  it('a sucessora traz o branch com refspec que vale em clone de um branch só', () => {
-    expect(teto).toContain('`git fetch origin <branch>:<branch>`');
+  it('the successor brings the branch with a refspec that works in a single-branch clone', () => {
+    expect(ceiling).toContain('`git fetch origin <branch>:<branch>`');
   });
 
-  it('o pedido de troca vale no item 7 e no Canal; a contagem usa o meta.sessions', () => {
-    const item7 = between(phase, '7. Ao terminar, avise', '8. ');
-    expect(item7).toContain('pedido de troca por contexto');
-    expect(item7).toContain('o pedido de troca por contexto do item 3 também');
-    expect(troca).toContain('`meta.sessions`');
-    expect(troca).toContain('já tem uma entrada `label=<código>` mais nova');
+  it('the switch request holds in item 7 and in the Channel; the count uses meta.sessions', () => {
+    const item7 = between(phase, '7. When done, notify', '8. ');
+    expect(item7).toContain('context switch request');
+    expect(item7).toContain('the context switch request of item 3 too');
+    expect(handover).toContain('`meta.sessions`');
+    expect(handover).toContain('already has a `label=<code>` entry newer than its own');
   });
 });
 
-// PP3 (etapa #1595, decisão 8): as cópias do texto da troca por contexto se comparam entre si
-// (números e começo do pedido), e os comandos do painel que o skill manda rodar rodam de verdade.
-const limitesTexto = (() => {
-  const passo = section(flow, '## Orquestrador — passo a passo');
-  return passo.slice(passo.indexOf('**Limites:**'));
+// PP3 (stage #1595, decision 8): the copies of the context-switch text are compared with each
+// other (numbers and start of the request), and the panel commands the skill says to run really run.
+const limitsText = (() => {
+  const step = section(flow, '## Orchestrator — step by step');
+  return step.slice(step.indexOf('**Limits:**'));
 })();
-const lugares: Array<[string, string]> = [
-  ['item 3 (Teto de contexto da fase)', teto],
-  ['"Limites" do FLOW', limitesTexto],
-  ['skill (Fase que passa a vez por contexto)', troca],
+const places: Array<[string, string]> = [
+  ['item 3 (Phase context ceiling)', ceiling],
+  ['"Limits" of the FLOW', limitsText],
+  ['skill (Phase that hands over by context)', handover],
 ];
 
-interface Numeros {
-  trocas: number[];
-  sessoes: number[];
-  kDeN: number[];
-  ultima: number[];
+interface Numbers {
+  switches: number[];
+  sessions: number[];
+  kOfN: number[];
+  last: number[];
 }
 
-/** Os números da troca num trecho: máximo de trocas, total de sessões, `<k> de N` e a `N de N` da última. */
-function numeros(texto: string): Numeros {
-  const todos = (re: RegExp, grupo = 1): number[] => [
-    ...new Set([...texto.matchAll(re)].map((m) => Number(m[grupo]))),
+/** The numbers of the switch in a piece of text: max switches, total sessions, `<k> de N` and the `N de N` of the last one. */
+function numbers(text: string): Numbers {
+  const all = (re: RegExp, group = 1): number[] => [
+    ...new Set([...text.matchAll(re)].map((m) => Number(m[group]))),
   ];
   return {
-    trocas: todos(/no m[aá]ximo (\d+) trocas por fase/gi),
-    sessoes: todos(/\((\d+) sessões\)/g),
-    kDeN: todos(/<k(?:-1)?>`? de (\d+)/g),
-    ultima: [
+    switches: all(/at most (\d+) switches per phase/gi),
+    sessions: all(/\((\d+) sessions\)/g),
+    kOfN: all(/<k(?:-1)?>`? de (\d+)/g),
+    last: [
       ...new Set(
-        [...texto.matchAll(/`(\d+) de (\d+)`/g)].flatMap((m) => [
+        [...text.matchAll(/`(\d+) de (\d+)`/g)].flatMap((m) => [
           Number(m[1]),
           Number(m[2]),
         ]),
@@ -322,103 +321,103 @@ function numeros(texto: string): Numeros {
   };
 }
 
-describe('PP3 — cópias do texto da troca por contexto comparadas (decisão 8)', () => {
-  it('os números da troca (trocas, sessões, <k> de N) são os mesmos nos três lugares', () => {
-    const achados = lugares.map(([nome, texto]) => ({ nome, ...numeros(texto) }));
-    for (const a of achados) {
-      // Cada lugar diz o máximo de trocas uma vez e o `<k> de N` com um N só.
-      expect(a.trocas, `${a.nome}: máximo de trocas`).toHaveLength(1);
-      expect(a.kDeN, `${a.nome}: <k> de N`).toHaveLength(1);
+describe('PP3 — copies of the context-switch text compared (decision 8)', () => {
+  it('the numbers of the switch (switches, sessions, <k> de N) are the same in the three places', () => {
+    const found = places.map(([name, text]) => ({ name, ...numbers(text) }));
+    for (const a of found) {
+      // Each place states the max switches once and the `<k> de N` with a single N.
+      expect(a.switches, `${a.name}: max switches`).toHaveLength(1);
+      expect(a.kOfN, `${a.name}: <k> de N`).toHaveLength(1);
     }
-    const [ref, ...outros] = achados;
-    for (const o of outros) {
-      expect(o.trocas, `${o.nome} x ${ref!.nome}: trocas`).toEqual(ref!.trocas);
-      expect(o.kDeN, `${o.nome} x ${ref!.nome}: <k> de N`).toEqual(ref!.kDeN);
+    const [ref, ...others] = found;
+    for (const o of others) {
+      expect(o.switches, `${o.name} x ${ref!.name}: switches`).toEqual(ref!.switches);
+      expect(o.kOfN, `${o.name} x ${ref!.name}: <k> de N`).toEqual(ref!.kOfN);
     }
-    // O total de sessões, onde o texto o diz, é o mesmo N, e N = trocas + 1.
-    const [trocas] = ref!.trocas;
-    const [n] = ref!.kDeN;
-    expect(n).toBe(trocas! + 1);
-    for (const a of achados) {
-      for (const total of [...a.sessoes, ...a.ultima])
-        expect(total, `${a.nome}: total de sessões`).toBe(n);
+    // The total of sessions, where the text states it, is the same N, and N = switches + 1.
+    const [switches] = ref!.switches;
+    const [n] = ref!.kOfN;
+    expect(n).toBe(switches! + 1);
+    for (const a of found) {
+      for (const total of [...a.sessions, ...a.last])
+        expect(total, `${a.name}: total of sessions`).toBe(n);
     }
-    expect(achados.some((a) => a.sessoes.length > 0)).toBe(true);
-    expect(achados.some((a) => a.ultima.length > 0)).toBe(true);
+    expect(found.some((a) => a.sessions.length > 0)).toBe(true);
+    expect(found.some((a) => a.last.length > 0)).toBe(true);
   });
 
-  it('o pedido de troca tem o mesmo começo no item 3, no "Limites" e no skill', () => {
-    const comeco = (texto: string): string[] => [
+  it('the switch request has the same start in item 3, in "Limits" and in the skill', () => {
+    const start = (text: string): string[] => [
       ...new Set(
         [
-          ...texto.matchAll(
+          ...text.matchAll(
             /Troca de sessão da fase <código>: contexto <n> mil; passagem em/g,
           ),
         ].map((m) => m[0]),
       ),
     ];
-    const achados = lugares.map(([nome, texto]) => ({ nome, comeco: comeco(texto) }));
-    for (const a of achados) expect(a.comeco, a.nome).toHaveLength(1);
-    const [ref, ...outros] = achados;
-    for (const o of outros)
-      expect(o.comeco, `${o.nome} x ${ref!.nome}`).toEqual(ref!.comeco);
+    const found = places.map(([name, text]) => ({ name, start: start(text) }));
+    for (const a of found) expect(a.start, a.name).toHaveLength(1);
+    const [ref, ...others] = found;
+    for (const o of others)
+      expect(o.start, `${o.name} x ${ref!.name}`).toEqual(ref!.start);
   });
 
-  it('a linha de retomada tem uma fonte só: o trecho entre crases do item 3, uma vez em FLOW + skill', () => {
-    const fontes = [...(flow + skill).matchAll(/`(Retomada por contexto \([^`]*)`/g)];
-    expect(fontes).toHaveLength(1);
-    expect(ocorrencias(flow + skill, 'Retomada por contexto (')).toBe(1);
-    expect(teto).toContain(fontes[0]![0]);
-    expect(ocorrencias(skill, 'Retomada por contexto (')).toBe(0);
-    expect(ocorrencias(limitesTexto, 'Retomada por contexto (')).toBe(0);
+  it('the resume line has a single source: the backticked part of item 3, once in FLOW + skill', () => {
+    const sources = [...(flow + skill).matchAll(/`(Retomada por contexto \([^`]*)`/g)];
+    expect(sources).toHaveLength(1);
+    expect(occurrences(flow + skill, 'Retomada por contexto (')).toBe(1);
+    expect(ceiling).toContain(sources[0]![0]);
+    expect(occurrences(skill, 'Retomada por contexto (')).toBe(0);
+    expect(occurrences(limitsText, 'Retomada por contexto (')).toBe(0);
   });
 });
 
-describe('PP3 — comandos do painel do skill rodados num painel temporário (decisão 8)', () => {
+describe('PP3 — skill panel commands run on a temporary panel (decision 8)', () => {
   const SCRIPT = '.claude/skills/implementar-fila/painel/painel.py';
-  const AGORA = '2026-11-12T10:00:00Z';
-  const ANTES = '2026-11-12T09:00:00Z';
-  const TEMPO_SUBPROCESSOS = 30_000;
-  const custo = between(porEtapa, '- **Custo:**', '**Sentinela:**');
+  const NOW = '2026-11-12T10:00:00Z';
+  const BEFORE = '2026-11-12T09:00:00Z';
+  const SUBPROCESS_TIMEOUT = 30_000;
+  const cost = between(perStage, '- **Cost:**', '**Sentinel:**');
   let dir = '';
 
-  const painel = (agora: string, ...args: string[]) => {
-    const r = spawnSync('python3', [SCRIPT, '--now', agora, ...args], {
+  const panel = (now: string, ...args: string[]) => {
+    const r = spawnSync('python3', [SCRIPT, '--now', now, ...args], {
       encoding: 'utf8',
     });
     expect(r.status, `${args.join(' ')}: ${r.stderr}`).toBe(0);
     return r.stdout;
   };
-  const lote = (agora: string, texto: string) => {
-    const r = spawnSync('python3', [SCRIPT, '--now', agora, 'apply', dir, '-'], {
+  const batch = (now: string, text: string) => {
+    const r = spawnSync('python3', [SCRIPT, '--now', now, 'apply', dir, '-'], {
       encoding: 'utf8',
-      input: texto,
+      input: text,
     });
     expect(r.status, r.stderr).toBe(0);
   };
-  const json = (nome: string): Array<Record<string, unknown>> =>
-    JSON.parse(readFileSync(path.join(dir, `${nome}.json`), 'utf8')) as Array<
+  const json = (name: string): Array<Record<string, unknown>> =>
+    JSON.parse(readFileSync(path.join(dir, `${name}.json`), 'utf8')) as Array<
       Record<string, unknown>
     >;
 
-  /** O comando entre crases do skill que começa por `prefixo`, sem o `painel.py ` do começo. */
-  function comando(texto: string, prefixo: string): string {
-    const achou = [...texto.matchAll(/`([^`]+)`/g)]
+  /** The backticked command of the skill that starts with `prefix`, without the leading `painel.py `. */
+  function command(text: string, prefix: string): string {
+    const found = [...text.matchAll(/`([^`]+)`/g)]
       .map((m) => m[1]!.replace(/^painel\.py /, ''))
-      .find((c) => c.startsWith(prefixo));
-    if (!achou) throw new Error(`comando não achado no skill: ${prefixo}`);
-    return achou;
+      .find((c) => c.startsWith(prefix));
+    if (!found) throw new Error(`command not found in the skill: ${prefix}`);
+    return found;
   }
 
-  /** Troca os marcadores do skill por valores e tira a `<pasta>` (o `apply` não a leva). */
-  function preenche(cmd: string, kind: string): string {
+  /** Replaces the skill's placeholders with values and drops the `<folder>` (`apply` does not take it). */
+  function fill(cmd: string, kind: string): string {
     return cmd
-      .replace('<pasta> ', '')
+      .replace('<folder> ', '')
       .replace("'#n'", "'#10'")
-      .replace('<novo>', 'session_nova')
-      .replace('<id anterior>', 'session_velha')
+      .replace('<new>', 'session_nova')
+      .replace('<previous id>', 'session_velha')
       .replace('<id>', 'session_velha')
-      .replace('<código>', 'PP3')
+      .replace('<code>', 'PP3')
       .replace('kind=fase', `kind=${kind}`)
       .replace('usd=…', 'usd=1.5')
       .replace('ctx=…', 'ctx=250000')
@@ -428,8 +427,8 @@ describe('PP3 — comandos do painel do skill rodados num painel temporário (de
 
   beforeEach(() => {
     dir = mkdtempSync(path.join(tmpdir(), 'painel-troca-'));
-    painel(ANTES, 'init', dir);
-    painel(ANTES, 'start', dir);
+    panel(BEFORE, 'init', dir);
+    panel(BEFORE, 'start', dir);
   });
 
   afterEach(() => {
@@ -440,50 +439,52 @@ describe('PP3 — comandos do painel do skill rodados num painel temporário (de
     ['fase', 'fase'],
     ['correção', 'correção'],
   ])(
-    'a troca da filha (kind=%s) num apply só: child novo, sessions com os dois ids, meta.sessions com o mesmo label e o custo da anterior',
-    (_nome, kind) => {
-      painel(
-        ANTES,
+    'the child switch (kind=%s) in a single apply: new child, sessions with both ids, meta.sessions with the same label and the previous one cost',
+    (_name, kind) => {
+      panel(
+        BEFORE,
         'row',
         dir,
         '#10',
-        'title=Etapa dez',
+        'title=Stage ten',
         'status=em andamento',
         'child=session_velha',
         'childAt=now',
-        'wait=pergunta',
+        'wait=question',
       );
-      painel(ANTES, 'session', dir, '#10', 'session_velha', `kind=${kind}`, 'label=PP3');
-      // A linha antes da troca: filha velha, com `wait`.
+      panel(BEFORE, 'session', dir, '#10', 'session_velha', `kind=${kind}`, 'label=PP3');
+      // The row before the switch: old child, with `wait`.
       expect(json('queue')[0]).toMatchObject({
         child: 'session_velha',
-        wait: 'pergunta',
+        wait: 'question',
       });
 
-      const row = preenche(comando(troca, "row '#n' child="), kind);
-      const sessao = preenche(comando(troca, 'session <pasta> '), kind);
-      const cost = preenche(comando(custo, 'cost <pasta> <id>'), kind);
-      expect(sessao).toContain(`kind=${kind}`);
-      lote(AGORA, [row, sessao, cost].join('\n'));
+      const row = fill(command(handover, "row '#n' child="), kind);
+      const session = fill(command(handover, 'session <folder> '), kind);
+      const costCmd = fill(command(cost, 'cost <folder> <id>'), kind);
+      expect(session).toContain(`kind=${kind}`);
+      batch(NOW, [row, session, costCmd].join('\n'));
 
-      const linha = json('queue')[0]!;
-      expect(linha.child).toBe('session_nova');
-      expect(linha.childAt).toBe(AGORA);
-      expect(linha.wait).toBe('');
-      expect(String(linha.sessions).split(' ').sort()).toEqual([
+      const line = json('queue')[0]!;
+      expect(line.child).toBe('session_nova');
+      expect(line.childAt).toBe(NOW);
+      expect(line.wait).toBe('');
+      expect(String(line.sessions).split(' ').sort()).toEqual([
         'session_nova',
         'session_velha',
       ]);
 
-      const sessoes = (json('meta')[0]!.sessions ?? []) as Array<Record<string, unknown>>;
-      const doCodigo = sessoes.filter((e) => e.label === 'PP3');
-      // A contagem das entradas com o label é o <k> da regra: a sucessora é a 2ª sessão.
-      expect(doCodigo.map((e) => e.id).sort()).toEqual(['session_nova', 'session_velha']);
-      expect(doCodigo.map((e) => e.kind)).toEqual([kind, kind]);
-      const velha = doCodigo.find((e) => e.id === 'session_velha')!;
-      expect(velha.cost).toMatchObject({ usd: 1.5, ctx: 250000 });
-      expect(doCodigo.find((e) => e.id === 'session_nova')!.cost).toBeUndefined();
+      const sessions = (json('meta')[0]!.sessions ?? []) as Array<
+        Record<string, unknown>
+      >;
+      const ofCode = sessions.filter((e) => e.label === 'PP3');
+      // The count of the entries with the label is the <k> of the rule: the successor is the 2nd session.
+      expect(ofCode.map((e) => e.id).sort()).toEqual(['session_nova', 'session_velha']);
+      expect(ofCode.map((e) => e.kind)).toEqual([kind, kind]);
+      const old = ofCode.find((e) => e.id === 'session_velha')!;
+      expect(old.cost).toMatchObject({ usd: 1.5, ctx: 250000 });
+      expect(ofCode.find((e) => e.id === 'session_nova')!.cost).toBeUndefined();
     },
-    TEMPO_SUBPROCESSOS,
+    SUBPROCESS_TIMEOUT,
   );
 });

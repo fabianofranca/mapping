@@ -1,114 +1,114 @@
 #!/usr/bin/env python3
-"""Mantém os 3 conjuntos de dados do painel "Fila de desenvolvimento".
+"""Maintains the 3 data sets of the "Fila de desenvolvimento" panel.
 
-Arquivos numa pasta: queue.json, meta.json, log.json (listas JSON).
-Cada comando imprime, no fim, `alterados: <arquivos gravados>`.
-A nota "Vagas k/N" (meta.vagas) é recalculada em toda gravação, a partir das fichas (`plan`),
-de `meta.paralelo` (`start --paralelo N`) e de `meta.merged` (`merged`); `context` guarda o contexto
-do coordenador: `context --medir --max <n>` mede com `scripts/ci/contextUsage.mjs` e grava o `pct` com a fonte
-(`sessao`/`recente`); `context <pct> [--fonte get_session]` é o número à mão (fonte `manual`, ou `get_session`).
-O `show` imprime `vagas:`, `começar agora:`, `contexto: <pct>% (<quando>, <fonte>)`, com o alerta acima de
-CONTEXT_LIMIT e os avisos de medida à mão e de medida velha (mais de CONTEXT_STALE_MINUTES).
-Ficha incompleta (decisão 11 da #1532): `dep`, `toca` ou `fases` em `?` (ou `dep` e `toca` sem o campo) dá o motivo
-`ficha incompleta (<campos>)` e entra em `fichas a refazer:` do `show`; a etapa começada com `toca=?` segue conflitando
-com toda candidata (`arquivo ? com #N`). O `toca=` lista arquivos e seções (#1812): um arquivo, um padrão de arquivos
-(`*` só no último segmento, que não começa por `*`, e nunca em `docs/`, em `.claude/` nem num `.md` da raiz), uma seção de
-documento com seções (`docs/TESTING.md#R9`, `CLAUDE.md#regras-de-arquitetura`) ou um documento com seções que ainda não
-existe, citado inteiro. Pasta (termina em `/` ou `/**`, ou existe na raiz do repositório), `**`, padrão fora dessa forma,
-documento com seções existente sem âncora e âncora fora da forma (no `docs/TESTING.md`, `R<n>`, `RP`, `RF`, `RA`, `RB`, um
-slug ou `inicio`; nos outros, um slug ou `inicio`) dão `ficha incompleta (toca: <primeira citação inválida>)` e entram em
-`fichas a refazer:`, inclusive na etapa já começada, cujas citações antigas seguem na comparação como hoje até a ficha ser
-refeita; a linha `exclusive=sim` não passa por essa validação (só o `?` a deixa incompleta). `toca "<citações separadas
-por vírgula>"` confere uma lista: `ok` (código 0) ou uma linha `inválida: <citação> — <motivo>` por citação (código 1).
-`conflito "<toca>" [--pasta <dir>] [--com "#N=<toca>"]…` (decisão 9 da #1864, só leitura, fora do `apply`) confere um `toca` contra
-as etapas começadas e não mescladas da pasta, as que o `show` lista em `começar agora:` e cada `--com`, com o mesmo cálculo da fila:
-`livre` (código 0, também sem `--pasta` e sem `--com`), uma linha `conflito: <citação> com #N (<status>|começa agora|fora do painel)`
-por etapa em conflito (código 1) ou `inválida: <citação> — <motivo>` (código 2).
-`exclusive=sim` na linha (`exclusive=` limpa) faz a etapa começar só com a fila
-sem etapa começada e não mesclada (`exclusiva (espera a fila esvaziar)`). Começada e ainda não mesclada, ela segura todas
-as outras em qualquer estado (`em andamento`, `aguardando` com `started`, `esperando dono`, `falhou`), e o motivo diz o
-estado: `exclusiva #N <status>` (`em andamento` também para a que começa no mesmo cálculo). A saída é só do dono: com a ordem
-dele escrita no chat da fila, o coordenador grava `row '#N' exclusive=` e o `log` "exclusiva #N liberada pelo dono" (decisões
-2 e 3 da #1595). A exclusiva na frente drena a fila (#1813): a primeira candidata pela `order`, sem `hold`, com a ficha
-completa, as dependências mescladas e que não começa neste cálculo, se for exclusiva, segura as candidatas de depois dela
-(`segurada para a exclusiva #N`, depois de `exclusiva #N <status>` e antes de `exclusiva (espera a fila esvaziar)`) até a
-última começada ser mesclada; comum na frente que espera arquivo, schema ou vaga é a primeira e não há drenagem. O `show`
-diz `drenando para a exclusiva: #N` (ou `nenhuma`) depois de `começar agora:`; nada se grava (recalculado em toda gravação).
-Todo `.md` sob `docs/`, os `.md` da raiz (`CLAUDE.md`, `README.md`) e os `.claude/skills/*/SKILL.md` são os documentos
-com seções, e se comparam
-por seção (`docs/ARCHITECTURE.md#desempenho`, `CLAUDE.md#regras-de-arquitetura`; o `docs/TESTING.md` por roteiro, `#R12`); os outros
-arquivos, inclusive os `.md` de outras pastas, contam inteiros; `slug "<título>"` imprime o slug de um `##`.
-`ciWait` (o PR cujo CI espera o coordenador, ex. `PR #7`) e `ciWaitAt` (desde quando; `ciWait=` limpa os
-dois) entram na linha `CI esperando o coordenador:` do `show`; trocar ou limpar `child` não mexe neles.
-Fase que espera o dono no chat dela (decisão 7 da #1602): a linha com `child` e `wait` começando por `dono no chat da fase:`
-(a marca; o `status` não entra, porque `esperando dono` vale também para merge pedido e achado de severidade alta) sai em
-`esperando o dono no chat da fase:` do `show`, e não em `esperando o coordenador:` nem em `atrasadas:` (o `wait` a tira da
-contagem). Como o `wait` a tira de `atrasadas:`, a linha `esperando o dono há mais de 1 h:` a devolve à conferência de
-hora em hora (`get_session` da filha), com "prazo vencido" a partir de 240 min (CL1, #1627).
-`apply DIR <arquivo|->` grava vários subcomandos de uma vez (um por linha, na sintaxe da linha de comando
-sem `painel.py` e sem a pasta; linha vazia e `#` são ignoradas; `show`, `init`, `published` e `apply` não
-entram): tudo ou nada, com uma linha `alterados:` e, no erro, código 2 citando o número da linha.
-Toda gravação soma os arquivos a `meta.unpublished` (`{since, files}`: o que foi gravado e ainda não foi
-publicado; o `show` o imprime). `published DIR` imprime `at: <ISO UTC>` (o valor de `updated.at` e `edit.at`
-da publicação), lista os arquivos a enviar, grava `meta.publishedAt` e `meta.publishing` (o que está em voo), mas
-**mantém** `unpublished`: só `published DIR --done`, rodado depois do `batch` bem-sucedido, o limpa (e só se nada
-foi gravado desde o `published`; senão o que foi gravado fica). Sem a confirmação (sessão morta, contexto estourado),
-o `show` segue dizendo o que falta e a conferência republica. Na retomada, a cópia publicada traz o `publishing` do envio que
-deu certo: `published DIR --done` sobre ela, depois de baixar os três arquivos e antes do `show`, limpa o `unpublished` que ela
-traz (sem `publishing`, de painel antigo, imprime "nada em voo" e fica como não publicada; a próxima publicação resolve; decisão 4
-da #1595). `touch DIR` marca de novo os três arquivos.
-Custo (decisões 5 e 26 da #1532): `session DIR '#n' <id> kind=<tipo> [label=<código>]` acrescenta `{id, issue, kind, label,
-created}` a `meta.sessions` (sem `kind`, só o `sessions` da linha, como antes); `cost DIR <id> usd= ctx= [model= effort=
-served=] [issue= kind=]` grava o custo da sessão (`kind` obrigatório com id novo); `costs [--desde <ISO>] DIR` lê só o `meta`
-e imprime o total, uma linha por tipo (sessões, US$, mediana) e uma por etapa (com `--desde`, só as com `created` a partir
-da data); o `show` traz a linha `custo:`.
-Teto do testador (decisão 9 da #1639): `cost` de sessão `testador` ou `reteste` com `ctx` acima de TESTER_CONTEXT_LIMIT
-grava como sempre, sai com 0 e imprime `acima do teto do testador (300 mil): <id> <ctx>`; o `show` traz `testador acima do
-teto: <etapa> <rótulo> <ctx em mil>k; …` (ou `nenhum`), só das etapas não `concluída` e fora de `meta.merged`.
-Sessão atual de cada papel (decisão 7 da #1532): `role DIR <coordenador|supervisor> <id> [link=<url>]` grava
-`meta.roles.<papel> = {id, n, at, link, previous}` (`previous` = o id registrado antes) com `n` = o anterior + 1 (ou 1); `roles DIR` lê só o `meta` e imprime
-`coordenador <n>: <id>` e `supervisor <n>: <id> (<link>)`, ou `—`. A sessão que não é a registrada não age.
-`roles --sessao <id> DIR` (decisões 3 e 4 da #1643) acrescenta a linha `esta sessão: …`, a primeira que casa: `registrada` (o
-`roles.supervisor.id`), `coordenador (não supervisiona)` (o `roles.coordenador.id` ou `.previous`, ou `kind: coordenador` em
-`meta.sessions`), `antiga (atual: <id>)` (o `roles.supervisor.previous`, ou `kind: supervisor` em `meta.sessions`),
-`sucessora (antecessor: <id>)` (outro id, com supervisor registrado) ou `nova (nenhum supervisor registrado)`; id vazio dá código 2.
-Pedidos do supervisor (decisão 9 da #1532): `sup DIR SUP-<n> [tipo=A|B] [pedido="…"] estado=<estado> [evidencia="…"]` grava
-em `meta.requests` (`{id, tipo, pedido, estado, evidencia, at, history}`; o pedido novo precisa de `tipo` e `pedido`;
-`aplicado` e `recusado` exigem `evidencia`; `atrasado` não se grava); `requests DIR` lê só o `meta` e imprime a tabela,
-com `atrasado` para `enviado` ou `aprovado` há mais de 90 min; o `show` traz `pedidos do supervisor:`.
-`requests --desde <ISO> DIR` (decisão 5 da #1643) mostra, no mesmo formato, só os pedidos com `at` a partir da hora pedida e todos os
-abertos (`enviado`, `perguntado ao dono`, `aprovado`); com pedidos de fora, a última linha é `<k> pedidos fechados antes de <ISO> fora
-da lista`; sem nada a mostrar, `nenhum desde <ISO>` (e `nenhum` se o painel não tem pedido). `--desde` que não é ISO UTC dá código 2.
-Regras em vigor (decisão 10): `rule DIR add "<texto>" origem=<dono|SUP-n> [saida="…"]` dá `R<k>` em `meta.rules` e
-`rule DIR end R<k> [motivo="…"]` a retira; o `show` imprime `regras em vigor:` com o texto inteiro de cada uma.
-Troca a quente e migração (decisões 17 e 25 da #1532): `upgrade DIR` troca, idempotente, o hold exatamente
-`ordem do dono (só com a fila vazia)` por `exclusive=sim` (sem hold) e grava no `log` o que mudou (nada, se nada mudou).
-`import DIR-NOVA DIR-ANTIGA` (pasta nova recém-criada com `init`, fila vazia; senão código 2) traz do painel antigo as linhas
-`aguardando`, `em andamento`, `esperando dono` e `falhou`, na ordem e renumeradas, com a ficha, as fases, o passo, o PR, o
-`started` e o `hold` (as `em andamento` e as `esperando dono` com `child` e `wait` levam também `child`, `childAt`, `wait`, `ciWait`, `ciWaitAt` e `sessions`); as
-`concluída` vão para `meta.merged` (com o antigo, sem repetir) e as regras em vigor de `meta.rules` vêm com a origem. Não vem
-o `ended`, nem do `meta` o `sessions`, `requests`, `current`, `paralelo`, `reserve`, `context`, `roles` e `unpublished`, nem o
-log. Os holds usam a conversão do `upgrade`; o `pausada pelo dono` (a drenagem da transição) é apagado. Uma linha no `log`
-registra o que veio. O `import` não entra no `apply`.
-Fases do plano (etapa #1705): `phases` guarda `<código>:<estado>` separados por `|`, com os estados `todo` (por fazer: só vem
-da ficha), `open` (aberta, com a sessão criada) e `ok` (mesclada no épico). Toda gravação (`Sessao.flush`) completa as linhas
-pela ficha (`fases=`): as fases dela vêm primeiro, na ordem dela, com o estado que já tinham (ou `todo`), e depois os itens
-`open` e `ok` que a ficha não traz (as `CLn`); o `todo` de uma ficha antiga sai. A linha `concluída` e a ficha ausente, vazia
-ou `?` não mudam. Se alguma linha mudou, o `queue.json` entra em `alterados:` e em `meta.unpublished`, até num `context`.
-`phase` aceita só `ok` e `open`: o `todo` não se grava à mão.
-Grafo da fila (etapa #1761): toda gravação grava, logo depois de `vagas` e `vagasItens`, `meta.grafoNos` e `meta.grafoSetas`
-(o `show` não muda). Nó: `{issue, titulo, onda, rank, estado, motivo, fase, feitas, total}` de cada linha não `concluída`, na
-ordem onda, `rank` (`null` por último) e `order`; `estado` é `rodando`, `dono`, `arquivo`, `dep`, `exclusiva`, `segurada`, `livre`
-ou `ficha`, lido do motivo que o `slots_plan` deu à candidata. Ondas, em rodadas: a 0 tem as começadas e as que começam agora; a
-cada rodada entram as que só dependem de nós já postos (as que esperam arquivo, vaga ou a exclusiva que roda ficam na 1), e a
-exclusiva da frente (a primeira pela `order`, sem `hold` e com a ficha completa) entra sozinha depois das comuns que vêm antes
-dela e antes das que ela segura (`estado` `exclusiva`, motivo `segurada para a exclusiva #N`); num ciclo, o que sobra entra
-junto na última.
-`rank` (1, 2, 3…): as `aguardando` sem `started`, menos `segurada` e `ficha`, por onda e `order`; as outras ficam `null`. Seta
-`{de, para, tipo}` (`de` segura `para`): `dep` pelo `dep=` da ficha entre nós (sem `:main` nem `meta.merged`), só a redução
-transitiva, e `arquivo` de `#N` quando o motivo é `arquivo <x> com #N` ou `schema com #N`.
-Só biblioteca padrão. Uso: painel.py [--now ISO] <subcomando> DIR ...
-(o subcomando vem ANTES da pasta: `painel.py row <pasta> '#n' status=...`).
+Files in one folder: queue.json, meta.json, log.json (JSON lists).
+Each command prints, at the end, `alterados: <files written>`.
+The note "Vagas k/N" (meta.vagas) is recalculated on every write, from the fichas (`plan`),
+from `meta.paralelo` (`start --paralelo N`) and from `meta.merged` (`merged`); `context` keeps the coordinator's
+context: `context --medir --max <n>` measures it with `scripts/ci/contextUsage.mjs` and writes the `pct` with the source
+(`sessao`/`recente`); `context <pct> [--fonte get_session]` is the number given by hand (source `manual`, or `get_session`).
+`show` prints `vagas:`, `começar agora:`, `contexto: <pct>% (<when>, <source>)`, with the alert above
+CONTEXT_LIMIT and the notices for a hand-given measure and for a stale measure (older than CONTEXT_STALE_MINUTES).
+Incomplete ficha (decision 11 of #1532): `dep`, `toca` or `fases` set to `?` (or `dep` and `toca` without the field) gives the reason
+`ficha incompleta (<fields>)` and goes into `fichas a refazer:` of `show`; a stage started with `toca=?` keeps conflicting
+with every candidate (`arquivo ? com #N`). The `toca=` lists files and sections (#1812): a file, a file pattern
+(`*` only in the last segment, which does not start with `*`, and never in `docs/`, in `.claude/` or in a root `.md`), a section of a
+document with sections (`docs/TESTING.md#R9`, `CLAUDE.md#regras-de-arquitetura`) or a document with sections that does not
+exist yet, cited whole. A folder (ends in `/` or `/**`, or exists at the repository root), `**`, a pattern outside that form,
+an existing document with sections but no anchor, and an anchor outside the form (in `docs/TESTING.md`, `R<n>`, `RP`, `RF`, `RA`, `RB`, a
+slug or `inicio`; in the others, a slug or `inicio`) give `ficha incompleta (toca: <first invalid citation>)` and go into
+`fichas a refazer:`, including on the already started stage, whose old citations stay in the comparison as today until the ficha is
+redone; the `exclusive=sim` line does not go through this validation (only the `?` makes it incomplete). `toca "<citations separated
+by commas>"` checks a list: `ok` (code 0) or one `inválida: <citation> — <reason>` line per citation (code 1).
+`conflito "<toca>" [--pasta <dir>] [--com "#N=<toca>"]…` (decision 9 of #1864, read-only, outside `apply`) checks a `toca` against
+the started and not merged stages of the folder, the ones `show` lists in `começar agora:` and each `--com`, with the same calculation as the queue:
+`livre` (code 0, also without `--pasta` and without `--com`), one `conflito: <citation> com #N (<status>|começa agora|fora do painel)` line
+per conflicting stage (code 1) or `inválida: <citation> — <reason>` (code 2).
+`exclusive=sim` on the row (`exclusive=` clears it) makes the stage start only with the queue
+free of any started and not merged stage (`exclusiva (espera a fila esvaziar)`). Once started and not yet merged, it holds all
+the others in any state (`em andamento`, `aguardando` with `started`, `esperando dono`, `falhou`), and the reason says the
+state: `exclusiva #N <status>` (`em andamento` also for the one that starts in the same calculation). The way out is the owner's alone: with
+their order written in the queue chat, the coordinator writes `row '#N' exclusive=` and the `log` "exclusiva #N liberada pelo dono" (decisions
+2 and 3 of #1595). The exclusive stage at the front drains the queue (#1813): the first candidate by `order`, without `hold`, with a complete
+ficha, merged dependencies and that does not start in this calculation, if it is exclusive, holds the candidates after it
+(`segurada para a exclusiva #N`, after `exclusiva #N <status>` and before `exclusiva (espera a fila esvaziar)`) until the
+last started one is merged; an ordinary one at the front that waits for a file, schema or slot is the first and there is no draining. `show`
+says `drenando para a exclusiva: #N` (or `nenhuma`) after `começar agora:`; nothing is written (recalculated on every write).
+Every `.md` under `docs/`, the root `.md` files (`CLAUDE.md`, `README.md`) and the `.claude/skills/*/SKILL.md` are the documents
+with sections, and are compared
+by section (`docs/ARCHITECTURE.md#desempenho`, `CLAUDE.md#regras-de-arquitetura`; `docs/TESTING.md` by script, `#R12`); the other
+files, including the `.md` files of other folders, count whole; `slug "<title>"` prints the slug of a `##`.
+`ciWait` (the PR whose CI the coordinator is waiting for, e.g. `PR #7`) and `ciWaitAt` (since when; `ciWait=` clears
+both) go into the `CI esperando o coordenador:` line of `show`; changing or clearing `child` does not touch them.
+A phase waiting for the owner in its chat (decision 7 of #1602): the row with `child` and a `wait` starting with `dono no chat da fase:`
+(the mark; the `status` does not count, because `esperando dono` also applies to a requested merge and to a high-severity finding) goes into
+`esperando o dono no chat da fase:` of `show`, and not into `esperando o coordenador:` or `atrasadas:` (the `wait` takes it out of
+the count). Since the `wait` takes it out of `atrasadas:`, the `esperando o dono há mais de 1 h:` line gives it back to the hourly
+check (`get_session` of the child), with "prazo vencido" from 240 min (CL1, #1627).
+`apply DIR <file|->` writes several subcommands at once (one per line, in the command-line syntax
+without `painel.py` and without the folder; blank lines and `#` are ignored; `show`, `init`, `published` and `apply` are not
+allowed): all or nothing, with a single `alterados:` line and, on error, code 2 citing the line number.
+Every write adds the files to `meta.unpublished` (`{since, files}`: what was written and not yet
+published; `show` prints it). `published DIR` prints `at: <ISO UTC>` (the value of `updated.at` and `edit.at`
+of the publication), lists the files to send, writes `meta.publishedAt` and `meta.publishing` (what is in flight), but
+**keeps** `unpublished`: only `published DIR --done`, run after the successful `batch`, clears it (and only if nothing
+was written since the `published`; otherwise what was written stays). Without the confirmation (dead session, context overflow),
+`show` keeps saying what is missing and the check republishes. On resume, the published copy carries the `publishing` of the send that
+succeeded: `published DIR --done` on it, after downloading the three files and before `show`, clears the `unpublished` it
+carries (without `publishing`, from an old panel, it prints "nada em voo" and stays as not published; the next publication resolves it; decision 4
+of #1595). `touch DIR` marks the three files again.
+Cost (decisions 5 and 26 of #1532): `session DIR '#n' <id> kind=<type> [label=<code>]` adds `{id, issue, kind, label,
+created}` to `meta.sessions` (without `kind`, only the row's `sessions`, as before); `cost DIR <id> usd= ctx= [model= effort=
+served=] [issue= kind=]` writes the session's cost (`kind` required with a new id); `costs [--desde <ISO>] DIR` reads only the `meta`
+and prints the total, one line per kind (sessions, US$, median) and one per stage (with `--desde`, only those with `created` from
+the date on); `show` brings the `custo:` line.
+Tester ceiling (decision 9 of #1639): a `cost` of a `testador` or `reteste` session with `ctx` above TESTER_CONTEXT_LIMIT
+is written as always, exits with 0 and prints `acima do teto do testador (300 mil): <id> <ctx>`; `show` brings `testador acima do
+teto: <stage> <label> <ctx in thousands>k; …` (or `nenhum`), only for the stages not `concluída` and outside `meta.merged`.
+Current session of each role (decision 7 of #1532): `role DIR <coordenador|supervisor> <id> [link=<url>]` writes
+`meta.roles.<role> = {id, n, at, link, previous}` (`previous` = the id registered before) with `n` = the previous one + 1 (or 1); `roles DIR` reads only the `meta` and prints
+`coordenador <n>: <id>` and `supervisor <n>: <id> (<link>)`, or `—`. A session that is not the registered one does not act.
+`roles --sessao <id> DIR` (decisions 3 and 4 of #1643) adds the `esta sessão: …` line, the first that matches: `registrada` (the
+`roles.supervisor.id`), `coordenador (não supervisiona)` (the `roles.coordenador.id` or `.previous`, or `kind: coordenador` in
+`meta.sessions`), `antiga (atual: <id>)` (the `roles.supervisor.previous`, or `kind: supervisor` in `meta.sessions`),
+`sucessora (antecessor: <id>)` (another id, with a registered supervisor) or `nova (nenhum supervisor registrado)`; an empty id gives code 2.
+Supervisor requests (decision 9 of #1532): `sup DIR SUP-<n> [tipo=A|B] [pedido="…"] estado=<state> [evidencia="…"]` writes
+to `meta.requests` (`{id, tipo, pedido, estado, evidencia, at, history}`; a new request needs `tipo` and `pedido`;
+`aplicado` and `recusado` require `evidencia`; `atrasado` is not written); `requests DIR` reads only the `meta` and prints the table,
+with `atrasado` for `enviado` or `aprovado` for more than 90 min; `show` brings `pedidos do supervisor:`.
+`requests --desde <ISO> DIR` (decision 5 of #1643) shows, in the same format, only the requests with `at` from the given time on and all the
+open ones (`enviado`, `perguntado ao dono`, `aprovado`); with requests left out, the last line is `<k> pedidos fechados antes de <ISO> fora
+da lista`; with nothing to show, `nenhum desde <ISO>` (and `nenhum` if the panel has no request). A `--desde` that is not ISO UTC gives code 2.
+Rules in force (decision 10): `rule DIR add "<text>" origem=<dono|SUP-n> [saida="…"]` gives `R<k>` in `meta.rules` and
+`rule DIR end R<k> [motivo="…"]` withdraws it; `show` prints `regras em vigor:` with the full text of each one.
+Hot switch and migration (decisions 17 and 25 of #1532): `upgrade DIR` swaps, idempotently, the hold exactly
+`ordem do dono (só com a fila vazia)` for `exclusive=sim` (without hold) and writes to the `log` what changed (nothing, if nothing changed).
+`import NEW-DIR OLD-DIR` (a new folder just created with `init`, empty queue; otherwise code 2) brings from the old panel the rows
+`aguardando`, `em andamento`, `esperando dono` and `falhou`, in order and renumbered, with the ficha, the phases, the step, the PR, the
+`started` and the `hold` (the `em andamento` and `esperando dono` rows with `child` and `wait` also carry `child`, `childAt`, `wait`, `ciWait`, `ciWaitAt` and `sessions`); the
+`concluída` ones go into `meta.merged` (together with the old one, without repeats) and the rules in force of `meta.rules` come with their origin. Not brought
+over are the `ended`, nor from the `meta` the `sessions`, `requests`, `current`, `paralelo`, `reserve`, `context`, `roles` and `unpublished`, nor the
+log. The holds use the `upgrade` conversion; the `pausada pelo dono` (the transition's drain) is erased. A line in the `log`
+records what came over. `import` does not go into `apply`.
+Plan phases (stage #1705): `phases` keeps `<code>:<state>` separated by `|`, with the states `todo` (to do: only comes
+from the ficha), `open` (open, with the session created) and `ok` (merged into the epic). Every write (`Sessao.flush`) completes the rows
+from the ficha (`fases=`): its phases come first, in its order, with the state they already had (or `todo`), and then the `open`
+and `ok` items that the ficha does not bring (the `CLn`); the `todo` of an old ficha goes away. The `concluída` row and an absent, empty
+or `?` ficha do not change. If any row changed, `queue.json` goes into `alterados:` and into `meta.unpublished`, even on a `context`.
+`phase` accepts only `ok` and `open`: the `todo` is not written by hand.
+Queue graph (stage #1761): every write writes, right after `vagas` and `vagasItens`, `meta.grafoNos` and `meta.grafoSetas`
+(`show` does not change). Node: `{issue, titulo, onda, rank, estado, motivo, fase, feitas, total}` of each non-`concluída` row, in
+the order wave, `rank` (`null` last) and `order`; `estado` is `rodando`, `dono`, `arquivo`, `dep`, `exclusiva`, `segurada`, `livre`
+or `ficha`, read from the reason that `slots_plan` gave the candidate. Waves, in rounds: wave 0 has the started ones and those that start now; in
+each round enter those that depend only on nodes already placed (those waiting for a file, slot or the running exclusive stay in 1), and the
+exclusive stage at the front (the first by `order`, without `hold` and with a complete ficha) enters alone after the ordinary ones that come before
+it and before those it holds (`estado` `exclusiva`, reason `segurada para a exclusiva #N`); in a cycle, what is left enters
+together in the last one.
+`rank` (1, 2, 3…): the `aguardando` without `started`, except `segurada` and `ficha`, by wave and `order`; the others stay `null`. Arrow
+`{de, para, tipo}` (`de` holds `para`): `dep` by the ficha's `dep=` between nodes (without `:main` or `meta.merged`), only the
+transitive reduction, and `arquivo` from `#N` when the reason is `arquivo <x> com #N` or `schema com #N`.
+Standard library only. Usage: painel.py [--now ISO] <subcommand> DIR ...
+(the subcommand comes BEFORE the folder: `painel.py row <folder> '#n' status=...`).
 """
 import argparse
 import datetime
@@ -130,20 +130,20 @@ STAGES = ["", "Fases", "Testador", "Correção", "Fechamento", "Mesclada"]
 FILES = ["queue", "meta", "log"]
 SESSION_KINDS = ["fase", "correção", "testador", "reteste", "fechamento", "coordenador", "supervisor"]
 CONTEXT_LIMIT = 35
-CONTEXT_STALE_MINUTES = 70  # a medida do contexto mais velha que isso é acusada pelo `show` (decisão 5 da #1874)
-CONTEXT_MEASURE_TIMEOUT = 30  # segundos para o `contextUsage.mjs` responder
+CONTEXT_STALE_MINUTES = 70  # a context measure older than this is flagged by `show` (decision 5 of #1874)
+CONTEXT_MEASURE_TIMEOUT = 30  # seconds for `contextUsage.mjs` to answer
 MEASURE_HINT = "meça com context --medir"
-TESTER_CONTEXT_LIMIT = 300000  # teto de contexto final do testador (decisões 8 e 9 da #1639): só se registra, não segura
+TESTER_CONTEXT_LIMIT = 300000  # tester final-context ceiling (decisions 8 and 9 of #1639): only recorded, it does not hold
 TESTER_KINDS = ["testador", "reteste"]
 ROLES = ["coordenador", "supervisor"]
-HOLD_EMPTY_QUEUE = "ordem do dono (só com a fila vazia)"  # vira exclusive=sim (decisões 12, 17 e 25)
-HOLD_PAUSED = "pausada pelo dono"  # a drenagem da transição: o `import` o apaga, o `upgrade` o deixa
+HOLD_EMPTY_QUEUE = "ordem do dono (só com a fila vazia)"  # becomes exclusive=sim (decisions 12, 17 and 25)
+HOLD_PAUSED = "pausada pelo dono"  # the transition's drain: `import` erases it, `upgrade` leaves it
 IMPORT_STATUS = ["aguardando", "em andamento", "esperando dono", "falhou"]
 IMPORT_FIELDS = ["issue", "title", "kind", "plan", "phases", "phasesTotal", "phasesDone", "stage", "step", "pr",
                  "started", "hold"]
-OWNER_WAIT_PREFIX = "dono no chat da fase:"  # a marca do `wait` da fase que espera o dono no chat dela
-OWNER_RECHECK_MINUTES = 60  # a conferência de hora em hora relê a fase esperando o dono
-OWNER_DEADLINE_MINUTES = 240  # sem resposta do dono até aqui, o coordenador interrompe a pergunta
+OWNER_WAIT_PREFIX = "dono no chat da fase:"  # the mark of the `wait` of a phase waiting for the owner in its chat
+OWNER_RECHECK_MINUTES = 60  # the hourly check rereads the phase waiting for the owner
+OWNER_DEADLINE_MINUTES = 240  # with no answer from the owner by here, the coordinator interrupts the question
 IMPORT_RUNNING_FIELDS = ["child", "childAt", "wait", "ciWait", "ciWaitAt", "sessions"]
 DEFAULT_PARALELO = 2
 INT_FIELDS = ["order", "phasesTotal", "phasesDone"]
@@ -151,36 +151,36 @@ QUEUE_EMPTY = {
     "order": 0, "issue": "", "title": "", "kind": "etapa", "step": "",
     "status": "aguardando", "pr": "", "started": "", "ended": "",
     "phases": "", "phasesTotal": 0, "phasesDone": 0, "stage": "",
-    # Ficha da etapa (dependências, fases, Toca em, Testador), para não reler a issue.
+    # Stage ficha (dependencies, phases, Toca em, Testador), so the issue is not reread.
     "plan": "",
-    # Filhas que ainda devem aviso (ids separados por espaço) e desde quando.
+    # Children that still owe a notice (ids separated by spaces) and since when.
     "child": "", "childAt": "",
-    # PR cujo CI espera o coordenador (ex.: "PR #1467") e desde quando; vazio se nenhum.
+    # PR whose CI the coordinator is waiting for (e.g. "PR #1467") and since when; empty if none.
     "ciWait": "", "ciWaitAt": "",
-    # Motivo curto de a filha esperar o coordenador (pergunta, CI travado, chama o dono); vazio se não espera.
+    # Short reason the child waits for the coordinator (question, stuck CI, calls the owner); empty if it does not wait.
     "wait": "",
-    # Sessões criadas para a etapa (ids separados por espaço), para arquivar no fim.
+    # Sessions created for the stage (ids separated by spaces), to archive at the end.
     "sessions": "",
-    # Motivo do dono para segurar uma etapa que não começou ("esperando dono (…)",
-    # "ordem do dono (…)", "pausada pelo dono"); vazio: não está segura.
+    # The owner's reason for holding a stage that has not started ("esperando dono (…)",
+    # "ordem do dono (…)", "pausada pelo dono"); empty: not held.
     "hold": "",
-    # "sim": etapa exclusiva (começa só com a fila sem etapa começada e não mesclada; nenhuma outra começa com ela); vazio: não.
+    # "sim": exclusive stage (starts only with the queue free of any started and not merged stage; no other starts with it); empty: not.
     "exclusive": "",
 }
 TIME_FIELDS = ["started", "ended", "childAt", "ciWaitAt"]
 LATE_MINUTES = 30
 REQUEST_STATES = ["enviado", "aplicado", "recusado", "perguntado ao dono", "aprovado", "negado"]
 REQUEST_NEEDS_EVIDENCE = ("aplicado", "recusado")
-REQUEST_LATE_STATES = ("enviado", "aprovado")  # `atrasado` se calcula, não se grava
+REQUEST_LATE_STATES = ("enviado", "aprovado")  # `atrasado` is computed, never written
 REQUEST_OPEN_STATES = ("enviado", "perguntado ao dono", "aprovado")
 REQUEST_LATE_MINUTES = 90
 
 NOW_OVERRIDE = None
-BATCH = None  # a Sessao compartilhada de um `apply` em andamento (None fora dele)
+BATCH = None  # the shared Sessao of an `apply` in progress (None outside it)
 
 
 class Erro(Exception):
-    """Erro de uso: sai com código 2 e a mensagem."""
+    """Usage error: exits with code 2 and the message."""
 
 
 def now():
@@ -210,7 +210,7 @@ def load(d, name):
 
 
 def save(d, name, data):
-    """Gravação atômica: arquivo temporário na mesma pasta + os.replace."""
+    """Atomic write: temporary file in the same folder + os.replace."""
     p = path(d, name)
     tmp = p + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
@@ -220,14 +220,14 @@ def save(d, name, data):
 
 
 class Sessao:
-    """Carrega sob demanda, marca o que mudou e grava tudo no fim."""
+    """Loads on demand, marks what changed and writes everything at the end."""
 
     def __init__(self, d):
         self.d = d
         self.data = {}
         self.dirty = []
-        self.deferred = False  # num `apply`, o commit de cada linha espera o fim do lote
-        self.loud = False  # algum comando que conta como "não publicado" (o `context` sozinho não conta)
+        self.deferred = False  # in an `apply`, each line's commit waits for the end of the batch
+        self.loud = False  # some command that counts as "not published" (a lone `context` does not count)
 
     def get(self, name):
         if name not in self.data:
@@ -253,7 +253,7 @@ class Sessao:
         for row in self.get("queue"):
             filled = fill_phases(row) or filled
         if filled:
-            # A ficha completou fases: a mudança entra na publicação, mesmo num `context`, que sozinho é quieto.
+            # The ficha completed phases: the change goes into the publication, even on a `context`, which alone is quiet.
             self.touch("queue")
             self.loud = True
         text, _, items, reasons, _ = slots_plan(self.get("queue"), meta[0])
@@ -270,8 +270,8 @@ class Sessao:
 
 
 def mark_unpublished(meta, files):
-    """Soma `files` (nomes sem .json) a meta.unpublished; o `since` é o da primeira gravação não publicada."""
-    meta.pop("publishing", None)  # gravar de novo invalida o que estava em voo
+    """Adds `files` (names without .json) to meta.unpublished; the `since` is that of the first unpublished write."""
+    meta.pop("publishing", None)  # writing again invalidates what was in flight
     pend = meta.get("unpublished") or {}
     have = set(pend.get("files", [])) | {n + ".json" for n in files}
     meta["unpublished"] = {
@@ -281,7 +281,7 @@ def mark_unpublished(meta, files):
 
 
 def open_session(d):
-    """A sessão do `apply` em andamento, se houver; senão uma nova."""
+    """The session of the `apply` in progress, if any; otherwise a new one."""
     return BATCH if BATCH is not None else Sessao(d)
 
 
@@ -318,7 +318,7 @@ PHASE_CODE = re.compile(r"[A-Za-z][A-Za-z0-9-]*")
 
 
 def plan_phase_codes(plan):
-    """Códigos do `fases=` da ficha, na ordem e sem repetir; None se faltar, estiver vazio, for `?` ou sem código válido."""
+    """Codes of the ficha's `fases=`, in order and without repeats; None if missing, empty, `?` or without a valid code."""
     raw = plan_field(plan, "fases")
     if raw is None or raw.strip() in ("", "?"):
         return None
@@ -331,7 +331,7 @@ def plan_phase_codes(plan):
 
 
 def fill_phases(row):
-    """Completa `phases` pela ficha (as fases dela primeiro, `todo` onde faltam) e devolve se a linha mudou."""
+    """Completes `phases` from the ficha (its phases first, `todo` where missing) and returns whether the row changed."""
     if row.get("status") == "concluída":
         return False
     codes = plan_phase_codes(row.get("plan") or "")
@@ -341,7 +341,7 @@ def fill_phases(row):
     for item in (row.get("phases") or "").split("|"):
         code, _, st = item.partition(":")
         if item and code not in state:
-            state[code] = st or "open"  # repetido vale pela primeira; sem ":" (à mão) vira open, como a página
+            state[code] = st or "open"  # a repeat counts as the first; without ":" (by hand) it becomes open, like the page
     parts = [(c, state.get(c, "todo")) for c in codes]
     parts += [(c, st) for c, st in state.items() if c not in codes and st != "todo"]
     phases = "|".join(c + ":" + st for c, st in parts)
@@ -364,7 +364,7 @@ def find_row(queue, issue):
     return None
 
 
-# --- subcomandos ---
+# --- subcommands ---
 
 def cmd_init(a):
     os.makedirs(a.dir, exist_ok=True)
@@ -415,13 +415,13 @@ def cmd_row(a):
     if pairs.get("ciWait") == "":
         pairs["ciWaitAt"] = ""
     if pairs.get("ciWait") and "ciWaitAt" not in pairs:
-        # PR novo na espera: o horário é o de agora, nunca o do PR anterior (nem em branco).
+        # New PR in the wait: the time is now, never that of the previous PR (nor blank).
         pairs["ciWaitAt"] = "now"
     if (pairs.get("status") in ("concluída", "falhou") or pairs.get("ended")) and "ciWait" not in pairs:
-        # Etapa terminada não espera CI: um ciWait esquecido não fica na conferência para sempre.
+        # A finished stage does not wait for CI: a forgotten ciWait does not stay in the check forever.
         pairs["ciWait"] = pairs["ciWaitAt"] = ""
     if "child" in pairs and "wait" not in pairs:
-        # Filha trocada (sessão recriada) ou removida: a espera da anterior não vale para a nova.
+        # Child replaced (session recreated) or removed: the previous one's wait does not apply to the new one.
         pairs["wait"] = ""
     for k in TIME_FIELDS:
         if k in pairs:
@@ -437,7 +437,7 @@ def cmd_row(a):
             row["order"] = max([r["order"] for r in q], default=0) + 1
         q.append(row)
     if pairs.get("status", "aguardando") != "aguardando" and "hold" not in pairs:
-        pairs["hold"] = ""  # o hold só vale enquanto a etapa não começou
+        pairs["hold"] = ""  # the hold only applies while the stage has not started
     row.update(pairs)
     if "phases" in pairs:
         row["phasesTotal"], row["phasesDone"] = count_phases(row["phases"])
@@ -482,7 +482,7 @@ def cmd_reorder(a):
     rest = sorted((r for r in q if r["issue"] not in cited and r["status"] == "aguardando"),
                   key=lambda r: r["order"])
     seq = [waiting[i] for i in cited] + rest
-    # Reaproveita os números de ordem que as linhas aguardando ocupavam.
+    # Reuses the order numbers that the aguardando rows occupied.
     slots = sorted(r["order"] for r in seq)
     for r, o in zip(seq, slots):
         r["order"] = o
@@ -542,7 +542,7 @@ def cmd_session(a):
 
 
 def session_entry(meta, sid):
-    """A entrada de `meta.sessions` com esse id; cria (só com o id) se não houver."""
+    """The `meta.sessions` entry with that id; creates it (with only the id) if there is none."""
     lst = meta.setdefault("sessions", [])
     for e in lst:
         if e.get("id") == sid:
@@ -585,7 +585,7 @@ def cmd_cost(a):
     for k in ("issue", "kind"):
         if k in pairs:
             entry[k] = pairs[k]
-    cost = dict(entry.get("cost") or {})  # o que já estava gravado (model, effort, served) fica
+    cost = dict(entry.get("cost") or {})  # what was already written (model, effort, served) stays
     cost.update({"usd": usd, "ctx": ctx, "at": now()})
     for k in ("model", "effort", "served"):
         if pairs.get(k):
@@ -598,14 +598,14 @@ def cmd_cost(a):
 
 
 def over_tester_limit(e):
-    """Sessão de testador ou de reteste com o contexto final acima do teto."""
+    """Tester or retest session with the final context above the ceiling."""
     ctx = (e.get("cost") or {}).get("ctx")
     return (e.get("kind") in TESTER_KINDS and isinstance(ctx, (int, float))
             and ctx > TESTER_CONTEXT_LIMIT)
 
 
 def tester_over_limit_text(q, meta):
-    """`testador acima do teto:` do `show`: `<etapa> <rótulo> <ctx em mil>k` das etapas ainda não entregues."""
+    """`testador acima do teto:` of `show`: `<stage> <label> <ctx in thousands>k` of the stages not yet delivered."""
     done = set(meta.get("merged") or []) | {r["issue"] for r in q if r["status"] == "concluída"}
     return "; ".join(
         f"{e.get('issue') or '—'} {e.get('label') or e['id']} {math.ceil(e['cost']['ctx'] / 1000)}k"
@@ -613,12 +613,12 @@ def tester_over_limit_text(q, meta):
 
 
 def costed(meta, since=None):
-    """Entradas de `meta.sessions` com custo; com `since`, só as com `created` a partir dele."""
+    """Entries of `meta.sessions` with a cost; with `since`, only those with `created` from it on."""
     out = []
     for e in meta.get("sessions", []):
         if not e.get("cost"):
             continue
-        started = e.get("created") or e["cost"].get("at")  # sem `created`, vale a hora do custo
+        started = e.get("created") or e["cost"].get("at")  # without `created`, the cost time applies
         if since and not (started and started >= since):
             continue
         out.append(e)
@@ -626,7 +626,7 @@ def costed(meta, since=None):
 
 
 def usd_of(e):
-    """US$ da entrada; 0 se o `cost` veio sem `usd` (o meta pode ser editado ou publicado pela metade)."""
+    """US$ of the entry; 0 if the `cost` came without `usd` (the meta may be edited or published halfway)."""
     v = e["cost"].get("usd")
     return v if isinstance(v, (int, float)) else 0
 
@@ -636,7 +636,7 @@ def money(x):
 
 
 def cost_summary(meta):
-    """`custo: …` do `show`: total e número de sessões com custo, ou `—`."""
+    """`custo: …` of `show`: total and number of sessions with a cost, or `—`."""
     es = costed(meta)
     if not es:
         return "—"
@@ -678,7 +678,7 @@ def cmd_merged(a):
 
 
 def parse_key_values(text):
-    """As linhas `chave=valor` de uma saída."""
+    """The `key=value` lines of an output."""
     values = {}
     for ln in text.splitlines():
         k, sep, v = ln.partition("=")
@@ -688,8 +688,8 @@ def parse_key_values(text):
 
 
 def measure_context(max_tokens):
-    """Roda `scripts/ci/contextUsage.mjs --max <n>` e devolve as chaves da saída (`pct`, `contexto`, `fonte`);
-    falha com `Erro`, sem gravar nada, sem medida ou com o script quebrado (decisão 2 da #1874)."""
+    """Runs `scripts/ci/contextUsage.mjs --max <n>` and returns the keys of the output (`pct`, `contexto`, `fonte`);
+    fails with `Erro`, writing nothing, with no measure or with the script broken (decision 2 of #1874)."""
     root = repo_root()
     script = os.path.join(root, "scripts", "ci", "contextUsage.mjs") if root else None
     if not script or not os.path.isfile(script):
@@ -709,7 +709,7 @@ def measure_context(max_tokens):
 
 
 def context_request(a):
-    """O que o `context` grava: `(pct, fonte, medida)`, com a medida só no `--medir` (decisões 1 a 3 da #1874)."""
+    """What `context` writes: `(pct, fonte, medida)`, with the measure only on `--medir` (decisions 1 to 3 of #1874)."""
     if a.medir == (a.pct is not None):
         raise Erro("use context <pasta> <pct> [--fonte get_session] ou context <pasta> --medir --max <n>")
     if not a.medir:
@@ -748,11 +748,11 @@ def cmd_context(a):
     s.touch("meta")
     if measured:
         print(f"medido: pct={pct} contexto={measured.get('contexto', '?')} fonte={fonte}")
-    s.commit(quiet=True)  # o contexto sozinho não faz a conferência de hora em hora publicar
+    s.commit(quiet=True)  # the context alone does not make the hourly check publish
 
 
 def print_no_change():
-    if BATCH is None:  # dentro do `apply` quem imprime `alterados:` é o fim do lote
+    if BATCH is None:  # inside `apply`, the end of the batch prints `alterados:`
         print("alterados: nenhum")
 
 
@@ -770,7 +770,7 @@ def cmd_role(a):
     roles = m.setdefault("roles", {})
     prev = roles.get(a.role) or {}
     n = prev.get("n")
-    if prev.get("id") == a.session:  # o id já registrado: nada muda (#1628), nem `n`, `previous`, `at` ou `link`
+    if prev.get("id") == a.session:  # the id already registered: nothing changes (#1628), not even `n`, `previous`, `at` or `link`
         print(f"{a.role} {n if isinstance(n, int) else '?'}: {a.session} já é o registrado; nada mudou")
         print_no_change()
         return
@@ -786,7 +786,7 @@ def cmd_role(a):
 
 
 def session_verdict(meta, sid):
-    """O papel desta sessão para o `roles --sessao` (decisões 3 e 4 da #1643); a primeira que casa vale."""
+    """The role of this session for `roles --sessao` (decisions 3 and 4 of #1643); the first that matches wins."""
     roles = meta.get("roles") or {}
     sup = roles.get("supervisor") or {}
     coord = roles.get("coordenador") or {}
@@ -852,10 +852,10 @@ def cmd_sup(a):
         for k in ("tipo", "pedido"):
             if k in pairs and pairs[k] != req.get(k):
                 raise Erro(f"{rid} já existe com {k}={req.get(k)!r}: o {k} não muda")
-    if req.get("estado") != estado:  # repetir o estado não recomeça a contagem do atrasado
+    if req.get("estado") != estado:  # repeating the state does not restart the atrasado count
         req["estado"] = estado
         req["at"] = now()
-        req.pop("evidencia", None)  # a evidência é do estado, não do pedido
+        req.pop("evidencia", None)  # the evidence belongs to the state, not to the request
         req.setdefault("history", []).append({"estado": estado, "at": req["at"]})
     if pairs.get("evidencia"):
         req["evidencia"] = pairs["evidencia"]
@@ -864,7 +864,7 @@ def cmd_sup(a):
 
 
 def request_late(r):
-    """`enviado` ou `aprovado` há mais de 90 min (`atrasado` se calcula, nunca se grava)."""
+    """`enviado` or `aprovado` for more than 90 min (`atrasado` is computed, never written)."""
     return (r.get("estado") in REQUEST_LATE_STATES and bool(r.get("at"))
             and minutes_since(r["at"]) > REQUEST_LATE_MINUTES)
 
@@ -874,7 +874,7 @@ def request_ids(meta, fn):
 
 
 def requests_summary(meta):
-    """`pedidos do supervisor:` do `show`: abertos e atrasados, ou `nenhum`."""
+    """`pedidos do supervisor:` of `show`: open and late ones, or `nenhum`."""
     opened = request_ids(meta, lambda r: r.get("estado") in REQUEST_OPEN_STATES)
     if not opened:
         return "nenhum"
@@ -895,7 +895,7 @@ def cmd_requests(a):
     if not reqs:
         print("nenhum")
         return
-    # `--desde` (decisão 5 da #1643): os com `at` a partir da hora pedida e todos os abertos; ISO UTC ordena como texto
+    # `--desde` (decision 5 of #1643): those with `at` from the requested time on and all the open ones; ISO UTC sorts as text
     shown = [r for r in reqs if since is None or r.get("estado") in REQUEST_OPEN_STATES
              or (r.get("at") or "") >= since]
     if not shown:
@@ -966,7 +966,7 @@ def print_rules(meta):
 
 
 def convert_hold(row):
-    """O hold da fila vazia vira `exclusive=sim` (sem hold). True se mudou a linha."""
+    """The empty-queue hold becomes `exclusive=sim` (without hold). True if the row changed."""
     if row.get("hold") != HOLD_EMPTY_QUEUE:
         return False
     row["hold"] = ""
@@ -988,9 +988,9 @@ def cmd_upgrade(a):
 
 
 def imported_row(old, order):
-    """A linha nova, só com o que o `import` traz (o resto fica no vazio padrão)."""
+    """The new row, with only what `import` brings (the rest stays at the default empty)."""
     row = dict(QUEUE_EMPTY)
-    # a fase que espera o dono no chat dela (#1602) leva a sessão; o merge pedido não leva nada disso
+    # the phase waiting for the owner in its chat (#1602) carries the session; a requested merge carries none of that
     running = carries_session(old)
     for k in IMPORT_FIELDS + (IMPORT_RUNNING_FIELDS if running else []):
         if k in old:
@@ -1044,7 +1044,7 @@ def cmd_import(a):
 
 
 def cmd_touch(a):
-    """A publicação falhou: marca de novo os três arquivos como não publicados."""
+    """The publication failed: marks the three files as not published again."""
     s = open_session(a.dir)
     mark_unpublished(s.get("meta")[0], FILES)
     s.touch("meta")
@@ -1052,7 +1052,7 @@ def cmd_touch(a):
 
 
 def cmd_published(a):
-    """Imprime a hora real da publicação e os arquivos a enviar; limpa o que falta publicar."""
+    """Prints the real time of the publication and the files to send; clears what is left to publish."""
     d = a.dir
     m = load(d, "meta")
     if not m:
@@ -1068,7 +1068,7 @@ def cmd_published(a):
     at = now()
     files = list((m[0].get("unpublished") or {}).get("files", []))
     if "meta.json" not in files:
-        files.append("meta.json")  # o meta muda a cada published (publishedAt), então vai sempre
+        files.append("meta.json")  # the meta changes on every published (publishedAt), so it always goes
     m[0]["publishedAt"] = at
     m[0]["publishing"] = {"at": at, "files": [n + ".json" for n in FILES if n + ".json" in files]}
     save(d, "meta", m)
@@ -1093,7 +1093,7 @@ def batch_lines(src):
 
 
 def parse_batch_line(n, line, d):
-    """Os argumentos de uma linha do lote, com a pasta posta depois do subcomando."""
+    """The arguments of a batch line, with the folder placed after the subcommand."""
     try:
         words = shlex.split(line)
     except ValueError as e:
@@ -1122,7 +1122,7 @@ def cmd_apply(a):
                 sub.fn(sub)
             except Erro as e:
                 raise Erro(e if str(e).startswith(f"linha {n}:") else f"linha {n}: {e}")
-            except SystemExit:  # `-h` do argparse: não é um comando
+            except SystemExit:  # argparse's `-h`: not a command
                 raise Erro(f"linha {n}: ajuda (-h) não entra no lote")
         BATCH.deferred = False
         BATCH.flush()
@@ -1130,19 +1130,19 @@ def cmd_apply(a):
         BATCH = None
 
 
-# --- vagas (etapa #1440) ---
+# --- slots (stage #1440) ---
 
 IGNORED_PREFIXES = ("changelog/", "docs/design-system/")
-IGNORED_EXACT = ("mcp/version.ts", "docs/TESTING-NUVEM.md#blocos")
-SECTION_GLOB = ".claude/skills/*/SKILL.md"  # além de todo `.md` de docs/ e da raiz: comparados por âncora (seção `##`)
-TESTING_DOC = "docs/TESTING.md"  # as âncoras dele também são roteiros (`R<n>`, `RP`, `RF`, `RA`, `RB`)
+IGNORED_EXACT = ("mcp/version.ts", "docs/TESTING-NUVEM.md#blocos", "docs/TESTING-NUVEM.md#full-round-in-blocks")
+SECTION_GLOB = ".claude/skills/*/SKILL.md"  # besides every `.md` of docs/ and of the root: compared by anchor (`##` section)
+TESTING_DOC = "docs/TESTING.md"  # its anchors are also scripts (`R<n>`, `RP`, `RF`, `RA`, `RB`)
 STARTED_STATUS = ("em andamento", "esperando dono", "falhou")
-EXCLUSIVE_WAITS = "exclusiva (espera a fila esvaziar)"  # a exclusiva que espera a fila esvaziar (e drena, se na frente)
-STARTS_NOW = "começa"  # o motivo da candidata que o `slots_plan` faz começar agora (o grafo a põe na onda 0)
+EXCLUSIVE_WAITS = "exclusiva (espera a fila esvaziar)"  # the exclusive stage that waits for the queue to empty (and drains, if at the front)
+STARTS_NOW = "começa"  # the reason of the candidate that `slots_plan` makes start now (the graph puts it in wave 0)
 
 
 def plan_field(plan, key):
-    """Valor de `key=` na ficha (campos separados por `|` ou `;`); None se faltar."""
+    """Value of `key=` in the ficha (fields separated by `|` or `;`); None if missing."""
     for part in plan.replace(";", "|").split("|"):
         part = part.strip()
         if part.startswith(key + "="):
@@ -1158,10 +1158,10 @@ def norm_path(x):
 
 
 def norm_toca(raw):
-    """Citações de um `toca=` já normalizadas, sem as que não contam; `?` se não diz nada."""
+    """Citations of a `toca=` already normalized, without the ones that do not count; `?` if it says nothing."""
     if raw is None or raw.strip() in ("", "?"):
         return ["?"]
-    # Anotação entre parênteses depois do caminho ("x.ts (novo método)") não faz parte dele.
+    # A parenthesized note after the path ("x.ts (novo método)") is not part of it.
     raw = re.sub(r"\s+\([^)]*\)", "", raw)
     out = []
     for x in raw.split(","):
@@ -1173,15 +1173,15 @@ def norm_toca(raw):
 
 
 def toca_list(plan):
-    """Citações do `toca=` já normalizadas, sem as que não contam; `?` se a ficha não diz."""
+    """Citations of the `toca=` already normalized, without the ones that do not count; `?` if the ficha does not say."""
     return norm_toca(plan_field(plan, "toca"))
 
 
 @functools.lru_cache(maxsize=None)
 def repo_root():
-    """A raiz do repositório: a pasta acima do `painel.py` que tem `.git` (arquivo ou pasta) ou, instalado
-    fora dele (`~/.claude/skills`), a que `git rev-parse --show-toplevel` dá no diretório atual. `None` se
-    nenhuma das duas acha: a conferência falha em vez de supor uma raiz (`toca_invalid`)."""
+    """The repository root: the folder above `painel.py` that has `.git` (file or folder) or, when installed
+    outside it (`~/.claude/skills`), the one `git rev-parse --show-toplevel` gives in the current directory. `None` if
+    neither finds one: the check fails instead of assuming a root (`toca_invalid`)."""
     d = os.path.dirname(os.path.abspath(__file__))
     while True:
         if os.path.exists(os.path.join(d, ".git")):
@@ -1199,15 +1199,15 @@ def repo_root():
 
 
 def is_folder(p):
-    """Pasta: termina em `/` ou `/**`, ou existe como pasta na raiz do repositório."""
+    """Folder: ends in `/` or `/**`, or exists as a folder at the repository root."""
     return p.endswith(("/", "/**")) or os.path.isdir(os.path.join(repo_root() or "", p))
 
 
 def bad_pattern(p):
-    """Padrão fora da decisão 1: `*` fora do último segmento, último segmento que começa por `*`,
-    ou padrão em `docs/`, em `.claude/` ou num `.md` da raiz (lá se cita o arquivo e a seção)."""
+    """Pattern outside decision 1: `*` outside the last segment, a last segment that starts with `*`,
+    or a pattern in `docs/`, in `.claude/` or in a root `.md` (there the file and the section are cited)."""
     if any(c in p for c in "?[]"):
-        return True  # só o `*` é padrão: `covers` e `glob_overlap` não entendem `?` nem `[...]`
+        return True  # only `*` is a pattern: `covers` and `glob_overlap` do not understand `?` or `[...]`
     if "*" not in p:
         return False
     segs = p.split("/")
@@ -1218,7 +1218,7 @@ def bad_pattern(p):
 
 @functools.lru_cache(maxsize=None)
 def doc_slugs(p):
-    """Slugs dos `##` do arquivo `p` (fora dos blocos de código) mais `inicio`; `None` se o arquivo não existe."""
+    """Slugs of the `##` of file `p` (outside code blocks) plus `inicio`; `None` if the file does not exist."""
     path = os.path.join(repo_root() or "", p)
     if not os.path.isfile(path):
         return None
@@ -1233,9 +1233,9 @@ def doc_slugs(p):
 
 
 def bad_anchor(p, anc):
-    """Âncora fora da decisão 2: no `docs/TESTING.md`, `R<n>`, `RP`, `RF`, `RA`, `RB` (em maiúscula) ou o slug de
-    um `##`; nos outros, o slug de um `##` do arquivo (a saída do `painel.py slug`) ou `inicio`. Documento que
-    ainda não existe aceita qualquer slug (a fase o cria)."""
+    """Anchor outside decision 2: in `docs/TESTING.md`, `R<n>`, `RP`, `RF`, `RA`, `RB` (uppercase) or the slug of
+    a `##`; in the others, the slug of a `##` of the file (the output of `painel.py slug`) or `inicio`. A document that
+    does not exist yet accepts any slug (the phase creates it)."""
     if p == TESTING_DOC and re.fullmatch(r"R(\d+|P|F|A|B)", anc):
         return False
     if not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", anc) or re.fullmatch(r"r(\d+|p|f|a|b)", anc):
@@ -1246,16 +1246,16 @@ def bad_anchor(p, anc):
 
 @functools.lru_cache(maxsize=None)
 def toca_invalid(x):
-    """Motivo pelo qual a citação não vale (decisão 2 da #1812), na ordem em que se confere; "" se vale.
+    """Reason why the citation is not valid (decision 2 of #1812), in the order checked; "" if valid.
 
-    A citação já vem normalizada e fora do filtro do que não conta. Pasta e documento existentes se leem na
-    raiz do repositório (`repo_root`), nunca no diretório atual. A âncora se confere contra os `##` do arquivo
-    existente (`doc_slugs`). O resultado é memoizado por citação: o arquivo não muda durante um comando.
+    The citation arrives already normalized and past the filter of what does not count. Existing folders and documents are read at the
+    repository root (`repo_root`), never in the current directory. The anchor is checked against the `##` of the existing
+    file (`doc_slugs`). The result is memoized per citation: the file does not change during a command.
     """
     if x == "?":
-        return "a ficha não diz"  # `?` no meio de uma lista (o campo todo em `?` dá só `toca`)
+        return "a ficha não diz"  # `?` in the middle of a list (the whole field as `?` gives just `toca`)
     if repo_root() is None:
-        return "raiz do repositório não achada"  # sem a raiz, pasta e documento não se conferem: falha segura
+        return "raiz do repositório não achada"  # without the root, folder and document cannot be checked: safe failure
     p, _, anc = x.partition("#")
     if is_folder(p):
         return "pasta"
@@ -1264,14 +1264,14 @@ def toca_invalid(x):
     if bad_pattern(p):
         return "padrão"
     if not by_section(p):
-        return ""  # arquivo (com ou sem âncora): conta inteiro, como hoje
+        return ""  # file (with or without anchor): counts whole, as today
     if not anc:
         return "documento inteiro" if os.path.isfile(os.path.join(repo_root(), p)) else ""
     return "âncora" if bad_anchor(p, anc) else ""
 
 
 def first_invalid(cites):
-    """(citação, motivo) da primeira citação inválida da lista; (None, "") se todas valem."""
+    """(citation, reason) of the first invalid citation of the list; (None, "") if all are valid."""
     for x in cites:
         why = toca_invalid(x)
         if why:
@@ -1280,7 +1280,7 @@ def first_invalid(cites):
 
 
 def covers(a, b):
-    """`a` (pasta `x/` ou `x/**`, pasta sem barra final ou glob `*`) cobre o caminho `b`?"""
+    """Does `a` (folder `x/` or `x/**`, folder without a trailing slash, or glob `*`) cover the path `b`?"""
     if a.endswith("/**"):
         a = a[:-2]
     if a.endswith("/"):
@@ -1291,15 +1291,15 @@ def covers(a, b):
 
 
 def by_section(path):
-    """O arquivo se compara por âncora (seção `##`, ou roteiro no docs/TESTING.md)? Todo `.md` sob `docs/`,
-    todo `.md` da raiz (sem `/`) e os SKILL.md; os outros arquivos, inclusive `.md` de outras pastas, contam inteiros."""
+    """Is the file compared by anchor (`##` section, or script in docs/TESTING.md)? Every `.md` under `docs/`,
+    every root `.md` (without `/`) and the SKILL.md files; the other files, including `.md` of other folders, count whole."""
     if not path.endswith(".md") or any(c in path for c in "*?"):
-        return False  # glob (`docs/*.md`) cobre tudo o que casa, com ou sem âncora
+        return False  # a glob (`docs/*.md`) covers everything it matches, with or without anchor
     return path.startswith("docs/") or "/" not in path or fnmatch.fnmatchcase(path, SECTION_GLOB)
 
 
 def glob_overlap(a, b):
-    """Dois padrões com `*` (que casa qualquer sequência, inclusive `/`) casam algum caminho em comum?"""
+    """Do two patterns with `*` (which matches any sequence, including `/`) match some path in common?"""
     seen = {}
 
     def go(i, j):
@@ -1320,7 +1320,7 @@ def glob_overlap(a, b):
 
 
 def same_target(a, b):
-    """Duas citações do `toca=` mexem no mesmo lugar? (seção ou roteiro, pasta, arquivo)"""
+    """Do two citations of the `toca=` touch the same place? (section or script, folder, file)"""
     if a == "?" or b == "?":
         return True
     pa, _, anc_a = a.partition("#")
@@ -1343,7 +1343,7 @@ def first_conflict(mine, other):
 
 
 def dep_state(plan):
-    """Dependências da ficha: ('?', []) se faltar; senão ('ok', [(#n, estado)])."""
+    """Dependencies of the ficha: ('?', []) if missing; otherwise ('ok', [(#n, state)])."""
     raw = plan_field(plan, "dep")
     if raw is None or raw.strip() in ("", "?"):
         return None
@@ -1360,10 +1360,10 @@ def dep_state(plan):
 
 
 def incomplete_fields(plan, exclusive=False):
-    """Campos da ficha que faltam: `dep` e `toca` em `?` ou ausentes; `fases` só em `?` ou vazio.
+    """Fields missing from the ficha: `dep` and `toca` as `?` or absent; `fases` only as `?` or empty.
 
-    Decisão 6 da #1812: a primeira citação inválida do `toca=` dá `toca: <citação>`. A linha exclusiva não passa
-    por essa validação (`exclusive`): o `toca` dela não entra na conta, porque ela espera a fila esvaziar.
+    Decision 6 of #1812: the first invalid citation of the `toca=` gives `toca: <citation>`. The exclusive row does not go
+    through this validation (`exclusive`): its `toca` does not count, because it waits for the queue to empty.
     """
     out = []
     if dep_state(plan) is None:
@@ -1382,12 +1382,12 @@ def incomplete_fields(plan, exclusive=False):
 
 
 def row_incomplete(r):
-    """Campos que faltam na ficha da linha, respeitando o `exclusive` dela."""
+    """Fields missing from the row's ficha, respecting its `exclusive`."""
     return incomplete_fields(r.get("plan", ""), r.get("exclusive") == "sim")
 
 
 def redo_rows(q):
-    """Linhas não concluídas com a ficha incompleta (a ficha se refaz no ciclo)."""
+    """Non-`concluída` rows with an incomplete ficha (the ficha is redone in the cycle)."""
     return [r for r in q if r["status"] != "concluída" and row_incomplete(r)]
 
 
@@ -1397,7 +1397,7 @@ def changes_schema(plan):
 
 
 def plan_block(r, merged, done):
-    """Motivo de a ficha segurar a etapa: ficha incompleta ou dependência fora da `main`; "" se não segura."""
+    """Reason the ficha holds the stage: incomplete ficha or dependency outside `main`; "" if it does not hold."""
     plan = r.get("plan", "")
     miss = row_incomplete(r)
     if miss:
@@ -1408,17 +1408,17 @@ def plan_block(r, merged, done):
 
 
 def exclusive_block(r, taking, front=""):
-    """Decisão 12: a exclusiva só começa com ninguém começado; com uma exclusiva começada, ninguém começa.
+    """Decision 12: the exclusive stage only starts with nothing started; with an exclusive one started, nothing starts.
 
-    Decisões 2 e 3 da #1595: a exclusiva segura a fila em qualquer estado, e o motivo diz o `status` da linha
-    (`falhou`, `esperando dono`, `aguardando` com `started`); `em andamento` e a que começa no mesmo cálculo dão
-    `em andamento`. Decisões 3 e 4 da #1813: com a exclusiva na frente (`front`, o `#N`), as candidatas de depois dela
-    dão `segurada para a exclusiva #N`; ela mesma, e a exclusiva que não está na frente, dão `exclusiva (espera a fila
+    Decisions 2 and 3 of #1595: the exclusive stage holds the queue in any state, and the reason says the row's `status`
+    (`falhou`, `esperando dono`, `aguardando` with `started`); `em andamento` and the one that starts in the same calculation give
+    `em andamento`. Decisions 3 and 4 of #1813: with the exclusive stage at the front (`front`, the `#N`), the candidates after it
+    give `segurada para a exclusiva #N`; itself, and the exclusive stage that is not at the front, give `exclusiva (espera a fila
     esvaziar)`.
     """
     for o in taking:
         if o.get("exclusive") == "sim":
-            # `aguardando` sem `started` é a que começa no mesmo cálculo (entrou em `taking` agora)
+            # an `aguardando` without `started` is the one that starts in the same calculation (it just entered `taking`)
             state = "em andamento" if o["status"] == "aguardando" and not o.get("started") else o["status"]
             return f"exclusiva {o['issue']} {state}"
     if front:
@@ -1429,14 +1429,14 @@ def exclusive_block(r, taking, front=""):
 
 
 def slots_plan(q, meta):
-    """(texto de meta.vagas, [issues que começam agora], pedaços do texto, motivos, exclusiva na frente).
+    """(text of meta.vagas, [issues that start now], pieces of the text, reasons, exclusive stage at the front).
 
-    Decisões 4 e 5 da #1440. Os motivos (decisão 4 da #1761) são `{issue: (texto do motivo, #N que segura)}` por
-    candidata; o `#N` só vem nos motivos `arquivo <x> com #N` e `schema com #N`, senão é "".
+    Decisions 4 and 5 of #1440. The reasons (decision 4 of #1761) are `{issue: (reason text, #N that holds)}` per
+    candidate; the `#N` only comes in the reasons `arquivo <x> com #N` and `schema com #N`, otherwise it is "".
 
-    Decisão 1 da #1813: a exclusiva na frente é a primeira candidata, pela `order`, sem `hold`, com a ficha completa e
-    as dependências mescladas, que não começa neste cálculo, se for exclusiva e esperar a fila esvaziar ("" se a primeira
-    é comum, ou se não há). Recalculada a cada chamada, sem estado.
+    Decision 1 of #1813: the exclusive stage at the front is the first candidate, by `order`, without `hold`, with a complete ficha and
+    merged dependencies, that does not start in this calculation, if it is exclusive and waits for the queue to empty ("" if the first
+    is ordinary, or if there is none). Recalculated on every call, stateless.
     """
     n = meta.get("paralelo") or DEFAULT_PARALELO
     merged = set(meta.get("merged", []))
@@ -1491,7 +1491,7 @@ def slots_plan(q, meta):
     return " · ".join(parts), now_list, parts, reasons, front
 
 
-# --- grafo da fila (etapa #1761) ---
+# --- queue graph (stage #1761) ---
 
 
 def is_started(r):
@@ -1499,7 +1499,7 @@ def is_started(r):
 
 
 def started_state(r):
-    """(estado, motivo) de uma linha começada (decisão 5 da #1761)."""
+    """(estado, motivo) of a started row (decision 5 of #1761)."""
     st = r["status"]
     if st == "em andamento":
         return "rodando", r.get("step") or "em andamento"
@@ -1511,7 +1511,7 @@ def started_state(r):
 
 
 def candidate_state(r, why):
-    """Estado de uma candidata pelo motivo que o `slots_plan` deu, na ordem da decisão 5 da #1761."""
+    """State of a candidate from the reason `slots_plan` gave, in the order of decision 5 of #1761."""
     if r.get("hold"):
         return "segurada"
     if why.startswith("ficha incompleta"):
@@ -1526,7 +1526,7 @@ def candidate_state(r, why):
 
 
 def graph_deps(r, nodes, merged):
-    """Dependências do `dep=` da ficha que são nós do grafo, sem as `:main` nem as mescladas (antes da redução)."""
+    """Dependencies of the ficha's `dep=` that are graph nodes, without the `:main` ones or the merged ones (before the reduction)."""
     out = []
     for d, st in dep_state(r.get("plan", "")) or []:
         if d in nodes and d != r["issue"] and st != "main" and d not in merged and d not in out:
@@ -1535,7 +1535,7 @@ def graph_deps(r, nodes, merged):
 
 
 def ancestors_of(issue, deps):
-    """Todas as dependências, diretas e indiretas, de `issue`; com ciclo, não entra em laço."""
+    """All the dependencies, direct and indirect, of `issue`; with a cycle, it does not loop."""
     seen = set()
     todo = list(deps.get(issue, []))
     while todo:
@@ -1547,24 +1547,24 @@ def ancestors_of(issue, deps):
 
 
 def reduce_deps(issue, deps, anc):
-    """Redução transitiva: sai a dependência `p` que é ancestral de outra dependência `q` (fora de ciclo com `p`)."""
+    """Transitive reduction: drops dependency `p` that is an ancestor of another dependency `q` (outside a cycle with `p`)."""
     mine = deps[issue]
     return [p for p in mine
             if not any(q != p and p in anc[q] and q not in anc[p] for q in mine)]
 
 
 def eligible_exclusive(r):
-    """Exclusiva sem `hold` e com a ficha completa: a que pode ficar na frente da ordem (decisão 6 da #1813)."""
+    """Exclusive stage without `hold` and with a complete ficha: the one that can stay at the front of the order (decision 6 of #1813)."""
     return (r.get("exclusive") == "sim" and not r.get("hold")
             and not row_incomplete(r))
 
 
 def wave_round(pending, ready):
-    """As linhas de uma rodada das ondas; `E` é a primeira exclusiva elegível entre as prontas (decisão 6 da #1813).
+    """The rows of a round of the waves; `E` is the first eligible exclusive stage among the ready ones (decision 6 of #1813).
 
-    Entram as comuns que vêm antes de `E` na `order`, mais as comuns com `hold` ou ficha incompleta (em qualquer
-    posição); sem nenhuma delas, `E` sozinha; sem `E`, todas as comuns; sem comuns nem `E`, a primeira pronta; num ciclo,
-    o que sobra entra junto.
+    Entering are the ordinary ones that come before `E` in `order`, plus the ordinary ones with `hold` or an incomplete ficha (in any
+    position); with none of them, `E` alone; without `E`, all the ordinary ones; with neither ordinary ones nor `E`, the first ready one; in a cycle,
+    what is left enters together.
     """
     front = next((r for r in ready if eligible_exclusive(r)), None)
     plain = [r for r in ready if r.get("exclusive") != "sim"]
@@ -1574,9 +1574,9 @@ def wave_round(pending, ready):
 
 
 def assign_waves(rows, wave, deps):
-    """Decisões 6 da #1761 e da #1813: simulação em rodadas; `wave` já traz a onda 0 e recebe as outras."""
+    """Decisions 6 of #1761 and of #1813: simulation in rounds; `wave` already carries wave 0 and receives the others."""
     w = 0
-    total = len({r["issue"] for r in rows})  # issue repetida em duas linhas conta uma vez
+    total = len({r["issue"] for r in rows})  # an issue repeated on two rows counts once
     while len(wave) < total:
         w += 1
         pending = [r for r in rows if r["issue"] not in wave]
@@ -1596,7 +1596,7 @@ def first_open_phase(r):
 
 
 def queue_graph(q, meta, reasons):
-    """(grafoNos, grafoSetas) da fila; decisões 3 a 8 da #1761. Lê o que o `slots_plan` já decidiu."""
+    """(grafoNos, grafoSetas) of the queue; decisions 3 to 8 of #1761. Reads what `slots_plan` already decided."""
     rows = sorted((r for r in q if r["status"] != "concluída"), key=lambda r: r["order"])
     nodes = {r["issue"]: r for r in rows}
     merged = set(meta.get("merged", []))
@@ -1636,8 +1636,8 @@ def minutes_since(iso):
 
 
 def context_notes(meta):
-    """Os avisos da linha `contexto:` do `show`, nesta ordem: o alerta de troca (a ação), a medida à mão e a
-    medida velha (decisão 5 da #1874). Só se o `meta` tem `context`."""
+    """The notices of the `contexto:` line of `show`, in this order: the switch alert (the action), the hand-given measure and the
+    stale measure (decision 5 of #1874). Only if the `meta` has `context`."""
     notes = []
     if meta["context"] > CONTEXT_LIMIT:
         notes.append(f"acima de {CONTEXT_LIMIT}%: troque de sessão agora (\"Troca de sessão\")")
@@ -1650,22 +1650,22 @@ def context_notes(meta):
 
 
 def late_rows(q):
-    """Filha sem aviso há mais de 30 min; a que espera o coordenador (`wait`) não conta."""
+    """A child with no notice for more than 30 min; one waiting for the coordinator (`wait`) does not count."""
     return [r for r in q if r.get("child") and r.get("childAt") and not r.get("wait")
             and minutes_since(r["childAt"]) > LATE_MINUTES]
 
 
 def is_owner_wait(r):
-    """Fase que espera o dono no chat dela: `child` e `wait` marcado com OWNER_WAIT_PREFIX (decisão 7 da #1602).
+    """A phase waiting for the owner in its chat: `child` and a `wait` marked with OWNER_WAIT_PREFIX (decision 7 of #1602).
 
-    A marca está no `wait`, não no `status`: `esperando dono` também vale para merge pedido, achado de severidade
-    alta e aprovação de ruleset, e a pergunta de uma fase de correção ao coordenador pode cair numa etapa assim.
+    The mark is in the `wait`, not in the `status`: `esperando dono` also applies to a requested merge, a high-severity
+    finding and a ruleset approval, and a fix phase's question to the coordinator can land on a stage like that.
     """
     return bool(r.get("child") and (r.get("wait") or "").startswith(OWNER_WAIT_PREFIX))
 
 
 def carries_session(r):
-    """Linha que ainda tem a sessão da fase rodando: `em andamento` ou esperando o dono no chat dela."""
+    """A row whose phase session is still running: `em andamento` or waiting for the owner in its chat."""
     return r.get("status") == "em andamento" or is_owner_wait(r)
 
 
@@ -1674,7 +1674,7 @@ def owner_waiting_rows(q):
 
 
 def owner_recheck_rows(q):
-    """Fase esperando o dono há mais de OWNER_RECHECK_MINUTES (o `wait` a tira de `late_rows`); `childAt` = início."""
+    """A phase waiting for the owner for more than OWNER_RECHECK_MINUTES (the `wait` takes it out of `late_rows`); `childAt` = start."""
     return [r for r in owner_waiting_rows(q) if r.get("childAt")
             and minutes_since(r["childAt"]) > OWNER_RECHECK_MINUTES]
 
@@ -1686,7 +1686,7 @@ def owner_recheck_text(r):
 
 
 def waiting_rows(q):
-    """Filha que espera o coordenador: `child` e `wait`, sem as que esperam o dono."""
+    """A child waiting for the coordinator: `child` and `wait`, without those waiting for the owner."""
     return [r for r in q if r.get("child") and r.get("wait") and not is_owner_wait(r)]
 
 
@@ -1708,7 +1708,7 @@ def show_row(r):
 
 
 def slugify(title):
-    """Slug de um `##`: minúsculas, sem acento (NFKD, sem as marcas), `-` por sequência fora de [a-z0-9], sem `-` nas pontas."""
+    """Slug of a `##`: lowercase, without accents (NFKD, without the marks), `-` per sequence outside [a-z0-9], no `-` at the ends."""
     text = unicodedata.normalize("NFKD", title)
     text = "".join(c for c in text if not unicodedata.combining(c)).lower()
     return re.sub(r"[^a-z0-9]+", "-", text).strip("-")
@@ -1719,7 +1719,7 @@ def cmd_slug(a):
 
 
 def invalid_lines(cites):
-    """As linhas `inválida: <citação> — <motivo>` das citações que não valem (a lista vazia se todas valem)."""
+    """The `inválida: <citation> — <reason>` lines of the citations that are not valid (the empty list if all are valid)."""
     out = []
     for x in cites:
         why = toca_invalid(x)
@@ -1729,7 +1729,7 @@ def invalid_lines(cites):
 
 
 def cmd_toca(a):
-    """Confere uma lista de citações do `toca=` (decisão 7 da #1812): `ok` (0) ou `inválida: … — <motivo>` (1)."""
+    """Checks a list of citations of the `toca=` (decision 7 of #1812): `ok` (0) or `inválida: … — <reason>` (1)."""
     bad = invalid_lines(norm_toca(a.cites))
     if bad:
         print("\n".join(bad))
@@ -1739,8 +1739,8 @@ def cmd_toca(a):
 
 
 def conflict_others(d):
-    """[(#N, status, citações)] da pasta que um `toca` novo precisa respeitar, como o `slots_plan` as lê: as começadas
-    (`is_started`) e as que ele faz começar agora. Só lê."""
+    """[(#N, status, citations)] of the folder that a new `toca` must respect, as `slots_plan` reads them: the started ones
+    (`is_started`) and the ones it makes start now. Read-only."""
     q, m = load(d, "queue"), load(d, "meta")
     starting = slots_plan(q, m[0] if m else {})[1]
     out = []
@@ -1753,7 +1753,7 @@ def conflict_others(d):
 
 
 def parse_com(items):
-    """`--com "#N=<toca>"` → [(#N, citações)]; sem o `=` ou com o número fora de `#N` é erro de uso."""
+    """`--com "#N=<toca>"` → [(#N, citations)]; without the `=` or with the number outside `#N` it is a usage error."""
     out = []
     for item in items or []:
         num, sep, cites = item.partition("=")
@@ -1764,7 +1764,7 @@ def parse_com(items):
 
 
 def conflict_lines(mine, others):
-    """Uma linha `conflito: <citação> com #N (<status>)` por etapa de `others` que mexe no mesmo lugar."""
+    """One `conflito: <citation> com #N (<status>)` line per stage of `others` that touches the same place."""
     out = []
     for n, status, cites in others:
         cite = first_conflict(mine, cites)
@@ -1774,7 +1774,7 @@ def conflict_lines(mine, others):
 
 
 def cmd_conflito(a):
-    """Confere um `toca` contra a fila (decisão 9 da #1864): `livre` (0), `conflito: …` (1) ou `inválida: …` (2)."""
+    """Checks a `toca` against the queue (decision 9 of #1864): `livre` (0), `conflito: …` (1) or `inválida: …` (2)."""
     extra = parse_com(a.com)
     mine = norm_toca(a.toca)
     bad = invalid_lines(mine)
@@ -1844,7 +1844,7 @@ def cmd_show(a):
 
 
 class Parser(argparse.ArgumentParser):
-    """Dentro de um `apply`, argumento inválido vira Erro (o lote cita a linha) em vez de sair."""
+    """Inside an `apply`, an invalid argument becomes an Erro (the batch cites the line) instead of exiting."""
 
     def error(self, message):
         if BATCH is not None:
@@ -1854,85 +1854,85 @@ class Parser(argparse.ArgumentParser):
 
 def build_parser():
     p = Parser(description=__doc__)
-    p.add_argument("--now", help="substitui o relógio (ISO UTC, para testes)")
+    p.add_argument("--now", help="overrides the clock (ISO UTC, for tests)")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     def add(name, fn, help_):
         sp = sub.add_parser(name, help=help_)
-        sp.add_argument("dir", help="pasta dos arquivos JSON")
+        sp.add_argument("dir", help="folder of the JSON files")
         sp.set_defaults(fn=fn)
         return sp
 
-    sp = add("init", cmd_init, "cria os 3 arquivos vazios")
+    sp = add("init", cmd_init, "creates the 3 empty files")
     sp.add_argument("--force", action="store_true")
-    sp = add("start", cmd_start, "marca o início da execução (e as vagas com --paralelo N)")
-    sp.add_argument("--paralelo", type=int, help="número de vagas (padrão 2)")
-    sp = add("row", cmd_row, "insere ou atualiza uma linha da fila")
+    sp = add("start", cmd_start, "marks the start of the run (and the slots with --paralelo N)")
+    sp.add_argument("--paralelo", type=int, help="number of slots (default 2)")
+    sp = add("row", cmd_row, "inserts or updates a queue row")
     sp.add_argument("issue")
     sp.add_argument("pairs", nargs="*")
-    sp = add("phase", cmd_phase, "muda o estado de fases de uma linha (<código>=ok|open; o `todo` vem da ficha, em toda gravação)")
+    sp = add("phase", cmd_phase, "changes the state of the phases of a row (<code>=ok|open; the `todo` comes from the ficha, on every write)")
     sp.add_argument("issue")
     sp.add_argument("pairs", nargs="+")
-    sp = add("reorder", cmd_reorder, "renumera as linhas aguardando")
+    sp = add("reorder", cmd_reorder, "renumbers the aguardando rows")
     sp.add_argument("issues", nargs="+")
-    sp = add("log", cmd_log, "acrescenta ao registro")
+    sp = add("log", cmd_log, "appends to the log")
     sp.add_argument("text")
-    sp = add("current", cmd_current, "muda a linha 'atual' do painel")
+    sp = add("current", cmd_current, "changes the panel's 'current' line")
     sp.add_argument("text")
-    sp = add("reserve", cmd_reserve, "guarda o id da conferência de reserva da sessão")
+    sp = add("reserve", cmd_reserve, "stores the id of the session's fallback check")
     sp.add_argument("trigger")
-    sp = add("session", cmd_session, "registra uma sessão criada para a etapa (sem repetir; kind= [label=] também a põe em meta.sessions)")
+    sp = add("session", cmd_session, "records a session created for the stage (without repeating; kind= [label=] also puts it in meta.sessions)")
     sp.add_argument("issue")
     sp.add_argument("session")
     sp.add_argument("pairs", nargs="*")
-    sp = add("cost", cmd_cost, "grava o custo de uma sessão (usd= ctx= [model= effort= served= issue= kind=])")
+    sp = add("cost", cmd_cost, "writes the cost of a session (usd= ctx= [model= effort= served= issue= kind=])")
     sp.add_argument("session")
     sp.add_argument("pairs", nargs="+")
-    sp = add("merged", cmd_merged, "registra uma etapa mesclada na main (sem repetir)")
+    sp = add("merged", cmd_merged, "records a stage merged into main (without repeating)")
     sp.add_argument("issue")
-    sp = add("context", cmd_context, "registra o contexto do coordenador: <pct> [--fonte get_session] (à mão, fonte manual) ou --medir --max <max_tokens> (mede com scripts/ci/contextUsage.mjs e grava a fonte)")
+    sp = add("context", cmd_context, "records the coordinator's context: <pct> [--fonte get_session] (by hand, source manual) or --medir --max <max_tokens> (measures with scripts/ci/contextUsage.mjs and writes the source)")
     sp.add_argument("pct", nargs="?")
-    sp.add_argument("--medir", action="store_true", help="mede o contexto da própria sessão com o contextUsage.mjs")
-    sp.add_argument("--max", help="max_tokens do get_session sem session_id (só com --medir)")
-    sp.add_argument("--fonte", help="get_session: o pct vem do used_tokens do get_session (só com <pct>)")
-    sp = add("role", cmd_role, "registra a sessão atual de um papel (coordenador|supervisor) [link=<url>]; n soma 1; o id já registrado não muda nada")
+    sp.add_argument("--medir", action="store_true", help="measures the session's own context with contextUsage.mjs")
+    sp.add_argument("--max", help="max_tokens of get_session without session_id (only with --medir)")
+    sp.add_argument("--fonte", help="get_session: the pct comes from the used_tokens of get_session (only with <pct>)")
+    sp = add("role", cmd_role, "records the current session of a role (coordenador|supervisor) [link=<url>]; n adds 1; an id already registered changes nothing")
     sp.add_argument("role")
     sp.add_argument("session")
     sp.add_argument("pairs", nargs="*")
-    sp = add("sup", cmd_sup, "grava um pedido do supervisor (SUP-n tipo= pedido= estado= [evidencia=]) em meta.requests")
+    sp = add("sup", cmd_sup, "writes a supervisor request (SUP-n tipo= pedido= estado= [evidencia=]) to meta.requests")
     sp.add_argument("request")
     sp.add_argument("pairs", nargs="+")
-    sp = add("requests", cmd_requests, "imprime os pedidos do supervisor, com o atrasado (lê só o meta; --desde <ISO> mostra só os de depois dessa hora e os abertos)")
-    sp.add_argument("--desde", help="só os pedidos com at a partir desta hora (ISO UTC) e todos os abertos")
-    sp = add("rule", cmd_rule, "regras em vigor: add \"<texto>\" origem=<dono|SUP-n> [saida=] | end R<k> [motivo=]")
+    sp = add("requests", cmd_requests, "prints the supervisor requests, with the atrasado (reads only the meta; --desde <ISO> shows only those after that time and the open ones)")
+    sp.add_argument("--desde", help="only the requests with at from this time on (ISO UTC) and all the open ones")
+    sp = add("rule", cmd_rule, "rules in force: add \"<text>\" origem=<dono|SUP-n> [saida=] | end R<k> [motivo=]")
     sp.add_argument("action")
     sp.add_argument("args", nargs="*")
-    add("upgrade", cmd_upgrade, "troca a quente: o hold da fila vazia vira exclusive=sim (idempotente; registra no log)")
-    sp = add("import", cmd_import, "traz de um painel antigo a ordem, os holds, as fichas e as em andamento (pasta nova, vazia)")
-    sp.add_argument("old", metavar="pasta-antiga", help="pasta do painel antigo (só leitura)")
-    sp = add("roles", cmd_roles, "imprime a sessão atual de cada papel (lê só o meta; --sessao <id> acrescenta a linha `esta sessão: …`)")
-    sp.add_argument("--sessao", help="o id desta sessão: acrescenta registrada, coordenador, antiga, sucessora ou nova")
-    sp = add("apply", cmd_apply, "grava vários subcomandos de uma vez (um por linha; '-' lê do stdin)")
-    sp.add_argument("file", metavar="arquivo", help="arquivo com os comandos, ou - para o stdin")
-    sp = add("published", cmd_published, "imprime a hora da publicação (at:) e os arquivos a enviar; --done, depois do batch, limpa o que falta publicar")
-    sp.add_argument("--done", action="store_true", help="o batch deu certo: limpa o que falta publicar")
-    add("touch", cmd_touch, "a publicação falhou: marca de novo os 3 arquivos como não publicados")
-    sp = sub.add_parser("slug", help="imprime o slug de um título `##` (âncora de seção)")
+    add("upgrade", cmd_upgrade, "hot switch: the empty-queue hold becomes exclusive=sim (idempotent; records in the log)")
+    sp = add("import", cmd_import, "brings from an old panel the order, the holds, the fichas and the running ones (new, empty folder)")
+    sp.add_argument("old", metavar="pasta-antiga", help="folder of the old panel (read-only)")
+    sp = add("roles", cmd_roles, "prints the current session of each role (reads only the meta; --sessao <id> adds the `esta sessão: …` line)")
+    sp.add_argument("--sessao", help="the id of this session: adds registrada, coordenador, antiga, sucessora or nova")
+    sp = add("apply", cmd_apply, "writes several subcommands at once (one per line; '-' reads from stdin)")
+    sp.add_argument("file", metavar="arquivo", help="file with the commands, or - for stdin")
+    sp = add("published", cmd_published, "prints the publication time (at:) and the files to send; --done, after the batch, clears what is left to publish")
+    sp.add_argument("--done", action="store_true", help="the batch succeeded: clears what is left to publish")
+    add("touch", cmd_touch, "the publication failed: marks the 3 files as not published again")
+    sp = sub.add_parser("slug", help="prints the slug of a `##` title (section anchor)")
     sp.add_argument("title", metavar="título")
     sp.set_defaults(fn=cmd_slug)
-    sp = sub.add_parser("toca", help="confere citações do toca= (arquivos e seções): ok, ou `inválida: … — <motivo>` e código 1")
-    sp.add_argument("cites", metavar="citações", help="separadas por vírgula, como no toca= da ficha")
+    sp = sub.add_parser("toca", help="checks citations of the toca= (files and sections): ok, or `inválida: … — <reason>` and code 1")
+    sp.add_argument("cites", metavar="citações", help="separated by commas, as in the ficha's toca=")
     sp.set_defaults(fn=cmd_toca)
-    sp = sub.add_parser("conflito", help="confere um toca contra a fila (só leitura): livre (0), `conflito: … com #N (…)` (1) ou `inválida: …` (2)")
-    sp.add_argument("toca", metavar="toca", help="citações separadas por vírgula, como no toca= da ficha")
-    sp.add_argument("--pasta", help="pasta do painel: as começadas e não mescladas e as de `começar agora:` contam")
-    sp.add_argument("--com", action="append", metavar="#N=<toca>", help="etapa de fora do painel e o toca dela (repetível)")
+    sp = sub.add_parser("conflito", help="checks a toca against the queue (read-only): livre (0), `conflito: … com #N (…)` (1) or `inválida: …` (2)")
+    sp.add_argument("toca", metavar="toca", help="citations separated by commas, as in the ficha's toca=")
+    sp.add_argument("--pasta", help="panel folder: the started and not merged ones and those of `começar agora:` count")
+    sp.add_argument("--com", action="append", metavar="#N=<toca>", help="a stage outside the panel and its toca (repeatable)")
     sp.set_defaults(fn=cmd_conflito)
-    sp = sub.add_parser("costs", help="total, por tipo e por etapa (lê só o meta; --desde <ISO> filtra por created)")
-    sp.add_argument("--desde", help="só as sessões com created a partir desta data (ISO UTC)")
-    sp.add_argument("dir", help="pasta dos arquivos JSON")
+    sp = sub.add_parser("costs", help="total, by kind and by stage (reads only the meta; --desde <ISO> filters by created)")
+    sp.add_argument("--desde", help="only the sessions with created from this date on (ISO UTC)")
+    sp.add_argument("dir", help="folder of the JSON files")
     sp.set_defaults(fn=cmd_costs)
-    sp = add("show", cmd_show, "resumo legível; com '#n', a linha inteira (com a ficha)")
+    sp = add("show", cmd_show, "readable summary; with '#n', the whole row (with the ficha)")
     sp.add_argument("issue", nargs="?")
     return p
 

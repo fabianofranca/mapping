@@ -1,7 +1,7 @@
 // @vitest-environment node
-// Fase FC1 (etapa #1285): o painel da fila guarda a ficha de cada etapa (`plan`), as filhas que
-// devem aviso (`child`, `childAt`) e a conferência de reserva (`reserve`), e o `show` resume tudo
-// sem imprimir o JSON inteiro, para o coordenador não encher o contexto.
+// Phase FC1 (stage #1285): the queue panel keeps the ficha of each stage (`plan`), the child sessions
+// that owe a notice (`child`, `childAt`) and the fallback check (`reserve`), and the `show` summarizes
+// everything without printing the whole JSON, so the coordinator does not fill the context.
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -35,8 +35,8 @@ describe('painel.py (FC1)', () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  it('a linha guarda a ficha (plan) e o show de uma linha a imprime', () => {
-    run('row', dir, '#10', 'title=Etapa dez', 'plan=dep=nenhuma; fases=AB1:#11');
+  it('the row keeps the ficha (plan) and the show of one row prints it', () => {
+    run('row', dir, '#10', 'title=Stage ten', 'plan=dep=nenhuma; fases=AB1:#11');
     const queue = json('queue') as Array<Record<string, unknown>>;
     expect(queue[0]?.plan).toBe('dep=nenhuma; fases=AB1:#11');
     const out = run('show', dir, '#10');
@@ -44,7 +44,7 @@ describe('painel.py (FC1)', () => {
     expect(out).toContain('dep=nenhuma; fases=AB1:#11');
   });
 
-  it('child e childAt=now registram a filha; show lista só as atrasadas (mais de 30 min; decisão 5 da #1324)', () => {
+  it('child and childAt=now register the child; show lists only the overdue ones (more than 30 min; decision 5 of #1324)', () => {
     runAt(
       '2026-11-09T10:00:00Z',
       'row',
@@ -68,13 +68,13 @@ describe('painel.py (FC1)', () => {
     expect(out).not.toMatch(/atrasadas:[^\n]*#20/);
   });
 
-  it('atrasada é só a filha com mais de 30 min: 30 não conta, 31 conta (decisão 5 da #1324)', () => {
+  it('overdue is only a child with more than 30 min: 30 does not count, 31 does (decision 5 of #1324)', () => {
     runAt('2026-11-09T10:00:00Z', 'row', dir, '#10', 'child=session_a', 'childAt=now');
     expect(runAt('2026-11-09T10:30:00Z', 'show', dir)).toMatch(/atrasadas: nenhuma/);
     expect(runAt('2026-11-09T10:31:00Z', 'show', dir)).toMatch(/atrasadas:[^\n]*#10/);
   });
 
-  it('child= vazio limpa childAt e a etapa deixa de estar atrasada', () => {
+  it('an empty child= clears childAt and the stage stops being overdue', () => {
     runAt('2026-11-09T10:00:00Z', 'row', dir, '#10', 'child=session_a', 'childAt=now');
     run('row', dir, '#10', 'child=');
     const queue = json('queue') as Array<Record<string, unknown>>;
@@ -83,7 +83,7 @@ describe('painel.py (FC1)', () => {
     expect(out).toMatch(/atrasadas: nenhuma/);
   });
 
-  it('reserve guarda o id da conferência no meta e o show o mostra', () => {
+  it('reserve keeps the check id in the meta and the show displays it', () => {
     const changed = run('reserve', dir, 'trig_abc');
     expect(changed).toContain('meta.json');
     const meta = json('meta') as Array<Record<string, unknown>>;
@@ -91,19 +91,19 @@ describe('painel.py (FC1)', () => {
     expect(run('show', dir)).toContain('reserva: trig_abc');
   });
 
-  it('filha com wait não é atrasada e aparece em "esperando o coordenador" (RS1, decisão 5)', () => {
+  it('a child with wait is not overdue and appears in "esperando o coordenador" (RS1, decision 5)', () => {
     runAt('2026-11-09T10:00:00Z', 'row', dir, '#10', 'child=session_a', 'childAt=now');
-    runAt('2026-11-09T10:01:00Z', 'row', dir, '#10', 'wait=pergunta de produto');
+    runAt('2026-11-09T10:01:00Z', 'row', dir, '#10', 'wait=product question');
     const out = runAt('2026-11-09T12:00:00Z', 'show', dir);
     expect(out).toMatch(/atrasadas: nenhuma/);
-    expect(out).toMatch(/esperando o coordenador: #10 \(pergunta de produto\)/);
+    expect(out).toMatch(/esperando o coordenador: #10 \(product question\)/);
   });
 
-  it('sem filha esperando, o show diz "esperando o coordenador: nenhuma"', () => {
+  it('with no child waiting, the show says "esperando o coordenador: nenhuma"', () => {
     expect(run('show', dir)).toMatch(/esperando o coordenador: nenhuma/);
   });
 
-  it('wait= com childAt=now devolve a filha à contagem', () => {
+  it('wait= with childAt=now puts the child back in the count', () => {
     runAt(
       '2026-11-09T10:00:00Z',
       'row',
@@ -120,7 +120,7 @@ describe('painel.py (FC1)', () => {
     expect(out).toMatch(/esperando o coordenador: nenhuma/);
   });
 
-  it('trocar a filha (sessão recriada) sem passar wait também limpa o wait', () => {
+  it('switching the child (recreated session) without passing wait also clears the wait', () => {
     runAt(
       '2026-11-09T10:00:00Z',
       'row',
@@ -128,7 +128,7 @@ describe('painel.py (FC1)', () => {
       '#10',
       'child=session_a',
       'childAt=now',
-      'wait=pergunta',
+      'wait=question',
     );
     runAt('2026-11-09T10:05:00Z', 'row', dir, '#10', 'child=session_b', 'childAt=now');
     const queue = json('queue') as Array<Record<string, unknown>>;
@@ -136,7 +136,7 @@ describe('painel.py (FC1)', () => {
     expect(runAt('2026-11-09T10:40:00Z', 'show', dir)).toMatch(/atrasadas:[^\n]*#10/);
   });
 
-  it('child= vazio limpa o wait', () => {
+  it('an empty child= clears the wait', () => {
     runAt(
       '2026-11-09T10:00:00Z',
       'row',
@@ -144,7 +144,7 @@ describe('painel.py (FC1)', () => {
       '#10',
       'child=session_a',
       'childAt=now',
-      'wait=chama o dono',
+      'wait=call the owner',
     );
     run('row', dir, '#10', 'child=');
     const queue = json('queue') as Array<Record<string, unknown>>;
@@ -152,133 +152,133 @@ describe('painel.py (FC1)', () => {
     expect(run('show', dir)).toMatch(/esperando o coordenador: nenhuma/);
   });
 
-  it('childAt inválido é recusado', () => {
-    expect(() => run('row', dir, '#10', 'childAt=ontem')).toThrow();
+  it('an invalid childAt is refused', () => {
+    expect(() => run('row', dir, '#10', 'childAt=yesterday')).toThrow();
   });
 });
 
-// Etapa #1298 (FT1) e #1315 (FC2); a decisão 11 da #1322 (FS1) troca só o critério: skill grande troca de sessão.
-describe('implementar-fila: skill novo na main e troca de sessão (FT1, FC2)', () => {
+// Stage #1298 (FT1) and #1315 (FC2); decision 11 of #1322 (FS1) only changes the criterion: a large skill switches the session.
+describe('implementar-fila: new skill on main and session switch (FT1, FC2)', () => {
   const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
-  const troca = section(skill, '## Troca de sessão');
+  const switching = section(skill, '## Session switch');
   const CHECK =
     'git fetch -q origin main && git diff --quiet HEAD origin/main -- .claude/skills/implementar-fila/SKILL.md';
 
-  it('"Troca de sessão" manda dar pull e reler o SKILL.md inteiro (decisão 5; decisão 11 da #1322)', () => {
-    expect(troca).toContain(CHECK);
-    expect(troca).toContain('git pull -q --ff-only origin main');
-    expect(troca).toMatch(/releia o `SKILL.md` inteiro/);
-    expect(troca).not.toContain('mesmo abaixo de 60%');
-    expect(troca).not.toContain('skill atualizado na main');
+  it('"Session switch" says to pull and reread the whole SKILL.md (decision 5; decision 11 of #1322)', () => {
+    expect(switching).toContain(CHECK);
+    expect(switching).toContain('git pull -q --ff-only origin main');
+    expect(switching).toMatch(/reread the whole `SKILL.md`/);
+    expect(switching).not.toContain('even below 60%');
+    expect(switching).not.toContain('skill updated on main');
   });
 
-  it('a troca é por contexto acima de 35% ou por skill grande (decisão 6; decisão 11 da #1322)', () => {
-    expect(troca).toMatch(/Troca de sessão por contexto ou por skill grande/);
-    expect(troca).toMatch(/Acima de 35%/);
+  it('the switch is by context above 35% or by a large skill (decision 6; decision 11 of #1322)', () => {
+    expect(switching).toMatch(/Session switch for context or for a large skill/);
+    expect(switching).toMatch(/Above 35%/);
   });
 
-  it('antes de criar o sucessor confere lineage.depth + 2 > limit (decisão 7)', () => {
-    expect(troca).toContain('lineage.depth');
-    expect(troca).toContain('lineage.limit');
-    expect(troca).toContain('depth + 2 > limit');
-    expect(troca).toMatch(/aguardando o dono abrir a sessão nova da fila/);
+  it('before creating the successor it checks lineage.depth + 2 > limit (decision 7)', () => {
+    expect(switching).toContain('lineage.depth');
+    expect(switching).toContain('lineage.limit');
+    expect(switching).toContain('depth + 2 > limit');
+    expect(switching).toMatch(/aguardando o dono abrir a sessão nova da fila/);
   });
 
-  it('a conferência de reserva e o passo "Entre etapas" fazem a mesma conferência', () => {
-    const entre = between(skill, '7. **Entre etapas:**', '**Conferências de reserva:**');
-    expect(entre).toMatch(/skill mudou na `main`/);
-    const conferencia = between(skill, '**Conferências de reserva:**', '**CI vermelho');
-    expect(conferencia).toMatch(/skill mudou na `main`/);
+  it('the fallback check and the "Between stages" step do the same check', () => {
+    const between7 = between(skill, '7. **Between stages:**', '**Fallback checks:**');
+    expect(between7).toMatch(/skill changed on `main`/);
+    const check = between(skill, '**Fallback checks:**', '**Red CI');
+    expect(check).toMatch(/skill changed on `main`/);
   });
 });
 
-// Etapa #1315 (FC2): ajustes finos de contexto, arquivamento das sessões e espera por workflow.
-describe('implementar-fila: ajustes finos do coordenador (FC2)', () => {
+// Stage #1315 (FC2): context fine-tuning, archiving of the sessions and waiting for a workflow.
+describe('implementar-fila: coordinator fine-tuning (FC2)', () => {
   const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
   const flow = readFileSync('docs/FLOW.md', 'utf8');
   const detalhar = readFileSync('.claude/skills/detalhar-backlog/SKILL.md', 'utf8');
   const TITLES = [
-    'Para a sessão da fase',
-    'Fase de correção',
-    'Para o testador',
-    'Rodada dirigida em grupos',
-    'Reteste junto',
-    'Rodada completa em 5 blocos',
+    'For the phase session',
+    'Fix phase',
+    'For the tester',
+    'Directed round in groups',
+    'Retest together',
+    'Full round in 5 blocks',
   ];
 
-  it('lista os títulos exatos das mensagens do FLOW.md e o comando de leitura (decisão 2)', () => {
+  it('lists the exact titles of the FLOW.md messages and the read command (decision 2)', () => {
     for (const title of TITLES) {
       expect(skill).toContain(`"${title}"`);
       expect(flow).toMatch(new RegExp(`^## ${title}$`, 'm'));
     }
     expect(skill).toContain(
-      "awk '/^## <título>$/{f=1;print;next} /^## /{f=0} f' docs/FLOW.md",
+      "awk '/^## <title>$/{f=1;print;next} /^## /{f=0} f' docs/FLOW.md",
     );
-    expect(skill).toMatch(/nunca por `grep`/);
+    expect(skill).toMatch(/never by `grep`/);
   });
 
-  it('o painel é publicado uma vez por turno que gravou, mesmo com o subagente rodando (decisão 3 da #1532)', () => {
-    expect(skill).toMatch(/uma vez por turno, no fim/);
-    expect(skill).toMatch(/mesmo com o subagente do ciclo ainda rodando/);
-    expect(skill).toMatch(/só com os arquivos alterados/);
+  it('the panel is published once per turn that wrote, even with the subagent running (decision 3 of #1532)', () => {
+    expect(skill).toMatch(/once per turn, at the end/);
+    expect(skill).toMatch(/even with the cycle's subagent still running/);
+    expect(skill).toMatch(/only with the changed files/);
     expect(skill).toMatch(
-      /conferência de hora em hora sem atrasadas e sem arquivo não publicado não publica/i,
+      /The hourly check with no overdue ones and no unpublished file does not publish/i,
     );
-    expect(skill).not.toMatch(/Nunca há duas publicações no mesmo ciclo/);
+    expect(skill).not.toMatch(/There are never two publications in the same cycle/);
   });
 
-  it('o chat fica quase mudo (decisão 3)', () => {
-    expect(skill).toMatch(/O chat fica quase mudo/);
-    expect(skill).toMatch(/não escreve resumo/);
+  it('the chat stays almost silent (decision 3)', () => {
+    expect(skill).toMatch(/The chat stays almost silent/);
+    expect(skill).toMatch(/writes no summary/);
   });
 
-  it('um subagente por ciclo para as tarefas de GitHub (decisão 4)', () => {
-    expect(skill).toMatch(/Um subagente por ciclo/);
-    expect(skill).toMatch(/uma linha por tarefa/);
+  it('one subagent per cycle for the GitHub tasks (decision 4)', () => {
+    expect(skill).toMatch(/One subagent per cycle/);
+    expect(skill).toMatch(/one line per task/);
   });
 
-  it('arquiva cada filha ao terminar, registra as sessões e arquiva a anterior (decisão 8)', () => {
+  it('archives each child when it finishes, registers the sessions and archives the previous one (decision 8)', () => {
     expect(skill).toContain('archive_session');
-    expect(skill).toContain("painel.py session <pasta> '#n' <id>");
+    expect(skill).toContain("painel.py session <folder> '#n' <id>");
     expect(skill).toMatch(/<código> arquivada/);
-    expect(skill).toMatch(/não se arquiva/i);
-    expect(skill).toMatch(/arquiva a `anterior`/);
-    expect(skill).toMatch(/não arquiva a si mesmo/);
+    expect(skill).toMatch(/not archived/i);
+    expect(skill).toMatch(/archives the `anterior`/);
+    expect(skill).toMatch(/does not archive itself/);
   });
 
-  it('a espera por workflow segue a duração medida (decisão 10)', () => {
-    expect(skill).toMatch(/no mesmo ciclo do merge/);
-    expect(skill).toMatch(/job `release` pulado/);
-    expect(skill).toMatch(/5 min depois do merge/);
-    expect(skill).toMatch(/a cada 1 min/);
-    expect(skill).toMatch(/Não segure o merge de outro épico/);
+  it('the wait for a workflow follows the measured duration (decision 10)', () => {
+    expect(skill).toMatch(/in the same cycle as the merge/);
+    expect(skill).toMatch(/`release` job skipped/);
+    expect(skill).toMatch(/5 min after the merge/);
+    expect(skill).toMatch(/every 1 min/);
+    expect(skill).toMatch(/does not hold the next epic's merge/);
   });
 
-  it('a troca de rótulo manda a lista completa (decisão 11), no skill e no detalhar-backlog', () => {
+  it('the label swap sends the complete list (decision 11), in the skill and in detalhar-backlog', () => {
     for (const text of [skill, detalhar]) {
-      expect(text).toMatch(/substitui todos os rótulos/);
-      expect(text).toMatch(/lista completa/);
+      expect(text).toMatch(/replaces all the (issue's )?labels/);
+      expect(text).toMatch(/(complete|full) list/);
       expect(text).toMatch(/`severity:`/);
     }
   });
 
-  it('o detalhar-backlog arquiva cada subagente de detalhamento ou agrupamento (decisão 9)', () => {
+  it('detalhar-backlog archives each detailing or grouping subagent (decision 9)', () => {
     expect(detalhar).toContain('archive_session');
-    expect(detalhar).toMatch(/arquiva/i);
-    expect(detalhar).toMatch(/resumo final/);
+    expect(detalhar).toMatch(/archiv/i);
+    expect(detalhar).toMatch(/final summary/);
   });
 
-  it('o FLOW.md diz como fica a troca e o arquivamento', () => {
-    const linha = flow
+  it('FLOW.md says how the switch and the archiving work', () => {
+    const line = flow
       .split('\n')
-      .find((l) => l.startsWith('Para implementar em sequência'));
-    expect(linha).toMatch(/por contexto/);
-    expect(linha).toMatch(/limite de linhagem/);
-    expect(linha).toMatch(/arquivadas/);
+      .find((l) => l.startsWith('To implement all the `ready` ones in sequence'));
+    expect(line).toMatch(/by context/);
+    expect(line).toMatch(/lineage limit/);
+    expect(line).toMatch(/archived/);
   });
 });
 
-describe('painel.py: sessions por etapa (FC2, decisão 8)', () => {
+describe('painel.py: sessions per stage (FC2, decision 8)', () => {
   beforeEach(() => {
     dir = mkdtempSync(path.join(tmpdir(), 'painel-'));
     runAt('2026-11-09T10:00:00Z', 'init', dir);
@@ -288,8 +288,8 @@ describe('painel.py: sessions por etapa (FC2, decisão 8)', () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  it('session acrescenta o id em sessions sem repetir, e show da etapa o mostra', () => {
-    run('row', dir, '#10', 'title=Etapa dez');
+  it('session appends the id to sessions without repeating, and the stage show displays it', () => {
+    run('row', dir, '#10', 'title=Stage ten');
     run('session', dir, '#10', 'session_a');
     run('session', dir, '#10', 'session_b');
     const out = run('session', dir, '#10', 'session_a');
@@ -299,79 +299,75 @@ describe('painel.py: sessions por etapa (FC2, decisão 8)', () => {
     expect(run('show', dir, '#10')).toContain('sessions: session_a session_b');
   });
 
-  it('session numa etapa fora da fila é recusado', () => {
+  it('session on a stage outside the queue is refused', () => {
     expect(() => run('session', dir, '#99', 'session_a')).toThrow();
   });
 });
 
-// Etapa #1324 (CR1): CI resiliente do lado da fase e do coordenador.
-describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
+// Stage #1324 (CR1): resilient CI on the phase's and the coordinator's side.
+describe('Resilient CI: phase, check and dist ceiling (CR1)', () => {
   const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
   const flow = readFileSync('docs/FLOW.md', 'utf8');
   const detalhar = readFileSync('.claude/skills/detalhar-backlog/SKILL.md', 'utf8');
   const processDoc = readFileSync('docs/PROCESS.md', 'utf8');
-  const fase = section(flow, '## Para a sessão da fase');
-  // O item 6 é uma lista: o bloco vai do "6." até o "7." (etapa #1466, decisão 9).
-  const item6 = between(fase, '\n6. ', '\n7. ');
-  const leitura = between(item6, '**Leitura do CI:**', '\n   - **');
-  const reserva = between(skill, '**Conferências de reserva:**', '**CI vermelho');
-  const ciVermelho = between(
-    skill,
-    '**CI vermelho',
-    '## Mudanças na fila durante a execução',
-  );
+  const phase = section(flow, '## For the phase session');
+  // Item 6 is a list: the block goes from "6." to "7." (stage #1466, decision 9).
+  const item6 = between(phase, '\n6. ', '\n7. ');
+  const reading = between(item6, '**Reading CI:**', '\n   - **');
+  const fallback = between(skill, '**Fallback checks:**', '**Red CI');
+  const redCi = between(skill, '**Red CI', '## Queue changes during the run');
 
-  it('"Para a sessão da fase": send_later de 4 min e de 2 em 2 min, segunda reexecução pela fase e aviso (decisões 1 e 2)', () => {
-    expect(item6).toMatch(/primeira conferência com um `send_later` de 4 min/);
-    expect(item6).toMatch(/de 2 em 2 min até 20 min/);
-    expect(item6).toMatch(/depois disso, de 8 em 8/);
-    expect(item6).not.toMatch(/`send_later` de 8 min/);
-    expect(item6).toMatch(/nunca encerre o turno/i);
+  it('"For the phase session": send_later of 4 min and every 2 min, second rerun by the phase and notice (decisions 1 and 2)', () => {
+    expect(item6).toMatch(/first check with a `send_later` of 4 min/);
+    expect(item6).toMatch(/every 2 min up to 20 min/);
+    expect(item6).toMatch(/after that, every 8/);
+    expect(item6).not.toMatch(/`send_later` of 8 min/);
+    expect(item6).toMatch(/never end the turn/i);
     expect(item6).toContain('ci-rerun.yml');
     expect(item6).toContain('node scripts/ci/ciRerun.mjs decide');
     expect(item6).toContain('gh run rerun <id> --failed');
-    expect(item6).toMatch(/depois de \*\*2 reexecuções sem sucesso\*\*/);
+    expect(item6).toMatch(/after \*\*2 reruns without success\*\*/);
     expect(item6).toContain('CI travado: <link da execução>, tentativas 1 a 3');
-    expect(item6).toMatch(/falha legítima/i);
+    expect(item6).toMatch(/legitimate failure/i);
   });
 
-  it('Leitura do CI: check runs, sem get_status, commit atual e só o workflow CI (decisões 1 a 4)', () => {
-    expect(leitura).toContain('`get_check_runs`');
-    expect(leitura).toMatch(/nunca com `get_status`/);
-    expect(leitura).toMatch(/`perPage` 100/);
+  it('Reading CI: check runs, no get_status, current commit and only the CI workflow (decisions 1 to 4)', () => {
+    expect(reading).toContain('`get_check_runs`');
+    expect(reading).toMatch(/never with `get_status`/);
+    expect(reading).toMatch(/`perPage` 100/);
     for (const job of ['epic', 'static', 'test', 'coverage', 'build', 'check', 'e2e'])
-      expect(leitura).toContain(`\`${job}\``);
-    expect(leitura).toMatch(/`queued` ou `in_progress`/);
-    expect(leitura).toMatch(/`failure`, `cancelled` ou `timed_out`/);
-    expect(leitura).toMatch(/execução mais recente de cada job/);
-    expect(leitura).toMatch(/outros workflows não contam/);
-    expect(leitura).toMatch(/verde de um commit anterior não vale/);
-    expect(leitura).toMatch(
-      /Sem `check` e `e2e` \(e `epic`, no PR de épico\) em `success` e sem falha, o CI ainda roda/,
+      expect(reading).toContain(`\`${job}\``);
+    expect(reading).toMatch(/`queued` or `in_progress`/);
+    expect(reading).toMatch(/`failure`, `cancelled` or `timed_out`/);
+    expect(reading).toMatch(/most recent run of each job/);
+    expect(reading).toMatch(/other workflows do not count/);
+    expect(reading).toMatch(/green of an earlier commit does not count/);
+    expect(reading).toMatch(
+      /Without `check` and `e2e` \(and `epic`, on an epic PR\) at `success` and with no failure, CI is still running/,
     );
-    expect(leitura).not.toMatch(/Ignore os check runs `skipped`/);
-    expect(leitura).not.toMatch(/nenhum outro com/);
+    expect(reading).not.toMatch(/Ignore the `skipped` check runs/);
+    expect(reading).not.toMatch(/no other with/);
   });
 
-  it('o item 6 é uma lista com Espera do CI, Leitura do CI, Runner abandonado e Teto; a fase mescla o próprio PR (decisões 9 e 12)', () => {
+  it('item 6 is a list with CI wait, Reading CI, Abandoned runner and Ceiling; the phase merges its own PR (decisions 9 and 12)', () => {
     for (const sub of [
-      'Espera do CI',
-      'Leitura do CI',
-      'Runner abandonado',
-      'Teto do `dist/index.html`',
+      'CI wait',
+      'Reading CI',
+      'Abandoned runner',
+      'Ceiling of `dist/index.html`',
     ])
       expect(item6).toContain(`   - **${sub}:**`);
-    expect(item6).toMatch(/mescle o próprio PR no épico/);
-    expect(item6).toMatch(/nunca deixado para o coordenador/);
-    expect(item6).toMatch(/cada push[^\n]*recomeça a contagem/);
-    expect(item6).toMatch(/nunca rebase/);
-    const item7 = between(fase, '\n7. ', '\n8. ');
-    expect(item7).toMatch(/PR mesclado/);
-    const correcao = section(flow, '## Fase de correção');
-    expect(correcao).toMatch(/mescla o próprio PR/);
+    expect(item6).toMatch(/merge your own PR into the epic/);
+    expect(item6).toMatch(/never left to the coordinator/);
+    expect(item6).toMatch(/each push[^\n]*restarts the 20 min count/);
+    expect(item6).toMatch(/never rebase/);
+    const item7 = between(phase, '\n7. ', '\n8. ');
+    expect(item7).toMatch(/PR already merged/);
+    const fix = section(flow, '## Fix phase');
+    expect(fix).toMatch(/merges its own PR/);
   });
 
-  it('o verde exige cada job do ci.yml fora do needs do check, junto com success (achado 6, decisão 11)', () => {
+  it('green requires each ci.yml job outside the check needs, together with success (finding 6, decision 11)', () => {
     const ci = readFileSync('.github/workflows/ci.yml', 'utf8');
     const afterJobs = ci.slice(ci.indexOf('\njobs:\n'));
     const jobs = [...afterJobs.matchAll(/^ {2}([\w-]+):\s*$/gm)].map((m) => m[1]!);
@@ -379,233 +375,243 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
     const needsLine = afterJobs.match(
       /^ {2}check:\n(?:(?: {4}|\n).*\n)*? {4}needs: \[([^\]]*)\]/m,
     );
-    if (needsLine === null) throw new Error('needs do job check não achado');
+    if (needsLine === null) throw new Error('needs of the check job not found');
     const needs = needsLine[1]!.split(',').map((n) => n.trim());
-    for (const job of jobs) expect(leitura).toContain(`\`${job}\``);
-    const verde = between(leitura, 'Verde = ', 'O `check` não espera');
-    const fora = jobs.filter((j) => j !== 'check' && !needs.includes(j));
-    expect(fora).toContain('e2e');
-    expect(fora).toContain('epic');
-    for (const job of fora) {
-      expect(verde).toContain(`\`${job}\``);
-      expect(verde).toContain('`success`');
+    for (const job of jobs) expect(reading).toContain(`\`${job}\``);
+    const green = between(reading, 'Green = ', '`check` does not wait');
+    const outside = jobs.filter((j) => j !== 'check' && !needs.includes(j));
+    expect(outside).toContain('e2e');
+    expect(outside).toContain('epic');
+    for (const job of outside) {
+      expect(green).toContain(`\`${job}\``);
+      expect(green).toContain('`success`');
     }
   });
 
-  it('o briefing do Merge aponta para a Leitura do CI e não repete a definição (decisão 10)', () => {
-    const conferencia = between(
+  it('the Merge briefing points to the Reading CI and does not repeat the definition (decision 10)', () => {
+    const check = between(
       skill,
-      'Quem confere o CI e se o PR pode ser mesclado',
+      'Whoever checks the CI and whether the PR can be merged',
       '\n\n',
     );
-    expect(conferencia).toContain('Leitura do CI');
-    expect(conferencia).toContain('docs/FLOW.md');
-    expect(conferencia).not.toContain('nenhum outro com');
-    expect(conferencia).not.toMatch(/ignore os `skipped`/i);
-    expect(skill).not.toMatch(/Ignore os check runs `skipped`/);
-    expect(flow).not.toMatch(/Ignore os check runs `skipped`/);
+    expect(check).toContain('Reading CI');
+    expect(check).toContain('docs/FLOW.md');
+    expect(check).not.toContain('no other with');
+    expect(check).not.toMatch(/ignore the `skipped`/i);
+    expect(skill).not.toMatch(/Ignore the `skipped` check runs/);
+    expect(flow).not.toMatch(/Ignore the `skipped` check runs/);
   });
 
-  it('PR que espera o coordenador: send_later, gatilhos, log do aviso e merge no mesmo turno (#1476, decisões 12 a 15)', () => {
-    const espera = between(skill, '**PR que espera o coordenador:**', '\n\n');
-    expect(espera).toMatch(/`send_later` de 4 min/);
-    expect(espera).toMatch(/de 2 em 2 min até 20 min/);
-    expect(espera).toMatch(/de 8 em 8/);
-    expect(espera).toMatch(/push do coordenador/);
-    expect(espera).toMatch(/deixou o merge/);
-    expect(espera).toMatch(/recomeça a cadeia/);
-    expect(espera).toMatch(/Leitura do CI/);
-    expect(reserva).toMatch(/`send_later` por PR que espera o coordenador/);
-    expect(reserva).toMatch(/Nada de `send_later` por filha/);
-    expect(reserva).toMatch(/Pior caso de detecção:[^\n]*PR que espera o coordenador/);
-    expect(reserva).toMatch(/não usa `subscribe_pr_activity`/);
-    const economia = section(skill, '## Economia de contexto');
-    const item7 = economia.split('\n').find((l) => l.startsWith('7. '));
-    expect(item7).toMatch(/outro ciclo/);
-    expect(item7).toMatch(/linha no `log`/);
-    expect(item7).toMatch(/mesmo turno/);
-    const fases = between(skill, '2. **Fases**', '3. **Testador.**');
-    expect(fases).toMatch(/mescla[^\n]*mesmo turno/);
+  it('PR that waits for the coordinator: send_later, triggers, notice log and merge in the same turn (#1476, decisions 12 to 15)', () => {
+    const waiting = between(skill, '**PR that waits for the coordinator:**', '\n\n');
+    expect(waiting).toMatch(/`send_later` 4 min after/);
+    expect(waiting).toMatch(/every 2 min up to 20 min/);
+    expect(waiting).toMatch(/then every 8/);
+    expect(waiting).toMatch(/push by the coordinator/);
+    expect(waiting).toMatch(/left the merge/);
+    expect(waiting).toMatch(/restarts the chain/);
+    expect(waiting).toMatch(/Reading CI/);
+    expect(fallback).toMatch(/per-PR `send_later` that waits for the coordinator/);
+    expect(fallback).toMatch(/No `send_later` per child/);
+    expect(fallback).toMatch(
+      /Worst case of detection:[^\n]*PR that waits for the coordinator/,
+    );
+    expect(fallback).toMatch(/does not use `subscribe_pr_activity`/);
+    const economy = section(skill, '## Context economy');
+    const item7 = economy.split('\n').find((l) => l.startsWith('7. '));
+    expect(item7).toMatch(/another cycle/);
+    expect(item7).toMatch(/`log` line/);
+    expect(item7).toMatch(/same turn/);
+    const phases = between(skill, '2. **Phases**', '3. **Tester.**');
+    expect(phases).toMatch(/merges[^\n]*same turn/);
   });
 
-  it('"Para o dono, nos três chats": resumos do Depende de, do paralelo e da conferência (#1442, decisão 18)', () => {
-    const dono = section(flow, '## Para o dono, nos três chats');
-    expect(dono).toMatch(/`Depende de`[^\n]*`docs\/TESTING\.md` por roteiro/);
-    expect(dono).toContain('docs/TESTING-NUVEM.md#blocos');
-    expect(dono).toMatch(/`paralelo=N`[^\n]*`Vagas k\/N`/);
-    expect(dono).not.toMatch(/arquivos disjuntos/);
-    expect(dono).toMatch(/conferência de hora em hora[^\n]*contexto[^\n]*35%/);
+  it('"For the owner, in the three chats": summaries of Depende de, of parallel and of the check (#1442, decision 18)', () => {
+    const owner = section(flow, '## For the owner, in the three chats');
+    expect(owner).toMatch(/`Depende de`[^\n]*`docs\/TESTING\.md` per script/);
+    expect(owner).toContain('docs/TESTING-NUVEM.md#full-round-in-blocks');
+    expect(owner).toMatch(/`paralelo=N`[^\n]*`Vagas k\/N`/);
+    expect(owner).not.toMatch(/disjoint files/);
+    expect(owner).toMatch(/hourly check[^\n]*context[^\n]*35%/);
   });
 
-  it('"Para a sessão da fase": margem e teto do dist para a fase (decisões 3, 6, 7 e 8)', () => {
+  it('"For the phase session": margin and dist ceiling for the phase (decisions 3, 6, 7 and 8)', () => {
     expect(item6).toMatch(/abaixo de 2 KiB/);
-    expect(item6).toMatch(/enxugar/);
+    expect(item6).toMatch(/trim/);
     expect(item6).toContain('node scripts/ci/distBudget.mjs raise');
-    // Etapa #1614 (decisão 5): o teto mora no `scripts/ci/dist-budget.json`; o `--ci` saiu do comando.
+    // Stage #1614 (decision 5): the ceiling lives in `scripts/ci/dist-budget.json`; the `--ci` left the command.
     expect(item6).toContain('scripts/ci/dist-budget.json');
     expect(item6).not.toContain('--ci .github/workflows/ci.yml');
-    expect(item6).not.toMatch(/INDEX_HTML_MAX_BYTES[^\n]*do `ci\.yml`/);
-    // Decisão 6: a transição de um branch que subiu o teto no `ci.yml` antes da etapa.
-    expect(item6).toMatch(/ficando com o `ci\.yml` da `main`/);
+    expect(item6).not.toMatch(/INDEX_HTML_MAX_BYTES[^\n]*of `ci\.yml`/);
+    // Decision 6: the transition of a branch that raised the ceiling in `ci.yml` before the stage.
+    expect(item6).toMatch(/keeping the `ci\.yml` from `main`/);
     expect(item6).toMatch(/`history`/);
     expect(item6).toMatch(/16 KiB/);
-    expect(item6).toMatch(/até 14 KiB/);
+    expect(item6).toMatch(/up to 14 KiB/);
     expect(item6).toMatch(/32 KiB/);
     expect(item6).toMatch(/64 KiB/);
     expect(item6).toMatch(/`send_message`/);
   });
 
-  it('"Para a sessão da fase": o teto sempre sobe e a fase abre o `bug` do teto (#1802, decisões 1 a 6)', () => {
-    const teto = between(item6, '   - **Teto do `dist/index.html`:**', '**Transição:**');
-    expect(teto).not.toMatch(/chama o dono/);
-    expect(teto).not.toContain('peça a autorização ao dono');
-    expect(teto).toMatch(/sempre sobe/);
-    expect(teto).toContain('`bug:`');
-    expect(teto).toContain('Teto do dist/index.html acima dos limites');
-    expect(teto).toContain('`severity: low`');
-    expect(teto).toContain('is:issue in:title');
-    expect(teto).toMatch(/um por subida/);
-    expect(teto).toMatch(/depois do commit[^\n]*antes do aviso/);
-    expect(teto).toContain('Teto do `dist/index.html` subiu');
-    expect(teto).toContain('acima dos limites, `bug` #<n> para o dono revisar');
-    // o número do `bug` só existe depois de aberto: o 1º commit leva a linha sem ele, e o 2º o completa antes do push
-    expect(teto).toMatch(/termina em "; acima dos limites, `bug` para o dono revisar"/);
-    expect(teto).toMatch(/segundo commit completa a linha[^\n]*só então o push/);
-    expect(teto).toMatch(/sem `PushNotification`|o dono olha depois/);
-    expect(teto).toContain('#1493');
-    expect(teto).toMatch(/outra falha/);
+  it('"For the phase session": the ceiling always goes up and the phase opens the ceiling `bug` (#1802, decisions 1 to 6)', () => {
+    const ceiling = between(
+      item6,
+      '   - **Ceiling of `dist/index.html`:**',
+      '**Transition:**',
+    );
+    expect(ceiling).not.toMatch(/calls the owner/);
+    expect(ceiling).not.toContain('ask the owner for authorization');
+    expect(ceiling).toMatch(/always raises/);
+    expect(ceiling).toContain('`bug:`');
+    expect(ceiling).toContain('Teto do dist/index.html acima dos limites');
+    expect(ceiling).toContain('`severity: low`');
+    expect(ceiling).toContain('is:issue in:title');
+    expect(ceiling).toMatch(/one per raise/);
+    expect(ceiling).toMatch(/after the commit[^\n]*before the notice/);
+    expect(ceiling).toContain('Teto do `dist/index.html` subiu');
+    expect(ceiling).toContain('acima dos limites, `bug` #<n> para o dono revisar');
+    // the `bug` number only exists after it is opened: the 1st commit carries the line without it, and the 2nd completes it before the push
+    expect(ceiling).toMatch(
+      /the commit ends it in "; acima dos limites, `bug` para o dono revisar"/,
+    );
+    expect(ceiling).toMatch(/second commit completes the line[^\n]*only then the push/);
+    expect(ceiling).toMatch(/no `PushNotification`|the owner looks later/);
+    expect(ceiling).toContain('#1493');
+    expect(ceiling).toMatch(/another failure/);
   });
 
-  it('o CI de uma fase fica só no item 6 (decisão do dono)', () => {
-    const outros = fase
+  it("a phase's CI stays only in item 6 (owner's decision)", () => {
+    const others = phase
       .split('\n')
       .filter((l) => /^\d+\. /.test(l) && !l.startsWith('6. '));
-    expect(outros.length).toBeGreaterThan(0);
-    for (const linha of outros) {
-      expect(linha).not.toContain('send_later');
-      expect(linha).not.toContain('ci-rerun.yml');
-      expect(linha).not.toContain('distBudget.mjs');
+    expect(others.length).toBeGreaterThan(0);
+    for (const line of others) {
+      expect(line).not.toContain('send_later');
+      expect(line).not.toContain('ci-rerun.yml');
+      expect(line).not.toContain('distBudget.mjs');
     }
   });
 
-  it('"Conferências de reserva": 30 min, review_ready/idle sem aviso e send_message antes de recriar (decisão 5)', () => {
-    expect(reserva).toMatch(/mais de 30 min/);
-    expect(reserva).not.toMatch(/mais de 60 min/);
-    expect(reserva).toContain('`review_ready`');
-    expect(reserva).toContain('`idle`');
+  it('"Fallback checks": 30 min, review_ready/idle with no notice and send_message before recreating (decision 5)', () => {
+    expect(fallback).toMatch(/more than 30 min/);
+    expect(fallback).not.toMatch(/more than 60 min/);
+    expect(fallback).toContain('`review_ready`');
+    expect(fallback).toContain('`idle`');
     const msg = 'Conferência da fila: a fase não avisou. Retome do ponto em que parou';
-    expect(reserva).toContain(msg);
-    expect(reserva).toMatch(
+    expect(fallback).toContain(msg);
+    expect(fallback).toMatch(
       new RegExp(
-        `${msg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[\\s\\S]*crie a sessão de novo`,
+        `${msg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[\\s\\S]*create the session again`,
       ),
     );
-    expect(reserva).toMatch(/conferência seguinte/);
+    expect(fallback).toMatch(/the check after the `send_message`/);
   });
 
-  it('"Por etapa" › 2 e "Painel" dizem quando o wait é gravado e limpo (RS1, decisão 5)', () => {
-    const fases = between(skill, '2. **Fases**', '3. **Testador.**');
-    expect(fases).toContain('espera o coordenador');
-    expect(fases).toContain('CI travado');
-    expect(fases).toContain(
-      'A subida do teto não espera mais o dono (etapa #1802): traga a `main` (`git merge origin/main`), rode o `raise --write` de novo e siga o item 6 da "Para a sessão da fase".',
+  it('"Per stage" › 2 and "Panel" say when the wait is written and cleared (RS1, decision 5)', () => {
+    const phases = between(skill, '2. **Phases**', '3. **Tester.**');
+    expect(phases).toContain('waits for the coordinator');
+    expect(phases).toContain('CI travado');
+    expect(phases).toContain(
+      'Raising the ceiling no longer waits for the owner (stage #1802): bring in `main` (`git merge origin/main`), run `raise --write` again and follow item 6 of "For the phase session".',
     );
-    expect(fases).toContain('row \'#n\' wait="<motivo curto>"');
-    expect(fases).toContain('wait= childAt=now');
-    const painel = section(skill, '## Painel');
-    expect(painel).toContain('wait="<motivo>"');
+    expect(phases).toContain('row \'#n\' wait="<short reason>"');
+    expect(phases).toContain('wait= childAt=now');
+    const panel = section(skill, '## Panel');
+    expect(panel).toContain('wait="<reason>"');
   });
 
-  it('"Conferências de reserva": send_later pendente é espera legítima, e o pior caso está escrito (RS1, decisões 6 e 7)', () => {
-    expect(reserva).toMatch(/`send_later`[^\n]*ainda por disparar/);
-    expect(reserva).toMatch(/há menos de 5 min/);
-    expect(reserva).toMatch(/`row '#n' childAt=now`, sem mensagem/);
-    expect(reserva).toMatch(/~60 min/);
-    expect(reserva).toMatch(/~90 min/);
-    expect(reserva).toMatch(
-      /espera do CI da própria fase \(4 min, de 2 em 2 min até 20 min, depois de 8 em 8\)/,
+  it('"Fallback checks": a pending send_later is a legitimate wait, and the worst case is written (RS1, decisions 6 and 7)', () => {
+    expect(fallback).toMatch(/`send_later` still to fire/);
+    expect(fallback).toMatch(/less than 5 min ago/);
+    expect(fallback).toMatch(/`row '#n' childAt=now`, no message/);
+    expect(fallback).toMatch(/~60 min/);
+    expect(fallback).toMatch(/~90 min/);
+    expect(fallback).toMatch(
+      /phase's own CI wait \(4 min, every 2 min up to 20 min, then every 8\)/,
     );
-    expect(reserva).toMatch(/frequência e o corte não mudam/);
+    expect(fallback).toMatch(/frequency and the cutoff do not change/);
   });
 
-  it('o coordenador não roda o CI de novo; chama o dono (decisão 4)', () => {
-    expect(skill).not.toMatch(/roda de novo uma vez se morreu antes de testar/);
-    expect(ciVermelho).toMatch(/não roda o CI de novo/);
-    expect(ciVermelho).toContain('ci-rerun.yml');
-    expect(ciVermelho).toContain('CI travado');
-    expect(ciVermelho).toContain('esperando dono');
-    expect(ciVermelho).toContain('PushNotification');
+  it('the coordinator does not rerun the CI; it calls the owner (decision 4)', () => {
+    expect(skill).not.toMatch(/reruns once if it died before testing/);
+    expect(redCi).toMatch(/does not rerun the CI/);
+    expect(redCi).toContain('ci-rerun.yml');
+    expect(redCi).toContain('CI travado');
+    expect(redCi).toContain('esperando dono');
+    expect(redCi).toContain('PushNotification');
   });
 
-  it('"CI vermelho no PR do épico": regra do teto, script e roadmap (decisões 6 a 9)', () => {
-    expect(ciVermelho).toContain('Tamanho do dist/index.html');
-    expect(ciVermelho).toMatch(/16 KiB/);
-    expect(ciVermelho).toContain('até 14 KiB (14.336 bytes)');
-    expect(ciVermelho).toContain('excesso acima de 14 KiB');
-    expect(ciVermelho).toMatch(/32 KiB/);
-    expect(ciVermelho).toMatch(/64 KiB/);
-    expect(ciVermelho).toMatch(/worktree descartável/);
-    expect(ciVermelho).toContain('npm ci && npm run build');
-    expect(ciVermelho).toContain('node scripts/ci/distBudget.mjs raise');
-    expect(ciVermelho).toContain('scripts/ci/dist-budget.json');
-    expect(ciVermelho).not.toContain('--ci .github/workflows/ci.yml');
-    expect(ciVermelho).not.toMatch(/INDEX_HTML_MAX_BYTES[^\n]*do `ci\.yml`/);
-    expect(ciVermelho).toMatch(/ficando com o `ci\.yml` da `main`/);
-    expect(ciVermelho).toMatch(/`history`/);
-    expect(ciVermelho).toContain('changelog/<nome>.md');
-    expect(ciVermelho).toContain('Orçamento do dist/index.html');
-    expect(ciVermelho).toContain('Teto na última revisão do dono');
-    expect(ciVermelho).toMatch(/primeira subida/);
-    expect(ciVermelho).toMatch(/inclusive as da fase|subida feita pela fase/);
+  it('"Red CI on the epic PR": ceiling rule, script and roadmap (decisions 6 to 9)', () => {
+    expect(redCi).toContain('Tamanho do dist/index.html');
+    expect(redCi).toMatch(/16 KiB/);
+    expect(redCi).toContain('up to 14 KiB (14,336 bytes)');
+    expect(redCi).toContain('excess above 14 KiB');
+    expect(redCi).toMatch(/32 KiB/);
+    expect(redCi).toMatch(/64 KiB/);
+    expect(redCi).toMatch(/disposable worktree/);
+    expect(redCi).toContain('npm ci && npm run build');
+    expect(redCi).toContain('node scripts/ci/distBudget.mjs raise');
+    expect(redCi).toContain('scripts/ci/dist-budget.json');
+    expect(redCi).not.toContain('--ci .github/workflows/ci.yml');
+    expect(redCi).not.toMatch(/INDEX_HTML_MAX_BYTES[^\n]*of `ci\.yml`/);
+    expect(redCi).toMatch(/keeping `main`'s `ci\.yml`/);
+    expect(redCi).toMatch(/`history`/);
+    expect(redCi).toContain('changelog/<name>.md');
+    expect(redCi).toContain('Orçamento do dist/index.html');
+    expect(redCi).toContain('Teto na última revisão do dono');
+    expect(redCi).toMatch(/first raise/);
+    expect(redCi).toMatch(/including the phases'|raise done by the phase/);
   });
 
-  it('"CI vermelho no PR do épico": o teto sempre sobe, o `bug` sai pelo subagente da subida (#1802, decisões 2, 3 e 6)', () => {
-    const teto = between(
-      ciVermelho,
-      '- **Teto do `dist/index.html`',
-      '\n\n**CI preso na fila',
+  it('"Red CI on the epic PR": the ceiling always goes up, the `bug` comes from the raise subagent (#1802, decisions 2, 3 and 6)', () => {
+    const ceiling = between(
+      redCi,
+      '- **`dist/index.html` ceiling',
+      '\n\n**CI stuck in the queue',
     );
-    expect(teto).toMatch(/sobe sozinho, sem esperar o dono/);
-    expect(teto).not.toMatch(/chama o dono/);
-    expect(teto).not.toContain('Fora disso, chame o dono');
-    expect(teto).toMatch(/outra falha/);
-    expect(teto).toMatch(/sempre sobe/);
-    expect(teto).toContain('"bug: …"');
-    expect(teto).toMatch(/`bug` do teto/);
-    expect(teto).toMatch(/subagente da subida/);
-    expect(teto).toContain('item 6 da "Para a sessão da fase"');
-    // o formato do `bug` fica no FLOW.md e não se copia para o skill
-    expect(teto).not.toContain('severity: low');
-    expect(teto).not.toContain('in:title');
-    expect(teto).toContain('sem `PushNotification`');
-    expect(teto).toContain('<código>: teto +<K> KiB acima dos limites, bug #<n>');
-    expect(teto).toMatch(/#1493[^\n]*cita o `bug`|cita o `bug`[^\n]*#1493/);
-    expect(teto).toContain('Teto do `dist/index.html` subiu');
-    expect(teto).toMatch(/segundo commit[^\n]*antes do push/);
-    expect(teto).toContain('até 14 KiB (14.336 bytes)');
-    expect(teto).toMatch(/32 KiB/);
-    expect(teto).toMatch(/64 KiB/);
+    expect(ceiling).toMatch(/goes up by itself, without waiting for the owner/);
+    expect(ceiling).not.toMatch(/calls the owner/);
+    expect(ceiling).not.toContain('Otherwise, call the owner');
+    expect(ceiling).toMatch(/a failure other than the size/);
+    expect(ceiling).toMatch(/always goes up/);
+    expect(ceiling).toContain('"bug: …"');
+    expect(ceiling).toMatch(/ceiling `bug`/);
+    expect(ceiling).toMatch(/raise subagent/);
+    expect(ceiling).toContain('item 6 of "For the phase session"');
+    // the format of the `bug` stays in FLOW.md and is not copied into the skill
+    expect(ceiling).not.toContain('severity: low');
+    expect(ceiling).not.toContain('in:title');
+    expect(ceiling).toContain('without `PushNotification`');
+    expect(ceiling).toContain('<code>: teto +<K> KiB acima dos limites, bug #<n>');
+    expect(ceiling).toMatch(
+      /#1493[^\n]*cites the ceiling `bug`|cites the ceiling `bug`[^\n]*#1493/,
+    );
+    expect(ceiling).toContain('Teto do `dist/index.html` subiu');
+    expect(ceiling).toMatch(/second commit[^\n]*before the push/);
+    expect(ceiling).toContain('up to 14 KiB (14,336 bytes)');
+    expect(ceiling).toMatch(/32 KiB/);
+    expect(ceiling).toMatch(/64 KiB/);
   });
 
-  it('detalhar-backlog: "1. Candidatas" deixa de fora o `bug` do teto do dist (#1802, decisão 10)', () => {
-    const candidatas = section(detalhar, '## 1. Candidatas');
-    const passo2 = between(candidatas, '2. ', '\n3. ');
-    expect(passo2).toContain('Teto do dist/index.html acima dos limites');
-    expect(passo2).toContain('chat do supervisor');
-    expect(passo2).toMatch(/título começa por/);
+  it('detalhar-backlog: "1. Candidates" leaves out the dist ceiling `bug` (#1802, decision 10)', () => {
+    const candidates = section(detalhar, '## 1. Candidates');
+    const step2 = between(candidates, '2. ', '\n3. ');
+    expect(step2).toContain('Teto do dist/index.html acima dos limites');
+    expect(step2).toContain("supervisor's chat");
+    expect(step2).toMatch(/title starts with/);
   });
 
-  it('PROCESS.md, "Rótulos": o `bug` admite a subida do teto acima dos limites, severity: low (#1802, decisão 9)', () => {
-    const rotulos = between(processDoc, '**Rótulos:**', '\n');
-    expect(rotulos).toContain('subida do teto do `dist/index.html` acima dos limites');
-    expect(rotulos).toContain('pedido de revisão do dono');
-    expect(rotulos).toContain('severity: low');
-    expect(rotulos).toContain('`docs/FLOW.md`, item 6');
+  it('PROCESS.md, "Labels": the `bug` admits the ceiling raise above the limits, severity: low (#1802, decision 9)', () => {
+    const labels = between(processDoc, '**Labels:**', '\n');
+    expect(labels).toContain('raising the `dist/index.html` ceiling above the limits');
+    expect(labels).toContain('a review request to the owner');
+    expect(labels).toContain('severity: low');
+    expect(labels).toContain('`docs/FLOW.md`, item 6');
   });
 
-  it('detalhar-backlog: gatilhos de risco (a) e reclassificação (b) (decisão 11)', () => {
-    const esforco = section(detalhar, '## Esforço do detalhamento');
-    for (const gatilho of [
+  it('detalhar-backlog: risk triggers (a) and reclassification (b) (decision 11)', () => {
+    const effort = section(detalhar, '## Detailing effort');
+    for (const trigger of [
       '`implementar-fila`',
       'painel.py',
       '.github/workflows/',
@@ -616,159 +622,157 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
       'pwa/csp.ts',
       '`/code-review high`',
     ]) {
-      expect(esforco).toContain(gatilho);
+      expect(effort).toContain(trigger);
     }
-    expect(esforco).toMatch(/qualquer que seja o tamanho/);
-    expect(esforco).toMatch(/gatilho/);
-    expect(esforco).toMatch(/reclassifica/);
+    expect(effort).toMatch(/whatever its size/);
+    expect(effort).toMatch(/trigger/);
+    expect(effort).toMatch(/reclassif/);
   });
 
-  it('implementar-fila: /code-review high no diff do épico, no Fechamento (decisão 11, c)', () => {
-    const fechamento = between(skill, '5. **Fechamento**', '6. **Merge**');
-    expect(fechamento).toContain('/code-review high');
-    expect(fechamento).toMatch(/diff inteiro do épico/);
-    expect(fechamento).toMatch(/base `main`/);
-    expect(fechamento).toMatch(/antes do merge/);
-    expect(fechamento).toMatch(/teste primeiro/);
-    expect(fechamento).toMatch(/mesmo que as fases tenham sido medium/);
+  it('implementar-fila: /code-review high on the epic diff, in the Closing (decision 11, c)', () => {
+    const closing = between(skill, '5. **Closing**', '6. **Merge**');
+    expect(closing).toContain('/code-review high');
+    expect(closing).toMatch(/epic's whole diff/);
+    expect(closing).toMatch(/base `main`/);
+    expect(closing).toMatch(/before the merge/);
+    expect(closing).toMatch(/test first/);
+    expect(closing).toMatch(/even if the phases were medium/);
   });
 
-  it('o item "rede de segurança" decide pela saída do riskTriggers, sem lista de caminhos própria (RS1, decisão 3)', () => {
-    const fechamento = between(skill, '5. **Fechamento**', '6. **Merge**');
-    const item = fechamento.split('\n').find((l) => l.includes('**rede de segurança'));
+  it('the "safety net" item decides by the riskTriggers output, with no path list of its own (RS1, decision 3)', () => {
+    const closing = between(skill, '5. **Closing**', '6. **Merge**');
+    const item = closing.split('\n').find((l) => l.includes('**safety net'));
     expect(item).toBeDefined();
     expect(item).toContain('node scripts/ci/riskTriggers.mjs --base origin/main');
     expect(item).toContain('`log`');
     expect(item).toContain('`gatilho:`');
     expect(item).toContain('`nenhum gatilho`');
-    for (const caminho of [
+    for (const filePath of [
       'src/store/session.ts',
       'pwa/csp.ts',
       'scripts/release/',
       'mcp/version.ts',
       '.github/workflows/',
     ]) {
-      expect(item).not.toContain(caminho);
+      expect(item).not.toContain(filePath);
     }
-    expect(fechamento).toContain('git diff --name-only origin/main...HEAD'); // a escolha da versão do MCP fica
+    expect(closing).toContain('git diff --name-only origin/main...HEAD'); // the choice of the MCP version stays
   });
 
-  it('versão do schema escolhida ao criar o épico, como a do MCP (decisão do dono de 2026-11-10)', () => {
-    const regra = between(
-      skill,
-      '3. **Uma versão do MCP por épico',
-      '## Economia de contexto',
-    );
-    expect(regra).toMatch(/Versão do schema/);
-    expect(regra).toMatch(/origin\/main/);
-    expect(regra).toMatch(/próxima/);
-    expect(regra).toMatch(/comente na issue/);
-    expect(regra).toMatch(/mensagem da primeira fase/);
+  it("schema version chosen when creating the epic, like the MCP's (owner's decision of 2026-11-10)", () => {
+    const rule = between(skill, '3. **One MCP version per epic', '## Context economy');
+    expect(rule).toMatch(/[Ss]chema version/);
+    expect(rule).toMatch(/origin\/main/);
+    expect(rule).toMatch(/next/);
+    expect(rule).toMatch(/comment on the issue/);
+    expect(rule).toMatch(/first phase's message/);
   });
 
-  it('PROCESS.md: a linha do ci-rerun.yml na regra da main (decisão 10)', () => {
+  it('PROCESS.md: the ci-rerun.yml line in the main rule (decision 10)', () => {
     const item = processDoc
       .split('\n')
-      .find((l) => l.includes('A `main` só aceita PR de `epic/*`'));
+      .find((l) => l.includes('`main` only accepts PRs from `epic/*`'));
     expect(item).toContain('ci-rerun.yml');
   });
 });
 
-// Etapa #1669 (QF1): execução do CI presa em `queued` sem jobs; o texto da fase e da fila.
-describe('CI preso na fila (#1669)', () => {
+// Stage #1669 (QF1): CI run stuck in `queued` with no jobs; the text of the phase and of the queue.
+describe('CI stuck in the queue (#1669)', () => {
   const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
   const flow = readFileSync('docs/FLOW.md', 'utf8');
-  const fase = section(flow, '## Para a sessão da fase');
-  const item6 = between(fase, '\n6. ', '\n7. ');
-  const item7 = between(fase, '\n7. ', '\n8. ');
-  const presoSub = () => between(item6, '   - **Execução presa na fila:**', '\n   - **');
-  const porEtapa = section(skill, '## 3. Por etapa');
-  // O parágrafo é a abertura e os sub-itens, até o fim da seção "3. Por etapa" (o prettier separa a
-  // abertura da lista por uma linha em branco).
-  const paragrafoCi = () => {
-    const marca = '**CI preso na fila (PR de fase ou de épico)';
-    const at = porEtapa.indexOf(marca);
-    if (at < 0) throw new Error(`âncora inicial não achada: ${marca}`);
-    return porEtapa.slice(at);
+  const phase = section(flow, '## For the phase session');
+  const item6 = between(phase, '\n6. ', '\n7. ');
+  const item7 = between(phase, '\n7. ', '\n8. ');
+  const stuckSub = () => between(item6, '   - **Run stuck in the queue:**', '\n   - **');
+  const perStage = section(skill, '## 3. Per stage');
+  // The paragraph is the opening and the sub-items, up to the end of the section "3. Per stage"
+  // (prettier separates the opening from the list by a blank line).
+  const stuckParagraph = () => {
+    const mark = '**CI stuck in the queue (phase or epic PR)';
+    const at = perStage.indexOf(mark);
+    if (at < 0) throw new Error(`starting anchor not found: ${mark}`);
+    return perStage.slice(at);
   };
 
-  it('item 6 da fase: sub-item depois do Runner abandonado, com o script, a lista do commit e o aviso (decisões 1 a 3)', () => {
-    const preso = presoSub();
-    expect(item6.indexOf('**Runner abandonado:**')).toBeLessThan(
-      item6.indexOf('**Execução presa na fila:**'),
+  it('item 6 of the phase: sub-item after the Abandoned runner, with the script, the commit list and the notice (decisions 1 to 3)', () => {
+    const stuck = stuckSub();
+    expect(item6.indexOf('**Abandoned runner:**')).toBeLessThan(
+      item6.indexOf('**Run stuck in the queue:**'),
     );
-    expect(preso).toContain('node scripts/ci/ciRerun.mjs queued');
-    expect(preso).toContain('actions/workflows/ci.yml/runs?head_sha=');
-    expect(preso).toContain('16 min');
-    expect(preso).toContain('CI preso na fila: <link da execução>');
-    expect(preso).toMatch(/não fecha, não reabre, não reexecuta e não faz commit vazio/);
-    expect(preso).toMatch(/uma vez por `run`/);
-    expect(preso).toMatch(/não pergunta nada ao dono/);
+    expect(stuck).toContain('node scripts/ci/ciRerun.mjs queued');
+    expect(stuck).toContain('actions/workflows/ci.yml/runs?head_sha=');
+    expect(stuck).toContain('16 min');
+    expect(stuck).toContain('CI preso na fila: <link da execução>');
+    expect(stuck).toMatch(
+      /does not close, does not reopen, does not rerun and does not make an empty commit/,
+    );
+    expect(stuck).toMatch(/once per `run`/);
+    expect(stuck).toMatch(/does not ask the owner anything/);
   });
 
-  it('item 6 da fase: fechar e reabrir é do coordenador e a fase não trata closed/reopened como fim (decisões 5, 6 e 8)', () => {
-    const preso = presoSub();
-    expect(preso).toMatch(/recomece a Espera do CI/);
-    expect(preso).toContain('`closed`');
-    expect(preso).toContain('`reopened`');
-    expect(preso).toMatch(/não como fim do PR/);
+  it("item 6 of the phase: closing and reopening is the coordinator's and the phase does not treat closed/reopened as the end (decisions 5, 6 and 8)", () => {
+    const stuck = stuckSub();
+    expect(stuck).toMatch(/restart the CI wait/);
+    expect(stuck).toContain('`closed`');
+    expect(stuck).toContain('`reopened`');
+    expect(stuck).toMatch(/not as the end of the PR/);
   });
 
-  it('o item 7 cita "CI preso na fila" entre as mensagens de espera', () => {
+  it('item 7 cites "CI preso na fila" among the waiting messages', () => {
     expect(item7).toContain('CI preso na fila');
   });
 
-  it('"CI e preview" proíbe o commit vazio e só admite o fechar e reabrir na execução presa na fila (decisão 9)', () => {
-    const ci = between(flow, 'O CI roda só nos PRs', '\n\n');
-    expect(ci).toMatch(/nada de commit vazio/);
-    expect(ci).toMatch(/execução presa na fila/);
-    expect(ci).toMatch(/"sim" do dono/);
+  it('"CI and preview" forbids the empty commit and only admits closing and reopening for a run stuck in the queue (decision 9)', () => {
+    const ci = between(flow, 'CI runs only on PRs', '\n\n');
+    expect(ci).toMatch(/no empty commits/);
+    expect(ci).toMatch(/run is stuck in the queue/);
+    expect(ci).toMatch(/owner's "sim"/);
     expect(ci).toContain('item 6');
   });
 
-  it('skill: parágrafo CI preso na fila com a pergunta, as opções e os efeitos (decisões 3 a 7)', () => {
-    const paragrafo = paragrafoCi();
-    expect(paragrafo).toContain(
+  it('skill: CI stuck in the queue paragraph with the question, the options and the effects (decisions 3 to 7)', () => {
+    const paragraph = stuckParagraph();
+    expect(paragraph).toContain(
       'Fecho e reabro o PR #<n> para criar uma execução nova do CI?',
     );
-    expect(paragrafo).toContain('Fechar e reabrir (Recomendado)');
-    expect(paragrafo).toContain('Esperar');
-    expect(paragrafo).toContain('update_pull_request');
-    expect(paragrafo).toContain('reaberto=true');
-    expect(paragrafo).toContain('instabilidade do GitHub');
-    expect(paragrafo).toContain('esperando dono');
-    expect(paragrafo).toContain('PushNotification');
-    expect(paragrafo).toContain('node scripts/ci/ciRerun.mjs queued');
-    expect(paragrafo).toMatch(/16 min/);
-    expect(paragrafo).toMatch(/[Ss]ó vale a resposta do dono no chat da fila/);
+    expect(paragraph).toContain('Fechar e reabrir (Recomendado)');
+    expect(paragraph).toContain('Esperar');
+    expect(paragraph).toContain('update_pull_request');
+    expect(paragraph).toContain('reaberto=true');
+    expect(paragraph).toContain('instabilidade do GitHub');
+    expect(paragraph).toContain('esperando dono');
+    expect(paragraph).toContain('PushNotification');
+    expect(paragraph).toContain('node scripts/ci/ciRerun.mjs queued');
+    expect(paragraph).toMatch(/16 min/);
+    expect(paragraph).toMatch(/[Oo]nly the owner's answer in the queue chat counts/);
   });
 
-  it('skill: o parágrafo vem depois do CI vermelho no PR do épico e antes do item que o remete', () => {
-    expect(skill.indexOf('**CI vermelho no PR do épico**')).toBeLessThan(
-      skill.indexOf('**CI preso na fila (PR de fase ou de épico)'),
+  it('skill: the paragraph comes after the red CI on the epic PR and before the item that refers to it', () => {
+    expect(skill.indexOf('**Red CI on the epic PR**')).toBeLessThan(
+      skill.indexOf('**CI stuck in the queue (phase or epic PR)'),
     );
   });
 
-  it('skill: "O coordenador não roda o CI de novo" continua e remete ao parágrafo novo', () => {
-    const item = between(skill, '- **O coordenador não roda o CI de novo.**', '\n- **');
+  it('skill: "The coordinator does not rerun the CI" stays and refers to the new paragraph', () => {
+    const item = between(skill, '- **The coordinator does not rerun the CI.**', '\n- **');
     expect(item).toContain('CI travado');
     expect(item).toMatch(
-      /salvo a execução presa na fila \(parágrafo \*\*CI preso na fila\*\*\)/,
+      /except for a run stuck in the queue \(paragraph \*\*CI stuck in the queue\*\*\)/,
     );
-    expect(item).toMatch(/runner abandonado/);
+    expect(item).toMatch(/abandoned runner/);
   });
 
-  it('skill: "Filha que espera o coordenador", o PR que espera e a conferência de hora em hora citam o caso', () => {
-    const filha = between(skill, '**Filha que espera o coordenador**', '\n\n');
-    expect(filha).toContain('CI preso na fila');
-    const espera = between(skill, '**PR que espera o coordenador:**', '\n\n');
-    expect(espera).toContain('CI preso na fila');
-    const reserva = between(skill, '**Conferências de reserva:**', '**CI vermelho');
-    expect(reserva).toContain('CI preso na fila');
+  it('skill: "Child that waits for the coordinator", the PR that waits and the hourly check cite the case', () => {
+    const child = between(skill, '**Child that waits for the coordinator**', '\n\n');
+    expect(child).toContain('CI preso na fila');
+    const waiting = between(skill, '**PR that waits for the coordinator:**', '\n\n');
+    expect(waiting).toContain('CI stuck in the queue');
+    const fallback = between(skill, '**Fallback checks:**', '**Red CI');
+    expect(fallback).toContain('CI stuck in the queue');
   });
 
-  it('o skill ficou pequeno: o parágrafo novo e as remissões somam menos de 60 linhas (decisão 11)', () => {
-    const paragrafo = paragrafoCi();
-    expect(paragrafo.split('\n').length).toBeLessThan(60);
+  it('the skill stayed small: the new paragraph and the references add up to less than 60 lines (decision 11)', () => {
+    const paragraph = stuckParagraph();
+    expect(paragraph.split('\n').length).toBeLessThan(60);
   });
 });

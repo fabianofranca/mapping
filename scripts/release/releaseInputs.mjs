@@ -1,38 +1,38 @@
-// Entradas da release do MCP (etapa #920, decisão 6): os arquivos cuja mudança muda o que vai
-// no `mapping-mcp.js` e nos arquivos do workspace publicados com ele. O job `epic` do `ci.yml`
-// usa a lista para exigir versão nova do MCP. Um teste (`tests/tooling/releaseInputs.test.ts`)
-// roda o esbuild com `metafile` e falha se algo empacotado ficar fora da lista.
-// Só Node, sem dependências. Termina em `/` = pasta inteira; sem `/` no fim = arquivo.
+// MCP release inputs (stage #920, decision 6): the files whose change changes what goes
+// into `mapping-mcp.js` and into the workspace files published with it. The `epic` job of `ci.yml`
+// uses the list to require a new MCP version. A test (`tests/tooling/releaseInputs.test.ts`)
+// runs esbuild with `metafile` and fails if anything bundled is left out of the list.
+// Node only, no dependencies. Ending in `/` = a whole folder; no trailing `/` = a file.
 import { WORKSPACE_SOURCES } from './workspaceAssets.mjs';
 
 export const RELEASE_INPUTS = [
-  // Servidor (inclui o build, as fontes TTF e a lista dos wasm).
+  // Server (includes the build, the TTF fonts and the wasm list).
   'mcp/',
-  // Modelo puro, o único trecho de `src/` que o bundle importa.
+  // Pure model, the only part of `src/` the bundle imports.
   'src/model/',
-  // Extrator de assinaturas: o bundle `mapping-signature.mjs` vai na Release, ao lado do servidor.
+  // Signature extractor: the `mapping-signature.mjs` bundle goes in the Release, next to the server.
   'signature/',
-  // Documentação embutida por `?raw` (recursos do servidor e guia do agente).
+  // Documentation embedded by `?raw` (server resources and the agent guide).
   'docs/AGENT-GUIDE.md',
   'docs/COMMENT-FORMAT.md',
   'docs/COMPONENT-FORMAT.md',
   'docs/FORMAT.md',
   'docs/SIGNATURE-FORMAT.md',
   'docs/SPEC-FORMAT.md',
-  // Biblioteca de notas embutida.
+  // Embedded notes library.
   'libraries/notas/',
-  // Fontes dos arquivos do workspace: a lista é a de `workspaceAssets.mjs`, sem cópia aqui.
+  // Sources of the workspace files: the list is that of `workspaceAssets.mjs`, with no copy here.
   ...WORKSPACE_SOURCES,
 ];
 
-/** O arquivo (caminho relativo à raiz, com `/`) é entrada da release? */
+/** Is the file (path relative to the root, with `/`) a release input? */
 export function isReleaseInput(path) {
   return RELEASE_INPUTS.some((entry) =>
     entry.endsWith('/') ? path.startsWith(entry) : path === entry,
   );
 }
 
-/** Dos caminhos dados, os que são entrada da release, na mesma ordem. */
+/** Of the given paths, those that are release inputs, in the same order. */
 export function releaseInputsIn(paths) {
   return paths.filter(isReleaseInput);
 }

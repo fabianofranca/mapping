@@ -1,14 +1,14 @@
-// Decisões da estável do MCP (etapa #920): o YAML só junta os dados (tags, versão, arquivos
-// mudados) e chama este script. Só Node, sem dependências.
-//   decide --version-file <mcp/version.ts> --sha <sha> [--tags-file <arquivo>] [--output <arquivo>]
-//     Job `decide` do `mcp-release.yml` (push na main): a tag `mcp-v<versão>` existe? Sem
-//     `--tags-file`, lê as tags do remoto (`git ls-remote --tags origin`). Escreve `tag`, `sha` e
-//     `publish` em `--output` (o `$GITHUB_OUTPUT`) e imprime o aviso quando pula.
+// MCP stable-release decisions (stage #920): the YAML only gathers the data (tags, version, changed
+// files) and calls this script. Node only, no dependencies.
+//   decide --version-file <mcp/version.ts> --sha <sha> [--tags-file <file>] [--output <file>]
+//     `decide` job of `mcp-release.yml` (push to main): does the `mcp-v<version>` tag exist? Without
+//     `--tags-file`, it reads the remote's tags (`git ls-remote --tags origin`). Writes `tag`, `sha` and
+//     `publish` to `--output` (the `$GITHUB_OUTPUT`) and prints the notice when it skips.
 //   version --version-file <mcp/version.ts>
-//     Imprime a `SERVER_VERSION` (os workflows de release a leem daqui, sem `sed`).
+//     Prints `SERVER_VERSION` (the release workflows read it from here, with no `sed`).
 //   epic --version-file <mcp/version.ts>
-//     Passo "Versão do MCP" do job `epic` do `ci.yml`: sai com 1 e `::error::` se o épico muda
-//     entrada da release e mantém a versão que já tem estável (ou se a versão nova não é maior).
+//     "Versão do MCP" step of the `epic` job of `ci.yml`: exits with 1 and `::error::` if the epic changes
+//     a release input and keeps the version that already has a stable (or if the new version is not greater).
 import { spawnSync } from 'node:child_process';
 import { appendFileSync, readFileSync } from 'node:fs';
 import process from 'node:process';
@@ -18,7 +18,7 @@ import { releaseInputsIn } from './releaseInputs.mjs';
 export const STABLE_TAG = /^mcp-v(\d+)\.(\d+)\.(\d+)$/;
 const MAX_LISTED = 5;
 
-/** Nomes de tag de um texto: `git ls-remote --tags` (`<sha>\trefs/tags/<tag>`) ou `git tag -l`. */
+/** Tag names from a text: `git ls-remote --tags` (`<sha>\trefs/tags/<tag>`) or `git tag -l`. */
 export function parseTags(text) {
   const tags = [];
   for (const line of text.split('\n')) {
@@ -29,7 +29,7 @@ export function parseTags(text) {
   return tags;
 }
 
-/** `SERVER_VERSION` do texto de `mcp/version.ts`. */
+/** `SERVER_VERSION` from the text of `mcp/version.ts`. */
 export function readServerVersion(source) {
   const match = /SERVER_VERSION = '([^']*)';/.exec(source);
   if (!match) throw new Error('SERVER_VERSION não encontrada em mcp/version.ts.');
@@ -52,7 +52,7 @@ export function compareVersions(a, b) {
   return 0;
 }
 
-/** A maior versão estável entre as tags (rc e snapshot não contam), ou `null`. */
+/** The greatest stable version among the tags (rc and snapshot do not count), or `null`. */
 export function latestStable(tags) {
   let best = null;
   for (const tag of tags) {
@@ -64,7 +64,7 @@ export function latestStable(tags) {
   return best;
 }
 
-/** Job `decide`: publica só se a tag estável da versão ainda não existe. */
+/** `decide` job: publishes only if the version's stable tag does not exist yet. */
 export function decideRelease({ version, tags }) {
   parts(version);
   const tag = `mcp-v${version}`;
@@ -85,7 +85,7 @@ function listFiles(files) {
   return rest > 0 ? `${shown} e mais ${rest}` : shown;
 }
 
-/** Passo "Versão do MCP" do job `epic`. `changed` só é lido quando a tag da versão existe. */
+/** "Versão do MCP" step of the `epic` job. `changed` is only read when the version's tag exists. */
 export function checkEpicVersion({ version, tags, changed }) {
   parts(version);
   const tag = `mcp-v${version}`;

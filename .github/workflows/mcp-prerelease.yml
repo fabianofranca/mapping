@@ -1,24 +1,24 @@
 name: MCP pre-release
 
-# Canais de teste do servidor MCP, antes da estável (`mcp-release.yml`, tag `mcp-v<versão>`).
-# A versão do código (`SERVER_VERSION` em `mcp/version.ts`) é uma por épico; estes canais só
-# acrescentam um sufixo ao build (`MCP_BUILD_SUFFIX`, validado em `mcp/build.mjs`).
+# Test channels of the MCP server, before the stable one (`mcp-release.yml`, tag `mcp-v<version>`).
+# The code version (`SERVER_VERSION` in `mcp/version.ts`) is one per epic; these channels only
+# add a suffix to the build (`MCP_BUILD_SUFFIX`, validated in `mcp/build.mjs`).
 #
-# - snapshot: todo PR com base num `epic/**` gera `mcp-snapshot-pr<N>` (pre-release fixa,
-#   sobrescrita a cada push; versão `<versão>-snapshot.pr<N>+<sha curto>`). Quando o PR fecha
-#   (mesclado ou não), a release e a tag são apagadas.
-# - rc: só sai no merge de um PR com o rótulo `mcp-rc` num `epic/**`: o PR da última fase do
-#   épico (o agente dessa fase põe o rótulo ao abrir o PR). Gera `mcp-v<versão>-rc.<n>`
-#   (n = maior rc existente daquela versão + 1) a partir do commit do merge. Sem o rótulo, o
-#   merge não gera rc. Se alguém esquecer o rótulo, rode este workflow à mão (`workflow_dispatch`)
-#   no branch `epic/**`. As rc são apagadas pelo `mcp-release.yml` quando a estável da mesma
-#   versão é publicada.
-# Os testes do PR rodam no `ci.yml`; o snapshot não os repete. A rc os roda, como a estável.
+# - snapshot: every PR based on an `epic/**` generates `mcp-snapshot-pr<N>` (a fixed pre-release,
+#   overwritten on every push; version `<version>-snapshot.pr<N>+<short sha>`). When the PR closes
+#   (merged or not), the release and the tag are deleted.
+# - rc: only goes out on the merge of a PR with the `mcp-rc` label into an `epic/**`: the PR of the epic's
+#   last phase (that phase's agent puts the label on when opening the PR). It generates `mcp-v<version>-rc.<n>`
+#   (n = that version's largest existing rc + 1) from the merge commit. Without the label, the
+#   merge does not generate an rc. If someone forgets the label, run this workflow by hand (`workflow_dispatch`)
+#   on the `epic/**` branch. The rcs are deleted by `mcp-release.yml` when the stable of the same
+#   version is published.
+# The PR's tests run in `ci.yml`; the snapshot does not repeat them. The rc runs them, like the stable.
 #
-# O código do PR (`npm ci`, build, testes) roda em jobs `*-build`, só com `contents: read` e sem
-# credencial persistida no checkout; o arquivo gerado passa por artifact a um job `*-publish`,
-# o único com `contents: write`, que não faz checkout nem roda código do PR (etapa #971,
-# decisão 11). O nome das pre-releases e os arquivos publicados não mudam.
+# The PR's code (`npm ci`, build, tests) runs in `*-build` jobs, with only `contents: read` and no
+# credential persisted in the checkout; the generated file goes through an artifact to a `*-publish` job,
+# the only one with `contents: write`, which does not check out or run the PR's code (stage #971,
+# decision 11). The names of the pre-releases and the published files do not change.
 on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
@@ -28,16 +28,16 @@ on:
 permissions:
   contents: read
 
-# Um grupo por PR: o fechamento (`cleanup`) cancela um snapshot em andamento, inclusive entre o
-# `snapshot-build` e o `snapshot-publish`, e nenhuma pre-release `mcp-snapshot-pr<N>` fica órfã.
-# O `workflow_dispatch` (só a rc) tem grupo próprio por execução; a rc serializa à parte.
+# One group per PR: closing (`cleanup`) cancels a snapshot in progress, including between
+# `snapshot-build` and `snapshot-publish`, and no `mcp-snapshot-pr<N>` pre-release is left orphaned.
+# `workflow_dispatch` (rc only) has its own group per run; the rc serializes separately.
 concurrency:
   group: ${{ github.event.pull_request.number && format('mcp-snapshot-pr{0}', github.event.pull_request.number) || format('mcp-dispatch-{0}', github.run_id) }}
   cancel-in-progress: true
 
 jobs:
   snapshot-build:
-    # PRs de fork não recebem token de escrita; só PRs do próprio repositório.
+    # Fork PRs do not get a write token; only PRs from the repository itself.
     if: >-
       github.event_name == 'pull_request' &&
       github.event.action != 'closed' &&
@@ -59,7 +59,7 @@ jobs:
           cache: npm
       - run: npm ci
 
-      - name: Calcular a versão do snapshot
+      - name: Compute the snapshot version
         run: |
           code_version="$(node scripts/release/stableRelease.mjs version --version-file mcp/version.ts)"
           suffix="-snapshot.pr${PR}+${HEAD_SHA:0:7}"
@@ -69,17 +69,17 @@ jobs:
 
       - run: npm run build:mcp
 
-      - name: Testar o arquivo gerado fora do repositório
+      - name: Test the generated file outside the repository
         run: |
           mkdir -p "$RUNNER_TEMP/smoke"
           cp dist-mcp/mapping-mcp.js "$RUNNER_TEMP/smoke/"
           cd "$RUNNER_TEMP/smoke"
           got="$(node mapping-mcp.js --version)"
           if [ "$got" != "$EXPECTED" ]; then
-            echo "--version imprimiu '$got', esperado '$EXPECTED'." >&2
+            echo "--version printed '$got', expected '$EXPECTED'." >&2
             exit 1
           fi
-          # O extrator de assinaturas (`.mjs`, sem dependências) também roda fora do repositório.
+          # The signature extractor (`.mjs`, no dependencies) also runs outside the repository.
           cp "$GITHUB_WORKSPACE/dist-mcp/mapping-signature.mjs" .
           node mapping-signature.mjs --help > /dev/null
 
@@ -89,9 +89,9 @@ jobs:
           sha256sum mapping-mcp.js > mapping-mcp.js.sha256
           sha256sum mapping-signature.mjs > mapping-signature.mjs.sha256
 
-      # Os arquivos publicados ficam juntos em `release-assets/`: o servidor, o extrator de assinaturas, os `.sha256` e os do
-      # workspace (o script dos arquivos do workspace roda uma vez).
-      - name: Arquivos da Release
+      # The published files stay together in `release-assets/`: the server, the signature extractor, the `.sha256` files and the
+      # workspace ones (the workspace files script runs once).
+      - name: Release files
         run: |
           mkdir release-assets
           cp dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 release-assets/
@@ -120,26 +120,26 @@ jobs:
           name: mcp-snapshot-assets
           path: release-assets
 
-      # O artifact vem de um job que roda código do PR: só publica se tiver exatamente os
-      # arquivos esperados (cada um com o seu `.sha256`).
-      - name: Conferir os arquivos baixados
+      # The artifact comes from a job that runs the PR's code: it only publishes if it has exactly the
+      # expected files (each with its `.sha256`).
+      - name: Check the downloaded files
         run: |
           expected="AGENTS.mapping.md AGENTS.mapping.md.sha256 SKILL.md SKILL.md.sha256 mapping-mcp.js mapping-mcp.js.sha256 mapping-signature.mjs mapping-signature.mjs.sha256 setup.sh setup.sh.sha256 watch-comments.mjs watch-comments.mjs.sha256"
           expected="$(printf '%s\n' $expected | LC_ALL=C sort | tr '\n' ' ')"
           found="$(ls -1 release-assets | LC_ALL=C sort | tr '\n' ' ')"
           if [ "$found" != "$expected" ]; then
-            echo "Arquivos inesperados em release-assets: $found (esperado: $expected)." >&2
+            echo "Unexpected files in release-assets: $found (expected: $expected)." >&2
             exit 1
           fi
 
-      - name: Publicar no snapshot do PR
+      - name: Publish to the PR snapshot
         run: |
           tag="mcp-snapshot-pr${PR}"
           title="$tag"
           assets=(release-assets/*)
-          notes="Build provisório do PR #${PR}, para testar antes de entrar no épico. Commit ${HEAD_SHA:0:7}. Sobrescrito a cada push e apagado quando o PR fecha. Traz também o \`setup.sh\`, a skill \`SKILL.md\`, as regras \`AGENTS.mapping.md\` e o watcher \`watch-comments.mjs\` do workspace e o extrator de assinaturas \`mapping-signature.mjs\`, cada um com o \`.sha256\`. Instalação: \`./setup.sh ${tag}\` (examples/workspace/) ou baixe \`mapping-mcp.js\` e confira com o \`.sha256\`. Atualizar um workspace que ainda tem o \`setup.sh\` antigo, uma vez: \`curl -fsSL https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh\`."
+          notes="Provisional build of PR #${PR}, for testing before it enters the epic. Commit ${HEAD_SHA:0:7}. Overwritten on every push and deleted when the PR closes. It also brings the workspace's \`setup.sh\`, the \`SKILL.md\` skill, the \`AGENTS.mapping.md\` rules and the \`watch-comments.mjs\` watcher, and the \`mapping-signature.mjs\` signature extractor, each with its \`.sha256\`. Installation: \`./setup.sh ${tag}\` (examples/workspace/) or download \`mapping-mcp.js\` and check it with the \`.sha256\`. To update a workspace that still has the old \`setup.sh\`, once: \`curl -fsSL https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh\`."
           if gh release view "$tag" > /dev/null 2>&1; then
-            # Já existe: move a tag para o commit novo e troca os arquivos.
+            # It already exists: move the tag to the new commit and replace the files.
             gh api -X PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/${tag}" \
               -f sha="$HEAD_SHA" -F force=true
             gh release upload "$tag" "${assets[@]}" --clobber
@@ -160,11 +160,11 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       PR: ${{ github.event.pull_request.number }}
     steps:
-      - name: Apagar o snapshot do PR
+      - name: Delete the PR snapshot
         run: |
-          # Sem checkout: `--repo` basta. Não falha se o snapshot não existe.
+          # No checkout: `--repo` is enough. It does not fail if the snapshot does not exist.
           gh release delete "mcp-snapshot-pr${PR}" \
-            --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || echo "Sem snapshot para apagar."
+            --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || echo "No snapshot to delete."
 
   rc-build:
     if: >-
@@ -178,9 +178,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    # Por épico (o nome do branch, igual no PR e no `workflow_dispatch`, sem `refs/heads/`) e
-    # sem cancelar: uma rc na fila não pode perder o seu número. O `rc-publish` usa o mesmo
-    # grupo.
+    # Per epic (the branch name, the same in the PR and in `workflow_dispatch`, without `refs/heads/`) and
+    # without cancelling: a queued rc cannot lose its number. `rc-publish` uses the same
+    # group.
     concurrency:
       group: mcp-rc-${{ github.event.pull_request.base.ref || github.ref_name }}
       cancel-in-progress: false
@@ -203,14 +203,14 @@ jobs:
 
       - run: npm run lint
       - run: npm run typecheck
-      # Sem os orçamentos de desempenho: oscilam conforme o runner (o CI os mede à parte).
+      # Without the performance budgets: they fluctuate with the runner (CI measures them separately).
       - run: PERF_BUDGETS=off npm test
 
-      - name: Calcular o número da rc
+      - name: Compute the rc number
         id: number
         run: |
           version="$(node scripts/release/stableRelease.mjs version --version-file mcp/version.ts)"
-          # Maior rc existente (tags no servidor) + 1. Pela API: o checkout não guarda credencial.
+          # Largest existing rc (tags on the server) + 1. Through the API: the checkout keeps no credential.
           last="$(gh api "repos/${GITHUB_REPOSITORY}/git/matching-refs/tags/mcp-v${version}-rc." --paginate --jq '.[].ref' |
             sed -n "s#^refs/tags/mcp-v${version}-rc\.\([0-9][0-9]*\)\$#\1#p" |
             sort -n | tail -1)"
@@ -223,17 +223,17 @@ jobs:
 
       - run: npm run build:mcp
 
-      - name: Testar o arquivo gerado fora do repositório
+      - name: Test the generated file outside the repository
         run: |
           mkdir -p "$RUNNER_TEMP/smoke"
           cp dist-mcp/mapping-mcp.js "$RUNNER_TEMP/smoke/"
           cd "$RUNNER_TEMP/smoke"
           got="$(node mapping-mcp.js --version)"
           if [ "$got" != "$EXPECTED" ]; then
-            echo "--version imprimiu '$got', esperado '$EXPECTED'." >&2
+            echo "--version printed '$got', expected '$EXPECTED'." >&2
             exit 1
           fi
-          # O extrator de assinaturas (`.mjs`, sem dependências) também roda fora do repositório.
+          # The signature extractor (`.mjs`, no dependencies) also runs outside the repository.
           cp "$GITHUB_WORKSPACE/dist-mcp/mapping-signature.mjs" .
           node mapping-signature.mjs --help > /dev/null
 
@@ -243,9 +243,9 @@ jobs:
           sha256sum mapping-mcp.js > mapping-mcp.js.sha256
           sha256sum mapping-signature.mjs > mapping-signature.mjs.sha256
 
-      # Os arquivos publicados ficam juntos em `release-assets/` (o script dos arquivos do
-      # workspace roda uma vez).
-      - name: Arquivos da Release
+      # The published files stay together in `release-assets/` (the workspace files
+      # script runs once).
+      - name: Release files
         run: |
           mkdir release-assets
           cp dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 release-assets/
@@ -279,23 +279,23 @@ jobs:
           name: mcp-rc-assets
           path: release-assets
 
-      # O artifact vem de um job que roda código do PR: só publica se tiver exatamente os
-      # arquivos esperados (cada um com o seu `.sha256`).
-      - name: Conferir os arquivos baixados
+      # The artifact comes from a job that runs the PR's code: it only publishes if it has exactly the
+      # expected files (each with its `.sha256`).
+      - name: Check the downloaded files
         run: |
           expected="AGENTS.mapping.md AGENTS.mapping.md.sha256 SKILL.md SKILL.md.sha256 mapping-mcp.js mapping-mcp.js.sha256 mapping-signature.mjs mapping-signature.mjs.sha256 setup.sh setup.sh.sha256 watch-comments.mjs watch-comments.mjs.sha256"
           expected="$(printf '%s\n' $expected | LC_ALL=C sort | tr '\n' ' ')"
           found="$(ls -1 release-assets | LC_ALL=C sort | tr '\n' ' ')"
           if [ "$found" != "$expected" ]; then
-            echo "Arquivos inesperados em release-assets: $found (esperado: $expected)." >&2
+            echo "Unexpected files in release-assets: $found (expected: $expected)." >&2
             exit 1
           fi
 
-      - name: Publicar a release candidate
+      - name: Publish the release candidate
         run: |
-          # Os valores vêm do job que compilou o código do PR: confere o formato antes de usar.
+          # The values come from the job that built the PR's code: check the format before using them.
           if ! printf '%s' "$RC_TAG" | grep -Eq '^mcp-v[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$'; then
-            echo "Tag de rc inválida: $RC_TAG." >&2
+            echo "Invalid rc tag: $RC_TAG." >&2
             exit 1
           fi
           assets=(release-assets/*)
@@ -303,4 +303,4 @@ jobs:
             "${assets[@]}" \
             --prerelease --target "$TARGET_SHA" \
             --title "$RC_TAG" \
-            --notes "Release candidate do épico \`${EPIC}\`, commit ${TARGET_SHA:0:7}. Provisória: apagada quando a estável mcp-v${SERVER_VERSION} for publicada. Traz também o \`setup.sh\`, a skill \`SKILL.md\`, as regras \`AGENTS.mapping.md\` e o watcher \`watch-comments.mjs\` do workspace e o extrator de assinaturas \`mapping-signature.mjs\`, cada um com o \`.sha256\`. Instalação: \`./setup.sh ${RC_TAG}\` (examples/workspace/) ou baixe \`mapping-mcp.js\` e confira com o \`.sha256\`. Atualizar um workspace que ainda tem o \`setup.sh\` antigo, uma vez: \`curl -fsSL https://github.com/${GITHUB_REPOSITORY}/releases/download/${RC_TAG}/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh\`."
+            --notes "Release candidate of epic \`${EPIC}\`, commit ${TARGET_SHA:0:7}. Provisional: deleted when the stable mcp-v${SERVER_VERSION} is published. It also brings the workspace's \`setup.sh\`, the \`SKILL.md\` skill, the \`AGENTS.mapping.md\` rules and the \`watch-comments.mjs\` watcher, and the \`mapping-signature.mjs\` signature extractor, each with its \`.sha256\`. Installation: \`./setup.sh ${RC_TAG}\` (examples/workspace/) or download \`mapping-mcp.js\` and check it with the \`.sha256\`. To update a workspace that still has the old \`setup.sh\`, once: \`curl -fsSL https://github.com/${GITHUB_REPOSITORY}/releases/download/${RC_TAG}/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh\`."

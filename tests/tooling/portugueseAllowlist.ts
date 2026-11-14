@@ -17,7 +17,15 @@ export type ProtocolGroup =
   // Section and title markers of the changelog and design-system records.
   | 'record-titles'
   // Fixed markers parsed in issue and PR bodies.
-  | 'issue-markers';
+  | 'issue-markers'
+  // Names of artifacts, boards and external things that skills look up by name.
+  | 'names'
+  // Choices and phrases of the chats with the owner, which stay in Portuguese by the
+  // language rule of CLAUDE.md (the owner reads and types them).
+  | 'owner-chat'
+  // Error messages thrown by `painel.py` and the `scripts/ci` and `scripts/release` scripts;
+  // their text is part of the frozen output that tests and skills match.
+  | 'error-messages';
 
 export interface ProtocolTerm {
   readonly term: string;
@@ -1025,5 +1033,761 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     term: '## Fluxo típico',
     source: 'examples/workspace/setup.sh',
     group: 'script-output',
+  },
+  {
+    term: 'AGRUPAMENTO',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'PERGUNTAS #<n>',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'RESPOSTAS #<n>',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'PRONTA #<n>',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'BLOQUEADA #<n>',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'FALHOU #<n>',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'SOZINHAS:',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'BLOQUEADAS:',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'ESFORÇO HIGH:',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'ORDEM:',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Por quê:',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Principal:',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Pergunta:',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Cabeçalho:',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Épico:',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Modelos:',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Absorvidas:',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Decisões do dono aplicadas:',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Sobreposição:',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Conferência:',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Issues novas:',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'MCP: sem mudança',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Conferência do orquestrador:',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  { term: 'É autorização do dono', source: 'docs/FLOW.md', group: 'session-notices' },
+  { term: 'parou em:', source: 'docs/FLOW.md', group: 'session-notices' },
+  {
+    term: 'passou de 300 mil na quinta sessão',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Dono: aplicar este prompt no CR por épico',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  { term: 'CR por épico', source: 'docs/FLOW.md', group: 'session-notices' },
+  { term: 'CR épico', source: 'docs/FLOW.md', group: 'session-notices' },
+  {
+    term: 'CR — coordenador (não arquivar)',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Execução iniciada',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'Fila concluída',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'Pausada pelo dono',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'Drenando a fila',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'Fila drenada',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'parada pelo dono',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'espera #N',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'CI preso',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'diagnóstico de ciclo',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'ciclo de CI',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'regra do supervisor',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'ainda trabalhando',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'medida de contexto divergente',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'troca por contexto',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'coordenador anterior não arquivou:',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'coordenador anterior arquivado',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'relido inteiro',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'não publicado',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'o que espera o dono',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'acima do teto do testador (300 mil)',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'Duplicadas: nenhuma (busca:',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'issue-markers',
+  },
+  {
+    term: 'Relacionada: #',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'issue-markers',
+  },
+  {
+    term: 'Via rápida:',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'issue-markers',
+  },
+  {
+    term: 'Via rápida recusada:',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'issue-markers',
+  },
+  {
+    term: 'Via rápida: espera #',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'issue-markers',
+  },
+  {
+    term: 'Origem: via rápida #',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'issue-markers',
+  },
+  {
+    term: 'Teto na última revisão do dono',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'issue-markers',
+  },
+  {
+    term: 'Orçamento do dist/index.html',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'issue-markers',
+  },
+  {
+    term: 'Teto de contexto do testador',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'issue-markers',
+  },
+  {
+    term: 'Nada.',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'issue-markers',
+  },
+  {
+    term: 'nenhuma (só processo)',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'issue-markers',
+  },
+  {
+    term: 'Exceção ao Button:',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'issue-markers',
+  },
+  {
+    term: 'Versão <n>',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'issue-markers',
+  },
+  { term: 'Versão do MCP', source: '.github/workflows/ci.yml', group: 'script-output' },
+  {
+    term: 'Tamanho do dist/index.html',
+    source: '.github/workflows/ci.yml',
+    group: 'script-output',
+  },
+  {
+    term: 'acima do orçamento',
+    source: '.github/workflows/ci.yml',
+    group: 'script-output',
+  },
+  { term: 'abaixo de 2 KiB', source: '.github/workflows/ci.yml', group: 'script-output' },
+  {
+    term: 'reexecuta: abandonados',
+    source: '.github/workflows/ci.yml',
+    group: 'script-output',
+  },
+  { term: 'não reexecuta:', source: '.github/workflows/ci.yml', group: 'script-output' },
+  { term: 'não tem a CSP', source: 'pwa/csp.ts', group: 'script-output' },
+  { term: 'atributo style', source: 'pwa/csp.ts', group: 'script-output' },
+  { term: 'handler inline', source: 'pwa/csp.ts', group: 'script-output' },
+  {
+    term: 'o perfil static não pode ter a diretiva',
+    source: 'pwa/csp.ts',
+    group: 'script-output',
+  },
+  {
+    term: 'Estado da execução',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'names',
+  },
+  {
+    term: 'Mapping Fila',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'names',
+  },
+  {
+    term: 'Fila de issues',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'names',
+  },
+  {
+    term: 'Registro de passos',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'names',
+  },
+  {
+    term: 'Fila de desenvolvimento',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'names',
+  },
+  {
+    term: 'Supervisão da fila',
+    source: '.claude/skills/supervisionar-fila/SKILL.md',
+    group: 'names',
+  },
+  {
+    term: 'Mapping - Backlog',
+    source: '.claude/skills/supervisionar-fila/SKILL.md',
+    group: 'names',
+  },
+  {
+    term: 'Mapping - testes',
+    source: '.claude/skills/supervisionar-fila/SKILL.md',
+    group: 'names',
+  },
+  {
+    term: 'main protegida',
+    source: '.claude/skills/supervisionar-fila/SKILL.md',
+    group: 'names',
+  },
+  {
+    term: 'evidencias',
+    source: '.claude/skills/supervisionar-fila/SKILL.md',
+    group: 'names',
+  },
+  {
+    term: 'Uso real',
+    source: '.claude/skills/supervisionar-fila/SKILL.md',
+    group: 'names',
+  },
+  {
+    term: 'observador-da-fila',
+    source: '.claude/skills/supervisionar-fila/SKILL.md',
+    group: 'names',
+  },
+  {
+    term: 'Madrugadão',
+    source: '.claude/skills/supervisionar-fila/SKILL.md',
+    group: 'names',
+  },
+  { term: 'Janela Comentários', source: 'docs/DESIGN-SYSTEM.md', group: 'names' },
+  {
+    term: 'Mesclar (Recomendado)',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'Ainda não',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'Segurar',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'Fechar e reabrir',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'Esperar',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'Começar nesta ordem (Recomendado)',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'Mudar a ordem',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'Usar um painel novo (Recomendado)',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'Usar este mesmo',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: "horário inválido '{value}' (use ISO UTC como 2026-11-08T16:00:11Z)",
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: '{p} não existe (rode `init` antes)',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: 'meta.json está vazio',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: "issue '{num}' inválida (use '#123')",
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: "{k} precisa ser inteiro, veio '{v}'",
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: "{k} inválido '{v}'; válidos: ",
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: 'já existem: ',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: '--paralelo precisa ser um inteiro a partir de 1',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: "campo desconhecido '{k}'; válidos: ",
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: 'não é possível trocar o campo issue',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: '{issue} não está na fila',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: '{i} não está aguardando (ou não está na fila)',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: '{a.issue} não está na fila',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: "campo desconhecido '{k}'; válidos: kind, label",
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: 'label= só com kind=',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: "{k} precisa ser numérico, veio '{v}'",
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: "campo desconhecido '{k}'; válidos: usd, ctx, model, effort, served, issue, kind",
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: 'falta {k}=',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: '{a.session} é uma sessão nova: falta kind=<tipo>',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: "não achei scripts/ci/contextUsage.mjs (procurei em {script or 'nenhuma raiz de repositório'})",
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: 'não consegui rodar {script}: {e}',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: "sem medida ({values.get('motivo', 'sem motivo')}): ",
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: 'a medida falhou (código {out.returncode}): {(out.stderr or out.stdout).strip()}',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: '--max só vale com --medir',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: "--fonte só aceita get_session, veio '{a.fonte}'",
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: '--fonte não vale com --medir (a fonte vem do script)',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: '--medir precisa de --max <max_tokens> (o do get_session sem session_id)',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: "--max precisa ser um inteiro positivo, veio '{a.max}'",
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: "pct precisa ser inteiro de 0 a 100, veio '{raw}'",
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: "papel inválido '{a.role}'; válidos: {', '.join(ROLES)}",
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: 'o id da sessão não pode ser vazio',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: "campo desconhecido '{k}'; válido: link",
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: "pedido '{v}' inválido (use SUP-<n>, como SUP-3)",
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: "campo desconhecido '{k}'; válidos: tipo, pedido, estado, evidencia",
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: 'falta estado=',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: '{rid} é um pedido novo: falta {k}=',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: '{rid} já existe com {k}={req.get(k)!r}: o {k} não muda',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: "campo desconhecido '{k}'; válidos: origem, saida",
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: 'falta origem=<dono|SUP-n>',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: "campo desconhecido '{k}'; válido: motivo",
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: '{a.args[0]} não existe em meta.rules',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: '{a.args[0]} já foi encerrada',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: "ação inválida '{a.action}'; válidas: add, end",
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: "{a.dir} já tem fila ({len(new.get('queue'))} linhas): o import precisa de uma pasta nova (`init`)",
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: 'não consegui ler {src}: {e.strerror}',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: 'linha {n}: `{words[0]}` não entra no lote',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: 'o lote não tem nenhum comando',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: 'linha {n}: ajuda (-h) não entra no lote',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: '--com \'{item}\' inválido (use "#N=<toca>")',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: 'ci.yml sem a chave jobs:.',
+    source: 'scripts/ci/ciRerun.mjs',
+    group: 'error-messages',
+  },
+  {
+    term: 'A execução ${run.id} tem created_at ilegível.',
+    source: 'scripts/ci/ciRerun.mjs',
+    group: 'error-messages',
+  },
+  {
+    term: 'O now (--now) "${now}" não é uma data ISO.',
+    source: 'scripts/ci/ciRerun.mjs',
+    group: 'error-messages',
+  },
+  {
+    term: 'O arquivo de jobs não tem a lista jobs.',
+    source: 'scripts/ci/ciRerun.mjs',
+    group: 'error-messages',
+  },
+  {
+    term: 'O arquivo de execuções não tem a lista workflow_runs.',
+    source: 'scripts/ci/ciRerun.mjs',
+    group: 'error-messages',
+  },
+  {
+    term: 'O arquivo de jobs não tem total_count nem a lista jobs.',
+    source: 'scripts/ci/ciRerun.mjs',
+    group: 'error-messages',
+  },
+  {
+    term: '${flag} repetida: use uma vez só. ${USAGE}',
+    source: 'scripts/ci/contextUsage.mjs',
+    group: 'error-messages',
+  },
+  {
+    term: '${file}: history precisa ser uma lista de frases (strings).',
+    source: 'scripts/ci/distBudget.mjs',
+    group: 'error-messages',
+  },
+  {
+    term: 'O arquivo tem teto ${data.indexHtmlMaxBytes}, não ${d.ceiling}.',
+    source: 'scripts/ci/distBudget.mjs',
+    group: 'error-messages',
+  },
+  {
+    term: '${a} precisa de um valor.',
+    source: 'scripts/ci/distBudget.mjs',
+    group: 'error-messages',
+  },
+  {
+    term: '--${name} precisa de um número inteiro de bytes.',
+    source: 'scripts/ci/distBudget.mjs',
+    group: 'error-messages',
+  },
+  {
+    term: '--write precisa de --epic <nome>.',
+    source: 'scripts/ci/distBudget.mjs',
+    group: 'error-messages',
+  },
+  {
+    term: '--base precisa de um valor.',
+    source: 'scripts/ci/riskTriggers.mjs',
+    group: 'error-messages',
+  },
+  {
+    term: 'SERVER_VERSION não encontrada em mcp/version.ts.',
+    source: 'scripts/release/stableRelease.mjs',
+    group: 'error-messages',
+  },
+  {
+    term: 'Versão inválida: "${version}" (esperado x.y.z).',
+    source: 'scripts/release/stableRelease.mjs',
+    group: 'error-messages',
   },
 ];
