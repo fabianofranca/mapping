@@ -162,7 +162,7 @@ describe('docs/component.schema.json and the root anchor', () => {
       '$.anchor.side',
     );
     expect(checkSchema(schema, file({ anchor: { gap: 1 } })).join('\n')).toContain(
-      '$.anchor.gap: chave desconhecida',
+      '$.anchor.gap: unknown key',
     );
   });
 });

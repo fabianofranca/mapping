@@ -82,9 +82,9 @@ const all = [...files.flatMap(declarations), ...guideDeclarations()];
  * (show or hide) is not a design value: only the intermediate ones come from the tokens.
  */
 function allowed(d: Declaration, category: string): boolean {
-  if (category === 'fonte')
+  if (category === 'font')
     return d.value === 'inherit' || /^var\(--[\w-]+\)$/.test(d.value);
-  if (category === 'opacidade') return d.value === '0' || d.value === '1';
+  if (category === 'opacity') return d.value === '0' || d.value === '1';
   return false;
 }
 
