@@ -36,7 +36,7 @@ describe('fiel.mjs (R25.1)', () => {
     const report = validateLibrary({ files });
     expect(report.errors).toEqual([]);
     expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
-  });
+  }, 30_000);
 
   it('top-app-bar: a caixa vermelha mede 48, 68 e 88 com 1, 2 e 3 linhas (R25.95)', () => {
     const dir = join(mkdtempSync(join(tmpdir(), 'fiel-')), 'm3-fiel');

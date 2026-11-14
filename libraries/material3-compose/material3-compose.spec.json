@@ -3,8 +3,8 @@
   "formatVersion": 16,
   "id": "material3-compose",
   "name": "Material 3 (Compose)",
-  "version": 13,
-  "description": "Material Design 3 (baseline, tema claro e escuro) para Jetpack Compose, com o composable de cada tipo no `code`. Os símbolos e os parâmetros vêm do código do androidx na versão compose.material3 1.4.0 (commit 5113b82a4ed6416d6344efa50e41db8cb65928ff). Padrões: os espaços (lambdas) de cada composable ficam no `notes`; o tamanho vem de width, height e weight; os ícones são sugestões de Icons.Filled; a imagem remota usa o carregador de imagens do app; o Scaffold coloca cada filha no espaço certo pelo tipo dela.",
+  "version": 14,
+  "description": "Material Design 3 (baseline, tema claro e escuro) para Jetpack Compose, com o composable de cada tipo no `code`. Os símbolos e os parâmetros vêm do código do androidx na versão compose.material3 1.4.0 (commit 5113b82a4ed6416d6344efa50e41db8cb65928ff). Padrões: os espaços (lambdas) de cada composable ficam no `notes`; o tamanho vem de width, height e weight; os ícones são sugestões de Icons.Filled (os que o androidx põe em Icons.AutoMirrored viram em rtl); a direção de leitura e a âncora desenham o tooltip (com a seta), o badge e o menu ancorados; a imagem remota usa o carregador de imagens do app; o Scaffold coloca cada filha no espaço certo pelo tipo dela.",
   "platforms": [
     {
       "id": "compose",
@@ -3277,7 +3277,7 @@
                   "surfaceContainerHighest": "MaterialTheme.colorScheme.surfaceContainerHighest"
                 }
               },
-              "notes": "O ícone vem de `Icons.Filled.<imageVector>`, por exemplo `Icon(imageVector = Icons.Filled.Home, contentDescription = <contentDescription>)`; sem descrição use `contentDescription = null`. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`. `tint` só entra quando preenchido; o tamanho é o padrão de 24 dp.",
+              "notes": "O ícone vem de `Icons.Filled.<imageVector>`, por exemplo `Icon(imageVector = Icons.Filled.Home, contentDescription = <contentDescription>)`; sem descrição use `contentDescription = null`. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`, e em `rtl` o desenho os vira na horizontal (o `mirror` do conjunto). `tint` só entra quando preenchido; o tamanho é o padrão de 24 dp.",
               "ignore": ["modifier"],
               "signature": "signatures/icon.compose.json"
             }
@@ -3295,6 +3295,13 @@
               "values": {
                 "imageVector": "Favorite",
                 "tint": "error"
+              }
+            },
+            {
+              "name": "Voltar",
+              "values": {
+                "imageVector": "ArrowBack",
+                "contentDescription": "Voltar"
               }
             }
           ],
@@ -22236,13 +22243,13 @@
             "compose": {
               "symbol": "androidx.compose.material3.Badge",
               "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Badge.kt",
-              "notes": "`Badge()` sem `content` desenha o ponto de 6dp. O Badge sozinho não se posiciona: para ancorá-lo ao canto de um ícone use `BadgedBox(badge = { Badge() }) { Icon(Icons.Filled.Notifications, contentDescription = …) }`, que cuida do deslocamento. Cores padrão `error` (fundo) e `onError` (texto); `containerColor` e `contentColor` só entram para mudá-las. Nem Badge nem BadgedBox exigem opt-in.",
+              "notes": "`Badge()` sem `content` desenha o ponto de 6dp. O Badge sozinho não se posiciona: para ancorá-lo ao canto de um ícone use `BadgedBox(badge = { Badge() }) { Icon(Icons.Filled.Notifications, contentDescription = …) }`, que cuida do deslocamento. Cores padrão `error` (fundo) e `onError` (texto); `containerColor` e `contentColor` só entram para mudá-las. Nem Badge nem BadgedBox exigem opt-in. Ancorado (`anchor`, lado `end`, alinhamento `start`), o `BadgedBox` põe o ponto com a borda do início a 6 dp da borda do fim da âncora (`BadgeOffset`), no topo dela; o contador, a 12 dp (`BadgeWithContentHorizontalOffset`) e 2 dp acima do topo (a 14 dp de sobreposição vertical, `BadgeWithContentVerticalOffset`): para o `large`, declare `offset` principal -12 e cruzado -2 na marcação.",
               "variants": {
                 "field": "style",
                 "cases": {
                   "large": {
                     "symbol": "androidx.compose.material3.Badge",
-                    "notes": "`Badge(content = { Text(<count>) })` desenha o contador de 16dp, que cresce com o texto (use `99+` para valores grandes). Ancorado: `BadgedBox(badge = { Badge { Text(<count>) } }) { Icon(Icons.Filled.Notifications, contentDescription = …) }`. Não exige opt-in.",
+                    "notes": "`Badge(content = { Text(<count>) })` desenha o contador de 16dp, que cresce com o texto (use `99+` para valores grandes). Ancorado: `BadgedBox(badge = { Badge { Text(<count>) } }) { Icon(Icons.Filled.Notifications, contentDescription = …) }`. Não exige opt-in. Posição ancorada: `offset` principal -12 e cruzado -2 (`BadgeWithContentHorizontalOffset` 12 dp e `BadgeWithContentVerticalOffset` 14 dp).",
                     "ignore": ["modifier"],
                     "signature": "signatures/badge.large.compose.json"
                   }
@@ -23112,13 +23119,13 @@
             "compose": {
               "symbol": "androidx.compose.material3.PlainTooltip",
               "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Tooltip.kt",
-              "notes": "Exige @OptIn(ExperimentalMaterial3Api::class) (TooltipBox, PlainTooltip e RichTooltip são experimentais no commit fixado). O tooltip não existe sozinho: envolve o elemento âncora em `TooltipBox(positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above), tooltip = { PlainTooltip { Text(<text>) } }, state = rememberTooltipState()) { <âncora> }`; o overload `rememberTooltipPositionProvider()` sem argumento está `@Deprecated` no commit fixado, por isso o argumento de posição (`Above`, `Below`, `Start`, `End`, `Left`, `Right`). O `PlainTooltip` e o `RichTooltip` são extensões do `TooltipScope` recebido pela lambda `tooltip`. A âncora é a marcação sob o tooltip; o texto vai na lambda `content` do `PlainTooltip`.",
+              "notes": "Exige @OptIn(ExperimentalMaterial3Api::class) (TooltipBox, PlainTooltip e RichTooltip são experimentais no commit fixado). O tooltip não existe sozinho: envolve o elemento âncora em `TooltipBox(positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above), tooltip = { PlainTooltip { Text(<text>) } }, state = rememberTooltipState()) { <âncora> }`; o overload `rememberTooltipPositionProvider()` sem argumento está `@Deprecated` no commit fixado, por isso o argumento de posição (`Above`, `Below`, `Start`, `End`, `Left`, `Right`). O `PlainTooltip` e o `RichTooltip` são extensões do `TooltipScope` recebido pela lambda `tooltip`. A âncora é a marcação sob o tooltip; o texto vai na lambda `content` do `PlainTooltip`. Com a marcação ancorada (`anchor`), o lado dela escolhe a posição (`top` → `TooltipAnchorPosition.Above`, `bottom` → `Below`, `start` → `Start`, `end` → `End`, que seguem a direção) e o espaçamento é o `SpacingBetweenTooltipAndAnchor` do Compose, 4 dp (o padrão de `rememberTooltipPositionProvider`); a seta de 16 × 8 dp sob o centro da âncora é `caretShape = TooltipDefaults.caretShape()` no `PlainTooltip`; sem âncora a marcação não tem seta, como o `caretShape = null` do Compose.",
               "variants": {
                 "field": "style",
                 "cases": {
                   "rich": {
                     "symbol": "androidx.compose.material3.RichTooltip",
-                    "notes": "Exige @OptIn(ExperimentalMaterial3Api::class). Mesmo `TooltipBox`, com `tooltip = { RichTooltip(title = { Text(<title>) }, action = { TextButton(onClick = { /* ... */ }) { Text(<action>) } }) { Text(<text>) } }`, `state = rememberTooltipState(isPersistent = true)` quando há `action` (para o tooltip não sumir antes do toque) e `TooltipBox(hasAction = true, …)`. `title` e `action` só entram quando preenchidos; o `text` vai na lambda final (parâmetro `text`).",
+                    "notes": "Exige @OptIn(ExperimentalMaterial3Api::class). Mesmo `TooltipBox`, com `tooltip = { RichTooltip(title = { Text(<title>) }, action = { TextButton(onClick = { /* ... */ }) { Text(<action>) } }) { Text(<text>) } }`, `state = rememberTooltipState(isPersistent = true)` quando há `action` (para o tooltip não sumir antes do toque) e `TooltipBox(hasAction = true, …)`. `title` e `action` só entram quando preenchidos; o `text` vai na lambda final (parâmetro `text`). Ancorado, leva também `caretShape = TooltipDefaults.caretShape()` no `RichTooltip`.",
                     "ignore": ["modifier"],
                     "signature": "signatures/tooltip.rich.compose.json",
                     "params": {
@@ -25774,7 +25781,7 @@
                 "width": "border.width",
                 "color": "border.color"
               },
-              "notes": "Estável, sem opt-in. O menu é um popup ancorado ao composable onde é declarado: ponha-o num `Box` junto do elemento âncora (o `IconButton` que o abre) e ligue `expanded` a um estado da tela (`var expanded by remember { mutableStateOf(<expanded>) }`), com `onDismissRequest = { expanded = false }`. Dentro, um `DropdownMenuItem` por linha de `items`: `text = { Text(<text>) }`, `onClick = { expanded = false; … }`, `leadingIcon = { Icon(Icons.Filled.<leadingIcon>, contentDescription = null) }` e `trailingIcon = { Icon(Icons.Filled.<trailingIcon>, contentDescription = null) }` só quando preenchidos, e `enabled = <enabled>`. A largura vai de 112 a 280 dp pelo conteúdo. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`.",
+              "notes": "Estável, sem opt-in. O menu é um popup ancorado ao composable onde é declarado: ponha-o num `Box` junto do elemento âncora (o `IconButton` que o abre) e ligue `expanded` a um estado da tela (`var expanded by remember { mutableStateOf(<expanded>) }`), com `onDismissRequest = { expanded = false }`. Dentro, um `DropdownMenuItem` por linha de `items`: `text = { Text(<text>) }`, `onClick = { expanded = false; … }`, `leadingIcon = { Icon(Icons.Filled.<leadingIcon>, contentDescription = null) }` e `trailingIcon = { Icon(Icons.Filled.<trailingIcon>, contentDescription = null) }` só quando preenchidos, e `enabled = <enabled>`. A largura vai de 112 a 280 dp pelo conteúdo. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`. Ancorado (`anchor`, lado `bottom`, alinhamento `start`), o menu abre logo abaixo do elemento, alinhado ao início dele: é o `DropdownMenu` declarado junto do elemento, com o `offset` padrão `DpOffset(0.dp, 0.dp)`.",
               "variants": {
                 "field": "style",
                 "cases": {
@@ -30927,7 +30934,7 @@
   "migrations": [
     {
       "from": 1,
-      "to": 13,
+      "to": 14,
       "steps": [
         {
           "op": "fill-field",
@@ -30951,7 +30958,7 @@
     },
     {
       "from": 2,
-      "to": 13,
+      "to": 14,
       "steps": [
         {
           "op": "fill-field",
@@ -30975,7 +30982,7 @@
     },
     {
       "from": 3,
-      "to": 13,
+      "to": 14,
       "steps": [
         {
           "op": "fill-field",
@@ -30999,7 +31006,7 @@
     },
     {
       "from": 4,
-      "to": 13,
+      "to": 14,
       "steps": [
         {
           "op": "fill-field",
@@ -31023,7 +31030,7 @@
     },
     {
       "from": 5,
-      "to": 13,
+      "to": 14,
       "steps": [
         {
           "op": "fill-field",

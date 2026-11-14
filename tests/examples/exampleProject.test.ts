@@ -159,7 +159,8 @@ describe('zip do projeto de exemplo', () => {
     });
     expect(report.errors).toEqual([]);
     expect(report.ok).toBe(true);
-  });
+    // A prova de desenho dos 229 exemplos do pacote passa de 5 s com a cobertura ligada no CI.
+  }, 30_000);
 });
 
 describe('conversas de exemplo (comments/)', () => {

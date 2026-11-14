@@ -97,7 +97,7 @@ const tokens = (mode: Mode) => resolveTokens(catalog.library!.tokens, {}, mode);
 
 describe('MF4: versão e atualização aditiva', () => {
   it('é a versão 7 e a atualização da 6 é aditiva (sem quebra nem migração faltando)', () => {
-    expect(spec.version).toBe(13);
+    expect(spec.version).toBe(14);
     // A versão 6, a da `main` no início do épico, sem os tokens de elevação de duas sombras.
     const previous = JSON.parse(JSON.stringify(spec)) as Spec;
     (previous as { version: number }).version = 6;
@@ -109,7 +109,7 @@ describe('MF4: versão e atualização aditiva', () => {
     expect(changes.filter((c) => c.kind === 'breaking')).toEqual([]);
     expect(missingMigrations(previous, spec)).toEqual([]);
     expect(validateLibrary({ files, specPath: SPEC_FILE, previous }).errors).toEqual([]);
-  });
+  }, 30_000);
 });
 
 describe('MF4: cor do conteúdo herdada (decisão 14)', () => {

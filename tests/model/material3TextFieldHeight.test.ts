@@ -6,6 +6,9 @@ import { multiply, IDENTITY } from '../../src/model/components/scene';
 import type { Matrix, SceneNode } from '../../src/model/components/scene';
 import { drawIn, files } from '../support/material3Library';
 
+/** O catálogo se monta uma vez, na coleta: dentro do teste ele levava ~4,7 s (limite de 5 s) com a cobertura ligada no CI. */
+const sharedCatalog = buildCatalog(files);
+
 /** Maior `y` (px, no espaço da raiz) que algum nó visível ocupa, pela caixa de cada nó. */
 function bottomOf(node: SceneNode, parent: Matrix = IDENTITY, isRoot = true): number {
   const m = isRoot ? IDENTITY : multiply(parent, node.transform);
@@ -21,7 +24,7 @@ describe.each(['text-field', 'secure-text-field'])(
   '%s: o "Em erro" cabe no size',
   (id) => {
     it.each(['light', 'dark'] as const)('termina dentro da altura (%s)', (mode) => {
-      const catalog = buildCatalog(files);
+      const catalog = sharedCatalog;
       const entry = findEntry(catalog, id);
       const example = entry?.examples.find((e) => e.name === 'Em erro');
       expect(example?.values?.style).toBe('outlined');
