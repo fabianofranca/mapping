@@ -30,7 +30,7 @@ describe('loose buttons (item 38)', () => {
   it('the list of exceptions is in docs/DESIGN-SYSTEM.md', () => {
     const doc = readFileSync('docs/DESIGN-SYSTEM.md', 'utf8');
     // pt-BR kept: heading of the Portuguese section of docs/DESIGN-SYSTEM.md
-    expect(doc).toContain('Botões avulsos');
+    expect(doc).toContain('Loose buttons');
     for (const file of FILES) expect(doc).toContain(file.split('/').pop());
   });
 });
