@@ -376,14 +376,26 @@ describe('CM1 — textos do fluxo que usam a medida (decisões 5 a 10)', () => {
     expect(conferencia).toContain(
       '`node scripts/ci/contextUsage.mjs --max <max_tokens>`',
     );
-    expect(conferencia).toContain('`painel.py context <pasta> <pct>`');
+    expect(conferencia).toContain(
+      '`painel.py context <pasta> --medir --max <max_tokens>`',
+    );
+    expect(conferencia).toContain(
+      '`painel.py context <pasta> <pct> --fonte get_session`',
+    );
     expect(conferencia).toContain('`pct`');
     expect(conferencia).toContain('`used_tokens`');
   });
 
+  it('implementar-fila: o passo 3 de "Na sessão nova" grava o contexto com --medir --max <max_tokens>', () => {
+    const nova = between(fila, '**Na sessão nova**', '## Fim');
+    expect(nova).toContain('--medir --max <max_tokens>');
+    expect(nova).not.toContain('`painel.py context <pasta> <pct>`');
+  });
+
   it('implementar-fila: a "Troca de sessão" mede com --max e o ctx do próprio custo vem do script', () => {
     expect(troca).toContain('`node scripts/ci/contextUsage.mjs --max <max_tokens>`');
-    expect(troca).toContain('`painel.py context <pasta> <pct>`');
+    expect(troca).toContain('`painel.py context <pasta> --medir --max <max_tokens>`');
+    expect(troca).toContain('`painel.py context <pasta> <pct> --fonte get_session`');
     const antiga = between(troca, '**Na sessão antiga:**', '2. Crie a sessão nova');
     expect(antiga).toContain('`ctx`');
     expect(antiga).toContain('`contexto` do script');
