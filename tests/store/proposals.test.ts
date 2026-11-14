@@ -36,6 +36,7 @@ const accept = (p: Proposal, changeId: string): Proposal => ({
   },
 });
 
+// pt-BR kept: shared fixture data asserted by tests/components and tests/store (proposalHarness image path 'images/nova.webp')
 describe('ProposalStore: write with file check', () => {
   it('writes with revision + 1 and updates the list; the proposal keeps its object while it does not change', async () => {
     const { proposal, ids } = richScenario();

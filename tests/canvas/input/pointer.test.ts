@@ -1130,7 +1130,7 @@ describe('PointerInput: multiple selection', () => {
       id: 'C',
       containerId: null,
       rect: { x: -100, y: -100, width: 2400, height: 1000 },
-      name: 'Grupo',
+      name: 'Group',
     });
   }
 
@@ -1814,7 +1814,7 @@ describe('PointerInput: arrows (ME4)', () => {
       const route = (s: ReturnType<typeof setup>) => {
         const project = s.store.project.peek();
         const arrow = r1(s);
-        if (!project || !arrow) throw new Error('seta');
+        if (!project || !arrow) throw new Error('arrow');
         return arrowRoute(project, arrow)?.points;
       };
 

@@ -44,9 +44,7 @@ describe('ArrivalRenderer', () => {
     renderer.render(frame());
     expect(renderer.badgeCount).toBe(1);
     const badge = renderer.badge('I2');
-    expect(badge?.label.text()).toBe(
-      t('perspective.canvas.cameFrom', { name: 'Front' }),
-    );
+    expect(badge?.label.text()).toBe(t('perspective.canvas.cameFrom', { name: 'Front' }));
     // Inverted pill, like the tooltip: light on dark, dark on light (TE1, decision 1).
     expect(badge?.box.fill()).toBe(TOKENS.text);
     expect(badge?.label.fill()).toBe(TOKENS.surface);

@@ -31,7 +31,7 @@ import {
   type Harness,
 } from './proposalHarness';
 
-// pt-BR kept: shared fixture data asserted by tests/components (sampleProject names 'Porta dianteira' and 'images/frente.jpg', and the proposal image path 'images/newer.webp' of proposalHarness)
+// pt-BR kept: shared fixture data asserted by tests/components (sampleProject names 'Porta dianteira' and 'images/frente.jpg', and the proposal image path 'images/nova.webp' of proposalHarness)
 beforeEach(() => localStorage.clear());
 afterEach(() => {
   clearReportedErrors();
@@ -269,7 +269,7 @@ describe('notas', () => {
     );
     if (!created?.ok) throw new Error('nota recusada');
     const noteId = must(created.noteId);
-    await review.addNote({ level: 'proposal', id: null }, 'Revise as telas novas.');
+    await review.addNote({ level: 'proposal', id: null }, 'Review the new screens.');
     await review.addNote({ level: 'item', id: 'M1' }, 'Name in English, please.');
     await review.addNote({ level: 'image', id: 'I3' }, 'Low-resolution image.');
     await review.addNote({ level: 'project', id: null }, 'Camadas ok.');
@@ -1198,7 +1198,7 @@ describe('apply accepted', () => {
     expect(session.store.canUndo.value).toBe(true);
     expect((await projectOnDisk(h)).containers.map((i) => i.id)).toContain('I3');
     // Image moved: the one in images/ exists and the one in the proposal is gone.
-    expect(await root.read('images/newer.webp')).toBe('WEBP');
+    expect(await root.read('images/nova.webp')).toBe('WEBP');
     expect(await root.read(NEW_IMAGE_PATH)).toBeNull();
     // Proposal: applied, with the date, and closed.
     const applied = await diskProposal(root);
@@ -1217,7 +1217,7 @@ describe('apply accepted', () => {
     expect(undone.status).toBe('open');
     expect(Object.keys(undone.decisions)).toHaveLength(5);
     expect(await root.read(NEW_IMAGE_PATH)).toBe('WEBP');
-    expect(await root.read('images/newer.webp')).toBeNull();
+    expect(await root.read('images/nova.webp')).toBeNull();
     expect(review.derived.counts.value.acceptedPending).toBe(5);
     expect(session.store.canUndo.value).toBe(false);
     expect(session.store.canRedo.value).toBe(true);
@@ -1229,7 +1229,7 @@ describe('apply accepted', () => {
     const redone = await diskProposal(root);
     expect(Object.keys(redone.applied)).toHaveLength(5);
     expect(redone.status).toBe('applied');
-    expect(await root.read('images/newer.webp')).toBe('WEBP');
+    expect(await root.read('images/nova.webp')).toBe('WEBP');
     expect(await root.read(NEW_IMAGE_PATH)).toBeNull();
     expect(session.store.project.value?.containers.map((i) => i.id)).toContain('I3');
   });
@@ -1319,7 +1319,7 @@ describe('apply accepted', () => {
     expect(session.store.project.value).toBe(projectBefore);
     expect((await diskProposal(root)).applied).toEqual({});
 
-    // Rejeitar a que causa o problema resolve.
+    // Rejecting the one that causes the problem solves it.
     await review.decide({ level: 'change', id: overlap.id }, 'rejected');
     expect(review.derived.validation.value?.ok).toBe(true);
   });
@@ -1334,7 +1334,7 @@ describe('apply accepted', () => {
     expect(result).toEqual({ ok: false, error: 'image-missing', path: NEW_IMAGE_PATH });
     expect(session.store.project.value).toBe(before);
     expect((await diskProposal(root)).applied).toEqual({});
-    expect(await root.read('images/newer.webp')).toBeNull();
+    expect(await root.read('images/nova.webp')).toBeNull();
   });
 
   it('does not overwrite the file of a project image (swap with the same name)', async () => {
@@ -1367,7 +1367,7 @@ describe('apply accepted', () => {
   });
 
   it.each([
-    ['a loose file in images/', 'images/newer.webp'],
+    ['a loose file in images/', 'images/nova.webp'],
     ['a file that only differs in case', 'images/NOVA.webp'],
   ])('target occupied by %s: image-exists, writing nothing', async (_name, occupied) => {
     const { proposal } = richScenario();
@@ -1382,7 +1382,7 @@ describe('apply accepted', () => {
     expect(result).toMatchObject({
       ok: false,
       error: 'image-exists',
-      path: 'images/newer.webp',
+      path: 'images/nova.webp',
     });
     expect(await root.read(occupied)).toBe('USER FILE');
     expect(await root.read(NEW_IMAGE_PATH)).toBe('WEBP');
@@ -1394,26 +1394,26 @@ describe('apply accepted', () => {
     const { proposal } = richScenario();
     const { review, session, root } = await openHarness({
       proposals: [proposal],
-      files: { [NEW_IMAGE_PATH]: 'WEBP', 'images/newer.webp': 'OLD FILE' },
+      files: { [NEW_IMAGE_PATH]: 'WEBP', 'images/nova.webp': 'OLD FILE' },
       project: addContainer(sampleProject(), {
         id: 'IX',
-        file: 'images/newer.webp',
+        file: 'images/nova.webp',
         width: 100,
         height: 100,
       }),
     });
     session.actions.removeContainer('IX');
     await session.flush();
-    expect(await root.read('images/newer.webp')).toBeNull();
+    expect(await root.read('images/nova.webp')).toBeNull();
     review.open('P1');
     await review.decide({ level: 'proposal', id: null }, 'accepted');
     const result = await review.apply();
     expect(result).toMatchObject({ ok: false, error: 'image-exists' });
-    expect(await root.read('images/newer.webp')).toBeNull();
+    expect(await root.read('images/nova.webp')).toBeNull();
     review.close();
     session.store.undo();
     await session.flush();
-    expect(await root.read('images/newer.webp')).toBe('OLD FILE');
+    expect(await root.read('images/nova.webp')).toBe('OLD FILE');
   });
 
   it('nothing accepted: applying creates no undo entry nor writes the proposal', async () => {
@@ -1588,15 +1588,15 @@ describe('delete proposal (phase 9.2)', () => {
     expect(await root.read(NEW_IMAGE_PATH)).toBeNull();
     // The file copied to images/ follows the session's normal cleanup: the mapping.json
     // written no longer cites it, so it left.
-    expect(await root.read('images/newer.webp')).toBeNull();
+    expect(await root.read('images/nova.webp')).toBeNull();
 
     expect(session.store.redo()).toBe(true);
     await session.proposals.settled();
     const redone = await projectOnDisk(h);
     expect(redone.containers.map((i) => i.id)).toContain('I3');
-    // mapping.json cites images/newer.webp and the file is there (restored from the trash).
-    expect(redone.containers.find((i) => i.id === 'I3')?.file).toBe('images/newer.webp');
-    expect(await root.read('images/newer.webp')).toBe('WEBP');
+    // mapping.json cites images/nova.webp and the file is there (restored from the trash).
+    expect(redone.containers.find((i) => i.id === 'I3')?.file).toBe('images/nova.webp');
+    expect(await root.read('images/nova.webp')).toBe('WEBP');
     expect(root.dirs.get('proposals')?.dirs.has('P1') ?? false).toBe(false);
     expect(await session.proposals.scan()).toEqual({
       added: [],
@@ -1633,7 +1633,7 @@ describe('delete proposal (phase 9.2)', () => {
     await session.proposals.settled();
     await session.flush();
     expect(session.store.project.value?.containers.map((i) => i.id)).toContain('I3');
-    expect(await root.read('images/newer.webp')).toBe('WEBP');
+    expect(await root.read('images/nova.webp')).toBe('WEBP');
     expect(root.dirs.get('proposals')?.dirs.has('P1') ?? false).toBe(false);
     expect(reportedErrors.value).toEqual([]);
   });

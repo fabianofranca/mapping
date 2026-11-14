@@ -316,7 +316,7 @@ function layoutKeysOf(dir: string): LayoutKeys {
 function expectNewLayout(): void {
   const keys = layoutKeysOf(MATERIAL3_DIR);
   expect(keys.v4Files, 'components in formatVersion 4').toBe(15);
-  expect(keys.alignedNone, 'none alinhado').toBeGreaterThan(0);
+  expect(keys.alignedNone, 'aligned none').toBeGreaterThan(0);
   expect(keys.grid, 'grid').toBeGreaterThan(0);
   expect(keys.weight, 'weight').toBeGreaterThan(0);
   expect(keys.maxContent, 'max-content').toBeGreaterThan(0);
@@ -470,7 +470,7 @@ describe('component drawing (Material 3)', () => {
       const mean = perComponent.reduce((sum, ms) => sum + ms, 0) / perComponent.length;
       expectBelow(mean, INSTANCE_BUDGET_MS, 'average of the 15');
       // No single component exceeds four times the budget (the largest measures ~0.9 ms).
-      expectBelow(Math.max(...perComponent), INSTANCE_BUDGET_MS * 4, 'pior componente');
+      expectBelow(Math.max(...perComponent), INSTANCE_BUDGET_MS * 4, 'worst component');
     },
   );
 
@@ -549,17 +549,17 @@ describe('grid with text', () => {
   const component = {
     format: 'mapping-component',
     formatVersion: 4,
-    id: 'grade',
-    name: 'Grade',
+    id: 'grid',
+    name: 'Grid',
     size: { width: 400, height: 300 },
     template: {
       type: 'frame',
-      name: 'raiz',
+      name: 'root',
       layout: { type: 'column' },
       children: [
         {
           type: 'frame',
-          name: 'grade',
+          name: 'grid',
           width: 'fill',
           height: 'hug',
           layout: { type: 'grid', columns: 4, gap: 8, lineGap: 8 },
@@ -580,7 +580,7 @@ describe('grid with text', () => {
     const { root, warnings } = drawn();
     const boxes = absoluteBoxes(root);
     const nodes = [...walk(root)];
-    const grid = nodes.find((n) => n.name === 'grade');
+    const grid = nodes.find((n) => n.name === 'grid');
     const texts = nodes.filter((n) => n.name === 'cell');
     expect(texts).toHaveLength(24);
     // (400 − 3 × 8) / 4 = 94 per column; each row has 2 text lines of 16.8.
@@ -619,7 +619,7 @@ describe('intrinsic nested in 3 levels', () => {
   const BOX = { x: 0, y: 0, width: 800, height: 300 };
   const inner = (i: number, j: number) => ({
     type: 'frame',
-    name: 'linha',
+    name: 'row',
     width: 'fill',
     layout: { type: 'row', gap: 4 },
     children: [
@@ -629,7 +629,7 @@ describe('intrinsic nested in 3 levels', () => {
   });
   const column = (i: number) => ({
     type: 'frame',
-    name: 'coluna',
+    name: 'column',
     width: 'min-content',
     height: 'hug',
     layout: { type: 'column', gap: 4 },
@@ -643,12 +643,12 @@ describe('intrinsic nested in 3 levels', () => {
     size: { width: 800, height: 300 },
     template: {
       type: 'frame',
-      name: 'raiz',
+      name: 'root',
       layout: { type: 'column' },
       children: [
         {
           type: 'frame',
-          name: 'externa',
+          name: 'outer',
           width: 'max-content',
           height: 'hug',
           layout: { type: 'row', gap: 8 },
@@ -668,8 +668,8 @@ describe('intrinsic nested in 3 levels', () => {
   it('the geometry: the column equals the row min-content and the outer row sums the 4', () => {
     const { root } = drawn();
     const nodes = [...walk(root)];
-    const columns = nodes.filter((n) => n.name === 'coluna');
-    const outer = nodes.find((n) => n.name === 'externa');
+    const columns = nodes.filter((n) => n.name === 'column');
+    const outer = nodes.find((n) => n.name === 'outer');
     expect(columns).toHaveLength(4);
     // Widest words at 14 px (7.7 per character): "bbbbbbbb" (61.6) and "yy" (15.4) + gap 4.
     const column = 61.6 + 4 + 15.4;
