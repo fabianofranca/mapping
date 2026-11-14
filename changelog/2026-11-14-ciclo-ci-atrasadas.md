@@ -1,4 +1,4 @@
-# Conferência das atrasadas olha o ciclo de CI — [Não lançado] (épico `epic/ciclo-ci-atrasadas`, PR #0, MCP sem mudança, schema v19)
+# Conferência das atrasadas olha o ciclo de CI — 2026-11-14 (épico `epic/ciclo-ci-atrasadas`, PR #1887, MCP sem mudança, schema v19)
 
 ## Alterado
 
