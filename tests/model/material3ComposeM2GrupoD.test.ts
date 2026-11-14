@@ -114,7 +114,7 @@ describe('M2 group D — fab, extended-fab and chip', () => {
     expect(textBox.x - (icon.x + icon.width)).toBe(12);
     // collapsed: only the icon
     const closed = both('extended-fab', {
-      text: 'Editar',
+      text: 'Edit',
       icon: 'Edit',
       expanded: 'false',
     });

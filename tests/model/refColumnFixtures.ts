@@ -1,6 +1,7 @@
-// Fixtures da coluna `ref` em `table` (ME4): uma especialização `rc` (v7) com o tipo `modelo`
-// (a tabela `campos`, cujas linhas são alvos) e o tipo `lista` (a tabela `alvos` com a coluna
-// `ref` `alvo`), e o projeto que a aplica.
+// Fixtures of the `ref` column in `table` (ME4): an `rc` specialization (v7) with the `modelo` type
+// (the `campos` table, whose rows are targets) and the `lista` type (the `alvos` table with the
+// `ref` column `alvo`), and the project that applies it.
+// pt-BR kept: shared fixture data (spec ids, names and keys; project names and values) asserted by tests/components, tests/store and tests/model
 import {
   addAnnotation,
   addContainer,
@@ -98,8 +99,8 @@ export function spec(
 }
 
 /**
- * Projeto com a especialização aplicada: AM (modelo) com as linhas R1 `cpf` e R2 `nome` em
- * `campos`; AL (lista) com a linha L1 (sem alvo); AF, uma anotação livre com a tupla E1.
+ * Project with the specialization applied: AM (model) with the rows R1 `cpf` and R2 `nome` in
+ * `campos`; AL (list) with the row L1 (no target); AF, a free annotation with the E1 tuple.
  */
 export function build(version = 1, edit: (raw: Raw) => void = () => undefined): Project {
   let p = emptyProject();
@@ -112,12 +113,12 @@ export function build(version = 1, edit: (raw: Raw) => void = () => undefined): 
     });
   }
   p = applySpecialization(p, spec(version, {}, edit), { newId: idGen('LS') });
-  const layerDados = p.layers.find((l) => l.spec?.layerId === 'dados')!.id;
-  const layerTelas = p.layers.find((l) => l.spec?.layerId === 'telas')!.id;
+  const dataLayerId = p.layers.find((l) => l.spec?.layerId === 'dados')!.id;
+  const screensLayerId = p.layers.find((l) => l.spec?.layerId === 'telas')!.id;
   p = addTypedAnnotation(p, {
     id: 'AM',
     markingId: 'M1',
-    layerId: layerDados,
+    layerId: dataLayerId,
     type: { specId: 'rc', typeId: 'modelo' },
   });
   p = setFieldValue(p, 'AM', 'titulo', 'Cliente');
@@ -128,7 +129,7 @@ export function build(version = 1, edit: (raw: Raw) => void = () => undefined): 
   p = addTypedAnnotation(p, {
     id: 'AL',
     markingId: 'M2',
-    layerId: layerTelas,
+    layerId: screensLayerId,
     type: { specId: 'rc', typeId: 'lista' },
   });
   p = addTableRow(p, 'AL', 'alvos', 'L1');

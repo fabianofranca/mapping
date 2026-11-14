@@ -50,13 +50,13 @@ const label = (d: Drawing): TextNode => findText(d.root)!;
 describe('M3 group A — checkbox', () => {
   it('20 box with radius 2 (CheckboxSize and RadiusSize), centered in the 48 minimum touch area', () => {
     const c = both('checkbox', { label: 'Accepted', state: 'checked' }).light;
-    const caixa = box(c, 'caixa');
-    expect([caixa.width, caixa.height]).toEqual([20, 20]);
-    expect('cornerRadius' in caixa.node && caixa.node.cornerRadius).toBe(2);
+    const square = box(c, 'caixa');
+    expect([square.width, square.height]).toEqual([20, 20]);
+    expect('cornerRadius' in square.node && square.node.cornerRadius).toBe(2);
     // Checkbox(onClick != null): minimumInteractiveComponentSize 48 with the box in the center
     const area = box(c, 'área');
     expect([area.width, area.x]).toEqual([48, 0]);
-    expect(caixa.x - area.x).toBe(14);
+    expect(square.x - area.x).toBe(14);
     expect(box(c, 'rótulo').x).toBe(48);
   });
 
@@ -85,10 +85,10 @@ describe('M3 group A — checkbox', () => {
   it('unchecked: no fill and a 2 inner outline in on-surface-variant; no check', () => {
     const c = both('checkbox', { state: 'unchecked' });
     for (const mode of ['light', 'dark'] as const) {
-      const caixa = named(c[mode], 'caixa')!;
-      expect(caixa.fills).toEqual([]);
+      const square = named(c[mode], 'caixa')!;
+      expect(square.fills).toEqual([]);
       expect(strokeOf(c[mode], 'caixa')).toBe(tok('on-surface-variant', mode));
-      expect(caixa.stroke).toMatchObject({ width: 2, align: 'inside' });
+      expect(square.stroke).toMatchObject({ width: 2, align: 'inside' });
       expect(named(c[mode], 'check')).toBeUndefined();
       expect(named(c[mode], 'traço')).toBeUndefined();
     }

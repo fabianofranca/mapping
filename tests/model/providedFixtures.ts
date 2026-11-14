@@ -1,5 +1,5 @@
-// Biblioteca pequena da cor herdada (MF3): `panel` oferece `ink`, `grand` oferece `ink` fixo, `shell`
-// não oferece nada, `label` lê `ink` com default cinza, `bare` lê sem default e `dot` não lê.
+// Small library of the inherited color (MF3): `panel` provides `ink`, `grand` provides a fixed `ink`, `shell`
+// provides nothing, `label` reads `ink` with a gray default, `bare` reads without a default and `dot` does not read.
 import {
   addComponentMarking,
   addContainer,

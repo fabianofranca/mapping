@@ -76,21 +76,21 @@ describe('M3 group B — text-field', () => {
     // the container stays at 56 (fixed height); the drawing has the size's height (84) and the 8 left over stay empty at the bottom
     expect(boxOf(light, 'contêiner')?.height).toBe(56);
     expect(boxOf(light, 'contêiner')?.width).toBe(280);
-    const fundo = named(light.root, 'fundo');
-    expect(color(fundo)).toBe('#E6E0E9');
+    const background = named(light.root, 'fundo');
+    expect(color(background)).toBe('#E6E0E9');
     expect(color(named(dark.root, 'fundo'))).toBe('#36343B');
     // top radius 4 by token (CornerExtraSmallTop): the list of 4 radii accepts `$token` per item
-    expect(fundo?.type === 'rect' && fundo.cornerRadius).toEqual([4, 4, 0, 0]);
-    expect(fundo?.height).toBe(56);
+    expect(background?.type === 'rect' && background.cornerRadius).toEqual([4, 4, 0, 0]);
+    expect(background?.height).toBe(56);
     expect(
       named(light.root, 'contêiner')?.type === 'frame' &&
         (named(light.root, 'contêiner') as { clip: boolean }).clip,
     ).toBe(true);
     // FilledTextFieldTokens.ActiveIndicatorHeight = 1, only the bottom border (stroke.sides)
-    const indicador = named(light.root, 'indicador');
-    expect(indicador?.stroke?.sides).toEqual(['bottom']);
-    expect(indicador?.stroke?.width).toBe(1);
-    expect(strokeColor(indicador)).toBe('#49454F');
+    const indicator = named(light.root, 'indicador');
+    expect(indicator?.stroke?.sides).toEqual(['bottom']);
+    expect(indicator?.stroke?.width).toBe(1);
+    expect(strokeColor(indicator)).toBe('#49454F');
     expect(strokeColor(named(dark.root, 'indicador'))).toBe('#CAC4D0');
     // no 1 px high rectangle plays the role of the indicator
     const thin = [...walk(light.root)].filter(
@@ -137,12 +137,12 @@ describe('M3 group B — text-field', () => {
     expect(iconOf(errored.light, 'email').color).toBe('#49454F');
     expect(textColor(texts(errored.light, 'valor'))).toBe('#1D1B20');
     // the hint in error stays onSurfaceVariant (errorPlaceholderColor)
-    const dicaErro = both('text-field', {
+    const errorHint = both('text-field', {
       label: 'Name',
       placeholder: 'Hint',
       isError: 'true',
     });
-    expect(textColor(texts(dicaErro.light, 'dica'))).toBe('#49454F');
+    expect(textColor(texts(errorHint.light, 'dica'))).toBe('#49454F');
   });
 
   it('typography: label and value in body-large, minimized label and supporting text in body-small', () => {
@@ -196,9 +196,9 @@ describe('M3 group B — text-field', () => {
     const { light, dark } = both('text-field', base);
     // TextFieldDefaults.colors: disabledContainerColor = ContainerColor (surfaceContainerHighest)
     expect(color(named(light.root, 'fundo'))).toBe('#E6E0E9');
-    const indicador = named(dark.root, 'indicador');
-    expect(strokeColor(indicador)).toBe('#E6E0E9');
-    expect(indicador?.opacity).toBe(0.38);
+    const indicator = named(dark.root, 'indicador');
+    expect(strokeColor(indicator)).toBe('#E6E0E9');
+    expect(indicator?.opacity).toBe(0.38);
     for (const name of ['rótulo', 'valor', 'apoio']) {
       expect(textColor(texts(dark, name))).toBe('#E6E0E9');
       expect(texts(dark, name)?.opacity).toBe(0.38);
@@ -218,13 +218,13 @@ describe('M3 group B — text-field', () => {
     );
     // OutlinedTextField: padding(top = half the minimized label = 8) + MinHeight 56
     expect(boxOf(light, 'contêiner')?.height).toBe(64);
-    const contorno = named(light.root, 'contorno');
-    expect(contorno?.height).toBe(56);
-    expect(contorno?.stroke?.width).toBe(1);
-    expect(contorno?.stroke?.sides).toBeUndefined();
-    expect(contorno?.type === 'rect' && contorno.cornerRadius).toBe(4);
-    expect(contorno?.fills).toEqual([]);
-    expect(strokeColor(contorno)).toBe('#79747E');
+    const outline = named(light.root, 'contorno');
+    expect(outline?.height).toBe(56);
+    expect(outline?.stroke?.width).toBe(1);
+    expect(outline?.stroke?.sides).toBeUndefined();
+    expect(outline?.type === 'rect' && outline.cornerRadius).toBe(4);
+    expect(outline?.fills).toEqual([]);
+    expect(strokeColor(outline)).toBe('#79747E');
     expect(strokeColor(named(dark.root, 'contorno'))).toBe('#938F99');
     expect(named(light.root, 'fundo')).toBeUndefined();
     expect(named(light.root, 'indicador')).toBeUndefined();
@@ -249,10 +249,10 @@ describe('M3 group B — text-field', () => {
   it('outlined with text: the minimized label opens a gap in the outline (no color patch), with no 1 px height', () => {
     const d = draw('text-field', { label: 'Name', value: 'Maria', style: 'outlined' });
     // a single outline (rect of radius 4, corner-extra-small) with the gap (stroke.gap) over the label; no `sides` or segments
-    const contorno = named(d.root, 'contorno');
-    expect(contorno).toMatchObject({ type: 'rect', cornerRadius: 4 });
-    expect(contorno?.stroke?.sides).toBeUndefined();
-    expect(strokeColor(contorno)).toBe('#79747E');
+    const outline = named(d.root, 'contorno');
+    expect(outline).toMatchObject({ type: 'rect', cornerRadius: 4 });
+    expect(outline?.stroke?.sides).toBeUndefined();
+    expect(strokeColor(outline)).toBe('#79747E');
     expect(named(d.root, 'contorno (lados)')).toBeUndefined();
     expect(named(d.root, 'trecho inicial')).toBeUndefined();
     expect(named(d.root, 'trecho final')).toBeUndefined();
@@ -261,13 +261,13 @@ describe('M3 group B — text-field', () => {
     expect(label).toBeDefined();
     // the minimized label sits at x = 16 (TextFieldPadding), between the gap of 4 on each side
     expect(boxes.get(label.id)!.x).toBe(16);
-    expect(contorno?.stroke?.gaps).toHaveLength(1);
-    const gap = contorno!.stroke!.gaps![0]!;
+    expect(outline?.stroke?.gaps).toHaveLength(1);
+    const gap = outline!.stroke!.gaps![0]!;
     expect(gap.side).toBe('top');
     expect(gap.from).toBe(12);
     expect(gap.to).toBeCloseTo(16 + boxes.get(label.id)!.width + 4, 5);
     // the top line of the outline is at y = 8, at the center of the 16 label
-    expect(boxes.get(contorno!.id)!.y).toBe(8);
+    expect(boxes.get(outline!.id)!.y).toBe(8);
     expect(fontOf(label)).toEqual(BODY_SMALL);
     // the gap is a real gap: no frame or rectangle covers the outline with a background color
     const patch = [...walk(d.root)].filter(
@@ -343,10 +343,10 @@ describe('M3 group B — secure-text-field', () => {
     expect(boxOf(light, 'contêiner')?.height).toBe(56);
     expect(color(named(light.root, 'fundo'))).toBe('#E6E0E9');
     expect(color(named(dark.root, 'fundo'))).toBe('#36343B');
-    const indicador = named(light.root, 'indicador');
-    expect(indicador?.stroke?.sides).toEqual(['bottom']);
-    expect(indicador?.stroke?.width).toBe(1);
-    expect(strokeColor(indicador)).toBe('#49454F');
+    const indicator = named(light.root, 'indicador');
+    expect(indicator?.stroke?.sides).toEqual(['bottom']);
+    expect(indicator?.stroke?.width).toBe(1);
+    expect(strokeColor(indicator)).toBe('#49454F');
     expect(strokeColor(named(dark.root, 'indicador'))).toBe('#CAC4D0');
     expect(textColor(texts(light, 'rótulo'))).toBe('#49454F');
     expect(fontOf(texts(light, 'rótulo'))).toEqual(BODY_SMALL);
@@ -410,10 +410,10 @@ describe('M3 group B — secure-text-field', () => {
       { label: 'Password', style: 'outlined', supportingText: 'Help' },
       { width: 280, height: 84 },
     );
-    const contorno = named(empty.light.root, 'contorno');
-    expect(contorno?.height).toBe(56);
-    expect(contorno?.type === 'rect' && contorno.cornerRadius).toBe(4);
-    expect(strokeColor(contorno)).toBe('#79747E');
+    const outline = named(empty.light.root, 'contorno');
+    expect(outline?.height).toBe(56);
+    expect(outline?.type === 'rect' && outline.cornerRadius).toBe(4);
+    expect(strokeColor(outline)).toBe('#79747E');
     expect(strokeColor(named(empty.dark.root, 'contorno'))).toBe('#938F99');
     const off = draw('secure-text-field', {
       label: 'Password',
@@ -494,11 +494,11 @@ describe('M3 group B — search-bar', () => {
       { width: 360, height: 240 },
     );
     expect(docked.root.type === 'frame' && docked.root.cornerRadius).toBe(28);
-    const divisor = named(docked.root, 'divisor');
+    const divider = named(docked.root, 'divisor');
     expect(named(docked.root, 'divisor (bar)')).toBeUndefined();
-    expect(divisor?.height).toBe(1);
-    expect(color(divisor)).toBe('#79747E');
-    expect(absoluteBoxes(docked.root).get(divisor!.id)!.y).toBe(56);
+    expect(divider?.height).toBe(1);
+    expect(color(divider)).toBe('#79747E');
+    expect(absoluteBoxes(docked.root).get(divider!.id)!.y).toBe(56);
     expect(
       color(
         named(

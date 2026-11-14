@@ -368,7 +368,11 @@ describe('M4 group B — navigation-rail', () => {
 
   it('width follows the content: wide expanded grows up to 360 (ContainerWidthMaximum), and the collapsed one stays at 96', () => {
     const items = [
-      { label: 'A very long label for the rail', icon: 'Home', selected: 'true' },
+      {
+        label: 'A very long label for the navigation rail destination',
+        icon: 'Home',
+        selected: 'true',
+      },
     ];
     const big = { width: 500, height: 400 };
     const drawn = (values: Values) =>

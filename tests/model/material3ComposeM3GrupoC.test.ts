@@ -407,9 +407,9 @@ describe('M3 group C — segmented-button', () => {
       const checkBox = boxOf(d, check.node!);
       expect([checkBox.width, checkBox.height]).toEqual([18, 18]);
       const labels = texts(d);
-      const selectedLabel = labels.find((t) => t.text === 'Semana')!;
+      const selectedLabel = labels.find((t) => t.text === 'Week')!;
       expect(solid(selectedLabel.fills)).toBe(tok('on-secondary-container', mode));
-      const other = labels.find((t) => t.text === 'Dia')!;
+      const other = labels.find((t) => t.text === 'Day')!;
       expect(solid(other.fills)).toBe(tok('on-surface', mode));
       // SegmentedButtonContent: 18 icon, IconSpacing 8, label
       const labelBox = boxOf(d, selectedLabel);
@@ -422,8 +422,8 @@ describe('M3 group C — segmented-button', () => {
 
   it('label in label-large and, without an icon, centered in the segment', () => {
     const d = draw('segmented-button', { options: three });
-    const dia = texts(d).find((t) => t.text === 'Dia')!;
-    const style = dia.style;
+    const day = texts(d).find((t) => t.text === 'Day')!;
+    const style = day.style;
     expect([
       style.fontSize,
       style.lineHeight,
@@ -431,7 +431,7 @@ describe('M3 group C — segmented-button', () => {
       style.letterSpacing,
     ]).toEqual([14, 20, 500, 0.1]);
     const [first] = segments(d);
-    const b = boxOf(d, dia);
+    const b = boxOf(d, day);
     near(b.x + b.width / 2, first!.x + first!.width / 2);
     // with no icon in the column and unselected, there is no icon in the segment
     expect(iconOf(d, 'check').node).toBeDefined(); // the selected one's
