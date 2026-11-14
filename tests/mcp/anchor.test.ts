@@ -336,7 +336,7 @@ describe('update_marking com anchor', () => {
     ]);
     expect(removed.errors).toEqual([]);
     expect(markingIn(removed, TIP).anchor ?? null).toBeNull();
-    expect(removed.steps[0]!.description).toContain('tirar a âncora');
+    expect(removed.steps[0]!.description).toContain('remove the anchor');
   });
 
   it('os erros anchor-self, anchor-cycle e anchor-other-space', async () => {

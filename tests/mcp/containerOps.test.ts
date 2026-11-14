@@ -181,7 +181,9 @@ describe('add_container: com arquivo e com fundo', () => {
       [3, 'invalid-arguments'],
     ]);
     expect(result.errors![0]!.message).toMatch(/ambiguous.*`file`.*`width`/);
-    expect(result.errors![2]!.message).toMatch(/missing: `width`, `height`, `background`/);
+    expect(result.errors![2]!.message).toMatch(
+      /missing: `width`, `height`, `background`/,
+    );
     expect(result.errors![3]!.message).toMatch(/missing: `height`/);
   });
 });

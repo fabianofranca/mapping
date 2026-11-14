@@ -132,8 +132,8 @@ describe('validate_library com docClones', () => {
     expect(result.valid).toBe(true);
     expect(result.warnings.map((w) => w.message)).toEqual(
       expect.arrayContaining([
-        '2 documentos de design-docs não conferidos (sem clone)',
-        '1 documento de wiki não conferido (sem clone)',
+        '2 documents of design-docs not checked (no clone)',
+        '1 document of wiki not checked (no clone)',
       ]),
     );
   });
@@ -143,11 +143,11 @@ describe('validate_library com docClones', () => {
     const messages = result.warnings.map((w) => w.message);
     expect(result.valid).toBe(true);
     expect(messages).toContain(
-      'documento não encontrado em design-docs: components/image.md',
+      'document not found in design-docs: components/image.md',
     );
     expect(messages.join('\n')).not.toContain('components/button.md');
     expect(messages.join('\n')).not.toContain('de design-docs não conferidos');
-    expect(messages).toContain('1 documento de wiki não conferido (sem clone)');
+    expect(messages).toContain('1 document of wiki not checked (no clone)');
   });
 
   it('um clone fora das raízes é recusado', async () => {
@@ -180,9 +180,9 @@ describe('plan_library_update usa o localPath do projeto', () => {
     );
     const messages = result.validation.warnings.map((w) => w.message);
     expect(messages).toContain(
-      'documento não encontrado em design-docs: components/image.md',
+      'document not found in design-docs: components/image.md',
     );
-    expect(messages).toContain('1 documento de wiki não conferido (sem clone)');
+    expect(messages).toContain('1 document of wiki not checked (no clone)');
     expect(messages.join('\n')).not.toContain('de design-docs não conferidos');
   });
 });

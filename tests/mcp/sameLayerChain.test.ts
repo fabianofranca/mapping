@@ -151,7 +151,7 @@ describe('vínculo na mesma camada pelo MCP', () => {
     expect(planned.valid).toBe(false);
     const error = planned.errors!.at(-1)!;
     expect(error.code).toBe('invalid-annotation-parent');
-    expect(error.message).toContain('na tipada, de um tipo que aceite este vínculo');
-    expect(error.message).toContain('inclusive na mesma camada');
+    expect(error.message).toContain('for a typed annotation, of a type that accepts this link');
+    expect(error.message).toContain('including in the same layer');
   });
 });

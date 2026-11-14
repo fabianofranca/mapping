@@ -96,7 +96,7 @@ describe('writeNewProposal e listStored', () => {
     const stored = await listStored(roots, location);
     expect(stored.proposals).toEqual([]);
     expect(stored.broken).toEqual([
-      { id: 'outra', error: expect.stringContaining('não bate com o da pasta') },
+      { id: 'outra', error: expect.stringContaining("does not match the folder's") },
     ]);
   });
 });
