@@ -8,9 +8,9 @@ import { specMessages } from './spec';
 import { versionMessages } from './versions';
 
 // Catalog of the model messages that the interface translates (stage #1263). Each module in the
-// folder is an area (`library.ts`, ...) and exports code → template of today's pt-BR text, with
-// `{parameters}`. The interface builds the pt-BR of the dictionaries from here
-// (`src/i18n/modelMessages.ts`), so the pt-BR text equals the model's by construction. No DOM.
+// folder is an area (`library.ts`, ...) and exports code → template of the English text the
+// model emits, with `{parameters}`. The en-US dictionary (`src/i18n/modelMessages.ts`) repeats it and the
+// pt-BR one lives in `src/i18n/modelMessagesTemplatesPtBR.ts`. No DOM.
 
 export const MODEL_MESSAGE_TEMPLATES = {
   ...libraryMessages,

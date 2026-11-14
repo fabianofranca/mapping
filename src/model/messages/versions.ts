@@ -6,69 +6,70 @@
 export const versionMessages = {
   // Specialization warnings (`specWarnings`)
   'versions.ignoredField':
-    'o campo "{key}" do tipo "{typeId}" é "{removed}", que saiu do formato: foi ignorado (os valores dele não são gravados); remova-o do arquivo',
+    'the field "{key}" of the type "{typeId}" is "{removed}", which was removed from the format: it was ignored (its values are not saved); remove it from the file',
   'versions.manyChildrenIds':
-    '{count} tipos listados um a um; uma cláusula { layer, groups } cobre a camada ou os grupos',
+    '{count} types listed one by one; a { layer, groups } clause covers the layer or the groups',
   'versions.unusedGroup':
-    'o grupo "{group}" da camada "{layer}" é declarado, mas nenhum tipo está nele',
+    'the group "{group}" of the layer "{layer}" is declared, but no type is in it',
   'versions.unusedDocRepo':
-    'o repositório "{repo}" de docRepos é declarado, mas nenhum `doc` o usa',
-  'versions.legacyFormat': '"{legacy}" é o nome antigo do formato; use "mapping-spec"',
+    'the repository "{repo}" in docRepos is declared, but no `doc` uses it',
+  'versions.legacyFormat': '"{legacy}" is the old name of the format; use "mapping-spec"',
   'versions.typeWithoutCode':
-    'o tipo "{typeId}" não tem `code`: nenhuma plataforma diz como criar uma instância dele',
+    'the type "{typeId}" has no `code`: no platform says how to create an instance of it',
   'versions.unusedPlatform':
-    'a plataforma "{id}" é declarada, mas nenhum tipo a usa em `code`',
+    'the platform "{id}" is declared, but no type uses it in `code`',
   'versions.pathWithoutRepo':
-    'a plataforma "{id}" tem tipos com `path` ({count}), mas não declara `repo`: o agente não sabe em que repositório estão esses arquivos; declare `repo` (formatVersion 5)',
+    'the platform "{id}" has types with `path` ({count}), but does not declare `repo`: the agent does not know which repository holds those files; declare `repo` (formatVersion 5)',
   // New field
-  'versions.fieldNew': 'o campo "{key}" do tipo "{typeId}" é novo',
-  'versions.columnNew': 'a coluna "{key}" do campo "{table}" do tipo "{typeId}" é nova',
+  'versions.fieldNew': 'the field "{key}" of the type "{typeId}" is new',
+  'versions.columnNew':
+    'the column "{key}" of the field "{table}" of the type "{typeId}" is new',
   'versions.fieldNewRequired':
-    'o campo "{key}" do tipo "{typeId}" é novo e já obrigatório; declare um passo "fill-field" em migrations',
+    'the field "{key}" of the type "{typeId}" is new and already required; declare a "fill-field" step in migrations',
   'versions.columnNewRequired':
-    'a coluna "{key}" do campo "{table}" do tipo "{typeId}" é nova e já obrigatória; declare um passo "fill-field" em migrations com field "{ref}"',
+    'the column "{key}" of the field "{table}" of the type "{typeId}" is new and already required; declare a "fill-field" step in migrations with field "{ref}"',
   // Field type changed
   'versions.fieldTypeChanged':
-    'o campo "{key}" do tipo "{typeId}" mudou de tipo ("{from}" para "{to}"); declare um passo "fill-field" em migrations',
+    'the field "{key}" of the type "{typeId}" changed type ("{from}" to "{to}"); declare a "fill-field" step in migrations',
   'versions.columnTypeChanged':
-    'a coluna "{key}" do campo "{table}" do tipo "{typeId}" mudou de tipo ("{from}" para "{to}"); declare um passo "fill-field" em migrations com field "{ref}"',
+    'the column "{key}" of the field "{table}" of the type "{typeId}" changed type ("{from}" to "{to}"); declare a "fill-field" step in migrations with field "{ref}"',
   // Became required
   'versions.fieldBecameRequired':
-    'o campo "{key}" do tipo "{typeId}" passou a ser obrigatório; declare um passo "fill-field" em migrations',
+    'the field "{key}" of the type "{typeId}" became required; declare a "fill-field" step in migrations',
   'versions.columnBecameRequired':
-    'a coluna "{key}" do campo "{table}" do tipo "{typeId}" passou a ser obrigatória; declare um passo "fill-field" em migrations com field "{ref}"',
+    'the column "{key}" of the field "{table}" of the type "{typeId}" became required; declare a "fill-field" step in migrations with field "{ref}"',
   // New option
   'versions.fieldOptionAdded':
-    'o campo "{key}" do tipo "{typeId}" ganhou a opção "{option}"',
+    'the field "{key}" of the type "{typeId}" gained the option "{option}"',
   'versions.columnOptionAdded':
-    'a coluna "{key}" do campo "{table}" do tipo "{typeId}" ganhou a opção "{option}"',
+    'the column "{key}" of the field "{table}" of the type "{typeId}" gained the option "{option}"',
   // Field and column removed
   'versions.fieldRemoved':
-    'o campo "{key}" do tipo "{typeId}" foi removido; declare um passo "remove-field" ou "rename-field" em migrations',
+    'the field "{key}" of the type "{typeId}" was removed; declare a "remove-field" or "rename-field" step in migrations',
   'versions.columnRemoved':
-    'a coluna "{key}" do campo "{table}" do tipo "{typeId}" foi removida; declare um passo "remove-field" ou "rename-field" em migrations com field "{ref}"',
+    'the column "{key}" of the field "{table}" of the type "{typeId}" was removed; declare a "remove-field" or "rename-field" step in migrations with field "{ref}"',
   // Option removed
   'versions.fieldOptionRemoved':
-    'a opção "{option}" do campo "{key}" do tipo "{typeId}" foi removida; declare um passo "map-values" com "{option}" em values em migrations',
+    'the option "{option}" of the field "{key}" of the type "{typeId}" was removed; declare a "map-values" step with "{option}" in values in migrations',
   'versions.columnOptionRemoved':
-    'a opção "{option}" da coluna "{key}" do campo "{table}" do tipo "{typeId}" foi removida; declare um passo "map-values" com "{option}" em values em migrations com field "{ref}"',
+    'the option "{option}" of the column "{key}" of the field "{table}" of the type "{typeId}" was removed; declare a "map-values" step with "{option}" in values in migrations with field "{ref}"',
   // Roles
   'versions.rolesRequired':
-    'o tipo "{typeId}" passou a ter papéis; declare um passo "set-role" em migrations (formatVersion 12)',
-  'versions.roleAdded': 'o tipo "{typeId}" ganhou o papel "{role}"',
+    'the type "{typeId}" now has roles; declare a "set-role" step in migrations (formatVersion 12)',
+  'versions.roleAdded': 'the type "{typeId}" gained the role "{role}"',
   'versions.roleRemoved':
-    'o papel "{role}" do tipo "{typeId}" foi removido; declare um passo "rename-role" ou "remove-role" em migrations (formatVersion 12)',
+    'the role "{role}" of the type "{typeId}" was removed; declare a "rename-role" or "remove-role" step in migrations (formatVersion 12)',
   // Types, components, applicability, documents, examples and fonts
 
-  'versions.typeNew': 'o tipo "{typeId}" é novo',
-  'versions.componentAdded': 'o tipo "{typeId}" ganhou o componente "{component}"',
+  'versions.typeNew': 'the type "{typeId}" is new',
+  'versions.componentAdded': 'the type "{typeId}" gained the component "{component}"',
   'versions.componentChanged':
-    'o componente do tipo "{typeId}" passou de "{from}" para "{to}"',
+    'the component of the type "{typeId}" changed from "{from}" to "{to}"',
   'versions.appliesToChanged':
-    'o tipo "{typeId}" passou a se aplicar a: {now} (antes: {before}); anotações que deixaram de se aplicar viram pendência',
-  'versions.docAdded': 'o tipo "{typeId}" ganhou o documento "{doc}"',
-  'versions.exampleAdded': 'o tipo "{typeId}" ganhou o exemplo "{name}"',
-  'versions.fontNew': 'a fonte "{family}" é nova',
+    'the type "{typeId}" now applies to: {now} (before: {before}); annotations that no longer apply become pending',
+  'versions.docAdded': 'the type "{typeId}" gained the document "{doc}"',
+  'versions.exampleAdded': 'the type "{typeId}" gained the example "{name}"',
+  'versions.fontNew': 'the font "{family}" is new',
   'versions.typeRemoved':
-    'o tipo "{typeId}" foi removido; declare um passo "remove-type" ou "rename-type" em migrations',
+    'the type "{typeId}" was removed; declare a "remove-type" or "rename-type" step in migrations',
 } as const;

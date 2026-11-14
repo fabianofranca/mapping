@@ -2,23 +2,16 @@
 // `src/model/modelMessage.ts`). The key is `model.<code>`. They enter the dictionaries through
 // `...modelMessagesEnUS` / `...modelMessagesPtBR`. en-US is the base: it defines the keys (the
 // template codes of the model plus the ones written below) and pt-BR is typed against it, with the
-// same keys and the same {parameters}. The pt-BR text is identical to the `text` the model returns
-// (what the MCP keeps emitting).
+// same keys and the same {parameters}. The model returns the English `text` (what the MCP and the
+// model tests read); the pt-BR templates of the catalog codes live in `modelMessagesTemplatesPtBR.ts`.
 
-import {
-  MODEL_MESSAGE_TEMPLATES,
-  type ModelMessageTemplateCode,
-} from '../model/messages';
+import type { ModelMessageTemplateCode } from '../model/messages';
+import { templatePtBR } from './modelMessagesTemplatesPtBR';
 import type { libraryMessages } from '../model/messages/library';
 import type { specMessages } from '../model/messages/spec';
 import type { versionMessages } from '../model/messages/versions';
 import { engineEnUS } from './modelMessagesEngine';
 import { componentEnUS, iconsFileEnUS, originsEnUS } from './modelMessagesComponent';
-
-/** The `model.<code>` keys of the model catalog, with its pt-BR text (the text is not repeated). */
-const templatePtBR = Object.fromEntries(
-  Object.entries(MODEL_MESSAGE_TEMPLATES).map(([code, text]) => [`model.${code}`, text]),
-) as { readonly [C in ModelMessageTemplateCode as `model.${C}`]: string };
 
 /** en-US of the `library` catalog codes (format terms, ids and paths are not translated). */
 const libraryEnUS: {
