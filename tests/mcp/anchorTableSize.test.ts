@@ -22,8 +22,8 @@ import { Roots } from '../../mcp/paths';
 import { findProject, loadProject, type LoadedProject } from '../../mcp/projects';
 import { NOW } from '../model/fixtures';
 
-// CL1, achado 1.2 (#1890): `dropdown-menu` criado ancorado e sem `rect` nasce no tamanho do desenho
-// com as linhas que o próprio lote informa (a tabela `items`), não no do menu vazio (112 × 16).
+// CL1, finding 1.2 (#1890): an anchored `dropdown-menu` created without `rect` is born at the size of the drawing
+// with the rows the batch itself provides (the `items` table), not that of the empty menu (112 × 16).
 
 const LIBRARY = resolve('libraries/material3-compose');
 const IMAGE = 'bbbbbbbb-0000-4000-8000-000000000001';
@@ -34,40 +34,40 @@ let loaded: LoadedProject;
 
 beforeAll(async () => {
   base = mkdtempSync(join(tmpdir(), 'mapping-anchor-table-'));
-  const dir = join(base, 'telas');
+  const dir = join(base, 'screens');
   mkdirSync(join(dir, 'specs'), { recursive: true });
   cpSync(LIBRARY, join(dir, 'specs', 'material3-compose'), { recursive: true });
   const parsed = parseSpecText(
     readFileSync(join(LIBRARY, 'material3-compose.spec.json'), 'utf8'),
   );
-  if (!parsed.ok) throw new Error('material3-compose inválida');
+  if (!parsed.ok) throw new Error('material3-compose is invalid');
   let p = createProject({
-    name: 'Telas',
+    name: 'Screens',
     now: NOW,
     firstLayer: { id: LAYER, name: 'Camada 1', color: '#D32F2F' },
   });
-  p = addContainer(p, { id: IMAGE, file: 'images/foto.png', width: 420, height: 560 });
+  p = addContainer(p, { id: IMAGE, file: 'images/photo.png', width: 420, height: 560 });
   p = applySpecialization(p, parsed.spec, {
     packageSpecName: 'material3-compose.spec.json',
   });
   writeFileSync(join(dir, 'mapping.json'), serialize(p));
   const roots = new Roots([base]);
-  loaded = await loadProject(roots, await findProject(roots, 'telas'));
+  loaded = await loadProject(roots, await findProject(roots, 'screens'));
 }, 30_000);
 
 afterAll(() => rmSync(base, { recursive: true, force: true }));
 
 const io = {
-  readSource: () => Promise.reject(new Error('sem arquivos')),
-  readSpecInput: () => Promise.reject(new Error('sem arquivos')),
+  readSource: () => Promise.reject(new Error('no files')),
+  readSpecInput: () => Promise.reject(new Error('no files')),
   takenImageFiles: new Set<string>(),
   now: () => new Date(NOW),
 };
 
-const lot = (menuExtra: Record<string, unknown>): Operation[] => [
+const batchOf = (menuExtra: Record<string, unknown>): Operation[] => [
   {
     op: 'create_marking',
-    as: '$campo',
+    as: '$field',
     container: IMAGE,
     rect: { x: 20, y: 340, width: 280, height: 56 },
     annotation: { type: 'material3-compose/text-field' },
@@ -82,9 +82,9 @@ const lot = (menuExtra: Record<string, unknown>): Operation[] => [
         style: 'menu',
         expanded: 'true',
         items: [
-          { text: 'Editar', leadingIcon: 'Edit' },
-          { text: 'Compartilhar', leadingIcon: 'Share' },
-          { text: 'Excluir', leadingIcon: 'Delete' },
+          { text: 'Edit', leadingIcon: 'Edit' },
+          { text: 'Share', leadingIcon: 'Share' },
+          { text: 'Delete', leadingIcon: 'Delete' },
         ],
       },
     },
@@ -96,22 +96,22 @@ const menuRect = (r: BatchResult) =>
   r.project.markings.find((m) => m.id === (r.aliases.get('$menu') as { id: string }).id)!
     .rect;
 
-describe('create_marking sem rect: o tamanho inclui as linhas do próprio lote', () => {
-  it('ancorado: o menu nasce com a altura dos três itens, não 112 × 16', async () => {
+describe('create_marking without rect: the size includes the rows of the batch itself', () => {
+  it('anchored: the menu is born with the height of the three items, not 112 × 16', async () => {
     const result = await runBatch(
       loaded,
-      lot({ anchor: { to: '$campo', side: 'bottom' } }),
+      batchOf({ anchor: { to: '$field', side: 'bottom' } }),
       io,
     );
     expect(result.errors).toEqual([]);
     const rect = menuRect(result);
     expect(rect.height).toBe(160);
-    // Já no tamanho do conteúdo: ajustar de novo não muda nada, e fica encostado sob o campo.
+    // Already at the content size: fitting again changes nothing, and it stays flush below the field.
     expect(rect).toMatchObject({ x: 20, y: 396 });
     const again = await runBatch(
       loaded,
       [
-        ...lot({ anchor: { to: '$campo', side: 'bottom' } }),
+        ...batchOf({ anchor: { to: '$field', side: 'bottom' } }),
         { op: 'fit_marking', marking: '$menu' } as Operation,
       ],
       io,
@@ -120,10 +120,10 @@ describe('create_marking sem rect: o tamanho inclui as linhas do próprio lote',
   }, 30_000);
 });
 
-// CL1, achado 3.2 (#1890): o servidor completa o que o lote não informa com o `preview` do
-// componente (como a Paleta da app; documentado em `create_marking`). O guia (R17.22 e R17.31)
-// informa vazio o que o passo não quer, e então nada além do pedido fica na anotação.
-describe('create_marking: o preview só entra no que o lote não informa', () => {
+// CL1, finding 3.2 (#1890): the server fills in what the batch does not provide with the component's
+// `preview` (like the app's Palette; documented in `create_marking`). The guide (R17.22 and R17.31)
+// provides an empty value for what the step does not want, and then nothing beyond the request stays on the annotation.
+describe('create_marking: the preview only fills in what the batch does not provide', () => {
   const valuesOf = (r: BatchResult, alias: string): Record<string, unknown> => {
     const id = (r.aliases.get(alias) as { id: string }).id;
     const a = r.project.annotations.find((x) => x.markingId === id)!;
@@ -142,19 +142,19 @@ describe('create_marking: o preview só entra no que o lote não informa', () =>
       annotation: { type: `material3-compose/${type}`, values },
     }) as Operation;
 
-  it('o preview completa o campo que o lote não informa (decisão em aberto: bug do dono)', async () => {
-    const r = await runBatch(loaded, [make('$sn', 'snackbar', { message: 'Oi' })], io);
+  it('the preview fills in the field the batch does not provide (open decision: owner bug)', async () => {
+    const r = await runBatch(loaded, [make('$sn', 'snackbar', { message: 'Hi' })], io);
     expect(r.errors).toEqual([]);
     expect(valuesOf(r, '$sn').actionLabel).toBe('Desfazer');
   }, 30_000);
 
-  it('com o campo informado vazio (como no R17.31), nada além do pedido entra', async () => {
+  it('with the field provided empty (as in R17.31), nothing beyond the request goes in', async () => {
     const r = await runBatch(
       loaded,
       [
-        make('$sn', 'snackbar', { message: 'Oi', actionLabel: '' }),
+        make('$sn', 'snackbar', { message: 'Hi', actionLabel: '' }),
         make('$cd', 'card', {
-          title: 'Título',
+          title: 'Title',
           style: 'elevated',
           subtitle: '',
           supportingText: '',

@@ -7,9 +7,9 @@ import { NOW } from '../model/fixtures';
 import { ok } from './proposalSupport';
 import { connect, type Connection } from './workspace';
 
-// Fase CRM4 (#965): o pacote lido do disco ignora subpastas com mais de 8 níveis, entradas
-// ocultas e `node_modules`, e avisa quais pulou (`ignored-paths`); `plan_library_update` lê o
-// pacote como `validate_library` (sem o limite de arquivos da app).
+// Phase CRM4 (#965): the package read from disk ignores subfolders deeper than 8 levels, hidden
+// entries and `node_modules`, and warns which ones it skipped (`ignored-paths`); `plan_library_update` reads the
+// package like `validate_library` (without the app's file limit).
 
 const MATERIAL3 = 'tests/fixtures/material3';
 
@@ -53,16 +53,16 @@ beforeAll(async () => {
   mkdirSync(join(ignored, ...deep), { recursive: true });
   writeFileSync(join(ignored, ...deep, 'fundo.md'), 'x');
 
-  // Mais arquivos que o limite da app (500), menos que o do servidor (2000).
+  // More files than the app's limit (500), fewer than the server's (2000).
   const many = join(root, 'muitos', 'material3');
   cpSync(MATERIAL3, many, { recursive: true });
   mkdirSync(join(many, 'extras'), { recursive: true });
   for (let i = 0; i < 520; i++) writeFileSync(join(many, 'extras', `f${i}.bin`), 'x');
 
   let empty = createProject({
-    name: 'Vazio',
+    name: 'Empty',
     now: NOW,
-    firstLayer: { id: layer, name: 'Livre', color: '#D32F2F' },
+    firstLayer: { id: layer, name: 'Free', color: '#D32F2F' },
   });
   empty = addBackgroundContainer(empty, {
     id: image,
@@ -82,8 +82,8 @@ afterAll(async () => {
 
 const ignoredOf = (issues: Issue[]) => issues.filter((i) => i.path === 'ignored-paths');
 
-describe('aviso ignored-paths', () => {
-  it('validate_library lista as pastas puladas', async () => {
+describe('ignored-paths warning', () => {
+  it('validate_library lists the skipped folders', async () => {
     const result = ok(
       await mcp.call<Validated>('validate_library', { path: 'ignorado/material3' }),
     );
@@ -96,14 +96,14 @@ describe('aviso ignored-paths', () => {
     expect(result.valid).toBe(true);
   });
 
-  it('pacote sem pastas ignoradas não leva o aviso', async () => {
+  it('a package without ignored folders carries no warning', async () => {
     const result = ok(
       await mcp.call<Validated>('validate_library', { path: 'limpo/material3' }),
     );
     expect(ignoredOf(result.warnings)).toEqual([]);
   });
 
-  it('plan_library_update repete o aviso na validação', async () => {
+  it('plan_library_update repeats the warning in the validation', async () => {
     const result = ok(
       await mcp.call<Plan>('plan_library_update', {
         project: 'vazio',
@@ -113,7 +113,7 @@ describe('aviso ignored-paths', () => {
     expect(ignoredOf(result.validation.warnings)).toHaveLength(1);
   });
 
-  it('o lote que aplica a biblioteca devolve o aviso', async () => {
+  it('the batch that applies the library returns the warning', async () => {
     const result = ok(
       await mcp.call<{ warnings?: Issue[]; steps?: { warnings?: Issue[] }[] }>(
         'plan_changes',
@@ -127,8 +127,8 @@ describe('aviso ignored-paths', () => {
   });
 });
 
-describe('plan_library_update lê o pacote como validate_library', () => {
-  it('pacote com mais de 500 arquivos, aceito por validate_library, não é recusado', async () => {
+describe('plan_library_update reads the package like validate_library', () => {
+  it('a package with more than 500 files, accepted by validate_library, is not refused', async () => {
     const validated = ok(
       await mcp.call<Validated>('validate_library', { path: 'muitos/material3' }),
     );

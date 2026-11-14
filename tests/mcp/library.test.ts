@@ -22,10 +22,11 @@ import { NOW } from '../model/fixtures';
 import { errorOf, ok } from './proposalSupport';
 import { connect, type Connection } from './workspace';
 
-// validate_library, list_components, get_component e get_specialization servindo a v4 (fase
-// B2). O pacote de prova é o Material 3 de `tests/fixtures/material3/`.
+// validate_library, list_components, get_component and get_specialization serving v4 (phase
+// B2). The test package is the Material 3 from `tests/fixtures/material3/`.
 
 const MATERIAL3 = 'tests/fixtures/material3';
+// The fixture folder, spec and field names stay in Portuguese: they are the real ids of `tests/fixtures/pessoas`.
 const PESSOAS = 'tests/fixtures/pessoas';
 
 interface Issue {
@@ -77,51 +78,51 @@ let mcp: Connection;
 
 beforeAll(async () => {
   base = mkdtempSync(join(tmpdir(), 'mapping-lib-'));
-  root = join(base, 'raiz');
+  root = join(base, 'root');
   mkdirSync(root, { recursive: true });
   cpSync(MATERIAL3, join(root, 'lib', 'material3'), { recursive: true });
 
-  // Cópia quebrada: falta o componente do botão.
-  cpSync(MATERIAL3, join(root, 'quebrado', 'material3'), { recursive: true });
-  rmSync(join(root, 'quebrado', 'material3', 'components', 'm3-button.json'));
+  // Broken copy: the button component is missing.
+  cpSync(MATERIAL3, join(root, 'broken', 'material3'), { recursive: true });
+  rmSync(join(root, 'broken', 'material3', 'components', 'm3-button.json'));
 
-  // Exemplo de sistema externo sem o tamanho da tela, que a declaração exige.
-  cpSync(MATERIAL3, join(root, 'externo', 'material3'), { recursive: true });
-  const example = join(root, 'externo', 'material3', 'examples', 'settings.sdui.json');
+  // External-system example without the screen size, which the declaration requires.
+  cpSync(MATERIAL3, join(root, 'external', 'material3'), { recursive: true });
+  const example = join(root, 'external', 'material3', 'examples', 'settings.sdui.json');
   const screen = JSON.parse(readFileSync(example, 'utf8')) as {
     screen: { device?: unknown };
   };
   delete screen.screen.device;
   writeFileSync(example, JSON.stringify(screen));
 
-  // Pessoas (nó image) e a cópia com o campo da foto trocado para number.
+  // People (image node) and the copy with the photo field switched to number.
   cpSync(PESSOAS, join(root, 'lib', 'pessoas'), { recursive: true });
-  cpSync(PESSOAS, join(root, 'imagem-errada', 'pessoas'), { recursive: true });
-  const pessoasSpec = join(root, 'imagem-errada', 'pessoas', 'pessoas.spec.json');
+  cpSync(PESSOAS, join(root, 'wrong-image', 'pessoas'), { recursive: true });
+  const peopleSpec = join(root, 'wrong-image', 'pessoas', 'pessoas.spec.json');
   writeFileSync(
-    pessoasSpec,
-    readFileSync(pessoasSpec, 'utf8').replace(
+    peopleSpec,
+    readFileSync(peopleSpec, 'utf8').replace(
       /("key": "foto",\s*"label": "Foto",\s*"type": )"string"/,
       '$1"number"',
     ),
   );
 
-  // A biblioteca de verdade, para os exemplos com as linhas de um campo `table`.
+  // The real library, for the examples with the rows of a `table` field.
   cpSync('libraries/material3-compose', join(root, 'compose', 'material3-compose'), {
     recursive: true,
   });
 
-  // O exemplo do tabs com texto no campo `items` (table): o validador recusa.
+  // The tabs example with text in the `items` (table) field: the validator refuses it.
   cpSync(
     'libraries/material3-compose',
-    join(root, 'texto-na-tabela', 'material3-compose'),
+    join(root, 'text-in-table', 'material3-compose'),
     {
       recursive: true,
     },
   );
   const tableSpec = join(
     root,
-    'texto-na-tabela',
+    'text-in-table',
     'material3-compose',
     'material3-compose.spec.json',
   );
@@ -130,15 +131,15 @@ beforeAll(async () => {
   };
   for (const layer of tableJson.layers) {
     const tabs = layer.annotationTypes.find((t) => t.id === 'tabs');
-    if (tabs) tabs.examples[0]!.values = { items: 'texto' };
+    if (tabs) tabs.examples[0]!.values = { items: 'text' };
   }
   writeFileSync(tableSpec, JSON.stringify(tableJson));
 
-  mkdirSync(join(root, 'vazia'));
-  writeFileSync(join(root, 'vazia', 'LEIA-ME.md'), 'nada aqui');
+  mkdirSync(join(root, 'empty'));
+  writeFileSync(join(root, 'empty', 'LEIA-ME.md'), 'nothing here');
 
-  // Projeto com a biblioteca aplicada na pasta `specs/material3/`.
-  const dir = join(root, 'projetos', 'telas');
+  // Project with the library applied in the `specs/material3/` folder.
+  const dir = join(root, 'projetos', 'screens');
   const specFile = 'specs/material3/material3.spec.json';
   cpSync(MATERIAL3, join(dir, 'specs', 'material3'), { recursive: true });
   const parsed = parseSpecText(
@@ -146,11 +147,11 @@ beforeAll(async () => {
   );
   if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
   let p = createProject({
-    name: 'Telas',
+    name: 'Screens',
     now: NOW,
     firstLayer: {
       id: 'cccccccc-0000-4000-8000-000000000001',
-      name: 'Livre',
+      name: 'Free',
       color: '#D32F2F',
     },
   });
@@ -165,10 +166,10 @@ beforeAll(async () => {
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'mapping.json'), serialize(p));
 
-  // Fora das raízes.
-  mkdirSync(join(base, 'fora'), { recursive: true });
-  cpSync(MATERIAL3, join(base, 'fora', 'material3'), { recursive: true });
-  symlinkSync(join(base, 'fora', 'material3'), join(root, 'link-para-fora'));
+  // Outside the roots.
+  mkdirSync(join(base, 'outside'), { recursive: true });
+  cpSync(MATERIAL3, join(base, 'outside', 'material3'), { recursive: true });
+  symlinkSync(join(base, 'outside', 'material3'), join(root, 'link-outside'));
 
   mcp = await connect([root]);
 });
@@ -178,7 +179,7 @@ afterAll(async () => {
   rmSync(base, { recursive: true, force: true });
 });
 
-describe('validate_specialization com containers (v6)', () => {
+describe('validate_specialization with containers (v6)', () => {
   const spec = (containers: unknown) =>
     JSON.stringify({
       format: 'mapping-spec',
@@ -190,18 +191,18 @@ describe('validate_specialization com containers (v6)', () => {
       layers: [],
     });
 
-  it('resume a quantidade de containers', async () => {
+  it('summarizes the number of containers', async () => {
     const result = ok(
       await mcp.call<{ valid: boolean; spec: Record<string, unknown> }>(
         'validate_specialization',
-        { text: spec([{ id: 'phone', name: 'Celular', width: 360, height: 800 }]) },
+        { text: spec([{ id: 'phone', name: 'Phone', width: 360, height: 800 }]) },
       ),
     );
     expect(result.valid).toBe(true);
     expect(result.spec).toMatchObject({ formatVersion: 6, containers: 1 });
   });
 
-  it('recusa id repetido e tamanho fora do limite, com o caminho', async () => {
+  it('refuses a repeated id and a size beyond the limit, with the path', async () => {
     const result = ok(
       await mcp.call<{ valid: boolean; errors: string[] }>('validate_specialization', {
         text: spec([
@@ -216,8 +217,8 @@ describe('validate_specialization com containers (v6)', () => {
   });
 });
 
-describe('validate_library com o nó image', () => {
-  it('aprova a biblioteca de pessoas, sem erro nem aviso', async () => {
+describe('validate_library with the image node', () => {
+  it('approves the people library, without error or warning', async () => {
     const result = ok(
       await mcp.call<Validated>('validate_library', { path: 'lib/pessoas' }),
     );
@@ -226,9 +227,9 @@ describe('validate_library com o nó image', () => {
     expect(result.warnings).toEqual([]);
   });
 
-  it('recusa o src ligado a um campo que não é string', async () => {
+  it('refuses the src bound to a field that is not a string', async () => {
     const result = ok(
-      await mcp.call<Validated>('validate_library', { path: 'imagem-errada/pessoas' }),
+      await mcp.call<Validated>('validate_library', { path: 'wrong-image/pessoas' }),
     );
     expect(result.valid).toBe(false);
     expect(result.errors.map((e) => e.message).join('\n')).toMatch(
@@ -237,7 +238,7 @@ describe('validate_library com o nó image', () => {
   });
 });
 
-describe('validate_specialization com suggestions (v8)', () => {
+describe('validate_specialization with suggestions (v8)', () => {
   const spec = (formatVersion: number, field: Record<string, unknown>) =>
     JSON.stringify({
       format: 'mapping-spec',
@@ -255,7 +256,7 @@ describe('validate_specialization com suggestions (v8)', () => {
       ],
     });
 
-  it('aceita a v8 com suggestions num campo string', async () => {
+  it('accepts v8 with suggestions on a string field', async () => {
     const result = ok(
       await mcp.call<{ valid: boolean; errors: string[] }>('validate_specialization', {
         text: spec(8, { key: 'type', type: 'string', suggestions: ['String', 'Int'] }),
@@ -265,7 +266,7 @@ describe('validate_specialization com suggestions (v8)', () => {
     expect(result.valid).toBe(true);
   });
 
-  it('recusa suggestions em versão anterior, em outro tipo e repetida, com o caminho', async () => {
+  it('refuses suggestions in an earlier version, on another type and repeated, with the path', async () => {
     const call = async (formatVersion: number, field: Record<string, unknown>) =>
       ok(
         await mcp.call<{ valid: boolean; errors: string[] }>('validate_specialization', {
@@ -288,7 +289,7 @@ describe('validate_specialization com suggestions (v8)', () => {
   });
 });
 
-describe('validate_specialization com linkedRef (v8)', () => {
+describe('validate_specialization with linkedRef (v8)', () => {
   const spec = (formatVersion: number, field: Record<string, unknown>) =>
     JSON.stringify({
       format: 'mapping-spec',
@@ -318,13 +319,13 @@ describe('validate_specialization com linkedRef (v8)', () => {
       }),
     );
 
-  it('aceita a v8 com linkedRef apontando para um campo ref', async () => {
+  it('accepts v8 with linkedRef pointing to a ref field', async () => {
     const result = await call(8, { key: 'type', type: 'string', linkedRef: 'typeRef' });
     expect(result.errors).toEqual([]);
     expect(result.valid).toBe(true);
   });
 
-  it('recusa linkedRef em versão anterior, em outro tipo e com chave errada, com o caminho', async () => {
+  it('refuses linkedRef in an earlier version, on another type and with a wrong key, with the path', async () => {
     const old = await call(7, { key: 'type', type: 'string', linkedRef: 'typeRef' });
     expect(old.errors).toContain(
       'layers[0].annotationTypes[0].fields[1].linkedRef: only allowed with formatVersion 8',
@@ -333,9 +334,9 @@ describe('validate_specialization com linkedRef (v8)', () => {
     expect(wrong.errors).toContain(
       'layers[0].annotationTypes[0].fields[1].linkedRef: only allowed in a string field or column',
     );
-    const missing = await call(8, { key: 'type', type: 'string', linkedRef: 'nada' });
+    const missing = await call(8, { key: 'type', type: 'string', linkedRef: 'nothing' });
     expect(missing.errors).toContain(
-      'layers[0].annotationTypes[0].fields[1].linkedRef: "nada" is not a field of the type',
+      'layers[0].annotationTypes[0].fields[1].linkedRef: "nothing" is not a field of the type',
     );
     const notRef = await call(8, { key: 'type', type: 'string', linkedRef: 'type' });
     expect(notRef.errors).toContain(
@@ -345,10 +346,10 @@ describe('validate_specialization com linkedRef (v8)', () => {
 });
 
 describe('validate_library', () => {
-  it('texto num campo table de exemplo: só o message em português, sem code (EX5)', async () => {
+  it('text in an example table field: only the message, without code (EX5)', async () => {
     const result = ok(
       await mcp.call<Validated>('validate_library', {
-        path: 'texto-na-tabela/material3-compose',
+        path: 'text-in-table/material3-compose',
       }),
     );
     expect(result.valid).toBe(false);
@@ -363,7 +364,7 @@ describe('validate_library', () => {
     ]);
   });
 
-  it('aprova o Material 3 (pasta ou arquivo): sem erros, com os avisos esperados', async () => {
+  it('approves Material 3 (folder or file): no errors, with the expected warnings', async () => {
     for (const path of ['lib/material3', 'lib/material3/material3.spec.json']) {
       const result = ok(await mcp.call<Validated>('validate_library', { path }));
       expect(result.valid, path).toBe(true);
@@ -385,13 +386,13 @@ describe('validate_library', () => {
     }
   });
 
-  it('o exemplo de sistema externo passa pela declaração (nível 3) e quebra se ela não o entende', async () => {
+  it('the external-system example goes through the declaration (level 3) and breaks if it does not understand it', async () => {
     const good = ok(
       await mcp.call<Validated>('validate_library', { path: 'lib/material3' }),
     );
     expect(good.errors).toEqual([]);
     const bad = ok(
-      await mcp.call<Validated>('validate_library', { path: 'externo/material3' }),
+      await mcp.call<Validated>('validate_library', { path: 'external/material3' }),
     );
     expect(bad.valid).toBe(false);
     expect(bad.errors).toHaveLength(1);
@@ -400,10 +401,10 @@ describe('validate_library', () => {
       path: 'origins[0].examples[0].file',
     });
     expect(bad.errors[0]?.message).toMatch(/screen width missing or invalid/);
-    // Com level 2 a prova de desenho não roda.
+    // With level 2 the drawing proof does not run.
     const level2 = ok(
       await mcp.call<Validated>('validate_library', {
-        path: 'externo/material3',
+        path: 'external/material3',
         level: 2,
       }),
     );
@@ -411,9 +412,9 @@ describe('validate_library', () => {
     expect(level2.summary.level).toBe(2);
   });
 
-  it('pacote sem um componente: erro com file e path certos', async () => {
+  it('package without a component: error with the right file and path', async () => {
     const result = ok(
-      await mcp.call<Validated>('validate_library', { path: 'quebrado/material3' }),
+      await mcp.call<Validated>('validate_library', { path: 'broken/material3' }),
     );
     expect(result.valid).toBe(false);
     const missing = result.errors.find((e) => e.message.includes('m3-button.json'));
@@ -422,7 +423,7 @@ describe('validate_library', () => {
     expect(result.hint).toMatch(/fix the errors/);
   });
 
-  it('contrato de versão: previous liga a checagem (a mesma versão não é nova)', async () => {
+  it('version contract: previous turns on the check (the same version is not new)', async () => {
     const same = ok(
       await mcp.call<Validated>('validate_library', {
         path: 'lib/material3',
@@ -430,39 +431,39 @@ describe('validate_library', () => {
       }),
     );
     expect(same.errors.length + same.warnings.length).toBeGreaterThan(0);
-    const semPrevious = ok(
+    const withoutPrevious = ok(
       await mcp.call<Validated>('validate_library', { path: 'lib/material3' }),
     );
-    expect(same.errors.length).toBeGreaterThanOrEqual(semPrevious.errors.length);
+    expect(same.errors.length).toBeGreaterThanOrEqual(withoutPrevious.errors.length);
   });
 
-  it('recusa caminho fora das raízes (inclusive link simbólico) e inexistente', async () => {
+  it('refuses a path outside the roots (including a symbolic link) and a nonexistent one', async () => {
     expect(
       errorOf(
-        await mcp.call('validate_library', { path: join(base, 'fora', 'material3') }),
+        await mcp.call('validate_library', { path: join(base, 'outside', 'material3') }),
       ).code,
     ).toBe('outside-roots');
     expect(
-      errorOf(await mcp.call('validate_library', { path: 'link-para-fora' })).code,
+      errorOf(await mcp.call('validate_library', { path: 'link-outside' })).code,
     ).toBe('outside-roots');
-    expect(errorOf(await mcp.call('validate_library', { path: '../fora' })).code).toBe(
+    expect(errorOf(await mcp.call('validate_library', { path: '../outside' })).code).toBe(
       'outside-roots',
     );
-    expect(errorOf(await mcp.call('validate_library', { path: 'nao-existe' })).code).toBe(
-      'path-not-found',
-    );
+    expect(
+      errorOf(await mcp.call('validate_library', { path: 'does-not-exist' })).code,
+    ).toBe('path-not-found');
   });
 
-  it('pasta sem especialização: valid false com a mensagem do validador', async () => {
-    const result = ok(await mcp.call<Validated>('validate_library', { path: 'vazia' }));
+  it('folder without a specialization: valid false with the validator message', async () => {
+    const result = ok(await mcp.call<Validated>('validate_library', { path: 'empty' }));
     expect(result.valid).toBe(false);
     expect(result.errors[0]?.message).toMatch(/no specialization found/);
     expect(result.spec).toBeUndefined();
   });
 });
 
-describe('validate_specialization com a v4', () => {
-  it('resume componentes, fontes, origens e migrações e aponta validate_library', async () => {
+describe('validate_specialization with v4', () => {
+  it('summarizes components, fonts, origins and migrations and points to validate_library', async () => {
     const result = ok(
       await mcp.call<{
         valid: boolean;
@@ -483,8 +484,8 @@ describe('validate_specialization com a v4', () => {
   });
 });
 
-describe('list_components e get_component', () => {
-  it('por path de pacote', async () => {
+describe('list_components and get_component', () => {
+  it('by package path', async () => {
     const list = ok(await mcp.call<Listed>('list_components', { path: 'lib/material3' }));
     expect(list.count).toBe(15);
     const button = list.components.find((c) => c.type === 'm3-button');
@@ -506,7 +507,7 @@ describe('list_components e get_component', () => {
     expect(got.examples[0]?.values).toBeDefined();
   });
 
-  it('get_component do tabs: cada exemplo traz as linhas de items como estão no arquivo (EX5)', async () => {
+  it('get_component of tabs: each example brings the items rows as they are in the file (EX5)', async () => {
     const got = ok(
       await mcp.call<Component>('get_component', {
         path: 'compose/material3-compose',
@@ -526,17 +527,17 @@ describe('list_components e get_component', () => {
     }
   });
 
-  it('por projeto e specId (a cópia aplicada em specs/<pasta>/)', async () => {
+  it('by project and specId (the copy applied in specs/<folder>/)', async () => {
     const list = ok(
       await mcp.call<Listed>('list_components', {
-        project: 'telas',
+        project: 'screens',
         specId: 'material3',
       }),
     );
     expect(list.count).toBe(15);
     const got = ok(
       await mcp.call<Component>('get_component', {
-        project: 'telas',
+        project: 'screens',
         specId: 'material3',
         type: 'm3-card',
       }),
@@ -545,29 +546,32 @@ describe('list_components e get_component', () => {
     expect(got.doc).toBe(readFileSync(`${MATERIAL3}/docs/m3-card.md`, 'utf8'));
   });
 
-  it('tipo desconhecido, argumentos errados e especialização não aplicada', async () => {
+  it('unknown type, wrong arguments and a specialization not applied', async () => {
     expect(
       errorOf(
-        await mcp.call('get_component', { path: 'lib/material3', type: 'nao-existe' }),
+        await mcp.call('get_component', {
+          path: 'lib/material3',
+          type: 'does-not-exist',
+        }),
       ).code,
     ).toBe('unknown-type');
     expect(errorOf(await mcp.call('list_components', {})).code).toBe('invalid-arguments');
     expect(
       errorOf(
-        await mcp.call('list_components', { path: 'lib/material3', project: 'telas' }),
+        await mcp.call('list_components', { path: 'lib/material3', project: 'screens' }),
       ).code,
     ).toBe('invalid-arguments');
-    expect(errorOf(await mcp.call('list_components', { project: 'telas' })).code).toBe(
+    expect(errorOf(await mcp.call('list_components', { project: 'screens' })).code).toBe(
       'invalid-arguments',
     );
     expect(
-      errorOf(await mcp.call('list_components', { project: 'telas', specId: 'outra' }))
+      errorOf(await mcp.call('list_components', { project: 'screens', specId: 'other' }))
         .code,
     ).toBe('not-found');
   });
 
-  it('tipo sem componente nem documento: resposta clara, não erro', async () => {
-    const dir = join(root, 'sem-componente');
+  it('type without a component or a document: clear answer, not an error', async () => {
+    const dir = join(root, 'no-component');
     cpSync(MATERIAL3, dir, { recursive: true });
     const file = join(dir, 'material3.spec.json');
     const spec = JSON.parse(readFileSync(file, 'utf8')) as Spec;
@@ -577,7 +581,7 @@ describe('list_components e get_component', () => {
     writeFileSync(file, JSON.stringify(spec));
     const got = ok(
       await mcp.call<Component>('get_component', {
-        path: 'sem-componente',
+        path: 'no-component',
         type: type.id,
       }),
     );
@@ -585,21 +589,19 @@ describe('list_components e get_component', () => {
     expect(got.doc).toBeNull();
     expect(got.component).toBeNull();
     expect(got.hint).toMatch(/has no component/);
-    const list = ok(
-      await mcp.call<Listed>('list_components', { path: 'sem-componente' }),
-    );
+    const list = ok(await mcp.call<Listed>('list_components', { path: 'no-component' }));
     expect(list.count).toBe(14);
     expect(list.typesWithoutComponent).toBe(1);
   });
 });
 
-describe('get_specialization com a v4', () => {
-  it('mantém component, doc, examples, fonts e origins e lista os arquivos do pacote', async () => {
+describe('get_specialization with v4', () => {
+  it('keeps component, doc, examples, fonts and origins and lists the package files', async () => {
     const view = ok(
       await mcp.call<{
         spec: Spec;
         package?: { dir: string; files: string[] };
-      }>('get_specialization', { project: 'telas', specId: 'material3' }),
+      }>('get_specialization', { project: 'screens', specId: 'material3' }),
     );
     expect(view.spec.fonts).toHaveLength(2);
     expect(view.spec.origins).toHaveLength(1);
@@ -610,25 +612,25 @@ describe('get_specialization com a v4', () => {
     expect(view.package?.dir).toBe('specs/material3');
     expect(view.package?.files).toContain('components/m3-button.json');
     expect(view.package?.files).toContain('fonts/LEIA-ME.txt');
-    expect(existsSync(join(root, 'projetos', 'telas', view.package!.dir))).toBe(true);
+    expect(existsSync(join(root, 'projetos', 'screens', view.package!.dir))).toBe(true);
   });
 });
 
-describe('apply_specialization com pacote v4', () => {
-  it('é aceito: a pasta vai pela proposta (detalhes em libraryUpdate.test.ts)', async () => {
+describe('apply_specialization with a v4 package', () => {
+  it('is accepted: the folder goes through the proposal (details in libraryUpdate.test.ts)', async () => {
     const result = ok(
       await mcp.call<{
         valid: boolean;
         errors?: { op: string; code: string; message: string }[];
         summary: string[];
       }>('plan_changes', {
-        project: 'telas',
+        project: 'screens',
         operations: [
           { op: 'apply_specialization', file: 'lib/material3/material3.spec.json' },
         ],
       }),
     );
-    // A biblioteca já está aplicada nesse projeto: o erro é o de sempre, não uma recusa do pacote.
+    // The library is already applied in this project: the error is the usual one, not a package refusal.
     expect(result.valid).toBe(false);
     expect(result.errors?.[0]?.code).toBe('spec-already-applied');
   });

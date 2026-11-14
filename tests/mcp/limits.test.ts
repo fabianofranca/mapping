@@ -9,9 +9,9 @@ import { operationSchema } from '../../mcp/operations';
 import { failure } from '../../mcp/tools';
 import { NOW } from '../model/fixtures';
 
-// Limites de memória do servidor: pixels decodificados e tamanho do base64 recebido.
+// Server memory limits: decoded pixels and size of the received base64.
 
-/** Cabeçalho PNG (sem pixels) que declara `width × height`. */
+/** PNG header (without pixels) that declares `width × height`. */
 function pngHeader(width: number, height: number): Uint8Array {
   const bytes = new Uint8Array(33);
   bytes.set([
@@ -33,27 +33,27 @@ async function codeOf(promise: Promise<unknown>): Promise<string | null> {
 
 afterEach(() => vi.restoreAllMocks());
 
-describe('teto de pixels', () => {
-  it('é de 40 megapixels', () => {
+describe('pixel ceiling', () => {
+  it('is 40 megapixels', () => {
     expect(MAX_PIXELS).toBe(40_000_000);
   });
 
-  it('recusa pelo cabeçalho uma imagem de 48 megapixels, antes de decodificar', async () => {
+  it('refuses by the header a 48-megapixel image, before decoding', async () => {
     expect(await codeOf(decodeImage(pngHeader(8000, 6000)))).toBe('image-too-large');
   });
 
-  it('não recusa por pixels uma imagem dentro do teto (o cabeçalho sem dados é inválido)', async () => {
+  it('does not refuse by pixels an image within the ceiling (the header without data is invalid)', async () => {
     expect(await codeOf(decodeImage(pngHeader(6000, 6000)))).toBe('invalid-image');
   });
 });
 
-describe('base64 das operações de imagem', () => {
-  it('o limite corresponde a um arquivo de 16 MB (imagens maiores vão por `file`)', () => {
+describe('base64 of the image operations', () => {
+  it('the limit corresponds to a 16 MB file (larger images go through `file`)', () => {
     expect(MAX_BASE64_LENGTH).toBe(Math.ceil((16 * 1024 * 1024) / 3) * 4);
     expect(16 * 1024 * 1024).toBeLessThan(MAX_FILE_BYTES);
   });
 
-  it('o schema recusa texto muito acima do limite', () => {
+  it('the schema refuses text far above the limit', () => {
     const big = 'A'.repeat(MAX_BASE64_LENGTH * 2);
     for (const op of ['add_image', 'replace_image'] as const) {
       const parsed = operationSchema.safeParse({ op, image: 'i:00000000', base64: big });
@@ -62,10 +62,10 @@ describe('base64 das operações de imagem', () => {
     }
   });
 
-  it('acima do limite, recusa antes de decodificar (sem Buffer.from)', async () => {
+  it('above the limit, refuses before decoding (without Buffer.from)', async () => {
     const from = vi.spyOn(Buffer, 'from');
     const project = createProject({
-      name: 'Limites',
+      name: 'Limits',
       now: NOW,
       firstLayer: {
         id: 'cccccccc-0000-4000-8000-000000000001',
@@ -75,7 +75,7 @@ describe('base64 das operações de imagem', () => {
     });
     const result = await runBatch(
       {
-        location: { name: 'limites', dir: '/tmp/limites', root: '/tmp', path: 'limites' },
+        location: { name: 'limits', dir: '/tmp/limits', root: '/tmp', path: 'limits' },
         project,
         readOnly: false,
         migratedFrom: null,
@@ -84,8 +84,8 @@ describe('base64 das operações de imagem', () => {
       },
       [{ op: 'add_image', base64: 'A'.repeat(MAX_BASE64_LENGTH + 4) }],
       {
-        readSource: () => Promise.reject(new Error('sem arquivos')),
-        readSpecInput: () => Promise.reject(new Error('sem arquivos')),
+        readSource: () => Promise.reject(new Error('no files')),
+        readSpecInput: () => Promise.reject(new Error('no files')),
         takenImageFiles: new Set(),
         now: () => new Date(NOW),
       },
@@ -97,8 +97,8 @@ describe('base64 das operações de imagem', () => {
   });
 });
 
-describe('failure() das tools', () => {
-  it('erro de regra do modelo vira o código e a explicação, não internal-error', () => {
+describe('failure() of the tools', () => {
+  it('a model rule error becomes the code and the explanation, not internal-error', () => {
     const stderr = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
     const result = failure(new ModelError('locked', 'm-1'));
     expect(result.isError).toBe(true);

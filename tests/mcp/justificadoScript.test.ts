@@ -1,7 +1,7 @@
-// R25.87 a R25.90 (MF5): a biblioteca que o `scripts/testing/justificado.mjs` monta passa no
-// `validate_library` (stdio) sem erro e só com os avisos conhecidos, o componente é da formatVersion 4 (e uma versão
-// menor recusa o `justify` e o `over`), e a cena traz o parágrafo justificado e a cor composta
-// opaca (o `primary` a 50% sobre branco) ao lado da translúcida (sem `over`).
+// R25.87 to R25.90 (MF5): the library that `scripts/testing/justificado.mjs` builds passes
+// `validate_library` (stdio) without errors and only with the known warnings, the component is formatVersion 4 (and a lower
+// version refuses `justify` and `over`), and the scene has the justified paragraph and the opaque
+// composed color (the `primary` at 50% over white) next to the translucent one (without `over`).
 import { execFileSync } from 'node:child_process';
 import { cpSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -42,12 +42,12 @@ afterAll(async () => {
 });
 
 describe('justificado.mjs (R25.87 a R25.90)', () => {
-  it('a biblioteca montada é válida, sem erro nem aviso', async () => {
+  it('the built library is valid, without errors or warnings', async () => {
     const result = ok(await mcp.call<Validated>('validate_library', { path: 'm3-just' }));
     expect(result.valid).toBe(true);
     expect(result.errors).toEqual([]);
-    // Provisório (decisão do dono pendente no bug #1774; curadoria na #1134): só os avisos
-    // `parameter outside the signature` do conjunto conhecido da Material 3; qualquer outro aviso falha.
+    // Provisional (owner decision pending in bug #1774; curation in #1134): only the
+    // `parameter outside the signature` warnings of the known Material 3 set; any other warning fails.
     expect(
       result.warnings.filter(
         (w) => !JSON.stringify(w).includes('parameter outside the signature'),
@@ -55,7 +55,7 @@ describe('justificado.mjs (R25.87 a R25.90)', () => {
     ).toEqual([]);
   });
 
-  it('grava um componente de formato 4, de 300 × 120, e a versão 3 recusa o justify e o over', () => {
+  it('writes a format 4 component, 300 × 120, and version 3 refuses justify and over', () => {
     expect(validateComponent(card)).toEqual([]);
     expect((card as { size: unknown }).size).toEqual({ width: 300, height: 120 });
     const errors = validateComponent({ ...(card as object), formatVersion: 3 });
@@ -66,7 +66,7 @@ describe('justificado.mjs (R25.87 a R25.90)', () => {
     );
   });
 
-  it('a cena tem o parágrafo justificado e o véu opaco ao lado do translúcido', () => {
+  it('the scene has the justified paragraph and the opaque veil next to the translucent one', () => {
     const parsed = parseComponent(card);
     if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
     const spec = JSON.parse(
@@ -86,7 +86,7 @@ describe('justificado.mjs (R25.87 a R25.90)', () => {
       const paint = node?.fills[0];
       return paint?.type === 'solid' ? paint.color.toLowerCase() : undefined;
     };
-    // `#6750A4` a 50% sobre `#FFFFFF`: `#B3A7D1` (alfa total); sem `over`, o `#6750A4` a 50%.
+    // `#6750A4` at 50% over `#FFFFFF`: `#B3A7D1` (full alpha); without `over`, the `#6750A4` at 50%.
     expect(fill(named('véu'))).toMatch(/^#b3a7d1(ff)?$/);
     expect(fill(named('translúcido'))).toBe('#6750a480');
   });

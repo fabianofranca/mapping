@@ -23,9 +23,9 @@ import { errorOf, ok } from './proposalSupport';
 import { codeOf, createWorkspace, connect } from './workspace';
 import type { Connection, Workspace } from './workspace';
 
-// Conversas pelo dist-mcp/mapping-mcp.js, por stdio (etapa Comentários, CM6): a caixa de
-// entrada, a leitura, abrir, responder com a guarda `after`, a autoria e o que o servidor nunca
-// faz (resolver, gravar em `comments/resolved/`, alterar o `mapping.json`).
+// Conversations through dist-mcp/mapping-mcp.js, over stdio (Comments stage, CM6): the
+// inbox, reading, opening, replying with the `after` guard, authorship and what the server never
+// does (resolve, write to `comments/resolved/`, change `mapping.json`).
 
 let ws: Workspace;
 let mcp: Connection;
@@ -108,21 +108,21 @@ afterAll(async () => {
 const id = (name: string): string => ws.ids[name] as string;
 
 describe('list_threads', () => {
-  it('o padrão são as abertas que aguardam o agente', async () => {
+  it('the default is the open ones awaiting the agent', async () => {
     const a = seedThread(dir(), {
       anchor: { kind: 'marking', id: id('MF') },
-      messages: [{ by: 'human', text: 'Qual a **variante**?' }],
+      messages: [{ by: 'human', text: 'What is the **variant**?' }],
     });
     const b = seedThread(dir(), {
       anchor: { kind: 'marking', id: id('MN') },
       messages: [
-        { by: 'human', text: 'Pergunta' },
-        { by: 'agent', text: 'Resposta' },
+        { by: 'human', text: 'Question' },
+        { by: 'agent', text: 'Answer' },
       ],
     });
     const c = seedThread(dir(), {
       anchor: { kind: 'marking', id: id('MT') },
-      messages: [{ by: 'human', text: 'Já resolvida' }],
+      messages: [{ by: 'human', text: 'Already resolved' }],
       resolved: true,
     });
     const listed = ok(await mcp.call<Listed>('list_threads', { project: 'cadastro' }));
@@ -140,7 +140,7 @@ describe('list_threads', () => {
       messages: 1,
     });
     expect(row.path).toContain('Formulário');
-    expect(row.last).toMatchObject({ text: 'Qual a **variante**?', cites: [] });
+    expect(row.last).toMatchObject({ text: 'What is the **variant**?', cites: [] });
     expect(row.last.author).toEqual({
       kind: 'human',
       name: HUMAN.name,
@@ -148,7 +148,7 @@ describe('list_threads', () => {
     });
   });
 
-  it('filtros: status, awaiting, anchor e text; sem filtro de awaiting com status dado traz todas', async () => {
+  it('filters: status, awaiting, anchor and text; without an awaiting filter and with a given status it returns all', async () => {
     const resolved = ok(
       await mcp.call<Listed>('list_threads', { project: 'cadastro', status: 'resolved' }),
     );
@@ -179,14 +179,14 @@ describe('list_threads', () => {
       await mcp.call<Listed>('list_threads', {
         project: 'cadastro',
         status: 'all',
-        text: 'VARIANTE',
+        text: 'VARIANT',
       }),
     );
     expect(text.threads).toHaveLength(1);
-    expect(text.threads[0]!.last.text).toContain('variante');
+    expect(text.threads[0]!.last.text).toContain('variant');
   });
 
-  it('pagina com limit e offset e informa o total', async () => {
+  it('paginates with limit and offset and reports the total', async () => {
     const page1 = ok(
       await mcp.call<Listed>('list_threads', {
         project: 'cadastro',
@@ -209,10 +209,10 @@ describe('list_threads', () => {
     expect(page2.offset).toBe(1);
   });
 
-  it('a órfã continua listada, sem referência de âncora', async () => {
+  it('the orphan stays listed, without an anchor reference', async () => {
     const orphan = seedThread(dir(), {
       anchor: { kind: 'marking', id: 'e0e0e0e0-0000-4000-8000-000000000000' },
-      messages: [{ by: 'human', text: 'Item que sumiu' }],
+      messages: [{ by: 'human', text: 'Item that vanished' }],
     });
     const listed = ok(await mcp.call<Listed>('list_threads', { project: 'cadastro' }));
     const row = listed.threads.find((t) => t.ref === threadRef(orphan.id))!;
@@ -220,14 +220,14 @@ describe('list_threads', () => {
     expect(row.anchor).toMatchObject({ kind: 'marking' });
   });
 
-  it('um arquivo ilegível vai para broken, sem derrubar a lista', async () => {
-    writeFileSync(join(dir(), 'comments', 'quebrada.json'), '{ não é JSON');
+  it('an unreadable file goes to broken, without breaking the list', async () => {
+    writeFileSync(join(dir(), 'comments', 'quebrada.json'), '{ not JSON');
     const listed = ok(await mcp.call<Listed>('list_threads', { project: 'cadastro' }));
     expect(listed.broken?.map((b) => b.id)).toContain('quebrada');
     rmSync(join(dir(), 'comments', 'quebrada.json'));
   });
 
-  it('um arquivo grande demais vai para broken, sem derrubar a lista', async () => {
+  it('a file that is too large goes to broken, without breaking the list', async () => {
     const big = join(dir(), 'comments', 'grande.json');
     writeFileSync(big, '');
     truncateSync(big, 17 * 1024 * 1024);
@@ -238,36 +238,36 @@ describe('list_threads', () => {
     rmSync(big);
   });
 
-  it('as cópias da mesma conversa em duas pastas são juntadas', async () => {
+  it('the copies of the same conversation in two folders are merged', async () => {
     const t = seedThread(dir(), {
       anchor: { kind: 'marking', id: id('ME') },
       messages: [
-        { by: 'human', text: 'Cópia aberta' },
-        { by: 'agent', text: 'Resposta' },
+        { by: 'human', text: 'Open copy' },
+        { by: 'agent', text: 'Answer' },
       ],
     });
-    // Uma cópia antiga, resolvida sem a resposta, esquecida em resolved/.
+    // An old copy, resolved without the reply, left behind in resolved/.
     const stale = { ...t, messages: [t.messages[0]!], resolved: null };
     const resolved = join(dir(), threadFilePath(t.id, true));
     writeFileSync(resolved, `${JSON.stringify(stale, null, 2)}\n`);
     const got = ok(await mcp.call<Got>('get_thread', { ref: threadRef(t.id) }));
-    expect(got.messages.map((m) => m.text)).toEqual(['Cópia aberta', 'Resposta']);
+    expect(got.messages.map((m) => m.text)).toEqual(['Open copy', 'Answer']);
     rmSync(resolved);
   });
 });
 
 describe('get_thread', () => {
-  it('traz a âncora resolvida (campo com o valor), as citações e o citedIn', async () => {
+  it('returns the resolved anchor (field with its value), the citations and the citedIn', async () => {
     const target = seedThread(dir(), {
       anchor: { kind: 'field', annotationId: id('AC'), key: 'nome' },
-      messages: [{ by: 'human', text: 'O nome da classe está certo?' }],
+      messages: [{ by: 'human', text: 'Is the class name right?' }],
     });
     const cites = seedThread(dir(), {
       anchor: { kind: 'marking', id: id('MC') },
       messages: [
         {
           by: 'human',
-          text: `Veja [o nome](${ref('a', id('AC'))}/f/nome), [a conversa](${threadRef(target.id)}) e [sumiu](${ref('m', 'f0f0f0f0-0000-4000-8000-000000000000')}).`,
+          text: `See [the name](${ref('a', id('AC'))}/f/nome), [the conversation](${threadRef(target.id)}) and [vanished](${ref('m', 'f0f0f0f0-0000-4000-8000-000000000000')}).`,
         },
       ],
     });
@@ -287,7 +287,7 @@ describe('get_thread', () => {
       ref: threadRef(target.id),
       broken: false,
     });
-    expect(gone).toMatchObject({ broken: true, label: 'sumiu' });
+    expect(gone).toMatchObject({ broken: true, label: 'vanished' });
 
     const cited = ok(await mcp.call<Got>('get_thread', { ref: threadRef(target.id) }));
     expect(cited.anchor).toMatchObject({
@@ -299,18 +299,18 @@ describe('get_thread', () => {
     expect(cited.citedIn.map((c) => c.ref)).toEqual([threadRef(cites.id)]);
   });
 
-  it('traz as propostas ligadas à conversa, com o estado', async () => {
+  it('returns the proposals linked to the conversation, with their state', async () => {
     const t = seedThread(dir(), {
       anchor: { kind: 'marking', id: id('MT') },
-      messages: [{ by: 'human', text: 'Troca o título?' }],
+      messages: [{ by: 'human', text: 'Change the title?' }],
     });
     const proposed = ok(
       await mcp.call<{ proposal: { ref: string; id: string } }>('propose_changes', {
         project: 'cadastro',
-        title: 'Troca o título',
+        title: 'Change the title',
         thread: threadRef(t.id),
         operations: [
-          { op: 'update_marking', marking: ref('m', id('MT')), name: 'Cabeçalho' },
+          { op: 'update_marking', marking: ref('m', id('MT')), name: 'Header' },
         ],
       }),
     );
@@ -318,14 +318,14 @@ describe('get_thread', () => {
     expect(got.proposals).toEqual([
       expect.objectContaining({
         ref: proposed.proposal.ref,
-        title: 'Troca o título',
+        title: 'Change the title',
         status: 'open',
       }),
     ]);
     expect(got.messages.at(-1)!.proposal).toBe(proposed.proposal.ref);
   });
 
-  it('thread-not-found e referência inválida', async () => {
+  it('thread-not-found and invalid reference', async () => {
     const missing = await mcp.call('get_thread', {
       ref: 'mapping://cadastro/c/deadbeef',
     });
@@ -336,18 +336,18 @@ describe('get_thread', () => {
 });
 
 describe('open_thread', () => {
-  const open = (anchor: unknown, text = 'Qual é a variante?') =>
+  const open = (anchor: unknown, text = 'Which is the variant?') =>
     mcp.call<{ ref: string; id: string; anchor: unknown; warnings?: { code: string }[] }>(
       'open_thread',
       { project: 'cadastro', anchor, text },
     );
 
   it.each([
-    ['marcação', () => ref('m', id('MF')), { kind: 'marking', id: () => id('MF') }],
+    ['marking', () => ref('m', id('MF')), { kind: 'marking', id: () => id('MF') }],
     ['container', () => ref('i', id('I1')), { kind: 'container', id: () => id('I1') }],
-    ['anotação', () => ref('a', id('AU')), { kind: 'annotation', id: () => id('AU') }],
-    ['camada', () => ref('l', id('LM')), { kind: 'layer', id: () => id('LM') }],
-  ])('âncora em %s', async (_name, anchor, expected) => {
+    ['annotation', () => ref('a', id('AU')), { kind: 'annotation', id: () => id('AU') }],
+    ['layer', () => ref('l', id('LM')), { kind: 'layer', id: () => id('LM') }],
+  ])('anchor on %s', async (_name, anchor, expected) => {
     const result = ok(await open(anchor()));
     const stored = readThread(dir(), result.id);
     expect(stored.anchor).toEqual({ kind: expected.kind, id: expected.id() });
@@ -355,7 +355,7 @@ describe('open_thread', () => {
     expect(result.ref).toBe(threadRef(result.id));
   });
 
-  it('âncora em campo, par e linha', async () => {
+  it('anchor on field, pair and row', async () => {
     const field = ok(await open(`${ref('a', id('AC'))}/f/nome`));
     expect(readThread(dir(), field.id).anchor).toEqual({
       kind: 'field',
@@ -377,7 +377,7 @@ describe('open_thread', () => {
     });
   });
 
-  it('ponto solto, no container e no canvas', async () => {
+  it('a loose point, in the container and on the canvas', async () => {
     const inside = ok(
       await open({ point: { container: ref('i', id('I1')), x: 120, y: 340 } }),
     );
@@ -396,8 +396,8 @@ describe('open_thread', () => {
     });
   });
 
-  it('a primeira mensagem é do agente: kind agent, e-mail nulo, nome do cliente', async () => {
-    const result = ok(await open(ref('m', id('MF')), 'Dúvida do agente'));
+  it("the first message is the agent's: kind agent, null email, the client's name", async () => {
+    const result = ok(await open(ref('m', id('MF')), 'Agent question'));
     const stored = readThread(dir(), result.id);
     expect(stored.messages[0]!.author).toEqual({
       kind: 'agent',
@@ -410,17 +410,17 @@ describe('open_thread', () => {
       await mcp.call<{ id: string }>('open_thread', {
         project: 'cadastro',
         anchor: ref('m', id('MF')),
-        text: 'Com nome',
-        author: 'Revisor IA',
+        text: 'With a name',
+        author: 'AI reviewer',
       }),
     );
-    expect(readThread(dir(), named.id).messages[0]!.author.name).toBe('Revisor IA');
+    expect(readThread(dir(), named.id).messages[0]!.author.name).toBe('AI reviewer');
   });
 
-  it('invalid-anchor e anchor-not-found; nada é gravado', async () => {
+  it('invalid-anchor and anchor-not-found; nothing is written', async () => {
     const before = commentFiles(dir());
     for (const bad of [
-      'texto qualquer',
+      'any text',
       ref('p', 'abcdef01-0000-4000-8000-000000000000'),
       { point: { container: null, x: 'a', y: 1 } },
       { point: { container: ref('m', id('MF')), x: 1, y: 1 } },
@@ -447,28 +447,28 @@ describe('open_thread', () => {
     expect(commentFiles(dir())).toEqual(before);
   });
 
-  it('empty-message e message-too-long', async () => {
+  it('empty-message and message-too-long', async () => {
     expect(errorOf(await open(ref('m', id('MF')), '   ')).code).toBe('empty-message');
     expect(errorOf(await open(ref('m', id('MF')), 'x'.repeat(10001))).code).toBe(
       'message-too-long',
     );
   });
 
-  it('citação que não resolve é gravada assim mesmo, com aviso broken-cite', async () => {
+  it('a citation that does not resolve is written anyway, with a broken-cite warning', async () => {
     const result = ok(
       await open(
         ref('m', id('MF')),
-        `Veja [o que sumiu](${ref('m', 'abcdef12-0000-4000-8000-000000000000')}).`,
+        `See [what vanished](${ref('m', 'abcdef12-0000-4000-8000-000000000000')}).`,
       ),
     );
     expect(result.warnings?.map((w) => w.code)).toEqual(['broken-cite']);
-    expect(readThread(dir(), result.id).messages[0]!.text).toContain('o que sumiu');
+    expect(readThread(dir(), result.id).messages[0]!.text).toContain('what vanished');
   });
 
-  it('nunca sobrescreve: o arquivo novo falha se o id já existe', async () => {
+  it('never overwrites: the new file fails if the id already exists', async () => {
     const result = ok(await open(ref('m', id('MF'))));
     const before = readFileSync(join(dir(), threadFilePath(result.id, false)), 'utf8');
-    // Um segundo open_thread gera outro id e não toca no primeiro arquivo.
+    // A second open_thread generates another id and does not touch the first file.
     ok(await open(ref('m', id('MF'))));
     expect(readFileSync(join(dir(), threadFilePath(result.id, false)), 'utf8')).toBe(
       before,
@@ -481,10 +481,10 @@ describe('post_message', () => {
     mcp.call<Record<string, unknown>>('post_message', args);
   const lastId = (id: string) => readThread(dir(), id).messages.at(-1)!.id;
 
-  it('responde com a guarda after e grava revision + 1', async () => {
+  it('replies with the after guard and writes revision + 1', async () => {
     const t = seedThread(dir(), {
       anchor: { kind: 'marking', id: id('MF') },
-      messages: [{ by: 'human', text: 'Qual a variante?' }],
+      messages: [{ by: 'human', text: 'Which is the variant?' }],
     });
     const result = ok(
       await post({ ref: threadRef(t.id), text: 'A **primary**.', after: lastId(t.id) }),
@@ -502,47 +502,47 @@ describe('post_message', () => {
     expect(resolvedFiles(dir())).not.toContain(`${t.id}.json`);
   });
 
-  it('stale-thread: não grava e devolve as mensagens novas', async () => {
+  it('stale-thread: writes nothing and returns the new messages', async () => {
     const t = seedThread(dir(), {
       anchor: { kind: 'marking', id: id('MN') },
-      messages: [{ by: 'human', text: 'Primeira' }],
+      messages: [{ by: 'human', text: 'First' }],
     });
     const seen = lastId(t.id);
-    humanReplies(dir(), t.id, 'Segunda, depois de você ler', 30);
+    humanReplies(dir(), t.id, 'Second, after you read', 30);
     const path = join(dir(), threadFilePath(t.id, false));
     const before = sha(path);
     const failure = errorOf(
-      await post({ ref: threadRef(t.id), text: 'Resposta', after: seen }),
+      await post({ ref: threadRef(t.id), text: 'Answer', after: seen }),
     );
     expect(failure.code).toBe('stale-thread');
     expect(failure.newMessages).toEqual([
-      expect.objectContaining({ text: 'Segunda, depois de você ler' }),
+      expect.objectContaining({ text: 'Second, after you read' }),
     ]);
     expect(sha(path)).toBe(before);
   });
 
-  it('after desconhecido também é stale-thread, com todas as mensagens', async () => {
+  it('an unknown after is also stale-thread, with all the messages', async () => {
     const t = seedThread(dir(), {
       anchor: { kind: 'marking', id: id('MN') },
-      messages: [{ by: 'human', text: 'Única' }],
+      messages: [{ by: 'human', text: 'Only one' }],
     });
     const failure = errorOf(
-      await post({ ref: threadRef(t.id), text: 'Oi', after: 'nao-existe' }),
+      await post({ ref: threadRef(t.id), text: 'Hi', after: 'does-not-exist' }),
     );
     expect(failure.code).toBe('stale-thread');
     expect((failure.newMessages as unknown[]).length).toBe(1);
   });
 
-  it('thread-resolved: recusa, com a dica de abrir outra conversa que cite esta', async () => {
+  it('thread-resolved: refuses, with the hint to open another conversation that cites this one', async () => {
     const t = seedThread(dir(), {
       anchor: { kind: 'marking', id: id('MI') },
-      messages: [{ by: 'human', text: 'Já resolvida' }],
+      messages: [{ by: 'human', text: 'Already resolved' }],
       resolved: true,
     });
     const path = join(dir(), threadFilePath(t.id, true));
     const before = sha(path);
     const failure = errorOf(
-      await post({ ref: threadRef(t.id), text: 'Oi', after: lastId(t.id) }),
+      await post({ ref: threadRef(t.id), text: 'Hi', after: lastId(t.id) }),
     );
     expect(failure.code).toBe('thread-resolved');
     expect(String(failure.hint)).toContain('open_thread');
@@ -550,10 +550,10 @@ describe('post_message', () => {
     expect(commentFiles(dir())).not.toContain(`${t.id}.json`);
   });
 
-  it('empty-message e message-too-long; thread-not-found', async () => {
+  it('empty-message and message-too-long; thread-not-found', async () => {
     const t = seedThread(dir(), {
       anchor: { kind: 'marking', id: id('MI') },
-      messages: [{ by: 'human', text: 'Oi' }],
+      messages: [{ by: 'human', text: 'Hi' }],
     });
     const after = lastId(t.id);
     expect(errorOf(await post({ ref: threadRef(t.id), text: ' \n', after })).code).toBe(
@@ -563,55 +563,55 @@ describe('post_message', () => {
       errorOf(await post({ ref: threadRef(t.id), text: 'x'.repeat(10001), after })).code,
     ).toBe('message-too-long');
     expect(
-      errorOf(await post({ ref: 'mapping://cadastro/c/deadbeef', text: 'Oi', after }))
+      errorOf(await post({ ref: 'mapping://cadastro/c/deadbeef', text: 'Hi', after }))
         .code,
     ).toBe('thread-not-found');
   });
 
-  it('o nome vem do argumento author; kind é sempre agent, e-mail nulo', async () => {
+  it('the name comes from the author argument; kind is always agent, null email', async () => {
     const t = seedThread(dir(), {
       anchor: { kind: 'marking', id: id('MI') },
-      messages: [{ by: 'human', text: 'Oi' }],
+      messages: [{ by: 'human', text: 'Hi' }],
     });
     ok(
       await post({
         ref: threadRef(t.id),
-        text: 'Resposta',
+        text: 'Answer',
         after: lastId(t.id),
-        author: 'Revisor IA',
+        author: 'AI reviewer',
       }),
     );
     expect(readThread(dir(), t.id).messages[1]!.author).toEqual({
       kind: 'agent',
-      name: 'Revisor IA',
+      name: 'AI reviewer',
       email: null,
     });
   });
 
-  it('o horário da resposta nunca fica antes da última mensagem', async () => {
+  it('the reply time is never before the last message', async () => {
     const t = seedThread(dir(), {
       anchor: { kind: 'marking', id: id('MI') },
       start: 60 * 24 * 365 * 5,
-      messages: [{ by: 'human', text: 'No futuro' }],
+      messages: [{ by: 'human', text: 'In the future' }],
     });
-    ok(await post({ ref: threadRef(t.id), text: 'Resposta', after: lastId(t.id) }));
+    ok(await post({ ref: threadRef(t.id), text: 'Answer', after: lastId(t.id) }));
     const messages = readThread(dir(), t.id).messages;
     expect(messages.map((m) => m.author.kind)).toEqual(['human', 'agent']);
     expect(Date.parse(messages[1]!.at)).toBeGreaterThan(Date.parse(messages[0]!.at));
   });
 
-  describe('a app gravando no meio', () => {
-    it('relê e refaz sobre a versão do disco: a mensagem nova da pessoa vira stale-thread', async () => {
+  describe('the app writing midway', () => {
+    it("rereads and redoes over the on-disk version: the person's new message becomes stale-thread", async () => {
       const t = seedThread(dir(), {
         anchor: { kind: 'marking', id: id('MI') },
-        messages: [{ by: 'human', text: 'Oi' }],
+        messages: [{ by: 'human', text: 'Hi' }],
       });
       const after = lastId(t.id);
       const path = join(dir(), threadFilePath(t.id, false));
-      // Cópia do arquivo com mais uma mensagem de pessoa, que "a app" grava depois da 1ª leitura.
+      // Copy of the file with one more message from a person, which "the app" writes after the 1st read.
       const newer = join(ws.base, 'newer.json');
       const keep = readFileSync(path);
-      humanReplies(dir(), t.id, 'Escrevi enquanto você respondia', 40);
+      humanReplies(dir(), t.id, 'I wrote while you were replying', 40);
       copyFileSync(path, newer);
       writeFileSync(path, keep);
       writeFileSync(
@@ -624,7 +624,7 @@ describe('post_message', () => {
         const failure = errorOf(
           await hooked.call('post_message', {
             ref: threadRef(t.id),
-            text: 'Resposta',
+            text: 'Answer',
             after,
           }),
         );
@@ -638,10 +638,10 @@ describe('post_message', () => {
       }
     });
 
-    it('mudança que não altera a guarda é refeita e grava', async () => {
+    it('a change that does not alter the guard is redone and written', async () => {
       const t = seedThread(dir(), {
         anchor: { kind: 'marking', id: id('MI') },
-        messages: [{ by: 'human', text: 'Oi' }],
+        messages: [{ by: 'human', text: 'Hi' }],
       });
       const path = join(dir(), threadFilePath(t.id, false));
       writeFileSync(
@@ -656,7 +656,7 @@ describe('post_message', () => {
         ok(
           await hooked.call('post_message', {
             ref: threadRef(t.id),
-            text: 'Resposta',
+            text: 'Answer',
             after: lastId(t.id),
           }),
         );
@@ -666,10 +666,10 @@ describe('post_message', () => {
       }
     });
 
-    it('revision-conflict depois das tentativas, sem gravar', async () => {
+    it('revision-conflict after the attempts, without writing', async () => {
       const t = seedThread(dir(), {
         anchor: { kind: 'marking', id: id('MI') },
-        messages: [{ by: 'human', text: 'Oi' }],
+        messages: [{ by: 'human', text: 'Hi' }],
       });
       const path = join(dir(), threadFilePath(t.id, false));
       writeFileSync(
@@ -682,7 +682,7 @@ describe('post_message', () => {
         const failure = errorOf(
           await hooked.call('post_message', {
             ref: threadRef(t.id),
-            text: 'Resposta',
+            text: 'Answer',
             after: lastId(t.id),
           }),
         );
@@ -695,8 +695,8 @@ describe('post_message', () => {
   });
 });
 
-describe('o que o servidor nunca faz', () => {
-  it('as tools de conversa não alteram o mapping.json nem gravam em comments/resolved/', async () => {
+describe('what the server never does', () => {
+  it('the conversation tools do not change mapping.json nor write to comments/resolved/', async () => {
     const before = sha(mapping());
     const resolvedBefore = resolvedFiles(dir());
     const t = seedThread(dir(), {
@@ -709,13 +709,13 @@ describe('o que o servidor nunca faz', () => {
       await mcp.call('open_thread', {
         project: 'cadastro',
         anchor: ref('m', id('MF')),
-        text: 'Nova',
+        text: 'New',
       }),
     );
     ok(
       await mcp.call('post_message', {
         ref: threadRef(t.id),
-        text: 'Resposta',
+        text: 'Answer',
         after: readThread(dir(), t.id).messages.at(-1)!.id,
       }),
     );
@@ -723,7 +723,7 @@ describe('o que o servidor nunca faz', () => {
     expect(resolvedFiles(dir())).toEqual(resolvedBefore);
   });
 
-  it('não existe tool para resolver, reabrir ou apagar conversa', async () => {
+  it('there is no tool to resolve, reopen or delete a conversation', async () => {
     const { tools } = await mcp.client.listTools();
     const names = tools.map((t) => t.name);
     expect(names).toEqual(
@@ -739,10 +739,10 @@ describe('o que o servidor nunca faz', () => {
     );
   });
 
-  it('uma conversa resolvida pela app continua resolvida depois de uma leitura', async () => {
+  it('a conversation resolved by the app stays resolved after a read', async () => {
     const t = seedThread(dir(), {
       anchor: { kind: 'marking', id: id('MF') },
-      messages: [{ by: 'human', text: 'Vou resolver' }],
+      messages: [{ by: 'human', text: 'I will resolve it' }],
     });
     humanResolves(dir(), t.id, 50);
     const got = ok(await mcp.call<Got>('get_thread', { ref: threadRef(t.id) }));

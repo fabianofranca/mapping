@@ -29,15 +29,15 @@ import { renderContainer, renderMarking } from '../../mcp/renderImage';
 import { NOW } from '../model/fixtures';
 import { encodeJpegWithExif } from './images';
 
-// CF9 (decisão 32): `render_marking` e `render_container`, o `get_marking_image` de um container sem
-// arquivo com o mesmo desenho e as `fonts` da biblioteca no lugar da embutida.
+// CF9 (decision 32): `render_marking` and `render_container`, the `get_marking_image` of a container without
+// a file with the same drawing and the library's `fonts` in place of the embedded one.
 
 const LAYER = 'cccccccc-0000-4000-8000-000000000001';
 const PHOTO = 'bbbbbbbb-0000-4000-8000-000000000001';
-// Arquivo com a metade das dimensões registradas (100×50 contra 200×100).
+// File with half the recorded dimensions (100×50 against 200×100).
 const SMALL = 'bbbbbbbb-0000-4000-8000-000000000002';
 const SMALL_MARKING = 'aaaaaaaa-0000-4000-8000-000000000002';
-// JPEG de 40×20 com orientação EXIF 6 (vista como 20×40), registrado como 20×40.
+// 40×20 JPEG with EXIF orientation 6 (seen as 20×40), recorded as 20×40.
 const ROTATED = 'bbbbbbbb-0000-4000-8000-000000000003';
 
 const SPEC = {
@@ -63,7 +63,7 @@ const SPEC = {
       annotationTypes: [
         {
           id: 'btn',
-          name: 'Botão',
+          name: 'Button',
           component: 'components/btn.json',
           fields: [
             { key: 'label', type: 'string', default: 'Salvar' },
@@ -85,7 +85,7 @@ const BUTTON = {
   format: 'mapping-component',
   formatVersion: 4,
   id: 'btn',
-  name: 'Botão',
+  name: 'Button',
   size: { width: 120, height: 40 },
   template: {
     type: 'frame',
@@ -140,14 +140,14 @@ beforeAll(async () => {
   writeFileSync(join(lib, 'components', 'btn.json'), JSON.stringify(BUTTON));
   writeFileSync(join(lib, 'components', 'badge.json'), JSON.stringify(BADGE));
   cpSync('tests/fixtures/icons/icons/set.json', join(lib, 'icons', 'set.json'));
-  // "Acme" é a fonte mono em negrito: bem mais larga que a sans nos mesmos caracteres.
+  // "Acme" is the bold mono font: much wider than the sans on the same characters.
   cpSync('mcp/fonts/MappingMono-Bold.ttf', join(lib, 'fonts', 'Acme.ttf'));
   const photo = createRaster(200, 100);
   for (let i = 0; i < photo.data.length; i += 4) {
     photo.data.set([16, 160, 48, 255], i);
   }
   writeFileSync(join(dir, 'images', 'foto.png'), await encodeImage(photo, 'png'));
-  // 100×50: faixa esquerda de 30 px vermelha, o resto verde.
+  // 100×50: a 30 px red left strip, the rest green.
   const small = createRaster(100, 50);
   for (let y = 0; y < 50; y++)
     for (let x = 0; x < 100; x++)
@@ -157,7 +157,7 @@ beforeAll(async () => {
   rotated.data.fill(200);
   writeFileSync(join(dir, 'images', 'girada.jpg'), await encodeJpegWithExif(rotated, 6));
   const parsed = parseSpecText(readFileSync(join(lib, 'lib.spec.json'), 'utf8'));
-  if (!parsed.ok) throw new Error(`spec inválida: ${JSON.stringify(parsed)}`);
+  if (!parsed.ok) throw new Error(`invalid spec: ${JSON.stringify(parsed)}`);
   let p = createProject({
     name: 'Telas',
     now: NOW,
@@ -183,8 +183,8 @@ afterAll(() => {
 });
 
 const io = {
-  readSource: () => Promise.reject(new Error('sem arquivos')),
-  readSpecInput: () => Promise.reject(new Error('sem arquivos')),
+  readSource: () => Promise.reject(new Error('no files')),
+  readSpecInput: () => Promise.reject(new Error('no files')),
   takenImageFiles: new Set<string>(),
   now: () => new Date(NOW),
 };
@@ -233,7 +233,7 @@ const luma = (raster: Raster, x: number, y: number) => {
   return (raster.data[i]! + raster.data[i + 1]! + raster.data[i + 2]!) / 3;
 };
 
-/** A coluna mais à direita com tinta escura (texto preto sobre o fundo branco do botão). */
+/** The rightmost column with dark ink (black text on the button's white background). */
 function rightmostInk(raster: Raster): number {
   let right = -1;
   for (let x = 0; x < raster.width; x++)
@@ -244,7 +244,7 @@ function rightmostInk(raster: Raster): number {
 const BTN_RECT = { x: 50, y: 60, width: 120, height: 40 };
 
 describe('render_marking', () => {
-  it('zoom 2 devolve o dobro da largura e da altura, com texto real', async () => {
+  it('zoom 2 returns double the width and height, with real text', async () => {
     const { refs, marking } = await setup([SCREEN, create('$b', BTN_RECT)]);
     const one = await renderMarking(roots, refs, marking('$b'), {});
     const two = await renderMarking(roots, refs, marking('$b'), { zoom: 2 });
@@ -258,14 +258,14 @@ describe('render_marking', () => {
     expect(ink).toBeGreaterThan(40);
   });
 
-  it('acima do limite de pixels falha com image-too-large, como get_marking_image', async () => {
+  it('above the pixel limit it fails with image-too-large, like get_marking_image', async () => {
     const { refs, container } = await setup([{ ...SCREEN, width: 2000, height: 2000 }]);
     await expect(
       renderContainer(roots, refs, container('$tela'), { zoom: 8 }),
     ).rejects.toMatchObject({ code: 'image-too-large' });
   });
 
-  it('drawingMode "dark" pinta com os tokens do modo; modo desconhecido é erro', async () => {
+  it('drawingMode "dark" paints with the mode\'s tokens; an unknown mode is an error', async () => {
     const { refs, marking } = await setup([SCREEN, create('$b', BTN_RECT)]);
     const light = (
       await decodeImage(
@@ -290,19 +290,19 @@ describe('render_marking', () => {
     ).rejects.toMatchObject({ code: 'invalid-arguments' });
   });
 
-  it('a sombra do botão aparece com a margem (padding)', async () => {
+  it("the button's shadow shows up with the margin (padding)", async () => {
     const { refs, marking } = await setup([SCREEN, create('$b', BTN_RECT)]);
     const out = await renderMarking(roots, refs, marking('$b'), {
       padding: 10,
       background: 'none',
     });
     const { raster } = await decodeImage(out.image.bytes);
-    // Logo abaixo do botão (y = 10 + 40 + 2): a sombra tem alfa > 0; longe dele, não.
+    // Right below the button (y = 10 + 40 + 2): the shadow has alpha > 0; far from it, it does not.
     expect(raster.data[(52 * raster.width + 70) * 4 + 3]).toBeGreaterThan(10);
     expect(raster.data[(0 * raster.width + 0) * 4 + 3]).toBe(0);
   });
 
-  it('fonts da biblioteca valem no lugar da embutida', async () => {
+  it("the library's fonts apply in place of the embedded one", async () => {
     const { refs, marking } = await setup([
       SCREEN,
       create('$sans', BTN_RECT, { label: 'iiiiii' }),
@@ -321,7 +321,7 @@ describe('render_marking', () => {
     expect(rightmostInk(b)).toBeGreaterThan(rightmostInk(a) + 8);
   });
 
-  it('desenha o ícone do conjunto da biblioteca', async () => {
+  it("draws the icon from the library's set", async () => {
     const { refs, marking } = await setup([
       SCREEN,
       create('$i', { x: 20, y: 20, width: 48, height: 48 }, {}, 'lib/badge'),
@@ -336,7 +336,7 @@ describe('render_marking', () => {
 });
 
 describe('render_container', () => {
-  it('background "image" pinta o arquivo do container; "none" é transparente', async () => {
+  it('background "image" paints the container\'s file; "none" is transparent', async () => {
     const { refs, project } = await setup([SCREEN]);
     const photo = project.containers.find((c) => c.id === PHOTO)!;
     const withImage = (
@@ -352,16 +352,16 @@ describe('render_container', () => {
     expect(none.width).toBe(200);
   });
 
-  it('container sem arquivo desenha os componentes sobre a cor de fundo', async () => {
+  it('a container without a file draws the components over the background color', async () => {
     const { refs, container } = await setup([SCREEN, create('$b', BTN_RECT)]);
     const out = await renderContainer(roots, refs, container('$tela'), {});
     const { raster } = await decodeImage(out.image.bytes);
     expect(out.json).toMatchObject({ width: 300, height: 200, drawings: 1 });
     expect([...raster.data.subarray(0, 3)]).toEqual([0xff, 0xeb, 0xee]);
-    expect(luma(raster, 60, 70)).toBeGreaterThan(240); // o botão branco
+    expect(luma(raster, 60, 70)).toBeGreaterThan(240); // the white button
   });
 
-  it('get_marking_image de um container sem arquivo tem o mesmo desenho do render_container', async () => {
+  it('get_marking_image of a container without a file has the same drawing as render_container', async () => {
     const { refs, marking, container } = await setup([SCREEN, create('$b', BTN_RECT)]);
     const full = (
       await decodeImage(
@@ -388,8 +388,8 @@ describe('render_container', () => {
   });
 });
 
-describe('arquivo com dimensões diferentes do projeto e EXIF (achados 25 e 26 da CR do MCP)', () => {
-  it('render_container e render_marking avisam, como get_marking_image', async () => {
+describe("file with dimensions different from the project's and EXIF (findings 25 and 26 of the MCP CR)", () => {
+  it('render_container and render_marking warn, like get_marking_image', async () => {
     const { refs, project } = await setup([SCREEN]);
     const small = project.containers.find((c) => c.id === SMALL)!;
     const marking = project.markings.find((m) => m.id === SMALL_MARKING)!;
@@ -405,19 +405,19 @@ describe('arquivo com dimensões diferentes do projeto e EXIF (achados 25 e 26 d
     );
   });
 
-  it('região que cai no meio de um pixel do arquivo não desalinha o fundo', async () => {
+  it('a region that falls in the middle of a file pixel does not misalign the background', async () => {
     const { refs, project } = await setup([SCREEN]);
     const marking = project.markings.find((m) => m.id === SMALL_MARKING)!;
     const out = await renderMarking(roots, refs, marking, {});
     const { raster } = await decodeImage(out.image.bytes);
-    // A faixa vermelha termina em x = 60 do container: coluna 9 da saída (que começa em 51).
+    // The red strip ends at x = 60 of the container: column 9 of the output (which starts at 51).
     const at = (x: number) =>
       [...raster.data.subarray((5 * raster.width + x) * 4)].slice(0, 3);
     expect(at(8)).toEqual([200, 32, 32]);
     expect(at(9)).toEqual([16, 160, 48]);
   });
 
-  it('get_container_file de JPEG com orientação não devolve bytes que contradigam o JSON', async () => {
+  it('get_container_file of a JPEG with orientation does not return bytes that contradict the JSON', async () => {
     const { refs, project } = await setup([SCREEN]);
     const rotated = project.containers.find((c) => c.id === ROTATED)!;
     const out = await imageFile(roots, refs, rotated, {});

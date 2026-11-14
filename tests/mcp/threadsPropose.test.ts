@@ -7,9 +7,9 @@ import { humanResolves, readThread, seedThread, sha } from './threadSupport';
 import { codeOf, connect, createWorkspace } from './workspace';
 import type { Connection, Workspace } from './workspace';
 
-// `propose_changes` com `thread` (etapa Comentários, decisão 36): a conversa é conferida ANTES de
-// gravar a proposta, a proposta é igual à de uma chamada sem `thread`, e a conversa ganha uma
-// mensagem do agente com `proposal`.
+// `propose_changes` with `thread` (Comments stage, decision 36): the conversation is checked BEFORE
+// writing the proposal, the proposal equals that of a call without `thread`, and the conversation gains an
+// agent message with `proposal`.
 
 let ws: Workspace;
 let mcp: Connection;
@@ -35,18 +35,18 @@ afterAll(async () => {
   await mcp?.close();
 });
 
-describe('propose_changes com thread', () => {
-  it('liga a proposta à conversa: mensagem do agente com proposal e o link da proposta', async () => {
+describe('propose_changes with thread', () => {
+  it('links the proposal to the conversation: an agent message with proposal and the proposal link', async () => {
     const t = seedThread(dir(), {
       anchor: { kind: 'marking', id: id('MT') },
-      messages: [{ by: 'human', text: 'Troca o título?' }],
+      messages: [{ by: 'human', text: 'Change the title?' }],
     });
     const proposed = ok(
       await mcp.call<Proposed & { thread: { ref: string } }>('propose_changes', {
         project: 'cadastro',
-        title: 'Título novo',
+        title: 'New title',
         thread: threadRef(t.id),
-        operations: rename('Cabeçalho'),
+        operations: rename('Header'),
       }),
     );
     expect(proposed.thread.ref).toBe(threadRef(t.id));
@@ -55,16 +55,16 @@ describe('propose_changes com thread', () => {
     const last = stored.messages.at(-1)!;
     expect(last.proposal).toBe(proposed.proposal.id);
     expect(last.author).toEqual({ kind: 'agent', name: 'teste', email: null });
-    expect(last.text).toBe(`Proposal: [Título novo](${proposed.proposal.ref})`);
+    expect(last.text).toBe(`Proposal: [New title](${proposed.proposal.ref})`);
     expect(last.text).toMatch(/\(mapping:\/\/cadastro\/p\/[0-9a-f]+\)$/);
   });
 
-  it('grava um proposal.json igual ao de uma chamada sem thread, a menos do id e das datas', async () => {
+  it('writes a proposal.json equal to that of a call without thread, apart from the id and the dates', async () => {
     const t = seedThread(dir(), {
       anchor: { kind: 'marking', id: id('MT') },
-      messages: [{ by: 'human', text: 'Outra' }],
+      messages: [{ by: 'human', text: 'Another' }],
     });
-    const common = { project: 'cadastro', title: 'Igual', operations: rename('Topo') };
+    const common = { project: 'cadastro', title: 'Same', operations: rename('Top') };
     const withThread = ok(
       await mcp.call<Proposed>('propose_changes', { ...common, thread: threadRef(t.id) }),
     );
@@ -79,16 +79,16 @@ describe('propose_changes com thread', () => {
     expect(normalize(withThread.proposal.id)).toEqual(normalize(without.proposal.id));
   });
 
-  it('conversa inexistente ou resolvida: recusa e não deixa nada no disco', async () => {
+  it('a nonexistent or resolved conversation: refuses and leaves nothing on disk', async () => {
     const resolved = seedThread(dir(), {
       anchor: { kind: 'marking', id: id('MT') },
-      messages: [{ by: 'human', text: 'Resolvida' }],
+      messages: [{ by: 'human', text: 'Resolved' }],
       resolved: true,
     });
     const before = proposalIds();
     const resolvedFile = join(dir(), threadFilePath(resolved.id, true));
     const hash = sha(resolvedFile);
-    const args = { project: 'cadastro', title: 'Recusada', operations: rename('X') };
+    const args = { project: 'cadastro', title: 'Refused', operations: rename('X') };
 
     const missing = errorOf(
       await mcp.call('propose_changes', {
@@ -105,31 +105,31 @@ describe('propose_changes com thread', () => {
     expect(sha(resolvedFile)).toBe(hash);
   });
 
-  it('conversa resolvida pela app no meio do caminho: a proposta fica e vem o aviso thread-not-linked', async () => {
-    // Não dá para provocar a corrida sem gancho; a mesma regra é testada pelo caminho direto:
-    // depois de resolvida, a conversa não aceita mais mensagem.
+  it('a conversation resolved by the app midway: the proposal stays and the thread-not-linked warning comes', async () => {
+    // The race cannot be provoked without a hook; the same rule is tested through the direct path:
+    // once resolved, the conversation accepts no more messages.
     const t = seedThread(dir(), {
       anchor: { kind: 'marking', id: id('MT') },
-      messages: [{ by: 'human', text: 'Vou resolver' }],
+      messages: [{ by: 'human', text: 'I will resolve it' }],
     });
     humanResolves(dir(), t.id, 90);
     const failure = errorOf(
       await mcp.call('post_message', {
         ref: threadRef(t.id),
-        text: 'Tarde demais',
+        text: 'Too late',
         after: readThread(dir(), t.id).messages.at(-1)!.id,
       }),
     );
     expect(failure.code).toBe('thread-resolved');
   });
 
-  it('sem thread, o comportamento é o de sempre e nenhuma conversa é tocada', async () => {
+  it('without thread, the behavior is the usual one and no conversation is touched', async () => {
     const before = readFileSync(join(dir(), 'mapping.json'), 'utf8');
     const result = ok(
       await mcp.call<Proposed & { thread?: unknown }>('propose_changes', {
         project: 'cadastro',
-        title: 'Sem conversa',
-        operations: rename('Sem'),
+        title: 'No conversation',
+        operations: rename('Without'),
       }),
     );
     expect(result.thread).toBeUndefined();

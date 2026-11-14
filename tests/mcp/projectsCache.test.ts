@@ -12,8 +12,8 @@ import {
 } from '../../src/model';
 import { NOW } from '../model/fixtures';
 
-// `loadProject` (decisão 7 da etapa): o `mapping.json` é interpretado uma vez; o catálogo e as
-// fontes ficam em cache por caminho, tamanho e `mtime`; `list_projects` não interpreta fontes.
+// `loadProject` (decision 7 of the stage): the `mapping.json` is parsed once; the catalog and the
+// sources are cached by path, size and `mtime`; `list_projects` does not parse sources.
 const fontBooks = vi.hoisted(() => ({ created: 0 }));
 
 vi.mock('../../mcp/image/textMeasurer', async (importOriginal) => {
@@ -46,7 +46,7 @@ const spec = {
       name: 'UI',
       color: '#6750A4',
       annotationTypes: [
-        { id: 'btn', name: 'Botão', component: 'components/btn.json', fields: [] },
+        { id: 'btn', name: 'Button', component: 'components/btn.json', fields: [] },
       ],
     },
   ],
@@ -71,10 +71,10 @@ function workspace() {
   writeFileSync(join(lib, 'components', 'btn.json'), JSON.stringify(component(120)));
   cpSync('mcp/fonts/MappingMono-Bold.ttf', join(lib, 'fonts', 'Acme.ttf'));
   const parsed = parseSpecText(JSON.stringify(spec));
-  if (!parsed.ok) throw new Error(`spec inválida: ${JSON.stringify(parsed)}`);
+  if (!parsed.ok) throw new Error(`invalid spec: ${JSON.stringify(parsed)}`);
   const project = applySpecialization(
     createProject({
-      name: 'Telas',
+      name: 'Screens',
       now: NOW,
       firstLayer: { id: LAYER, name: 'Camada 1', color: '#D32F2F' },
     }),
@@ -85,8 +85,8 @@ function workspace() {
   return { base, dir, lib, roots: new Roots([base]) };
 }
 
-describe('loadProject: cache e leitura única', () => {
-  it('interpreta o mapping.json uma vez', async () => {
+describe('loadProject: cache and single read', () => {
+  it('parses the mapping.json once', async () => {
     const { dir, roots } = workspace();
     const location = await findProject(roots, 'telas');
     const text = (await import('node:fs')).readFileSync(
@@ -102,7 +102,7 @@ describe('loadProject: cache e leitura única', () => {
     }
   });
 
-  it('reaproveita o catálogo e as fontes quando nada mudou no disco', async () => {
+  it('reuses the catalog and the sources when nothing changed on disk', async () => {
     const { roots } = workspace();
     const location = await findProject(roots, 'telas');
     const first = await loadProject(roots, location);
@@ -111,13 +111,13 @@ describe('loadProject: cache e leitura única', () => {
     expect(second.catalog.get('lib')).toBe(first.catalog.get('lib'));
   });
 
-  it('vê o componente e a fonte trocados no disco', async () => {
+  it('sees the component and the source swapped on disk', async () => {
     const { lib, roots } = workspace();
     const location = await findProject(roots, 'telas');
     const first = await loadProject(roots, location);
     const oldFont = first.fonts!.fontFor('Acme', 400, false);
 
-    // Outro tamanho de arquivo e `mtime` diferente: o cache não vale mais.
+    // Another file size and a different `mtime`: the cache no longer holds.
     const later = new Date(Date.now() + 60_000);
     writeFileSync(
       join(lib, 'components', 'btn.json'),
@@ -136,11 +136,11 @@ describe('loadProject: cache e leitura única', () => {
     expect(second.fonts!.fontFor('Acme', 400, false)).not.toBe(oldFont);
   });
 
-  it('list_projects não interpreta as fontes', async () => {
+  it('list_projects does not parse the sources', async () => {
     const { base } = workspace();
     const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
     await createServer({ roots: [base] }).connect(serverSide);
-    const client = new Client({ name: 'teste', version: '0' });
+    const client = new Client({ name: 'test', version: '0' });
     await client.connect(clientSide);
     const before = fontBooks.created;
     const result = await client.callTool({ name: 'list_projects', arguments: {} });

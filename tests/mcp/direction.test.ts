@@ -13,11 +13,11 @@ import {
 } from './proposalSupport';
 import { codeOf, connect, type Connection } from './workspace';
 
-// R2 (#1096, decisão 3): a direção de leitura no MCP. `update_project` fixa ou remove a do
-// projeto; `add_container` e `update_container` fixam a do container (`null` volta a seguir o
-// projeto); `get_project`, `get_container` e `get_marking` devolvem a fixada e a efetiva;
-// `render_*` aceitam `direction`; `get_code_hints` devolve a efetiva. O projeto `escrita` do
-// cenário do código é o de escrita (SDUI com Screen `Cadastro`, container com a imagem).
+// R2 (#1096, decision 3): the reading direction in the MCP. `update_project` sets or removes the
+// project one; `add_container` and `update_container` set the container one (`null` goes back to following the
+// project); `get_project`, `get_container` and `get_marking` return the pinned and the effective one;
+// `render_*` accept `direction`; `get_code_hints` returns the effective one. The `escrita` project of
+// the code scenario is the writing one (SDUI with Screen `Cadastro`, container with the image).
 
 let ws: CodeWorkspace;
 let mcp: Connection;
@@ -41,7 +41,7 @@ interface ContainerView {
   effectiveDirection: string;
 }
 
-/** Aplica o lote pela proposta (aceita tudo) e devolve o projeto gravado. */
+/** Applies the batch through the proposal (accepts everything) and returns the written project. */
 async function apply(operations: unknown[]) {
   const proposed = await propose(mcp, PROJECT, operations);
   return { proposed, saved: acceptAllAndApply(dir(), proposed.proposal.id) };
@@ -54,8 +54,8 @@ async function firstContainer(): Promise<ContainerView> {
   return project.containers[0]!;
 }
 
-describe('update_project: direção do projeto', () => {
-  it('grava a direção, aparece no proposal.json e em get_project; null remove', async () => {
+describe('update_project: project direction', () => {
+  it('writes the direction, shows up in proposal.json and in get_project; null removes', async () => {
     const before = ok(await mcp.call('get_project', { project: PROJECT }));
     expect(before.direction).toBe('ltr');
 
@@ -72,7 +72,7 @@ describe('update_project: direção do projeto', () => {
     expect(ok(await mcp.call('get_project', { project: PROJECT })).direction).toBe('ltr');
   });
 
-  it('recusa valor fora do conjunto; chave ausente não muda', async () => {
+  it('refuses a value outside the set; an absent key does not change', async () => {
     const wrong = await mcp.client
       .callTool({
         name: 'plan_changes',
@@ -101,8 +101,8 @@ describe('update_project: direção do projeto', () => {
   });
 });
 
-describe('direção do container', () => {
-  it('add_container e update_container fixam; null volta a seguir o projeto', async () => {
+describe('container direction', () => {
+  it('add_container and update_container set it; null goes back to following the project', async () => {
     await apply([{ op: 'update_project', direction: 'ltr' }]);
     const added = await apply([
       {
@@ -123,7 +123,7 @@ describe('direção do container', () => {
       effectiveDirection: 'rtl',
     });
 
-    // Fixada em ltr com o projeto em rtl: a efetiva é a do container.
+    // Pinned to ltr with the project in rtl: the effective one is the container one.
     await apply([{ op: 'update_project', direction: 'rtl' }]);
     const second = await apply([
       { op: 'update_container', container: ref, direction: 'ltr' },
@@ -136,7 +136,7 @@ describe('direção do container', () => {
       effectiveDirection: 'ltr',
     });
 
-    // null: volta a seguir o projeto (rtl).
+    // null: goes back to following the project (rtl).
     const third = await apply([
       { op: 'update_container', container: ref, direction: null },
     ]);
@@ -150,7 +150,7 @@ describe('direção do container', () => {
     await apply([{ op: 'update_project', direction: null }]);
   });
 
-  it('recusa valor fora do conjunto em add_container e update_container', async () => {
+  it('refuses a value outside the set in add_container and update_container', async () => {
     const container = await firstContainer();
     for (const operation of [
       { op: 'add_container', as: '$c', width: 10, height: 10, direction: 'x' },
@@ -170,8 +170,8 @@ describe('direção do container', () => {
   });
 });
 
-describe('vistas', () => {
-  it('get_project e get_marking (no container do item) trazem a fixada e a efetiva', async () => {
+describe('views', () => {
+  it('get_project and get_marking (in the item container) bring the pinned and the effective one', async () => {
     const container = await firstContainer();
     await apply([{ op: 'update_container', container: container.ref, direction: 'rtl' }]);
     const view = await firstContainer();
@@ -187,7 +187,7 @@ describe('vistas', () => {
       effectiveDirection: 'rtl',
     });
 
-    // Sem fixar: segue o projeto.
+    // Not pinned: follows the project.
     await apply([
       { op: 'update_container', container: container.ref, direction: null },
       { op: 'update_project', direction: 'rtl' },
@@ -200,8 +200,8 @@ describe('vistas', () => {
   });
 });
 
-describe('render_marking e render_container', () => {
-  it('aceitam direction, citam a usada no resultado e recusam valor fora do conjunto', async () => {
+describe('render_marking and render_container', () => {
+  it('accept direction, cite the one used in the result and refuse a value outside the set', async () => {
     const container = await firstContainer();
     const marking = await mcp.call('render_marking', {
       ref: markingRef(),
@@ -230,7 +230,7 @@ describe('render_marking e render_container', () => {
 });
 
 describe('get_code_hints', () => {
-  it('devolve a direção efetiva do container da marcação, no topo e em cada nó', async () => {
+  it('returns the effective direction of the marking container, at the top and on each node', async () => {
     interface Hints {
       direction: string;
       tree: { direction: string; children?: { direction: string }[] };
@@ -251,8 +251,8 @@ describe('get_code_hints', () => {
   });
 });
 
-describe('formato da proposta (sobe para 8 só quando usa a direção)', () => {
-  it('o lote com direction grava a formatVersion 8; sem direção a proposta não sobe', async () => {
+describe('proposal format (goes up to 8 only when it uses the direction)', () => {
+  it('the batch with direction writes formatVersion 8; without direction the proposal does not go up', async () => {
     const withProject = await propose(mcp, PROJECT, [
       { op: 'update_project', direction: 'rtl' },
     ]);

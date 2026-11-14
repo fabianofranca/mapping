@@ -7,15 +7,15 @@ import { layerOf } from '../model/specFixtures';
 import { v11Json, type Json } from '../model/specV11Fixtures';
 import { PNG_1X1, allIds, codeOf, uuidFor, withUuids } from './workspace';
 
-// Cenário dos testes do MCP 0.18.0 (etapa #559, PD6): um projeto com a especialização v11 de
-// teste (`button` com papéis Clique e Pressionar, `image` com o papel Toque, documentos num
-// repositório externo `design-docs`) e, ao lado, o clone desse repositório e um pacote de
-// biblioteca. Tudo sob `raiz/`, que é também o diretório de trabalho do servidor.
+// Scenario for the MCP 0.18.0 tests (stage #559, PD6): a project with the v11 test
+// specialization (`button` with roles Clique and Pressionar, `image` with the role Toque, documents in an
+// external repository `design-docs`) and, beside it, the clone of that repository and a library
+// package. Everything under `root/`, which is also the server's working directory.
 
 export const DOC_REPO_URL = 'https://gitlab.example.com/g/design-docs';
 export const DOC_TEMPLATE = `${DOC_REPO_URL}/-/blob/main/{path}`;
 
-/** Edita a especialização do cenário: papéis nos donos e o `doc` objeto em `button` e `image`. */
+/** Edits the scenario's specialization: roles on the owners and the `doc` object on `button` and `image`. */
 function roleEdit(s: Json): void {
   const [button, image, text] = s.layers[0].annotationTypes as Json[];
   button!.childRoles = [
@@ -34,14 +34,14 @@ function roleEdit(s: Json): void {
   text!.doc = { repo: 'wiki', path: 'text.md' };
 }
 
-/** A especialização do cenário como JSON (`formatVersion` 11). */
+/** The scenario's specialization as JSON (`formatVersion` 11). */
 export const roleSpec = (edit?: (spec: Json) => void): Json =>
   v11Json((s) => {
     roleEdit(s);
     edit?.(s);
   });
 
-/** Projeto: donos `A1`, `A2` (button), `A3` (image); filhos `C1` (click) e `C2` (sem papel) em `A1`. */
+/** Project: owners `A1`, `A2` (button), `A3` (image); children `C1` (click) and `C2` (no role) in `A1`. */
 export function roleScenarioProject(): Project {
   let p = roleProject(roleEdit);
   p = addTypedAnnotation(p, {
@@ -57,21 +57,21 @@ export function roleScenarioProject(): Project {
 
 export interface RoleWorkspace {
   readonly base: string;
-  /** Raiz do servidor e diretório de trabalho. */
+  /** Server root and working directory. */
   readonly root: string;
   readonly ids: Readonly<Record<string, string>>;
-  /** Projetos: `proj` (clone em `../clone`), `proj-fora` (`localPath` fora das raízes), `proj-sem`. */
+  /** Projects: `proj` (clone in `../clone`), `proj-fora` (`localPath` outside the roots), `proj-sem`. */
   readonly project: string;
-  /** Pasta do clone do repositório de documentos. */
+  /** Folder of the documents repository clone. */
   readonly clone: string;
-  /** Pacote de biblioteca (só o arquivo da especialização). */
+  /** Library package (only the specialization file). */
   readonly lib: string;
   readonly ref: (id: string, kind?: 'a' | 'm') => string;
 }
 
 export function createRoleWorkspace(): RoleWorkspace {
   const base = mkdtempSync(join(tmpdir(), 'mapping-roles-'));
-  const root = join(base, 'raiz');
+  const root = join(base, 'root');
   const clone = join(root, 'clone');
   const lib = join(root, 'lib');
   const source = roleScenarioProject();
@@ -97,7 +97,7 @@ export function createRoleWorkspace(): RoleWorkspace {
     put(join(dir, 'a.png'), PNG_1X1);
     for (const [file, content] of specFiles(source)) put(join(dir, file), content);
   }
-  put(join(base, 'fora', 'components', 'button.md'), 'SEGREDO fora das raízes\n');
+  put(join(base, 'fora', 'components', 'button.md'), 'SEGREDO outside the roots\n');
   put(join(clone, 'components', 'button.md'), '# Button\n\nDocumento externo.\n');
   put(join(lib, 's.json'), JSON.stringify(roleSpec(), null, 2));
   return {

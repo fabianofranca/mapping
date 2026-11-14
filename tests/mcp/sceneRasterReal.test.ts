@@ -10,8 +10,8 @@ import {
 } from '../../src/model/components/scene';
 import { layoutRuns } from '../../src/model/components/richText';
 
-// CF9 (decisão 31): o rasterizador completo do servidor: texto de verdade (opentype.js), sombra,
-// tracejado, `align` do traço, `cap`/`join`, `sides` e trechos. Texto sem `fonts` segue em barras.
+// CF9 (decision 31): the server's full rasterizer: real text (opentype.js), shadow,
+// dashes, stroke `align`, `cap`/`join`, `sides` and runs. Text without `fonts` stays as bars.
 
 const book = createFontBook();
 const measure = measurerFor(book);
@@ -87,24 +87,24 @@ function ink(raster: Raster, x0: number, y0: number, x1: number, y1: number): nu
   return total / 255;
 }
 
-describe('texto de verdade', () => {
-  it('"Salvar" pinta glifos dentro do retângulo do rótulo, não barras', () => {
+describe('real text', () => {
+  it('"Salvar" paints glyphs inside the label rectangle, not bars', () => {
     const raster = canvas(100, 40);
     paint(raster, frame([label('Salvar', 400)], 100, 40));
-    // Tudo fora do retângulo do rótulo (10,5 60×20) continua branco.
+    // Everything outside the label rectangle (10,5 60×20) stays white.
     expect(ink(raster, 0, 0, 100, 5)).toBe(0);
     expect(ink(raster, 0, 25, 100, 40)).toBe(0);
     expect(ink(raster, 0, 0, 10, 40)).toBe(0);
     const inside = ink(raster, 10, 5, 70, 25);
     expect(inside).toBeGreaterThan(15);
-    // Uma barra de 6 caracteres a 0,6·20 de altura pintaria ~ 6·7,7·12 px; glifos pintam bem menos.
+    // A 6-character bar at 0.6·20 height would paint ~ 6·7.7·12 px; glyphs paint far less.
     expect(inside).toBeLessThan(150);
-    // O texto ocupa só a largura medida ("Salvar" a 14 px ≈ 38 px), não a caixa inteira de 60 px.
+    // The text takes only the measured width ("Salvar" at 14 px ≈ 38 px), not the whole 60 px box.
     expect(ink(raster, 10 + 44, 0, 100, 40)).toBe(0);
     expect(ink(raster, 10, 5, 10 + 44, 25)).toBeGreaterThan(15);
   });
 
-  it('o mesmo texto com weight 700 ocupa mais pixels', () => {
+  it('the same text with weight 700 takes more pixels', () => {
     const regular = canvas(100, 40);
     paint(regular, frame([label('Salvar', 400)], 100, 40));
     const bold = canvas(100, 40);
@@ -112,7 +112,7 @@ describe('texto de verdade', () => {
     expect(ink(bold, 0, 0, 100, 40)).toBeGreaterThan(ink(regular, 0, 0, 100, 40) * 1.05);
   });
 
-  it('wrap none + ellipsis fica dentro da largura da caixa', () => {
+  it('wrap none + ellipsis stays within the box width', () => {
     const raster = canvas(120, 40);
     const node = label('Pagar fatura do cartão de crédito', 400, {
       style: {
@@ -133,7 +133,7 @@ describe('texto de verdade', () => {
   });
 
   it.each(['left', 'center', 'right'] as const)(
-    'wrap none sem ellipsis, align %s: a letra que passa da caixa sai cortada no meio (FX4)',
+    'wrap none without ellipsis, align %s: the letter that overflows the box is cut in the middle (FX4)',
     (align) => {
       const raster = canvas(160, 40);
       const node = label('Pagar fatura do cartão de crédito', 400, {
@@ -149,15 +149,15 @@ describe('texto de verdade', () => {
         },
       });
       paint(raster, frame([node], 160, 40));
-      // A caixa vai de x = 10 a 70: há tinta até a borda e nenhuma depois dela.
+      // The box runs from x = 10 to 70: there is ink up to the edge and none after it.
       expect(ink(raster, 10 + 60 - 4, 5, 70, 25)).toBeGreaterThan(0);
       expect(ink(raster, 70, 0, 160, 40)).toBe(0);
-      // Uma linha mais larga que a caixa começa na borda esquerda (como na app), em qualquer align.
+      // A line wider than the box starts at the left edge (as in the app), with any align.
       expect(ink(raster, 10, 5, 16, 25)).toBeGreaterThan(0);
     },
   );
 
-  it('trechos: o chip pinta o fundo e o texto de cada trecho', () => {
+  it('runs: the chip paints the background and the text of each run', () => {
     const raster = canvas(160, 40);
     const runs = [
       {
@@ -215,7 +215,7 @@ describe('texto de verdade', () => {
   });
 });
 
-describe('sombra, tracejado, align, cap, join e sides', () => {
+describe('shadow, dashes, align, cap, join and sides', () => {
   const box = (extra: Partial<SceneNode> = {}): SceneNode =>
     ({
       ...baseNode({
@@ -231,7 +231,7 @@ describe('sombra, tracejado, align, cap, join e sides', () => {
       ...extra,
     }) as SceneNode;
 
-  it('sombra com blur 6 e offsetY 2 escurece abaixo e some longe', () => {
+  it('a shadow with blur 6 and offsetY 2 darkens below and vanishes far away', () => {
     const raster = canvas(100, 80);
     paint(
       raster,
@@ -245,14 +245,14 @@ describe('sombra, tracejado, align, cap, join e sides', () => {
         80,
       ),
     );
-    expect(luma(raster, 50, 43)).toBeLessThan(230); // logo abaixo do retângulo
-    expect(luma(raster, 50, 43)).toBeGreaterThan(40); // desfocada, não sólida
-    expect(luma(raster, 50, 55)).toBeGreaterThan(250); // longe do alcance do blur
-    expect(luma(raster, 50, 30)).toBe(255); // o retângulo branco cobre a sombra
-    expect(luma(raster, 50, 43)).toBeLessThan(luma(raster, 50, 16)); // deslocada para baixo
+    expect(luma(raster, 50, 43)).toBeLessThan(230); // right below the rectangle
+    expect(luma(raster, 50, 43)).toBeGreaterThan(40); // blurred, not solid
+    expect(luma(raster, 50, 55)).toBeGreaterThan(250); // far from the blur's reach
+    expect(luma(raster, 50, 30)).toBe(255); // the white rectangle covers the shadow
+    expect(luma(raster, 50, 43)).toBeLessThan(luma(raster, 50, 16)); // shifted downward
   });
 
-  it('traço tracejado [4, 2] alterna tinta e vão', () => {
+  it('a dashed stroke [4, 2] alternates ink and gap', () => {
     const raster = canvas(80, 20);
     const line: SceneNode = {
       ...baseNode({ id: 'l', name: 'l', width: 60, height: 0 }),
@@ -271,7 +271,7 @@ describe('sombra, tracejado, align, cap, join e sides', () => {
     expect(dark(raster, 11, 10)).toBe(false);
   });
 
-  it('align outside desenha o anel fora do contorno; inside, dentro', () => {
+  it('align outside draws the ring outside the outline; inside, inside', () => {
     const outside = canvas(100, 80);
     paint(
       outside,
@@ -286,8 +286,8 @@ describe('sombra, tracejado, align, cap, join e sides', () => {
         80,
       ),
     );
-    expect(dark(outside, 28, 30)).toBe(true); // x 26..30, à esquerda da caixa
-    expect(dark(outside, 32, 30)).toBe(false); // dentro da caixa
+    expect(dark(outside, 28, 30)).toBe(true); // x 26..30, to the left of the box
+    expect(dark(outside, 32, 30)).toBe(false); // inside the box
     const inside = canvas(100, 80);
     paint(
       inside,
@@ -306,7 +306,7 @@ describe('sombra, tracejado, align, cap, join e sides', () => {
     expect(dark(inside, 28, 30)).toBe(false);
   });
 
-  it('cap round estende a ponta; butt não', () => {
+  it('cap round extends the tip; butt does not', () => {
     const make = (cap: 'butt' | 'round') => {
       const raster = canvas(60, 30);
       const line: SceneNode = {
@@ -326,7 +326,7 @@ describe('sombra, tracejado, align, cap, join e sides', () => {
     expect(dark(make('butt'), 13, 15)).toBe(false);
   });
 
-  it('sides: [bottom] só traça o lado de baixo', () => {
+  it('sides: [bottom] strokes only the bottom side', () => {
     const raster = canvas(100, 80);
     paint(
       raster,
@@ -353,7 +353,7 @@ describe('sombra, tracejado, align, cap, join e sides', () => {
 });
 
 describe('rotation (EX3)', () => {
-  /** Caixa (x, y, largura, altura) de todos os pixels escuros. */
+  /** Box (x, y, width, height) of all dark pixels. */
   function inkBox(raster: Raster) {
     let x0 = Infinity;
     let y0 = Infinity;
@@ -371,7 +371,7 @@ describe('rotation (EX3)', () => {
     return { x0, y0, width: x1 - x0 + 1, height: y1 - y0 + 1 };
   }
 
-  it('o texto de um nó girado 90° ocupa uma coluna, em volta do centro da caixa', () => {
+  it('the text of a node rotated 90° takes a column, around the box center', () => {
     const flat = canvas(100, 100);
     const turned = canvas(100, 100);
     const make = (extra: Partial<TextNode>) =>
@@ -386,12 +386,12 @@ describe('rotation (EX3)', () => {
     const b = inkBox(turned);
     expect(a.width).toBeGreaterThan(a.height);
     expect(b.height).toBeGreaterThan(b.width);
-    // o centro da tinta fica perto do centro da caixa (50, 50) nos dois
+    // the ink center stays near the box center (50, 50) in both
     expect(Math.abs(b.x0 + b.width / 2 - 50)).toBeLessThan(12);
     expect(Math.abs(b.y0 + b.height / 2 - 50)).toBeLessThan(12);
   });
 
-  it('o texto de um quadro girado a 45° com recorte não vaza para fora do losango', () => {
+  it('the text of a frame rotated 45° with clipping does not leak outside the diamond', () => {
     const raster = canvas(100, 100);
     const text = label('XXXXXXXXXXXXXXXX', 900, {
       transform: [1, 0, 0, 1, -50, 5],
@@ -412,12 +412,12 @@ describe('rotation (EX3)', () => {
         100,
       ),
     );
-    // o canto do quadrado sem giro, (30, 35), fica fora do retângulo girado
+    // the unrotated square's corner, (30, 35), is outside the rotated rectangle
     expect(dark(raster, 31, 36)).toBe(false);
     expect(inkBox(raster).width).toBeGreaterThan(5);
   });
 
-  it('o texto cortado (`wrap: none`) de um nó girado 90° é cortado na largura da caixa', () => {
+  it('the clipped text (`wrap: none`) of a node rotated 90° is cut at the box width', () => {
     const raster = canvas(100, 100);
     const text = label('XXXXXXXXXXXXXXXX', 900, {
       width: 30,
@@ -437,13 +437,13 @@ describe('rotation (EX3)', () => {
     });
     paint(raster, frame([text], 100, 100));
     const ink = inkBox(raster);
-    // a caixa 30 × 20 girada ocupa 20 × 30 em volta de (50, 50): a tinta não passa de y 35..65
+    // the rotated 30 × 20 box takes 20 × 30 around (50, 50): the ink does not go beyond y 35..65
     expect(ink.height).toBeGreaterThan(10);
     expect(ink.y0).toBeGreaterThanOrEqual(34);
     expect(ink.y0 + ink.height).toBeLessThanOrEqual(66);
   });
 
-  it('o texto cortado de um nó girado 30° não pinta fora da caixa girada (MC0, decisão 32)', () => {
+  it('the clipped text of a node rotated 30° does not paint outside the rotated box (MC0, decision 32)', () => {
     const raster = canvas(100, 100);
     const text = label('XXXXXXXXXXXXXXXX', 900, {
       width: 30,
@@ -462,8 +462,8 @@ describe('rotation (EX3)', () => {
       },
     });
     paint(raster, frame([text], 100, 100));
-    // Cada pixel escuro, desfeito o giro em volta do centro (50, 50), cai na caixa 30 × 20 (com 1 px
-    // de folga para a borda do recorte).
+    // Each dark pixel, with the rotation undone around the center (50, 50), falls in the 30 × 20 box (with 1 px
+    // of slack for the clip edge).
     const cos = Math.cos((-30 * Math.PI) / 180);
     const sin = Math.sin((-30 * Math.PI) / 180);
     let inside = 0;
@@ -483,8 +483,8 @@ describe('rotation (EX3)', () => {
   });
 });
 
-describe('baselinePadding.top no raster (MC1, decisão 7)', () => {
-  /** O pé do `H` (a linha de base), em px do nó a partir do topo dele, lido da tinta do PNG. */
+describe('baselinePadding.top in the raster (MC1, decision 7)', () => {
+  /** The foot of the `H` (the baseline), in node px from its top, read from the PNG's ink. */
   function footOfH(zoom: number, baselineTop: number, fontSize = 13): number {
     const raster = canvas(Math.ceil(100 * zoom), Math.ceil(100 * zoom));
     const node = label('H', 400, {
@@ -506,18 +506,18 @@ describe('baselinePadding.top no raster (MC1, decisão 7)', () => {
     let last = -1;
     for (let y = 0; y < raster.height; y++)
       for (let x = 0; x < raster.width; x++) if (dark(raster, x, y)) last = y;
-    // `last` é a última linha de pixels escura: o pé fica no fim dela.
+    // `last` is the last dark pixel row: the foot sits at its end.
     return (last + 1) / zoom - 5;
   }
 
   it.each([1, 4.2])(
-    'o pé do "H" fica a ≤ 0,5 px de 30 do topo do nó a zoom %s',
+    'the foot of the "H" is within ≤ 0.5 px of 30 from the node top at zoom %s',
     (zoom) => {
       expect(Math.abs(footOfH(zoom, 30) - 30)).toBeLessThanOrEqual(0.5);
     },
   );
 
-  it('vale em qualquer corpo de fonte', () => {
+  it('holds at any font size', () => {
     expect(Math.abs(footOfH(4.2, 30, 20) - 30)).toBeLessThanOrEqual(0.5);
     expect(Math.abs(footOfH(1, 40, 11) - 40)).toBeLessThanOrEqual(0.5);
   });

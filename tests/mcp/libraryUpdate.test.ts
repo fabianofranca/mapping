@@ -36,9 +36,9 @@ import {
 } from './proposalSupport';
 import { connect, type Connection } from './workspace';
 
-// Atualização da biblioteca pelo servidor (B4): `plan_library_update` (prévia) e as operações
-// `apply_specialization`/`update_specialization` de `propose_changes` com a PASTA do pacote v4.
-// O pacote de prova é o Material 3 de `tests/fixtures/material3/` como v1.
+// Library update through the server (B4): `plan_library_update` (preview) and the
+// `apply_specialization`/`update_specialization` operations of `propose_changes` with the v4 package FOLDER.
+// The test package is the Material 3 from `tests/fixtures/material3/` as v1.
 
 const MATERIAL3 = 'tests/fixtures/material3';
 
@@ -107,16 +107,16 @@ function material3(): Spec {
   return parsed.spec;
 }
 
-/** Projeto com o Material 3 v1 aplicado (pasta `specs/material3/`) e duas anotações tipadas. */
+/** Project with Material 3 v1 applied (folder `specs/material3/`) and two typed annotations. */
 function projectWithLibrary(): Project {
   let p = createProject({
-    name: 'Telas',
+    name: 'Screens',
     now: NOW,
-    firstLayer: { id: ids.layer, name: 'Livre', color: '#D32F2F' },
+    firstLayer: { id: ids.layer, name: 'Free', color: '#D32F2F' },
   });
   p = addContainer(p, {
     id: ids.image,
-    file: 'images/foto.png',
+    file: 'images/photo.png',
     width: 400,
     height: 400,
   });
@@ -128,7 +128,7 @@ function projectWithLibrary(): Project {
     id: ids.marking,
     containerId: ids.image,
     rect: { x: 10, y: 10, width: 200, height: 60 },
-    name: 'Campo',
+    name: 'Field',
   });
   const layer = p.layers.find((l) => l.spec?.specId === 'material3')!;
   p = addTypedAnnotation(p, {
@@ -137,8 +137,8 @@ function projectWithLibrary(): Project {
     layerId: layer.id,
     type: { specId: 'material3', typeId: 'm3-text-field' },
   });
-  p = setFieldValue(p, ids.field, 'label', 'Nome');
-  p = setFieldValue(p, ids.field, 'supporting', 'Como no documento');
+  p = setFieldValue(p, ids.field, 'label', 'Name');
+  p = setFieldValue(p, ids.field, 'supporting', 'As in the document');
   p = addTypedAnnotation(p, {
     id: ids.chip,
     markingId: ids.marking,
@@ -158,7 +158,7 @@ function readJson(path: string): Json {
   return JSON.parse(readFileSync(path, 'utf8')) as Json;
 }
 
-/** Copia o pacote para `root/<name>/material3` e devolve a pasta. */
+/** Copies the package to `root/<name>/material3` and returns the folder. */
 function copyPackage(name: string): string {
   const dir = join(root, name, 'material3');
   cpSync(MATERIAL3, dir, { recursive: true });
@@ -174,16 +174,16 @@ function editSpec(dir: string, edit: (spec: Spec) => void): void {
 
 function typeOf(spec: Spec, typeId: string) {
   const type = spec.layers.flatMap((l) => l.annotationTypes).find((t) => t.id === typeId);
-  if (!type) throw new Error(`tipo ${typeId}`);
+  if (!type) throw new Error(`type ${typeId}`);
   return type;
 }
 
-/** v2 aditiva: um componente novo (cópia do chip) e um campo opcional novo no chip. */
+/** Additive v2: a new component (copy of the chip) and a new optional field on the chip. */
 function makeAdditive(dir: string): void {
   editSpec(dir, (spec) => {
     spec.version = 2;
     const chip = typeOf(spec, 'm3-chip');
-    chip.fields.push({ key: 'tooltip', label: 'Dica', type: 'string' });
+    chip.fields.push({ key: 'tooltip', label: 'Hint', type: 'string' });
     const badge = structuredClone(chip);
     badge.id = 'm3-badge';
     badge.name = 'Badge';
@@ -200,7 +200,7 @@ function makeAdditive(dir: string): void {
   );
 }
 
-/** v2 que renomeia o campo `supporting` do campo de texto para `helper` (com ou sem migração). */
+/** v2 that renames the `supporting` field of the text field to `helper` (with or without a migration). */
 function makeRename(dir: string, migration: boolean): void {
   editSpec(dir, (spec) => {
     spec.version = 2;
@@ -238,15 +238,15 @@ function makeRename(dir: string, migration: boolean): void {
   writeFileSync(file, readFileSync(file, 'utf8').replaceAll('"supporting"', '"helper"'));
 }
 
-/** v2 que troca o id da camada (mesmos tipos, sem quebra): as anotações tipadas dela viram livres. */
+/** v2 that changes the layer id (same types, no break): its typed annotations become free-form. */
 function makeLayerRename(dir: string): void {
   editSpec(dir, (spec) => {
     spec.version = 2;
-    spec.layers[0]!.id = 'telas';
+    spec.layers[0]!.id = 'screens';
   });
 }
 
-/** v2 que remove o campo `supporting` (com `remove-field`): perde o valor da anotação. */
+/** v2 that removes the `supporting` field (with `remove-field`): loses the annotation value. */
 function makeRemoval(dir: string): void {
   editSpec(dir, (spec) => {
     spec.version = 2;
@@ -271,7 +271,7 @@ function makeRemoval(dir: string): void {
     template: unknown;
   };
   delete component.preview?.['supporting'];
-  // O desenho deixa de ter o texto de apoio, o único que citava o campo removido.
+  // The drawing no longer has the supporting text, the only one that cited the removed field.
   const drop = (node: unknown): void => {
     if (typeof node !== 'object' || node === null) return;
     const children = Reflect.get(node, 'children');
@@ -289,32 +289,32 @@ function makeRemoval(dir: string): void {
 
 beforeAll(async () => {
   base = mkdtempSync(join(tmpdir(), 'mapping-libupd-'));
-  root = join(base, 'raiz');
+  root = join(base, 'root');
   mkdirSync(root, { recursive: true });
   cpSync(MATERIAL3, join(root, 'lib', 'material3'), { recursive: true });
-  makeAdditive(copyPackage('v2-aditiva'));
-  makeRename(copyPackage('v2-renomeia'), true);
-  makeRename(copyPackage('v2-sem-migracao'), false);
+  makeAdditive(copyPackage('v2-additive'));
+  makeRename(copyPackage('v2-rename'), true);
+  makeRename(copyPackage('v2-no-migration'), false);
   makeRemoval(copyPackage('v2-remove'));
-  makeLayerRename(copyPackage('v2-camada'));
-  // Uma especialização de arquivo único (formatVersion 3), para o caminho sem pacote.
-  mkdirSync(join(root, 'legado'), { recursive: true });
-  cpSync('tests/fixtures/sdui-v2.json', join(root, 'legado', 'sdui.json'));
-  // O mesmo, como v4 (e v5) que não cita arquivo do pacote: vale como arquivo isolado.
+  makeLayerRename(copyPackage('v2-layer'));
+  // A single-file specialization (formatVersion 3), for the path without a package.
+  mkdirSync(join(root, 'legacy'), { recursive: true });
+  cpSync('tests/fixtures/sdui-v2.json', join(root, 'legacy', 'sdui.json'));
+  // The same, as v4 (and v5) that does not cite a package file: counts as an isolated file.
   for (const v of [4, 5]) {
     const raw = JSON.parse(readFileSync('tests/fixtures/sdui-v2.json', 'utf8')) as object;
     writeFileSync(
-      join(root, 'legado', `sdui-v${v}.json`),
+      join(root, 'legacy', `sdui-v${v}.json`),
       JSON.stringify({ ...raw, formatVersion: v }),
     );
   }
 
-  writeProject(join(root, 'projetos', 'telas'), projectWithLibrary(), true);
-  // Projeto sem a biblioteca, com um container.
+  writeProject(join(root, 'projetos', 'screens'), projectWithLibrary(), true);
+  // Project without the library, with a container.
   let empty = createProject({
-    name: 'Vazio',
+    name: 'Empty',
     now: NOW,
-    firstLayer: { id: ids.layer, name: 'Livre', color: '#D32F2F' },
+    firstLayer: { id: ids.layer, name: 'Free', color: '#D32F2F' },
   });
   empty = addBackgroundContainer(empty, {
     id: ids.image,
@@ -322,7 +322,7 @@ beforeAll(async () => {
     height: 844,
     background: '#FFFFFF',
   });
-  writeProject(join(root, 'projetos', 'vazio'), empty, false);
+  writeProject(join(root, 'projetos', 'empty'), empty, false);
   mcp = await connect([root]);
 });
 
@@ -331,12 +331,12 @@ afterAll(async () => {
   rmSync(base, { recursive: true, force: true });
 });
 
-const plan = async (path: string, project = 'telas') =>
+const plan = async (path: string, project = 'screens') =>
   ok(await mcp.call<Plan>('plan_library_update', { project, path }));
 
 describe('plan_library_update', () => {
-  it('atualização aditiva (componente e campo opcional novos): aplica direto, sem passos', async () => {
-    const result = await plan('v2-aditiva/material3');
+  it('additive update (new component and optional field): applies directly, without steps', async () => {
+    const result = await plan('v2-additive/material3');
     expect(result).toMatchObject({
       specId: 'material3',
       from: 1,
@@ -359,8 +359,8 @@ describe('plan_library_update', () => {
     expect(result.hint).toMatch(/update_specialization/);
   });
 
-  it('camada que some: não é aditiva e a hint pede confirmação da pessoa', async () => {
-    const result = await plan('v2-camada/material3');
+  it("a layer that disappears: is not additive and the hint asks for the person's confirmation", async () => {
+    const result = await plan('v2-layer/material3');
     expect(result).toMatchObject({ decision: 'update', additive: false, refused: false });
     expect(result.validation.valid).toBe(true);
     expect(result.freedLayers?.length).toBe(1);
@@ -370,13 +370,13 @@ describe('plan_library_update', () => {
     expect(result.hint).toMatch(/update_specialization/);
   });
 
-  it('aceita o arquivo da especialização dentro da pasta', async () => {
-    const result = await plan('v2-aditiva/material3/material3.spec.json');
+  it('accepts the specialization file inside the folder', async () => {
+    const result = await plan('v2-additive/material3/material3.spec.json');
     expect(result).toMatchObject({ decision: 'update', additive: true });
   });
 
-  it('renomeia um campo com rename-field: o passo conta o valor e nada se perde', async () => {
-    const result = await plan('v2-renomeia/material3');
+  it('renames a field with rename-field: the step counts the value and nothing is lost', async () => {
+    const result = await plan('v2-rename/material3');
     expect(result).toMatchObject({
       decision: 'update',
       additive: false,
@@ -405,8 +405,8 @@ describe('plan_library_update', () => {
     expect(result.hint).not.toMatch(/loses data/);
   });
 
-  it('quebra sem migração: refused com a lista do que falta', async () => {
-    const result = await plan('v2-sem-migracao/material3');
+  it('a break without a migration: refused with the list of what is missing', async () => {
+    const result = await plan('v2-no-migration/material3');
     expect(result.decision).toBe('update');
     expect(result.refused).toBe(true);
     expect(result.additive).toBe(false);
@@ -415,13 +415,13 @@ describe('plan_library_update', () => {
       expect(typeof m.message).toBe('string');
       expect(typeof m.path).toBe('string');
     }
-    // A validação com a cópia aplicada como `previous` também recusa o pacote.
+    // Validation with the applied copy as `previous` also refuses the package.
     expect(result.validation.valid).toBe(false);
     expect(result.validation.errors.length).toBeGreaterThan(0);
     expect(result.hint).toMatch(/declare `migrations`/);
   });
 
-  it('remove-field perde o valor: a perda vem com a anotação e a hint pede confirmação', async () => {
+  it('remove-field loses the value: the loss comes with the annotation and the hint asks for confirmation', async () => {
     const result = await plan('v2-remove/material3');
     expect(result.validation.errors).toEqual([]);
     expect(result.refused).toBe(false);
@@ -429,54 +429,55 @@ describe('plan_library_update', () => {
     expect(result.losses?.[0]).toMatchObject({
       reason: 'removed-field',
       field: 'supporting',
-      value: 'Como no documento',
+      value: 'As in the document',
     });
-    expect(result.losses?.[0]?.annotation).toMatch(/^mapping:\/\/telas\/a\//);
-    expect(result.losses?.[0]?.markingLabel).toMatch(/Campo/);
+    expect(result.losses?.[0]?.annotation).toMatch(/^mapping:\/\/screens\/a\//);
+    expect(result.losses?.[0]?.markingLabel).toMatch(/Field/);
     expect(result.steps?.[0]?.lossCount).toBe(1);
     expect(result.hint).toMatch(/confirm with the person/);
   });
 
-  it('versão que não cresceu e biblioteca ainda não aplicada', async () => {
+  it('version that did not grow and library not yet applied', async () => {
     const same = await plan('lib/material3');
     expect(same).toMatchObject({ decision: 'not-newer', from: 1, to: 1 });
     expect(same.hint).toMatch(/is not greater than/);
-    const fresh = await plan('lib/material3', 'vazio');
+    const fresh = await plan('lib/material3', 'empty');
     expect(fresh).toMatchObject({ decision: 'apply', from: null, to: 1 });
     expect(fresh.validation.valid).toBe(true);
     expect(fresh.hint).toMatch(/apply_specialization/);
   });
 
-  it('pasta sem especialização devolve a validação, não um erro; caminhos inválidos falham', async () => {
-    mkdirSync(join(root, 'vazia'), { recursive: true });
-    writeFileSync(join(root, 'vazia', 'LEIA-ME.md'), 'nada');
-    const result = await plan('vazia');
+  it('folder without a specialization returns the validation, not an error; invalid paths fail', async () => {
+    mkdirSync(join(root, 'no-spec'), { recursive: true });
+    writeFileSync(join(root, 'no-spec', 'LEIA-ME.md'), 'nothing');
+    const result = await plan('no-spec');
     expect(result.validation.valid).toBe(false);
     expect(result.validation.errors[0]?.message).toMatch(/no specialization found/);
     expect(
-      errorOf(await mcp.call('plan_library_update', { project: 'telas', path: 'x/nao' }))
-        .code,
+      errorOf(
+        await mcp.call('plan_library_update', { project: 'screens', path: 'x/missing' }),
+      ).code,
     ).toBe('path-not-found');
     expect(
       errorOf(
-        await mcp.call('plan_library_update', { project: 'telas', path: '../fora' }),
+        await mcp.call('plan_library_update', { project: 'screens', path: '../outside' }),
       ).code,
     ).toBe('outside-roots');
   });
 
-  it('não grava nada', async () => {
-    const dir = join(root, 'projetos', 'telas');
+  it('writes nothing', async () => {
+    const dir = join(root, 'projetos', 'screens');
     const before = readFileSync(join(dir, 'mapping.json'), 'utf8');
-    await plan('v2-renomeia/material3');
+    await plan('v2-rename/material3');
     expect(readFileSync(join(dir, 'mapping.json'), 'utf8')).toBe(before);
     expect(existsSync(join(dir, 'proposals'))).toBe(false);
   });
 });
 
-describe('propose_changes com a pasta do pacote', () => {
-  it('apply_specialization de pacote v4: a proposta leva a pasta em proposals/<id>/specs/…', async () => {
-    const dir = join(root, 'projetos', 'vazio');
-    const result = await propose(mcp, 'vazio', [
+describe('propose_changes with the package folder', () => {
+  it('apply_specialization of a v4 package: the proposal carries the folder in proposals/<id>/specs/…', async () => {
+    const dir = join(root, 'projetos', 'empty');
+    const result = await propose(mcp, 'empty', [
       { op: 'apply_specialization', file: 'lib/material3' },
     ]);
     expect(result.proposed).toBe(true);
@@ -497,7 +498,7 @@ describe('propose_changes com a pasta do pacote', () => {
       },
     ]);
 
-    // A mudança da especialização aponta a pasta definitiva; a app copia para `specs/`.
+    // The specialization change points to the final folder; the app copies it to `specs/`.
     const proposal = readProposal(dir, id);
     const change = proposal.changes.find((c) => c.entity === 'specialization')!;
     expect(change.kind).toBe('create');
@@ -511,22 +512,22 @@ describe('propose_changes com a pasta do pacote', () => {
     expect(existsSync(join(dir, applied.packages[0]!.from, 'material3.spec.json'))).toBe(
       true,
     );
-    // Copiada para `specs/<pasta>/`, a pasta passa na validação do servidor.
+    // Copied to `specs/<folder>/`, the folder passes the server validation.
     cpSync(join(dir, applied.packages[0]!.from), join(dir, applied.packages[0]!.dir), {
       recursive: true,
     });
     const valid = ok(
       await mcp.call<{ valid: boolean }>('validate_library', {
-        path: join('projetos', 'vazio', 'specs', 'material3'),
+        path: join('projetos', 'empty', 'specs', 'material3'),
       }),
     );
     expect(valid.valid).toBe(true);
   });
 
-  it('update_specialization com a pasta v2: arquivos na proposta e mudanças das anotações migradas', async () => {
-    const dir = join(root, 'projetos', 'telas');
-    const result = await propose(mcp, 'telas', [
-      { op: 'update_specialization', file: 'v2-renomeia/material3' },
+  it('update_specialization with the v2 folder: files in the proposal and changes of the migrated annotations', async () => {
+    const dir = join(root, 'projetos', 'screens');
+    const result = await propose(mcp, 'screens', [
+      { op: 'update_specialization', file: 'v2-rename/material3' },
     ]);
     expect(result.proposed).toBe(true);
     expect(result.summary[0]).toMatch(
@@ -550,16 +551,16 @@ describe('propose_changes com a pasta do pacote', () => {
       (c) => c.entity === 'annotation' && c.field?.startsWith('values.'),
     );
     const byField = new Map(values.map((c) => [c.field, c]));
-    expect(byField.get('values.helper')?.to).toBe('Como no documento');
+    expect(byField.get('values.helper')?.to).toBe('As in the document');
     expect(byField.has('values.supporting')).toBe(true);
     expect(byField.get('values.supporting')?.to).toBeNull();
     expect(result.reviewChanges.total).toBe(proposal.changes.length);
   });
 
-  it('update aditivo vai por proposta sem mudar as anotações', async () => {
-    const dir = join(root, 'projetos', 'telas');
-    const result = await propose(mcp, 'telas', [
-      { op: 'update_specialization', file: 'v2-aditiva/material3/material3.spec.json' },
+  it('an additive update goes through a proposal without changing the annotations', async () => {
+    const dir = join(root, 'projetos', 'screens');
+    const result = await propose(mcp, 'screens', [
+      { op: 'update_specialization', file: 'v2-additive/material3/material3.spec.json' },
     ]);
     expect(result.proposed).toBe(true);
     const proposal = readProposal(dir, result.proposal.id);
@@ -579,14 +580,14 @@ describe('propose_changes com a pasta do pacote', () => {
     ).toBe(true);
   });
 
-  it('a perda aparece na descrição da operação', async () => {
-    const result = await propose(mcp, 'telas', [
+  it('the loss appears in the operation description', async () => {
+    const result = await propose(mcp, 'screens', [
       { op: 'update_specialization', file: 'v2-remove/material3' },
     ]);
     expect(result.summary[0]).toMatch(/1 value lost/);
   });
 
-  it('update sem migração é recusado com spec-missing-migrations e a lista do que falta', async () => {
+  it('an update without a migration is refused with spec-missing-migrations and the list of what is missing', async () => {
     const result = ok(
       await mcp.call<{
         valid: boolean;
@@ -597,9 +598,9 @@ describe('propose_changes com a pasta do pacote', () => {
           missingMigrations: { message: string; path: string }[];
         }[];
       }>('propose_changes', {
-        project: 'telas',
-        title: 'Sem migração',
-        operations: [{ op: 'update_specialization', file: 'v2-sem-migracao/material3' }],
+        project: 'screens',
+        title: 'No migration',
+        operations: [{ op: 'update_specialization', file: 'v2-no-migration/material3' }],
       }),
     );
     expect(result.valid).toBe(false);
@@ -613,16 +614,16 @@ describe('propose_changes com a pasta do pacote', () => {
     });
   });
 
-  it('pacote com erro: invalid-library com os primeiros erros', async () => {
-    const dir = join(root, 'quebrado', 'material3');
+  it('package with an error: invalid-library with the first errors', async () => {
+    const dir = join(root, 'broken', 'material3');
     cpSync(MATERIAL3, dir, { recursive: true });
     rmSync(join(dir, 'components', 'm3-button.json'));
     const result = ok(
       await mcp.call<{ errors: { code: string; errors: { file: string }[] }[] }>(
         'plan_changes',
         {
-          project: 'vazio',
-          operations: [{ op: 'apply_specialization', file: 'quebrado/material3' }],
+          project: 'empty',
+          operations: [{ op: 'apply_specialization', file: 'broken/material3' }],
         },
       ),
     );
@@ -630,25 +631,25 @@ describe('propose_changes com a pasta do pacote', () => {
     expect(result.errors[0]?.errors[0]?.file).toBe('material3.spec.json');
   });
 
-  it('versão que não cresceu e update de especialização não aplicada', async () => {
+  it('version that did not grow and update of a specialization not applied', async () => {
     const same = ok(
       await mcp.call<{ errors: { code: string }[] }>('plan_changes', {
-        project: 'telas',
+        project: 'screens',
         operations: [{ op: 'update_specialization', file: 'lib/material3' }],
       }),
     );
     expect(same.errors[0]?.code).toBe('spec-not-newer');
     const missing = ok(
       await mcp.call<{ errors: { code: string }[] }>('plan_changes', {
-        project: 'vazio',
-        operations: [{ op: 'update_specialization', file: 'v2-aditiva/material3' }],
+        project: 'empty',
+        operations: [{ op: 'update_specialization', file: 'v2-additive/material3' }],
       }),
     );
     expect(missing.errors[0]?.code).toBe('not-found');
   });
 
-  it('nunca grava specs/ nem o mapping.json do projeto', async () => {
-    const dir = join(root, 'projetos', 'telas');
+  it('never writes specs/ or the project mapping.json', async () => {
+    const dir = join(root, 'projetos', 'screens');
     const text = readFileSync(join(dir, 'mapping.json'), 'utf8');
     expect(JSON.parse(text)).toMatchObject({ specializations: [{ version: 1 }] });
     expect(
@@ -656,23 +657,23 @@ describe('propose_changes com a pasta do pacote', () => {
     ).toBe(readFileSync(join(MATERIAL3, 'material3.spec.json'), 'utf8'));
   });
 
-  it('especialização v1 a v3 em arquivo continua indo só pelo arquivo', async () => {
+  it('a v1 to v3 specialization in a file still goes only through the file', async () => {
     const result = ok(
       await mcp.call<{ valid: boolean; summary: string[] }>('plan_changes', {
-        project: 'vazio',
-        operations: [{ op: 'apply_specialization', file: 'legado/sdui.json' }],
+        project: 'empty',
+        operations: [{ op: 'apply_specialization', file: 'legacy/sdui.json' }],
       }),
     );
     expect(result.valid).toBe(true);
     expect(result.summary[0]).toMatch(/Apply the specialization/);
   });
 
-  it('v4 e v5 sem arquivo do pacote valem como arquivo isolado', async () => {
+  it('v4 and v5 without a package file count as an isolated file', async () => {
     for (const v of [4, 5]) {
       const result = ok(
         await mcp.call<{ valid: boolean; summary: string[] }>('plan_changes', {
-          project: 'vazio',
-          operations: [{ op: 'apply_specialization', file: `legado/sdui-v${v}.json` }],
+          project: 'empty',
+          operations: [{ op: 'apply_specialization', file: `legacy/sdui-v${v}.json` }],
         }),
       );
       expect(result.valid).toBe(true);

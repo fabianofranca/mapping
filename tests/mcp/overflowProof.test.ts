@@ -26,9 +26,9 @@ import { findProject, loadProject } from '../../mcp/projects';
 import { createServer } from '../../mcp/server';
 import { NOW } from '../model/fixtures';
 
-// CF10 (decisões 27 e 28): `plan_changes` e `propose_changes` instanciam o componente de cada
-// marcação criada ou alterada e devolvem o "não cabe" em `issues` (`component-overflow`, sem
-// bloquear o lote); `operationsFile` traz o lote de um arquivo dentro das raízes.
+// CF10 (decisions 27 and 28): `plan_changes` and `propose_changes` instantiate the component of each
+// created or changed marking and return the "does not fit" in `issues` (`component-overflow`, without
+// blocking the batch); `operationsFile` brings the batch from a file inside the roots.
 
 const LAYER = 'cccccccc-0000-4000-8000-000000000001';
 const PHOTO = 'bbbbbbbb-0000-4000-8000-000000000001';
@@ -52,9 +52,9 @@ const spec = (withFonts: boolean) => ({
       annotationTypes: [
         {
           id: 'btn',
-          name: 'Botão',
+          name: 'Button',
           component: 'components/btn.json',
-          fields: [{ key: 'label', type: 'string', default: 'Confirmar pagamento' }],
+          fields: [{ key: 'label', type: 'string', default: 'Confirm payment now' }],
         },
         {
           id: 'chip',
@@ -63,22 +63,22 @@ const spec = (withFonts: boolean) => ({
           fields: [],
         },
         {
-          id: 'botao',
-          name: 'Botão',
-          component: 'components/botao.json',
-          fields: [{ key: 'label', type: 'string', default: 'Salvar' }],
+          id: 'save',
+          name: 'Save button',
+          component: 'components/save.json',
+          fields: [{ key: 'label', type: 'string', default: 'Save' }],
         },
         {
           id: 'dir',
-          name: 'Direção',
+          name: 'Direction',
           component: 'components/dir.json',
           fields: [],
         },
         {
           id: 'face',
-          name: 'Rótulo',
+          name: 'Label',
           component: 'components/face.json',
-          fields: [{ key: 'label', type: 'string', default: 'Confirmar pagamento' }],
+          fields: [{ key: 'label', type: 'string', default: 'Confirm payment now' }],
         },
       ],
     },
@@ -87,8 +87,8 @@ const spec = (withFonts: boolean) => ({
 
 const textNode = (family?: unknown) => ({
   type: 'text',
-  name: 'rotulo',
-  text: { $field: 'label', default: 'Confirmar pagamento' },
+  name: 'label',
+  text: { $field: 'label', default: 'Confirm payment now' },
   width: 'fill',
   height: 'fill',
   font: { size: 14, lineHeight: 20, ...(family === undefined ? {} : { family }) },
@@ -104,7 +104,7 @@ const component = (id: string, family?: unknown) => ({
   template: { type: 'frame', layout: { type: 'row' }, children: [textNode(family)] },
 });
 
-/** A #1093: raiz `none` com um quadro `hug` de padding 24 nas laterais e uma barra de 39 (87×36). */
+/** From #1093: `none` root with a `hug` frame with 24 side padding and a 39 bar (87×36). */
 const chipComponent = {
   format: 'mapping-component',
   formatVersion: 4,
@@ -118,39 +118,39 @@ const chipComponent = {
     children: [
       {
         type: 'frame',
-        name: 'miolo',
+        name: 'core',
         width: 'hug',
         height: 'hug',
         anchors: { centerX: true, centerY: true },
         layout: { type: 'row', padding: [0, 24] },
-        children: [{ type: 'rect', name: 'barra', width: 39, height: 36 }],
+        children: [{ type: 'rect', name: 'bar', width: 39, height: 36 }],
       },
     ],
   },
 };
 
-/** A #1631: o rótulo de um botão com padding 24 nas laterais (58 de largura deixam 10 para a palavra). */
-const botaoComponent = {
+/** From #1631: the label of a button with 24 side padding (58 of width leaves 10 for the word). */
+const saveComponent = {
   format: 'mapping-component',
   formatVersion: 4,
-  id: 'botao',
-  name: 'botao',
+  id: 'save',
+  name: 'save',
   size: { width: 96, height: 40 },
   template: {
     type: 'frame',
-    name: 'botao',
+    name: 'save',
     layout: { type: 'row', padding: [0, 24] },
     children: [
       {
         ...textNode(),
-        name: 'rótulo',
-        text: { $field: 'label', default: 'Salvar' },
+        name: 'save-label',
+        text: { $field: 'label', default: 'Save' },
       },
     ],
   },
 };
 
-/** Estoura só em `rtl`: uma barra de 300 de largura, visível só nessa direção, num quadro de 120. */
+/** Overflows only in `rtl`: a 300-wide bar, visible only in that direction, in a 120 frame. */
 const dirComponent = {
   format: 'mapping-component',
   formatVersion: 4,
@@ -162,10 +162,10 @@ const dirComponent = {
     name: 'dir',
     layout: { type: 'row' },
     children: [
-      { type: 'rect', name: 'curta', width: 30, height: 10, fill: '#000000' },
+      { type: 'rect', name: 'short', width: 30, height: 10, fill: '#000000' },
       {
         type: 'rect',
-        name: 'larga',
+        name: 'wide',
         width: 300,
         height: 10,
         fill: '#000000',
@@ -182,7 +182,7 @@ interface Workspace {
 
 async function workspace(withFonts: boolean): Promise<Workspace> {
   const base = mkdtempSync(join(tmpdir(), 'mapping-overflow-'));
-  const dir = join(base, 'telas');
+  const dir = join(base, 'screens');
   const lib = join(dir, 'specs', 'lib');
   mkdirSync(join(lib, 'components'), { recursive: true });
   mkdirSync(join(lib, 'fonts'), { recursive: true });
@@ -190,44 +190,44 @@ async function workspace(withFonts: boolean): Promise<Workspace> {
   writeFileSync(join(lib, 'lib.spec.json'), JSON.stringify(spec(withFonts)));
   writeFileSync(join(lib, 'components', 'btn.json'), JSON.stringify(component('btn')));
   writeFileSync(join(lib, 'components', 'chip.json'), JSON.stringify(chipComponent));
-  writeFileSync(join(lib, 'components', 'botao.json'), JSON.stringify(botaoComponent));
+  writeFileSync(join(lib, 'components', 'save.json'), JSON.stringify(saveComponent));
   writeFileSync(join(lib, 'components', 'dir.json'), JSON.stringify(dirComponent));
   writeFileSync(
     join(lib, 'components', 'face.json'),
     JSON.stringify(component('face', { $token: 'face' })),
   );
-  // "Acme" é a mono em negrito: bem mais larga que a sans nos mesmos caracteres.
+  // "Acme" is the bold mono: much wider than the sans for the same characters.
   cpSync('mcp/fonts/MappingMono-Bold.ttf', join(lib, 'fonts', 'Acme.ttf'));
-  writeFileSync(join(dir, 'images', 'foto.png'), Buffer.from([0]));
+  writeFileSync(join(dir, 'images', 'photo.png'), Buffer.from([0]));
   const parsed = parseSpecText(JSON.stringify(spec(withFonts)));
-  if (!parsed.ok) throw new Error(`spec inválida: ${JSON.stringify(parsed)}`);
+  if (!parsed.ok) throw new Error(`invalid spec: ${JSON.stringify(parsed)}`);
   let p = createProject({
-    name: 'Telas',
+    name: 'Screens',
     now: NOW,
     firstLayer: { id: LAYER, name: 'Camada 1', color: '#D32F2F' },
   });
-  p = addContainer(p, { id: PHOTO, file: 'images/foto.png', width: 400, height: 300 });
+  p = addContainer(p, { id: PHOTO, file: 'images/photo.png', width: 400, height: 300 });
   p = applySpecialization(p, parsed.spec, { packageSpecName: 'lib.spec.json' });
   writeFileSync(join(dir, 'mapping.json'), serialize(p));
   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
   await createServer({ roots: [base] }).connect(serverSide);
-  const client = new Client({ name: 'teste', version: '0' });
+  const client = new Client({ name: 'test', version: '0' });
   await client.connect(clientSide);
   return { base, client };
 }
 
-/** Grava no `mapping.json` o resultado de um lote (o projeto já nasce com marcações). */
+/** Writes the result of a batch to `mapping.json` (the project is born with markings). */
 async function seed(ws: Workspace, operations: Operation[]): Promise<Project> {
   const roots = new Roots([ws.base]);
-  const loaded = await loadProject(roots, await findProject(roots, 'telas'));
+  const loaded = await loadProject(roots, await findProject(roots, 'screens'));
   const result = await runBatch(loaded, operations, {
-    readSource: () => Promise.reject(new Error('sem arquivos')),
-    readSpecInput: () => Promise.reject(new Error('sem arquivos')),
+    readSource: () => Promise.reject(new Error('no files')),
+    readSpecInput: () => Promise.reject(new Error('no files')),
     takenImageFiles: new Set<string>(),
     now: () => new Date(NOW),
   });
   expect(result.errors).toEqual([]);
-  writeFileSync(join(ws.base, 'telas', 'mapping.json'), serialize(result.project));
+  writeFileSync(join(ws.base, 'screens', 'mapping.json'), serialize(result.project));
   return result.project;
 }
 
@@ -254,14 +254,14 @@ async function call(
   try {
     return { isError: result.isError === true, data: JSON.parse(text) };
   } catch {
-    // Recusa do próprio SDK (argumento fora do schema): texto puro, sem `code`.
+    // Refusal by the SDK itself (argument outside the schema): plain text, without `code`.
     return { isError: result.isError === true, data: { message: text } };
   }
 }
 
 const SCREEN = {
   op: 'add_container',
-  as: '$tela',
+  as: '$screen',
   width: 300,
   height: 200,
   background: '#FFEBEE',
@@ -273,14 +273,14 @@ const create = (
 ) => ({
   op: 'create_marking',
   as: '$m',
-  container: '$tela',
+  container: '$screen',
   rect,
   annotation: { type },
   ...extra,
 });
 const plan = (ws: Workspace, operations: unknown[]) =>
-  call(ws, 'plan_changes', { project: 'telas', operations });
-/** Os itens `component-overflow` de `issues.new` (cada um com a anotação a que pertence). */
+  call(ws, 'plan_changes', { project: 'screens', operations });
+/** The `component-overflow` items of `issues.new` (each with the annotation it belongs to). */
 const overflows = (reply: Reply): Record<string, unknown>[] =>
   (
     (reply.data.issues?.new ?? []) as { annotation: string; issues: { code: string }[] }[]
@@ -290,26 +290,26 @@ const overflows = (reply: Reply): Record<string, unknown>[] =>
       .map((i) => ({ annotation: entry.annotation, ...i })),
   );
 
-let aprox: Workspace;
+let approx: Workspace;
 let real: Workspace;
 let seeded: Workspace;
 
 beforeAll(async () => {
-  aprox = await workspace(false);
+  approx = await workspace(false);
   real = await workspace(true);
   seeded = await workspace(false);
 });
 
 afterAll(async () => {
-  for (const ws of [aprox, real, seeded]) {
+  for (const ws of [approx, real, seeded]) {
     await ws.client.close();
     rmSync(ws.base, { recursive: true, force: true });
   }
 });
 
-describe('plan_changes: prova de desenho por instância', () => {
-  it('60×20 com "Confirmar pagamento" não cabe: component-overflow com o nó e quanto falta, sem bloquear', async () => {
-    const reply = await plan(aprox, [
+describe('plan_changes: drawing proof per instance', () => {
+  it('60×20 with "Confirm payment now" does not fit: component-overflow with the node and how much is missing, without blocking', async () => {
+    const reply = await plan(approx, [
       SCREEN,
       create({ x: 10, y: 10, width: 60, height: 20 }),
     ]);
@@ -318,13 +318,13 @@ describe('plan_changes: prova de desenho por instância', () => {
     expect(reply.data.valid).toBe(true);
     const items = overflows(reply);
     expect(items).toHaveLength(1);
-    expect(items[0]).toMatchObject({ code: 'component-overflow', node: 'rotulo' });
+    expect(items[0]).toMatchObject({ code: 'component-overflow', node: 'label' });
     expect(items[0]!.missing).toBeGreaterThan(0);
     expect(items[0]!.message).toMatch(/\d+ px short/);
   });
 
-  it('o mesmo lote com 200×40 não traz component-overflow', async () => {
-    const reply = await plan(aprox, [
+  it('the same batch with 200×40 brings no component-overflow', async () => {
+    const reply = await plan(approx, [
       SCREEN,
       create({ x: 10, y: 10, width: 200, height: 40 }),
     ]);
@@ -332,9 +332,9 @@ describe('plan_changes: prova de desenho por instância', () => {
     expect(overflows(reply)).toEqual([]);
   });
 
-  it('(aproximado) sem as fonts da biblioteca; com elas, não', async () => {
+  it('(approximate) without the library fonts; with them, not', async () => {
     const ops = [SCREEN, create({ x: 10, y: 10, width: 60, height: 20 })];
-    const without = overflows(await plan(aprox, ops));
+    const without = overflows(await plan(approx, ops));
     const withFonts = overflows(await plan(real, ops));
     expect(without[0]!.message).toContain('(approximate)');
     expect(without[0]!.approximate).toBe(true);
@@ -342,36 +342,36 @@ describe('plan_changes: prova de desenho por instância', () => {
     expect(withFonts[0]!.approximate).toBeUndefined();
   });
 
-  it('update_marking que encolhe gera o item; marcação não tocada pelo lote não gera', async () => {
-    // O projeto já tem uma marcação que não cabe ("velha") e outra que cabe ("boa").
+  it('an update_marking that shrinks generates the item; a marking not touched by the batch does not', async () => {
+    // The project already has a marking that does not fit ("old") and another that fits ("good").
     const project = await seed(seeded, [
       { ...SCREEN, as: '$s' } as Operation,
       create({ x: 10, y: 10, width: 60, height: 20 }, 'lib/btn', {
-        as: '$velha',
+        as: '$old',
         container: '$s',
-        name: 'velha',
+        name: 'old',
       }) as Operation,
       create({ x: 10, y: 60, width: 200, height: 40 }, 'lib/btn', {
-        as: '$boa',
+        as: '$good',
         container: '$s',
-        name: 'boa',
+        name: 'good',
       }) as Operation,
     ]);
     const id = (name: string) => project.markings.find((m) => m.name === name)!.id;
 
-    // Mexer só na que cabe, sem encolher: nenhum item (a "velha" não foi tocada pelo lote).
+    // Touch only the one that fits, without shrinking: no item (the "old" one was not touched by the batch).
     const untouched = await plan(seeded, [
-      { op: 'update_marking', marking: id('boa'), name: 'boa agora' },
-      { op: 'update_marking', marking: id('boa'), move: { dx: 1, dy: 0 } },
+      { op: 'update_marking', marking: id('good'), name: 'good now' },
+      { op: 'update_marking', marking: id('good'), move: { dx: 1, dy: 0 } },
     ]);
     expect(untouched.data.errors).toBeUndefined();
     expect(overflows(untouched)).toEqual([]);
 
-    // Encolher a "boa" para 60×20: ela passa a não caber e só ela é reportada.
+    // Shrink the "good" one to 60×20: it stops fitting and only it is reported.
     const shrink = await plan(seeded, [
       {
         op: 'update_marking',
-        marking: id('boa'),
+        marking: id('good'),
         rect: { x: 10, y: 60, width: 60, height: 20 },
       },
     ]);
@@ -379,7 +379,7 @@ describe('plan_changes: prova de desenho por instância', () => {
     expect(overflows(shrink)).toHaveLength(1);
   });
 
-  it('usa o modo efetivo do container: com "dark" a fonte do token muda e o resultado também', async () => {
+  it('uses the container effective mode: with "dark" the token font changes and so does the result', async () => {
     const rect = { x: 10, y: 10, width: 140, height: 20 };
     const light = await plan(real, [SCREEN, create(rect, 'lib/face')]);
     const dark = await plan(real, [
@@ -390,16 +390,16 @@ describe('plan_changes: prova de desenho por instância', () => {
     expect(overflows(dark)).toHaveLength(1);
   });
 
-  it('propose_changes devolve os mesmos itens em issues', async () => {
+  it('propose_changes returns the same items in issues', async () => {
     const operations = [SCREEN, create({ x: 10, y: 10, width: 60, height: 20 })];
-    const planned = overflows(await plan(aprox, operations));
-    const proposed = await call(aprox, 'propose_changes', {
-      project: 'telas',
-      title: 'Prova',
+    const planned = overflows(await plan(approx, operations));
+    const proposed = await call(approx, 'propose_changes', {
+      project: 'screens',
+      title: 'Proof',
       operations,
     });
     expect(proposed.isError).toBe(false);
-    // A referência da anotação muda a cada chamada (ids novos); o resto é igual.
+    // The annotation reference changes on every call (new ids); the rest is the same.
     const bare = (items: Record<string, unknown>[]) =>
       items.map((item) => ({ ...item, annotation: undefined }));
     expect(bare(overflows(proposed))).toEqual(bare(planned));
@@ -407,9 +407,9 @@ describe('plan_changes: prova de desenho por instância', () => {
   });
 });
 
-describe('plan_changes: aviso no pai none (#1093)', () => {
-  it('chip de raiz none em 58×40 devolve component-overflow de conteúdo; em 87×40 nada', async () => {
-    const small = await plan(aprox, [
+describe('plan_changes: warning on the none parent (#1093)', () => {
+  it('a none-root chip at 58×40 returns a content component-overflow; at 87×40 nothing', async () => {
+    const small = await plan(approx, [
       SCREEN,
       create({ x: 10, y: 10, width: 58, height: 40 }, 'lib/chip'),
     ]);
@@ -422,7 +422,7 @@ describe('plan_changes: aviso no pai none (#1093)', () => {
       node: 'chip',
       missing: 29,
     });
-    const fits = await plan(aprox, [
+    const fits = await plan(approx, [
       SCREEN,
       create({ x: 10, y: 10, width: 87, height: 40 }, 'lib/chip'),
     ]);
@@ -430,36 +430,35 @@ describe('plan_changes: aviso no pai none (#1093)', () => {
   });
 });
 
-describe('plan_changes: palavra mais larga que a caixa (#1631)', () => {
-  const botao = (width: number) =>
-    create({ x: 10, y: 10, width, height: 40 }, 'lib/botao');
+describe('plan_changes: word wider than the box (#1631)', () => {
+  const save = (width: number) => create({ x: 10, y: 10, width, height: 40 }, 'lib/save');
 
-  it('botão "Salvar" em 58×40 devolve component-overflow de texto no rótulo; em 96×40 nada', async () => {
-    const small = await plan(aprox, [SCREEN, botao(58)]);
+  it('button "Save" at 58×40 returns a text component-overflow on the label; at 96×40 nothing', async () => {
+    const small = await plan(approx, [SCREEN, save(58)]);
     expect(small.data.errors).toBeUndefined();
     const items = overflows(small);
     expect(items).toHaveLength(1);
     expect(items[0]).toMatchObject({
       code: 'component-overflow',
       kind: 'text',
-      node: 'rótulo',
+      node: 'save-label',
     });
     expect(items[0]!.missing).toBeGreaterThan(0);
-    const fits = await plan(aprox, [SCREEN, botao(96)]);
+    const fits = await plan(approx, [SCREEN, save(96)]);
     expect(overflows(fits)).toEqual([]);
   });
 });
 
-describe('plan_changes: prova de desenho × densidade (#1085)', () => {
+describe('plan_changes: drawing proof × density (#1085)', () => {
   const SCREEN3 = { ...SCREEN, width: 1200, height: 800, density: 3 };
 
-  it('update_container density 3 com um botão de 200×40 devolve component-overflow com missing em pixels', async () => {
+  it('update_container density 3 with a 200×40 button returns component-overflow with missing in pixels', async () => {
     const project = await seed(seeded, [
       { ...SCREEN3, density: undefined, as: '$s' } as Operation,
       create({ x: 10, y: 10, width: 200, height: 40 }, 'lib/btn', {
         as: '$b',
         container: '$s',
-        name: 'botao',
+        name: 'button',
       }) as Operation,
     ]);
     const container = project.containers.find((c) => c.file === null)!;
@@ -472,25 +471,25 @@ describe('plan_changes: prova de desenho × densidade (#1085)', () => {
     ]);
     expect(dense.data.errors).toBeUndefined();
     const items = overflows(dense);
-    const text = items.find((i) => i.node === 'rotulo');
+    const text = items.find((i) => i.node === 'label');
     expect(text).toMatchObject({ code: 'component-overflow', kind: 'text' });
     expect(text!.missing as number).toBeGreaterThan(0);
   });
 
-  it('a falta é em pixels: o mesmo botão em 180×60 a 3x falta 3× o de 60×20 a 1x', async () => {
+  it('the shortfall is in pixels: the same button at 180×60 at 3x is short by 3× that of 60×20 at 1x', async () => {
     const one = overflows(
-      await plan(aprox, [SCREEN, create({ x: 10, y: 10, width: 60, height: 20 })]),
+      await plan(approx, [SCREEN, create({ x: 10, y: 10, width: 60, height: 20 })]),
     );
     const three = overflows(
-      await plan(aprox, [SCREEN3, create({ x: 30, y: 30, width: 180, height: 60 })]),
+      await plan(approx, [SCREEN3, create({ x: 30, y: 30, width: 180, height: 60 })]),
     );
     expect(one).toHaveLength(1);
     expect(three).toHaveLength(1);
     expect(three[0]!.missing as number).toBeCloseTo((one[0]!.missing as number) * 3, 0);
   });
 
-  it('a 3x o botão de 600×120 (200×40 unidades) cabe e não gera nada', async () => {
-    const reply = await plan(aprox, [
+  it('at 3x the 600×120 button (200×40 units) fits and generates nothing', async () => {
+    const reply = await plan(approx, [
       SCREEN3,
       create({ x: 30, y: 30, width: 600, height: 120 }),
     ]);
@@ -499,7 +498,7 @@ describe('plan_changes: prova de desenho × densidade (#1085)', () => {
   });
 });
 
-describe('plan_changes: prova de desenho × direção', () => {
+describe('plan_changes: drawing proof × direction', () => {
   const seedDir = () =>
     seed(seeded, [
       { ...SCREEN, as: '$s' } as Operation,
@@ -510,7 +509,7 @@ describe('plan_changes: prova de desenho × direção', () => {
       }) as Operation,
     ]);
 
-  it('um lote só mudando a direção do container prova o componente que estoura só em rtl', async () => {
+  it('a batch only changing the container direction proves the component that overflows only in rtl', async () => {
     const project = await seedDir();
     const container = project.containers.find((c) => c.file === null)!;
     const same = await plan(seeded, [
@@ -524,7 +523,7 @@ describe('plan_changes: prova de desenho × direção', () => {
     expect(overflows(rtl).length).toBeGreaterThan(0);
   });
 
-  it('um lote só mudando a direção do projeto prova o componente que estoura só em rtl', async () => {
+  it('a batch only changing the project direction proves the component that overflows only in rtl', async () => {
     await seedDir();
     const rtl = await plan(seeded, [{ op: 'update_project', direction: 'rtl' }]);
     expect(rtl.data.errors).toBeUndefined();
@@ -532,59 +531,59 @@ describe('plan_changes: prova de desenho × direção', () => {
   });
 });
 
-describe('plan_changes e propose_changes: operationsFile', () => {
+describe('plan_changes and propose_changes: operationsFile', () => {
   const operations = [SCREEN, create({ x: 10, y: 10, width: 60, height: 20 })];
 
-  it('aplica o lote do arquivo e o resultado é igual ao de operations inline', async () => {
-    writeFileSync(join(aprox.base, 'lote.json'), JSON.stringify(operations));
-    const inline = await plan(aprox, operations);
-    const file = await call(aprox, 'plan_changes', {
-      project: 'telas',
-      operationsFile: join(aprox.base, 'lote.json'),
+  it('applies the batch from the file and the result equals that of inline operations', async () => {
+    writeFileSync(join(approx.base, 'batch.json'), JSON.stringify(operations));
+    const inline = await plan(approx, operations);
+    const file = await call(approx, 'plan_changes', {
+      project: 'screens',
+      operationsFile: join(approx.base, 'batch.json'),
     });
     expect(file.isError).toBe(false);
-    // Os ids dos itens criados são novos a cada chamada: só o resto é comparado.
+    // The ids of the created items are new on every call: only the rest is compared.
     const strip = (r: Reply) =>
       JSON.parse(JSON.stringify(r.data).replace(/[0-9a-f]{8}/g, '#'));
     expect(strip(file)).toEqual(strip(inline));
     expect(overflows(file)).toHaveLength(1);
   });
 
-  it('aceita o caminho relativo a uma raiz e vale também no propose_changes', async () => {
-    writeFileSync(join(aprox.base, 'lote2.json'), JSON.stringify(operations));
-    const proposed = await call(aprox, 'propose_changes', {
-      project: 'telas',
-      title: 'Do arquivo',
-      operationsFile: 'lote2.json',
+  it('accepts a path relative to a root and also works in propose_changes', async () => {
+    writeFileSync(join(approx.base, 'batch2.json'), JSON.stringify(operations));
+    const proposed = await call(approx, 'propose_changes', {
+      project: 'screens',
+      title: 'From file',
+      operationsFile: 'batch2.json',
     });
     expect(proposed.isError).toBe(false);
     expect(proposed.data.valid).toBe(true);
     expect(overflows(proposed)).toHaveLength(1);
   });
 
-  it('operations e operationsFile juntos: invalid-arguments', async () => {
-    const reply = await call(aprox, 'plan_changes', {
-      project: 'telas',
+  it('operations and operationsFile together: invalid-arguments', async () => {
+    const reply = await call(approx, 'plan_changes', {
+      project: 'screens',
       operations,
-      operationsFile: 'lote.json',
+      operationsFile: 'batch.json',
     });
     expect(reply.isError).toBe(true);
     expect(reply.data.error?.code).toBe('invalid-arguments');
   });
 
-  it('nenhum dos dois: invalid-arguments', async () => {
-    const reply = await call(aprox, 'plan_changes', { project: 'telas' });
+  it('neither of them: invalid-arguments', async () => {
+    const reply = await call(approx, 'plan_changes', { project: 'screens' });
     expect(reply.isError).toBe(true);
     expect(reply.data.error?.code).toBe('invalid-arguments');
   });
 
-  it('arquivo fora das raízes: o erro de caminho de hoje (outside-roots)', async () => {
-    const outside = mkdtempSync(join(tmpdir(), 'mapping-fora-'));
-    writeFileSync(join(outside, 'lote.json'), JSON.stringify(operations));
+  it('a file outside the roots: the same path error as today (outside-roots)', async () => {
+    const outside = mkdtempSync(join(tmpdir(), 'mapping-outside-'));
+    writeFileSync(join(outside, 'batch.json'), JSON.stringify(operations));
     try {
-      const reply = await call(aprox, 'plan_changes', {
-        project: 'telas',
-        operationsFile: join(outside, 'lote.json'),
+      const reply = await call(approx, 'plan_changes', {
+        project: 'screens',
+        operationsFile: join(outside, 'batch.json'),
       });
       expect(reply.isError).toBe(true);
       expect(reply.data.error?.code).toBe('outside-roots');
@@ -593,14 +592,14 @@ describe('plan_changes e propose_changes: operationsFile', () => {
     }
   });
 
-  it('link simbólico para fora das raízes também é outside-roots', async () => {
-    const outside = mkdtempSync(join(tmpdir(), 'mapping-fora-'));
-    writeFileSync(join(outside, 'lote.json'), JSON.stringify(operations));
-    symlinkSync(join(outside, 'lote.json'), join(aprox.base, 'escapa.json'));
+  it('a symbolic link outside the roots is also outside-roots', async () => {
+    const outside = mkdtempSync(join(tmpdir(), 'mapping-outside-'));
+    writeFileSync(join(outside, 'batch.json'), JSON.stringify(operations));
+    symlinkSync(join(outside, 'batch.json'), join(approx.base, 'escapes.json'));
     try {
-      const reply = await call(aprox, 'plan_changes', {
-        project: 'telas',
-        operationsFile: 'escapa.json',
+      const reply = await call(approx, 'plan_changes', {
+        project: 'screens',
+        operationsFile: 'escapes.json',
       });
       expect(reply.data.error?.code).toBe('outside-roots');
     } finally {
@@ -608,23 +607,26 @@ describe('plan_changes e propose_changes: operationsFile', () => {
     }
   });
 
-  it('invalid JSON: erro com a posição', async () => {
-    writeFileSync(join(aprox.base, 'quebrado.json'), '[{"op": "add_container",,}]');
-    const reply = await call(aprox, 'plan_changes', {
-      project: 'telas',
-      operationsFile: 'quebrado.json',
+  it('invalid JSON: error with the position', async () => {
+    writeFileSync(join(approx.base, 'broken.json'), '[{"op": "add_container",,}]');
+    const reply = await call(approx, 'plan_changes', {
+      project: 'screens',
+      operationsFile: 'broken.json',
     });
     expect(reply.isError).toBe(true);
     expect(reply.data.error?.code).toBe('invalid-arguments');
-    expect(reply.data.error?.message).toMatch(/quebrado\.json/);
+    expect(reply.data.error?.message).toMatch(/broken\.json/);
     expect(reply.data.error?.message).toMatch(/position|line \d+ column \d+/);
   });
 
-  it('o conteúdo é conferido como as operações inline (op desconhecido)', async () => {
-    writeFileSync(join(aprox.base, 'ruim.json'), JSON.stringify([{ op: 'nao_existe' }]));
-    const reply = await call(aprox, 'plan_changes', {
-      project: 'telas',
-      operationsFile: 'ruim.json',
+  it('the content is checked like the inline operations (unknown op)', async () => {
+    writeFileSync(
+      join(approx.base, 'bad.json'),
+      JSON.stringify([{ op: 'does_not_exist' }]),
+    );
+    const reply = await call(approx, 'plan_changes', {
+      project: 'screens',
+      operationsFile: 'bad.json',
     });
     expect(reply.isError).toBe(true);
     expect(reply.data.error?.code).toBe('invalid-arguments');

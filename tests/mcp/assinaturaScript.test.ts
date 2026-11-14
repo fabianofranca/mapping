@@ -1,6 +1,6 @@
-// R26 (Importar a assinatura): o ajudante `scripts/testing/assinatura.mjs` grava o `spec` e a ficha da
-// n-ésima resposta de `plan_signature_import` na saída do cliente stdio, e confere se reimportar
-// não muda nada. O teste monta a saída no formato do `mcp-stdio-client.mjs`.
+// R26 (Importing the signature): the helper `scripts/testing/assinatura.mjs` writes the `spec` and the sheet of the
+// nth reply of `plan_signature_import` in the stdio client's output, and checks that reimporting
+// changes nothing. The test builds the output in the format of `mcp-stdio-client.mjs`.
 import { spawnSync } from 'node:child_process';
 import {
   existsSync,
@@ -28,7 +28,7 @@ afterEach(() => {
 const run = (...args: string[]) =>
   spawnSync('node', [SCRIPT, ...args], { encoding: 'utf8' });
 
-/** A saída do cliente stdio: um bloco `=== tool` por chamada, a resposta como lista de um texto JSON. */
+/** The stdio client's output: one `=== tool` block per call, the reply as a list of one JSON text. */
 function output(blocks: { name: string; result: unknown }[]): string {
   return blocks
     .map((b) => `=== ${b.name}\n[\n ${JSON.stringify(JSON.stringify(b.result))}\n]\n`)
@@ -38,7 +38,7 @@ function output(blocks: { name: string; result: unknown }[]): string {
 const SPEC = { format: 'mapping-spec', version: 2, layers: [] };
 
 describe('assinatura.mjs (R26)', () => {
-  it('gravar: o spec da resposta n e a ficha em signaturePath', () => {
+  it('gravar: the spec of reply n and the sheet at signaturePath', () => {
     const saida = path.join(dir, 'saida.txt');
     writeFileSync(
       saida,
@@ -69,7 +69,7 @@ describe('assinatura.mjs (R26)', () => {
     );
   });
 
-  it('gravar: um signaturePath que sai do pacote é recusado e nada é escrito fora', () => {
+  it('gravar: a signaturePath that leaves the package is refused and nothing is written outside', () => {
     const saida = path.join(dir, 'saida.txt');
     writeFileSync(
       saida,
@@ -90,7 +90,7 @@ describe('assinatura.mjs (R26)', () => {
     expect(existsSync(path.join(dir, 'fora'))).toBe(false);
   });
 
-  it('igual: diz igual e sai com 0; diferente sai com 1', () => {
+  it('igual: says igual and exits with 0; diferente exits with 1', () => {
     const saida = path.join(dir, 'saida.txt');
     writeFileSync(
       saida,
@@ -105,7 +105,7 @@ describe('assinatura.mjs (R26)', () => {
     expect(r.status).toBe(1);
   });
 
-  it('a resposta que é erro, a que falta e o uso errado saem com 2 e dizem o motivo', () => {
+  it('an error reply, a missing one and wrong usage exit with 2 and say why', () => {
     const saida = path.join(dir, 'saida.txt');
     writeFileSync(
       saida,

@@ -41,10 +41,10 @@ import {
 } from './proposalSupport';
 import { connect, type Connection } from './workspace';
 
-// R3 da etapa #1096: a âncora no MCP. `anchor` em `create_marking` (sem `rect` nasce encostada) e
-// em `update_marking` (`null` tira), a op `snap_to_anchor` (no lote e na proposta), `get_marking`
-// (`anchor`, `anchoredBy`) e `get_code_hints` (`anchor`). O servidor nunca grava o projeto:
-// "direto" é o lote (`runBatch`) e a prévia (`plan_changes`).
+// R3 of stage #1096: the anchor in the MCP. `anchor` in `create_marking` (without `rect` it is born snapped) and
+// in `update_marking` (`null` removes it), the `snap_to_anchor` op (in the batch and in the proposal), `get_marking`
+// (`anchor`, `anchoredBy`) and `get_code_hints` (`anchor`). The server never writes the project:
+// "direct" is the batch (`runBatch`) and the preview (`plan_changes`).
 
 const IMAGE = 'bbbbbbbb-0000-4000-8000-000000000001';
 const LAYER = 'cccccccc-0000-4000-8000-000000000001';
@@ -63,19 +63,19 @@ let roots: Roots;
 let loaded: LoadedProject;
 let mcp: Connection;
 
-/** Um alvo, um tooltip já ancorado nele (o encosto é feito), um trancado ancorado e um solto. */
+/** A target, a tooltip already anchored to it (the snap is done), a locked anchored one and a loose one. */
 function project(): Project {
   let p = createProject({
-    name: 'Telas',
+    name: 'Screens',
     now: NOW,
     firstLayer: { id: LAYER, name: 'Camada 1', color: '#D32F2F' },
   });
-  p = addContainer(p, { id: IMAGE, file: 'images/foto.png', width: 600, height: 400 });
+  p = addContainer(p, { id: IMAGE, file: 'images/photo.png', width: 600, height: 400 });
   p = applySpecialization(p, tipSpec(), { packageSpecName: 'tip.spec.json' });
   p = createMarking(p, {
     id: TARGET,
     containerId: IMAGE,
-    name: 'Alvo',
+    name: 'Target',
     rect: TARGET_RECT,
   });
   const tip = (id: string, annotationId: string, x: number, y: number) =>
@@ -103,7 +103,7 @@ function project(): Project {
     containerId: IMAGE,
     rect: { x: 400, y: 300, width: 50, height: 50 },
   });
-  // Dois soltos a mais: cada teste de proposta aplica no disco e usa o seu.
+  // Two more loose ones: each proposal test applies on disk and uses its own.
   p = createMarking(p, {
     id: LOOSE2,
     containerId: IMAGE,
@@ -123,7 +123,7 @@ function project(): Project {
 
 beforeAll(async () => {
   base = mkdtempSync(join(tmpdir(), 'mapping-anchor-'));
-  const dir = join(base, 'telas');
+  const dir = join(base, 'screens');
   mkdirSync(join(dir, 'specs', 'tip', 'components'), { recursive: true });
   writeFileSync(
     join(dir, 'specs', 'tip', 'tip.spec.json'),
@@ -137,7 +137,7 @@ beforeAll(async () => {
   }
   writeFileSync(join(dir, 'mapping.json'), serialize(project()));
   roots = new Roots([base]);
-  loaded = await loadProject(roots, await findProject(roots, 'telas'));
+  loaded = await loadProject(roots, await findProject(roots, 'screens'));
   mcp = await connect([base]);
 });
 
@@ -147,8 +147,8 @@ afterAll(async () => {
 });
 
 const io = {
-  readSource: () => Promise.reject(new Error('sem arquivos')),
-  readSpecInput: () => Promise.reject(new Error('sem arquivos')),
+  readSource: () => Promise.reject(new Error('no files')),
+  readSpecInput: () => Promise.reject(new Error('no files')),
   takenImageFiles: new Set<string>(),
   now: () => new Date(NOW),
 };
@@ -170,7 +170,7 @@ const createTip = (extra: Record<string, unknown> = {}): Operation =>
     ...extra,
   }) as Operation;
 
-/** A seta visível do tooltip: o canto de cima à esquerda, relativo à caixa dele. */
+/** The visible arrow of the tooltip: the top-left corner, relative to its box. */
 function arrowOf(project: Project, id: string): [number, number] | undefined {
   const drawing = createDrawingCache()(project, tipCatalog(), approximateMeasurer, 0).get(
     id,
@@ -179,21 +179,21 @@ function arrowOf(project: Project, id: string): [number, number] | undefined {
   return node === undefined ? undefined : [node.transform[4], node.transform[5]];
 }
 
-describe('create_marking com anchor', () => {
-  it('sem rect nasce no tamanho do componente, encostado acima da âncora, com a seta sob o centro dela (num lote)', async () => {
+describe('create_marking with anchor', () => {
+  it('without rect it is born at the component size, snapped above the anchor, with the arrow under its center (in a batch)', async () => {
     const result = await run([
       {
         op: 'create_marking',
-        as: '$alvo',
+        as: '$target',
         container: IMAGE,
         rect: { x: 300, y: 250, width: 120, height: 40 },
       } as Operation,
-      createTip({ anchor: { to: '$alvo' } }),
+      createTip({ anchor: { to: '$target' } }),
     ]);
     expect(result.errors).toEqual([]);
-    const target = aliasId(result, '$alvo');
+    const target = aliasId(result, '$target');
     const tip = markingIn(result, aliasId(result, '$tip'));
-    // 100 × 48 acima do alvo (y 250), com o offset.main 4 do componente; centrado em 300 + 60.
+    // 100 × 48 above the target (y 250), with the component's offset.main 4; centered at 300 + 60.
     expect(tip.rect).toEqual({ x: 310, y: 198, width: 100, height: 48 });
     expect(tip.anchor).toEqual({ to: target });
     expect(arrowOf(result.project, tip.id)).toEqual([42, 40]);
@@ -201,7 +201,7 @@ describe('create_marking com anchor', () => {
     expect(result.invariantIssues).toEqual([]);
   });
 
-  it('com side, align e offset dados, valem os dados (offset em pixels)', async () => {
+  it('with side, align and offset given, the given ones apply (offset in pixels)', async () => {
     const result = await run([
       createTip({
         anchor: {
@@ -221,7 +221,7 @@ describe('create_marking com anchor', () => {
     });
   });
 
-  it('com rect dado, ele manda e a âncora é gravada', async () => {
+  it('with a given rect, it wins and the anchor is stored', async () => {
     const rect = { x: 10, y: 10, width: 100, height: 48 };
     const result = await run([createTip({ rect })]);
     const tip = markingIn(result, aliasId(result, '$tip'));
@@ -229,7 +229,7 @@ describe('create_marking com anchor', () => {
     expect(tip.anchor).toEqual({ to: TARGET });
   });
 
-  it('marcação sem componente e sem rect continua sendo erro claro', async () => {
+  it('a marking without a component and without rect is still a clear error', async () => {
     const result = await run([
       { op: 'create_marking', container: IMAGE, anchor: { to: TARGET } } as Operation,
     ]);
@@ -237,7 +237,7 @@ describe('create_marking com anchor', () => {
     expect(result.errors[0]!.message).toContain('`rect` is required');
   });
 
-  it('sem componente e com rect, a âncora é gravada sem mover', async () => {
+  it('without a component and with rect, the anchor is stored without moving', async () => {
     const rect = { x: 10, y: 10, width: 40, height: 40 };
     const result = await run([
       {
@@ -255,7 +255,7 @@ describe('create_marking com anchor', () => {
     });
   });
 
-  it('erros: âncora inexistente, em outro espaço', async () => {
+  it('errors: nonexistent anchor, in another space', async () => {
     const missing = await run([
       createTip({ anchor: { to: 'ffffffff-0000-4000-8000-000000000009' } }),
     ]);
@@ -266,8 +266,8 @@ describe('create_marking com anchor', () => {
   });
 });
 
-describe('create_marking com anchor: o assentar leva a nova para outro espaço que o alvo', () => {
-  /** Um alvo do canvas sobre a borda direita da imagem e o retângulo (do canvas) dentro dela. */
+describe('create_marking with anchor: settling takes the new one to a different space than the target', () => {
+  /** A canvas target over the right edge of the image and the rectangle (in the canvas) inside it. */
   function edge(): { target: Operation; inside: Record<string, number> } {
     const image = loaded.project.containers.find((c) => c.id === IMAGE)!;
     const box = imageCanvasRect(image, image.placement);
@@ -283,7 +283,7 @@ describe('create_marking com anchor: o assentar leva a nova para outro espaço q
     };
   }
 
-  it('sem componente: a marcação nasce sem âncora, com um aviso (a operação não falha)', async () => {
+  it('without a component: the marking is born without an anchor, with a warning (the operation does not fail)', async () => {
     const { target, inside } = edge();
     const result = await run([
       target,
@@ -303,8 +303,8 @@ describe('create_marking com anchor: o assentar leva a nova para outro espaço q
   });
 });
 
-describe('update_marking com anchor', () => {
-  it('grava a âncora sem mover e null a tira', async () => {
+describe('update_marking with anchor', () => {
+  it('stores the anchor without moving and null removes it', async () => {
     const result = await run([
       {
         op: 'update_marking',
@@ -339,7 +339,7 @@ describe('update_marking com anchor', () => {
     expect(removed.steps[0]!.description).toContain('remove the anchor');
   });
 
-  it('os erros anchor-self, anchor-cycle e anchor-other-space', async () => {
+  it('the errors anchor-self, anchor-cycle and anchor-other-space', async () => {
     const self = await run([
       { op: 'update_marking', marking: LOOSE, anchor: { to: LOOSE } } as Operation,
     ]);
@@ -354,7 +354,7 @@ describe('update_marking com anchor', () => {
     expect(other.errors[0]).toMatchObject({ code: 'anchor-other-space' });
   });
 
-  it('a âncora tirada e depois a marcação movida: nada a levar junto', async () => {
+  it('the anchor removed and then the marking moved: nothing to carry along', async () => {
     const result = await run([
       { op: 'update_marking', marking: TIP, anchor: null } as Operation,
       { op: 'update_marking', marking: TARGET, move: { dx: 50, dy: 0 } } as Operation,
@@ -363,8 +363,8 @@ describe('update_marking com anchor', () => {
   });
 });
 
-describe('mover a âncora e encostar de novo', () => {
-  it('mover a âncora leva o tooltip junto; mudar o tamanho e snap_to_anchor o encosta de novo', async () => {
+describe('moving the anchor and snapping again', () => {
+  it('moving the anchor carries the tooltip along; changing the size and snap_to_anchor snaps it again', async () => {
     const moved = await run([
       { op: 'update_marking', marking: TARGET, move: { dx: 60, dy: 20 } } as Operation,
     ]);
@@ -386,7 +386,7 @@ describe('mover a âncora e encostar de novo', () => {
     ]);
     expect(result.errors).toEqual([]);
     const tip = markingIn(result, TIP);
-    // Mais alto (70): o encosto sobe até a borda de baixo ficar 4 acima da âncora (y 200).
+    // Taller (70): the snap rises until the bottom edge is 4 above the anchor (y 200).
     expect(tip.rect).toEqual({ x: 200, y: 126, width: 100, height: 70 });
     const step = result.steps[1]!;
     expect(step.description).toContain('Snap the marking');
@@ -395,7 +395,7 @@ describe('mover a âncora e encostar de novo', () => {
     expect(result.invariantIssues).toEqual([]);
   });
 
-  it('o padrão do componente (offset.main 4) vale quando a âncora não diz o offset', async () => {
+  it('the component default (offset.main 4) applies when the anchor does not state the offset', async () => {
     const result = await run([
       {
         op: 'update_marking',
@@ -412,14 +412,14 @@ describe('mover a âncora e encostar de novo', () => {
     });
   });
 
-  it('nada a mudar: o resumo diz isso e o projeto é o mesmo', async () => {
+  it('nothing to change: the summary says so and the project is the same', async () => {
     const result = await run([snap(TIP)]);
     expect(result.errors).toEqual([]);
     expect(result.steps[0]!.description).toContain('nothing changes');
     expect(result.project.markings).toEqual(loaded.project.markings);
   });
 
-  it('os erros: not-anchored, locked e referência desconhecida', async () => {
+  it('the errors: not-anchored, locked and unknown reference', async () => {
     const loose = await run([snap(LOOSE)]);
     expect(loose.errors[0]).toMatchObject({
       index: 0,
@@ -434,7 +434,7 @@ describe('mover a âncora e encostar de novo', () => {
     expect(missing.errors[0]!.op).toBe('snap_to_anchor');
   });
 
-  it('um apelido de uma marcação criada no mesmo lote vale', async () => {
+  it('an alias of a marking created in the same batch works', async () => {
     const result = await run([
       createTip({ rect: { x: 10, y: 10, width: 100, height: 48 } }),
       snap('$tip'),
@@ -444,15 +444,16 @@ describe('mover a âncora e encostar de novo', () => {
   });
 });
 
-describe('leitura: get_marking e get_code_hints', () => {
+describe('reading: get_marking and get_code_hints', () => {
   const ref = async (id: string): Promise<string> =>
-    ok(await mcp.call<{ ref: string }>('get_marking', { ref: id, project: 'telas' })).ref;
+    ok(await mcp.call<{ ref: string }>('get_marking', { ref: id, project: 'screens' }))
+      .ref;
 
-  it('get_marking da ancorada devolve anchor com to como referência; a âncora devolve anchoredBy', async () => {
+  it('get_marking of the anchored one returns anchor with to as a reference; the anchor returns anchoredBy', async () => {
     const tip = ok(
       await mcp.call<Record<string, unknown>>('get_marking', {
         ref: TIP,
-        project: 'telas',
+        project: 'screens',
       }),
     );
     expect(tip.anchor).toEqual({ to: await ref(TARGET), side: 'top' });
@@ -460,7 +461,7 @@ describe('leitura: get_marking e get_code_hints', () => {
     const target = ok(
       await mcp.call<Record<string, unknown>>('get_marking', {
         ref: TARGET,
-        project: 'telas',
+        project: 'screens',
       }),
     );
     expect(target.anchor).toBeNull();
@@ -470,23 +471,23 @@ describe('leitura: get_marking e get_code_hints', () => {
     expect((target.anchoredBy as string[]).length).toBe(2);
   });
 
-  it('get_marking de uma marcação sem relação traz anchor null e anchoredBy vazio', async () => {
+  it('get_marking of a marking without a relation brings anchor null and empty anchoredBy', async () => {
     const loose = ok(
       await mcp.call<Record<string, unknown>>('get_marking', {
         ref: LOOSE,
-        project: 'telas',
+        project: 'screens',
       }),
     );
     expect(loose.anchor).toBeNull();
     expect(loose.anchoredBy).toEqual([]);
   });
 
-  it('get_code_hints devolve anchor com o lado e o alinhamento efetivos (declarados ou os do componente)', async () => {
+  it("get_code_hints returns anchor with the effective side and alignment (declared or the component's)", async () => {
     const hints = ok(
       await mcp.call<{ anchor?: unknown; tree: { anchor?: unknown } }>('get_code_hints', {
         ref: TIP,
         platform: 'web',
-        project: 'telas',
+        project: 'screens',
       }),
     );
     expect(hints.anchor).toEqual({
@@ -499,7 +500,7 @@ describe('leitura: get_marking e get_code_hints', () => {
       await mcp.call<{ anchor?: unknown }>('get_code_hints', {
         ref: LOCKED,
         platform: 'web',
-        project: 'telas',
+        project: 'screens',
       }),
     );
     expect(defaults.anchor).toEqual({
@@ -511,15 +512,15 @@ describe('leitura: get_marking e get_code_hints', () => {
       await mcp.call<{ anchor?: unknown }>('get_code_hints', {
         ref: TARGET,
         platform: 'web',
-        project: 'telas',
+        project: 'screens',
       }),
     );
     expect(none.anchor).toBeUndefined();
   });
 });
 
-describe('plan_changes: a prévia direta', () => {
-  it('valida a âncora e o encosto, resume o retângulo e não grava nada', async () => {
+describe('plan_changes: the direct preview', () => {
+  it('validates the anchor and the snap, summarizes the rectangle and writes nothing', async () => {
     const plan = await planChanges(
       roots,
       loaded.location,
@@ -541,10 +542,10 @@ describe('plan_changes: a prévia direta', () => {
     expect(again.valid).toBe(false);
   });
 
-  it('pelo cliente stdio: a mesma prévia e o erro not-anchored', async () => {
+  it('through the stdio client: the same preview and the not-anchored error', async () => {
     const plan = ok(
       await mcp.call<{ valid: boolean; summary: string[] }>('plan_changes', {
-        project: 'telas',
+        project: 'screens',
         operations: [
           { op: 'update_marking', marking: TARGET, move: { dx: 10, dy: 0 } },
           snap(TIP),
@@ -554,7 +555,7 @@ describe('plan_changes: a prévia direta', () => {
     expect(plan.valid).toBe(true);
     const failed = await mcp.call<{ valid: boolean; errors: { code: string }[] }>(
       'plan_changes',
-      { project: 'telas', operations: [snap(LOOSE)] },
+      { project: 'screens', operations: [snap(LOOSE)] },
     );
     expect(failed.data.valid).toBe(false);
     expect(failed.data.errors[0]!.code).toBe('not-anchored');
@@ -562,8 +563,8 @@ describe('plan_changes: a prévia direta', () => {
   });
 });
 
-describe('anchor e snap_to_anchor numa proposta', () => {
-  const dir = () => join(base, 'telas');
+describe('anchor and snap_to_anchor in a proposal', () => {
+  const dir = () => join(base, 'screens');
   const operations = (marking = LOOSE): Operation[] => [
     {
       op: 'update_marking',
@@ -573,9 +574,9 @@ describe('anchor e snap_to_anchor numa proposta', () => {
     snap(marking),
   ];
 
-  it('a revisão traz a âncora (campo anchor) e a Posição; a proposta grava a formatVersion 9', async () => {
-    const proposed = await propose(mcp, 'telas', operations(), {
-      title: 'Ancorar o solto',
+  it('the review brings the anchor (anchor field) and the Position; the proposal writes formatVersion 9', async () => {
+    const proposed = await propose(mcp, 'screens', operations(), {
+      title: 'Anchor the loose one',
     });
     expect(proposed.valid).toBe(true);
     const proposal = readProposal(dir(), proposed.proposal.id);
@@ -591,9 +592,9 @@ describe('anchor e snap_to_anchor numa proposta', () => {
     expect(proposed.summary.join('\n')).toContain('Snap the marking');
   });
 
-  it('aceitar só a âncora grava a âncora e deixa o retângulo', async () => {
-    const proposed = await propose(mcp, 'telas', operations(LOOSE2), {
-      title: 'Só a âncora',
+  it('accepting only the anchor stores the anchor and leaves the rectangle', async () => {
+    const proposed = await propose(mcp, 'screens', operations(LOOSE2), {
+      title: 'Only the anchor',
     });
     const proposal = readProposal(dir(), proposed.proposal.id);
     const anchor = proposal.changes.find((c) => c.field === 'anchor')!;
@@ -616,9 +617,9 @@ describe('anchor e snap_to_anchor numa proposta', () => {
     expect(marking.rect).toEqual({ x: 400, y: 100, width: 50, height: 50 });
   });
 
-  it('aceitar só a Posição move e não grava a âncora', async () => {
-    const proposed = await propose(mcp, 'telas', operations(LOOSE3), {
-      title: 'Só a posição',
+  it('accepting only the Position moves and does not store the anchor', async () => {
+    const proposed = await propose(mcp, 'screens', operations(LOOSE3), {
+      title: 'Only the position',
     });
     const proposal = readProposal(dir(), proposed.proposal.id);
     const anchor = proposal.changes.find((c) => c.field === 'anchor')!;
@@ -641,10 +642,10 @@ describe('anchor e snap_to_anchor numa proposta', () => {
     expect(marking.rect).toMatchObject({ x: 225, y: 240 });
   });
 
-  it('só snap_to_anchor (numa já ancorada): é a Posição de sempre, sem subir a versão', async () => {
+  it('only snap_to_anchor (on an already anchored one): it is the usual Position, without raising the version', async () => {
     const proposed = await propose(
       mcp,
-      'telas',
+      'screens',
       [
         {
           op: 'update_marking',
@@ -653,7 +654,7 @@ describe('anchor e snap_to_anchor numa proposta', () => {
         } as Operation,
         snap(TIP),
       ],
-      { title: 'Reencostar' },
+      { title: 'Re-snap' },
     );
     const proposal = readProposal(dir(), proposed.proposal.id);
     expect(proposal.formatVersion).toBeLessThan(9);

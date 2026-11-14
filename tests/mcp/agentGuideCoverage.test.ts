@@ -1,4 +1,4 @@
-// Etapa #680, fase IA1: o guia do agente cita, entre crases, toda tool do servidor e todo `op` do lote.
+// Stage #680, phase IA1: the agent guide cites, in backticks, every server tool and every batch `op`.
 import { readFileSync } from 'node:fs';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
@@ -19,19 +19,19 @@ async function toolNames(): Promise<string[]> {
   return tools.map((tool) => tool.name);
 }
 
-/** Os `op` do lote, lidos do schema (os `z.literal` de `mcp/operations.ts`). */
+/** The batch `op`s, read from the schema (the `z.literal`s of `mcp/operations.ts`). */
 function operationNames(): string[] {
   return operationSchema.options.map((option) => String(option.shape.op.value));
 }
 
-describe('guia do agente × MCP', () => {
-  it('toda tool de listTools() aparece entre crases no AGENT-GUIDE.md', async () => {
+describe('agent guide × MCP', () => {
+  it('every tool of listTools() appears in backticks in AGENT-GUIDE.md', async () => {
     const names = await toolNames();
     expect(names.length).toBeGreaterThan(20);
     expect(names.filter((name) => !quoted(name))).toEqual([]);
   });
 
-  it('todo op do lote do propose_changes e do plan_changes aparece entre crases no AGENT-GUIDE.md', () => {
+  it('every batch op of propose_changes and plan_changes appears in backticks in AGENT-GUIDE.md', () => {
     const names = operationNames();
     expect(names.length).toBeGreaterThan(20);
     expect(new Set(names).size).toBe(names.length);

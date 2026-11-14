@@ -12,8 +12,8 @@ import { parseSpecText } from '../../src/model';
 import { errorOf, ok } from './proposalSupport';
 import { connect, type Connection } from './workspace';
 
-// validate_specialization (etapa 4.2): os erros são os da importação da app (`parseSpecText`,
-// a mesma função de `src/ui/SpecsDialog.tsx`), com o caminho exato; os avisos são do servidor.
+// validate_specialization (stage 4.2): the errors are those of the app's import (`parseSpecText`,
+// the same function as in `src/ui/SpecsDialog.tsx`), with the exact path; the warnings are the server's.
 
 type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -50,13 +50,13 @@ afterAll(async () => {
 const sdui = (): Json =>
   JSON.parse(readFileSync('examples/specs/sdui.json', 'utf8')) as Json;
 
-/** O SDUI em v3 com uma origem em cada nível (tipo, campo de texto e campo enum). */
+/** The SDUI in v3 with an origin on each level (type, text field and enum field). */
 function v3(): Json {
   const spec = sdui();
   spec.formatVersion = 3;
-  // A v3 não tem `repo` (só a v5).
+  // The v3 has no `repo` (only the v5).
   for (const platform of spec.platforms) delete platform.repo;
-  // E a v11 (grupos, papéis, cláusulas e documento externo) volta ao que a v3 conhece.
+  // And the v11 (groups, roles, clauses and external document) goes back to what the v3 knows.
   delete spec.docRepos;
   delete spec.migrations;
   for (const layer of spec.layers) {
@@ -86,8 +86,8 @@ function v3(): Json {
 
 const text = (spec: Json) => JSON.stringify(spec);
 
-describe('arquivos válidos', () => {
-  it('os exemplos do repositório são válidos, com o resumo e sem erros', async () => {
+describe('valid files', () => {
+  it('the repository examples are valid, with the summary and without errors', async () => {
     for (const name of ['sdui', 'modelo-de-dados']) {
       const result = ok(
         await mcp.call<Validated>('validate_specialization', {
@@ -110,9 +110,9 @@ describe('arquivos válidos', () => {
     });
   });
 
-  it('avisa plataforma declarada e não usada e tipo sem code, sem invalidar', async () => {
+  it('warns about a declared but unused platform and a type without code, without invalidating', async () => {
     const spec = sdui();
-    // O `screen` do SDUI já não tem `code`; a plataforma `desktop` não é usada por ninguém.
+    // The SDUI `screen` no longer has `code`; the `desktop` platform is used by nobody.
     spec.platforms.push({ id: 'desktop', name: 'Desktop' });
     const result = ok(
       await mcp.call<Validated>('validate_specialization', { text: text(spec) }),
@@ -128,7 +128,7 @@ describe('arquivos válidos', () => {
     expect(result.warnings![1]!.message).toContain('desktop');
   });
 
-  it('campo do tipo removido (codeRef): válido, ignorado e com aviso no caminho exato', async () => {
+  it('field of the removed type (codeRef): valid, ignored and with a warning at the exact path', async () => {
     const spec = sdui();
     spec.layers[2].annotationTypes[0].fields.push({
       key: 'implementacao',
@@ -148,7 +148,7 @@ describe('arquivos válidos', () => {
     });
   });
 
-  it('o format antigo (mapeador-spec) é aceito, com aviso', async () => {
+  it('the old format (mapeador-spec) is accepted, with a warning', async () => {
     const spec = sdui();
     spec.format = 'mapeador-spec';
     const result = ok(
@@ -161,20 +161,20 @@ describe('arquivos válidos', () => {
   });
 });
 
-describe('erros: os mesmos da importação da app, com o caminho exato', () => {
+describe('errors: the same as the app import, with the exact path', () => {
   const BUTTON = 'layers[0].annotationTypes[0]';
   const broken: [string, () => Json][] = [
     [
-      'destino de values fora das options',
+      'values target outside the options',
       () => {
         const spec = v3();
         spec.layers[0].annotationTypes[0].fields[2].sources[0].values.Primary =
-          'nao-existe';
+          'does-not-exist';
         return spec;
       },
     ],
     [
-      'values em campo que não é enum',
+      'values on a field that is not an enum',
       () => {
         const spec = v3();
         spec.layers[0].annotationTypes[0].fields[1].sources[0].values = { A: 'b' };
@@ -182,7 +182,7 @@ describe('erros: os mesmos da importação da app, com o caminho exato', () => {
       },
     ],
     [
-      'origem sem id nem name',
+      'origin without id or name',
       () => {
         const spec = v3();
         spec.layers[0].annotationTypes[0].sources = [{ system: 'figma' }];
@@ -190,7 +190,7 @@ describe('erros: os mesmos da importação da app, com o caminho exato', () => {
       },
     ],
     [
-      'sources numa especialização v2',
+      'sources in a v2 specialization',
       () => {
         const spec = v3();
         spec.formatVersion = 2;
@@ -198,17 +198,17 @@ describe('erros: os mesmos da importação da app, com o caminho exato', () => {
       },
     ],
     [
-      'tipo de campo desconhecido e id repetido',
+      'unknown field type and repeated id',
       () => {
         const spec = sdui();
-        spec.layers[0].annotationTypes[0].fields[0].type = 'inexistente';
+        spec.layers[0].annotationTypes[0].fields[0].type = 'nonexistent';
         spec.layers[0].annotationTypes[1].id = 'button';
         return spec;
       },
     ],
   ];
 
-  // O MCP não expõe o código do modelo (decisão 2 da #1263): só `path` e `message`.
+  // The MCP does not expose the model's code (decision 2 of #1263): only `path` and `message`.
   const pathAndMessage = (issues: readonly { path: string; message: string }[]) =>
     issues.map(({ path, message }) => ({ path, message }));
 
@@ -216,10 +216,10 @@ describe('erros: os mesmos da importação da app, com o caminho exato', () => {
     it(`${name}`, async () => {
       const content = text(make());
       const expected = parseSpecText(content);
-      if (expected.ok) throw new Error('o caso deveria ser inválido');
+      if (expected.ok) throw new Error('the case should be invalid');
       expect(expected.errors.length).toBeGreaterThan(0);
 
-      // Por texto.
+      // By text.
       const byText = ok(
         await mcp.call<Validated>('validate_specialization', { text: content }),
       );
@@ -229,16 +229,16 @@ describe('erros: os mesmos da importação da app, com o caminho exato', () => {
       expect(byText.errorCount).toBe(expected.errors.length);
       expect(byText.warnings).toBeUndefined();
 
-      // Por arquivo dentro das raízes: os mesmos erros.
-      const file = join(root, 'fontes', 'quebrada.json');
+      // By file inside the roots: the same errors.
+      const file = join(root, 'fontes', 'broken.json');
       writeFileSync(file, content);
       const byPath = ok(
         await mcp.call<Validated>('validate_specialization', {
-          path: 'fontes/quebrada.json',
+          path: 'fontes/broken.json',
         }),
       );
       expect(byPath.errors).toEqual(expected.errors);
-      // E por caminho absoluto.
+      // And by absolute path.
       const absolute = ok(
         await mcp.call<Validated>('validate_specialization', { path: file }),
       );
@@ -246,9 +246,10 @@ describe('erros: os mesmos da importação da app, com o caminho exato', () => {
     });
   }
 
-  it('o caminho aponta o trecho exato (ex: sources[0].values.Primary)', async () => {
+  it('the path points to the exact spot (e.g. sources[0].values.Primary)', async () => {
     const spec = v3();
-    spec.layers[0].annotationTypes[0].fields[2].sources[0].values.Primary = 'nao-existe';
+    spec.layers[0].annotationTypes[0].fields[2].sources[0].values.Primary =
+      'does-not-exist';
     const result = ok(
       await mcp.call<Validated>('validate_specialization', { text: text(spec) }),
     );
@@ -260,7 +261,7 @@ describe('erros: os mesmos da importação da app, com o caminho exato', () => {
     expect(result.errors[0]).toContain(`${BUTTON}.fields[2].sources[0].values.Primary: `);
   });
 
-  it('`issues` leva só `path` e `message`: o código do modelo não sai pelo MCP', async () => {
+  it('`issues` carries only `path` and `message`: the model code does not leave through the MCP', async () => {
     const spec = v3();
     spec.layers[0].annotationTypes[0].fields[0].key = 'a b';
     const result = ok(
@@ -272,7 +273,7 @@ describe('erros: os mesmos da importação da app, com o caminho exato', () => {
     }
   });
 
-  it('JSON inválido volta como erro, não como falha da tool', async () => {
+  it('invalid JSON comes back as an error, not as a tool failure', async () => {
     const content = '{ "format": ';
     const expected = parseSpecText(content);
     const result = ok(
@@ -283,14 +284,14 @@ describe('erros: os mesmos da importação da app, com o caminho exato', () => {
     expect(result.errors[0]).toMatch(/^invalid JSON/);
   });
 
-  it('limita a quantidade de erros devolvidos e diz quantos faltaram', async () => {
+  it('limits the number of returned errors and says how many were left out', async () => {
     const spec = sdui();
     spec.layers[0].annotationTypes[0].fields = Array.from({ length: 150 }, () => ({
       key: 'x y',
       type: 'string',
     }));
     const expected = parseSpecText(text(spec));
-    if (expected.ok) throw new Error('era para falhar');
+    if (expected.ok) throw new Error('was expected to fail');
     expect(expected.errors.length).toBeGreaterThan(100);
     const result = ok(
       await mcp.call<Validated>('validate_specialization', { text: text(spec) }),
@@ -301,8 +302,8 @@ describe('erros: os mesmos da importação da app, com o caminho exato', () => {
   });
 });
 
-describe('argumentos e segurança', () => {
-  it('exige exatamente um de path ou text', async () => {
+describe('arguments and security', () => {
+  it('requires exactly one of path or text', async () => {
     expect(errorOf(await mcp.call('validate_specialization', {})).code).toBe(
       'invalid-arguments',
     );
@@ -316,9 +317,10 @@ describe('argumentos e segurança', () => {
     ).toBe('invalid-arguments');
   });
 
-  it('recusa caminhos fora das raízes e arquivos inexistentes', async () => {
+  it('refuses paths outside the roots and nonexistent files', async () => {
     expect(
-      errorOf(await mcp.call('validate_specialization', { path: '../fora.json' })).code,
+      errorOf(await mcp.call('validate_specialization', { path: '../outside.json' }))
+        .code,
     ).toBe('outside-roots');
     expect(
       errorOf(

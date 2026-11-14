@@ -1,20 +1,20 @@
-// Ganchos de disco para os testes de concorrência por stdio (fase 8.5). Carregado só pelos
-// testes, com `node --import`, ANTES do `mapping-mcp.js`: troca funções do objeto do módulo
-// `node:fs/promises`, que o bundle CJS chama como `import_promises.readFile(...)`. Nada daqui
-// entra no bundle (`tests/mcp/staticGuards.test.ts` confere).
+// Disk hooks for the concurrency tests over stdio (phase 8.5). Loaded only by the
+// tests, with `node --import`, BEFORE `mapping-mcp.js`: replaces functions on the
+// `node:fs/promises` module object, which the CJS bundle calls as `import_promises.readFile(...)`. Nothing here
+// goes into the bundle (`tests/mcp/staticGuards.test.ts` checks).
 //
-// A configuração é um JSON no arquivo apontado por `MAPPING_MCP_FS_HOOKS`, relido a cada
-// chamada (o teste arma e desarma os ganchos entre uma tool e outra). Sem o arquivo, nada muda.
+// The configuration is a JSON in the file pointed to by `MAPPING_MCP_FS_HOOKS`, re-read on every
+// call (the test arms and disarms the hooks between one tool and another). Without the file, nothing changes.
 //
 // {
 //   "afterRead": [{ "match": "fontes/tela.png", "append": { "file": "/abs/mapping.json", "text": "\n" } }],
 //   "fail": [{ "fn": "link", "match": "/images/", "code": "EPERM" }, { "fn": "rm", "match": ".tmp", "code": "EBUSY" }]
 // }
 //
-// `match` é um trecho do caminho (qualquer argumento de texto da chamada). `afterRead` acrescenta
-// `text` a `file` depois de cada leitura que casa (ou, com `copy: { from, to }`, copia `from`
-// sobre `to`); com `nth`, só depois da n-ésima leitura que casa (contada por regra, a partir do
-// início do processo). `fail` faz a função rejeitar com o código.
+// `match` is a piece of the path (any text argument of the call). `afterRead` appends
+// `text` to `file` after each matching read (or, with `copy: { from, to }`, copies `from`
+// over `to`); with `nth`, only after the nth matching read (counted per rule, from the
+// start of the process). `fail` makes the function reject with the code.
 
 import { appendFileSync, copyFileSync, existsSync, readFileSync } from 'node:fs';
 import fsp from 'node:fs/promises';
@@ -35,7 +35,7 @@ const matches = (args, match) =>
   args.some((arg) => typeof arg === 'string' && arg.includes(match));
 
 function failure(fn, code, args) {
-  const error = new Error(`${code}: ${fn} recusado pelo gancho de teste`);
+  const error = new Error(`${code}: ${fn} refused by the test hook`);
   error.code = code;
   error.syscall = fn;
   error.path = typeof args[0] === 'string' ? args[0] : undefined;

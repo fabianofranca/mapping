@@ -1,7 +1,7 @@
-// R1 (#1096): o raster do MCP desenha o espelho de rtl (matriz com scaleX negativo) do ícone e do
-// caminho na caixa certa (fill, traço, tracejado e cap) e põe o texto rtl no lado físico do
-// `align`. Limite conhecido: os glifos saem na ordem do texto, sem bidi. A paridade em pixels
-// com o Konva está em tests/e2e/directionParity.spec.ts.
+// R1 (#1096): the MCP raster draws the rtl mirror (matrix with negative scaleX) of the icon and of the
+// path in the right box (fill, stroke, dashed and cap) and puts rtl text on the physical side of
+// `align`. Known limit: glyphs come out in text order, without bidi. Pixel parity
+// with Konva is in tests/e2e/directionParity.spec.ts.
 import { describe, expect, it } from 'vitest';
 import { createRaster, type Raster } from '../../mcp/image/raster';
 import { paintScene } from '../../mcp/image/sceneRaster';
@@ -45,7 +45,7 @@ function sceneOf(child: Json, direction: 'rtl' | undefined): Scene {
   );
 }
 
-/** As colunas [esquerda, direita) com tinta (qualquer pixel escuro). */
+/** The columns [left, right) with ink (any dark pixel). */
 function ink(scene: Scene): { left: number; right: number } {
   const raster: Raster = createRaster(60, 40);
   raster.data.fill(255);
@@ -84,30 +84,30 @@ const path = (extra: Json): Json => ({
   ...extra,
 });
 
-describe('raster: o espelho do ícone e do caminho na mesma caixa', () => {
-  it('ícone com fill: x de 2 a 20 em ltr; espelhado na caixa do nó em rtl', () => {
+describe('raster: the mirror of the icon and of the path in the same box', () => {
+  it('icon with fill: x from 2 to 20 in ltr; mirrored in the node box in rtl', () => {
     expect(ink(sceneOf(icon('back'), undefined))).toEqual({ left: 2, right: 20 });
     expect(ink(sceneOf(icon('back'), 'rtl'))).toEqual({ left: 40, right: 58 });
   });
 
-  it('ícone com traço (cap butt): espelha o traço', () => {
+  it('icon with stroke (butt cap): mirrors the stroke', () => {
     expect(ink(sceneOf(icon('line'), undefined))).toEqual({ left: 2, right: 20 });
     expect(ink(sceneOf(icon('line'), 'rtl'))).toEqual({ left: 40, right: 58 });
   });
 
-  it('caminho com fill: caixa 4 a 40 em ltr, 20 a 56 em rtl', () => {
+  it('path with fill: box 4 to 40 in ltr, 20 to 56 in rtl', () => {
     const fill = path({ fill: '#000000' });
     expect(ink(sceneOf(fill, undefined))).toEqual({ left: 4, right: 40 });
     expect(ink(sceneOf(fill, 'rtl'))).toEqual({ left: 20, right: 56 });
   });
 
-  it('caminho tracejado: o tracejado começa na ponta espelhada (butt e round)', () => {
+  it('dashed path: the dash starts at the mirrored end (butt and round)', () => {
     const line = (cap: string) =>
       path({
         d: 'M2 5L20 5',
         stroke: { color: '#000000', width: 4, cap, dash: [10, 10] },
       });
-    // o caminho vai de x=4 a x=40 (viewBox 24 → 48); o primeiro traço (10 do viewBox = 20 px) parte do início
+    // the path goes from x=4 to x=40 (viewBox 24 → 48); the first dash (10 of the viewBox = 20 px) starts at the beginning
     const butt = (d?: 'rtl') => ink(sceneOf(line('butt'), d));
     expect(butt()).toEqual({ left: 4, right: 24 });
     expect(butt('rtl')).toEqual({ left: 36, right: 56 });
@@ -141,17 +141,17 @@ function textNode(align: TextNode['style']['align'], direction?: 'rtl'): TextNod
   };
 }
 
-describe('raster: texto rtl no lado físico do align', () => {
+describe('raster: rtl text on the physical side of align', () => {
   const six = (text: string) => ({ width: text.length * 6, height: 14 });
 
-  it('align right: a barra encosta na borda direita; align left, na esquerda', () => {
+  it('align right: the bar touches the right edge; align left, the left one', () => {
     const [right] = textBars(textNode('right', 'rtl'), six);
     expect(right!.x + right!.width).toBe(60);
     const [left] = textBars(textNode('left', 'rtl'), six);
     expect(left!.x).toBe(0);
   });
 
-  it('o glifo pintado cai do mesmo lado (sem bidi: ordem do texto)', () => {
+  it('the painted glyph falls on the same side (without bidi: text order)', () => {
     const raster = createRaster(60, 20);
     raster.data.fill(255);
     paintScene(raster, [{ root: textNode('right', 'rtl') }], measure, {

@@ -5,9 +5,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { acceptAllAndApply, ok, propose } from './proposalSupport';
 import { connect, type Connection } from './workspace';
 
-// Instância de componente sem nome (a Paleta cria assim): no MCP o nome do tipo toma o lugar
-// da palavra "Marcação" e o código curto fica ("Nota 1680c843"); marcação comum continua
-// "Marcação <código>". Nada é gravado: `name` segue `null`.
+// Unnamed component instance (the Palette creates it this way): in the MCP the type name takes the place
+// of the word "Marking" and the short code stays ("Nota 1680c843"); a plain marking remains
+// "Marking <code>". Nothing is written: `name` stays `null`.
 
 interface PathSegment {
   ref: string;
@@ -25,7 +25,7 @@ interface ArrowsData {
 let root: string;
 let mcp: Connection;
 let dir: string;
-const project = 'sem-nome';
+const project = 'unnamed';
 
 beforeAll(async () => {
   root = mkdtempSync(join(tmpdir(), 'mapping-unnamed-'));
@@ -39,7 +39,7 @@ afterAll(async () => {
   rmSync(root, { recursive: true, force: true });
 });
 
-describe('nome da marcação sem nome no MCP', () => {
+describe('name of an unnamed marking in the MCP', () => {
   let noteId = '';
   let plainId = '';
 
@@ -47,14 +47,14 @@ describe('nome da marcação sem nome no MCP', () => {
     const proposed = await propose(mcp, project, [
       {
         op: 'create_marking',
-        as: '$nota',
-        annotationAs: '$nota-a',
+        as: '$note',
+        annotationAs: '$note-a',
         annotation: { type: 'notas/nota' },
         rect: { x: 0, y: 0, width: 200, height: 100 },
       },
       {
         op: 'create_marking',
-        as: '$comum',
+        as: '$plain',
         rect: { x: 400, y: 0, width: 200, height: 100 },
       },
     ]);
@@ -68,7 +68,7 @@ describe('nome da marcação sem nome no MCP', () => {
     plainId = plain!.id;
   });
 
-  it('get_marking: o caminho mostra "<Tipo> <código>" e o nome gravado segue null', async () => {
+  it('get_marking: the path shows "<Type> <code>" and the stored name stays null', async () => {
     const note = ok(await mcp.call<MarkingData>('get_marking', { project, ref: noteId }));
     expect(note.name).toBeNull();
     expect(note.path.at(-1)?.name).toMatch(/^Nota [0-9a-f]{8}$/);
@@ -79,9 +79,9 @@ describe('nome da marcação sem nome no MCP', () => {
     expect(plain.path.at(-1)?.name).toMatch(/^Marking [0-9a-f]{8}$/);
   });
 
-  it('a seta que sai da instância sem nome mostra "<Tipo> <código>" na ponta', async () => {
+  it('the arrow leaving the unnamed instance shows "<Type> <code>" at the end', async () => {
     const proposed = await propose(mcp, project, [
-      { op: 'create_arrow', as: '$seta', from: noteId, to: plainId },
+      { op: 'create_arrow', as: '$arrow', from: noteId, to: plainId },
     ]);
     expect(proposed.valid).toBe(true);
     acceptAllAndApply(dir, proposed.proposal.id);

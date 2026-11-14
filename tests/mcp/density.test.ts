@@ -9,8 +9,8 @@ import {
 import { acceptAllAndApply, ok, propose, readProposal } from './proposalSupport';
 import { connect, type Connection } from './workspace';
 
-// Densidade do container (schema v19) no MCP: `add_container` e `update_container` aceitam
-// `density` (`null` volta a 1); `get_container`, `get_project` e `get_marking` a devolvem.
+// Container density (schema v19) in the MCP: `add_container` and `update_container` accept
+// `density` (`null` goes back to 1); `get_container`, `get_project` and `get_marking` return it.
 
 let root: string;
 let mcp: Connection;
@@ -45,8 +45,8 @@ const box = {
   background: '#FFFFFF',
 };
 
-describe('density no add_container e no update_container', () => {
-  it('add_container fixa a densidade; get_container, get_project e get_marking a devolvem', async () => {
+describe('density in add_container and update_container', () => {
+  it('add_container pins the density; get_container, get_project and get_marking return it', async () => {
     const { name, dir } = await newProject();
     const { proposed, saved } = await apply(name, dir, [
       { ...box, density: 3 },
@@ -76,7 +76,7 @@ describe('density no add_container e no update_container', () => {
     ).toBe(3);
   });
 
-  it('sem density o container devolve 1 e o arquivo não guarda a chave', async () => {
+  it('without density the container returns 1 and the file does not keep the key', async () => {
     const { name, dir } = await newProject();
     const { proposed, saved } = await apply(name, dir, [{ ...box }]);
     expect('density' in saved.containers[0]!).toBe(false);
@@ -84,7 +84,7 @@ describe('density no add_container e no update_container', () => {
     expect(ok(await mcp.call('get_container', { ref })).density).toBe(1);
   });
 
-  it('update_container muda a densidade e null volta a 1', async () => {
+  it('update_container changes the density and null goes back to 1', async () => {
     const { name, dir } = await newProject();
     const first = await apply(name, dir, [{ ...box }]);
     const ref = first.proposed.created.find((c) => c.kind === 'container')!.ref!;
@@ -99,7 +99,7 @@ describe('density no add_container e no update_container', () => {
     expect(ok(await mcp.call('get_container', { ref })).density).toBe(1);
   });
 
-  it('density fora de 0,5 a 8 é container-density, com detail e hint', async () => {
+  it('density outside 0.5 to 8 is container-density, with detail and hint', async () => {
     const { name } = await newProject();
     for (const density of [12, 0.4]) {
       const bad = ok(
@@ -119,8 +119,8 @@ describe('density no add_container e no update_container', () => {
   });
 });
 
-describe('formato da proposta (sobe para 7 só quando usa a densidade)', () => {
-  it('add_container e update_container com density gravam a formatVersion 7; sem, continua a 4', async () => {
+describe('proposal format (rises to 7 only when density is used)', () => {
+  it('add_container and update_container with density write formatVersion 7; without it, it stays at 4', async () => {
     const { name, dir } = await newProject();
     const plain = await propose(mcp, name, [{ ...box }]);
     expect(readProposal(dir, plain.proposal.id).formatVersion).toBe(

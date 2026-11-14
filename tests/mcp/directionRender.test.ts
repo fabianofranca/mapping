@@ -18,10 +18,10 @@ import { findProject, loadProject, type LoadedProject } from '../../mcp/projects
 import { renderContainer, renderMarking } from '../../mcp/renderImage';
 import { NOW } from '../model/fixtures';
 
-// R2 (#1096, decisão 3): `render_container` e `render_marking` com `direction` fixam a direção na
-// imagem, como o `drawingMode`. Um componente com uma `row` de dois filhos coloridos sai
-// espelhado em `rtl` (x' = largura − x − w, no espaço do componente); o container que fixa a
-// direção também espelha sem `direction`, e o parâmetro vale sobre o que o container fixa.
+// R2 (#1096, decision 3): `render_container` and `render_marking` with `direction` fix the direction in the
+// image, like `drawingMode`. A component with a `row` of two colored children comes out
+// mirrored in `rtl` (x' = width − x − w, in the component's space); the container that fixes the
+// direction also mirrors without `direction`, and the parameter prevails over what the container fixes.
 
 const LAYER = 'cccccccc-0000-4000-8000-000000000001';
 
@@ -70,13 +70,13 @@ let loaded: LoadedProject;
 
 beforeAll(async () => {
   base = mkdtempSync(join(tmpdir(), 'mapping-direction-render-'));
-  const dir = join(base, 'telas');
+  const dir = join(base, 'screens');
   const lib = join(dir, 'specs', 'lib');
   mkdirSync(join(lib, 'components'), { recursive: true });
   writeFileSync(join(lib, 'lib.spec.json'), JSON.stringify(SPEC));
   writeFileSync(join(lib, 'components', 'pair.json'), JSON.stringify(PAIR));
   const parsed = parseSpecText(readFileSync(join(lib, 'lib.spec.json'), 'utf8'));
-  if (!parsed.ok) throw new Error(`spec inválida: ${JSON.stringify(parsed)}`);
+  if (!parsed.ok) throw new Error(`invalid spec: ${JSON.stringify(parsed)}`);
   let p = createProject({
     name: 'Telas',
     now: NOW,
@@ -85,7 +85,7 @@ beforeAll(async () => {
   p = applySpecialization(p, parsed.spec, { packageSpecName: 'lib.spec.json' });
   writeFileSync(join(dir, 'mapping.json'), serialize(p));
   roots = new Roots([base]);
-  loaded = await loadProject(roots, await findProject(roots, 'telas'));
+  loaded = await loadProject(roots, await findProject(roots, 'screens'));
 });
 
 afterAll(() => {
@@ -93,8 +93,8 @@ afterAll(() => {
 });
 
 const io = {
-  readSource: () => Promise.reject(new Error('sem arquivos')),
-  readSpecInput: () => Promise.reject(new Error('sem arquivos')),
+  readSource: () => Promise.reject(new Error('no files')),
+  readSpecInput: () => Promise.reject(new Error('no files')),
   takenImageFiles: new Set<string>(),
   now: () => new Date(NOW),
 };
@@ -105,7 +105,7 @@ function screen(extra: Record<string, unknown> = {}): Operation[] {
   return [
     {
       op: 'add_container',
-      as: '$tela',
+      as: '$screen',
       width: 200,
       height: 80,
       background: '#FFFFFF',
@@ -114,7 +114,7 @@ function screen(extra: Record<string, unknown> = {}): Operation[] {
     {
       op: 'create_marking',
       as: '$par',
-      container: '$tela',
+      container: '$screen',
       rect: PAIR_RECT,
       annotation: { type: 'lib/pair', values: {} },
     },
@@ -129,7 +129,7 @@ async function setup(operations: Operation[]) {
   return {
     refs,
     marking: result.project.markings.find((m) => m.id === id('$par'))!,
-    container: result.project.containers.find((c) => c.id === id('$tela'))!,
+    container: result.project.containers.find((c) => c.id === id('$screen'))!,
   };
 }
 
@@ -138,7 +138,7 @@ const pixel = (raster: Raster, x: number, y: number): number[] => {
   return [...raster.data.subarray(i, i + 3)];
 };
 
-/** As cores do vermelho e do azul pelo centro de cada um dos dois filhos (relativo ao componente). */
+/** The red and blue colors at the center of each of the two children (relative to the component). */
 function swatches(raster: Raster, originX: number): { red: number[]; blue: number[] } {
   return {
     red: pixel(raster, originX + 10, 30),
@@ -146,13 +146,13 @@ function swatches(raster: Raster, originX: number): { red: number[]; blue: numbe
   };
 }
 
-describe('render_container com direction', () => {
-  it('ltr: o primeiro filho à esquerda; rtl: espelhado (x′ = largura − x − w)', async () => {
+describe('render_container with direction', () => {
+  it('ltr: the first child on the left; rtl: mirrored (x′ = width − x − w)', async () => {
     const { refs, container } = await setup(screen());
     const ltr = (
       await decodeImage((await renderContainer(roots, refs, container, {})).image.bytes)
     ).raster;
-    // O componente ocupa x de 10 a 110: vermelho em 10..30, azul em 30..50.
+    // The component spans x from 10 to 110: red at 10..30, blue at 30..50.
     expect(pixel(ltr, 20, 30)).toEqual(RED);
     expect(pixel(ltr, 40, 30)).toEqual(BLUE);
     expect(pixel(ltr, 100, 30)).toEqual([255, 255, 255]);
@@ -160,14 +160,14 @@ describe('render_container com direction', () => {
     const out = await renderContainer(roots, refs, container, { direction: 'rtl' });
     expect(out.json).toMatchObject({ direction: 'rtl' });
     const rtl = (await decodeImage(out.image.bytes)).raster;
-    // Vermelho em 80..100 (110 − 10 − 20 = 80), azul em 60..80, vazio onde estava.
+    // Red at 80..100 (110 − 10 − 20 = 80), blue at 60..80, empty where it was.
     expect(pixel(rtl, 90, 30)).toEqual(RED);
     expect(pixel(rtl, 70, 30)).toEqual(BLUE);
     expect(pixel(rtl, 20, 30)).toEqual([255, 255, 255]);
     expect(pixel(rtl, 40, 30)).toEqual([255, 255, 255]);
   });
 
-  it('o container que fixa rtl espelha sem direction; direction fixa na imagem sobre o container', async () => {
+  it('the container that fixes rtl mirrors without direction; direction on the image prevails over the container', async () => {
     const { refs, container } = await setup(screen({ direction: 'rtl' }));
     expect(container.direction).toBe('rtl');
     const own = (
@@ -189,8 +189,8 @@ describe('render_container com direction', () => {
   });
 });
 
-describe('render_marking com direction', () => {
-  it('desenha a marcação espelhada (a região é a dela: vermelho à direita)', async () => {
+describe('render_marking with direction', () => {
+  it('draws the mirrored marking (the region is its own: red on the right)', async () => {
     const { refs, marking } = await setup(screen());
     const out = await renderMarking(roots, refs, marking, {
       direction: 'rtl',
