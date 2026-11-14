@@ -1,13 +1,12 @@
 import { expect, test } from '@playwright/test';
 import { fixtureZip } from './proposalFixture';
 
-// A dica da barra lateral não cobre o menu do projeto aberto (900 px).
+// The side bar tooltip does not cover the open project menu (900 px).
+// pt-BR kept: shared fixture data (proposalFixture zip) asserted by tests/examples and tests/store
 
 test.use({ viewport: { width: 900, height: 720 } });
 
-test('dica da barra lateral some enquanto o menu do projeto está aberto', async ({
-  page,
-}) => {
+test('side bar tooltip disappears while the project menu is open', async ({ page }) => {
   await page.goto('/');
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
@@ -16,20 +15,20 @@ test('dica da barra lateral some enquanto o menu do projeto está aberto', async
       mimeType: 'application/zip',
       buffer: await fixtureZip(),
     });
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   const strip = page.locator('.tool-strip-left .tooltip-anchor').first();
-  // Sem menu: a dica aparece ao passar o mouse.
+  // Without the menu: the tooltip shows on hover.
   await strip.hover();
   await expect(strip.locator('.tooltip')).toBeVisible();
 
-  await page.getByRole('button', { name: /: ações do projeto$/ }).click();
+  await page.getByRole('button', { name: /: project actions$/ }).click();
   await expect(
-    page.getByRole('menuitem', { name: 'Fechar projeto', exact: true }),
+    page.getByRole('menuitem', { name: 'Close project', exact: true }),
   ).toBeVisible();
   await strip.hover();
   await expect(strip.locator('.tooltip')).toBeHidden();
-  // O item do menu continua livre para o clique (nada o cobre).
-  const item = page.getByRole('menuitem', { name: 'Fechar projeto', exact: true });
+  // The menu item stays free for the click (nothing covers it).
+  const item = page.getByRole('menuitem', { name: 'Close project', exact: true });
   const box = (await item.boundingBox())!;
   const covered = await item.evaluate(
     (el, pt) => !el.contains(document.elementFromPoint(pt.x, pt.y)),

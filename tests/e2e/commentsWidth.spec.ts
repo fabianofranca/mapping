@@ -2,14 +2,14 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import JSZip from 'jszip';
 
-// Janela Comentários (#734, CL1): sem barra horizontal, com o ⋯ de cada linha inteiro e o selo de
-// status dentro da célula, de 887 px (1591 × 1052) até a janela estreita de 900 × 720, onde
-// Msgs e Quando somem e Por mostra só o avatar. Árvore, Camadas e Detalhes ficam abertos.
+// Comments window (#734, CL1): no horizontal bar, with the ⋯ of each row whole and the status
+// badge inside the cell, from 887 px (1591 × 1052) down to the narrow 900 × 720 window, where
+// Msgs and When disappear and By shows only the avatar. Tree, Layers and Details stay open.
 
 const EXAMPLE_ZIP = 'examples/exemplo-completo.zip';
 const FIRST_THREAD = 'comments/5d0e8a41-2c7b-4f1e-9a63-b8c1d4e7f902.json';
 
-/** O exemplo com uma 4ª conversa aberta (cópia da primeira, âncora longa e não lida). */
+/** The example with a 4th open conversation (copy of the first, long anchor and unread). */
 async function exampleWithFourThreads(): Promise<Buffer> {
   const zip = await JSZip.loadAsync(readFileSync(EXAMPLE_ZIP));
   const first = JSON.parse(await zip.file(FIRST_THREAD)!.async('string')) as {
@@ -43,7 +43,7 @@ async function openComments(
 async function expectInside(inner: Locator, outer: Locator): Promise<void> {
   const o = await outer.boundingBox();
   const i = await inner.boundingBox();
-  if (!o || !i) throw new Error('elemento sem caixa');
+  if (!o || !i) throw new Error('element without a box');
   expect(i.x).toBeGreaterThanOrEqual(o.x - 0.5);
   expect(i.x + i.width).toBeLessThanOrEqual(o.x + o.width + 0.5);
 }
@@ -71,10 +71,10 @@ async function expectDeleteMenu(page: Page): Promise<void> {
 
 for (const status of ['All', 'Resolved'] as const) {
   test.describe(`${status}`, () => {
-    test.describe('janela de 887 px (1591 × 1052)', () => {
+    test.describe('887 px window (1591 × 1052)', () => {
       test.use({ viewport: { width: 1591, height: 1052 } });
 
-      test('sem barra horizontal, ⋯ inteiro e selo na célula', async ({ page }) => {
+      test('no horizontal bar, whole ⋯ and badge in the cell', async ({ page }) => {
         await openComments(page, status);
         await expectFits(page);
         await expectDeleteMenu(page);
@@ -83,10 +83,10 @@ for (const status of ['All', 'Resolved'] as const) {
       });
     });
 
-    test.describe('janela estreita (900 × 720)', () => {
+    test.describe('narrow window (900 × 720)', () => {
       test.use({ viewport: { width: 900, height: 720 } });
 
-      test('Msgs e Quando somem, Por vira avatar e o ⋯ fica inteiro', async ({
+      test('Msgs and When disappear, By becomes an avatar and the ⋯ stays whole', async ({
         page,
       }) => {
         await openComments(page, status);
@@ -108,14 +108,14 @@ for (const status of ['All', 'Resolved'] as const) {
   });
 }
 
-test.describe('altura inicial da janela inferior (900 × 720, sem altura gravada)', () => {
+test.describe('initial height of the bottom window (900 × 720, no saved height)', () => {
   test.use({ viewport: { width: 900, height: 720 } });
 
-  test('Comentários mostra 4 linhas inteiras, todas com a altura de uma linha', async ({
+  test('Comments shows 4 whole rows, all with the height of one row', async ({
     page,
   }) => {
     await openComments(page, 'All', await exampleWithFourThreads());
-    // O ponto de não lida fica na mesma linha da âncora: nenhuma linha passa de uma linha de texto.
+    // The unread dot stays on the same line as the anchor: no row exceeds one line of text.
     const sizes = await page.locator('.comments-view .list-scroll').evaluate((el) => {
       const rows = [...el.querySelectorAll('.comments-row')];
       const heights = rows.map((r) => r.getBoundingClientRect().height);
@@ -124,25 +124,24 @@ test.describe('altura inicial da janela inferior (900 × 720, sem altura gravada
       return { client: el.clientHeight, heights, hidden: last.bottom - box.bottom };
     });
     expect(sizes.heights).toHaveLength(4);
-    expect(
-      new Set(sizes.heights).size,
-      `alturas das linhas: ${sizes.heights.join(', ')}`,
-    ).toBe(1);
+    expect(new Set(sizes.heights).size, `row heights: ${sizes.heights.join(', ')}`).toBe(
+      1,
+    );
     expect(
       sizes.hidden,
-      `.list-scroll clientHeight ${sizes.client}: a 4ª linha passa ${sizes.hidden} px da borda`,
+      `.list-scroll clientHeight ${sizes.client}: the 4th row goes ${sizes.hidden} px past the edge`,
     ).toBeLessThanOrEqual(0);
   });
 });
 
-test.describe('faixa de abas da janela inferior (900 × 720)', () => {
+test.describe('bottom window tab strip (900 × 720)', () => {
   test.use({ viewport: { width: 900, height: 720 } });
 
-  // Folga mínima (px) entre a última aba e a borda da faixa: cobre fontes mais largas de outras
-  // máquinas e contagens de mais dígitos (o relato da CL2 e o CI medem 362 a 363 px de conteúdo para 356 antes do ajuste; aqui, com a fonte local, a folga é maior).
+  // Minimum slack (px) between the last tab and the strip edge: covers wider fonts on other
+  // machines and counts with more digits (the CL2 report and CI measure 362 to 363 px of content for 356 before the fix; here, with the local font, the slack is larger).
   const SLACK = 12;
 
-  test('as seis abas cabem inteiras, sem rolar e com folga', async ({ page }) => {
+  test('the six tabs fit whole, without scrolling and with slack', async ({ page }) => {
     await openComments(page, 'All');
     const strip = page.locator('.tool-window-bottom [role=tablist]');
     const sizes = await strip.evaluate((el) => ({
@@ -155,20 +154,20 @@ test.describe('faixa de abas da janela inferior (900 × 720)', () => {
     }));
     expect(
       sizes.s,
-      `faixa de abas: scrollWidth ${sizes.s} > clientWidth ${sizes.c} (scrollLeft ${sizes.left})`,
+      `tab strip: scrollWidth ${sizes.s} > clientWidth ${sizes.c} (scrollLeft ${sizes.left})`,
     ).toBeLessThanOrEqual(sizes.c);
     expect(
       sizes.right - sizes.lastRight,
-      `folga ${sizes.right - sizes.lastRight} px < ${SLACK} px entre a última aba e a borda da faixa`,
+      `slack ${sizes.right - sizes.lastRight} px < ${SLACK} px between the last tab and the strip edge`,
     ).toBeGreaterThanOrEqual(SLACK);
   });
 });
 
-test.describe('âncora da conversa resolvida (900 × 720)', () => {
+test.describe('anchor of the resolved conversation (900 × 720)', () => {
   test.use({ viewport: { width: 900, height: 720 } });
 
   for (const status of ['Resolved', 'All'] as const) {
-    test(`${status}: o botão da âncora fica riscado e em cinza`, async ({ page }) => {
+    test(`${status}: the anchor button is struck through and gray`, async ({ page }) => {
       await openComments(page, status);
       const row = page.locator('.comments-row[data-resolved]').first();
       await expect(row).toBeVisible();
@@ -180,7 +179,7 @@ test.describe('âncora da conversa resolvida (900 × 720)', () => {
       });
       expect(style.line, `text-decoration-line: ${style.line}`).toContain('line-through');
       expect(style.line).not.toContain('underline');
-      expect(style.color, `cor ${style.color} != atenuada ${style.muted}`).toBe(
+      expect(style.color, `color ${style.color} != muted ${style.muted}`).toBe(
         style.muted,
       );
       await expect(button).toHaveAttribute('aria-label', /.+/);

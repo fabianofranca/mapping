@@ -3,10 +3,10 @@ import JSZip from 'jszip';
 import { readFileSync } from 'node:fs';
 import { avisosZip } from './avisosFixture';
 
-// Cabeçalhos dos Detalhes e menus (etapa #552, AG1): o campo do nome da anotação desce inteiro
-// para a 2ª linha quando não cabe tudo, com copiar e lixeira juntos na 1ª; o cabeçalho de camada
-// só encolhe o nome depois do selo; o espaço entre ícone e rótulo dos menus; a legenda por cima
-// do minimapa.
+// Details headers and menus (stage #552, AG1): the annotation name field goes whole
+// to the 2nd line when everything does not fit, with copy and trash together on the 1st; the layer header
+// only shrinks the name after the badge; the space between icon and label in menus; the legend over
+// the minimap.
 
 async function openZip(page: Page, name: string, buffer: Buffer): Promise<void> {
   await page.goto('/');
@@ -16,9 +16,9 @@ async function openZip(page: Page, name: string, buffer: Buffer): Promise<void> 
   await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
 }
 
-const FOLDER = 'exemplo-pasta-ag1';
+const FOLDER = 'example-folder-ag1';
 
-/** Descompacta o exemplo numa pasta do OPFS e faz dela a pasta escolhida em "Open folder". */
+/** Unzips the example into an OPFS folder and makes it the folder chosen in "Open folder". */
 async function openExampleFolder(page: Page): Promise<void> {
   const zip = await JSZip.loadAsync(readFileSync('examples/exemplo-completo.zip'));
   const files: { path: string; data: number[] }[] = [];
@@ -46,11 +46,11 @@ async function openExampleFolder(page: Page): Promise<void> {
     [FOLDER, files] as const,
   );
   await page.goto('/');
-  await page.getByRole('button', { name: /Abrir pasta/ }).click();
+  await page.getByRole('button', { name: /Open folder/ }).click();
   await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
 }
 
-/** O placeholder do campo cabe na largura útil dele? (medida pelo texto, sem o `...`). */
+/** Does the field placeholder fit in its usable width? (measured by the text, without the `...`). */
 async function placeholderFits(page: Page): Promise<{
   readonly placeholder: string;
   readonly text: number;
@@ -79,14 +79,14 @@ async function placeholderFits(page: Page): Promise<{
     });
 }
 
-test.describe('cabeçalho da anotação nos Detalhes', () => {
-  test('a 360 px, o placeholder cabe inteiro na Cartão e na Simples (com selo)', async ({
+test.describe('annotation header in Details', () => {
+  test('at 360 px, the placeholder fits whole in the Card and the Simple (with badge)', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1280, height: 860 });
     await openZip(page, 'avisos.zip', await avisosZip());
     await page.keyboard.press('Control+Shift+Digit3');
-    for (const name of ['Cartão', 'Simples']) {
+    for (const name of ['Card', 'Simple']) {
       await page.locator('.tree-row', { hasText: name }).first().click();
       const header = page.locator('.annotation-header').first();
       await expect(header.locator('.annotation-name')).toBeVisible();
@@ -98,18 +98,17 @@ test.describe('cabeçalho da anotação nos Detalhes', () => {
     }
   });
 
-  test('por pasta a 900 px, copiar e lixeira ficam juntos na 1ª linha e o nome desce', async ({
+  test('by folder at 900 px, copy and trash stay together on the 1st line and the name goes down', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 900, height: 720 });
     await openExampleFolder(page);
     await page.keyboard.press('Control+Shift+Digit3');
+    // pt-BR kept: shared fixture data (examples/exemplo-completo.zip) asserted by other tests
     for (const name of ['Barra', 'Chip Dados']) {
       await page.locator('.tree-row', { hasText: name }).first().click();
       const header = page.locator('.annotation-header').first();
-      await expect(
-        header.getByRole('button', { name: 'Copy reference' }),
-      ).toBeVisible();
+      await expect(header.getByRole('button', { name: 'Copy reference' })).toBeVisible();
       const m = await header.evaluate((h) => {
         const top = (e: Element | null) => e?.getBoundingClientRect().top ?? -1;
         const copy = h.querySelector('[aria-label="Copy reference"]');
@@ -127,15 +126,16 @@ test.describe('cabeçalho da anotação nos Detalhes', () => {
       expect(m.scroll[0], name).toBeLessThanOrEqual(m.scroll[1]!);
     }
 
-    // Com a janela larga, tudo cabe numa linha e o cabeçalho é o de sempre.
+    // With a wide window, everything fits on one line and the header is the usual one.
     await page.setViewportSize({ width: 1592, height: 720 });
-    const handle = page.getByRole('separator', { name: /Detalhes/ });
+    const handle = page.getByRole('separator', { name: /Details/ });
     const box = (await handle.boundingBox())!;
     await page.mouse.move(box.x + box.width / 2, box.y + 100);
     await page.mouse.down();
     await page.mouse.move(box.x - 400, box.y + 100, { steps: 5 });
     await page.mouse.up();
-    await page.locator('.tree-row', { hasText: 'Email' }).first().click();
+    // pt-BR kept: shared fixture data (examples/exemplo-completo.zip: the marking is named 'E-mail')
+    await page.locator('.tree-row', { hasText: 'E-mail' }).first().click();
     const height = await page
       .locator('.annotation-header')
       .first()

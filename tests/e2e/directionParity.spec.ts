@@ -1,8 +1,8 @@
-// R1 (#1096): paridade Konva × raster do MCP da direção de leitura, no Chromium de verdade. A caixa
-// de tinta (bbox dos pixels pintados) do ícone e do caminho espelhados em rtl difere ≤ 0,5 px entre
-// os dois; o texto rtl com align right/left cai no mesmo lado físico (a borda da tinta, ≤ 2 px:
-// o raster sem fontes desenha barras, o Konva os glifos). Limite conhecido: os glifos saem na ordem
-// do texto, sem bidi. Não abre a app: monta o Konva numa página em branco (como shadowsGap.spec).
+// R1 (#1096): Konva × MCP raster parity of the reading direction, in a real Chromium. The ink
+// box (bbox of the painted pixels) of the icon and of the path mirrored in rtl differs ≤ 0.5 px between
+// the two; rtl text with align right/left lands on the same physical side (the ink edge, ≤ 2 px:
+// the raster without fonts draws bars, Konva draws the glyphs). Known limit: the glyphs come out in the order
+// of the text, without bidi. Does not open the app: mounts Konva on a blank page (like shadowsGap.spec).
 import { expect, test, type Page } from '@playwright/test';
 import { build, type Plugin } from 'esbuild';
 
@@ -15,8 +15,8 @@ import { approximateMeasurer, instantiate } from './src/model/components/instant
 import { createRaster } from './mcp/image/raster';
 import { paintScene } from './mcp/image/sceneRaster';
 Konva.autoDrawEnabled = false;
-// Instancia o componente (com a direção e os ícones) e desenha no Konva e no raster; devolve a caixa
-// de tinta (pixels escuros sobre branco) de cada um.
+// Instantiates the component (with the direction and the icons) and draws on Konva and on the raster; returns the
+// ink box (dark pixels on white) of each.
 window.draw = (component, width, height, direction, icons) => {
   const options = { measure: approximateMeasurer, icons, ...(direction ? { direction } : {}) };
   const { root } = instantiate(component, {}, { x: 0, y: 0, width, height }, options);
@@ -117,10 +117,10 @@ const path = {
 };
 
 for (const [label, node, rtl] of [
-  ['ícone', icon, { left: 40, right: 58 }],
-  ['caminho', path, { left: 20, right: 56 }],
+  ['icon', icon, { left: 40, right: 58 }],
+  ['path', path, { left: 20, right: 56 }],
 ] as const) {
-  test(`${label} espelhado em rtl: a tinta do Konva e do raster difere ≤ 0,5 px`, async ({
+  test(`${label} mirrored in rtl: the Konva and raster ink differ ≤ 0.5 px`, async ({
     page,
   }) => {
     const drawn = await draw(page, [node], 'rtl');
@@ -129,7 +129,7 @@ for (const [label, node, rtl] of [
     expect(drawn.raster).toEqual(rtl);
   });
 
-  test(`${label} em ltr: a mesma paridade, sem espelho`, async ({ page }) => {
+  test(`${label} in ltr: the same parity, without mirroring`, async ({ page }) => {
     const drawn = await draw(page, [node]);
     expect(Math.abs(drawn.konva.left - drawn.raster.left)).toBeLessThanOrEqual(0.5);
     expect(Math.abs(drawn.konva.right - drawn.raster.right)).toBeLessThanOrEqual(0.5);
@@ -137,7 +137,7 @@ for (const [label, node, rtl] of [
 }
 
 for (const align of ['right', 'left'] as const) {
-  test(`texto rtl com align ${align}: a tinta cai do mesmo lado físico`, async ({
+  test(`rtl text with align ${align}: the ink lands on the same physical side`, async ({
     page,
   }) => {
     const text = {
@@ -152,7 +152,7 @@ for (const align of ['right', 'left'] as const) {
     const drawn = await draw(page, [text], 'rtl');
     const edge = align === 'right' ? 'right' : 'left';
     expect(Math.abs(drawn.konva[edge] - drawn.raster[edge])).toBeLessThanOrEqual(2);
-    // e é mesmo o lado pedido: a tinta encosta na borda, longe da oposta
+    // and it is indeed the requested side: the ink touches the edge, far from the opposite one
     expect(
       Math.abs(drawn.raster[edge] - (align === 'right' ? 60 : 0)),
     ).toBeLessThanOrEqual(2);

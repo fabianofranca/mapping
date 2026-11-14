@@ -4,7 +4,7 @@
   "id": "material3",
   "name": "Material Design 3 (baseline)",
   "version": 1,
-  "description": "Componentes do Material 3, tema claro baseline, escritos no formato de componente do laboratório.",
+  "description": "Material 3 components, baseline light theme, written in the component format of the lab.",
   "containers": [
     {
       "id": "phone",
@@ -46,7 +46,7 @@
   "origins": [
     {
       "system": "sdui",
-      "name": "SDUI do backend",
+      "name": "Backend SDUI",
       "node": {
         "type": "type",
         "props": "props",
@@ -103,7 +103,7 @@
       },
       "examples": [
         {
-          "name": "Configurações",
+          "name": "Settings",
           "file": "examples/settings.sdui.json"
         }
       ]
@@ -112,7 +112,7 @@
   "layers": [
     {
       "id": "componentes",
-      "name": "Componentes",
+      "name": "Components",
       "color": "#6750A4",
       "annotationTypes": [
         {
@@ -210,7 +210,7 @@
           "doc": "docs/m3-top-app-bar.md",
           "examples": [
             {
-              "name": "Padrão",
+              "name": "Default",
               "values": {
                 "title": "Title",
                 "navigation": "menu",
@@ -219,7 +219,7 @@
               }
             },
             {
-              "name": "Centralizado",
+              "name": "Centered",
               "values": {
                 "title": "Title",
                 "navigation": "menu",
@@ -310,7 +310,7 @@
           "doc": "docs/m3-button.md",
           "examples": [
             {
-              "name": "Padrão",
+              "name": "Default",
               "values": {
                 "label": "Label",
                 "variant": "filled",
@@ -326,7 +326,7 @@
               }
             },
             {
-              "name": "Contornado",
+              "name": "Outlined",
               "values": {
                 "label": "Label",
                 "variant": "outlined",
@@ -403,21 +403,21 @@
           "doc": "docs/m3-fab.md",
           "examples": [
             {
-              "name": "Padrão",
+              "name": "Default",
               "values": {
                 "icon": "add",
                 "color": "primary"
               }
             },
             {
-              "name": "Secundário",
+              "name": "Secondary",
               "values": {
                 "icon": "add",
                 "color": "secondary"
               }
             },
             {
-              "name": "Superfície",
+              "name": "Surface",
               "values": {
                 "icon": "add",
                 "color": "surface"
@@ -528,7 +528,7 @@
           "doc": "docs/m3-text-field.md",
           "examples": [
             {
-              "name": "Padrão",
+              "name": "Default",
               "values": {
                 "label": "Label",
                 "value": "Input text",
@@ -537,7 +537,7 @@
               }
             },
             {
-              "name": "Focado",
+              "name": "Focused",
               "values": {
                 "label": "Label",
                 "value": "Input text",
@@ -546,7 +546,7 @@
               }
             },
             {
-              "name": "Com erro",
+              "name": "With error",
               "values": {
                 "label": "Label",
                 "value": "Input text",
@@ -610,7 +610,7 @@
           "doc": "docs/m3-switch.md",
           "examples": [
             {
-              "name": "Padrão",
+              "name": "Default",
               "values": {
                 "label": "Label",
                 "selected": "sim",
@@ -618,7 +618,7 @@
               }
             },
             {
-              "name": "Desligado",
+              "name": "Off",
               "values": {
                 "label": "Label",
                 "selected": "não",
@@ -681,7 +681,7 @@
           "doc": "docs/m3-checkbox.md",
           "examples": [
             {
-              "name": "Padrão",
+              "name": "Default",
               "values": {
                 "label": "Label",
                 "checked": "sim",
@@ -689,7 +689,7 @@
               }
             },
             {
-              "name": "Desmarcado",
+              "name": "Unchecked",
               "values": {
                 "label": "Label",
                 "checked": "não",
@@ -697,7 +697,7 @@
               }
             },
             {
-              "name": "Com erro",
+              "name": "With error",
               "values": {
                 "label": "Label",
                 "checked": "sim",
@@ -773,14 +773,14 @@
           "doc": "docs/m3-chip.md",
           "examples": [
             {
-              "name": "Padrão",
+              "name": "Default",
               "values": {
                 "label": "Label",
                 "selected": "não"
               }
             },
             {
-              "name": "Selecionado",
+              "name": "Selected",
               "values": {
                 "label": "Label",
                 "selected": "sim"
@@ -854,7 +854,7 @@
           "doc": "docs/m3-card.md",
           "examples": [
             {
-              "name": "Padrão",
+              "name": "Default",
               "values": {
                 "headline": "Headline",
                 "subhead": "Subhead",
@@ -863,7 +863,7 @@
               }
             },
             {
-              "name": "Preenchido",
+              "name": "Filled",
               "values": {
                 "headline": "Headline",
                 "subhead": "Subhead",
@@ -872,7 +872,7 @@
               }
             },
             {
-              "name": "Contornado",
+              "name": "Outlined",
               "values": {
                 "headline": "Headline",
                 "subhead": "Subhead",
@@ -986,7 +986,7 @@
           "doc": "docs/m3-list-item.md",
           "examples": [
             {
-              "name": "Padrão",
+              "name": "Default",
               "values": {
                 "headline": "Headline",
                 "supporting": "Supporting text",
@@ -1147,7 +1147,7 @@
           "doc": "docs/m3-navigation-bar.md",
           "examples": [
             {
-              "name": "Padrão",
+              "name": "Default",
               "values": {
                 "label1": "Home",
                 "icon1": "home",
@@ -1159,7 +1159,7 @@
               }
             },
             {
-              "name": "Segunda aba ativa",
+              "name": "Second tab active",
               "values": {
                 "label1": "Home",
                 "icon1": "home",
@@ -1171,7 +1171,7 @@
               }
             },
             {
-              "name": "Terceira aba ativa",
+              "name": "Third tab active",
               "values": {
                 "label1": "Home",
                 "icon1": "home",
@@ -1339,7 +1339,7 @@
           "doc": "docs/m3-bottom-sheet.md",
           "examples": [
             {
-              "name": "Padrão",
+              "name": "Default",
               "values": {
                 "title": "Title",
                 "handle": "sim",
@@ -1352,7 +1352,7 @@
               }
             },
             {
-              "name": "Sem alça",
+              "name": "No handle",
               "values": {
                 "title": "Title",
                 "handle": "não",
@@ -1375,7 +1375,7 @@
           "doc": "docs/m3-scrim.md",
           "examples": [
             {
-              "name": "Padrão",
+              "name": "Default",
               "values": {}
             }
           ]
@@ -1428,21 +1428,21 @@
           "doc": "docs/m3-box.md",
           "examples": [
             {
-              "name": "Padrão",
+              "name": "Default",
               "values": {
                 "background": "none",
                 "shape": "none"
               }
             },
             {
-              "name": "Fundo primário",
+              "name": "Primary background",
               "values": {
                 "background": "primary-container",
                 "shape": "none"
               }
             },
             {
-              "name": "Cantos grandes",
+              "name": "Large corners",
               "values": {
                 "background": "none",
                 "shape": "large"
@@ -1522,7 +1522,7 @@
           "doc": "docs/m3-row.md",
           "examples": [
             {
-              "name": "Padrão",
+              "name": "Default",
               "values": {
                 "background": "none",
                 "shape": "none",
@@ -1531,7 +1531,7 @@
               }
             },
             {
-              "name": "Fundo primário",
+              "name": "Primary background",
               "values": {
                 "background": "primary-container",
                 "shape": "none",
@@ -1540,7 +1540,7 @@
               }
             },
             {
-              "name": "Cantos grandes",
+              "name": "Large corners",
               "values": {
                 "background": "none",
                 "shape": "large",
@@ -1622,7 +1622,7 @@
           "doc": "docs/m3-column.md",
           "examples": [
             {
-              "name": "Padrão",
+              "name": "Default",
               "values": {
                 "background": "none",
                 "shape": "none",
@@ -1631,7 +1631,7 @@
               }
             },
             {
-              "name": "Fundo primário",
+              "name": "Primary background",
               "values": {
                 "background": "primary-container",
                 "shape": "none",
@@ -1640,7 +1640,7 @@
               }
             },
             {
-              "name": "Cantos grandes",
+              "name": "Large corners",
               "values": {
                 "background": "none",
                 "shape": "large",

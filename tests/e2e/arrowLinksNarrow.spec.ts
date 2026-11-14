@@ -26,6 +26,7 @@ test('long labels in the Linked by arrow section do not create a horizontal bar 
 }) => {
   await openExample(page);
   const tree = page.getByRole('list', { name: 'Marking tree' });
+  // pt-BR kept: shared fixture data (examples/exemplo-completo.zip) asserted by other tests
   await tree.getByRole('button', { name: 'Cadastrar', exact: true }).click();
   await page.getByRole('button', { name: 'Link to…', exact: true }).click();
   const picker = page.getByRole('dialog', { name: /^Link .* to…$/ });

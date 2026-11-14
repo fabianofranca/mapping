@@ -32,9 +32,7 @@ async function packageZip(extraDoc?: {
   return zip.generateAsync({ type: 'nodebuffer' });
 }
 
-test('Open library: list, Button page and playground that redraws', async ({
-  page,
-}) => {
+test('Open library: list, Button page and playground that redraws', async ({ page }) => {
   await page.goto('/');
   await page.locator('input[data-library-zip]').setInputFiles({
     name: 'material3.zip',
@@ -171,9 +169,9 @@ test('inside a project: apply the package, open the Catalog and add a component'
   await expect(page.locator('button[data-type-id="nota"]')).toBeVisible();
   await expect(page.locator('button[data-type-id="m3-button"]')).toHaveCount(0);
   await page.getByRole('tab', { name: 'Palette' }).click();
-  await expect(
-    page.getByRole('button', { name: 'Add to canvas: Nota' }),
-  ).toHaveText('Add to canvas');
+  await expect(page.getByRole('button', { name: 'Add to canvas: Nota' })).toHaveText(
+    'Add to canvas',
+  );
   await page.getByRole('tab', { name: 'Components' }).click();
 
   await projectAction(page, 'Specializations');

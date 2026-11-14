@@ -1,9 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createProject } from './helpers';
 
-// Fase 5.4: build id visível e erros que escapam dos handlers no Diagnóstico.
+// Phase 5.4: visible build id and errors that escape the handlers in Diagnostics.
 
-/** `abc1234 · 2026-10-10` (ou `dev · …` num build sem git). */
+/** `abc1234 · 2026-10-10` (or `dev · …` in a build without git). */
 const BUILD_ID = /^([0-9a-f]{7}|dev) · \d{4}-\d{2}-\d{2}$/;
 
 async function aboutBuildId(page: Page): Promise<string> {
@@ -16,7 +16,7 @@ async function aboutBuildId(page: Page): Promise<string> {
   return id;
 }
 
-test('o build id aparece no "About" das Configurações e na barra de status', async ({
+test('the build id appears in the Settings "About" and in the status bar', async ({
   page,
 }) => {
   await page.goto('/');
@@ -28,13 +28,13 @@ test('o build id aparece no "About" das Configurações e na barra de status', a
   await expect(bar.getByText(id, { exact: true })).toBeVisible();
 });
 
-test('promessa rejeitada solta aparece no Diagnóstico', async ({ page }) => {
-  await createProject(page, 'Erros');
+test('a loose rejected promise appears in Diagnostics', async ({ page }) => {
+  await createProject(page, 'Errors');
   await page.evaluate(() => {
-    void Promise.reject(new Error('promessa solta no handler'));
+    void Promise.reject(new Error('loose promise in the handler'));
   });
 
   await page.keyboard.press('Control+Shift+Digit6');
-  await expect(page.getByText('promessa solta no handler')).toBeVisible();
+  await expect(page.getByText('loose promise in the handler')).toBeVisible();
   await expect(page.getByText('window', { exact: true })).toBeVisible();
 });

@@ -1,12 +1,12 @@
-// MF2 no Chromium de verdade: a lista de sombras com `spread` e o contorno com vão arredondado
-// (`stroke.gap`) desenhados pelo Konva (renderScene), lidos pixel a pixel, e a paridade com o
-// raster do MCP (a mesma cena a 100% e a 420%, numa tolerância por canal escrita aqui). Não abre
-// a app: monta o Konva numa página em branco, como o rotation.spec.
+// MF2 in a real Chromium: the shadow list with `spread` and the outline with a rounded gap
+// (`stroke.gap`) drawn by Konva (renderScene), read pixel by pixel, and parity with the
+// MCP raster (the same scene at 100% and 420%, within a per-channel tolerance written here). It does not open
+// the app: it mounts Konva on a blank page, like rotation.spec.
 import { expect, test, type Page } from '@playwright/test';
 import { build, type Plugin } from 'esbuild';
 
-// O Konva e o raster do MCP rodam na mesma página, a partir do mesmo componente. Os bytes das
-// fontes do raster (`font:*`) ficam vazios: a medida aqui é a aproximada.
+// Konva and the MCP raster run on the same page, from the same component. The raster font
+// bytes (`font:*`) stay empty: the measurement here is the approximate one.
 const ENTRY = `
 import Konva from 'konva/lib/Core';
 import { Layer } from 'konva/lib/Layer';
@@ -16,8 +16,8 @@ import { approximateMeasurer, instantiate } from './src/model/components/instant
 import { createRaster } from './mcp/image/raster';
 import { paintScene } from './mcp/image/sceneRaster';
 Konva.autoDrawEnabled = false;
-// Instancia o componente e desenha no Konva e no raster, no zoom pedido; os pixels (RGB) já
-// compostos sobre branco.
+// Instantiates the component and draws it in Konva and in the raster, at the requested zoom; the pixels (RGB) already
+// composited over white.
 window.draw = (component, width, height, zoom) => {
   const { root } = instantiate(component, {}, { x: 0, y: 0, width, height }, { measure: approximateMeasurer });
   const scene = { root, warnings: [] };
@@ -80,7 +80,7 @@ async function load(page: Page): Promise<void> {
 type Drawn = { konva: number[]; raster: number[] };
 type Window = { draw: (c: object, w: number, h: number, zoom: number) => Drawn };
 
-/** Os pixels RGB do Konva e do raster do MCP, no zoom pedido. */
+/** The RGB pixels of Konva and of the MCP raster, at the requested zoom. */
 async function drawBoth(
   page: Page,
   component: object,
@@ -121,7 +121,7 @@ function sceneOf(children: object[], width = 120, height = 70): object {
   };
 }
 
-/** O cartão de duas sombras com `spread` (a de cima azul, a de baixo preta, as duas com desfoque). */
+/** The card with two shadows with `spread` (the upper one blue, the lower one black, both blurred). */
 const card = (fill: string, shadow: object[]): object => ({
   type: 'rect',
   name: 'card',
@@ -138,7 +138,7 @@ const TWO = [
   { color: '#000000aa', y: 8, blur: 8, spread: -1 },
 ];
 
-/** Tolerância por canal (0 a 255) e fração de pixels que pode passar dela (bordas e desfoque). */
+/** Per-channel tolerance (0 to 255) and fraction of pixels that may exceed it (edges and blur). */
 const TOLERANCE = 40;
 const OUTLIERS = 0.02;
 
@@ -155,20 +155,20 @@ function expectParity(konvaRgb: number[], rasterRgb: number[]): void {
 }
 
 for (const zoom of [1, 4.2]) {
-  test(`paridade com o raster a ${Math.round(zoom * 100)}%: duas sombras com spread`, async ({
+  test(`parity with the raster at ${Math.round(zoom * 100)}%: two shadows with spread`, async ({
     page,
   }) => {
     const scene = sceneOf([card('#ffffff', TWO)]);
     const drawn = await drawBoth(page, scene, 120, 70, zoom);
     expectParity(drawn.rgb, drawn.raster);
-    // As duas aparecem: embaixo do cartão chega a preta (mais afastada) e acima só a azul.
+    // Both show: below the card the black one reaches (further away) and above only the blue one.
     const below = drawn.at(60 * zoom, (18 + 30 + 9) * zoom);
     const above = drawn.at(60 * zoom, (18 - 3) * zoom);
     expect(below[0] ?? 255).toBeLessThan(250);
     expect(above[2] ?? 0).toBeGreaterThan(above[0] ?? 255);
   });
 
-  test(`paridade com o raster a ${Math.round(zoom * 100)}%: contorno com vão arredondado`, async ({
+  test(`parity with the raster at ${Math.round(zoom * 100)}%: outline with a rounded gap`, async ({
     page,
   }) => {
     const scene = sceneOf([
@@ -185,9 +185,9 @@ for (const zoom of [1, 4.2]) {
         },
       },
       {
-        // Um retângulo, não um texto: o raster do teste não tem os bytes das fontes e desenha uma
-        // barra no lugar da letra, então a paridade compararia letra do Konva com barra do raster.
-        // O que o teste mede é o vão do contorno ao redor do rótulo.
+        // A rectangle, not a text: the test raster has no font bytes and draws a
+        // bar in place of the letter, so parity would compare a Konva letter with a raster bar.
+        // What the test measures is the outline gap around the label.
         type: 'rect',
         name: 'label',
         width: 26,
@@ -201,7 +201,9 @@ for (const zoom of [1, 4.2]) {
   });
 }
 
-test('o vão: a cor no vão é a do fundo e o canto é arredondado', async ({ page }) => {
+test('the gap: the color in the gap is the background one and the corner is rounded', async ({
+  page,
+}) => {
   const scene = sceneOf([
     {
       type: 'frame',
@@ -224,14 +226,14 @@ test('o vão: a cor no vão é a do fundo e o canto é arredondado', async ({ pa
     },
   ]);
   const drawn = await drawBoth(page, scene, 120, 70, 1);
-  // O lado de cima do contorno está em y = 20 (a linha vai de 20 a 22); o vão é x de 20 a 58.
+  // The top side of the outline is at y = 20 (the line goes from 20 to 22); the gap is x from 20 to 58.
   expect(drawn.at(40, 21)).toEqual([255, 255, 255]);
   expect(drawn.at(80, 21)).toEqual([204, 0, 0]);
-  // O canto de cima à esquerda é arredondado: o ponto do canto reto (10, 20) fica em branco.
+  // The top-left corner is rounded: the straight corner point (10, 20) stays white.
   expect(drawn.at(10, 20)).toEqual([255, 255, 255]);
 });
 
-test('uma forma com preenchimento translúcido não muda de cor com várias sombras', async ({
+test('a shape with a translucent fill does not change color with several shadows', async ({
   page,
 }) => {
   const away = [
@@ -240,17 +242,17 @@ test('uma forma com preenchimento translúcido não muda de cor com várias somb
   ];
   const scene = sceneOf([card('#ff000080', away)], 200, 70);
   const drawn = await drawBoth(page, scene, 200, 70, 1);
-  // Metade de vermelho sobre branco; um segundo desenho da forma daria 25% (#ff4040).
+  // Half red over white; a second drawing of the shape would give 25% (#ff4040).
   const centre = drawn.at(60, 33);
   expect(centre[0]).toBe(255);
   expect(Math.abs((centre[1] ?? 0) - 127)).toBeLessThanOrEqual(1);
   expect(Math.abs((centre[2] ?? 0) - 127)).toBeLessThanOrEqual(1);
 });
 
-test('a forma da sombra não aparece em lugar nenhum fora da sombra', async ({ page }) => {
+test('the shadow shape does not appear anywhere outside the shadow', async ({ page }) => {
   const scene = sceneOf([card('#ffffff', TWO)]);
   const drawn = await drawBoth(page, scene, 120, 70, 1);
-  // O canto da tela, longe do cartão e das sombras, fica branco.
+  // The corner of the canvas, far from the card and the shadows, stays white.
   expect(drawn.at(2, 2)).toEqual([255, 255, 255]);
   expect(drawn.at(117, 67)).toEqual([255, 255, 255]);
 });

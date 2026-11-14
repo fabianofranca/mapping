@@ -25,14 +25,16 @@ import {
   type Spec,
 } from '../../src/model';
 
-// Etapa Proposto com componentes: projetos e propostas montados pelo modelo, com os pacotes do
-// biblioteca `material3-compose` (`libraries/material3-compose`). Usado pelo e2e (`proposedComponents.spec.ts`)
-// e pelo zip `examples/proposta-componentes.zip` (roteiro R13 do `docs/TESTING.md`).
+// Proposed-with-components stage: projects and proposals built by the model, with the packages of the
+// `material3-compose` library (`libraries/material3-compose`). Used by the e2e (`proposedComponents.spec.ts`)
+// and by the zip `examples/proposta-componentes.zip` (script R13 of `docs/TESTING.md`).
+// pt-BR kept: shared fixture data (project 'Telas', proposal 'Componentes novos', marking names, labels) asserted by
+// tests/examples, tests/store, tests/components and the e2e specs
 
 export const PACKAGE_DIR = 'libraries/material3-compose';
 export const NOW = '2026-10-24T12:00:00.000Z';
 
-/** Arquivos de componente do Material 3 (caminho relativo ao pacote → texto). */
+/** Material 3 component files (path relative to the package → text). */
 export function componentTexts(): Map<string, string> {
   const dir = join(PACKAGE_DIR, 'components');
   return new Map(
@@ -45,8 +47,8 @@ export function componentTexts(): Map<string, string> {
 const TEXT_EXTENSIONS = /\.(json|md|txt)$/;
 
 /**
- * Todos os arquivos do pacote (caminho relativo → conteúdo), ordenados: texto como string e as
- * fontes (`.woff2`) como bytes.
+ * All the package files (relative path → content), sorted: text as a string and the
+ * fonts (`.woff2`) as bytes.
  */
 export function packageTexts(): Map<string, string | Buffer> {
   const out = new Map<string, string | Buffer>();
@@ -66,8 +68,8 @@ export function packageTexts(): Map<string, string | Buffer> {
 }
 
 /**
- * A especialização do Material 3 com outro `id` (para simular um pacote que a proposta traz).
- * Com o `id` da biblioteca ela mantém o nome dela ("Material 3 (Compose)"); com outro, o nome é o `id`.
+ * The Material 3 specialization with another `id` (to simulate a package the proposal brings).
+ * With the library's `id` it keeps its name ("Material 3 (Compose)"); with another, the name is the `id`.
  */
 export function loadSpec(id: string): Spec {
   const raw = JSON.parse(
@@ -82,7 +84,7 @@ export function loadSpec(id: string): Spec {
   return parsed.spec;
 }
 
-/** Catálogo de uma especialização cujo pacote está em `specs/<id>/`. */
+/** Catalog of a specialization whose package is in `specs/<id>/`. */
 export function catalogOf(spec: Spec, texts: Map<string, string>): ComponentCatalog {
   const file = `specs/${spec.id}/${spec.id}.spec.json`;
   const loaded = loadSpecComponents(spec, file, spec.version, (path) =>
@@ -91,11 +93,11 @@ export function catalogOf(spec: Spec, texts: Map<string, string>): ComponentCata
   return new Map([[spec.id, loaded]]);
 }
 
-/** Os arquivos do projeto base: `mapping.json`, `specs/` e o pacote do Material 3. */
+/** The base project files: `mapping.json`, `specs/` and the Material 3 package. */
 function baseFiles(base: Project): Map<string, string | Buffer> {
   const files = new Map<string, string | Buffer>([['mapping.json', serialize(base)]]);
   for (const [path, text] of specFiles(base)) files.set(path, text);
-  // O pacote inteiro (componentes, docs, exemplos, fontes): o Diagnóstico da app o confere.
+  // The whole package (components, docs, examples, fonts): the app's Diagnostics checks it.
   for (const [path, text] of packageTexts()) {
     const target = `specs/material3-compose/${path}`;
     if (!files.has(target)) files.set(target, text);
@@ -120,11 +122,11 @@ async function zipOf(files: Map<string, string | Buffer>, date?: Date): Promise<
 }
 
 // ---------------------------------------------------------------------------------------
-// Fixture simples do e2e: um tipo já aplicado (`material3-compose`) e um do pacote da proposta.
+// Simple e2e fixture: an already applied type (`material3-compose`) and one from the proposal package.
 
 export const PROPOSAL_ID = 'telas-novas';
 
-/** O projeto "Telas" (Material 3 aplicado, tela em branco 360 × 800). */
+/** The project "Telas" (Material 3 applied, blank screen 360 × 800). */
 function baseProject(counter: { n: number }): Project {
   let base = createProject({
     id: '00000000-0000-4000-8000-000000000e2e',
@@ -147,8 +149,8 @@ function baseProject(counter: { n: number }): Project {
 }
 
 /**
- * O projeto "Telas" e a proposta que cria nela um Button de tipo já aplicado (`material3-compose`) e
- * um de um pacote que a proposta traz (`m3novo`).
+ * The project "Telas" and the proposal that creates in it a Button of an already applied type (`material3-compose`) and
+ * one from a package the proposal brings (`m3novo`).
  */
 export async function fixtureZip(): Promise<Buffer> {
   const texts = componentTexts();
@@ -200,14 +202,14 @@ export async function fixtureZip(): Promise<Buffer> {
 }
 
 // ---------------------------------------------------------------------------------------
-// Proposta de exemplo do roteiro R13 (`examples/proposta-componentes.zip`).
+// Sample proposal of script R13 (`examples/proposta-componentes.zip`).
 
 export const SHOWCASE_PROPOSAL_ID = 'componentes-novos';
 export const SHOWCASE_PROPOSAL_TITLE = 'Componentes novos';
-/** Data fixa nas entradas do zip: o mesmo conteúdo gera sempre os mesmos bytes. */
+/** Fixed date on the zip entries: the same content always generates the same bytes. */
 const ENTRY_DATE = new Date('2026-10-24T00:00:00Z');
 
-/** Os nomes das marcações criadas pela proposta, por caso do roteiro. */
+/** The names of the markings created by the proposal, per script case. */
 export const SHOWCASE_NAMES = {
   existing: 'Existente',
   pending: 'Pendente',
@@ -222,9 +224,9 @@ export interface Showcase {
   readonly base: Project;
   readonly proposal: Proposal;
   /**
-   * Id da mudança de criação da marcação, por caso (`marking:create`); no "invalid", o da
-   * criação da anotação adulterada (`annotation:create`), que é a que a revisão aponta; no
-   * `acceptedAnnotation`, a da anotação do "accepted" (decidida, para o Aceito não ficar parcial).
+   * Id of the marking creation change, per case (`marking:create`); in "invalid", that of the
+   * tampered annotation creation (`annotation:create`), which is the one the review points at; in
+   * `acceptedAnnotation`, that of the "accepted" annotation (decided, so that Aceito is not left partial).
    */
   readonly createIds: Readonly<
     Record<
@@ -236,11 +238,11 @@ export interface Showcase {
 }
 
 /**
- * O projeto "Telas" (uma tela em branco 360 × 800 e o componente existente "Existente") e a
- * proposta aberta "Componentes novos": um Button novo pendente, um aceito, um rejeitado, um
- * aceito e inválido (um `text-field` pequeno que não cabe, com a anotação criada numa camada que não existe), um sem o rótulo obrigatório, um de um tipo
- * do pacote da proposta (`m3novo`) e o "Existente" com o rótulo alterado. As decisões já estão
- * gravadas em `proposal.json`.
+ * The project "Telas" (a blank 360 × 800 screen and the existing component "Existente") and the
+ * open proposal "Componentes novos": a new pending Button, an accepted one, a rejected one, an
+ * accepted and invalid one (a small `text-field` that does not fit, with the annotation created in a layer that does not exist), one without the required label, one of a type
+ * from the proposal package (`m3novo`) and the "Existente" with the label changed. The decisions are already
+ * written in `proposal.json`.
  */
 export function showcase(): Showcase {
   const texts = componentTexts();
@@ -296,8 +298,8 @@ export function showcase(): Showcase {
     ['N6', SHOWCASE_NAMES.package, 'm3novo', 540, { label: 'Do pacote' }],
   ];
   for (const [id, name, specId, y, values] of creations) {
-    // O Inválido é um `text-field` (o `button` e o `chip`, de raiz sem layout e conteúdo que abraça o texto, não dão
-    // "não cabe" até a #1078 avisar também no pai `none`); o retângulo é encolhido abaixo.
+    // The Inválido is a `text-field` (the `button` and the `chip`, with a root without layout and content that hugs the text, do not give
+    // "does not fit" until #1078 also warns on the `none` parent); the rectangle is shrunk below.
     const typeId = id === 'N4' ? 'text-field' : 'button';
     after = renameMarking(button(after, id, specId, y, values, 180, typeId), id, name);
   }
@@ -307,15 +309,15 @@ export function showcase(): Showcase {
     createdAt: NOW,
   });
 
-  // O "Inválido": um `text-field` (Rótulo `Inválido`) de 40×32 no canto superior esquerdo, menor que o
-  // conteúdo (`component-overflow`: o componente não cabe); a anotação criada fica numa camada que
-  // não existe (`missing-layer`), o que a revisão marca como inválido. Incompletas lista os dois
-  // motivos (R13.9).
+  // The "Inválido": a `text-field` (Rótulo `Inválido`) of 40×32 in the top-left corner, smaller than the
+  // content (`component-overflow`: the component does not fit); the created annotation sits in a layer that
+  // does not exist (`missing-layer`), which the review marks as invalid. Incomplete lists both
+  // reasons (R13.9).
   const createOf = (markingId: string) => {
     const found = built.changes.find(
       (c) => c.entity === 'marking' && c.entityId === markingId && c.kind === 'create',
     );
-    if (!found) throw new Error(`sem mudança de criação de ${markingId}`);
+    if (!found) throw new Error(`no creation change for ${markingId}`);
     return found;
   };
   const annotationOf = (markingId: string) => {
@@ -325,7 +327,7 @@ export function showcase(): Showcase {
         c.entityId === `A_${markingId}` &&
         c.kind === 'create',
     );
-    if (!found) throw new Error(`sem mudança de criação da anotação de ${markingId}`);
+    if (!found) throw new Error(`no annotation creation change for ${markingId}`);
     return found;
   };
   const isRecord = (v: unknown): v is Record<string, unknown> =>
@@ -357,7 +359,7 @@ export function showcase(): Showcase {
       state,
       NOW,
     );
-    if (!result.ok) throw new Error(`decisão de ${change.entityId}: ${result.reason}`);
+    if (!result.ok) throw new Error(`decision for ${change.entityId}: ${result.reason}`);
     proposal = { ...proposal, decisions: result.decisions };
   }
 
@@ -385,7 +387,7 @@ export function showcase(): Showcase {
   };
 }
 
-/** Os bytes de `examples/proposta-componentes.zip` (determinísticos). */
+/** The bytes of `examples/proposta-componentes.zip` (deterministic). */
 export async function showcaseZip(): Promise<Buffer> {
   return zipOf(showcase().files, ENTRY_DATE);
 }

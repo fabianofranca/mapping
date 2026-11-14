@@ -22,10 +22,12 @@ import {
 } from '../../src/model';
 import { blocksPng, type PngBlock } from './png';
 
-// Projeto de exemplo com uma proposta de alteração (etapa 4): usado pelo e2e da revisão
-// (revisar e aplicar parcialmente) e pelo zip de `examples/proposta-exemplo.zip`, que serve
-// para testar a revisão sem o agente (Abrir zip, no desktop e no celular). Tudo é montado
-// com as funções do modelo, então a proposta é exatamente a que o MCP gravaria.
+// Sample project with a change proposal (stage 4): used by the review e2e
+// (review and partially apply) and by the zip `examples/proposta-exemplo.zip`, which serves
+// to test the review without the agent (Open zip, on desktop and on the phone). Everything is built
+// with the model functions, so the proposal is exactly what the MCP would write.
+// pt-BR kept: shared fixture data (project, layer, image, marking, annotation and proposal names, entries, file
+// names such as 'images/carrinho.png') asserted by tests/examples, tests/model, tests/store and the e2e specs
 
 const NOW = '2026-10-09T12:00:00.000Z';
 export const FIXTURE_PROPOSAL_ID = 'checkout-figma';
@@ -47,7 +49,7 @@ const block = (
   rgb: readonly [number, number, number],
 ): PngBlock => ({ x, y, width, height, rgb });
 
-/** As telas: o Checkout, o Carrinho (e a versão nova dele) e a Confirmação, nova. */
+/** The screens: Checkout, Cart (and its new version) and the new Confirmation. */
 export const FIXTURE_IMAGES = {
   'images/checkout.png': blocksPng(WIDTH, HEIGHT, BG, [
     block(0, 0, WIDTH, 64, INK),
@@ -74,7 +76,7 @@ export const FIXTURE_IMAGES = {
   ]),
 } as const;
 
-/** O projeto como está: duas telas, marcações (o Botão Pagar trancado) e anotações. */
+/** The project as it is: two screens, markings (the Pay button locked) and annotations. */
 export function fixtureProject(): Project {
   let p = createProject({
     id: '00000000-0000-4000-8000-000000000e2e',
@@ -96,7 +98,7 @@ export function fixtureProject(): Project {
     height: HEIGHT,
   });
   p = renameContainer(p, 'I2', 'Carrinho');
-  // O pai vem da contenção (o Botão Pagar fica dentro do Rodapé).
+  // The parent comes from containment (the Pay button sits inside the Footer).
   const mark = (id: string, imageId: string, name: string, rect: readonly number[]) => {
     const [x = 0, y = 0, width = 0, height = 0] = rect;
     p = createMarking(p, {
@@ -133,9 +135,9 @@ export function fixtureProject(): Project {
 }
 
 /**
- * A proposta "Checkout a partir do Figma": renomeia o cabeçalho, move o botão trancado,
- * troca o estilo do botão, remove o banner, cria o campo de cupom, uma camada nova com o
- * evento do botão, a tela de confirmação (imagem nova) e troca a imagem do carrinho.
+ * The proposal "Checkout a partir do Figma": renames the header, moves the locked button,
+ * changes the button style, removes the banner, creates the coupon field, a new layer with the
+ * button event, the confirmation screen (new image) and replaces the cart image.
  */
 export function fixtureProposal(base: Project = fixtureProject()): Proposal {
   let after = renameMarking(base, 'M1', 'Cabeçalho do checkout');
@@ -193,7 +195,7 @@ export function fixtureProposal(base: Project = fixtureProject()): Proposal {
   });
 }
 
-/** Os arquivos do zip (caminho → conteúdo), como a exportação da app os grava. */
+/** The zip files (path → content), as the app's export writes them. */
 export function fixtureFiles(): Map<string, string | Buffer> {
   const project = fixtureProject();
   const proposal = fixtureProposal(project);
@@ -208,7 +210,7 @@ export function fixtureFiles(): Map<string, string | Buffer> {
   return files;
 }
 
-/** O zip do projeto de exemplo com a proposta (para "Abrir zip"). */
+/** The zip of the sample project with the proposal (for "Open zip"). */
 export async function fixtureZip(): Promise<Buffer> {
   const zip = new JSZip();
   for (const [path, content] of fixtureFiles()) {

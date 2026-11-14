@@ -14,17 +14,17 @@ import {
 } from '../../src/model';
 import { blocksPng } from './png';
 
-// Posição e Tamanho dos Detalhes num painel estreito (900 px): X, Y, L e A mostram o valor
-// inteiro (4 dígitos na revisão, 3 dígitos fora dela), sem o campo cortar (#465, AC1).
+// Position and Size of Details in a narrow panel (900 px): X, Y, W and H show the whole
+// value (4 digits in review, 3 digits outside it), without the field cutting it (#465, AC1).
 
 test.use({ viewport: { width: 900, height: 720 } });
 
 const NOW = '2026-11-05T12:00:00.000Z';
 
-/** Zip com uma marcação de coordenadas de 4 dígitos e uma proposta que a renomeia. */
+/** Zip with a marking with 4-digit coordinates and a proposal that renames it. */
 async function bigNumbersZip(): Promise<Buffer> {
   let base = createProject({
-    name: 'Grande',
+    name: 'Big',
     now: NOW,
     firstLayer: { id: 'L1', name: 'Componentes', color: '#1e88e5' },
   });
@@ -34,19 +34,19 @@ async function bigNumbersZip(): Promise<Buffer> {
     width: 3000,
     height: 3000,
   });
-  base = renameContainer(base, 'I1', 'Tela grande');
+  base = renameContainer(base, 'I1', 'Big screen');
   base = createMarking(base, {
     id: 'M1',
     containerId: 'I1',
-    name: 'Faixa',
+    name: 'Strip',
     rect: { x: 1234, y: 1345, width: 1456, height: 1567 },
   });
-  const proposal = buildProposal(base, renameMarking(base, 'M1', 'Faixa nova'), {
-    id: 'grande',
-    title: 'Renomeia',
+  const proposal = buildProposal(base, renameMarking(base, 'M1', 'New strip'), {
+    id: 'big',
+    title: 'Rename',
     description: '',
-    origin: 'teste',
-    author: 'teste',
+    origin: 'test',
+    author: 'test',
     createdAt: NOW,
   });
   const zip = new JSZip();
@@ -57,7 +57,7 @@ async function bigNumbersZip(): Promise<Buffer> {
   return zip.generateAsync({ type: 'nodebuffer', platform: 'UNIX' });
 }
 
-/** Os quatro campos não cortam o valor e cabem em 5 dígitos. */
+/** The four fields do not cut the value and fit 5 digits. */
 async function expectFieldsFit(page: Page, digits: number): Promise<void> {
   const fields = page.locator('.props-pair-item .input');
   expect(await fields.count()).toBe(4);
@@ -86,18 +86,18 @@ async function expectFieldsFit(page: Page, digits: number): Promise<void> {
       };
     });
     expect(m.value.length).toBeGreaterThanOrEqual(digits);
-    expect(m.scroll, `campo ${m.value}`).toBeLessThanOrEqual(m.client);
-    // Largura útil para 5 dígitos (menos a folga do spinner, que o tema esconde).
-    expect(m.inner, `campo ${m.value}`).toBeGreaterThanOrEqual(m.fiveDigits);
+    expect(m.scroll, `field ${m.value}`).toBeLessThanOrEqual(m.client);
+    // Usable width for 5 digits (minus the spinner slack, which the theme hides).
+    expect(m.inner, `field ${m.value}`).toBeGreaterThanOrEqual(m.fiveDigits);
   }
 }
 
-test('revisão a 900 px: X, Y, L e A com 4 dígitos cabem inteiros', async ({ page }) => {
+test('review at 900 px: X, Y, W and H with 4 digits fit whole', async ({ page }) => {
   await page.goto('/');
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
     .setInputFiles({
-      name: 'grande.zip',
+      name: 'big.zip',
       mimeType: 'application/zip',
       buffer: await bigNumbersZip(),
     });
@@ -106,17 +106,15 @@ test('revisão a 900 px: X, Y, L e A com 4 dígitos cabem inteiros', async ({ pa
   await page.keyboard.press('Control+Shift+Digit7');
   await page.keyboard.press('Control+Shift+Digit2');
   await page
-    .getByRole('button', { name: /^Revisar/ })
+    .getByRole('button', { name: /^Review/ })
     .first()
     .click();
-  await page.locator('.tree-row', { hasText: 'Faixa' }).first().click();
+  await page.locator('.tree-row', { hasText: 'Strip' }).first().click();
   await expect(page.locator('.props-pair-item .input').first()).toBeVisible();
   await expectFieldsFit(page, 4);
 });
 
-test('fora da revisão, num painel de 280 px, o Y de 3 dígitos cabe inteiro', async ({
-  page,
-}) => {
+test('outside review, in a 280 px panel, the 3-digit Y fits whole', async ({ page }) => {
   await page.goto('/');
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
@@ -128,6 +126,7 @@ test('fora da revisão, num painel de 280 px, o Y de 3 dígitos cabe inteiro', a
   await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   await page.keyboard.press('Control+Shift+Digit3');
   await page.keyboard.press('Control+Shift+Digit2');
+  // pt-BR kept: shared fixture data (examples/exemplo-completo.zip) asserted by other tests
   await page.locator('.tree-row', { hasText: 'Cadastrar' }).first().click();
   const y = page.getByRole('spinbutton', { name: 'Y', exact: true });
   await expect(y).toHaveValue('347');

@@ -2,15 +2,15 @@ import { expect, test, type Page } from '@playwright/test';
 import JSZip from 'jszip';
 import { readFileSync } from 'node:fs';
 
-// Detalhes a 900 px com o projeto aberto por pasta: o cabeçalho do item tem o botão
-// "Copy reference" (só existe com pasta de origem) e nenhum filho passa da largura do
-// painel, sem barra horizontal.
+// Details at 900 px with the project opened from a folder: the item header has the
+// "Copy reference" button (it only exists with an origin folder) and no child exceeds the width of the
+// panel, with no horizontal bar.
 
 test.use({ viewport: { width: 900, height: 720 } });
 
-const FOLDER = 'exemplo-pasta-e2e';
+const FOLDER = 'example-folder-e2e';
 
-/** Descompacta o exemplo numa pasta do OPFS e faz dela a pasta escolhida em "Open folder". */
+/** Unzips the example into an OPFS folder and makes it the folder chosen in "Open folder". */
 async function openExampleFolder(page: Page): Promise<void> {
   const zip = await JSZip.loadAsync(readFileSync('examples/exemplo-completo.zip'));
   const files: { path: string; data: number[] }[] = [];
@@ -38,11 +38,11 @@ async function openExampleFolder(page: Page): Promise<void> {
     [FOLDER, files] as const,
   );
   await page.goto('/');
-  await page.getByRole('button', { name: /Abrir pasta/ }).click();
+  await page.getByRole('button', { name: /Open folder/ }).click();
   await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
 }
 
-test('Detalhes na revisão a 900 px sem barra horizontal com o projeto aberto por pasta', async ({
+test('Details in review at 900 px without a horizontal bar with the project opened from a folder', async ({
   page,
 }) => {
   await openExampleFolder(page);
@@ -51,27 +51,27 @@ test('Detalhes na revisão a 900 px sem barra horizontal com o projeto aberto po
   await page.keyboard.press('Control+Shift+Digit2');
   await page.keyboard.press('Control+Shift+Digit1');
   await page
-    .getByRole('button', { name: 'Revisar: Tela de Perfil e ajuste no Cadastro' })
+    // pt-BR kept: shared fixture data (examples/exemplo-completo.zip) asserted by other tests
+    .getByRole('button', { name: 'Review: Tela de Perfil e ajuste no Cadastro' })
     .click();
   await expect(page.getByText('Read-only').first()).toBeVisible();
-  for (const box of await page
-    .getByRole('checkbox', { name: /^Mostrar a camada / })
-    .all()) {
+  for (const box of await page.getByRole('checkbox', { name: /^Show layer / }).all()) {
     if ((await box.isChecked()) && (await box.isEnabled()))
       await box.uncheck({ force: true });
   }
   await page
     .getByRole('group', { name: 'Canvas view' })
-    .getByRole('button', { name: 'Proposto', exact: true })
+    .getByRole('button', { name: 'Proposed', exact: true })
     .click();
+  // pt-BR kept: shared fixture data (examples/exemplo-completo.zip) asserted by other tests
   await page.locator('.tree-row', { hasText: 'Dados da conta' }).first().click();
-  await page.getByRole('button', { name: 'Mostrar aqui' }).first().click();
+  await page.getByRole('button', { name: 'Show here' }).first().click();
   await expect(
     page.getByRole('button', { name: 'Copy reference' }).first(),
   ).toBeVisible();
 
-  // Nada do painel passa da borda direita dele, e o campo do nome da anotação não é
-  // espremido (o botão Copiar referência só existe com pasta de origem).
+  // Nothing in the panel goes past its right edge, and the annotation name field is not
+  // squeezed (the Copy reference button only exists with an origin folder).
   const m = await page.evaluate(() => {
     const b = document.querySelector('[data-window="details"] .tool-window-body')!;
     const p = document.querySelector('.panel-details')!;

@@ -1,12 +1,12 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { fixtureZip } from './proposalFixture';
 
-// Layout em janela estreita (1098 × 698, DPR 1,25, Árvore e Detalhes abertos): abas,
-// ações e linhas das listas não podem se sobrepor nem gerar rolagem horizontal.
+// Layout in a narrow window (1098 × 698, DPR 1.25, Tree and Details open): tabs,
+// actions and list rows must not overlap or produce horizontal scrolling.
 
 test.use({ viewport: { width: 1098, height: 860 }, deviceScaleFactor: 1.25 });
 
-// Pasta das capturas (opcional, só para conferência manual).
+// Folder for the screenshots (optional, for manual checking only).
 const SHOTS = process.env.LAYOUT_SHOTS ?? '';
 
 type Box = { x: number; y: number; width: number; height: number };
@@ -16,18 +16,18 @@ async function open(page: Page): Promise<void> {
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
     .setInputFiles({
-      name: 'loja.zip',
+      name: 'store.zip',
       mimeType: 'application/zip',
       buffer: await fixtureZip(),
     });
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   await page.keyboard.press('Control+Shift+1');
   await page.keyboard.press('Control+Shift+3');
 }
 
-// Fonte mais larga que a de qualquer máquina (o CI usa outras fontes): a tabela não pode depender dela.
+// A font wider than any machine's (CI uses other fonts): the table must not depend on it.
 async function widerFont(page: Page): Promise<void> {
-  // A CSP proíbe <style> inline; a CSSOM (folha adotada) é permitida.
+  // The CSP forbids inline <style>; the CSSOM (adopted sheet) is allowed.
   await page.evaluate(() => {
     const sheet = new CSSStyleSheet();
     sheet.replaceSync('.list-table { letter-spacing: 0.08em; font-size: 1.1em }');
@@ -63,27 +63,25 @@ function expectNoOverlap(list: readonly Box[]): void {
       expect(overlaps(list[i]!, list[j]!)).toBe(false);
 }
 
-test('abas da janela inferior não passam sob as ações', async ({ page }) => {
+test('bottom window tabs do not go under the actions', async ({ page }) => {
   await open(page);
   await page.keyboard.press('Control+Shift+6');
   const win = page.locator('[data-window="diagnostics"]');
   await expect(win).toBeVisible();
-  await shot(page, 'diagnostico');
+  await shot(page, 'diagnostics');
   const tablist = win.getByRole('tablist');
   const strip = (await boxes(tablist))[0]!;
-  // Janela estreita demais até para as abas: só elas rolam (nada é desenhado fora da faixa).
+  // Window too narrow even for the tabs: only they scroll (nothing is drawn outside the strip).
   await expect(tablist).toHaveCSS('overflow-x', 'auto');
   const actions = await boxes(win.locator('.tool-window-head > :not(.tool-window-tabs)'));
   expect(actions.length).toBeGreaterThan(0);
   for (const a of actions) {
-    // Ao lado das abas ou, sem largura, numa linha abaixo (bottomTabs.spec.ts).
+    // Next to the tabs or, without width, on a line below (bottomTabs.spec.ts).
     expect(overlaps(a, strip)).toBe(false);
   }
 });
 
-test('janela inferior a 900 px: abas inteiras, ações sem cobrir nenhuma', async ({
-  page,
-}) => {
+test('bottom window at 900 px: whole tabs, actions covering none', async ({ page }) => {
   await page.setViewportSize({ width: 900, height: 720 });
   await open(page);
   await page.keyboard.press('Control+Shift+6');
@@ -96,21 +94,21 @@ test('janela inferior a 900 px: abas inteiras, ações sem cobrir nenhuma', asyn
     for (const tab of tabs) expect(overlaps(a, tab)).toBe(false);
 });
 
-test('aba escolhida continua visível quando a lista de abas é estreitada depois', async ({
+test('the chosen tab stays visible when the tab list is narrowed afterwards', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1400, height: 860 });
   await open(page);
   await page.keyboard.press('Control+Shift+6');
-  // As abas pertencem à mesma janela inferior: a lista é a que tem a aba Diagnóstico.
+  // The tabs belong to the same bottom window: the list is the one with the Diagnostics tab.
   const tablist = page
     .getByRole('tablist')
-    .filter({ has: page.getByRole('tab', { name: 'Diagnóstico' }) });
+    .filter({ has: page.getByRole('tab', { name: 'Diagnostics' }) });
   await expect(tablist).toBeVisible();
-  // Largo: todas as abas cabem e a Diagnóstico está escolhida.
+  // Wide: all tabs fit and Diagnostics is chosen.
   expect(await tablist.evaluate((e) => e.scrollWidth > e.clientWidth)).toBe(false);
-  // Estreita a faixa depois (o que uma janela menor faz); a CSP proíbe <style> inline,
-  // a CSSOM (folha adotada) é permitida.
+  // Narrows the strip afterwards (what a smaller window does); the CSP forbids inline <style>,
+  // the CSSOM (adopted sheet) is allowed.
   await page.evaluate(() => {
     const sheet = new CSSStyleSheet();
     sheet.replaceSync(
@@ -130,12 +128,12 @@ test('aba escolhida continua visível quando a lista de abas é estreitada depoi
     .toBe(true);
 });
 
-test('janela Propostas e lista da revisão sem textos sobrepostos', async ({ page }) => {
+test('Proposals window and review list without overlapping texts', async ({ page }) => {
   await open(page);
   await page.keyboard.press('Control+Shift+7');
   const row = page.locator('.proposal-row').first();
   await expect(row).toBeVisible();
-  await shot(page, 'propostas');
+  await shot(page, 'proposals');
   const title = (await row.locator('.proposal-row-title b').boundingBox())!;
   expect(title.width).toBeGreaterThan(60);
   expectNoOverlap(
@@ -147,20 +145,21 @@ test('janela Propostas e lista da revisão sem textos sobrepostos', async ({ pag
   );
 
   await page
-    .getByRole('button', { name: /^Revisar/ })
+    .getByRole('button', { name: /^Review/ })
     .first()
     .click();
-  await page.getByRole('button', { name: 'Aceitar Checkout a partir do Figma' }).click();
+  // pt-BR kept: shared fixture data (proposal title) asserted by tests/e2e/proposalFixture.ts
+  await page.getByRole('button', { name: 'Accept Checkout a partir do Figma' }).click();
   await page
-    .getByRole('button', { name: /^Aplicar aceitas/ })
+    .getByRole('button', { name: /^Apply accepted/ })
     .first()
     .click();
-  await expect(page.getByText(/mudança\(s\) aplicada\(s\)/).first()).toBeVisible();
-  await shot(page, 'revisao');
+  await expect(page.getByText(/change\(s\) applied/).first()).toBeVisible();
+  await shot(page, 'review');
   for (const r of await page.locator('.review-row').all()) {
     const cells = await boxes(r.locator(':scope > *'));
     expectNoOverlap(cells);
-    // O que não cabe no nome é cortado no rótulo, nunca desenhado sobre o resumo.
+    // What does not fit in the name is clipped in the label, never drawn over the summary.
     const clipped = await r
       .locator('.review-row-name')
       .evaluate((e) => e.scrollWidth - e.clientWidth);
@@ -171,13 +170,13 @@ test('janela Propostas e lista da revisão sem textos sobrepostos', async ({ pag
   }
 });
 
-test('Incompletas sem rolagem horizontal', async ({ page }) => {
+test('Incomplete without horizontal scrolling', async ({ page }) => {
   await open(page);
   await page.keyboard.press('Control+Shift+5');
   const win = page.locator('[data-window="incomplete"]');
   await expect(win).toBeVisible();
   await widerFont(page);
-  await shot(page, 'incompletas');
+  await shot(page, 'incomplete');
   const over = await win
     .locator('.tool-window-body, .list-scroll')
     .evaluateAll((els) => els.map((e) => e.scrollWidth - e.clientWidth));
@@ -185,24 +184,24 @@ test('Incompletas sem rolagem horizontal', async ({ page }) => {
   for (const d of over) expect(d).toBeLessThanOrEqual(0);
 });
 
-test('Lista sem rolagem horizontal', async ({ page }) => {
+test('List without horizontal scrolling', async ({ page }) => {
   await open(page);
   await page.keyboard.press('Control+Shift+4');
   const win = page.locator('[data-window="list"]');
   await expect(win.locator('.list-row').first()).toBeVisible();
   await widerFont(page);
-  await shot(page, 'lista');
+  await shot(page, 'list');
   const over = await win
     .locator('.tool-window-body, .list-scroll')
     .evaluateAll((els) => els.map((e) => e.scrollWidth - e.clientWidth));
   for (const d of over) expect(d).toBeLessThanOrEqual(0);
 });
 
-test('janelas abertas largo e estreitando a janela: nada fica fora da tela', async ({
+test('windows opened wide and then narrowing the window: nothing falls off the screen', async ({
   page,
 }) => {
-  // Layout guardado de uma janela larga (Detalhes no máximo); com layout guardado o
-  // desktop compacto não recolhe o Detalhes, então só o ajuste das larguras acomoda.
+  // Saved layout of a wide window (Details at the maximum); with a saved layout the
+  // compact desktop does not collapse Details, so only the width adjustment accommodates it.
   await page.addInitScript(() => {
     localStorage.setItem(
       'mapping.toolWindows',
@@ -228,7 +227,7 @@ test('janelas abertas largo e estreitando a janela: nada fica fora da tela', asy
       })
       .toBe(true);
     const canvas = (await page
-      .getByRole('main', { name: 'Canvas do projeto' })
+      .getByRole('main', { name: 'Project canvas' })
       .boundingBox())!;
     expect(canvas.width).toBeGreaterThanOrEqual(319.5);
     expect(

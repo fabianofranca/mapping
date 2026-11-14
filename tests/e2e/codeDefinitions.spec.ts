@@ -181,9 +181,7 @@ async function createAnnotations(page: Page, withLocalPath = false): Promise<voi
   await page.getByLabel('nome', { exact: true }).press('Enter');
   await page.getByLabel('rota', { exact: true }).fill('/signup');
   await page.getByLabel('rota', { exact: true }).press('Enter');
-  await page
-    .getByRole('button', { name: 'Add annotation to layer Componentes' })
-    .click();
+  await page.getByRole('button', { name: 'Add annotation to layer Componentes' }).click();
   await page.getByRole('button', { name: /^Button/ }).click();
   await page.getByLabel('id', { exact: true }).fill('btn_signup');
   await page.getByLabel('id', { exact: true }).press('Enter');
@@ -254,7 +252,9 @@ test('step 2: the specialization repo is read-only and only the local path is ed
   const local = android.getByLabel('Local path of the root');
   await local.fill('/abs/olute');
   await local.press('Enter');
-  await expect(android.getByRole('alert')).toContainText('relative to the project folder');
+  await expect(android.getByRole('alert')).toContainText(
+    'relative to the project folder',
+  );
   await local.fill('../../..');
   await local.press('Enter');
   await expect(android.getByRole('alert')).toHaveCount(0);
@@ -385,7 +385,11 @@ async function sduiWithCodeRef(): Promise<Buffer> {
   const screen = spec.layers
     .flatMap((l) => l.annotationTypes)
     .find((t) => t.id === 'screen');
-  screen?.fields.push({ key: 'implementation', label: 'implementation', type: 'codeRef' });
+  screen?.fields.push({
+    key: 'implementation',
+    label: 'implementation',
+    type: 'codeRef',
+  });
   return Buffer.from(JSON.stringify(spec));
 }
 

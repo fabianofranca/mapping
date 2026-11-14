@@ -1,12 +1,13 @@
 import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
-// Legenda das marcas na revisão a 900×720 (#537): enquanto aberta, fica por cima do minimapa,
-// inteira à vista.
+// Mark legend in the review at 900×720 (#537): while open, it sits on top of the minimap,
+// fully in view.
+// pt-BR kept: shared fixture data (exemplo-completo proposal title 'Tela de Perfil e ajuste no Cadastro') asserted by tests/examples
 
 test.use({ viewport: { width: 900, height: 720 } });
 
-test('a legenda das marcas fica por cima do minimapa a 900×720', async ({ page }) => {
+test('the mark legend sits on top of the minimap at 900×720', async ({ page }) => {
   await page.goto('/');
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
@@ -15,18 +16,18 @@ test('a legenda das marcas fica por cima do minimapa a 900×720', async ({ page 
       mimeType: 'application/zip',
       buffer: readFileSync('examples/exemplo-completo.zip'),
     });
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   for (const key of ['Digit3', 'Digit7', 'Digit2', 'Digit1']) {
     await page.keyboard.press(`Control+Shift+${key}`);
   }
   await page
-    .getByRole('button', { name: 'Revisar: Tela de Perfil e ajuste no Cadastro' })
+    .getByRole('button', { name: 'Review: Tela de Perfil e ajuste no Cadastro' })
     .click();
-  await expect(page.getByText('Somente leitura').first()).toBeVisible();
-  // Com a janela Propostas aumentada, o canvas fica baixo e a legenda alcança o minimapa.
+  await expect(page.getByText('Read-only').first()).toBeVisible();
+  // With the Proposals window enlarged, the canvas gets short and the legend reaches the minimap.
   await page.locator('[data-window="proposals"] [role="tree"]').focus();
   for (let i = 0; i < 24; i += 1) await page.keyboard.press('Control+Shift+ArrowUp');
-  await page.getByRole('button', { name: 'Legenda das marcas' }).click();
+  await page.getByRole('button', { name: 'Mark legend' }).click();
   const legend = page.locator('.review-legend');
   await expect(legend).toBeVisible();
 
@@ -43,19 +44,19 @@ test('a legenda das marcas fica por cima do minimapa a 900×720', async ({ page 
     const hit = document.elementFromPoint(x, y);
     return { onLegend: hit?.closest('.review-legend') !== null };
   });
-  // Os dois se sobrepõem a 900×720; no ponto em comum, quem aparece é a legenda.
+  // The two overlap at 900×720; at the shared point, the legend is what shows.
   expect(overlap).not.toBeNull();
   expect(overlap?.onLegend).toBe(true);
 
-  // Inteira à vista: sem rolagem interna (R13.5; #552, AG4).
+  // Fully in view: no inner scrolling (R13.5; #552, AG4).
   const fit = await legend.evaluate((el) => ({
     scroll: el.scrollHeight,
     client: el.clientHeight,
   }));
   expect(fit.scroll).toBeLessThanOrEqual(fit.client);
 
-  // Um diálogo aberto com a legenda à vista fica por cima dela (--z-dialog > --z-popover).
-  await page.getByRole('button', { name: 'Configurações', exact: true }).first().click();
+  // A dialog opened with the legend in view sits on top of it (--z-dialog > --z-popover).
+  await page.getByRole('button', { name: 'Settings', exact: true }).first().click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
   await expect(legend).toBeVisible();
@@ -67,10 +68,10 @@ test('a legenda das marcas fica por cima do minimapa a 900×720', async ({ page 
   expect(legendHit.onLegend).toBe(false);
 });
 
-// Legenda sobre a Propostas (#598, JB1): com o canvas mais baixo que ela, a legenda sai do
-// recorte do canvas e desce por cima da janela Propostas, inteira, sem passar da coluna do
-// canvas nem da barra de status.
-test('a legenda cobre a Propostas quando o canvas é mais baixo que ela', async ({
+// Legend over Proposals (#598, JB1): with the canvas shorter than it, the legend leaves the
+// canvas clip and drops over the Proposals window, whole, without going past the canvas
+// column or the status bar.
+test('the legend covers Proposals when the canvas is shorter than it', async ({
   page,
 }) => {
   await page.goto('/');
@@ -81,19 +82,19 @@ test('a legenda cobre a Propostas quando o canvas é mais baixo que ela', async 
       mimeType: 'application/zip',
       buffer: readFileSync('examples/exemplo-completo.zip'),
     });
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   for (const key of ['Digit3', 'Digit7', 'Digit2', 'Digit1']) {
     await page.keyboard.press(`Control+Shift+${key}`);
   }
   await page
-    .getByRole('button', { name: 'Revisar: Tela de Perfil e ajuste no Cadastro' })
+    .getByRole('button', { name: 'Review: Tela de Perfil e ajuste no Cadastro' })
     .click();
-  await expect(page.getByText('Somente leitura').first()).toBeVisible();
+  await expect(page.getByText('Read-only').first()).toBeVisible();
 
-  // Aumenta a janela Propostas até o canvas ficar mais baixo que a legenda.
+  // Enlarges the Proposals window until the canvas is shorter than the legend.
   await page.locator('[data-window="proposals"] [role="tree"]').focus();
   for (let i = 0; i < 24; i += 1) await page.keyboard.press('Control+Shift+ArrowUp');
-  const toggle = page.getByRole('button', { name: 'Legenda das marcas' });
+  const toggle = page.getByRole('button', { name: 'Mark legend' });
   await toggle.click();
   const legend = page.locator('.review-legend');
   await expect(legend).toBeVisible();
@@ -129,7 +130,7 @@ test('a legenda cobre a Propostas quando o canvas é mais baixo que ela', async 
       onLegend: hit?.closest('.review-legend') !== null && hit !== null,
     };
   });
-  // O canvas está mais baixo que a legenda: a premissa do teste.
+  // The canvas is shorter than the legend: the premise of the test.
   expect(m.canvasHeight).toBeLessThan(m.legendHeight);
   expect(m.scroll).toBeLessThanOrEqual(m.client);
   expect(m.legendBottom).toBeLessThanOrEqual(m.statusTop);
@@ -138,20 +139,20 @@ test('a legenda cobre a Propostas quando o canvas é mais baixo que ela', async 
   expect(m.legendRight).toBeLessThanOrEqual(m.canvasRight + 0.5);
   expect(m.legendLeft).toBeGreaterThanOrEqual(m.canvasLeft - 0.5);
 
-  // Um clique no canvas não a fecha; Esc fecha e o foco volta ao botão.
+  // A click on the canvas does not close it; Esc closes it and focus returns to the button.
   const box = (await page.locator('[data-canvas-area]').boundingBox())!;
   await page.mouse.click(box.x + box.width - 20, box.y + 20);
   await expect(legend).toBeVisible();
-  await legend.getByRole('button', { name: 'Fechar legenda' }).focus();
+  await legend.getByRole('button', { name: 'Close legend' }).focus();
   await page.keyboard.press('Escape');
   await expect(legend).toBeHidden();
   await expect(toggle).toBeFocused();
 });
 
-// Altura padrão da janela inferior na revisão (#598, decisão 5): a 900×720, com as quatro
-// janelas abertas, a lista mostra ao menos 3 linhas inteiras e o rodapé de atalhos cabe na
-// janela (o mesmo critério do R4.14).
-test('a janela Propostas começa com 3 linhas inteiras e o rodapé à vista', async ({
+// Default height of the bottom window in the review (#598, decision 5): at 900×720, with the four
+// windows open, the list shows at least 3 whole rows and the shortcuts footer fits in the
+// window (the same criterion as R4.14).
+test('the Proposals window starts with 3 whole rows and the footer in view', async ({
   page,
 }) => {
   await page.goto('/');
@@ -162,14 +163,14 @@ test('a janela Propostas começa com 3 linhas inteiras e o rodapé à vista', as
       mimeType: 'application/zip',
       buffer: readFileSync('examples/exemplo-completo.zip'),
     });
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   for (const key of ['Digit3', 'Digit7', 'Digit2', 'Digit1']) {
     await page.keyboard.press(`Control+Shift+${key}`);
   }
   await page
-    .getByRole('button', { name: 'Revisar: Tela de Perfil e ajuste no Cadastro' })
+    .getByRole('button', { name: 'Review: Tela de Perfil e ajuste no Cadastro' })
     .click();
-  await expect(page.getByText('Somente leitura').first()).toBeVisible();
+  await expect(page.getByText('Read-only').first()).toBeVisible();
   const m = await page.evaluate(() => {
     const win = document.querySelector('[data-window="proposals"]')!;
     const rows = [...win.querySelectorAll<HTMLElement>('[data-row]')];

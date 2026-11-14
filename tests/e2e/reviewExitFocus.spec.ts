@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
 import { fixtureZip } from './proposalFixture';
 
-// Etapa #515 (FN2, achado 1 do relato da FN1): sair da revisão pelo botão leva o foco ao
-// Revisar/Continuar da proposta (janela Propostas aberta) ou ao canvas (fechada); nunca ao
-// body. A janela troca a árvore da revisão pela lista depois do `review.close()`.
+// Stage #515 (FN2, finding 1 of the FN1 report): leaving the review through the button moves focus to
+// the proposal's Review/Continue (Proposals window open) or to the canvas (closed); never to the
+// body. The window swaps the review tree for the list after `review.close()`.
 
 test.use({ viewport: { width: 1280, height: 860 } });
 
@@ -16,7 +16,7 @@ async function openFixture(page: import('@playwright/test').Page) {
       mimeType: 'application/zip',
       buffer: await fixtureZip(),
     });
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
 }
 
 const activeTag = (page: import('@playwright/test').Page) =>
@@ -29,17 +29,17 @@ const activeTag = (page: import('@playwright/test').Page) =>
     };
   });
 
-test('Sair da revisão pelo botão, com Propostas aberta: foco no botão da proposta (4 vezes)', async ({
+test('Exiting the review through the button, with Proposals open: focus on the proposal button (4 times)', async ({
   page,
 }) => {
   await openFixture(page);
   await page.keyboard.press('Control+Shift+7');
   for (let i = 0; i < 4; i++) {
     await page
-      .getByRole('button', { name: /^(Revisar|Continuar)/ })
+      .getByRole('button', { name: /^(Review|Continue)/ })
       .first()
       .click();
-    const exit = page.getByRole('button', { name: 'Sair da revisão' });
+    const exit = page.getByRole('button', { name: 'Exit review' });
     await expect(exit).toBeVisible();
     await exit.click();
     await expect(page.locator('[data-proposal-action]')).toHaveCount(1);
@@ -49,22 +49,22 @@ test('Sair da revisão pelo botão, com Propostas aberta: foco no botão da prop
   }
 });
 
-test('Sair da revisão pelo botão, com Propostas fechada: foco no canvas', async ({
+test('Exiting the review through the button, with Proposals closed: focus on the canvas', async ({
   page,
 }) => {
   await openFixture(page);
   await page.keyboard.press('Control+Shift+7');
   await page
-    .getByRole('button', { name: /^(Revisar|Continuar)/ })
+    .getByRole('button', { name: /^(Review|Continue)/ })
     .first()
     .click();
-  // Fecha a janela Propostas pelo botão da faixa, com a revisão em curso.
+  // Closes the Proposals window through the strip button, with the review in progress.
   await page.locator('[data-strip-window="proposals"]').click();
   await expect(page.locator('[data-window="proposals"]')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Sair da revisão' }).click();
-  await expect(page.getByRole('button', { name: 'Sair da revisão' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Exit review' }).click();
+  await expect(page.getByRole('button', { name: 'Exit review' })).toHaveCount(0);
   await page.waitForTimeout(600);
   const state = await activeTag(page);
   expect(state.body).toBe(false);
-  expect(state.canvas).toBe('Canvas do projeto');
+  expect(state.canvas).toBe('Project canvas');
 });

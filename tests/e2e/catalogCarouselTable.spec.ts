@@ -30,9 +30,7 @@ for (const scheme of ['light', 'dark'] as const) {
       const confirm = page.getByRole('button', { name: 'Apply', exact: true });
       await expect(confirm).toBeEnabled();
       await confirm.click();
-      await expect(
-        page.getByRole('status').filter({ hasText: 'applied' }),
-      ).toBeVisible();
+      await expect(page.getByRole('status').filter({ hasText: 'applied' })).toBeVisible();
       await page
         .getByRole('dialog')
         .getByRole('button', { name: 'Close', exact: true })

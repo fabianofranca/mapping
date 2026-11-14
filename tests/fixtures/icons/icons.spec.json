@@ -2,7 +2,7 @@
   "format": "mapping-spec",
   "formatVersion": 15,
   "id": "icons",
-  "name": "Ícones de teste",
+  "name": "Test icons",
   "version": 1,
   "icons": "icons/set.json",
   "layers": [
@@ -13,7 +13,7 @@
       "annotationTypes": [
         {
           "id": "badge",
-          "name": "Selo",
+          "name": "Badge",
           "component": "components/badge.json",
           "fields": [
             {
