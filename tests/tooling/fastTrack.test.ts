@@ -172,8 +172,8 @@ describe('regras da via rápida nos documentos do fluxo (decisões 11 a 14)', ()
   });
 
   it('CLAUDE.md: a exceção no resumo do fluxo, e o arquivo segue com até 15000 caracteres', () => {
-    const s = section(CLAUDE, '## Fluxo de trabalho (resumo)');
-    expect(s).toContain('salvo a via rápida');
+    const s = section(CLAUDE, '## Workflow (summary)');
+    expect(s).toContain('except the fast track');
     expect(s).toContain('.claude/skills/via-rapida/SKILL.md');
     expect(CLAUDE.length).toBeLessThanOrEqual(15000);
   });

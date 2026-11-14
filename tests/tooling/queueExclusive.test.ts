@@ -436,23 +436,23 @@ describe('painel.py — todo .md de docs/ e da raiz por seção (TS1, decisões 
   });
 
   it('os .md da raiz se comparam por seção, com ./ normalizado e .md novo da raiz', () => {
-    expect(
-      motivo('CLAUDE.md#regras-de-arquitetura', 'CLAUDE.md#fluxo-de-trabalho-resumo'),
-    ).toBe('#2 começa');
+    expect(motivo('CLAUDE.md#architecture-rules', 'CLAUDE.md#workflow-summary')).toBe(
+      '#2 começa',
+    );
     expect(motivo('CLAUDE.md#stack', 'CLAUDE.md#stack')).toBe(
       '#2 arquivo CLAUDE.md#stack com #1',
     );
-    expect(motivo('CLAUDE.md', 'CLAUDE.md#projeto')).toBe(
-      '#2 arquivo CLAUDE.md#projeto com #1',
+    expect(motivo('CLAUDE.md', 'CLAUDE.md#project')).toBe(
+      '#2 arquivo CLAUDE.md#project com #1',
     );
-    expect(motivo('CLAUDE.md#projeto', 'CLAUDE.md')).toBe(
+    expect(motivo('CLAUDE.md#project', 'CLAUDE.md')).toBe(
       '#2 ficha incompleta (toca: CLAUDE.md)',
     );
-    expect(motivo('README.md#como-testar', 'README.md#documentacao')).toBe('#2 começa');
-    expect(motivo('README.md', 'README.md#documentacao')).toBe(
-      '#2 arquivo README.md#documentacao com #1',
+    expect(motivo('README.md#how-to-test', 'README.md#documentation')).toBe('#2 começa');
+    expect(motivo('README.md', 'README.md#documentation')).toBe(
+      '#2 arquivo README.md#documentation com #1',
     );
-    expect(motivo('./CLAUDE.md#stack', 'CLAUDE.md#codigo')).toBe('#2 começa');
+    expect(motivo('./CLAUDE.md#stack', 'CLAUDE.md#code')).toBe('#2 começa');
     expect(motivo('AGENTS.md#a', 'AGENTS.md#b')).toBe('#2 começa');
   });
 

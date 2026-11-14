@@ -1,129 +1,129 @@
 # Mapping
 
-Aplicação web para marcar **áreas retangulares** em imagens, organizá-las em **camadas** e anotá-las com pares chave-valor (livres) ou com **anotações tipadas** definidas por uma _especialização_ (ex: SDUI, modelo de dados). Tudo é salvo num `mapping.json` ao lado das imagens, num formato pensado para ser lido por um agente de IA: as coordenadas são pixels da imagem original, então o agente recorta exatamente a área marcada.
+A web app to mark **rectangular areas** on images, organize them into **layers** and annotate them with free key-value pairs or with **typed annotations** defined by a _specialization_ (e.g. SDUI, data model). Everything is saved in a `mapping.json` next to the images, in a format designed to be read by an AI agent: the coordinates are pixels of the original image, so the agent crops exactly the marked area.
 
-O núcleo é **genérico** (imagens, marcações, camadas, anotações, componentes e telas): todo conceito de domínio (SDUI, plataformas, Figma, contratos) entra por _especializações_, para a mesma ferramenta servir a N aplicações.
+The core is **generic** (images, markings, layers, annotations, components and screens): every domain concept (SDUI, platforms, Figma, contracts) comes in through _specializations_, so the same tool serves any number of applications.
 
-- **Só desktop**: feita para estação de trabalho (mouse, teclado, painéis lado a lado), com janela mínima de 900×720 px; numa janela mais estreita ou mais baixa a app mostra "Abra numa janela maior" e volta ao normal ao alargar ou crescer. Toque simples (num monitor de toque) funciona; não há layout de celular.
-- **Um único arquivo**: o build gera `dist/index.html` autocontido; funciona aberto por `file://` (Chrome/Edge desktop) e hospedado no GitHub Pages, sem requisições de rede (ver [Privacidade](#privacidade-e-seus-dados)).
-- **Dois modos de armazenamento**: _pasta_ no disco (File System Access API, Chrome/Edge desktop) ou _projeto local_ no navegador (IndexedDB). Qualquer projeto pode ser exportado em `.zip`.
-- Tema claro/escuro, português (pt-BR) e inglês (en-US), instalável como PWA (só em `https:`).
-- **Servidor MCP** para agentes de IA lerem projetos em pasta e **proporem alterações** a eles, com o Ctrl+C da app copiando a referência do item selecionado. O agente nunca grava o `mapping.json` (não há `apply_changes`). Instalação e uso em [`docs/MCP.md`](docs/MCP.md).
-- **Propostas de alteração com revisão** (etapa 4): toda alteração feita por um agente chega como uma _proposta_, uma espécie de pull request dentro da ferramenta, gravada em `proposals/` na pasta do projeto (versionada junto com o resto; o zip exportado a inclui). Na janela **Propostas** (Ctrl+Shift+7) o usuário abre a proposta no **modo revisão**: o projeto fica somente leitura, o canvas mostra o projeto **como ficaria** (alternância Atual / Proposto), e ele **aceita ou rejeita** em qualquer nível (proposta, imagem, item ou mudança), deixa **notas** no que rejeitou e usa **Aplicar aceitas** (uma entrada de desfazer). A revisão pode ser interrompida e retomada, inclusive depois de fechar a app. O agente lê a revisão (`get_proposal_review`) e corrige a mesma proposta (`revise_proposal`: troca, retira e acrescenta, sem mexer no que o usuário aceitou); depois de aplicada, manda uma nova (`supersedes`) só com as correções. Imagens e marcações têm uma identidade externa genérica (`source`), e as especializações `formatVersion` 3 declaram a que elementos de um sistema externo cada tipo e campo correspondem (`sources`); o núcleo não interpreta o sistema. Para experimentar sem um agente, abra `examples/proposta-exemplo.zip` na app. Formato em [`docs/PROPOSAL-FORMAT.md`](docs/PROPOSAL-FORMAT.md).
-- **Guia interativo e projeto de exemplo**: um passeio de 12 passos (a página `guia/`, que funciona sem internet, aberta pela tela inicial e pela **Ajuda**) e o projeto de exemplo, o arquivo `examples/exemplo-completo.zip` deste repositório, que se abre pelo **Abrir zip** (não vai embutido na app). Ver [Guia interativo e exemplo](#guia-interativo-e-projeto-de-exemplo).
-- **Código das especializações**: uma especialização pode declarar _plataformas_ e dizer com que código se cria uma instância de cada tipo nelas (`code`: o que se chama, `symbol`, e o arquivo que o define, `path`, no repositório `repo` da plataforma); o projeto só guarda o clone local (`platformRepos`). Nos Detalhes, a linha "Definição" tem "Abrir no repositório" e "Copiar caminho". O mapeamento não guarda nada sobre a solução. O agente recebe as chamadas a escrever para uma marcação (`get_code_hints`) e acha, a partir de um arquivo, os tipos que o usam e as marcações deles (`find_by_code`). O núcleo continua genérico: nenhum nome de plataforma no código da app nem do servidor MCP. Formato em [`docs/SPEC-FORMAT.md`](docs/SPEC-FORMAT.md) e [`docs/FORMAT.md`](docs/FORMAT.md).
-- **Biblioteca de componentes** (etapa Biblioteca, concluída): a especialização pode entregar um _pacote_ (pasta com componentes, fontes, documentos e exemplos) que a app valida, aplica e atualiza com migrações; telas sem imagem montadas com componentes direto no canvas, e um **Catálogo** para navegar pelos componentes e experimentar os campos. Formato em [`docs/COMPONENT-FORMAT.md`](docs/COMPONENT-FORMAT.md) e [`docs/SPEC-FORMAT.md`](docs/SPEC-FORMAT.md).
+- **Desktop only**: made for a workstation (mouse, keyboard, side-by-side panels), with a minimum window of 900×720 px; in a narrower or shorter window the app shows "Open in a larger window" and goes back to normal when the window grows. Simple touch (on a touch monitor) works; there is no phone layout.
+- **A single file**: the build produces a self-contained `dist/index.html`; it works opened through `file://` (desktop Chrome/Edge) and hosted on GitHub Pages, with no network requests (see [Privacy](#privacy-and-your-data)).
+- **Two storage modes**: a _folder_ on disk (File System Access API, desktop Chrome/Edge) or a _local project_ in the browser (IndexedDB). Any project can be exported as a `.zip`.
+- Light/dark theme, Portuguese (pt-BR) and English (en-US), installable as a PWA (only on `https:`).
+- **MCP server** for AI agents to read projects in a folder and **propose changes** to them, with the app's Ctrl+C copying the reference of the selected item. The agent never writes the `mapping.json` (there is no `apply_changes`). Installation and use in [`docs/MCP.md`](docs/MCP.md).
+- **Change proposals with review** (stage 4): every change made by an agent arrives as a _proposal_, a kind of pull request inside the tool, saved in `proposals/` in the project folder (versioned along with the rest; the exported zip includes it). In the **Proposals** window (Ctrl+Shift+7) the user opens the proposal in **review mode**: the project becomes read-only, the canvas shows the project **as it would be** (Current / Proposed toggle), and they **accept or reject** at any level (proposal, image, item or change), leave **notes** on what they rejected and use **Apply accepted** (one undo entry). The review can be interrupted and resumed, even after closing the app. The agent reads the review (`get_proposal_review`) and fixes the same proposal (`revise_proposal`: replaces, withdraws and adds, without touching what the user accepted); after it is applied, it sends a new one (`supersedes`) with only the fixes. Images and markings have a generic external identity (`source`), and `formatVersion` 3 specializations declare which elements of an external system each type and field correspond to (`sources`); the core does not interpret the system. To try it without an agent, open `examples/proposta-exemplo.zip` in the app. Format in [`docs/PROPOSAL-FORMAT.md`](docs/PROPOSAL-FORMAT.md).
+- **Interactive guide and example project**: a 12-step tour (the `guia/` page, which works offline, opened from the home screen and from **Help**) and the example project, the `examples/exemplo-completo.zip` file in this repository, opened through **Open zip** (it is not embedded in the app). See [Interactive guide and example project](#interactive-guide-and-example-project).
+- **Specialization code**: a specialization can declare _platforms_ and say which code creates an instance of each type on them (`code`: what is called, `symbol`, and the file that defines it, `path`, in the platform's `repo` repository); the project only keeps the local clone (`platformRepos`). In Details, the "Definition" row has "Open in repository" and "Copy path". The mapping stores nothing about the solution. The agent receives the calls to write for a marking (`get_code_hints`) and finds, from a file, the types that use it and their markings (`find_by_code`). The core stays generic: no platform name in the app or MCP server code. Format in [`docs/SPEC-FORMAT.md`](docs/SPEC-FORMAT.md) and [`docs/FORMAT.md`](docs/FORMAT.md).
+- **Component library** (Library stage, finished): a specialization can deliver a _package_ (a folder with components, sources, documents and examples) that the app validates, applies and updates with migrations; screens without an image assembled from components directly on the canvas, and a **Catalog** to browse the components and try out the fields. Format in [`docs/COMPONENT-FORMAT.md`](docs/COMPONENT-FORMAT.md) and [`docs/SPEC-FORMAT.md`](docs/SPEC-FORMAT.md).
 
-## Privacidade e seus dados
+## Privacy and your data
 
-Seus projetos e imagens **ficam no seu dispositivo** (na pasta que você escolheu ou no navegador) e **não são enviados a nenhum servidor**. Isso não é só uma promessa do código: o `index.html` carrega uma _Content Security Policy_ que o próprio navegador impõe, com `connect-src 'none'` e `default-src 'none'`. Na prática:
+Your projects and images **stay on your device** (in the folder you chose or in the browser) and **are not sent to any server**. This is not just a promise of the code: the `index.html` carries a _Content Security Policy_ that the browser itself enforces, with `connect-src 'none'` and `default-src 'none'`. In practice:
 
-- a app **não consegue** fazer requisição de rede (`fetch`, `XMLHttpRequest`, `WebSocket`…), nem carregar imagem, fonte, script, estilo ou frame de outro endereço;
-- não há telemetria, analytics, fontes ou bibliotecas carregadas de CDN: tudo (código e estilos) está dentro do arquivo, e a política só aceita exatamente esse conteúdo (por hash), sem `'unsafe-inline'` nem `'unsafe-eval'`;
-- o único contato com a rede é o do **navegador** ao baixar a app (e o service worker ao procurar versão nova) a partir de onde ela está hospedada; seus dados nunca participam disso;
-- o que sai da app é o que **você** manda: o `.zip` exportado, baixado ou compartilhado pela folha de compartilhamento do sistema.
+- the app **cannot** make a network request (`fetch`, `XMLHttpRequest`, `WebSocket`…), nor load an image, font, script, style or frame from another address;
+- there is no telemetry, analytics, or fonts or libraries loaded from a CDN: everything (code and styles) is inside the file, and the policy only accepts exactly that content (by hash), with no `'unsafe-inline'` or `'unsafe-eval'`;
+- the only contact with the network is the **browser's**, when downloading the app (and the service worker, when looking for a new version) from where it is hosted; your data never takes part in it;
+- what leaves the app is what **you** send: the exported `.zip`, downloaded or shared through the system share sheet.
 
-A política é gerada no build, e o build falha se ela faltar ou não bater com o conteúdo do arquivo; testes Playwright confirmam o bloqueio. Detalhes e motivos em [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#content-security-policy).
+The policy is generated at build time, and the build fails if it is missing or does not match the file's content; Playwright tests confirm the blocking. Details and reasons in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#content-security-policy).
 
-## Como rodar
+## How to run
 
-Requer Node 22 (fixado em `.nvmrc` e em `engines` no `package.json`; com nvm, `nvm use`).
+Requires Node 22 (pinned in `.nvmrc` and in `engines` in `package.json`; with nvm, `nvm use`).
 
 ```bash
 npm ci
-npm run dev        # servidor de desenvolvimento (Vite)
-npm run build      # gera dist/index.html (e sw.js, manifest.webmanifest) com a CSP
-npm run dev:viewer # demonstração do visualizador embutível num hospedeiro React (viewer/README.md)
-npm run build:viewer # gera dist-viewer/ (visualizador embutível: núcleo, invólucro React e tipos)
-npm run build:guia   # regera public/guia/index.html (o npm run build já faz)
-npm run build:example # regera examples/exemplo-completo.zip e materializa examples/exemplo-completo/specs/
-npm run build:proposal-components # regera examples/proposta-componentes.zip (proposta com componentes novos, roteiro R13)
-npm run build:suggestions-kotlin # regera examples/sugestoes-kotlin.zip (biblioteca Kotlin com duas data classes, roteiro R14)
+npm run dev        # development server (Vite)
+npm run build      # generates dist/index.html (and sw.js, manifest.webmanifest) with the CSP
+npm run dev:viewer # demo of the embeddable viewer in a React host (viewer/README.md)
+npm run build:viewer # generates dist-viewer/ (embeddable viewer: core, React wrapper and types)
+npm run build:guia   # regenerates public/guia/index.html (npm run build already does it)
+npm run build:example # regenerates examples/exemplo-completo.zip and materializes examples/exemplo-completo/specs/
+npm run build:proposal-components # regenerates examples/proposta-componentes.zip (proposal with new components, script R13)
+npm run build:suggestions-kotlin # regenerates examples/sugestoes-kotlin.zip (Kotlin library with two data classes, script R14)
 ```
 
-## Guia interativo e projeto de exemplo
+## Interactive guide and example project
 
-Baixe o `examples/exemplo-completo.zip` do repositório e abra-o pelo **Abrir zip**, na tela inicial: é uma cópia do projeto `examples/exemplo-completo/` (para abrir a pasta com **Abrir pasta**, rode `npm run build:example` antes: o `specs/` dela é gerado das fontes e não vai no git; 4 telas, 31 marcações, 41 anotações, 8 camadas, 3 especializações e uma proposta de alteração para revisar), O **Guia interativo** (na lateral, e na **Ajuda**) abre numa aba nova o passeio de 12 passos sobre esse mesmo projeto, para seguir lado a lado com a app. O guia é uma página estática (`public/guia/index.html`, publicada em `guia/` ao lado do `index.html`), gerada do projeto de exemplo, no tema da app, e fica no cache do service worker.
+Download `examples/exemplo-completo.zip` from the repository and open it through **Open zip**, on the home screen: it is a copy of the `examples/exemplo-completo/` project (to open the folder with **Open folder**, run `npm run build:example` first: its `specs/` is generated from the sources and is not in git; 4 screens, 31 markings, 41 annotations, 8 layers, 3 specializations and a change proposal to review). The **Interactive guide** (in the sidebar, and in **Help**) opens in a new tab the 12-step tour over that same project, to follow side by side with the app. The guide is a static page (`public/guia/index.html`, published at `guia/` next to the `index.html`), generated from the example project, in the app's theme, and kept in the service worker's cache.
 
 ```bash
-npm run build:example   # examples/exemplo-completo.zip e specs/ da pasta examples/exemplo-completo/ (materializado das fontes)
-npm run build:guia      # public/guia/index.html, do template e do exemplo
+npm run build:example   # examples/exemplo-completo.zip and specs/ of the examples/exemplo-completo/ folder (materialized from the sources)
+npm run build:guia      # public/guia/index.html, from the template and the example
 ```
 
-Como é gerado, o que abrir o exemplo grava e como mudar o exemplo: [`docs/GUIDE.md`](docs/GUIDE.md). Roteiro de teste manual: R11 do [`docs/TESTING.md`](docs/TESTING.md).
+How it is generated, what opening the example writes and how to change the example: [`docs/GUIDE.md`](docs/GUIDE.md). Manual test script: R11 of [`docs/TESTING.md`](docs/TESTING.md).
 
-## Como testar
+## How to test
 
 ```bash
-npm run build:mcp    # gera dist-mcp/mapping-mcp.js (servidor MCP em arquivo único)
-npm run lint         # eslint + prettier --check (inclui complexidade por função até 10; legado em eslint-suppressions.json)
-npm run lint:ci      # o mesmo, com cache em .cache/ (usado pelo CI)
-npm run typecheck    # tsc --noEmit (app e servidor MCP); build e build:mcp não repetem o tsc
-npm test             # Vitest: modelo (Node), store, storage, canvas e componentes
-npm run test:coverage # com relatório de cobertura em coverage/ (pula os orçamentos de desempenho)
-npm run test:perf    # só os orçamentos de desempenho por quadro
-npm run test:e2e     # Playwright contra dist/index.html (precisa de npm run build antes; inclui a CSP e o service worker, que usam openssl)
+npm run build:mcp    # generates dist-mcp/mapping-mcp.js (single-file MCP server)
+npm run lint         # eslint + prettier --check (includes per-function complexity up to 10; legacy in eslint-suppressions.json)
+npm run lint:ci      # the same, with a cache in .cache/ (used by CI)
+npm run typecheck    # tsc --noEmit (app and MCP server); build and build:mcp do not repeat tsc
+npm test             # Vitest: model (Node), store, storage, canvas and components
+npm run test:coverage # with a coverage report in coverage/ (skips the performance budgets)
+npm run test:perf    # only the per-frame performance budgets
+npm run test:e2e     # Playwright against dist/index.html (needs npm run build first; includes the CSP and the service worker, which use openssl)
 ```
 
-Antes de abrir um PR: `npm run lint && npm run typecheck && npm test && npm run build`.
+Before opening a PR: `npm run lint && npm run typecheck && npm test && npm run build`.
 
-O E2E roda no CI. Localmente, rode `npm run build` e informe o Chrome com `PLAYWRIGHT_CHROMIUM_EXECUTABLE=<caminho>`.
+E2E runs in CI. Locally, run `npm run build` and point to Chrome with `PLAYWRIGHT_CHROMIUM_EXECUTABLE=<path>`.
 
-## Como publicar
+## How to publish
 
-Os workflows em `.github/workflows/`:
+The workflows in `.github/workflows/`:
 
-- **`ci.yml`**: em todo PR (e por `workflow_call`, chamado pelo `deploy.yml`; não roda mais em push): o job `epic` confere a origem (PR para a `main` só a partir de `epic/*` ou do Dependabot; check obrigatório no ruleset da `main`), e depois lint, typecheck, testes com cobertura, orçamentos de desempenho, build (app e servidor MCP), orçamento de tamanho do `dist/index.html` (teto em `scripts/ci/dist-budget.json`, que o `scripts/ci/distBudget.mjs raise --write` sobe sem mexer no `ci.yml`; o último passo do `build` mostra o tamanho e a margem no resumo do job e avisa abaixo de 2 KiB) e E2E. Todo job tem `timeout-minutes` perto do dobro do tempo medido: o que trava para e o `check` termina vermelho em vez de ficar pendente. O `check` é o agregador de quatro jobs em paralelo (`static`: lint e typecheck; `test`: 4 shards do Vitest com cobertura, balanceados por tempo (`tests/support/timedSequencer.ts` lê os tempos de `tests/support/durations.json`; `npm run test:durations` os regenera, e tempo desatualizado só desequilibra) e sem gerar relatório (`COVERAGE_REPORT=off`); `coverage`: junta os blobs e gera o relatório; `build`: desempenho, build, tamanho, MCP e visualizador), ao lado do `e2e`; `node_modules`, o cache do ESLint/Prettier e o navegador do Playwright ficam em cache. O `e2e` usa 3 workers no CI (`workers: 3`) e só roda o `playwright install-deps chromium` se o Chromium em cache não abrir. O Playwright repete uma vez no CI, com trace só na repetição.
-- **`mcp-prerelease.yml`**: pre-releases do servidor MCP para testar antes da estável: um snapshot por PR com base em `epic/**` (`mcp-snapshot-pr<N>`, apagado quando o PR fecha) e uma release candidate no merge do PR da última fase do épico, o que leva o rótulo `mcp-rc` (`mcp-v<versão>-rc.<n>`, apagadas quando a estável sai); ver [`docs/MCP.md`](docs/MCP.md).
-- **`mcp-release.yml`**: no merge de um épico na `main`, publica a estável `mcp-v<versão>` (tag e Release juntas, com `mapping-mcp.js` e os arquivos do workspace) quando a versão de `mcp/version.ts` ainda não tem tag; com a tag já existente, termina verde sem publicar. Uma tag `mcp-v<versão>` criada à mão e o Run workflow para uma tag que já existe seguem como plano B (ver [`docs/MCP.md`](docs/MCP.md)).
-- **`preview-on-pr.yml`**: por `workflow_run`, quando o `ci.yml` de um PR do próprio repositório termina em sucesso, dispara o `deploy.yml` com o branch e o SHA validado do PR, que passa a ocupar o `/preview/`. Commit superado (CI cancelado) não gera preview.
-- **`ci-rerun.yml`**: por `workflow_run`, quando o `ci.yml` de um PR do próprio repositório (não do Dependabot) termina vermelho na tentativa 1, roda de novo, uma vez, só os jobs que sumiram da execução por runner abandonado do GitHub (`scripts/ci/ciRerun.mjs` decide, pelos jobs do `ci.yml` da `main`). Falha de teste, lint, build e timeout não são reexecutados. A mudança só vale depois do merge na `main`.
-- **`deploy.yml`**: um push na `main` publica a versão principal no GitHub Pages (em `/`). Antes, chama o `ci.yml` inteiro (`workflow_call`) para a `main` e, no preview, também para o branch. Com o input `sha` cujos check runs `check` e `e2e` estão verdes, não roda o `ci.yml` de novo e publica esse SHA em `/preview/`; sem isso (disparo manual), roda o `ci.yml` no branch como antes. Todo deploy grava `deploy.json` na raiz do site com o commit da `main` publicado. Sem preview, a falha da `main` bloqueia tudo; com preview, o branch precisa passar, mas a falha da `main` (que só é checada se ela mudou desde o `deploy.json`) não bloqueia: a produção é republicada do commit já publicado, com aviso no resumo.
-- **`dependabot.yml`**: atualizações semanais de npm e GitHub Actions, com minor e patch agrupados num PR por ecossistema.
+- **`ci.yml`**: on every PR (and through `workflow_call`, called by `deploy.yml`; it no longer runs on push): the `epic` job checks the origin (a PR to `main` only from `epic/*` or from Dependabot; a required check in `main`'s ruleset), and then lint, typecheck, tests with coverage, performance budgets, build (app and MCP server), size budget of `dist/index.html` (ceiling in `scripts/ci/dist-budget.json`, which `scripts/ci/distBudget.mjs raise --write` raises without touching `ci.yml`; the last step of `build` shows the size and the margin in the job summary and warns below 2 KiB) and E2E. Every job has a `timeout-minutes` close to double the measured time: one that hangs stops and the `check` ends red instead of staying pending. The `check` is the aggregator of four parallel jobs (`static`: lint and typecheck; `test`: 4 Vitest shards with coverage, balanced by time (`tests/support/timedSequencer.ts` reads the times from `tests/support/durations.json`; `npm run test:durations` regenerates them, and outdated times only unbalance) and without generating a report (`COVERAGE_REPORT=off`); `coverage`: merges the blobs and generates the report; `build`: performance, build, size, MCP and viewer), next to the `e2e`; `node_modules`, the ESLint/Prettier cache and the Playwright browser are cached. The `e2e` uses 3 workers in CI (`workers: 3`) and only runs `playwright install-deps chromium` if the cached Chromium does not open. Playwright retries once in CI, with a trace only on the retry.
+- **`mcp-prerelease.yml`**: MCP server pre-releases to test before the stable one: a snapshot per PR based on `epic/**` (`mcp-snapshot-pr<N>`, deleted when the PR closes) and a release candidate on the merge of the epic's last-phase PR, which carries the `mcp-rc` label (`mcp-v<version>-rc.<n>`, deleted when the stable one is out); see [`docs/MCP.md`](docs/MCP.md).
+- **`mcp-release.yml`**: on the merge of an epic into `main`, publishes the stable `mcp-v<version>` (tag and Release together, with `mapping-mcp.js` and the workspace files) when the version in `mcp/version.ts` does not have a tag yet; with the tag already existing, it ends green without publishing. A `mcp-v<version>` tag created by hand and the Run workflow for a tag that already exists remain as plan B (see [`docs/MCP.md`](docs/MCP.md)).
+- **`preview-on-pr.yml`**: through `workflow_run`, when the `ci.yml` of a PR from the repository itself ends in success, it triggers `deploy.yml` with the PR's branch and validated SHA, which takes over `/preview/`. A superseded commit (cancelled CI) generates no preview.
+- **`ci-rerun.yml`**: through `workflow_run`, when the `ci.yml` of a PR from the repository itself (not Dependabot's) ends red on attempt 1, it runs again, once, only the jobs that disappeared from the run because of an abandoned GitHub runner (`scripts/ci/ciRerun.mjs` decides, from the jobs of `main`'s `ci.yml`). Test, lint, build and timeout failures are not rerun. The change only takes effect after the merge into `main`.
+- **`deploy.yml`**: a push to `main` publishes the main version on GitHub Pages (at `/`). Before that, it calls the whole `ci.yml` (`workflow_call`) for `main` and, in the preview, for the branch too. With the `sha` input whose `check` and `e2e` check runs are green, it does not run `ci.yml` again and publishes that SHA at `/preview/`; without it (manual dispatch), it runs `ci.yml` on the branch as before. Every deploy writes `deploy.json` at the site root with the published `main` commit. Without a preview, `main`'s failure blocks everything; with a preview, the branch must pass, but `main`'s failure (which is only checked if it changed since `deploy.json`) does not block: production is republished from the already published commit, with a notice in the summary.
+- **`dependabot.yml`**: weekly npm and GitHub Actions updates, with minor and patch grouped into one PR per ecosystem.
 
-O `index.html` avulso também sai como artefato do workflow, para abrir por `file://`.
+The standalone `index.html` also comes out as a workflow artifact, to open through `file://`.
 
-## Como usar o preview de um branch
+## How to use a branch preview
 
-Quando o CI de um PR fica verde, o branch dele é publicado em `/preview/` sozinho (`preview-on-pr.yml` dispara o Deploy com o SHA validado); há um preview só, o do último PR com CI verde. Para publicar outro branch à mão: em **Actions → Deploy → Run workflow**, escolha o branch em "Use workflow from" (ou digite o nome no campo `branch`). O workflow publica:
+When a PR's CI turns green, its branch is published at `/preview/` automatically (`preview-on-pr.yml` triggers the Deploy with the validated SHA); there is only one preview, that of the last PR with green CI. To publish another branch by hand: in **Actions → Deploy → Run workflow**, choose the branch in "Use workflow from" (or type the name in the `branch` field). The workflow publishes:
 
-- a `main`, intacta, em `/` (o último commit validado: se os checks da `main` falharem, fica o já publicado);
-- o branch em **`/preview/`**, construído com `VITE_CHANNEL=preview`.
+- `main`, intact, at `/` (the last validated commit: if `main`'s checks fail, the already published one stays);
+- the branch at **`/preview/`**, built with `VITE_CHANNEL=preview`.
 
-O preview tem **armazenamento separado** (IndexedDB, `localStorage` e service worker próprios): ele não enxerga nem migra os projetos locais da versão principal. Uma faixa no topo avisa que é uma versão de teste (dá para dispensá-la na sessão; o selo PREVIEW na barra e o canal na barra de status ficam sempre), e o manifest tem outro nome, para instalar os dois lado a lado.
+The preview has **separate storage** (its own IndexedDB, `localStorage` and service worker): it does not see or migrate the local projects of the main version. A banner at the top warns that it is a test version (it can be dismissed for the session; the PREVIEW badge in the bar and the channel in the status bar always stay), and the manifest has another name, so both can be installed side by side.
 
-## Como relatar um problema
+## How to report a problem
 
-Para testar a app de ponta a ponta (onde pegar, requisitos, roteiros com o resultado esperado de cada passo e o template do relato), siga o guia do testador: [`docs/TESTING.md`](docs/TESTING.md). O agente testador é uma sessão do Claude Code na nuvem, sem você no computador; o prompt inicial dele está em [`docs/TESTING-NUVEM.md`](docs/TESTING-NUVEM.md) (rodada completa ou dirigida por achados de um relato, por uma lista de passos ou pelas fases de uma etapa), e o guia tem um apêndice só para o agente.
+To test the app end to end (where to get it, requirements, scripts with the expected result of each step and the report template), follow the tester's guide: [`docs/TESTING.md`](docs/TESTING.md). The tester agent is a Claude Code session in the cloud, without you at the computer; its initial prompt is in [`docs/TESTING-NUVEM.md`](docs/TESTING-NUVEM.md) (a full round or one driven by the findings of a report, by a list of steps or by the phases of a stage), and the guide has an appendix just for the agent.
 
-A app não envia nada para a rede (nem telemetria), então o relato depende de você copiar os dados:
+The app sends nothing to the network (not even telemetry), so the report depends on you copying the data:
 
-1. Abra o **Diagnóstico**: a aba Diagnóstico da janela de baixo (`Ctrl+Shift+6`).
-2. Clique em **Copiar**. O texto traz um cabeçalho com a versão (build), canal, schema, tipo de armazenamento (pasta ou local), navegador, tamanho da janela, idioma, tema, quantas imagens, marcações e anotações o projeto tem e se há gravação pendente, seguido dos erros registrados. Não leva nomes de projeto, de imagens nem caminhos.
-3. Abra uma issue em [github.com/fabianofranca/mapping/issues](https://github.com/fabianofranca/mapping/issues) com o texto copiado, o que você fez, o que esperava e o que aconteceu (um print ajuda).
+1. Open **Diagnostics**: the Diagnostics tab of the bottom window (`Ctrl+Shift+6`).
+2. Click **Copy**. The text carries a header with the version (build), channel, schema, storage type (folder or local), browser, window size, language, theme, how many images, markings and annotations the project has and whether there is a pending write, followed by the logged errors. It does not carry project names, image names or paths.
+3. Open an issue at [github.com/fabianofranca/mapping/issues](https://github.com/fabianofranca/mapping/issues) with the copied text, what you did, what you expected and what happened (a screenshot helps).
 
-Sem projeto aberto, a versão fica em **Configurações → Sobre**, que também tem **Copiar**; com um projeto aberto, ela aparece ainda no fim da barra de status.
+With no project open, the version is in **Settings → About**, which also has **Copy**; with a project open, it also appears at the end of the status bar.
 
-## Documentação
+## Documentation
 
-- [`docs/TESTING.md`](docs/TESTING.md): guia do testador (onde pegar a app, requisitos, mapa da interface, instalação do MCP, roteiros de teste manual, teste manual avançado e os templates do relato e do registro de uso real; apêndices para o agente testador e para operações de disco).
-- [`docs/TESTING-NUVEM.md`](docs/TESTING-NUVEM.md): prompt do testador da nuvem (sessão do Claude Code no ambiente "Mapping - testes", sem o dono).
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): camadas, fluxo de dados, regras e onde fica cada coisa.
-- [`docs/GUIDE.md`](docs/GUIDE.md): guia interativo e projeto de exemplo (como são gerados, o que abrir o exemplo grava, como mudá-los).
-- [`docs/FORMAT.md`](docs/FORMAT.md): referência do `mapping.json` (schema v13).
-- [`docs/PROPOSAL-FORMAT.md`](docs/PROPOSAL-FORMAT.md): formato da proposta de alteração e regras da revisão.
-- [`docs/COMMENT-FORMAT.md`](docs/COMMENT-FORMAT.md): formato da conversa ancorada (`mapping-thread`), a gramática das referências e citações e a API do modelo.
-- [`docs/MCP.md`](docs/MCP.md): servidor MCP (instalação, `.mcp.json`, raízes, tools, referências e solução de problemas); [`docs/AGENT-GUIDE.md`](docs/AGENT-GUIDE.md) é o guia do agente.
-- [`docs/SPEC-FORMAT.md`](docs/SPEC-FORMAT.md): formato do arquivo de especialização (e [`docs/spec.schema.json`](docs/spec.schema.json)); exemplos em [`examples/specs/`](examples/specs/).
-- [`.claude/skills/spec-author/SKILL.md`](.claude/skills/spec-author/SKILL.md): skill do Claude Code que escreve e valida uma especialização a partir de um código ou design system (copie a pasta para o repositório mapeado ou para `~/.claude/skills/`).
-- [`examples/workspace/`](examples/workspace/): esqueleto de uma pasta que centraliza projetos Mapping, pronta para qualquer agente MCP (servidor, raízes, skill e `AGENTS.md` por caminho relativo; `setup.sh` baixa a release).
-- [`docs/COMPONENT-FORMAT.md`](docs/COMPONENT-FORMAT.md): formato do arquivo de componente (`mapping-component`): nós, dimensionamento, expressões e avisos do motor; [`docs/component.schema.json`](docs/component.schema.json) é o JSON Schema (documentação; o código é a fonte da verdade).
-- [`docs/DESIGN-SYSTEM.md`](docs/DESIGN-SYSTEM.md): design system (artefato do Claude Design): mapa componente → origem no código, gatilhos, pendências e histórico de sincronização.
-- [`viewer/README.md`](viewer/README.md): visualizador embutível (pacote `mapping-viewer`): estrutura, comandos e a demonstração em React.
-- **Planejamento nas issues do GitHub** ([github.com/fabianofranca/mapping/issues](https://github.com/fabianofranca/mapping/issues)): os itens futuros são issues com o rótulo `roadmap` (cada uma com um rótulo de impacto, `impact: high`, `medium` ou `low`, que fica quando ela vira etapa), e os defeitos com o `bug` (tipo que acompanha a issue até fechar, com um rótulo de severidade `severity: high`, `medium` ou `low`; antes de abrir um, procura-se uma issue igual ou que o agrupe; as capturas ficam no branch `evidencias`); a etapa detalhada, pronta para desenvolver, é uma issue com o rótulo `ready`, com uma sub-issue (rótulo `step`) por fase; quando o épico começa, ela passa a `in-progress`; as concluídas ficam nas issues fechadas com esse rótulo. O que veio antes delas está no histórico do git.
-- [`CLAUDE.md`](CLAUDE.md): regras de trabalho para o Claude Code.
-- [`docs/PROCESS.md`](docs/PROCESS.md): processo de entrega (issues, épicos, fases, testador, revisão de código, uso de modelos).
+- [`docs/TESTING.md`](docs/TESTING.md): the tester's guide (where to get the app, requirements, interface map, MCP installation, manual test scripts, advanced manual testing and the templates of the report and of the real-use log; appendices for the tester agent and for disk operations).
+- [`docs/TESTING-NUVEM.md`](docs/TESTING-NUVEM.md): prompt of the cloud tester (a Claude Code session in the "Mapping - testes" environment, without the owner).
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): layers, data flow, rules and where each thing lives.
+- [`docs/GUIDE.md`](docs/GUIDE.md): interactive guide and example project (how they are generated, what opening the example writes, how to change them).
+- [`docs/FORMAT.md`](docs/FORMAT.md): reference of the `mapping.json` (schema v13).
+- [`docs/PROPOSAL-FORMAT.md`](docs/PROPOSAL-FORMAT.md): format of the change proposal and the rules of the review.
+- [`docs/COMMENT-FORMAT.md`](docs/COMMENT-FORMAT.md): format of the anchored thread (`mapping-thread`), the grammar of references and citations and the model API.
+- [`docs/MCP.md`](docs/MCP.md): MCP server (installation, `.mcp.json`, roots, tools, references and troubleshooting); [`docs/AGENT-GUIDE.md`](docs/AGENT-GUIDE.md) is the agent's guide.
+- [`docs/SPEC-FORMAT.md`](docs/SPEC-FORMAT.md): format of the specialization file (and [`docs/spec.schema.json`](docs/spec.schema.json)); examples in [`examples/specs/`](examples/specs/).
+- [`.claude/skills/spec-author/SKILL.md`](.claude/skills/spec-author/SKILL.md): Claude Code skill that writes and validates a specialization from a codebase or design system (copy the folder to the mapped repository or to `~/.claude/skills/`).
+- [`examples/workspace/`](examples/workspace/): skeleton of a folder that centralizes Mapping projects, ready for any MCP agent (server, roots, skill and `AGENTS.md` by relative path; `setup.sh` downloads the release).
+- [`docs/COMPONENT-FORMAT.md`](docs/COMPONENT-FORMAT.md): format of the component file (`mapping-component`): nodes, sizing, expressions and engine warnings; [`docs/component.schema.json`](docs/component.schema.json) is the JSON Schema (documentation; the code is the source of truth).
+- [`docs/DESIGN-SYSTEM.md`](docs/DESIGN-SYSTEM.md): design system (Claude Design artifact): component → code origin map, triggers, pending items and sync history.
+- [`viewer/README.md`](viewer/README.md): embeddable viewer (package `mapping-viewer`): structure, commands and the React demo.
+- **Planning in GitHub issues** ([github.com/fabianofranca/mapping/issues](https://github.com/fabianofranca/mapping/issues)): future items are issues with the `roadmap` label (each with an impact label, `impact: high`, `medium` or `low`, which stays when it becomes a stage), and defects with `bug` (a type that follows the issue until it closes, with a severity label `severity: high`, `medium` or `low`; before opening one, an equal issue or one that groups it is looked for; screenshots live in the `evidencias` branch); the detailed stage, ready to develop, is an issue with the `ready` label, with one sub-issue (label `step`) per phase; when the epic starts, it becomes `in-progress`; the finished ones stay in the closed issues with that label. What came before them is in the git history.
+- [`CLAUDE.md`](CLAUDE.md): working rules for Claude Code.
+- [`docs/PROCESS.md`](docs/PROCESS.md): delivery process (issues, epics, phases, tester, code review, model use).
 
 ## Stack
 
-Vite + TypeScript (strict) + Preact + `@preact/signals`; Konva (canvas); JSZip; zod; idb; `vite-plugin-singlefile`; Vitest e Playwright.
+Vite + TypeScript (strict) + Preact + `@preact/signals`; Konva (canvas); JSZip; zod; idb; `vite-plugin-singlefile`; Vitest and Playwright.

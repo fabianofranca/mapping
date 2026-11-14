@@ -1,90 +1,90 @@
 # CLAUDE.md
 
-## Projeto
+## Project
 
-Mapping: app web para marcar áreas retangulares em imagens, organizar em camadas e anotar com pares chave-valor, salvando tudo num `mapping.json` ao lado das imagens.
+Mapping: a web app to mark rectangular areas on images, organize them into layers and annotate them with key-value pairs, saving everything in a `mapping.json` next to the images.
 
-**Antes de qualquer tarefa de uma etapa, leia a issue dela no GitHub e o [`docs/PROCESS.md`](docs/PROCESS.md)** (rótulo `ready` ou `in-progress`, com as sub-issues de fase e os comentários; ver "Planejamento nas issues" no `docs/PROCESS.md`). Trabalhe **uma fase por vez**, na ordem, e marque os checkboxes concluídos na sub-issue da fase. A referência atual está em `docs/` (`ARCHITECTURE.md`, `FORMAT.md`, `SPEC-FORMAT.md`, `COMMENT-FORMAT.md`, `MCP.md`, `AGENT-GUIDE.md`, `DESIGN-SYSTEM.md`); o plano das etapas concluídas está nas issues fechadas com o rótulo `in-progress` (o que veio antes delas está no histórico do git). Os roteiros de teste manual e o template do relato estão em `docs/TESTING.md`; o prompt do testador da nuvem (sessão do Claude Code sem o dono), em `docs/TESTING-NUVEM.md`.
+**Before any task of a stage, read its GitHub issue and [`docs/PROCESS.md`](docs/PROCESS.md)** (label `ready` or `in-progress`, with the phase sub-issues and the comments; see "Issue planning" in `docs/PROCESS.md`). Work on **one phase at a time**, in order, and tick the finished checkboxes in the phase sub-issue. The current reference is in `docs/` (`ARCHITECTURE.md`, `FORMAT.md`, `SPEC-FORMAT.md`, `COMMENT-FORMAT.md`, `MCP.md`, `AGENT-GUIDE.md`, `DESIGN-SYSTEM.md`); the plan of the finished stages is in the closed issues with the `in-progress` label (what came before them is in the git history). The manual test scripts and the report template are in `docs/TESTING.md`; the prompt of the cloud tester (a Claude Code session without the owner) is in `docs/TESTING-NUVEM.md`.
 
-Skills do Claude Code ficam em `.claude/skills/`: **`spec-author`** escreve e valida especializações (`docs/SPEC-FORMAT.md`); o prompt que a invoca só especifica a origem, o `id`, a `formatVersion` e as plataformas (modelo no fim da própria skill). **`detalhar-backlog`** coordena subagentes Opus (ferramenta `Agent`, no esforço high ou medium pelos critérios da skill, sem prompt manual) que detalham como etapas `ready` todas as `roadmap` e `bug` que ainda não estão `ready`: antes, propõe juntar issues num épico só, e as perguntas chegam ao dono pelo seletor de perguntas (`docs/FLOW.md`). **`implementar-fila`** coordena a implementação em sequência das `ready` (ordem pelo `**Depende de:**`), com fases, testador, correções até zerar os ❌ e o painel "Fila de desenvolvimento"; o merge de cada épico espera o dono, salvo `mesclar=auto` escrito por ele na chamada (`docs/FLOW.md`). Para usar a `spec-author` no repositório do código que está sendo mapeado, copie a pasta para o `.claude/skills/` dele ou para `~/.claude/skills/`. `examples/workspace/` é o esqueleto de uma pasta central de mapeamentos (servidor, raízes, skill e `AGENTS.md` para qualquer cliente MCP). O que cada exemplo mostra e como abri-lo está em `examples/README.md`. O **guia interativo** (`public/guia/`, gerado) e o **projeto de exemplo** (`examples/exemplo-completo/` e o zip) saem de uma fonte só; ver `docs/GUIDE.md`. `viewer/` é o visualizador embutível (pacote `mapping-viewer`), com a demonstração em React em `viewer/demo/`; estrutura e comandos em `viewer/README.md`.
+Claude Code skills live in `.claude/skills/`: **`spec-author`** writes and validates specializations (`docs/SPEC-FORMAT.md`); the prompt that invokes it only specifies the origin, the `id`, the `formatVersion` and the platforms (template at the end of the skill itself). **`detalhar-backlog`** coordinates Opus subagents (the `Agent` tool, at high or medium effort by the skill's criteria, no manual prompt) that detail as `ready` stages every `roadmap` and `bug` that is not `ready` yet: first it proposes merging issues into a single epic, and the questions reach the owner through the question picker (`docs/FLOW.md`). **`implementar-fila`** coordinates the sequential implementation of the `ready` ones (order by `**Depende de:**`), with phases, tester, fixes until the ❌ are zero and the "Fila de desenvolvimento" panel; the merge of each epic waits for the owner, unless `mesclar=auto` is written by them in the call (`docs/FLOW.md`). To use `spec-author` in the repository of the code being mapped, copy the folder to its `.claude/skills/` or to `~/.claude/skills/`. `examples/workspace/` is the skeleton of a central folder of mappings (server, roots, skill and `AGENTS.md` for any MCP client). What each example shows and how to open it is in `examples/README.md`. The **interactive guide** (`public/guia/`, generated) and the **example project** (`examples/exemplo-completo/` and the zip) come from a single source; see `docs/GUIDE.md`. `viewer/` is the embeddable viewer (package `mapping-viewer`), with the React demo in `viewer/demo/`; structure and commands in `viewer/README.md`.
 
 ## Stack
 
 - Vite + TypeScript (strict) + Preact + @preact/signals
-- Konva.js (canvas), JSZip (zip), zod (validação do schema), idb (IndexedDB)
-- vite-plugin-singlefile: o build gera **um único `dist/index.html`** autocontido
-- Vitest para testes
+- Konva.js (canvas), JSZip (zip), zod (schema validation), idb (IndexedDB)
+- vite-plugin-singlefile: the build produces **a single, self-contained `dist/index.html`**
+- Vitest for tests
 - Deploy: GitHub Pages via GitHub Actions
 
-## Comandos
+## Commands
 
 ```bash
-npm run dev       # servidor de desenvolvimento
-npm run build     # gera dist/index.html
-npm test          # vitest (modelo, store, storage, canvas e componentes)
-npm run test:coverage # vitest com relatório de cobertura (coverage/); pula os orçamentos de desempenho
-npm run test:durations # regenera tests/support/durations.json (tempos por arquivo que balanceiam os 4 shards do CI; roda a suíte com cobertura)
-npm run test:perf # só os orçamentos de desempenho (sem cobertura; o CI roda separado)
-npm run test:scale # testes de crescimento (n e 4n marcações, razão < 6×), fora do npm test; roda no CI depois do test:perf
-npm run perf:canvas # mede o canvas num Chromium de verdade contra o dist/index.html (2.000 e 5.000 marcações; quadros de pan, zoom, edição, arrasto e abertura; tabela no stdout; opções `--setas <n>`, `--sem-setas`, `--componentes` e `--vezes <k>` (mediana de k execuções)); fora do CI; localmente: npm run build e PLAYWRIGHT_CHROMIUM_EXECUTABLE=<chrome>
-npm run test:e2e  # Playwright contra dist/index.html; roda no CI (localmente: npm run build e PLAYWRIGHT_CHROMIUM_EXECUTABLE=<chrome>)
-npm run build:mcp # gera dist-mcp/mapping-mcp.js (servidor MCP, etapa 3a)
-npm run dev:viewer # demonstração do visualizador embutível num hospedeiro React (viewer/demo)
-npm run build:viewer # gera dist-viewer/ (mapping-viewer.js, mapping-viewer-react.js e types/)
-npm run build:example # gera examples/exemplo-completo.zip e materializa examples/exemplo-completo/specs/ das fontes (zip conferido por teste)
-npm run build:guia # gera public/guia/index.html (o guia interativo; o `npm run build` já roda; conferido por teste)
+npm run dev       # development server
+npm run build     # generates dist/index.html
+npm test          # vitest (model, store, storage, canvas and components)
+npm run test:coverage # vitest with a coverage report (coverage/); skips the performance budgets
+npm run test:durations # regenerates tests/support/durations.json (per-file times that balance the 4 CI shards; runs the suite with coverage)
+npm run test:perf # only the performance budgets (no coverage; CI runs it separately)
+npm run test:scale # growth tests (n and 4n markings, ratio < 6×), outside npm test; runs in CI after test:perf
+npm run perf:canvas # measures the canvas in a real Chromium against dist/index.html (2,000 and 5,000 markings; frames of pan, zoom, edit, drag and open; table on stdout; options `--setas <n>`, `--sem-setas`, `--componentes` and `--vezes <k>` (median of k runs)); outside CI; locally: npm run build and PLAYWRIGHT_CHROMIUM_EXECUTABLE=<chrome>
+npm run test:e2e  # Playwright against dist/index.html; runs in CI (locally: npm run build and PLAYWRIGHT_CHROMIUM_EXECUTABLE=<chrome>)
+npm run build:mcp # generates dist-mcp/mapping-mcp.js (MCP server, stage 3a)
+npm run dev:viewer # demo of the embeddable viewer in a React host (viewer/demo)
+npm run build:viewer # generates dist-viewer/ (mapping-viewer.js, mapping-viewer-react.js and types/)
+npm run build:example # generates examples/exemplo-completo.zip and materializes examples/exemplo-completo/specs/ from the sources (zip checked by a test)
+npm run build:guia # generates public/guia/index.html (the interactive guide; `npm run build` already runs it; checked by a test)
 npm run lint      # eslint + prettier --check
-npm run lint:ci   # o mesmo lint com cache em .cache/ (só o CI usa)
-npm run typecheck # tsc --noEmit (app e mcp/); os tipos só são checados aqui: `build` e `build:mcp` não rodam o `tsc`
+npm run lint:ci   # the same lint with a cache in .cache/ (only CI uses it)
+npm run typecheck # tsc --noEmit (app and mcp/); types are only checked here: `build` and `build:mcp` do not run `tsc`
 ```
 
-Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm test && npm run build` precisam passar.
+Before finishing any task: `npm run lint && npm run typecheck && npm test && npm run build` must pass.
 
-## Regras de arquitetura
+## Architecture rules
 
-- `src/model/` contém só funções puras e imutáveis, sem DOM. Toda regra de negócio fica aqui e é testada.
-- **`src/model/` não pode depender de APIs de navegador** (DOM, `window`, `document`, IndexedDB, File System Access, `createImageBitmap`, `Image`, canvas, `localStorage`). Ele será reutilizado por um servidor MCP em Node na etapa 3. Use apenas APIs disponíveis tanto no navegador quanto no Node (ex: `crypto.randomUUID()`). Tudo que depende de navegador (leitura de dimensões da imagem, EXIF, bitmaps) fica em `src/storage/` ou `src/canvas/` e entrega dados já prontos ao `model/`. A regra é imposta automaticamente: ESLint (`no-restricted-globals`/`no-restricted-imports` em `src/model/**`) e o projeto `model` do Vitest, que roda `tests/model/` com `environment: 'node'`.
-- Toda mutação do projeto passa por uma action do store. Nunca altere o estado diretamente num componente.
-- O estado do projeto (JSON + undo) é separado do estado da UI (seleção, visibilidade, modo, viewport).
-- Consultas por id e agrupamentos do projeto usam `projectIndex(p)` (`src/model/projectIndex.ts`, memoizado por versão do projeto), nunca `find`/`filter` dentro de laços. O estado derivado do editor (camadas visíveis, indicadores, visibilidade, pendências, lista) fica em `src/store/derived.ts` e é lido por canvas, painel e lista, sem recalcular.
-- **Espaços, pertencimento e setas:** a marcação vive no espaço do container (pixels dele) ou no do canvas (`containerId` nulo); quem contém quem é decidido só pela geometria, por `settleHierarchy` (`src/model/hierarchySettle.ts`), no fim de toda operação do modelo que muda geometria (as prévias de gesto usam `settle: false`; o gesto termina repetindo a operação com `settle: true`, numa entrada de desfazer). O assentar do fim da operação (`settleFrom`) é recortado ao que ela mexeu, com o mesmo resultado do assentar inteiro (`settleHierarchy` sem `before`, que continua assentando tudo). Nunca se escolhe o pai à mão nem se calcula interseção fora do modelo. A seta (`arrows`) é uma marcação que aponta, fora da árvore de pertencimento; a flutuante (`floating`) também.
-- O `mapping.json` só é gravado pela sessão (`src/store/session.ts`): ela confere o arquivo (`revision` e conteúdo) antes de gravar e grava `revision + 1`; nenhum outro código escreve no armazenamento do projeto. Alterações externas (MCP, editor de texto) viram recarga ou o diálogo "Projeto alterado fora da app" (`docs/ARCHITECTURE.md`).
-- O canvas desenha no máximo uma vez por quadro (`requestAnimationFrame`); pan e zoom não recalculam dados que dependem só do projeto.
-- Um gesto (arrastar/redimensionar) gera **uma** entrada no histórico de undo.
-- Konva fica isolado em `src/canvas/` (`CanvasController` imperativo). Componentes Preact não importam Konva, exceto `CanvasHost`. Não usar `react-konva`.
-- As coordenadas das marcações são **sempre** em pixels da imagem original. Conversões de tela/canvas ficam só em `src/canvas/`.
-- Nenhuma string de UI hardcoded: tudo via `t()` com chaves em `src/i18n/pt-BR.ts` e `src/i18n/en-US.ts`.
-- Nenhum valor de design fixo (cor, espaço, raio, fonte, opacidade, duração, z-index) fora dos tokens: use `var(--…)` dos tokens de `src/theme/tokens.ts` (fonte única, temas claro e escuro). Borda de controle usa `--color-border-control`; `--color-border` é só divisória. O canvas lê os tokens do tema. Um teste (`tests/theme/tokenLiterals.test.ts`) procura literais no CSS.
-- Controles de formulário e botões vêm de `src/ui/controls/` (`Button`, `IconButton`, `TextField`, `Select`, `Choice`, `Segmented`, `Tabs`, `Tooltip`) e ícones de `<Icon name="…" />` (`src/ui/icons.tsx`); não crie botão, campo ou ícone avulso. Altura, raio e ícone vêm dos papéis `--control-*` (28px/16px).
+- `src/model/` holds only pure, immutable functions, without DOM. All business rules live here and are tested.
+- **`src/model/` must not depend on browser APIs** (DOM, `window`, `document`, IndexedDB, File System Access, `createImageBitmap`, `Image`, canvas, `localStorage`). It will be reused by an MCP server in Node in stage 3. Use only APIs available in both the browser and Node (e.g. `crypto.randomUUID()`). Everything that depends on the browser (reading image dimensions, EXIF, bitmaps) lives in `src/storage/` or `src/canvas/` and hands ready data to `model/`. The rule is enforced automatically: ESLint (`no-restricted-globals`/`no-restricted-imports` in `src/model/**`) and the `model` project of Vitest, which runs `tests/model/` with `environment: 'node'`.
+- Every project mutation goes through a store action. Never change the state directly in a component.
+- The project state (JSON + undo) is separate from the UI state (selection, visibility, mode, viewport).
+- Lookups by id and groupings of the project use `projectIndex(p)` (`src/model/projectIndex.ts`, memoized by project version), never `find`/`filter` inside loops. The derived editor state (visible layers, indicators, visibility, pending items, list) lives in `src/store/derived.ts` and is read by canvas, panel and list, without recomputing.
+- **Spaces, containment and arrows:** a marking lives in the container's space (its pixels) or in the canvas's (`containerId` null); who contains whom is decided only by geometry, by `settleHierarchy` (`src/model/hierarchySettle.ts`), at the end of every model operation that changes geometry (gesture previews use `settle: false`; the gesture ends by repeating the operation with `settle: true`, in one undo entry). The settle at the end of the operation (`settleFrom`) is clipped to what it touched, with the same result as the full settle (`settleHierarchy` without `before`, which still settles everything). The parent is never chosen by hand and no intersection is computed outside the model. The arrow (`arrows`) is a marking that points, outside the containment tree; the floating one (`floating`) too.
+- `mapping.json` is only written by the session (`src/store/session.ts`): it checks the file (`revision` and content) before writing and writes `revision + 1`; no other code writes to the project storage. External changes (MCP, text editor) become a reload or the "Project changed outside the app" dialog (`docs/ARCHITECTURE.md`).
+- The canvas draws at most once per frame (`requestAnimationFrame`); pan and zoom do not recompute data that depends only on the project.
+- A gesture (drag/resize) produces **one** undo history entry.
+- Konva is isolated in `src/canvas/` (imperative `CanvasController`). Preact components do not import Konva, except `CanvasHost`. Do not use `react-konva`.
+- The coordinates of the markings are **always** in pixels of the original image. Screen/canvas conversions live only in `src/canvas/`.
+- No hardcoded UI string: everything goes through `t()` with keys in `src/i18n/pt-BR.ts` and `src/i18n/en-US.ts`.
+- No fixed design value (color, spacing, radius, font, opacity, duration, z-index) outside the tokens: use `var(--…)` from the tokens of `src/theme/tokens.ts` (single source, light and dark themes). A control border uses `--color-border-control`; `--color-border` is only a divider. The canvas reads the theme's tokens. A test (`tests/theme/tokenLiterals.test.ts`) looks for literals in the CSS.
+- Form controls and buttons come from `src/ui/controls/` (`Button`, `IconButton`, `TextField`, `Select`, `Choice`, `Segmented`, `Tabs`, `Tooltip`) and icons from `<Icon name="…" />` (`src/ui/icons.tsx`); do not create a loose button, field or icon. Height, radius and icon come from the `--control-*` roles (28px/16px).
 
-## Restrições do ambiente de execução
+## Runtime environment restrictions
 
-- O `index.html` precisa funcionar em **`file://` no Chrome/Edge desktop** e hospedado no **GitHub Pages**:
-  - nada de import de módulos externos em runtime nem requisições de rede;
-  - o service worker só é registrado quando `location.protocol === 'https:'`;
-  - detecte os recursos em runtime (`showDirectoryPicker`, IndexedDB, `navigator.canShare`) e degrade com elegância;
-  - o `dist/index.html` leva uma **CSP** em `<meta>` gerada no build (`pwa/csp.ts`; hashes dos blocos embutidos, sem `'unsafe-inline'`/`'unsafe-eval'`, `connect-src 'none'`). Por isso: sem `style=""` nem handlers inline no HTML, sem `eval`/`new Function`, sem `setAttribute('style')`, sem `fetch`/XHR/WebSocket (estilo dinâmico só por JS: `el.style.x`, objeto `style` do Preact). A CSP da app também libera `https:`/`http:` no `img-src` e exige Trusted Types: nada de `innerHTML`/`outerHTML`/`insertAdjacentHTML`/`dangerouslySetInnerHTML` com conteúdo nem `script.src` (monte o DOM por JSX ou `textContent`), e imagem por URL só pelo carregador de `src/canvas/components/` (ou `src/storage/` para `blob:`; regra de lint). O guia e a demonstração do visualizador usam o perfil `static` (sem imagem remota nem Trusted Types). Não escreva a CSP à mão no `index.html`. Detalhes em `docs/ARCHITECTURE.md`.
-- **Só desktop**: janela mínima de 900×720 px (tokens `size-app-min` e `size-app-min-height`), mouse e teclado; toque simples funciona (clicar, arrastar, rolar e a pinça), gestos de celular não. Abaixo de 900 px de largura ou de 720 px de altura a app mostra o aviso "Abra numa janela maior" no lugar da tela, sem desmontar nada (o projeto continua aberto e gravando). Não há layout de celular (decisão da fase 5.8). Num tablet Android, com janela de pelo menos 900×720 e toque simples, a app funciona sem garantia; o projeto em pasta passa pela pasta do Android, mais lenta que a do desktop.
-- Envolva todo acesso a `localStorage`/IndexedDB em try/catch.
+- The `index.html` must work on **`file://` in desktop Chrome/Edge** and hosted on **GitHub Pages**:
+  - no external module imports at runtime and no network requests;
+  - the service worker is only registered when `location.protocol === 'https:'`;
+  - detect features at runtime (`showDirectoryPicker`, IndexedDB, `navigator.canShare`) and degrade gracefully;
+  - the `dist/index.html` carries a **CSP** in a `<meta>` generated at build time (`pwa/csp.ts`; hashes of the embedded blocks, no `'unsafe-inline'`/`'unsafe-eval'`, `connect-src 'none'`). Hence: no `style=""` or inline handlers in the HTML, no `eval`/`new Function`, no `setAttribute('style')`, no `fetch`/XHR/WebSocket (dynamic style only through JS: `el.style.x`, Preact's `style` object). The app's CSP also allows `https:`/`http:` in `img-src` and requires Trusted Types: no `innerHTML`/`outerHTML`/`insertAdjacentHTML`/`dangerouslySetInnerHTML` with content and no `script.src` (build the DOM with JSX or `textContent`), and an image by URL only through the loader in `src/canvas/components/` (or `src/storage/` for `blob:`; lint rule). The guide and the viewer demo use the `static` profile (no remote image or Trusted Types). Do not write the CSP by hand in `index.html`. Details in `docs/ARCHITECTURE.md`.
+- **Desktop only**: minimum window of 900×720 px (tokens `size-app-min` and `size-app-min-height`), mouse and keyboard; simple touch works (click, drag, scroll and pinch), phone gestures do not. Below 900 px wide or 720 px tall the app shows the "Open in a larger window" notice in place of the screen, without unmounting anything (the project stays open and saving). There is no phone layout (decision of phase 5.8). On an Android tablet, with a window of at least 900×720 and simple touch, the app works without guarantee; a project in a folder goes through Android's folder access, slower than the desktop's.
+- Wrap every `localStorage`/IndexedDB access in try/catch.
 
-## Código
+## Code
 
-- Identificadores e nomes de arquivos em inglês. Comentários e documentação podem ser em português.
-- TypeScript strict, sem `any` (use `unknown` + validação).
-- Componentes pequenos e funcionais; lógica fora dos componentes.
-- Não adicione dependências além da stack acima sem justificar no PR.
-- **Complexidade por função:** função nova ou alterada fica com complexidade ciclomática até 10 (`complexity` do ESLint, erro em `src/**` e `mcp/**`); o legado acima disso está em `eslint-suppressions.json`, onde a contagem por arquivo só pode cair.
-  - Quem reduz uma função suprimida abaixo do limite roda `npx eslint --prune-suppressions` no mesmo PR (sem isso o `lint` falha por supressão sem uso).
-  - Não se usa `eslint-disable` para `complexity`: a exceção fica no arquivo de supressões, visível no diff.
-  - Função já suprimida que a fase precisou tocar não exige redução (basta não criar outra acima do limite no mesmo arquivo); a dívida grande vira issue `roadmap`, não refatoração no meio da fase.
+- **Language:** everything in the repository and on GitHub is in **English**: identifiers, file names, comments, documentation, tests, error and MCP messages, commit messages, titles and bodies of issues and PRs, and the comments and reports that agents write on GitHub. Brazilian Portuguese (pt-BR) stays only where decision 2 of #741 allows: `src/i18n/pt-BR.ts` and the `pt-BR` parts of the bilingual modules of `src/i18n/`, the pt-BR strings of the interactive guide, the locale tests that check pt-BR text, the fixtures declared in the exceptions list, the protocol terms (`PROTOCOL_TERMS` in `tests/tooling/portugueseAllowlist.ts`, only inside backticks or quotes) and `mappings-workspace/`. The app UI stays bilingual (en-US and pt-BR, the same keys). Chats with the owner stay in Portuguese.
+- TypeScript strict, no `any` (use `unknown` + validation).
+- Small, functional components; logic outside the components.
+- Do not add dependencies beyond the stack above without justifying it in the PR.
+- **Complexity per function:** a new or changed function stays at cyclomatic complexity up to 10 (ESLint `complexity`, an error in `src/**` and `mcp/**`); legacy above that is in `eslint-suppressions.json`, where the per-file count can only go down.
+  - Whoever reduces a suppressed function below the limit runs `npx eslint --prune-suppressions` in the same PR (without it `lint` fails on an unused suppression).
+  - `eslint-disable` is not used for `complexity`: the exception lives in the suppressions file, visible in the diff.
+  - A suppressed function that the phase had to touch does not need to be reduced (just do not create another one above the limit in the same file); the big debt becomes a `roadmap` issue, not a refactor in the middle of the phase.
 
-## Fluxo de trabalho (resumo)
+## Workflow (summary)
 
-- O dono do projeto usa o Claude Code **pelo celular** e não roda nada localmente.
-- **Início de sessão:** a sessão trabalha direto na pasta do repositório (sem worktree, salvo pedido do dono), no branch que estiver em uso. Antes de qualquer tarefa nova, vá para a `main` atualizada (`git switch main && git pull --ff-only`) e crie dali o branch do épico; se houver alteração não commitada ou o branch em uso não estiver mesclado, pergunte ao dono antes de trocar.
-- Nada se implementa sem uma issue `ready` (ou `in-progress`, ao retomar), e tudo chega à `main` por um épico (`epic/<nome>`, com PR para a `main`); cada fase é um branch curto com PR para o épico. A exceção é a via rápida: ajuste pequeno de processo vai num épico de um PR só, sem `ready` nem fases, pelo skill `/via-rapida` (`.claude/skills/via-rapida/SKILL.md`; "salvo a via rápida").
-- Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm test && npm run build` precisam passar.
-- **Antes de abrir issue, branch, PR ou sessão, leia o [`docs/PROCESS.md`](docs/PROCESS.md)** (as seções que valem para a tarefa): planejamento nas issues, rótulos, bugs, fluxo automatizado, revisão de código, roteiros de teste, descrição de PR, uso de modelos e etapas. As mensagens prontas estão em [`docs/FLOW.md`](docs/FLOW.md).
+- The project owner uses Claude Code **from a phone** and does not run anything locally.
+- **Session start:** the session works directly in the repository folder (no worktree, unless the owner asks), on the branch in use. Before any new task, go to an up-to-date `main` (`git switch main && git pull --ff-only`) and create the epic branch from there; if there is an uncommitted change or the branch in use is not merged, ask the owner before switching.
+- Nothing is implemented without a `ready` issue (or `in-progress`, when resuming), and everything reaches `main` through an epic (`epic/<name>`, with a PR to `main`); each phase is a short branch with a PR to the epic. The exception is the fast track: a small process tweak goes in a one-PR epic, with no `ready` or phases, through the `/via-rapida` skill (`.claude/skills/via-rapida/SKILL.md`; "except the fast track").
+- Before finishing any task: `npm run lint && npm run typecheck && npm test && npm run build` must pass.
+- **Before opening an issue, branch, PR or session, read [`docs/PROCESS.md`](docs/PROCESS.md)** (the sections that apply to the task): planning in issues, labels, bugs, automated flow, code review, test scripts, PR description, model use and stages. The ready-made messages are in [`docs/FLOW.md`](docs/FLOW.md).
 
 ## Mapping workspace
 
