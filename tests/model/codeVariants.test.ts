@@ -22,6 +22,7 @@ describe('resolveCode', () => {
     const code = resolveCode(base, { style: 'text' }, fields);
     expect(code.symbol).toBe('androidx.compose.material3.TextButton');
     expect(code.path).toBe('compose/material3/TextButton.kt');
+    // pt-BR kept: matches the notes text of variantsFixtures (Portuguese fixture data).
     expect(code.notes).toBe('sem fundo');
   });
 

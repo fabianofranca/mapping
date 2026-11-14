@@ -293,7 +293,10 @@ describe('runs per instance', () => {
             template: {
               type: 'frame',
               children: [
-                { type: 'text', runs: [{ text: 'Item ' }, { text: { $field: 'label' } }] },
+                {
+                  type: 'text',
+                  runs: [{ text: 'Item ' }, { text: { $field: 'label' } }],
+                },
               ],
             },
           },

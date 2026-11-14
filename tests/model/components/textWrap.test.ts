@@ -1,5 +1,5 @@
-// Formato 4, fase CF3: `font.wrap`, `font.ellipsis`, `font.maxLines`, o aviso de texto que não
-// cabe na altura e a tolerância de 1 px por nó de texto.
+// Format 4, phase CF3: `font.wrap`, `font.ellipsis`, `font.maxLines`, the warning for text that does not
+// fit in the height and the 1 px tolerance per text node.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { checkSchema } from '../../support/jsonSchema';
@@ -22,10 +22,10 @@ import {
 } from '../../../src/model/components/textWrap';
 
 const V4 = 'only allowed with formatVersion 4';
-const LONG = 'Texto longo demais para a caixa';
+const LONG = 'Words spill beyond into a frame';
 type MeasureFont = Parameters<TextMeasurer>[1];
 
-/** 10 px, 5,5 px por caractere (approximate), linha de 12 px. */
+/** 10 px, 5.5 px per character (approximate), line of 12 px. */
 const FONT: MeasureFont = {
   family: 'Inter',
   size: 10,
@@ -35,15 +35,15 @@ const FONT: MeasureFont = {
   letterSpacing: 0,
 };
 
-describe('approximateMeasurer: wrap, ellipsis e maxLines', () => {
-  it('wrap "none" mede uma linha só, mesmo numa caixa de 80 px', () => {
+describe('approximateMeasurer: wrap, ellipsis and maxLines', () => {
+  it('wrap "none" measures a single line, even in an 80 px box', () => {
     const wrapped = approximateMeasurer(LONG, FONT, 80);
     expect(wrapped.height).toBeGreaterThan(12);
     const single = approximateMeasurer(LONG, { ...FONT, wrap: 'none' }, 80);
     expect(single.height).toBe(12);
   });
 
-  it('ellipsis + wrap "none": o texto que não cabe termina em … e a largura não passa de 80', () => {
+  it('ellipsis + wrap "none": the text that does not fit ends in … and the width does not go past 80', () => {
     const result = approximateMeasurer(
       LONG,
       { ...FONT, wrap: 'none', ellipsis: true },
@@ -55,12 +55,12 @@ describe('approximateMeasurer: wrap, ellipsis e maxLines', () => {
     expect(result.lines?.[0]?.endsWith('…')).toBe(true);
   });
 
-  it('wrap "none" sem ellipsis não corta o texto', () => {
+  it('wrap "none" without ellipsis does not cut the text', () => {
     const result = approximateMeasurer(LONG, { ...FONT, wrap: 'none' }, 80);
     expect(result.lines?.[0]).toBe(LONG);
   });
 
-  it('maxLines 2 + ellipsis: a segunda linha termina em …; sem ellipsis, é cortada', () => {
+  it('maxLines 2 + ellipsis: the second line ends in …; without ellipsis, it is cut', () => {
     const text = 'aaaa bbbb cccc dddd eeee';
     const full = approximateMeasurer(text, FONT, 40);
     expect(full.lines).toHaveLength(5);
@@ -77,7 +77,7 @@ describe('approximateMeasurer: wrap, ellipsis e maxLines', () => {
     expect(cut.height).toBe(24);
   });
 
-  it('texto que cabe em maxLines não muda', () => {
+  it('text that fits in maxLines does not change', () => {
     const result = approximateMeasurer(
       'aaaa bbbb',
       { ...FONT, maxLines: 3, ellipsis: true },
@@ -87,7 +87,7 @@ describe('approximateMeasurer: wrap, ellipsis e maxLines', () => {
   });
 });
 
-describe('textBars (medidor do raster): wrap, ellipsis e maxLines', () => {
+describe('textBars (raster measurer): wrap, ellipsis and maxLines', () => {
   const text = (extra: Partial<TextNode['style']>, width = 80): TextNode => ({
     ...baseNode({ id: 't', name: 't', width, height: 40, fills: [] }),
     type: 'text',
@@ -104,19 +104,19 @@ describe('textBars (medidor do raster): wrap, ellipsis e maxLines', () => {
     },
   });
 
-  it('wrap "none" desenha uma barra só', () => {
+  it('wrap "none" draws a single bar', () => {
     expect(textBars(text({}), approximateMeasurer).length).toBeGreaterThan(1);
     const bars = textBars(text({ wrap: 'none' }), approximateMeasurer);
     expect(bars).toHaveLength(1);
   });
 
-  it('ellipsis + wrap "none": a barra não passa da largura do nó', () => {
+  it('ellipsis + wrap "none": the bar does not go past the node width', () => {
     const bars = textBars(text({ wrap: 'none', ellipsis: true }), approximateMeasurer);
     expect(bars).toHaveLength(1);
     expect(bars[0]!.width).toBeLessThanOrEqual(80);
   });
 
-  it('maxLines limita o número de barras', () => {
+  it('maxLines limits the number of bars', () => {
     expect(textBars(text({ maxLines: 2 }, 40), approximateMeasurer)).toHaveLength(2);
   });
 });
@@ -142,8 +142,8 @@ const textNode = (font: Record<string, unknown>): Record<string, unknown> => ({
   font,
 });
 
-describe('validação de font.wrap, font.ellipsis e font.maxLines', () => {
-  it('valem na formatVersion 4, com literal ou expressão', () => {
+describe('validation of font.wrap, font.ellipsis and font.maxLines', () => {
+  it('they apply in formatVersion 4, with literal or expression', () => {
     expect(
       validateComponent(
         component(
@@ -169,7 +169,7 @@ describe('validação de font.wrap, font.ellipsis e font.maxLines', () => {
   });
 
   it.each(['wrap', 'ellipsis', 'maxLines'])(
-    '%s na formatVersion 3 é erro no caminho da chave',
+    '%s in formatVersion 3 is an error at the key path',
     (key) => {
       const value = { wrap: 'none', ellipsis: true, maxLines: 2 }[key];
       const errors = validateComponent(component(textNode({ [key]: value }), 3));
@@ -177,14 +177,14 @@ describe('validação de font.wrap, font.ellipsis e font.maxLines', () => {
     },
   );
 
-  it('expressão na formatVersion 3 também é erro', () => {
+  it('expression in formatVersion 3 is also an error', () => {
     const errors = validateComponent(
       component(textNode({ maxLines: { $field: 'lines', default: 2 } }), 3),
     );
     expect(errors).toEqual([`template.children[0].font.maxLines: ${V4}`]);
   });
 
-  it('maxLines 0, negativo ou fracionário é erro', () => {
+  it('maxLines 0, negative or fractional is an error', () => {
     for (const bad of [0, -1, 1.5]) {
       const errors = validateComponent(component(textNode({ maxLines: bad })));
       expect(errors).toHaveLength(1);
@@ -192,7 +192,7 @@ describe('validação de font.wrap, font.ellipsis e font.maxLines', () => {
     }
   });
 
-  it('wrap fora de word/none e ellipsis que não é booleano são erro', () => {
+  it('wrap outside word/none and ellipsis that is not a boolean are an error', () => {
     expect(validateComponent(component(textNode({ wrap: 'char' })))).toHaveLength(1);
     expect(validateComponent(component(textNode({ ellipsis: 'sim' })))).toHaveLength(1);
   });
@@ -206,7 +206,7 @@ function drawn(
   const tpl = {
     type: 'frame',
     layout: { type: 'none' },
-    children: [{ type: 'text', name: 'rotulo', text: LONG, font, ...node }],
+    children: [{ type: 'text', name: 'label', text: LONG, font, ...node }],
   } as unknown as FrameTemplate;
   const file: ComponentFile = {
     format: 'mapping-component',
@@ -219,16 +219,16 @@ function drawn(
   return instantiate(file, {}, box, { measure: approximateMeasurer });
 }
 
-describe('aviso text larger than the box', () => {
-  const OVERFLOW = 'text larger than the box: rotulo';
+describe('warning text larger than the box', () => {
+  const OVERFLOW = 'text larger than the box: label';
 
-  it('3 linhas numa caixa que comporta 2, sem maxLines nem ellipsis: aviso', () => {
-    // largura 80: "Texto longo demais para a caixa" quebra em 3 linhas de 12 px = 36 > 24.
+  it('3 lines in a box that fits 2, without maxLines or ellipsis: warning', () => {
+    // width 80: "Words spill beyond into a frame" wraps into 3 lines of 12 px = 36 > 24.
     const { warnings } = drawn({ size: 10, lineHeight: 12 }, { width: 80, height: 24 });
     expect(warnings).toContain(OVERFLOW);
   });
 
-  it('com maxLines ou ellipsis o texto é cortado de propósito: sem aviso', () => {
+  it('with maxLines or ellipsis the text is cut on purpose: no warning', () => {
     const node = { width: 80, height: 24 };
     expect(drawn({ size: 10, lineHeight: 12, maxLines: 2 }, node).warnings).not.toContain(
       OVERFLOW,
@@ -238,25 +238,25 @@ describe('aviso text larger than the box', () => {
     ).not.toContain(OVERFLOW);
   });
 
-  it('cabendo na altura não avisa', () => {
+  it('fitting in the height does not warn', () => {
     const { warnings } = drawn({ size: 10, lineHeight: 12 }, { width: 80, height: 48 });
     expect(warnings).not.toContain(OVERFLOW);
   });
 
-  it('excesso de 0,6 px vindo de texto não avisa; de 2 px, avisa', () => {
-    const short = { text: 'curto', width: 100 };
-    // linha de 12,6 px numa caixa de 12 px.
+  it('an excess of 0.6 px coming from text does not warn; of 2 px, it warns', () => {
+    const short = { text: 'short', width: 100 };
+    // line of 12.6 px in a box of 12 px.
     expect(
       drawn({ size: 10, lineHeight: 12.6 }, { ...short, height: 12 }).warnings,
     ).not.toContain(OVERFLOW);
-    // linha de 14 px numa caixa de 12 px.
+    // line of 14 px in a box of 12 px.
     expect(
       drawn({ size: 10, lineHeight: 14 }, { ...short, height: 12 }).warnings,
     ).toContain(OVERFLOW);
   });
 });
 
-describe('tolerância de 1 px no "content larger than the box" vindo de texto', () => {
+describe('1 px tolerance in the "content larger than the box" coming from text', () => {
   const column = (lineHeight: number): ComponentFile => ({
     format: 'mapping-component',
     formatVersion: 4,
@@ -267,7 +267,7 @@ describe('tolerância de 1 px no "content larger than the box" vindo de texto', 
       type: 'frame',
       name: 'col',
       layout: { type: 'column' },
-      children: [{ type: 'text', name: 'a', text: 'curto', font: { lineHeight } }],
+      children: [{ type: 'text', name: 'a', text: 'short', font: { lineHeight } }],
     },
   });
   const warnings = (lineHeight: number, height: number) =>
@@ -278,23 +278,23 @@ describe('tolerância de 1 px no "content larger than the box" vindo de texto', 
       { measure: approximateMeasurer },
     ).warnings;
 
-  it('0,6 px de texto a mais não avisa', () => {
+  it('0.6 px of extra text does not warn', () => {
     expect(warnings(12.6, 12)).not.toContain('content larger than the box: col');
   });
 
-  it('2 px de texto a mais avisa', () => {
+  it('2 px of extra text warns', () => {
     expect(
       warnings(14, 12).some((w) => w.startsWith('content larger than the box')),
     ).toBe(true);
   });
 });
 
-describe('component.schema.json: wrap, ellipsis e maxLines', () => {
+describe('component.schema.json: wrap, ellipsis and maxLines', () => {
   const schema = JSON.parse(
     readFileSync(new URL('../../../docs/component.schema.json', import.meta.url), 'utf8'),
   ) as Record<string, unknown>;
 
-  it('aceita as três chaves, com literal ou expressão, e recusa maxLines 0', () => {
+  it('accepts the three keys, with literal or expression, and refuses maxLines 0', () => {
     const ok = component(
       textNode({
         wrap: 'none',
@@ -312,14 +312,14 @@ describe('component.schema.json: wrap, ellipsis e maxLines', () => {
   });
 });
 
-describe('cutLineLeft (MC0, decisão 30): onde começa a linha do texto cortado', () => {
-  // Caixa de 100; o bloco é a linha mais larga.
+describe('cutLineLeft (MC0, decision 30): where the line of the cut text starts', () => {
+  // Box of 100; the block is the widest line.
   it.each([
     ['left', 0, 0],
     ['justify', 0, 0],
     ['center', 20, 20],
     ['right', 40, 40],
-  ] as const)('%s: a linha mais larga (60) começa em %i', (align, _x, expected) => {
+  ] as const)('%s: the widest line (60) starts at %i', (align, _x, expected) => {
     expect(cutLineLeft(align, 100, 60, 60)).toBe(expected);
   });
 
@@ -329,58 +329,58 @@ describe('cutLineLeft (MC0, decisão 30): onde começa a linha do texto cortado'
     ['center', 20 + 10],
     ['right', 40 + 20],
   ] as const)(
-    '%s: a linha curta (40) dentro do bloco de 60 começa em %i',
+    '%s: the short line (40) inside the block of 60 starts at %i',
     (align, expected) => {
       expect(cutLineLeft(align, 100, 60, 40)).toBe(expected);
     },
   );
 
   it.each(['left', 'justify', 'center', 'right'] as const)(
-    '%s: o bloco mais largo que a caixa começa na borda esquerda',
+    '%s: the block wider than the box starts at the left edge',
     (align) => {
       expect(cutLineLeft(align, 100, 160, 160)).toBe(0);
     },
   );
 
-  it('o bloco mais largo que a caixa alinha a linha curta dentro do bloco, não da caixa', () => {
+  it('the block wider than the box aligns the short line inside the block, not the box', () => {
     expect(cutLineLeft('center', 100, 160, 100)).toBe(30);
     expect(cutLineLeft('right', 100, 160, 100)).toBe(60);
     expect(cutLineLeft('left', 100, 160, 100)).toBe(0);
   });
 
-  it('o bloco do tamanho da caixa começa em 0', () => {
+  it('the block the size of the box starts at 0', () => {
     expect(cutLineLeft('right', 100, 100, 100)).toBe(0);
     expect(cutLineLeft('center', 100, 100, 100)).toBe(0);
   });
 });
 
-describe('visibleLineCount (MC0, decisão 31): as linhas que o Konva guarda', () => {
-  it('a primeira linha sempre fica, mesmo numa caixa menor que a linha', () => {
+describe('visibleLineCount (MC0, decision 31): the lines that Konva keeps', () => {
+  it('the first line always stays, even in a box smaller than the line', () => {
     expect(visibleLineCount(3, 5, 12)).toBe(1);
   });
 
-  it('caixa de 1 linha: 1; de 2: 2; de 2,5: 2; de 3: 3', () => {
+  it('box of 1 line: 1; of 2: 2; of 2.5: 2; of 3: 3', () => {
     expect(visibleLineCount(5, 12, 12)).toBe(1);
     expect(visibleLineCount(5, 24, 12)).toBe(2);
     expect(visibleLineCount(5, 30, 12)).toBe(2);
     expect(visibleLineCount(5, 36, 12)).toBe(3);
   });
 
-  it('bloco menor que a caixa: todas as linhas', () => {
+  it('block smaller than the box: all the lines', () => {
     expect(visibleLineCount(2, 100, 12)).toBe(2);
     expect(visibleLineCount(0, 100, 12)).toBe(0);
   });
 
-  it('sem altura (0), todas as linhas', () => {
+  it('without a height (0), all the lines', () => {
     expect(visibleLineCount(4, 0, 12)).toBe(4);
   });
 
-  it('sem total (Infinity) devolve quantas linhas cabem', () => {
+  it('without a total (Infinity) returns how many lines fit', () => {
     expect(visibleLineCount(Number.POSITIVE_INFINITY, 30, 12)).toBe(2);
   });
 
-  it('a mesma aritmética do Konva: lineHeight / fontSize × fontSize, somado linha a linha', () => {
-    // 14,3 / 11 × 11 não é exatamente 14,3; a soma de 3 linhas na caixa de 3 × 14,3 decide.
+  it('the same arithmetic as Konva: lineHeight / fontSize × fontSize, summed line by line', () => {
+    // 14.3 / 11 × 11 is not exactly 14.3; the sum of 3 lines in the box of 3 × 14.3 decides.
     const lh = konvaLineHeight(14.3, 11);
     expect(visibleLineCount(9, lh * 3, lh)).toBe(3);
   });

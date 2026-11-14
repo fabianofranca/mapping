@@ -114,11 +114,7 @@ const labelHeight = approximateMeasurer('Save', FONT).height;
 
 describe('instantiate: button', () => {
   it('the root fills the given box', () => {
-    const { root } = run(
-      button,
-      { label: 'Save', variant: 'primary', icon: NO },
-      BOX,
-    );
+    const { root } = run(button, { label: 'Save', variant: 'primary', icon: NO }, BOX);
     expect(root.type).toBe('frame');
     expect(root.transform).toEqual([1, 0, 0, 1, 10, 20]);
     expect(root.width).toBe(120);
@@ -147,11 +143,7 @@ describe('instantiate: button', () => {
   });
 
   it('with an icon, the icon sits on the left with 8px of gap and the group is centered', () => {
-    const { root } = run(
-      button,
-      { label: 'Save', variant: 'primary', icon: YES },
-      BOX,
-    );
+    const { root } = run(button, { label: 'Save', variant: 'primary', icon: YES }, BOX);
     expect(root.children).toHaveLength(2);
     const icon = child(root, 0) as PathNode;
     const text = child(root, 1) as TextNode;
@@ -183,11 +175,7 @@ describe('instantiate: button', () => {
   });
 
   it('the variant switches the colors', () => {
-    const primary = run(
-      button,
-      { label: 'A', variant: 'primary', icon: NO },
-      BOX,
-    ).root;
+    const primary = run(button, { label: 'A', variant: 'primary', icon: NO }, BOX).root;
     const secondary = run(
       button,
       { label: 'A', variant: 'secondary', icon: NO },

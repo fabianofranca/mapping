@@ -109,6 +109,7 @@ describe('project platforms', () => {
       { id: 'ios', name: 'iOS', language: 'swift', specIds: ['sdui'], repos: [] },
       {
         id: 'bff',
+        // pt-BR kept: platform name of the sdui example, which is Portuguese data.
         name: 'Contrato SDUI',
         language: 'json',
         specIds: ['sdui'],
@@ -136,6 +137,7 @@ describe('project platforms', () => {
       { id: 'ios', name: 'iOS', language: 'swift', specIds: ['sdui'], repos: [] },
       {
         id: 'bff',
+        // pt-BR kept: platform name of the sdui example, which is Portuguese data.
         name: 'Contrato SDUI',
         language: 'json',
         specIds: ['sdui'],
@@ -543,6 +545,7 @@ describe('examples', () => {
       .layers.flatMap((l) => l.annotationTypes)
       .find((t) => t.id === 'screen');
     expect(screen?.code).toBeUndefined();
+    // pt-BR kept: field keys of the sdui example, which is Portuguese data.
     expect(screen?.fields.map((f) => f.key)).toEqual(['nome', 'rota']);
   });
 });

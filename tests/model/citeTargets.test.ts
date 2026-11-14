@@ -278,7 +278,8 @@ describe('citeCandidates', () => {
     }
   });
 
-  it('matches by name regardless of case and accent', () => {
+  // pt-BR kept: the object of this test is the accent-insensitive match (`botao` matches `Botão`)
+  it('matches by name regardless of case and accent (pt-BR)', () => {
     expect(labels(citeCandidates(ctx, 'botao', null, OPTIONS))).toContain('Botão');
     expect(
       citeCandidates(ctx, 'GLOSSARIO', null, OPTIONS).find(
@@ -322,9 +323,10 @@ describe('citeCandidates', () => {
   });
 
   it('in the same group, whoever matches by name comes before whoever matches only by path', () => {
+    // pt-BR kept: the thread name `Sobre o botão` is matched by the accent-insensitive query `botao`
     const threads = [
       thread('t-by-path', 'Other', { anchor: { kind: 'marking', id: 'M2' } }),
-      thread('t-by-name', 'About the button'),
+      thread('t-by-name', 'Sobre o botão'),
     ];
     const local = ctxOf(baseProject(), threads);
     const list = citeCandidates(local, 'botao', null, OPTIONS).filter(

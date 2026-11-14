@@ -693,7 +693,7 @@ describe('arrangeMarking: align "baseline" in the slot (MC1, decision 4)', () =>
     };
     row.formatVersion = 4;
     const slot = row.template.children[0];
-    if (slot === undefined) throw new Error('sem slot');
+    if (slot === undefined) throw new Error('no slot');
     slot.layout.align = 'baseline';
     return testCatalog({ ...COMPONENTS, row, wide: BIG });
   }
@@ -728,7 +728,7 @@ describe('arrangeMarking: align "baseline" in the slot (MC1, decision 4)', () =>
     };
     hug.formatVersion = 4;
     const slot = hug.template.children[0];
-    if (slot === undefined) throw new Error('sem slot');
+    if (slot === undefined) throw new Error('no slot');
     slot.layout.align = 'baseline';
     const cat = testCatalog({ ...COMPONENTS, rowhug: hug, wide: BIG });
     let p = add(componentProject(), 'C', 'rowhug', box(100, 100, 200, 60), null, {}, cat);
@@ -991,7 +991,7 @@ describe('arrangeMarking: wrap in the slot (MC4, decision 12)', () => {
     };
     base.formatVersion = 4;
     const slot = base.template.children[0];
-    if (slot === undefined) throw new Error('sem slot');
+    if (slot === undefined) throw new Error('no slot');
     slot.layout = { ...slot.layout, wrap: 'wrap', lineGap: 12, ...layout };
     return testCatalog({ ...COMPONENTS, [id]: base });
   }

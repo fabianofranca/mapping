@@ -243,9 +243,7 @@ describe('parseComponent: repeat', () => {
 
   it('the preview accepts rows (list of objects) and checks each cell', () => {
     expect(parseComponent(raw({ preview: { title: 'T', rows: ROWS } })).ok).toBe(true);
-    expect(checkSchema(schema, raw({ preview: { title: 'T', rows: ROWS } }))).toEqual(
-      [],
-    );
+    expect(checkSchema(schema, raw({ preview: { title: 'T', rows: ROWS } }))).toEqual([]);
     expect(errorsOf(raw({ preview: { rows: ['x'] } }))).toContain(
       'preview.rows[0]: expected an object (a row)',
     );
@@ -445,9 +443,7 @@ describe('expandRepeats', () => {
   });
 
   it('the table field not provided becomes a warning; provided empty or null, it does not', () => {
-    expect(expandRepeats(component(), {}).warnings).toEqual([
-      'field not provided: rows',
-    ]);
+    expect(expandRepeats(component(), {}).warnings).toEqual(['field not provided: rows']);
     expect(expandRepeats(component(), { rows: null }).warnings).toEqual([]);
     expect(expandRepeats(component(), { rows: [] }).warnings).toEqual([]);
   });
@@ -520,12 +516,8 @@ describe('instantiate with repeat', () => {
 
   it('visible on the repeat hides the whole table', () => {
     const c = component({}, { visible: { $has: 'show' } });
-    expect(
-      texts(draw(c, { title: 'T', show: null, rows: ROWS }).root),
-    ).toHaveLength(1);
-    expect(
-      texts(draw(c, { title: 'T', show: 'yes', rows: ROWS }).root),
-    ).toHaveLength(7);
+    expect(texts(draw(c, { title: 'T', show: null, rows: ROWS }).root)).toHaveLength(1);
+    expect(texts(draw(c, { title: 'T', show: 'yes', rows: ROWS }).root)).toHaveLength(7);
   });
 
   it('the row axis is hug: more rows, more measured height; the frame is not split with the fill ones', () => {
@@ -724,11 +716,7 @@ describe('repeat by count (format 4)', () => {
   });
 
   it('$index also applies in the repeat by field', () => {
-    const base = raw(
-      {},
-      { template: row([num({ $field: '$index' }), text('key')]) },
-      4,
-    );
+    const base = raw({}, { template: row([num({ $field: '$index' }), text('key')]) }, 4);
     const parsed = parseComponent(base);
     if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
     const { root } = draw(parsed.component, { title: 'T', rows: ROWS });
@@ -1133,7 +1121,8 @@ describe('repeat.layout (L3, decision 14 of #1078)', () => {
     const visit = (node: SceneNode, ox: number, oy: number): void => {
       const x = ox + node.transform[4];
       const y = oy + node.transform[5];
-      if (node.name === 'cell') out.push({ x, y, width: node.width, height: node.height });
+      if (node.name === 'cell')
+        out.push({ x, y, width: node.width, height: node.height });
       if (node.type === 'frame') for (const child of node.children) visit(child, x, y);
     };
     visit(root, 0, 0);
@@ -1241,9 +1230,12 @@ describe('repeat.layout (L3, decision 14 of #1078)', () => {
       v4({ field: 'options', layout: { type: 'column', gap: 3 }, template: tpl }),
       { options: OPTIONS },
     );
-    const b = cells(v4({ field: 'options', direction: 'column', gap: 3, template: tpl }), {
-      options: OPTIONS,
-    });
+    const b = cells(
+      v4({ field: 'options', direction: 'column', gap: 3, template: tpl }),
+      {
+        options: OPTIONS,
+      },
+    );
     expect(a).toEqual(b);
   });
 

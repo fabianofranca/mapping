@@ -144,12 +144,15 @@ describe('layoutScreen in rtl: logical ScreenAnchor', () => {
     'end',
     'bottom-start',
     'bottom-end',
-  ])('%s: start and end swap sides in rtl, the vertical axis does not change', (anchor) => {
-    const ltr = boxOf(anchored(anchor, 'ltr'), 'x');
-    const rtl = boxOf(anchored(anchor, 'rtl'), 'x');
-    expect(rtl.x).toBeCloseTo(W - ltr.x - ltr.width, 6);
-    expect(rtl.y).toBe(ltr.y);
-  });
+  ])(
+    '%s: start and end swap sides in rtl, the vertical axis does not change',
+    (anchor) => {
+      const ltr = boxOf(anchored(anchor, 'ltr'), 'x');
+      const rtl = boxOf(anchored(anchor, 'rtl'), 'x');
+      expect(rtl.x).toBeCloseTo(W - ltr.x - ltr.width, 6);
+      expect(rtl.y).toBe(ltr.y);
+    },
+  );
 
   it('top, center and bottom (without start/end) are the same in both directions', () => {
     for (const anchor of ['top', 'center', 'bottom'] as const)

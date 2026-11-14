@@ -1,5 +1,5 @@
-// NC1 (decisão 4 da #1631): o motor avisa `text larger than the box: <nó>` também quando a palavra mais
-// larga do texto passa da largura do nó (o texto só quebra entre palavras), sem mudar o desenho.
+// NC1 (decision 4 of #1631): the engine warns `text larger than the box: <node>` also when the widest
+// word of the text goes past the width of the node (the text only breaks between words), without changing the drawing.
 import { describe, expect, it } from 'vitest';
 import { COMPONENT_FORMAT } from '../../../src/model/components/componentFormat';
 import {
@@ -13,7 +13,7 @@ import { instantiateOptions } from '../../support/material3Library';
 
 type Json = Record<string, unknown>;
 
-/** Instancia o tipo da Material 3 em `width × height` com os valores dados. */
+/** Instantiates the Material 3 type at `width × height` with the given values. */
 function drawBox(id: string, values: Json, width: number, height: number) {
   const entry = entryOf(id);
   return instantiate(
@@ -27,24 +27,28 @@ function drawBox(id: string, values: Json, width: number, height: number) {
 const tooBig = (warnings: readonly string[]): string[] =>
   warnings.filter((w) => w.startsWith('text larger than the box'));
 
-describe('palavra mais larga que a caixa do texto avisa', () => {
-  it('button "Salvar" em 58 × 40 avisa o rótulo; em 96 × 40 não avisa', () => {
-    const small = drawBox('button', { label: 'Salvar' }, 58, 40);
+describe('a word wider than the text box warns', () => {
+  it('button "Submit" at 58 × 40 warns about the label; at 96 × 40 it does not warn', () => {
+    const small = drawBox('button', { label: 'Submit' }, 58, 40);
+    // pt-BR kept: node names of the Material 3 sample library (viewer/samples) are Portuguese
     expect(tooBig(small.warnings)).toEqual(['text larger than the box: rótulo']);
-    const fits = drawBox('button', { label: 'Salvar' }, 96, 40);
+    const fits = drawBox('button', { label: 'Submit' }, 96, 40);
     expect(tooBig(fits.warnings)).toEqual([]);
   });
 
-  it('extended-fab "Novo" em 50 × 56 e "Confirmar compra" em 60 × 56 avisam o texto', () => {
-    const novo = drawBox('extended-fab', { text: 'Novo' }, 50, 56);
-    expect(tooBig(novo.warnings)).toEqual(['text larger than the box: texto']);
-    const longo = drawBox('extended-fab', { text: 'Confirmar compra' }, 60, 56);
-    expect(tooBig(longo.warnings)).toEqual(['text larger than the box: texto']);
+  it('extended-fab "Next" at 50 × 56 and "Customize layout" at 60 × 56 warn about the text', () => {
+    const next = drawBox('extended-fab', { text: 'Next' }, 50, 56);
+    // pt-BR kept: node names of the Material 3 sample library (viewer/samples) are Portuguese
+    expect(tooBig(next.warnings)).toEqual(['text larger than the box: texto']);
+    const long = drawBox('extended-fab', { text: 'Customize layout' }, 60, 56);
+    // pt-BR kept: node names of the Material 3 sample library (viewer/samples) are Portuguese
+    expect(tooBig(long.warnings)).toEqual(['text larger than the box: texto']);
   });
 
-  it('button "Confirmar compra" em 58 × 40 mantém o aviso de conteúdo e ganha o do rótulo', () => {
-    const made = drawBox('button', { label: 'Confirmar compra' }, 58, 40);
+  it('button "Customize layout" at 58 × 40 keeps the content warning and gains the label one', () => {
+    const made = drawBox('button', { label: 'Customize layout' }, 58, 40);
     expect(made.warnings).toContain('content larger than the box: button');
+    // pt-BR kept: node names of the Material 3 sample library (viewer/samples) are Portuguese
     expect(tooBig(made.warnings)).toEqual(['text larger than the box: rótulo']);
   });
 });
@@ -58,7 +62,7 @@ const file = (text: Json): never =>
     size: { width: 40, height: 60 },
     template: {
       type: 'frame',
-      name: 'raiz',
+      name: 'root',
       width: 'fill',
       height: 'fill',
       layout: { type: 'none' },
@@ -74,10 +78,10 @@ const run = (text: Json) =>
     { measure: approximateMeasurer },
   );
 
-describe('o que não avisa e o texto rico', () => {
-  const longWord = 'Extraordinariamente';
+describe('what does not warn and the rich text', () => {
+  const longWord = 'Incomprehensibility';
 
-  it('texto com maxLines ou ellipsis não avisa', () => {
+  it('text with maxLines or ellipsis does not warn', () => {
     const base = { type: 'text', name: 't', width: 40, height: 60, text: longWord };
     expect(tooBig(run({ ...base, font: { size: 14, maxLines: 1 } }).warnings)).toEqual(
       [],
@@ -87,51 +91,51 @@ describe('o que não avisa e o texto rico', () => {
     );
   });
 
-  it('o mesmo texto sem maxLines nem ellipsis avisa', () => {
+  it('the same text without maxLines or ellipsis warns', () => {
     const base = { type: 'text', name: 't', width: 40, height: 60, text: longWord };
     expect(tooBig(run({ ...base, font: { size: 14 } }).warnings)).toEqual([
       'text larger than the box: t',
     ]);
   });
 
-  it('texto rico com um chip mais largo que a caixa avisa', () => {
+  it('rich text with a chip wider than the box warns', () => {
     const made = run({
       type: 'text',
-      name: 'rico',
+      name: 'rich',
       width: 40,
       height: 60,
       font: { size: 14 },
-      runs: [{ text: 'a ' }, { text: 'chipmuitolargo', background: '#cccccc' }],
+      runs: [{ text: 'a ' }, { text: 'chipverylonger', background: '#cccccc' }],
     });
-    expect(tooBig(made.warnings)).toEqual(['text larger than the box: rico']);
+    expect(tooBig(made.warnings)).toEqual(['text larger than the box: rich']);
   });
 });
 
-describe('rótulo com espaço sem quebra e palavra com glifo largo', () => {
+describe('label with a non-breaking space and a word with a wide glyph', () => {
   const base = { type: 'text', name: 't', width: 80, height: 60 };
 
-  it('wrap none com espaço mais largo que a caixa avisa, como o mesmo texto em runs', () => {
-    const text = 'Confirmar compra';
+  it('wrap none with a space wider than the box warns, like the same text in runs', () => {
+    const text = 'Customize layout';
     const plain = run({ ...base, text, font: { size: 14, wrap: 'none' } });
     expect(tooBig(plain.warnings)).toEqual(['text larger than the box: t']);
     const rich = run({ ...base, font: { size: 14, wrap: 'none' }, runs: [{ text }] });
     expect(tooBig(rich.warnings)).toEqual(['text larger than the box: t']);
   });
 
-  it('wrap none com ellipsis não avisa e linha com espaço que cabe não avisa', () => {
-    const text = 'Confirmar compra';
+  it('wrap none with ellipsis does not warn and a line with a space that fits does not warn', () => {
+    const text = 'Customize layout';
     const cut = run({ ...base, text, font: { size: 14, wrap: 'none', ellipsis: true } });
     expect(tooBig(cut.warnings)).toEqual([]);
     const fits = run({ ...base, width: 200, text, font: { size: 14, wrap: 'none' } });
     expect(tooBig(fits.warnings)).toEqual([]);
   });
 
-  it('palavra com tab mais larga que a caixa avisa (a quebra é só em espaço)', () => {
-    const made = run({ ...base, text: 'Confirmar\tcompra', font: { size: 14 } });
+  it('a word with a tab wider than the box warns (the break is only at a space)', () => {
+    const made = run({ ...base, text: 'Customize\tlayout', font: { size: 14 } });
     expect(tooBig(made.warnings)).toEqual(['text larger than the box: t']);
   });
 
-  it('emoji mais largo que 1em não some no atalho', () => {
+  it('an emoji wider than 1em does not disappear in the shortcut', () => {
     const wide = (value: string): number => [...value].length * 14 * 1.5;
     const made = instantiate(
       file({ ...base, width: 60, text: '😀😀😀', font: { size: 14 } }),
