@@ -1,15 +1,17 @@
-// MC5 (#1033, etapa #898), grupo B: tabs, top-app-bar e list-item. As posições verticais que eram estimadas para o
-// Roboto 14/20 passam à linha de base do Compose (`baselinePadding`) e a altura passa a seguir as linhas medidas
-// (`$lines`) ou o `style` (`sizing` por expressão). Referência (commit 5113b82a…, androidx/compose/material3/
+// MC5 (#1033, stage #898), group B: tabs, top-app-bar and list-item. The vertical positions that were estimated for
+// Roboto 14/20 move to the Compose baseline (`baselinePadding`) and the height now follows the measured lines
+// (`$lines`) or the `style` (`sizing` by expression). Reference (commit 5113b82a…, androidx/compose/material3/
 // material3/src/commonMain/kotlin/androidx/compose/material3):
-//  - Tab.kt 367 a 417 (`placeTextAndIcon`: a última linha de base fica a `SingleLineTextBaselineWithIcon` 14 ou
-//    `DoubleLineTextBaselineWithIcon` 6 mais o indicador de 3 do fundo da aba; o ícone fica a `IconDistanceFromBaseline`
-//    20 acima da primeira linha de base) e 420 a 438 (as constantes);
-//  - AppBar.kt 3213 a 3231 (o título grande tem a linha de base a `titleBottomPadding` do fundo da barra) e 3510 e 3511
-//    (`MediumTitleBottomPadding` 24 e `LargeTitleBottomPadding` 28); tokens/AppBar{Small,Medium,Large}Tokens.kt
-//    (`ContainerHeight` 64, 112 e 152);
-//  - ListItem.kt 191 a 330 (`isSupportingMultiline` pelas linhas de base do apoio), 451 a 473 (`calculateHeight`),
-//    475 a 524 (`place`: o item de três linhas prende o conteúdo ao topo, a `topPadding` 12) e 712 a 757 (`ListItemType`).
+//  - Tab.kt 367 to 417 (`placeTextAndIcon`: the last baseline sits `SingleLineTextBaselineWithIcon` 14 or
+//    `DoubleLineTextBaselineWithIcon` 6 plus the 3 indicator above the tab bottom; the icon sits `IconDistanceFromBaseline`
+//    20 above the first baseline) and 420 to 438 (the constants);
+//  - AppBar.kt 3213 to 3231 (the large title has its baseline `titleBottomPadding` above the bar bottom) and 3510 and 3511
+//    (`MediumTitleBottomPadding` 24 and `LargeTitleBottomPadding` 28); tokens/AppBar{Small,Medium,Large}Tokens.kt
+//    (`ContainerHeight` 64, 112 and 152);
+//  - ListItem.kt 191 to 330 (`isSupportingMultiline` by the baselines of the supporting text), 451 to 473 (`calculateHeight`),
+//    475 to 524 (`place`: the three-line item pins the content to the top, at `topPadding` 12) and 712 to 757 (`ListItemType`).
+// pt-BR kept: node names ('aba', 'rótulo empilhado', 'pilha', 'indicador primário', 'título grande', 'corpo', 'apoio',
+// 'textos') and the example name 'Apoio de duas linhas' are the Portuguese data of libraries/material3-compose
 import { describe, expect, it } from 'vitest';
 import { absoluteBoxes, walk } from '../../src/model/components/scene';
 import type { SceneNode, TextNode } from '../../src/model/components/scene';
@@ -37,10 +39,10 @@ const textBox = (d: Drawing, text: string) => {
   const node = [...walk(d.root)].find(
     (n): n is TextNode => n.type === 'text' && n.visible && n.text === text,
   );
-  if (node === undefined) throw new Error(`texto ausente: ${text}`);
+  if (node === undefined) throw new Error(`missing text: ${text}`);
   return { node, ...boxOf(d, node) };
 };
-/** Os ícones desenhados (o nó `icon` é um grupo de 24 com um caminho), na ordem do desenho. */
+/** The drawn icons (the `icon` node is a 24 group with a path), in drawing order. */
 const iconBoxes = (d: Drawing) =>
   [...walk(d.root)]
     .filter(
@@ -49,7 +51,7 @@ const iconBoxes = (d: Drawing) =>
     )
     .map((node) => ({ node, ...boxOf(d, node) }));
 
-/** Os nós `text` do template com `baselinePadding` (em qualquer ramo). */
+/** The template `text` nodes with `baselinePadding` (in any branch). */
 function textsWithBaseline(id: string): Record<string, unknown>[] {
   const found: Record<string, unknown>[] = [];
   const walkJson = (node: unknown): void => {
@@ -73,18 +75,18 @@ const row = (label: string, selected = false, icon = 'Home'): Row => ({
   selected: String(selected),
 });
 const THREE = [
-  row('Início', true),
-  row('Buscar', false, 'Search'),
-  row('Perfil', false, 'Person'),
+  row('Home', true),
+  row('Search', false, 'Search'),
+  row('Profile', false, 'Person'),
 ];
 const TWO_LINES = [
-  row('Configurações da conta', true),
-  row('Buscar', false, 'Search'),
-  row('Perfil', false, 'Person'),
+  row('Account settings', true),
+  row('Search', false, 'Search'),
+  row('Profile', false, 'Person'),
 ];
 const STYLES = ['primary', 'secondary', 'primary-scrollable', 'secondary-scrollable'];
 
-/** A tabela de abas (uma linha só, ícone acima) na altura da marcação dada. */
+/** The tab table (a single row, icon above) at the given marking height. */
 const drawTabs = (
   items: Row[],
   style: string,
@@ -96,47 +98,47 @@ const drawTabs = (
     height,
   }).drawing;
 
-/** A linha de base do rótulo: só existe quando o nó leva `baselinePadding.top` (a estimativa não tinha). */
+/** The label baseline: it only exists when the node carries `baselinePadding.top` (the estimate had none). */
 function baselineOf(node: TextNode, y: number): number {
   const top = node.style.baselineTop;
   if (top === undefined)
-    throw new Error(`o rótulo não tem linha de base declarada (baselineTop)`);
+    throw new Error(`the label has no declared baseline (baselineTop)`);
   return y + top;
 }
 
-describe('MC5 grupo B — tabs, ícone acima do texto pela linha de base (Tab.kt 367 a 417)', () => {
-  it('o rótulo empilhado leva baselinePadding.top 20 e a pilha perdeu o padding [0,0,12,0] estimado', () => {
-    // Fixa e rolável: um nó de texto de cada, com o top = IconDistanceFromBaseline (Tab.kt 438).
+describe('MC5 group B — tabs, icon above the text by the baseline (Tab.kt 367 to 417)', () => {
+  it('the stacked label carries baselinePadding.top 20 and the stack lost the estimated [0,0,12,0] padding', () => {
+    // Fixed and scrollable: one text node each, with top = IconDistanceFromBaseline (Tab.kt 438).
     const labels = textsWithBaseline('tabs');
     expect(labels).toHaveLength(2);
     for (const label of labels)
       expect((label.baselinePadding as { top: number }).top).toBe(20);
-    const pilhas = templateNodes('tabs', 'pilha');
-    expect(pilhas.length).toBeGreaterThan(0);
-    for (const pilha of pilhas)
+    const stacks = templateNodes('tabs', 'pilha');
+    expect(stacks.length).toBeGreaterThan(0);
+    for (const stack of stacks)
       expect(
-        JSON.stringify((pilha.layout as { padding?: unknown }).padding),
+        JSON.stringify((stack.layout as { padding?: unknown }).padding),
       ).not.toContain('12');
   });
 
   it.each(STYLES)(
-    '%s, uma linha: a última linha de base fica a 17 do fundo (14 + indicador de 3) e o ícone a 20 acima dela, em light e dark',
+    '%s, one line: the last baseline sits 17 above the bottom (14 + 3 indicator) and the icon 20 above it, in light and dark',
     (style) => {
       for (const mode of MODES) {
         const d = drawTabs(THREE, style, 72, mode);
-        const label = textBox(d, 'Início');
+        const label = textBox(d, 'Home');
         const baseline = baselineOf(label.node, label.y);
         near(72 - baseline, 17);
         const icon = iconBoxes(d)[0]!;
         near(icon.height, 24);
-        // Tab.kt 399 a 411: o fundo do ícone fica IconDistanceFromBaseline (20) acima da primeira linha de base
+        // Tab.kt 399 to 411: the icon bottom sits IconDistanceFromBaseline (20) above the first baseline
         near(baseline - (icon.y + icon.height), 20);
         near(icon.y, 11);
       }
     },
   );
 
-  it('a aba de 72 não mexe nas outras: o ícone de uma aba só de ícone e o de texto continuam centrados', () => {
+  it('the 72 tab leaves the others alone: the icon of an icon-only tab and the text one stay centered', () => {
     const only = drawFitted(
       'tabs',
       {
@@ -150,47 +152,47 @@ describe('MC5 grupo B — tabs, ícone acima do texto pela linha de base (Tab.kt
     near(iconBoxes(only)[0]!.y, 24);
   });
 
-  it('duas linhas (fileira fixa): o rótulo quebra em duas, a última linha de base fica a 9 do fundo (6 + 3) e o ícone a 20 da primeira', () => {
-    // Na aba do Compose a altura vira max(72, ícone + texto + 20) = 84; a marcação é que dá a altura aqui.
+  it('two lines (fixed row): the label breaks in two, the last baseline sits 9 above the bottom (6 + 3) and the icon 20 above the first', () => {
+    // In the Compose tab the height becomes max(72, icon + text + 20) = 84; here the marking provides the height.
     for (const mode of MODES) {
       const d = drawTabs(TWO_LINES, 'primary', 84, mode);
       const long = boxesOf(d, 'rótulo empilhado').find(
-        (b) => (b.node as TextNode).text === 'Configurações da conta',
+        (b) => (b.node as TextNode).text === 'Account settings',
       )!;
-      expect(long, 'rótulo de duas linhas').toBeDefined();
+      expect(long, 'two-line label').toBeDefined();
       const first = baselineOf(long.node as TextNode, long.y);
       const last = first + 20;
       near(84 - last, 9);
       const icon = iconBoxes(d)[0]!;
       near(first - (icon.y + icon.height), 20);
-      // A aba curta da mesma fileira segue a distância de uma linha (17), pela própria aba.
-      const short = textBox(d, 'Buscar');
+      // The short tab in the same row follows the one-line distance (17), by its own tab.
+      const short = textBox(d, 'Search');
       near(84 - baselineOf(short.node, short.y), 17);
     }
   });
 
-  it('duas linhas: o texto ocupa a largura da aba menos os 2 × 16 do HorizontalTextPadding', () => {
+  it('two lines: the text takes the tab width minus the 2 × 16 of HorizontalTextPadding', () => {
     const d = drawTabs(TWO_LINES, 'primary', 84);
     const tab = boxesOf(d, 'aba')[0]!;
-    const long = textBox(d, 'Configurações da conta');
+    const long = textBox(d, 'Account settings');
     expect(long.width).toBeLessThanOrEqual(tab.width - 32 + 1e-6);
     near(long.height, 49);
   });
 
-  it('o indicador primário continua do tamanho do conteúdo (matchContentSize)', () => {
+  it('the primary indicator stays the size of the content (matchContentSize)', () => {
     const d = drawTabs(THREE, 'primary', 72);
     const indicator = boxesOf(d, 'indicador primário')[0]!;
-    near(indicator.width, textBox(d, 'Início').width);
+    near(indicator.width, textBox(d, 'Home').width);
     const long = drawTabs(TWO_LINES, 'primary', 84);
     const wide = boxesOf(long, 'indicador primário')[0]!;
-    const text = textBox(long, 'Configurações da conta');
+    const text = textBox(long, 'Account settings');
     near(wide.width, text.width);
     const tab = boxesOf(long, 'aba')[0]!;
     expect(wide.width).toBeLessThanOrEqual(tab.width - 32 + 1e-6);
   });
 
   it.each(MODES)(
-    'os exemplos do tabs desenham sem aviso, no size e no tamanho ajustado (%s)',
+    'the tabs examples draw without warnings, at the size and at the fitted size (%s)',
     (mode) => {
       for (const example of entryOf('tabs').examples) {
         const values = example.values as Values;
@@ -205,9 +207,9 @@ describe('MC5 grupo B — tabs, ícone acima do texto pela linha de base (Tab.kt
     },
   );
 
-  // as roláveis não quebram o rótulo (a aba tem a largura do conteúdo) e um rótulo comprido passa da fileira, como antes
+  // the scrollable ones do not break the label (the tab has the content width) and a long label overflows the row, as before
   it.each(['primary', 'secondary'])(
-    '%s: o rótulo de duas linhas desenha sem aviso, em light e dark',
+    '%s: the two-line label draws without warnings, in light and dark',
     (style) => {
       for (const mode of MODES) {
         expect(drawTabs(TWO_LINES, style, 84, mode).warnings).toEqual([]);
@@ -227,14 +229,14 @@ const BAR_HEIGHT: Record<string, number> = {
   large: 152,
 };
 
-describe('MC5 grupo B — top-app-bar, título grande pela linha de base e a altura pelo style', () => {
-  it('os títulos grandes (medium e large) levam baselinePadding.bottom 24 e 28, sem a âncora de fundo estimada', () => {
+describe('MC5 group B — top-app-bar, large title by the baseline and the height by the style', () => {
+  it('the large titles (medium and large) carry baselinePadding.bottom 24 and 28, without the estimated bottom anchor', () => {
     const nodes = templateNodes('top-app-bar', 'título grande');
     expect(nodes).toHaveLength(2);
     expect(
       nodes.map((n) => (n.baselinePadding as { bottom: number } | undefined)?.bottom),
     ).toEqual([24, 28]);
-    // a âncora de 16 e de 20 era a conta do Roboto: a caixa agora desce até o fundo da barra
+    // the 16 and 20 anchors were the Roboto estimate: the box now goes down to the bar bottom
     for (const node of nodes) expect((node.anchors as { bottom: number }).bottom).toBe(0);
   });
 
@@ -242,12 +244,12 @@ describe('MC5 grupo B — top-app-bar, título grande pela linha de base e a alt
     ['medium', 24, 24, 32],
     ['large', 28, 28, 36],
   ])(
-    '%s: a linha de base do título fica a %i do fundo da barra (AppBar.kt 3213 a 3231)',
+    '%s: the title baseline sits %i above the bar bottom (AppBar.kt 3213 to 3231)',
     (style, bottom, size, lineHeight) => {
       for (const mode of MODES) {
         const { box, drawing } = drawFitted(
           'top-app-bar',
-          { title: 'Configurações', style, navigationIcon: 'ArrowBack' },
+          { title: 'Settings', style, navigationIcon: 'ArrowBack' },
           mode,
         );
         expect(box.height).toBe(BAR_HEIGHT[style]);
@@ -258,26 +260,26 @@ describe('MC5 grupo B — top-app-bar, título grande pela linha de base e a alt
     },
   );
 
-  it('o sizing.height é a expressão pelo style e o size continua 412 × 152', () => {
+  it('sizing.height is the expression by style and the size stays 412 × 152', () => {
     const component = entryOf('top-app-bar').component!;
     expect(component.size).toEqual({ width: 412, height: 152 });
     expect(typeof component.sizing?.height).toBe('object');
   });
 
   it.each(Object.entries(BAR_HEIGHT))(
-    'style %s: o tamanho ajustado tem %i de altura e a largura da marcação',
+    'style %s: the fitted size is %i high and the marking width',
     (style, height) => {
       for (const mode of MODES) {
         const fit = fittedSize(
           'top-app-bar',
-          { title: 'Início', style, navigationIcon: 'Menu' },
+          { title: 'Home', style, navigationIcon: 'Menu' },
           mode,
         );
         expect(fit.height).toBe(height);
         expect(fit.messages).toEqual([]);
         const { drawing } = drawFitted(
           'top-app-bar',
-          { title: 'Início', style, navigationIcon: 'Menu' },
+          { title: 'Home', style, navigationIcon: 'Menu' },
           mode,
           { width: 412 },
         );
@@ -286,12 +288,12 @@ describe('MC5 grupo B — top-app-bar, título grande pela linha de base e a alt
     },
   );
 
-  it('sem style (o padrão é small) o ajuste dá 64', () => {
-    expect(fittedSize('top-app-bar', { title: 'Início' }).height).toBe(64);
+  it('without a style (the default is small) the fit gives 64', () => {
+    expect(fittedSize('top-app-bar', { title: 'Home' }).height).toBe(64);
   });
 
   it.each(MODES)(
-    'os exemplos da barra desenham sem aviso no size e no tamanho ajustado (%s)',
+    'the bar examples draw without warnings at the size and at the fitted size (%s)',
     (mode) => {
       for (const example of entryOf('top-app-bar').examples) {
         const values = example.values as Values;
@@ -312,30 +314,30 @@ describe('MC5 grupo B — top-app-bar, título grande pela linha de base e a alt
 // list-item
 // ---------------------------------------------------------------------------------------------
 const LONG_SUPPORT =
-  'Sala 3, com a equipe de produto, para combinar o planejamento do semestre e os próximos passos';
+  'Room 3, with the product team, to agree on the semester planning and the next steps';
 const twoLineSupport = {
-  headlineContent: 'Reunião de planejamento',
+  headlineContent: 'Planning meeting',
   supportingContent: LONG_SUPPORT,
   leadingIcon: 'DateRange',
   trailingContent: '12:30',
 };
 
-describe('MC5 grupo B — list-item, o apoio de duas linhas faz o item de três linhas (ListItem.kt 191 a 330)', () => {
-  it('o corpo cita as linhas do apoio (isSupportingMultiline) no minHeight, no padding e no alinhamento', () => {
-    const [corpo] = templateNodes('list-item', 'corpo');
-    expect(corpo).toBeDefined();
-    const json = JSON.stringify(corpo);
+describe('MC5 group B — list-item, a two-line supporting text makes the three-line item (ListItem.kt 191 to 330)', () => {
+  it('the body cites the supporting lines (isSupportingMultiline) in the minHeight, the padding and the alignment', () => {
+    const [body] = templateNodes('list-item', 'corpo');
+    expect(body).toBeDefined();
+    const json = JSON.stringify(body);
     expect(json).toContain('"$lines":"apoio"');
-    // o respiro de 12 e o 88 do item de três linhas passam a valer também por esse caminho
-    const layout = JSON.stringify((corpo as { layout: unknown }).layout);
+    // the 12 breathing room and the 88 of the three-line item now also hold through this path
+    const layout = JSON.stringify((body as { layout: unknown }).layout);
     expect(layout).toContain('"$lines":"apoio"');
-    expect((corpo as { minHeight: unknown }).minHeight).toBeDefined();
-    expect(JSON.stringify((corpo as { minHeight: unknown }).minHeight)).toContain(
+    expect((body as { minHeight: unknown }).minHeight).toBeDefined();
+    expect(JSON.stringify((body as { minHeight: unknown }).minHeight)).toContain(
       '"$lines":"apoio"',
     );
   });
 
-  it('apoio de 2 linhas sem sobretítulo: o tamanho ajustado dá 88 (calculateHeight, três linhas)', () => {
+  it('2-line supporting text without overline: the fitted size gives 88 (calculateHeight, three lines)', () => {
     for (const mode of MODES) {
       const fit = fittedSize('list-item', twoLineSupport, mode);
       expect(fit.messages).toEqual([]);
@@ -343,36 +345,36 @@ describe('MC5 grupo B — list-item, o apoio de duas linhas faz o item de três 
     }
   });
 
-  it('apoio de 1 linha dá 72; só o título, 56; sobretítulo e apoio, 88', () => {
+  it('1-line supporting text gives 72; headline only, 56; overline and supporting text, 88', () => {
     expect(
       fittedSize('list-item', {
         headlineContent: 'Ana',
-        supportingContent: 'Vamos almoçar?',
+        supportingContent: 'Shall we have lunch?',
       }).height,
     ).toBe(72);
     expect(fittedSize('list-item', { headlineContent: 'Ana' }).height).toBe(56);
     expect(
       fittedSize('list-item', {
         headlineContent: 'Ana',
-        overlineContent: 'Hoje',
-        supportingContent: 'Vamos almoçar?',
+        overlineContent: 'Today',
+        supportingContent: 'Shall we have lunch?',
       }).height,
     ).toBe(88);
   });
 
-  it('apoio de 2 linhas: o ícone inicial e o texto final começam a 12 do topo (o respiro de três linhas), não centrados em 88', () => {
+  it('2-line supporting text: the leading icon and the trailing text start 12 from the top (the three-line breathing room), not centered in 88', () => {
     for (const mode of MODES) {
       const { box, drawing } = drawFitted('list-item', twoLineSupport, mode);
       expect(box.height).toBe(88);
       const icon = iconBoxes(drawing)[0]!;
       near(icon.y, 12);
-      near(textBox(drawing, 'Reunião de planejamento').y, 12);
+      near(textBox(drawing, 'Planning meeting').y, 12);
       const trailing = textBox(drawing, '12:30');
       near(trailing.y, 12);
     }
   });
 
-  it('apoio de 2 linhas: o avatar também fica preso ao topo (12)', () => {
+  it('2-line supporting text: the avatar is also pinned to the top (12)', () => {
     const { drawing } = drawFitted('list-item', {
       ...twoLineSupport,
       leadingIcon: '',
@@ -383,13 +385,13 @@ describe('MC5 grupo B — list-item, o apoio de duas linhas faz o item de três 
     near(avatar.height, 40);
   });
 
-  it('apoio de 1 linha: 72 e o conteúdo inicial e final centrados como antes (respiro de 8)', () => {
+  it('1-line supporting text: 72 and the leading and trailing content centered as before (breathing room of 8)', () => {
     for (const mode of MODES) {
       const { box, drawing } = drawFitted(
         'list-item',
         {
           headlineContent: 'Ana Souza',
-          supportingContent: 'Vamos almoçar?',
+          supportingContent: 'Shall we have lunch?',
           leadingIcon: 'Person',
           trailingContent: '12:30',
         },
@@ -399,24 +401,24 @@ describe('MC5 grupo B — list-item, o apoio de duas linhas faz o item de três 
       near(iconBoxes(drawing)[0]!.y, 24);
       const trailing = textBox(drawing, '12:30');
       near(trailing.y + trailing.height / 2, 36);
-      const textos = boxesOf(drawing, 'textos')[0]!;
-      near(textos.y + textos.height / 2, 36);
+      const texts = boxesOf(drawing, 'textos')[0]!;
+      near(texts.y + texts.height / 2, 36);
     }
   });
 
-  it('o bloco de texto de três linhas por apoio fica no topo (12) e termina dentro do item de 88', () => {
+  it('the three-line text block by supporting text sits at the top (12) and ends inside the 88 item', () => {
     const { box, drawing } = drawFitted('list-item', twoLineSupport);
-    const textos = boxesOf(drawing, 'textos')[0]!;
-    near(textos.y, 12);
-    near(textos.height, 24 + 40, 3);
-    expect(textos.y + textos.height).toBeLessThanOrEqual(box.height - 12 + 1e-6);
+    const texts = boxesOf(drawing, 'textos')[0]!;
+    near(texts.y, 12);
+    near(texts.height, 24 + 40, 3);
+    expect(texts.y + texts.height).toBeLessThanOrEqual(box.height - 12 + 1e-6);
   });
 
-  it('o item de três linhas do sobretítulo continua igual (88, conteúdo preso ao topo)', () => {
+  it('the three-line item from the overline stays the same (88, content pinned to the top)', () => {
     const { box, drawing } = drawFitted('list-item', {
-      headlineContent: 'Reunião',
-      overlineContent: 'Hoje',
-      supportingContent: 'Sala 3',
+      headlineContent: 'Meeting',
+      overlineContent: 'Today',
+      supportingContent: 'Room 3',
       leadingIcon: 'DateRange',
     });
     expect(box.height).toBe(88);
@@ -424,7 +426,7 @@ describe('MC5 grupo B — list-item, o apoio de duas linhas faz o item de três 
   });
 
   it.each(MODES)(
-    'os exemplos do list-item desenham sem aviso no size e no ajustado (%s)',
+    'the list-item examples draw without warnings at the size and at the fitted size (%s)',
     (mode) => {
       for (const example of entryOf('list-item').examples) {
         const values = example.values as Values;
@@ -439,11 +441,11 @@ describe('MC5 grupo B — list-item, o apoio de duas linhas faz o item de três 
     },
   );
 
-  it('o exemplo "Apoio de duas linhas" existe e mede 88', () => {
+  it('the "Apoio de duas linhas" example exists and measures 88', () => {
     const example = entryOf('list-item').examples.find(
       (e) => e.name === 'Apoio de duas linhas',
     );
-    expect(example, 'exemplo Apoio de duas linhas').toBeDefined();
+    expect(example, 'Apoio de duas linhas example').toBeDefined();
     expect(fittedSize('list-item', example!.values as Values).height).toBe(88);
   });
 });

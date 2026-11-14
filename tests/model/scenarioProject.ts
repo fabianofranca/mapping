@@ -1,6 +1,6 @@
-// Projeto grande do cenário "projeto inteiro à vista" (etapa canvas-desempenho, CD1): usado pelos testes do
-// canvas (`tests/canvas/wholeProjectScenario.ts`), pelo teste de crescimento (`tests/scale/app/canvasGrowth.scale.ts`)
-// e pelo `npm run perf:canvas` (`scripts/perf/project.ts`). Só Node e modelo: nada de DOM.
+// Large project of the "whole project in view" scenario (stage canvas-performance, CD1): used by the
+// canvas tests (`tests/canvas/wholeProjectScenario.ts`), by the growth test (`tests/scale/app/canvasGrowth.scale.ts`)
+// and by `npm run perf:canvas` (`scripts/perf/project.ts`). Node and model only: no DOM.
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import {
@@ -17,23 +17,23 @@ import { approximateMeasurer } from '../../src/model/components/instantiate';
 import { M3_SCREEN } from '../../viewer/samples/samplesMaterial3';
 import { buildLargeProject } from './largeProject';
 
-// Relativo à raiz do repositório (o cwd do vitest e do `npm run perf:canvas`): o esbuild empacota este arquivo em ESM.
+// Relative to the repository root (the cwd of vitest and of `npm run perf:canvas`): esbuild bundles this file as ESM.
 const MATERIAL3_DIR = join(process.cwd(), 'tests/fixtures/material3');
 const MATERIAL3_SPEC_FILE = 'specs/material3/material3.spec.json';
-/** Onde a tela de componentes entra em cada container (abaixo das marcações da receita, que ocupam até 90% da altura). */
+/** Where the components screen goes in each container (below the recipe markings, which take up to 90% of the height). */
 const SCREEN_ORIGIN = { x: 20, y: 3020 };
 const CONTAINER_HEIGHT_WITH_COMPONENTS = 4000;
 
 export interface ScenarioOptions {
-  /** Número de marcações da receita (múltiplo de `perImage`). */
+  /** Number of markings of the recipe (a multiple of `perImage`). */
   readonly size: number;
-  /** Marcações por container; padrão 100 (maior que isso a receita gera marcações de largura 0). */
+  /** Markings per container; default 100 (above that the recipe generates markings of width 0). */
   readonly perImage?: number;
-  /** Número de setas; padrão metade das marcações. */
+  /** Number of arrows; default half of the markings. */
   readonly arrows?: number;
-  /** Acrescenta, em cada container, as 21 instâncias da tela `M3_SCREEN` (biblioteca Material 3). */
+  /** Adds, in each container, the 21 instances of the `M3_SCREEN` screen (Material 3 library). */
   readonly components?: boolean;
-  /** Containers só de cor de fundo, sem arquivo (o `perf:canvas` abre a pasta sem imagens). */
+  /** Containers with only a background color, no file (`perf:canvas` opens the folder without images). */
   readonly backgrounds?: boolean;
 }
 
@@ -41,11 +41,11 @@ function material3Spec(): Spec {
   const parsed = parseSpecText(
     readFileSync(join(MATERIAL3_DIR, 'material3.spec.json'), 'utf8'),
   );
-  if (!parsed.ok) throw new Error('material3.spec.json inválido');
+  if (!parsed.ok) throw new Error('invalid material3.spec.json');
   return parsed.spec;
 }
 
-/** Catálogo de componentes do Material 3, lido do disco como a sessão lê da pasta do projeto. */
+/** Material 3 component catalog, read from disk as the session reads from the project folder. */
 export function material3Catalog(): ComponentCatalog {
   const loaded = loadSpecComponents(material3Spec(), MATERIAL3_SPEC_FILE, 1, (path) => {
     try {
@@ -61,7 +61,7 @@ export function material3Catalog(): ComponentCatalog {
   return new Map([['material3', loaded]]);
 }
 
-/** Os arquivos da biblioteca Material 3, com o caminho na pasta do projeto (`specs/material3/...`). */
+/** The files of the Material 3 library, with the path in the project folder (`specs/material3/...`). */
 export function material3Files(): { path: string; bytes: Uint8Array }[] {
   const list = (dir: string): string[] =>
     readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
@@ -136,7 +136,7 @@ function withComponents(base: Project): Project {
   return project;
 }
 
-/** Projeto grande com `size` marcações, `arrows` setas entre marcações vizinhas e, se pedido, componentes. */
+/** Large project with `size` markings, `arrows` arrows between neighboring markings and, if requested, components. */
 export function scenarioProject(options: ScenarioOptions): Project {
   const { size, perImage = 100, components = false, backgrounds = false } = options;
   const arrows = options.arrows ?? size / 2;

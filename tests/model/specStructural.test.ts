@@ -1,4 +1,4 @@
-// `formatVersion` 15 (etapa #747, CF8): `structural: true` no tipo de anotação.
+// `formatVersion` 15 (stage #747, CF8): `structural: true` on the annotation type.
 import { describe, expect, it } from 'vitest';
 import { emptyProject } from './fixtures';
 import {
@@ -25,7 +25,7 @@ function spec(type: Json, formatVersion = 15): Json {
         id: 'l',
         name: 'L',
         color: '#112233',
-        annotationTypes: [{ id: 'group', name: 'Grupo', fields: [], ...type }],
+        annotationTypes: [{ id: 'group', name: 'Group', fields: [], ...type }],
       },
     ],
   };
@@ -37,22 +37,22 @@ const issuesOf = (raw: Json) => {
 };
 
 describe('formatVersion 15: structural', () => {
-  it('na 15 aceita structural: true e false', () => {
+  it('in 15 accepts structural: true and false', () => {
     expect(issuesOf(spec({ structural: true }))).toEqual([]);
     expect(issuesOf(spec({ structural: false }))).toEqual([]);
   });
 
-  it('structural não booleano falha', () => {
-    const paths = issuesOf(spec({ structural: 'sim' })).map((i) => i.path);
+  it('non-boolean structural fails', () => {
+    const paths = issuesOf(spec({ structural: 'yes' })).map((i) => i.path);
     expect(paths).toContain('layers[0].annotationTypes[0].structural');
   });
 
-  it('structural junto com component falha no caminho do tipo', () => {
+  it('structural together with component fails at the type's path', () => {
     const found = issuesOf(spec({ structural: true, component: 'components/a.json' }));
     expect(found.map((i) => i.path)).toContain('layers[0].annotationTypes[0].structural');
   });
 
-  it('na formatVersion 14 falha com a mensagem de versão', () => {
+  it('in formatVersion 14 it fails with the version message', () => {
     const found = issuesOf(spec({ structural: true }, 14));
     expect(found).toContainEqual(
       expect.objectContaining({
@@ -67,7 +67,7 @@ function withInstance(structural: boolean): Project {
   const parsed = parseSpec(
     spec({ structural, fields: [{ key: 'note', type: 'string' }] }),
   );
-  if (!parsed.ok) throw new Error('spec inválida');
+  if (!parsed.ok) throw new Error('invalid spec');
   const applied = applySpecialization(emptyProject(), parsed.spec, {
     newId: () => 'LS1',
     packageSpecName: 's.spec.json',
@@ -85,13 +85,13 @@ function withInstance(structural: boolean): Project {
   });
 }
 
-describe('marcação de tipo estrutural', () => {
-  it('structuralMarkingIds lista só as marcações de tipo estrutural', () => {
+describe('marking of a structural type', () => {
+  it('structuralMarkingIds lists only the markings of a structural type', () => {
     expect([...structuralMarkingIds(withInstance(true))]).toEqual(['M1']);
     expect(structuralMarkingIds(withInstance(false)).size).toBe(0);
   });
 
-  it('não entra em pendência por falta de componente', () => {
+  it('does not become pending for lack of a component', () => {
     expect(projectIssues(withInstance(true)).size).toBe(0);
   });
 });

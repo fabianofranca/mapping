@@ -1,13 +1,34 @@
-// M5 da etapa "Material 3 fiel": o date-picker contra o que `DatePicker.kt`, `DateRangePicker.kt`,
-// `DatePickerDialog.android.kt` e `DatePickerModalTokens.kt` fixam no commit 5113b82a. As cores
-// esperadas saem dos tokens da especialização (light e dark); a geometria, das constantes do Compose
-// (dp = px do componente).
+// M5 of the "faithful Material 3" stage: the date-picker against what `DatePicker.kt`, `DateRangePicker.kt`,
+// `DatePickerDialog.android.kt` and `DatePickerModalTokens.kt` fix at commit 5113b82a. The expected
+// colors come from the specialization tokens (light and dark); the geometry, from the Compose constants
+// (dp = component px).
 import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import { approximateMeasurer } from '../../src/model/components/instantiate';
 import { absoluteBoxes, walk } from '../../src/model/components/scene';
 import type { PathNode, SceneNode, TextNode } from '../../src/model/components/scene';
 import { drawIn, files, solid, spec, text } from '../support/material3Library';
+
+// pt-BR kept: shared library data, the node names of libraries/material3-compose are in Portuguese
+const NAMES = {
+  header: 'cabeçalho',
+  divider: 'divisor',
+  title: 'título',
+  headline: 'manchete',
+  modeButton: 'botão do modo',
+  monthNav: 'navegação do mês',
+  yearButton: 'botão do ano',
+  displayedMonth: 'mês exibido',
+  prevArrow: 'seta anterior',
+  nextArrow: 'seta próxima',
+  weekdays: 'dias da semana',
+  weekday: 'dia da semana',
+  grid: 'grade',
+  band: 'faixa',
+  day: 'dia',
+  marked: 'marcado',
+  rangeMonth: 'mês do intervalo',
+} as const;
 
 const catalog = buildCatalog(files);
 const entry = findEntry(catalog, 'date-picker')!;
@@ -19,14 +40,14 @@ const draw = (values: Values, mode: Mode = 'light'): Drawing =>
   drawIn(catalog, entry, values, mode);
 
 const SINGLE: Values = {
-  headline: 'qua., 15 de out.',
-  displayedMonth: 'Outubro de 2025',
+  headline: 'Wed, Oct 15',
+  displayedMonth: 'October 2025',
   selection: 'single',
   selectedDay: 15,
 };
 const RANGE: Values = {
-  headline: '9 out – 16 out',
-  displayedMonth: 'Outubro de 2025',
+  headline: 'Oct 9 – Oct 16',
+  displayedMonth: 'October 2025',
   selection: 'range',
   rangeStartDay: 9,
   rangeEndDay: 16,
@@ -52,7 +73,7 @@ const named = (d: Drawing, name: string): SceneNode | undefined => {
 const absOf = (d: Drawing, node: SceneNode) => absoluteBoxes(d.root).get(node.id)!;
 const box = (d: Drawing, name: string) => {
   const node = named(d, name);
-  if (node === undefined) throw new Error(`nó ausente: ${name}`);
+  if (node === undefined) throw new Error(`missing node: ${name}`);
   const { x, y, width, height } = absOf(d, node);
   return { node, x, y, width, height };
 };
@@ -84,11 +105,11 @@ const fontOf = (node: TextNode | undefined) =>
         node.style.fontWeight,
         node.style.letterSpacing,
       ];
-/** As faixas do intervalo (uma por célula do intervalo), unidas numa por semana que o intervalo toca. */
+/** The range bands (one per range cell), merged into one per week that the range touches. */
 const bands = (d: Drawing) => {
   const rows = new Map<number, { x0: number; x1: number; h: number; fill?: string }>();
   for (const n of walk(d.root)) {
-    if (n.name !== 'faixa' || !n.visible || n.width <= 0) continue;
+    if (n.name !== NAMES.band || !n.visible || n.width <= 0) continue;
     const { x, y, width, height } = absOf(d, n);
     const cur = rows.get(y);
     rows.set(y, {
@@ -102,26 +123,26 @@ const bands = (d: Drawing) => {
     .sort((a, b) => a[0] - b[0])
     .map(([y, r]) => ({ rect: [r.x0, y, r.x1 - r.x0, r.h], fill: r.fill }));
 };
-/** A célula de um dia (o texto `dia`) que aparece dentro da janela da grade. */
+/** The cell of a day (the `dia` text) that appears inside the grid window. */
 const dayNode = (d: Drawing, day: number): TextNode => {
-  const grid = box(d, 'grade');
+  const grid = box(d, NAMES.grid);
   const found = [...walk(d.root)].find((n): n is TextNode => {
-    if (n.type !== 'text' || n.name !== 'dia' || !n.visible || n.text !== String(day))
+    if (n.type !== 'text' || n.name !== NAMES.day || !n.visible || n.text !== String(day))
       return false;
     const r = absOf(d, n);
     return r.x >= grid.x + 12 && r.x + r.width <= grid.x + grid.width - 12;
   });
-  if (found === undefined) throw new Error(`dia ausente: ${day}`);
+  if (found === undefined) throw new Error(`missing day: ${day}`);
   return found;
 };
 const dayRect = (d: Drawing, day: number) => {
   const { x, y, width, height } = absOf(d, dayNode(d, day));
   return [x, y, width, height];
 };
-/** Os círculos primary do dia escolhido e das pontas do intervalo (o nó `marcado`), com o número que levam. */
+/** The primary circles of the chosen day and of the range ends (the `marcado` node), with the number they carry. */
 const markedAll = (d: Drawing) =>
   [...walk(d.root)]
-    .filter((n) => n.name === 'marcado' && n.visible)
+    .filter((n) => n.name === NAMES.marked && n.visible)
     .map((n) => {
       const { x, y, width, height } = absOf(d, n);
       const label = [...walk(n)].find((c): c is TextNode => c.type === 'text')!;
@@ -129,10 +150,11 @@ const markedAll = (d: Drawing) =>
     });
 const markedOf = (d: Drawing, text: string) =>
   markedAll(d).find((m) => m.label.text === text);
+// pt-BR kept: 'não cabe' is the pt-BR text of the warning emitted by src/model
 const BAD = /não cabe|text larger than the box|unknown icon|stretched icon|token/i;
 
-describe('M5 date-picker — contêiner e cabeçalho (modo single)', () => {
-  it('contêiner em surface-container-high com raio corner-extra-large (28), sem sombra, em light e dark', () => {
+describe('M5 date-picker — container and header (single mode)', () => {
+  it('container in surface-container-high with corner-extra-large radius (28), no shadow, in light and dark', () => {
     for (const mode of MODES) {
       const d = draw(SINGLE, mode);
       expect(fillOf(d, 'date picker')).toBe(tok('surface-container-high', mode));
@@ -143,100 +165,101 @@ describe('M5 date-picker — contêiner e cabeçalho (modo single)', () => {
     }
   });
 
-  it('altura 120 do cabeçalho (HeaderContainerHeight) com o divisor de 1 em outline-variant na base dele', () => {
+  it('header height 120 (HeaderContainerHeight) with the 1 divider in outline-variant at its base', () => {
     for (const mode of MODES) {
       const d = draw(SINGLE, mode);
-      expect(rect(d, 'cabeçalho')).toEqual([0, 0, 360, 120]);
-      expect(rect(d, 'divisor')).toEqual([0, 119, 360, 1]);
-      expect(fillOf(d, 'divisor')).toBe(tok('outline-variant', mode));
+      expect(rect(d, NAMES.header)).toEqual([0, 0, 360, 120]);
+      expect(rect(d, NAMES.divider)).toEqual([0, 119, 360, 1]);
+      expect(fillOf(d, NAMES.divider)).toBe(tok('outline-variant', mode));
     }
   });
 
-  it('título em label-large (14/20/500/0,1) em on-surface-variant, a 24 da esquerda e 16 do topo', () => {
+  it('title in label-large (14/20/500/0.1) in on-surface-variant, 24 from the left and 16 from the top', () => {
     for (const mode of MODES) {
-      const d = draw({ ...SINGLE, title: 'Selecionar data' }, mode);
-      const title = textOf(d, 'título')!;
+      const d = draw({ ...SINGLE, title: 'Select date' }, mode);
+      const title = textOf(d, NAMES.title)!;
       expect(fontOf(title)).toEqual(scale('label-large'));
       expect(solid(title.fills)).toBe(tok('on-surface-variant', mode));
       expect([absOf(d, title).x, absOf(d, title).y]).toEqual([24, 16]);
     }
   });
 
-  it('título e manchete padrão do M3 quando vazios (Selecionar data / Data selecionada)', () => {
-    const d = draw({ selection: 'single', displayedMonth: 'Outubro de 2025' });
-    expect(textOf(d, 'título')!.text).toBe('Selecionar data');
-    expect(textOf(d, 'manchete')!.text).toBe('Data selecionada');
+  // pt-BR kept: the library's default title and headline are Portuguese data (libraries/material3-compose)
+  it('default M3 title and headline when empty', () => {
+    const d = draw({ selection: 'single', displayedMonth: 'October 2025' });
+    expect(textOf(d, NAMES.title)!.text).toBe('Selecionar data');
+    expect(textOf(d, NAMES.headline)!.text).toBe('Data selecionada');
   });
 
-  it('manchete em headline-large (32/40/400/0), on-surface-variant, maxLines 1, a 24 da esquerda', () => {
+  it('headline in headline-large (32/40/400/0), on-surface-variant, maxLines 1, 24 from the left', () => {
     for (const mode of MODES) {
       const d = draw(SINGLE, mode);
-      const headline = textOf(d, 'manchete')!;
+      const headline = textOf(d, NAMES.headline)!;
       expect(fontOf(headline)).toEqual(scale('headline-large'));
       expect(solid(headline.fills)).toBe(tok('on-surface-variant', mode));
       expect(headline.style.maxLines).toBe(1);
-      // linha de 60 (botão 48 + 12 de baixo) acima do divisor; a manchete (40 + 12 de baixo) centrada nela
+      // 60 row (48 button + 12 below) above the divider; the headline (40 + 12 below) centered in it
       expect([absOf(d, headline).x, absOf(d, headline).y]).toEqual([24, 63]);
     }
   });
 
-  it('alternar modo: botão de 48 a 12 da direita e 12 da base, com o ícone edit de 24 em on-surface-variant', () => {
+  it('toggle mode: 48 button 12 from the right and 12 from the base, with the 24 edit icon in on-surface-variant', () => {
     for (const mode of MODES) {
       const d = draw(SINGLE, mode);
-      expect(rect(d, 'botão do modo')).toEqual([300, 59, 48, 48]);
-      const icon = iconIn(d, 'botão do modo')!;
+      expect(rect(d, NAMES.modeButton)).toEqual([300, 59, 48, 48]);
+      const icon = iconIn(d, NAMES.modeButton)!;
       expect(icon.rect).toEqual([312, 71, 24, 24]);
       expect(icon.color).toBe(tok('on-surface-variant', mode));
     }
   });
 
-  it('showModeToggle false esconde o botão e a manchete desce (só os 12 de baixo)', () => {
+  it('showModeToggle false hides the button and the headline moves down (only the 12 below)', () => {
     const d = draw({ ...SINGLE, showModeToggle: 'false' });
-    expect(named(d, 'botão do modo')).toBeUndefined();
-    expect(absOf(d, textOf(d, 'manchete')!).y).toBe(67);
+    expect(named(d, NAMES.modeButton)).toBeUndefined();
+    expect(absOf(d, textOf(d, NAMES.headline)!).y).toBe(67);
   });
 });
 
-describe('M5 date-picker — navegação do mês e dias da semana (single)', () => {
-  it('linha do mês de 56 (MonthYearHeight) com 12 de margem; botão do ano de 40 com texto label-large', () => {
+describe('M5 date-picker — month navigation and weekdays (single)', () => {
+  it('month row of 56 (MonthYearHeight) with 12 margin; 40 year button with label-large text', () => {
     for (const mode of MODES) {
       const d = draw(SINGLE, mode);
-      expect(rect(d, 'navegação do mês')).toEqual([0, 120, 360, 56]);
-      expect(rect(d, 'botão do ano')).toEqual([12, 128, expect.any(Number), 40]);
-      const month = textOf(d, 'mês exibido')!;
-      expect(month.text).toBe('Outubro de 2025');
+      expect(rect(d, NAMES.monthNav)).toEqual([0, 120, 360, 56]);
+      expect(rect(d, NAMES.yearButton)).toEqual([12, 128, expect.any(Number), 40]);
+      const month = textOf(d, NAMES.displayedMonth)!;
+      expect(month.text).toBe('October 2025');
       expect(fontOf(month)).toEqual(scale('label-large'));
       expect(solid(month.fills)).toBe(tok('on-surface-variant', mode));
-      // padding de 12 do TextButton
+      // 12 padding of the TextButton
       expect(absOf(d, month).x).toBe(24);
     }
   });
 
-  it('setas de mês: dois IconButtons de 48 colados à direita (12 de margem), ícones keyboard_arrow de 24 em on-surface-variant; o seletor de ano leva arrow_drop_down de 24', () => {
+  it('month arrows: two 48 IconButtons flush right (12 margin), 24 keyboard_arrow icons in on-surface-variant; the year selector carries a 24 arrow_drop_down', () => {
     for (const mode of MODES) {
       const d = draw(SINGLE, mode);
-      expect(rect(d, 'seta anterior')).toEqual([252, 124, 48, 48]);
-      expect(rect(d, 'seta próxima')).toEqual([300, 124, 48, 48]);
+      expect(rect(d, NAMES.prevArrow)).toEqual([252, 124, 48, 48]);
+      expect(rect(d, NAMES.nextArrow)).toEqual([300, 124, 48, 48]);
       for (const [name, x] of [
-        ['seta anterior', 264],
-        ['seta próxima', 312],
+        [NAMES.prevArrow, 264],
+        [NAMES.nextArrow, 312],
       ] as const) {
         const icon = iconIn(d, name)!;
         expect(icon.rect).toEqual([x, 136, 24, 24]);
         expect(icon.color).toBe(tok('on-surface-variant', mode));
       }
-      const drop = iconIn(d, 'botão do ano')!;
+      const drop = iconIn(d, NAMES.yearButton)!;
       expect([drop.rect[2], drop.rect[3]]).toEqual([24, 24]);
       expect(drop.color).toBe(tok('on-surface-variant', mode));
     }
   });
 
-  it('dias da semana: 7 células de 48 a partir de 12, em body-large (16/24/400/0,5) e on-surface', () => {
+  it('weekdays: 7 cells of 48 starting at 12, in body-large (16/24/400/0.5) and on-surface', () => {
     for (const mode of MODES) {
       const d = draw(SINGLE, mode);
-      expect(rect(d, 'dias da semana')).toEqual([0, 176, 360, 48]);
+      expect(rect(d, NAMES.weekdays)).toEqual([0, 176, 360, 48]);
       for (let i = 1; i <= 7; i++) {
-        const letter = named(d, `dia da semana ${i}`) as TextNode;
+        const letter = named(d, `${NAMES.weekday} ${i}`) as TextNode;
         expect(fontOf(letter)).toEqual(scale('body-large'));
         expect(solid(letter.fills)).toBe(tok('on-surface', mode));
         expect([absOf(d, letter).x, absOf(d, letter).width]).toEqual([
@@ -248,8 +271,8 @@ describe('M5 date-picker — navegação do mês e dias da semana (single)', () 
   });
 });
 
-describe('M5 date-picker — grade de dias', () => {
-  it('31 dias começando na quarta, células de 48 (RecommendedSizeForAccessibility), em body-large e on-surface', () => {
+describe('M5 date-picker — day grid', () => {
+  it('31 days starting on Wednesday, 48 cells (RecommendedSizeForAccessibility), in body-large and on-surface', () => {
     for (const mode of MODES) {
       const d = draw(SINGLE, mode);
       expect(dayRect(d, 1)).toEqual([156, 224, 48, 48]);
@@ -263,14 +286,14 @@ describe('M5 date-picker — grade de dias', () => {
     }
   });
 
-  it('o conteúdo mede 360 × 464 (cabeçalho 120 + mês 56 + semana 48 + cinco linhas de 48) e o fundo ocupa a caixa de 469', () => {
+  it('the content measures 360 × 464 (header 120 + month 56 + week 48 + five rows of 48) and the background fills the 469 box', () => {
     const d = draw(SINGLE);
-    expect(rect(d, 'grade')).toEqual([0, 224, 360, 240]);
+    expect(rect(d, NAMES.grid)).toEqual([0, 224, 360, 240]);
     expect([d.root.width, d.root.height]).toEqual([360, 512]);
     expect(d.warnings.filter((w) => /content larger than the box/.test(w))).toEqual([]);
   });
 
-  it('dia escolhido: círculo de 40 (DateContainerWidth/Height) corner-full em primary dentro da célula de 48, número em on-primary, em light e dark', () => {
+  it('chosen day: 40 circle (DateContainerWidth/Height) corner-full in primary inside the 48 cell, number in on-primary, in light and dark', () => {
     for (const mode of MODES) {
       const d = draw(SINGLE, mode);
       const marked = markedAll(d);
@@ -284,68 +307,69 @@ describe('M5 date-picker — grade de dias', () => {
       expect(solid(label.fills)).toBe(tok('on-primary', mode));
       expect(fontOf(label)).toEqual(scale('body-large'));
     }
-    // a cor do selecionado muda de um modo para o outro
+    // the selected color changes from one mode to the other
     expect(tok('primary', 'light')).not.toBe(tok('primary', 'dark'));
     expect(solid(markedAll(draw(SINGLE, 'light'))[0]!.node.fills)).not.toBe(
       solid(markedAll(draw(SINGLE, 'dark'))[0]!.node.fills),
     );
   });
 
-  it('o dia escolhido acompanha selectedDay (1 e 31) e some sem seleção', () => {
+  it('the chosen day follows selectedDay (1 and 31) and disappears without a selection', () => {
     expect(markedOf(draw({ ...SINGLE, selectedDay: 1 }), '1')!.rect).toEqual([
       160, 228, 40, 40,
     ]);
     expect(markedOf(draw({ ...SINGLE, selectedDay: 31 }), '31')!.rect).toEqual([
       256, 420, 40, 40,
     ]);
-    const none = draw({ selection: 'single', displayedMonth: 'Outubro de 2025' });
+    const none = draw({ selection: 'single', displayedMonth: 'October 2025' });
     expect(markedAll(none)).toEqual([]);
     expect(bands(none)).toEqual([]);
   });
 
-  it('no estilo single não aparece intervalo, mesmo com dias de intervalo preenchidos', () => {
+  it('in the single style no range appears, even with range days filled in', () => {
     const d = draw({ ...SINGLE, rangeStartDay: 9, rangeEndDay: 16 });
     expect(bands(d)).toEqual([]);
-    // só o dia escolhido: as pontas do intervalo (9 e 16) não desenham
+    // only the chosen day: the range ends (9 and 16) do not draw
     expect(markedAll(d).map((m) => m.label.text)).toEqual(['15']);
   });
 });
 
-describe('M5 date-picker — intervalo (DateRangePicker)', () => {
-  it('cabeçalho do intervalo: título a 64 da esquerda, manchete em title-large (22/28/400/0) em on-surface-variant', () => {
+describe('M5 date-picker — range (DateRangePicker)', () => {
+  it('range header: title 64 from the left, headline in title-large (22/28/400/0) in on-surface-variant', () => {
     for (const mode of MODES) {
       const d = draw(RANGE, mode);
-      const title = textOf(d, 'título')!;
+      const title = textOf(d, NAMES.title)!;
+      // pt-BR kept: the library's default range title is Portuguese data
       expect(title.text).toBe('Selecionar datas');
       expect(fontOf(title)).toEqual(scale('label-large'));
       expect(absOf(d, title).x).toBe(64);
-      const headline = textOf(d, 'manchete')!;
-      expect(headline.text).toBe('9 out – 16 out');
+      const headline = textOf(d, NAMES.headline)!;
+      expect(headline.text).toBe('Oct 9 – Oct 16');
       expect(fontOf(headline)).toEqual(scale('title-large'));
       expect(solid(headline.fills)).toBe(tok('on-surface-variant', mode));
       expect(absOf(d, headline).x).toBe(64);
-      // título 20 + linha de 60 + divisor de 1
-      expect(rect(d, 'cabeçalho')).toEqual([0, 0, 360, 81]);
+      // title 20 + row of 60 + divider of 1
+      expect(rect(d, NAMES.header)).toEqual([0, 0, 360, 81]);
     }
   });
 
-  it('sem a linha de navegação; o mês vira o subtítulo (title-small, on-surface-variant) a 24, com 20 em cima e 8 embaixo', () => {
+  it('without the navigation row; the month becomes the subtitle (title-small, on-surface-variant) at 24, with 20 above and 8 below', () => {
     for (const mode of MODES) {
       const d = draw(RANGE, mode);
-      expect(named(d, 'navegação do mês')).toBeUndefined();
-      expect(rect(d, 'dias da semana')).toEqual([0, 81, 360, 48]);
-      const month = textOf(d, 'mês do intervalo')!;
-      expect(month.text).toBe('Outubro de 2025');
+      expect(named(d, NAMES.monthNav)).toBeUndefined();
+      expect(rect(d, NAMES.weekdays)).toEqual([0, 81, 360, 48]);
+      const month = textOf(d, NAMES.rangeMonth)!;
+      expect(month.text).toBe('October 2025');
       expect(fontOf(month)).toEqual(scale('title-small'));
       expect(solid(month.fills)).toBe(tok('on-surface-variant', mode));
       expect([absOf(d, month).x, absOf(d, month).y]).toEqual([24, 149]);
       expect(dayRect(d, 1)).toEqual([156, 177, 48, 48]);
       // 81 + 48 + 48 + 240
-      expect(rect(d, 'grade')).toEqual([0, 177, 360, 240]);
+      expect(rect(d, NAMES.grid)).toEqual([0, 177, 360, 240]);
     }
   });
 
-  it('extremos do intervalo: círculos de 40 em primary com número em on-primary, em light e dark', () => {
+  it('range ends: 40 circles in primary with the number in on-primary, in light and dark', () => {
     for (const mode of MODES) {
       const d = draw(RANGE, mode);
       expect(markedAll(d)).toHaveLength(2);
@@ -359,28 +383,28 @@ describe('M5 date-picker — intervalo (DateRangePicker)', () => {
     }
   });
 
-  it('faixa do intervalo: 40 de altura em secondary-container, do centro do dia inicial ao centro do final, atravessando as semanas', () => {
+  it('range band: 40 high in secondary-container, from the center of the start day to the center of the end day, crossing the weeks', () => {
     for (const mode of MODES) {
       const d = draw(RANGE, mode);
       expect(bands(d)).toEqual([
-        // semana de 5 a 11: do centro do dia 9 até a borda direita da grade (348)
+        // week of 5 to 11: from the center of day 9 to the right edge of the grid (348)
         { rect: [228, 229, 120, 40], fill: tok('secondary-container', mode) },
-        // semana de 12 a 18: da borda esquerda da grade (12) até o centro do dia 16
+        // week of 12 to 18: from the left edge of the grid (12) to the center of day 16
         { rect: [12, 277, 216, 40], fill: tok('secondary-container', mode) },
       ]);
     }
   });
 
-  it('intervalo dentro de uma semana: a faixa vai de centro a centro', () => {
+  it('range within one week: the band goes from center to center', () => {
     const d = draw({ ...RANGE, rangeStartDay: 13, rangeEndDay: 16 });
-    // 13 (coluna 1) a 16 (coluna 4): 12 + 48 + 24 = 84 até 12 + 192 + 24 = 228
+    // 13 (column 1) to 16 (column 4): 12 + 48 + 24 = 84 to 12 + 192 + 24 = 228
     expect(bands(d).map((b) => b.rect)).toEqual([[84, 277, 144, 40]]);
   });
 
-  it('intervalo de cinco semanas: faixas cheias nas semanas do meio (largura 336)', () => {
+  it('five-week range: full bands in the middle weeks (width 336)', () => {
     const d = draw({ ...RANGE, rangeStartDay: 2, rangeEndDay: 30 });
     expect(bands(d).map((b) => [b.rect[0], b.rect[2]])).toEqual([
-      // dia 2 é a coluna 4 da primeira semana: do centro dele (228) até a borda direita (348)
+      // day 2 is column 4 of the first week: from its center (228) to the right edge (348)
       [228, 120],
       [12, 336],
       [12, 336],
@@ -389,18 +413,18 @@ describe('M5 date-picker — intervalo (DateRangePicker)', () => {
     ]);
   });
 
-  it('dia fora do mês: o início depois do mês não desenha faixa e o fim depois do mês leva a faixa até o último dia', () => {
+  it('day outside the month: a start after the month draws no band and an end after the month takes the band to the last day', () => {
     expect(bands(draw({ ...RANGE, rangeStartDay: 45, rangeEndDay: 50 }))).toEqual([]);
     const d = draw({ ...RANGE, rangeStartDay: 3, rangeEndDay: 50 });
     const rows = bands(d);
-    // o dia 3 é a coluna 5 da primeira semana (centro em 276); o 31 fecha a semana de 26 a 31 na coluna 5 (borda em 300)
+    // day 3 is column 5 of the first week (center at 276); the 31 closes the week of 26 to 31 at column 5 (edge at 300)
     expect(rows[0]!.rect[0]).toBe(276);
     const last = rows[rows.length - 1]!.rect;
     expect(last[0]! + last[2]!).toBe(300);
     expect(markedAll(d).map((m) => m.label.text)).toEqual(['3']);
   });
 
-  it('intervalo sem o dia final: só o círculo do dia inicial, sem faixa', () => {
+  it('range without the end day: only the start day circle, no band', () => {
     const d = draw({ ...RANGE, rangeEndDay: undefined });
     expect(bands(d)).toEqual([]);
     expect(markedAll(d).map((m) => m.label.text)).toEqual(['9']);
@@ -408,8 +432,8 @@ describe('M5 date-picker — intervalo (DateRangePicker)', () => {
   });
 });
 
-describe('M5 date-picker — fontes e limites', () => {
-  it('sem cor literal, sem family e sem caminho SVG; ícones pelo conjunto (edit, arrow_drop_down, keyboard_arrow_*)', () => {
+describe('M5 date-picker — sources and limits', () => {
+  it('no literal color, no family and no SVG path; icons from the set (edit, arrow_drop_down, keyboard_arrow_*)', () => {
     const raw = text('components/date-picker.json');
     expect(raw).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
     expect(raw).not.toMatch(/rgba?\(/);
@@ -425,16 +449,16 @@ describe('M5 date-picker — fontes e limites', () => {
     }
   });
 
-  it('o arquivo encolhe de 120 kB para menos de 80 kB (a grade usa tokens e uma camada por seleção)', () => {
+  it('the file shrinks from 120 kB to under 80 kB (the grid uses tokens and one layer per selection)', () => {
     expect(text('components/date-picker.json').length).toBeLessThan(80_000);
   });
 
-  it('o texto da manchete que não cabe é cortado na linha (maxLines 1), sem aviso', () => {
+  it('a headline text that does not fit is cut on the line (maxLines 1), without a warning', () => {
     const d = draw({
       ...SINGLE,
-      headline: 'quarta-feira, 15 de outubro de 2025 e ainda mais texto comprido',
+      headline: 'Wednesday, October 15, 2025 and even more long text',
     });
-    const headline = textOf(d, 'manchete')!;
+    const headline = textOf(d, NAMES.headline)!;
     expect(headline.style.maxLines).toBe(1);
     const metrics = approximateMeasurer(
       headline.text,

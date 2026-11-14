@@ -1,4 +1,4 @@
-// `formatVersion` 14: `accepts.annotations` em campo e coluna `ref` (anotação inteira como alvo).
+// `formatVersion` 14: `accepts.annotations` on a `ref` field and column (a whole annotation as the target).
 import { describe, expect, it } from 'vitest';
 import { parseSpec } from '../../src/model';
 import { sameLayerSpec, type Json } from './sameLayerFixtures';
@@ -10,7 +10,7 @@ const issuesOf = (spec: Json) => {
 
 const button = (s: Json) => s.layers[0].annotationTypes[0] as Json;
 
-/** `button` ganha o campo `item` (ref) e a tabela `rows` com a coluna `alvo` (ref). */
+/** `button` gets the `item` field (ref) and the `rows` table with the `target` column (ref). */
 function withAccepts(accepts: unknown, formatVersion = 14) {
   return sameLayerSpec(formatVersion, (s) => {
     s.layers[1].groups = [{ id: 'g1', name: 'G1' }];
@@ -19,7 +19,7 @@ function withAccepts(accepts: unknown, formatVersion = 14) {
       {
         key: 'rows',
         type: 'table',
-        columns: [{ key: 'alvo', type: 'ref', accepts }],
+        columns: [{ key: 'target', type: 'ref', accepts }],
       },
     ];
   });
@@ -29,11 +29,12 @@ const field = 'layers[0].annotationTypes[0].fields[0].accepts';
 const column = 'layers[0].annotationTypes[0].fields[1].columns[0].accepts';
 
 describe('accepts.annotations (formatVersion 14)', () => {
-  it('cláusula de camada vale em campo e coluna', () => {
+  it('a layer clause is valid on a field and a column', () => {
+    // pt-BR kept: shared fixture data (sameLayerFixtures: layers `componentes` and `eventos`), outside this phase
     expect(issuesOf(withAccepts({ annotations: [{ layer: 'eventos' }] }))).toEqual([]);
   });
 
-  it('id de tipo, cláusula com groups e mistura com tags valem', () => {
+  it('type id, clause with groups and a mix with tags are valid', () => {
     expect(issuesOf(withAccepts({ annotations: ['onClick'] }))).toEqual([]);
     expect(
       issuesOf(withAccepts({ annotations: [{ layer: 'eventos', groups: ['g1'] }] })),
@@ -43,13 +44,13 @@ describe('accepts.annotations (formatVersion 14)', () => {
     ).toEqual([]);
   });
 
-  it('a camada do próprio tipo vale', () => {
+  it("the type's own layer is valid", () => {
     expect(issuesOf(withAccepts({ annotations: [{ layer: 'componentes' }] }))).toEqual(
       [],
     );
   });
 
-  it('na 13 é erro, no caminho do campo e da coluna', () => {
+  it('in 13 it is an error, at the path of the field and the column', () => {
     const issues = issuesOf(withAccepts({ annotations: ['onClick'] }, 13));
     expect(issues).toContainEqual({
       path: `${field}.annotations`,
@@ -61,10 +62,10 @@ describe('accepts.annotations (formatVersion 14)', () => {
     });
   });
 
-  it('camada inexistente, grupo inexistente e tipo inexistente', () => {
-    expect(issuesOf(withAccepts({ annotations: [{ layer: 'nada' }] }))).toContainEqual({
+  it('nonexistent layer, nonexistent group and nonexistent type', () => {
+    expect(issuesOf(withAccepts({ annotations: [{ layer: 'nothing' }] }))).toContainEqual({
       path: `${field}.annotations[0].layer`,
-      message: 'layer "nada" does not exist in the specialization',
+      message: 'layer "nothing" does not exist in the specialization',
     });
     expect(
       issuesOf(withAccepts({ annotations: [{ layer: 'eventos', groups: ['zz'] }] })),
@@ -72,24 +73,24 @@ describe('accepts.annotations (formatVersion 14)', () => {
       path: `${column}.annotations[0].groups[0]`,
       message: 'group "zz" does not exist in the layer "eventos"',
     });
-    expect(issuesOf(withAccepts({ annotations: ['nada'] }))).toContainEqual({
+    expect(issuesOf(withAccepts({ annotations: ['nothing'] }))).toContainEqual({
       path: `${field}.annotations[0]`,
-      message: 'type "nada" does not exist in the specialization',
+      message: 'type "nothing" does not exist in the specialization',
     });
   });
 
-  it('annotations vazio é erro', () => {
+  it('empty annotations is an error', () => {
     expect(issuesOf(withAccepts({ annotations: [] }))).toContainEqual({
       path: `${field}.annotations`,
       message: expect.stringContaining('cannot be empty'),
     });
   });
 
-  it('accepts só com annotations satisfaz o "pelo menos um"', () => {
+  it('accepts with only annotations satisfies the "at least one"', () => {
     const messages = issuesOf(withAccepts({ annotations: ['onClick'] })).map(
       (i) => i.message,
     );
-    expect(messages.join('|')).not.toContain('precisa de pelo menos');
+    expect(messages.join('|')).not.toContain('needs at least one');
     expect(issuesOf(withAccepts({}))).toContainEqual({
       path: field,
       message: expect.stringContaining('annotations'),

@@ -11,42 +11,44 @@ import {
 
 const read = (path: string): string => readFileSync(path, 'utf8');
 const sdui = read('examples/specs/sdui.json');
-// A SDUI de antes do `repo` (formatVersion 2): base dos casos de plataformas e de code.
+// The SDUI from before `repo` (formatVersion 2): base of the platform and code cases.
 const sduiV2 = read('tests/fixtures/sdui-v2.json');
-const modelo = read('examples/specs/modelo-de-dados.json');
-const biblioteca = read('tests/fixtures/specs/biblioteca.json');
+// pt-BR kept: file names of shared fixtures (examples/specs/, tests/fixtures/specs/), outside this phase
+const dataModel = read('examples/specs/modelo-de-dados.json');
+const library = read('tests/fixtures/specs/biblioteca.json');
 const jsonSchema = JSON.parse(read('docs/spec.schema.json')) as Record<string, unknown>;
 const jsonValidator = z.fromJSONSchema(jsonSchema as never);
 
 type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-/** Cópia do SDUI para o teste alterar. */
+/** Copy of the SDUI for the test to change. */
 function base(): Json {
   return JSON.parse(sduiV2) as Json;
 }
 
 function errorsOf(result: SpecParseResult): string[] {
-  if (result.ok) throw new Error('era para falhar');
+  if (result.ok) throw new Error('should have failed');
   return result.errors;
 }
 
-describe('exemplos de especialização', () => {
+describe('specialization examples', () => {
   it.each([
     ['sdui', sdui],
-    ['modelo-de-dados', modelo],
-    ['biblioteca', biblioteca],
-  ])('%s valida no zod e no JSON Schema', (_name, text) => {
+    ['modelo-de-dados', dataModel],
+    ['biblioteca', library],
+  ])('%s validates in zod and in the JSON Schema', (_name, text) => {
     const result = parseSpecText(text);
     expect(result.ok).toBe(true);
     expect(jsonValidator.safeParse(JSON.parse(text)).success).toBe(true);
   });
 
-  it('lê os campos esperados do SDUI (formatVersion 12, com o repo de cada plataforma)', () => {
+  it('reads the expected fields of the SDUI (formatVersion 12, with the repo of each platform)', () => {
     const result = parseSpecText(sdui);
-    if (!result.ok) throw new Error('falhou');
+    if (!result.ok) throw new Error('failed');
     const { spec } = result;
     expect(spec.formatVersion).toBe(12);
     expect(spec.version).toBe(4);
+    // pt-BR kept: shared fixture data (examples/specs/sdui.json, outside this phase)
     expect(spec.layers.map((l) => l.id)).toEqual(['componentes', 'eventos', 'telas']);
     expect(spec.layers[1]?.annotationTypes[0]?.requiresOwner).toBe(true);
     const repo = (name: string) => ({
@@ -61,9 +63,9 @@ describe('exemplos de especialização', () => {
     ]);
   });
 
-  it('o SDUI traz `code` das três plataformas em todos os tipos de componentes e eventos', () => {
+  it('the SDUI carries `code` for the three platforms in every component and event type', () => {
     const result = parseSpecText(sdui);
-    if (!result.ok) throw new Error('falhou');
+    if (!result.ok) throw new Error('failed');
     const types = result.spec.layers
       .filter((l) => l.id !== 'telas')
       .flatMap((l) => l.annotationTypes);
@@ -82,9 +84,10 @@ describe('exemplos de especialização', () => {
     const button = types[0]?.code?.android;
     expect(button?.symbol).toBe('com.app.ds.DSButton');
     expect(button?.path).toBe('app/src/main/java/com/app/ds/DSButton.kt');
+    // pt-BR kept: shared fixture data (examples/specs/sdui.json, outside this phase)
     expect(button?.params).toMatchObject({ texto: 'text', estilo: 'style' });
     expect(button?.values?.estilo?.primary).toBe('ButtonStyle.Primary');
-    // A bff aponta para a função Kotlin que gera o nó do componente, não para o nó.
+    // The bff points to the Kotlin function that generates the component node, not to the node.
     const bff = types[0]?.code?.bff;
     expect(bff?.symbol).toBe('com.app.bff.sdui.button');
     expect(bff?.path).toBe('src/main/kotlin/com/app/bff/sdui/Components.kt');
@@ -97,10 +100,11 @@ describe('exemplos de especialização', () => {
     }
   });
 
-  it('a camada Telas tem o Screen, só com nome e rota', () => {
+  it('the Telas layer has the Screen, with only name and route', () => {
     const result = parseSpecText(sdui);
-    if (!result.ok) throw new Error('falhou');
+    if (!result.ok) throw new Error('failed');
     const layer = result.spec.layers[2];
+    // pt-BR kept: shared fixture data (examples/specs/sdui.json, outside this phase)
     expect(layer?.name).toBe('Telas');
     const screen = layer?.annotationTypes[0];
     expect(screen?.name).toBe('Screen');
@@ -113,60 +117,60 @@ describe('exemplos de especialização', () => {
     expect(result.ignored).toEqual([]);
   });
 
-  it('o modelo de dados continua em formatVersion 1, sem plataformas', () => {
-    const result = parseSpecText(modelo);
-    if (!result.ok) throw new Error('falhou');
+  it('the data model stays at formatVersion 1, without platforms', () => {
+    const result = parseSpecText(dataModel);
+    if (!result.ok) throw new Error('failed');
     expect(result.spec.formatVersion).toBe(1);
     expect(result.spec.platforms).toBeUndefined();
   });
 });
 
-/** Cada caso: a mutação e o caminho (e trecho) esperado na mensagem. */
+/** Each case: the mutation and the path (and excerpt) expected in the message. */
 const semantic: [string, (s: Json) => void, string][] = [
-  ['format errado', (s) => (s.format = 'x'), 'format:'],
-  ['formatVersion errado', (s) => (s.formatVersion = 17), 'formatVersion:'],
-  ['id ausente', (s) => delete s.id, 'id:'],
-  ['name ausente', (s) => delete s.name, 'name:'],
+  ['wrong format', (s) => (s.format = 'x'), 'format:'],
+  ['wrong formatVersion', (s) => (s.formatVersion = 17), 'formatVersion:'],
+  ['missing id', (s) => delete s.id, 'id:'],
+  ['missing name', (s) => delete s.name, 'name:'],
   ['version zero', (s) => (s.version = 0), 'version:'],
-  ['version fracionária', (s) => (s.version = 1.5), 'version:'],
-  ['id de camada repetido', (s) => (s.layers[1].id = 'componentes'), 'layers[1].id:'],
+  ['fractional version', (s) => (s.version = 1.5), 'version:'],
+  ['repeated layer id', (s) => (s.layers[1].id = 'componentes'), 'layers[1].id:'],
   [
-    'id de tipo repetido entre camadas',
+    'repeated type id across layers',
     (s) => (s.layers[1].annotationTypes[0].id = 'button'),
     'layers[1].annotationTypes[0].id:',
   ],
   [
-    'key repetida no tipo',
+    'repeated key in the type',
     (s) => (s.layers[0].annotationTypes[0].fields[1].key = 'id'),
     'layers[0].annotationTypes[0].fields[1].key:',
   ],
   [
-    'key começando com _',
+    'key starting with _',
     (s) => (s.layers[0].annotationTypes[0].fields[0].key = '_id'),
     'layers[0].annotationTypes[0].fields[0].key:',
   ],
   [
-    'key com espaço',
+    'key with a space',
     (s) => (s.layers[0].annotationTypes[0].fields[0].key = 'a b'),
     'layers[0].annotationTypes[0].fields[0].key:',
   ],
   [
-    'key repetida em coluna',
+    'repeated key in a column',
     (s) => (s.layers[1].annotationTypes[0].fields[2].columns[1].key = 'nome'),
     'layers[1].annotationTypes[0].fields[2].columns[1].key:',
   ],
   [
-    'allowedChildren inexistente',
-    (s) => (s.layers[0].annotationTypes[0].allowedChildren = ['nada']),
+    'nonexistent allowedChildren',
+    (s) => (s.layers[0].annotationTypes[0].allowedChildren = ['nothing']),
     'layers[0].annotationTypes[0].allowedChildren[0]:',
   ],
   [
-    'allowedChildren na mesma camada',
+    'allowedChildren in the same layer',
     (s) => (s.layers[0].annotationTypes[0].allowedChildren = ['input']),
     'layers[0].annotationTypes[0].allowedChildren[0]:',
   ],
   [
-    'requiresOwner sem dono possível',
+    'requiresOwner without a possible owner',
     (s) => {
       s.layers[0].annotationTypes[0].allowedChildren = ['onHold'];
       s.layers[0].annotationTypes[3].allowedChildren = [];
@@ -174,37 +178,37 @@ const semantic: [string, (s: Json) => void, string][] = [
     'layers[1].annotationTypes[0].requiresOwner:',
   ],
   [
-    'tipo de campo inválido',
-    (s) => (s.layers[0].annotationTypes[1].fields[2].type = 'numero'),
-    'layers[0].annotationTypes[1].fields[2].type: "numero" is invalid',
+    'invalid field type',
+    (s) => (s.layers[0].annotationTypes[1].fields[2].type = 'bogus'),
+    'layers[0].annotationTypes[1].fields[2].type: "bogus" is invalid',
   ],
   [
-    'default incompatível (number)',
+    'incompatible default (number)',
     (s) => (s.layers[1].annotationTypes[1].fields[1].default = 'x'),
     'layers[1].annotationTypes[1].fields[1].default:',
   ],
   [
-    'default fora das options',
-    (s) => (s.layers[0].annotationTypes[0].fields[2].default = 'rosa'),
+    'default outside the options',
+    (s) => (s.layers[0].annotationTypes[0].fields[2].default = 'pink'),
     'layers[0].annotationTypes[0].fields[2].default:',
   ],
   [
-    'default em ref',
+    'default on ref',
     (s) => (s.layers[0].annotationTypes[1].fields[5].default = {}),
     'layers[0].annotationTypes[1].fields[5].default:',
   ],
   [
-    'enum sem options',
+    'enum without options',
     (s) => delete s.layers[0].annotationTypes[0].fields[2].options,
     'layers[0].annotationTypes[0].fields[2].options:',
   ],
   [
-    'enum com options repetidas',
+    'enum with repeated options',
     (s) => (s.layers[0].annotationTypes[0].fields[2].options = ['a', 'a']),
     'layers[0].annotationTypes[0].fields[2].options:',
   ],
   [
-    'ref de coluna sem accepts',
+    'column ref without accepts',
     (s) =>
       (s.layers[1].annotationTypes[0].fields[2].columns[0] = {
         key: 'r',
@@ -213,7 +217,7 @@ const semantic: [string, (s: Json) => void, string][] = [
     'layers[1].annotationTypes[0].fields[2].columns[0].accepts:',
   ],
   [
-    'ref de coluna na formatVersion 2 (só existe a partir da 7)',
+    'column ref in formatVersion 2 (only exists from 7)',
     (s) =>
       (s.layers[1].annotationTypes[0].fields[2].columns[0] = {
         key: 'r',
@@ -223,7 +227,7 @@ const semantic: [string, (s: Json) => void, string][] = [
     'layers[1].annotationTypes[0].fields[2].columns[0].type: only allowed with formatVersion 7',
   ],
   [
-    'table dentro de table',
+    'table inside table',
     (s) =>
       (s.layers[1].annotationTypes[0].fields[2].columns[0] = {
         key: 't',
@@ -233,84 +237,84 @@ const semantic: [string, (s: Json) => void, string][] = [
     'layers[1].annotationTypes[0].fields[2].columns[0].type:',
   ],
   [
-    'table sem columns',
+    'table without columns',
     (s) => delete s.layers[1].annotationTypes[0].fields[2].columns,
     'layers[1].annotationTypes[0].fields[2].columns:',
   ],
   [
-    'table com tags sem rowLabel',
+    'table with tags without rowLabel',
     (s) => (s.layers[1].annotationTypes[0].fields[2].tags = ['data-field']),
     'layers[1].annotationTypes[0].fields[2].rowLabel:',
   ],
   [
-    'rowLabel numa coluna não-string',
+    'rowLabel on a non-string column',
     (s) => {
       const f = s.layers[1].annotationTypes[0].fields[2];
       f.tags = ['data-field'];
-      f.rowLabel = 'inexistente';
+      f.rowLabel = 'nonexistent';
     },
     'layers[1].annotationTypes[0].fields[2].rowLabel:',
   ],
   [
-    'labelField inexistente',
-    (s) => (s.layers[0].annotationTypes[0].labelField = 'nada'),
+    'nonexistent labelField',
+    (s) => (s.layers[0].annotationTypes[0].labelField = 'nothing'),
     'layers[0].annotationTypes[0].labelField:',
   ],
   [
-    'labelField de campo não-string',
+    'labelField of a non-string field',
     (s) => (s.layers[0].annotationTypes[1].labelField = 'maxLength'),
     'layers[0].annotationTypes[1].labelField:',
   ],
   [
-    'accepts vazio',
+    'empty accepts',
     (s) => (s.layers[0].annotationTypes[1].fields[5].accepts = { tags: [] }),
     'layers[0].annotationTypes[1].fields[5].accepts:',
   ],
   [
-    'ref sem accepts',
+    'ref without accepts',
     (s) => delete s.layers[0].annotationTypes[1].fields[5].accepts,
     'layers[0].annotationTypes[1].fields[5].accepts:',
   ],
   [
-    'etiqueta com formato inválido',
+    'tag with an invalid format',
     (s) => (s.layers[0].annotationTypes[1].fields[5].accepts.tags = ['Data Field']),
     'layers[0].annotationTypes[1].fields[5].accepts.tags[0]:',
   ],
-  ['cor inválida', (s) => (s.layers[0].color = 'azul'), 'layers[0].color:'],
+  ['invalid color', (s) => (s.layers[0].color = 'blue'), 'layers[0].color:'],
   [
-    'propriedade desconhecida',
+    'unknown property',
     (s) => (s.layers[0].annotationTypes[0].extra = 1),
     'layers[0].annotationTypes[0]:',
   ],
 ];
 
-describe('validação do formato (13.2)', () => {
-  it.each(semantic)('rejeita: %s', (_name, mutate, expected) => {
+describe('format validation (13.2)', () => {
+  it.each(semantic)('rejects: %s', (_name, mutate, expected) => {
     const spec = base();
     mutate(spec);
     const errors = errorsOf(parseSpec(spec));
     expect(errors.some((e) => e.startsWith(expected))).toBe(true);
   });
 
-  it('o erro de tipo sugere os valores válidos', () => {
+  it('the type error suggests the valid values', () => {
     const spec = base();
-    spec.layers[0].annotationTypes[1].fields[2].type = 'numero';
+    spec.layers[0].annotationTypes[1].fields[2].type = 'bogus';
     const error = errorsOf(parseSpec(spec))[0];
-    expect(error).toContain('"numero" is invalid; use');
+    expect(error).toContain('"bogus" is invalid; use');
     expect(error).toContain('"table" or "ref"');
-    // O tipo removido na etapa 9 não é sugerido.
+    // The type removed in stage 9 is not suggested.
     expect(error).not.toContain('codeRef');
   });
 
-  it('JSON malformado vira um erro legível', () => {
+  it('malformed JSON becomes a readable error', () => {
     expect(errorsOf(parseSpecText('{'))[0]).toMatch(/^invalid JSON/);
   });
 
-  it('aceita ref com free sem etiquetas e date default válida', () => {
+  it('accepts ref with free without tags and a valid date default', () => {
     const spec = base();
     spec.layers[0].annotationTypes[1].fields[5].accepts = { free: true };
     spec.layers[0].annotationTypes[0].fields.push({
-      key: 'quando',
+      key: 'when',
       type: 'date',
       default: '2024-02-29',
     });
@@ -320,7 +324,7 @@ describe('validação do formato (13.2)', () => {
   it('rejeita nonexistent date no default', () => {
     const spec = base();
     spec.layers[0].annotationTypes[0].fields.push({
-      key: 'quando',
+      key: 'when',
       type: 'date',
       default: '2023-02-30',
     });
@@ -328,61 +332,61 @@ describe('validação do formato (13.2)', () => {
   });
 });
 
-/** Erros puramente estruturais: o JSON Schema também precisa rejeitar. */
+/** Purely structural errors: the JSON Schema must reject them too. */
 const structural: [string, (s: Json) => void][] = [
-  ['format errado', (s) => (s.format = 'x')],
-  ['formatVersion errado', (s) => (s.formatVersion = 17)],
-  ['id ausente', (s) => delete s.id],
+  ['wrong format', (s) => (s.format = 'x')],
+  ['wrong formatVersion', (s) => (s.formatVersion = 17)],
+  ['missing id', (s) => delete s.id],
   ['version zero', (s) => (s.version = 0)],
-  ['key com espaço', (s) => (s.layers[0].annotationTypes[0].fields[0].key = 'a b')],
-  ['key começando com _', (s) => (s.layers[0].annotationTypes[0].fields[0].key = '_id')],
+  ['key with a space', (s) => (s.layers[0].annotationTypes[0].fields[0].key = 'a b')],
+  ['key starting with _', (s) => (s.layers[0].annotationTypes[0].fields[0].key = '_id')],
   [
-    'tipo de campo inválido',
-    (s) => (s.layers[0].annotationTypes[1].fields[2].type = 'numero'),
+    'invalid field type',
+    (s) => (s.layers[0].annotationTypes[1].fields[2].type = 'bogus'),
   ],
-  ['enum sem options', (s) => delete s.layers[0].annotationTypes[0].fields[2].options],
+  ['enum without options', (s) => delete s.layers[0].annotationTypes[0].fields[2].options],
   [
-    'ref de coluna sem accepts',
+    'column ref without accepts',
     (s) =>
       (s.layers[1].annotationTypes[0].fields[2].columns[0] = {
         key: 'r',
         type: 'ref',
       }),
   ],
-  ['table sem columns', (s) => delete s.layers[1].annotationTypes[0].fields[2].columns],
+  ['table without columns', (s) => delete s.layers[1].annotationTypes[0].fields[2].columns],
   [
-    'accepts vazio',
+    'empty accepts',
     (s) => (s.layers[0].annotationTypes[1].fields[5].accepts = { tags: [] }),
   ],
-  ['ref sem accepts', (s) => delete s.layers[0].annotationTypes[1].fields[5].accepts],
+  ['ref without accepts', (s) => delete s.layers[0].annotationTypes[1].fields[5].accepts],
   [
-    'etiqueta inválida',
+    'invalid tag',
     (s) => (s.layers[0].annotationTypes[1].fields[5].accepts.tags = ['Data Field']),
   ],
-  ['cor inválida', (s) => (s.layers[0].color = 'azul')],
-  ['propriedade desconhecida', (s) => (s.layers[0].annotationTypes[0].extra = 1)],
+  ['invalid color', (s) => (s.layers[0].color = 'blue')],
+  ['unknown property', (s) => (s.layers[0].annotationTypes[0].extra = 1)],
 ];
 
-describe('nome do produto (format)', () => {
-  it('os exemplos usam `mapping-spec`', () => {
+describe('product name (format)', () => {
+  it('the examples use `mapping-spec`', () => {
     expect(base().format).toBe('mapping-spec');
   });
 
-  it('a importação ainda aceita `mapeador-spec`, no zod e no JSON Schema', () => {
+  it('the import still accepts `mapeador-spec`, in zod and in the JSON Schema', () => {
     const spec = { ...base(), format: 'mapeador-spec' };
     expect(parseSpec(spec).ok).toBe(true);
     expect(jsonValidator.safeParse(spec).success).toBe(true);
   });
 
-  it('rejeita outro `format`', () => {
-    const spec = { ...base(), format: 'outro' };
+  it('rejects another `format`', () => {
+    const spec = { ...base(), format: 'other' };
     expect(parseSpec(spec).ok).toBe(false);
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });
 });
 
-describe('consistência zod × JSON Schema', () => {
-  it.each(structural)('os dois rejeitam: %s', (_name, mutate) => {
+describe('zod × JSON Schema consistency', () => {
+  it.each(structural)('both reject: %s', (_name, mutate) => {
     const spec = base();
     mutate(spec);
     expect(parseSpec(spec).ok).toBe(false);
@@ -393,7 +397,7 @@ describe('consistência zod × JSON Schema', () => {
 const BUTTON = 'layers[0].annotationTypes[0]';
 const SCREEN = 'layers[2].annotationTypes[0]';
 
-/** Especialização v1: o SDUI sem plataformas, sem `code` e sem a camada Telas. */
+/** v1 specialization: the SDUI without platforms, without `code` and without the Telas layer. */
 function asV1(spec: Json): Json {
   const v1 = structuredClone(spec);
   v1.formatVersion = 1;
@@ -405,7 +409,7 @@ function asV1(spec: Json): Json {
   return v1;
 }
 
-/** Remove `platforms`, todo `code` e a camada Telas: o que sobra é uma especialização válida. */
+/** Removes `platforms`, all `code` and the Telas layer: what is left is a valid specialization. */
 function withoutPlatforms(spec: Json): Json {
   const out = asV1(spec);
   out.formatVersion = 2;
@@ -413,7 +417,7 @@ function withoutPlatforms(spec: Json): Json {
 }
 
 describe('formatVersion 1 e 2', () => {
-  it('uma especialização v1 (sem plataformas e sem code) continua válida', () => {
+  it('a v1 specialization (without platforms and without code) is still valid', () => {
     const v1 = asV1(base());
     const result = parseSpec(v1);
     expect(result.ok).toBe(true);
@@ -424,11 +428,11 @@ describe('formatVersion 1 e 2', () => {
     expect(jsonValidator.safeParse(v1).success).toBe(true);
   });
 
-  it('uma v2 sem platforms também é válida', () => {
+  it('a v2 without platforms is also valid', () => {
     expect(parseSpec(withoutPlatforms(base())).ok).toBe(true);
   });
 
-  it('formatVersion fora de 1 a 16 é rejeitado, com a lista válida na mensagem', () => {
+  it('formatVersion outside 1 to 16 is rejected, with the valid list in the message', () => {
     for (const bad of [0, 17, '2', null]) {
       const spec = { ...base(), formatVersion: bad };
       const errors = errorsOf(parseSpec(spec));
@@ -443,165 +447,167 @@ describe('formatVersion 1 e 2', () => {
   });
 });
 
-/** Cada caso novo da validação: a mutação do SDUI v2 e o caminho esperado no início da mensagem. */
+/** Each new validation case: the SDUI v2 mutation and the path expected at the start of the message. */
 const platformCases: [string, (s: Json) => void, string][] = [
   // platforms
   [
-    'platforms[].id fora de [a-z0-9-]+',
+    'platforms[].id outside [a-z0-9-]+',
     (s) => (s.platforms[0].id = 'Android'),
     'platforms[0].id:',
   ],
-  ['platforms[].id com espaço', (s) => (s.platforms[1].id = 'i os'), 'platforms[1].id:'],
-  ['platforms[].id vazio', (s) => (s.platforms[2].id = ''), 'platforms[2].id:'],
-  ['platforms[].id ausente', (s) => delete s.platforms[0].id, 'platforms[0].id:'],
+  ['platforms[].id with a space', (s) => (s.platforms[1].id = 'i os'), 'platforms[1].id:'],
+  ['platforms[].id empty', (s) => (s.platforms[2].id = ''), 'platforms[2].id:'],
+  ['platforms[].id missing', (s) => delete s.platforms[0].id, 'platforms[0].id:'],
   [
-    'platforms[].id repetido',
+    'platforms[].id repeated',
     (s) => (s.platforms[1].id = 'android'),
     'platforms[1].id: id "android" repeated',
   ],
-  ['platforms[].name ausente', (s) => delete s.platforms[0].name, 'platforms[0].name:'],
-  ['platforms[].name vazio', (s) => (s.platforms[0].name = ''), 'platforms[0].name:'],
+  ['platforms[].name missing', (s) => delete s.platforms[0].name, 'platforms[0].name:'],
+  ['platforms[].name empty', (s) => (s.platforms[0].name = ''), 'platforms[0].name:'],
   [
-    'platforms[].language que não é texto',
+    'platforms[].language that is not text',
     (s) => (s.platforms[0].language = 1),
     'platforms[0].language:',
   ],
   [
-    'platforms[] com propriedade desconhecida',
+    'platforms[] with an unknown property',
     (s) => (s.platforms[0].extra = 1),
     'platforms[0]:',
   ],
-  ['platforms que não é lista', (s) => (s.platforms = {}), 'platforms:'],
+  ['platforms that is not a list', (s) => (s.platforms = {}), 'platforms:'],
   // code
   [
-    'code sem platforms na especialização',
+    'code without platforms in the specialization',
     (s) => delete s.platforms,
     `${BUTTON}.code: only allowed in specializations that declare platforms`,
   ],
   [
-    'code com platforms vazio',
+    'code with empty platforms',
     (s) => (s.platforms = []),
     `${BUTTON}.code: only allowed in specializations that declare platforms`,
   ],
   [
-    'code com plataforma não declarada',
+    'code with an undeclared platform',
     (s) => (s.layers[0].annotationTypes[0].code.web = { symbol: 'X' }),
     `${BUTTON}.code.web: platform "web" is not declared in platforms`,
   ],
   [
-    'code com id de plataforma fora do formato (em tipo da camada Eventos)',
+    'code with a platform id outside the format (in a type of the Eventos layer)',
     (s) => (s.layers[1].annotationTypes[0].code.Web = { symbol: 'X' }),
     'layers[1].annotationTypes[0].code.Web:',
   ],
   [
-    'code sem symbol',
+    'code without symbol',
     (s) => delete s.layers[0].annotationTypes[0].code.android.symbol,
     `${BUTTON}.code.android.symbol: required`,
   ],
   [
-    'code com symbol vazio',
+    'code with empty symbol',
     (s) => (s.layers[0].annotationTypes[0].code.ios.symbol = ''),
     `${BUTTON}.code.ios.symbol:`,
   ],
   [
-    'code com symbol que não é texto',
+    'code with a symbol that is not text',
     (s) => (s.layers[0].annotationTypes[0].code.bff.symbol = 3),
     `${BUTTON}.code.bff.symbol: must be text`,
   ],
   [
-    'code com path vazio',
+    'code with empty path',
     (s) => (s.layers[0].annotationTypes[0].code.android.path = ''),
     `${BUTTON}.code.android.path: cannot be empty`,
   ],
   [
-    'code com path que não é texto',
+    'code with a path that is not text',
     (s) => (s.layers[0].annotationTypes[0].code.android.path = 3),
     `${BUTTON}.code.android.path: must be text`,
   ],
   [
-    'code com path absoluto',
+    'code with absolute path',
     (s) => (s.layers[0].annotationTypes[0].code.android.path = '/app/DSButton.kt'),
     `${BUTTON}.code.android.path: invalid path`,
   ],
   [
-    'code com path com ..',
+    'code with path containing ..',
     (s) => (s.layers[0].annotationTypes[0].code.ios.path = '../DSButton.swift'),
     `${BUTTON}.code.ios.path: invalid path`,
   ],
   [
-    'code com path com barra invertida e unidade',
+    'code with path containing a backslash and a drive',
     (s) => (s.layers[0].annotationTypes[0].code.bff.path = 'C:\\app\\DSButton.kt'),
     `${BUTTON}.code.bff.path: invalid path`,
   ],
   [
-    'code com path com ./ no começo',
+    'code with path starting with ./',
     (s) => (s.layers[0].annotationTypes[0].code.android.path = './app/DSButton.kt'),
     `${BUTTON}.code.android.path: invalid path`,
   ],
   [
-    'code que não é objeto',
+    'code that is not an object',
     (s) => (s.layers[0].annotationTypes[0].code = []),
     `${BUTTON}.code:`,
   ],
   [
-    'code com propriedade desconhecida',
+    'code with an unknown property',
     (s) => (s.layers[0].annotationTypes[0].code.android.extra = 1),
     `${BUTTON}.code.android:`,
   ],
   [
-    'code.notes que não é texto',
+    'code.notes that is not text',
     (s) => (s.layers[0].annotationTypes[0].code.android.notes = 1),
     `${BUTTON}.code.android.notes:`,
   ],
   [
-    'params com chave que não é campo do tipo',
-    (s) => (s.layers[0].annotationTypes[0].code.android.params.naoExiste = 'x'),
-    `${BUTTON}.code.android.params.naoExiste: "naoExiste" is not a field of the type`,
+    'params with a key that is not a field of the type',
+    (s) => (s.layers[0].annotationTypes[0].code.android.params.doesNotExist = 'x'),
+    `${BUTTON}.code.android.params.doesNotExist: "doesNotExist" is not a field of the type`,
   ],
+  // pt-BR kept: shared fixture data (examples/specs/sdui.json, outside this phase)
   [
-    'params com nome de parâmetro vazio',
+    'params with an empty parameter name',
     (s) => (s.layers[0].annotationTypes[0].code.android.params.texto = ''),
     `${BUTTON}.code.android.params.texto:`,
   ],
   [
-    'params com nome de parâmetro que não é texto',
+    'params with a parameter name that is not text',
     (s) => (s.layers[0].annotationTypes[0].code.android.params.texto = 1),
     `${BUTTON}.code.android.params.texto:`,
   ],
   [
-    'values com chave que não é campo do tipo',
-    (s) => (s.layers[0].annotationTypes[0].code.android.values.naoExiste = { a: 'b' }),
-    `${BUTTON}.code.android.values.naoExiste: "naoExiste" is not a field of the type`,
+    'values with a key that is not a field of the type',
+    (s) => (s.layers[0].annotationTypes[0].code.android.values.doesNotExist = { a: 'b' }),
+    `${BUTTON}.code.android.values.doesNotExist: "doesNotExist" is not a field of the type`,
   ],
   [
-    'values para campo que não é enum',
+    'values for a field that is not enum',
     (s) => (s.layers[0].annotationTypes[0].code.android.values.texto = { a: 'b' }),
+    // pt-BR kept: shared fixture data (examples/specs/sdui.json, outside this phase)
     `${BUTTON}.code.android.values.texto: "texto" must be an enum field of the type`,
   ],
   [
-    'values para campo table (não enum)',
+    'values for a table field (not enum)',
     (s) =>
       (s.layers[1].annotationTypes[0].code.android.values = { parametros: { a: 'b' } }),
     'layers[1].annotationTypes[0].code.android.values.parametros:',
   ],
   [
-    'values com valor que não está nas options',
-    (s) => (s.layers[0].annotationTypes[0].code.android.values.estilo.rosa = 'X'),
-    `${BUTTON}.code.android.values.estilo.rosa: "rosa" is not in the options of "estilo"`,
+    'values with a value that is not in the options',
+    (s) => (s.layers[0].annotationTypes[0].code.android.values.estilo.pink = 'X'),
+    `${BUTTON}.code.android.values.estilo.pink: "pink" is not in the options of "estilo"`,
   ],
   [
-    'values com tradução vazia',
+    'values with an empty translation',
     (s) => (s.layers[0].annotationTypes[0].code.android.values.estilo.primary = ''),
     `${BUTTON}.code.android.values.estilo.primary:`,
   ],
-  // Campos
+  // Fields
   [
-    'platforms num campo (só existia no tipo de campo removido)',
+    'platforms on a field (only existed on the removed field type)',
     (s) => (s.layers[2].annotationTypes[0].fields[0].platforms = ['android']),
     `${SCREEN}.fields[0].platforms: not allowed in this field type`,
   ],
   [
-    'codeRef como coluna de table',
+    'codeRef as a table column',
     (s) =>
       (s.layers[1].annotationTypes[0].fields[2].columns[0] = {
         key: 'impl',
@@ -611,14 +617,14 @@ const platformCases: [string, (s: Json) => void, string][] = [
   ],
   // formatVersion 1
   [
-    'platforms numa especialização formatVersion 1',
+    'platforms in a formatVersion 1 specialization',
     (s) => {
       s.formatVersion = 1;
     },
     'platforms: only allowed with formatVersion 2',
   ],
   [
-    'code numa especialização formatVersion 1 (sem platforms)',
+    'code in a formatVersion 1 specialization (without platforms)',
     (s) => {
       s.formatVersion = 1;
       delete s.platforms;
@@ -627,8 +633,8 @@ const platformCases: [string, (s: Json) => void, string][] = [
   ],
 ];
 
-describe('validação do formatVersion 2 (plataformas e code)', () => {
-  it.each(platformCases)('rejeita: %s', (_name, mutate, expected) => {
+describe('formatVersion 2 validation (platforms and code)', () => {
+  it.each(platformCases)('rejects: %s', (_name, mutate, expected) => {
     const spec = base();
     mutate(spec);
     const errors = errorsOf(parseSpec(spec));
@@ -638,7 +644,7 @@ describe('validação do formatVersion 2 (plataformas e code)', () => {
     ).toBe(true);
   });
 
-  it('`path` do code é opcional e vale nas formatVersion 2 e 3', () => {
+  it("the code's `path` is optional and valid in formatVersion 2 and 3", () => {
     for (const formatVersion of [2, 3]) {
       const spec: Json = { ...base(), formatVersion };
       spec.layers[0].annotationTypes[0].code.bff.path = 'bff/src/TDSButton.kt';
@@ -652,7 +658,7 @@ describe('validação do formatVersion 2 (plataformas e code)', () => {
     }
   });
 
-  it('o JSON Schema recusa `path` vazio, absoluto ou com ..', () => {
+  it('the JSON Schema refuses `path` that is empty, absolute or with ..', () => {
     for (const path of [
       '',
       '/app/A.kt',
@@ -667,63 +673,64 @@ describe('validação do formatVersion 2 (plataformas e code)', () => {
     }
   });
 
-  it('os erros também chegam em `issues` com o caminho separado da mensagem', () => {
+  it('the errors also arrive in `issues` with the path separated from the message', () => {
     const spec = base();
-    spec.layers[0].annotationTypes[0].code.android.params.naoExiste = 'x';
+    spec.layers[0].annotationTypes[0].code.android.params.doesNotExist = 'x';
     const result = parseSpec(spec);
-    if (result.ok) throw new Error('era para falhar');
+    if (result.ok) throw new Error('should have failed');
     expect(result.issues).toContainEqual({
-      path: `${BUTTON}.code.android.params.naoExiste`,
-      message: '"naoExiste" is not a field of the type',
+      path: `${BUTTON}.code.android.params.doesNotExist`,
+      message: '"doesNotExist" is not a field of the type',
       code: 'spec.notTypeField',
-      params: { key: 'naoExiste' },
+      params: { key: 'doesNotExist' },
     });
   });
 
-  it('aceita code parcial: plataformas sem entrada, params/values/notes opcionais', () => {
+  it('accepts partial code: platforms without an entry, optional params/values/notes', () => {
     const spec = base();
     spec.layers[0].annotationTypes[0].code = { ios: { symbol: 'DSButton' } };
     expect(parseSpec(spec).ok).toBe(true);
   });
 
-  it('aceita platform sem language', () => {
+  it('accepts platform without language', () => {
     const spec = base();
     delete spec.platforms[0].language;
     expect(parseSpec(spec).ok).toBe(true);
   });
 
-  it('aceita params que citam um campo table', () => {
+  it('accepts params that cite a table field', () => {
     const spec = base();
     spec.layers[1].annotationTypes[0].code.android.params.parametros = 'params';
     expect(parseSpec(spec).ok).toBe(true);
   });
 });
 
-/** Erros estruturais do v2 que o JSON Schema também precisa rejeitar. */
+/** Structural v2 errors that the JSON Schema must reject too. */
 const structuralV2: [string, (s: Json) => void][] = [
   ['formatVersion 17', (s) => (s.formatVersion = 17)],
-  ['platforms[].id fora do formato', (s) => (s.platforms[0].id = 'Android')],
-  ['platforms[].name ausente', (s) => delete s.platforms[0].name],
-  ['platforms[] com propriedade desconhecida', (s) => (s.platforms[0].extra = 1)],
-  ['code sem symbol', (s) => delete s.layers[0].annotationTypes[0].code.android.symbol],
+  ['platforms[].id outside the format', (s) => (s.platforms[0].id = 'Android')],
+  ['platforms[].name missing', (s) => delete s.platforms[0].name],
+  ['platforms[] with an unknown property', (s) => (s.platforms[0].extra = 1)],
+  ['code without symbol', (s) => delete s.layers[0].annotationTypes[0].code.android.symbol],
   [
-    'code com id de plataforma fora do formato',
+    'code with a platform id outside the format',
     (s) => (s.layers[0].annotationTypes[0].code.Web = { symbol: 'X' }),
   ],
   [
-    'code com propriedade desconhecida',
+    'code with an unknown property',
     (s) => (s.layers[0].annotationTypes[0].code.android.extra = 1),
   ],
+  // pt-BR kept: shared fixture data (examples/specs/sdui.json, outside this phase)
   [
-    'params com valor que não é texto',
+    'params with a value that is not text',
     (s) => (s.layers[0].annotationTypes[0].code.android.params.texto = 1),
   ],
   [
-    'values com tradução que não é texto',
+    'values with a translation that is not text',
     (s) => (s.layers[0].annotationTypes[0].code.android.values.estilo.primary = 1),
   ],
   [
-    'codeRef como coluna de table',
+    'codeRef as a table column',
     (s) =>
       (s.layers[1].annotationTypes[0].fields[2].columns[0] = {
         key: 'impl',
@@ -731,20 +738,20 @@ const structuralV2: [string, (s: Json) => void][] = [
       }),
   ],
   [
-    'platforms num campo comum',
+    'platforms on a regular field',
     (s) => (s.layers[2].annotationTypes[0].fields[0].platforms = ['android']),
   ],
 ];
 
-describe('consistência zod × JSON Schema (formatVersion 2)', () => {
-  it.each(structuralV2)('os dois rejeitam: %s', (_name, mutate) => {
+describe('zod × JSON Schema consistency (formatVersion 2)', () => {
+  it.each(structuralV2)('both reject: %s', (_name, mutate) => {
     const spec = base();
     mutate(spec);
     expect(parseSpec(spec).ok).toBe(false);
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });
 
-  it('o JSON Schema declara as mesmas versões, tipos de campo e propriedades do zod', () => {
+  it('the JSON Schema declares the same versions, field types and properties as zod', () => {
     const schema = jsonSchema as Json;
     expect(schema.properties.formatVersion.enum).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
@@ -753,7 +760,7 @@ describe('consistência zod × JSON Schema (formatVersion 2)', () => {
     expect(Object.keys(schema.$defs.tableField.properties)).toContain('sources');
     expect(Object.keys(schema.properties)).toContain('platforms');
     expect(Object.keys(schema.$defs.annotationType.properties)).toContain('code');
-    // O tipo de campo removido na etapa 9 não faz parte do formato (a app só o lê e ignora).
+    // The field type removed in stage 9 is not part of the format (the app only reads and ignores it).
     expect(schema.$defs).not.toHaveProperty('codeRefField');
     expect(JSON.stringify(schema)).not.toContain('codeRef');
     expect(Object.keys(schema.$defs.codeEntry.properties).sort()).toEqual([
@@ -771,41 +778,41 @@ describe('consistência zod × JSON Schema (formatVersion 2)', () => {
   });
 });
 
-describe('campo do tipo removido (codeRef, etapa 9): lido e ignorado', () => {
-  /** O SDUI com o campo removido de volta no Screen (como as especializações antigas). */
+describe('field of the removed type (codeRef, stage 9): read and ignored', () => {
+  /** The SDUI with the removed field put back on the Screen (like the old specializations). */
   function legacy(field: Json = {}): Json {
     const spec = base();
     spec.layers[2].annotationTypes[0].fields.push({
-      key: 'implementacao',
-      label: 'implementação',
+      key: 'implementation',
+      label: 'implementation',
       type: REMOVED_FIELD_TYPE,
       ...field,
     });
     return spec;
   }
 
-  it('importa: o campo sai do tipo e volta em `ignored`, com o caminho no arquivo', () => {
+  it('import: the field leaves the type and comes back in `ignored`, with the path in the file', () => {
     const result = parseSpec(legacy());
     if (!result.ok) throw new Error(result.errors.join('\n'));
     const screen = result.spec.layers[2]?.annotationTypes[0];
     expect(screen?.fields.map((f) => f.key)).toEqual(['nome', 'rota']);
     expect(result.ignored).toEqual([
-      { path: `${SCREEN}.fields[2]`, typeId: 'screen', key: 'implementacao' },
+      { path: `${SCREEN}.fields[2]`, typeId: 'screen', key: 'implementation' },
     ]);
   });
 
-  it('as regras antigas do campo não valem mais: platforms, default, etiquetas e v1', () => {
+  it('the old rules of the field no longer apply: platforms, default, tags and v1', () => {
     for (const field of [
       { platforms: ['android', 'web'] },
       { platforms: [] },
       { default: [] },
       { tags: ['data-field'] },
-      { required: true, description: 'onde foi implementado' },
+      { required: true, description: 'where it was implemented' },
     ]) {
       const result = parseSpec(legacy(field));
       expect(result.ok, JSON.stringify(field)).toBe(true);
     }
-    // Numa v1 (sem plataformas) o campo também é só ignorado.
+    // In a v1 (without platforms) the field is also just ignored.
     const v1 = asV1(base());
     v1.layers[1].annotationTypes[0].fields.push({
       key: 'impl',
@@ -815,11 +822,11 @@ describe('campo do tipo removido (codeRef, etapa 9): lido e ignorado', () => {
     expect(result.ok && result.ignored.map((f) => f.key)).toEqual(['impl']);
   });
 
-  it('os params do code que citam o campo saem junto (e params vazio some)', () => {
+  it('the code params that cite the field go along with it (and an empty params disappears)', () => {
     const spec = legacy();
     spec.layers[2].annotationTypes[0].code = {
-      android: { symbol: 'Screen', params: { implementacao: 'impl' } },
-      ios: { symbol: 'ScreenView', params: { nome: 'title', implementacao: 'impl' } },
+      android: { symbol: 'Screen', params: { implementation: 'impl' } },
+      ios: { symbol: 'ScreenView', params: { nome: 'title', implementation: 'impl' } },
     };
     const result = parseSpec(spec);
     if (!result.ok) throw new Error(result.errors.join('\n'));
@@ -828,20 +835,20 @@ describe('campo do tipo removido (codeRef, etapa 9): lido e ignorado', () => {
     expect(code?.ios).toEqual({ symbol: 'ScreenView', params: { nome: 'title' } });
   });
 
-  it('continua recusando chave repetida com outro campo do tipo', () => {
+  it('still refuses a key repeated with another field of the type', () => {
     const duplicated = legacy({ key: 'nome' });
     expect(errorsOf(parseSpec(duplicated))).toContain(
       `${SCREEN}.fields[2].key: key "nome" repeated`,
     );
   });
 
-  it('removedFieldKeys lê as chaves do JSON cru, por tipo, sem validar', () => {
+  it('removedFieldKeys reads the keys of the raw JSON, by type, without validating', () => {
     const spec = legacy();
     spec.layers[0].annotationTypes[0].fields.push({ key: 'x', type: REMOVED_FIELD_TYPE });
     expect(removedFieldKeys(spec)).toEqual(
       new Map([
         ['button', new Set(['x'])],
-        ['screen', new Set(['implementacao'])],
+        ['screen', new Set(['implementation'])],
       ]),
     );
     expect(removedFieldKeys(null)).toEqual(new Map());
@@ -849,7 +856,7 @@ describe('campo do tipo removido (codeRef, etapa 9): lido e ignorado', () => {
     expect(removedFieldKeys(base())).toEqual(new Map());
   });
 
-  it('o JSON Schema (formato atual) recusa o campo removido; a app o aceita e ignora', () => {
+  it('the JSON Schema (current format) refuses the removed field; the app accepts and ignores it', () => {
     const spec = legacy();
     expect(parseSpec(spec).ok).toBe(true);
     expect(jsonValidator.safeParse(spec).success).toBe(false);

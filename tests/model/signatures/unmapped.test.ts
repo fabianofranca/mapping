@@ -1,5 +1,5 @@
-// `unmappedParams` e `paramsOutsideSignature` (etapa #1079, S1): o que a ficha tem e o `code` não
-// liga a campo, e o que o `code` liga e a ficha não tem.
+// `unmappedParams` and `paramsOutsideSignature` (stage #1079, S1): what the signature has and the
+// `code` does not bind to a field, and what the `code` binds and the signature lacks.
 import { describe, expect, it } from 'vitest';
 import {
   parseSignature,
@@ -17,7 +17,7 @@ function signature(edit?: (s: Json) => void): Signature {
 }
 
 describe('paramTarget', () => {
-  it('nome, caminho e posicional', () => {
+  it('name, path and positional', () => {
     expect(paramTarget('text')).toEqual({ kind: 'name', name: 'text' });
     expect(paramTarget('colors.containerColor')).toEqual({
       kind: 'path',
@@ -31,7 +31,7 @@ describe('paramTarget', () => {
 });
 
 describe('unmappedParams', () => {
-  it('lista, na ordem da ficha, o que não tem campo: callback, modifier, slot e value', () => {
+  it('lists, in the signature's order, what has no field: callback, modifier, slot and value', () => {
     expect(unmappedParams(signature(), { params: { label: 'enabled' } })).toEqual([
       { name: 'onClick', role: 'callback', type: '() -> Unit', required: true },
       {
@@ -64,7 +64,7 @@ describe('unmappedParams', () => {
     ]);
   });
 
-  it('o ignore tira o parâmetro, sem aviso', () => {
+  it('ignore removes the parameter, without a notice', () => {
     const names = unmappedParams(signature(), {
       params: { label: 'enabled' },
       ignore: ['modifier', 'content', 'onClick'],
@@ -72,14 +72,14 @@ describe('unmappedParams', () => {
     expect(names).toEqual(['shape', 'colors']);
   });
 
-  it('um parâmetro com algum campo da fábrica ligado (caminho) conta como ligado', () => {
+  it('a parameter with some factory field bound (path) counts as bound', () => {
     const names = unmappedParams(signature(), {
       params: { fill: 'colors.containerColor', on: 'enabled', s: 'shape' },
     }).map((p) => p.name);
     expect(names).toEqual(['onClick', 'modifier', 'content']);
   });
 
-  it('o posicional #n liga o n-ésimo parâmetro de rótulo _', () => {
+  it('the positional #n binds the n-th parameter with label _', () => {
     const sig = signature((s) => {
       s.params.push({
         name: 'title',
@@ -106,13 +106,13 @@ describe('unmappedParams', () => {
     expect(unmapped({ a: '#1' })).toEqual(['title']);
   });
 
-  it('sem params no code, a ficha inteira fica sem campo', () => {
+  it('without params in the code, the whole signature is left without a field', () => {
     expect(unmappedParams(signature(), {})).toHaveLength(6);
   });
 });
 
 describe('paramsOutsideSignature', () => {
-  it('um parâmetro mapeado que a ficha não tem', () => {
+  it('a mapped parameter that the signature lacks', () => {
     expect(
       paramsOutsideSignature(signature(), {
         params: {
@@ -128,14 +128,14 @@ describe('paramsOutsideSignature', () => {
     ]);
   });
 
-  it('posicional além dos parâmetros posicionais da ficha também é fora', () => {
+  it('a positional beyond the signature's positional parameters is also outside', () => {
     expect(paramsOutsideSignature(signature(), { params: { a: '#0' } })).toEqual([
       { field: 'a', name: '#0' },
     ]);
   });
 });
 
-describe('paramsOutsideSignature com o expand do fieldModels (S5)', () => {
+describe('paramsOutsideSignature with the fieldModels expand (S5)', () => {
   const withBorder = (): Signature =>
     signature((s) => {
       (s.params as Json[]).push({
@@ -152,21 +152,22 @@ describe('paramsOutsideSignature com o expand do fieldModels (S5)', () => {
     'BorderStroke?': { expand: { call: 'BorderStroke', params: { width: 'Dp' } } },
   };
 
-  it('o membro do expand do modelo do tipo do parâmetro dono vale, mesmo que a fábrica da ficha seja outra', () => {
+  it('the member of the expand of the owner parameter's type model counts, even if the signature's factory is another', () => {
     const params = { w: 'border.width', e: 'border.enabled', x: 'border.nope' };
     expect(paramsOutsideSignature(withBorder(), { params })).toEqual([
       { field: 'w', name: 'border.width' },
       { field: 'x', name: 'border.nope' },
     ]);
-    // com o modelo, vale a expansão do modelo (a mesma do importador): `enabled` é argumento da
-    // fábrica da ficha, mas não do `expand`, então o importador não o tem como unidade (CL1, S5-c)
+    // with the model, the model's expansion counts (the same as the importer's): `enabled` is an
+    // argument of the signature's factory, but not of the `expand`, so the importer does not have it
+    // as a unit (CL1, S5-c)
     expect(paramsOutsideSignature(withBorder(), { params }, models)).toEqual([
       { field: 'e', name: 'border.enabled' },
       { field: 'x', name: 'border.nope' },
     ]);
   });
 
-  it('um membro herdado de Object.prototype não conta como membro do expand', () => {
+  it('a member inherited from Object.prototype does not count as a member of the expand', () => {
     const params = { a: 'border.constructor', b: 'border.toString' };
     expect(paramsOutsideSignature(withBorder(), { params }, models)).toEqual([
       { field: 'a', name: 'border.constructor' },
@@ -175,7 +176,7 @@ describe('paramsOutsideSignature com o expand do fieldModels (S5)', () => {
   });
 });
 
-describe('rótulo externo do Swift (corrigido na S2)', () => {
+describe('Swift external label (fixed in S2)', () => {
   const swift = (): Signature =>
     signature((s) => {
       s.params = [
@@ -196,27 +197,27 @@ describe('rótulo externo do Swift (corrigido na S2)', () => {
       ];
     });
 
-  it('o params que cita o rótulo externo liga o parâmetro', () => {
-    expect(unmappedParams(swift(), { params: { titulo: 'title', icone: '#0' } })).toEqual(
+  it('the params that cites the external label binds the parameter', () => {
+    expect(unmappedParams(swift(), { params: { heading: 'title', icon: '#0' } })).toEqual(
       [],
     );
-    expect(paramsOutsideSignature(swift(), { params: { titulo: 'title' } })).toEqual([]);
+    expect(paramsOutsideSignature(swift(), { params: { heading: 'title' } })).toEqual([]);
   });
 
-  it('o nome interno também vale (o que um agente escreve à mão)', () => {
-    expect(unmappedParams(swift(), { params: { titulo: 'text', icone: '#0' } })).toEqual(
+  it('the internal name also counts (what an agent writes by hand)', () => {
+    expect(unmappedParams(swift(), { params: { heading: 'text', icon: '#0' } })).toEqual(
       [],
     );
-    expect(paramsOutsideSignature(swift(), { params: { titulo: 'text' } })).toEqual([]);
+    expect(paramsOutsideSignature(swift(), { params: { heading: 'text' } })).toEqual([]);
   });
 
-  it('o ignore aceita o rótulo ou o nome', () => {
+  it('ignore accepts the label or the name', () => {
     const left = unmappedParams(swift(), { params: {}, ignore: ['title'] });
     expect(left.map((u) => u.name)).toEqual(['icon']);
   });
 });
 
-describe('paramsOutsideSignature e o importador usam a mesma expansão (CL1, S5-c)', () => {
+describe('paramsOutsideSignature and the importer use the same expansion (CL1, S5-c)', () => {
   const models = {
     ButtonColors: { expand: { params: { foo: 'Color' } } },
     Spacing: { expand: { params: { gap: 'Dp' } } },
@@ -244,9 +245,9 @@ describe('paramsOutsideSignature e o importador usam a mesma expansão (CL1, S5-
             params: [{ name: 'containerColor', role: 'value', type: 'Color' }],
           },
         },
-        // o modelo expand não vale para quem não é value
+        // the expand model does not apply to what is not a value
         { name: 'spacing', role: 'other', type: 'Spacing' },
-        // nem para o posicional
+        // nor to the positional
         { name: 'pos', label: '_', role: 'value', type: 'Spacing' },
       ],
     });
@@ -256,14 +257,14 @@ describe('paramsOutsideSignature e o importador usam a mesma expansão (CL1, S5-
   const outside = (value: string): string[] =>
     paramsOutsideSignature(sig(), { params: { f: value } }, models).map((o) => o.name);
 
-  it('o argumento da fábrica que o expand do modelo não expande está fora', () => {
-    // o importador expande `colors` pelo modelo (foo), não pela fábrica (containerColor)
+  it('the factory argument that the model's expand does not expand is outside', () => {
+    // the importer expands `colors` by the model (foo), not by the factory (containerColor)
     expect(outside('colors.foo')).toEqual([]);
     expect(outside('colors.containerColor')).toEqual(['colors.containerColor']);
   });
 
-  it('o modelo expand de um parâmetro que não expande (role other ou posicional) não vale', () => {
-    expect(outside('spacing.gap')).toEqual([]); // sem fábrica descrita: não conferido
+  it('the expand model of a parameter that does not expand (role other or positional) does not apply', () => {
+    expect(outside('spacing.gap')).toEqual([]); // no factory described: not checked
     expect(
       paramsOutsideSignature(sig(), { params: { f: 'pos.gap' } }, models).map(
         (o) => o.name,
@@ -271,7 +272,7 @@ describe('paramsOutsideSignature e o importador usam a mesma expansão (CL1, S5-
     ).toEqual([]);
   });
 
-  it('todo alvo que o importador gera como unidade é aceito pelo validador', async () => {
+  it('every target that the importer generates as a unit is accepted by the validator', async () => {
     const { unitsOf } = await import('../../../src/model/signatures/importUnits');
     for (const unit of unitsOf(sig(), models)) {
       expect(outside(unit.target), unit.target).toEqual([]);

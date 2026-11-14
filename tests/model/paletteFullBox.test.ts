@@ -3,8 +3,8 @@ import { addComponentMarking, approximateMeasurer, type Rect } from '../../src/m
 import { SPEC_ID, componentProject, testCatalog } from './componentFixtures';
 import { expectValid, marking } from './fixtures';
 
-// Achado 3.1 (etapa #1533, bloco 3, R12.12a): soltar um Button da Paleta num Box sem espaço livre
-// o aninhava no Button anterior (parentId dele) e sobre o 1º Button.
+// Finding 3.1 (stage #1533, block 3, R12.12a): dropping a Button from the Palette into a Box with no free space
+// nested it in the previous Button (its parentId) and over the 1st Button.
 
 const catalog = testCatalog();
 const rect = (x: number, y: number, width: number, height: number): Rect => ({
@@ -14,7 +14,7 @@ const rect = (x: number, y: number, width: number, height: number): Rect => ({
   height,
 });
 
-describe('Paleta solta num Box de slot cheio (3.1, caminho do slot)', () => {
+describe('Palette dropped into a Box with a full slot (3.1, slot path)', () => {
   function fullBox() {
     let p = addComponentMarking(
       componentProject(),
@@ -50,14 +50,14 @@ describe('Paleta solta num Box de slot cheio (3.1, caminho do slot)', () => {
     );
   }
 
-  it('o terceiro com o slot cheio fica filho do Box, sem coincidir com o primeiro', () => {
+  it('the third one with the slot full becomes a child of the Box, without coinciding with the first', () => {
     const p = dropIn(fullBox(), 'T3');
     expect(marking(p, 'T3').parentId).toBe('BOX');
     expect(marking(p, 'T3').rect).not.toEqual(marking(p, 'T1').rect);
     expectValid(p);
   });
 
-  it('soltar de novo não aninha mais um nível', () => {
+  it('dropping again does not nest one more level', () => {
     const p = dropIn(dropIn(fullBox(), 'T3'), 'T4');
     for (const id of ['T1', 'T2', 'T3', 'T4'])
       expect(marking(p, id).parentId).toBe('BOX');

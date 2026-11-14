@@ -11,9 +11,9 @@ import {
 import { emptyProject } from './fixtures';
 import { idGen, layerOf } from './specFixtures';
 
-// Especialização formatVersion 9 de teste (um Material em miniatura) e um projeto com botões
-// em cada variante, para os testes de `variants` (codeBlueprint, findByCode, typedDisplay,
-// Catálogo e MCP).
+// Test formatVersion 9 specialization (a miniature Material) and a project with buttons
+// in each variant, for the `variants` tests (codeBlueprint, findByCode, typedDisplay,
+// Catalog and MCP).
 
 export const BUTTON_PATH = 'compose/material3/Button.kt';
 export const TEXT_BUTTON_PATH = 'compose/material3/TextButton.kt';
@@ -71,6 +71,7 @@ export function variantsSpecJson(formatVersion = 9): Record<string, unknown> {
                     text: {
                       symbol: 'androidx.compose.material3.TextButton',
                       path: TEXT_BUTTON_PATH,
+                      // pt-BR kept: shared fixture data asserted by tests/mcp
                       notes: 'sem fundo',
                     },
                     tonal: {
@@ -104,8 +105,8 @@ export function variantsSpec(): Spec {
 }
 
 /**
- * Botões `BF` (sem valor em `style`: usa o `default` filled), `BO` (outlined), `BT` (text),
- * `BN` (tonal, `size: large`) e um Card `CD`, todos no container `I1`.
+ * Buttons `BF` (no value in `style`: uses the `default` filled), `BO` (outlined), `BT` (text),
+ * `BN` (tonal, `size: large`) and a Card `CD`, all in the container `I1`.
  */
 export function variantsProject(): Project {
   let p = applySpecialization(emptyProject(), variantsSpec(), { newId: idGen('LV') });
@@ -136,6 +137,6 @@ export function variantsProject(): Project {
   add('BO', 'button', 100, { label: 'Outlined', style: 'outlined' });
   add('BT', 'button', 200, { label: 'Text', style: 'text' });
   add('BN', 'button', 300, { label: 'Tonal', style: 'tonal', size: 'large' });
-  add('CD', 'card', 400, { title: 'Cartão' });
+  add('CD', 'card', 400, { title: 'Card' });
   return p;
 }

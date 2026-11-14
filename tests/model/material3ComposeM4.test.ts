@@ -1,5 +1,5 @@
-// M4 da etapa "Material 3 fiel": os 9 componentes de navegação e listas no formato 4.
-// Os valores de cada componente contra os `.kt` ficam nos arquivos `material3ComposeM4*.test.ts`.
+// M4 of the "faithful Material 3" stage: the 9 navigation and list components in format 4.
+// The values of each component against the `.kt` files live in the `material3ComposeM4*.test.ts` files.
 import { describe, expect, it } from 'vitest';
 import { validateLibrary } from '../../src/model/library';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
@@ -26,6 +26,7 @@ const M4 = [
   'dropdown-menu',
 ];
 const BAD_WARNING =
+  // pt-BR kept: matches the pt-BR text-too-big warning message
   /não cabe|text larger than the box|unknown icon|stretched icon|does not exist in the specialization tokens/i;
 
 type Rec = Record<string, unknown>;
@@ -35,11 +36,11 @@ const rawTypes: Record<string, Rec> = Object.fromEntries(
 );
 const component = (id: string): Rec => JSON.parse(text(`components/${id}.json`)) as Rec;
 
-/** O catálogo se monta uma vez, na coleta: montá-lo dentro do teste passava de 5 s com a cobertura ligada no CI. */
+/** The catalog is built once, at collection: building it inside the test took over 5 s with coverage on in CI. */
 const shared = buildCatalog(files);
 
-describe('M4 — navegação e listas no formato 4', () => {
-  it.each(M4)('%s é formato 4, sem cor literal e sem family literal', (id) => {
+describe('M4 — navigation and lists in format 4', () => {
+  it.each(M4)('%s is format 4, with no literal color and no literal family', (id) => {
     const raw = text(`components/${id}.json`);
     expect(component(id).formatVersion).toBe(4);
     expect(raw).not.toMatch(/"family"/);
@@ -47,11 +48,11 @@ describe('M4 — navegação e listas no formato 4', () => {
     expect(raw).not.toMatch(/rgba?\(/);
   });
 
-  it.each(M4)('%s não repete caminho SVG de ícone escolhido', (id) => {
+  it.each(M4)('%s does not repeat the SVG path of a chosen icon', (id) => {
     expect(text(`components/${id}.json`)).not.toMatch(/"M\d[^"]{40,}"/);
   });
 
-  // A ME4 deu a coluna `selected` aos itens do `dropdown-menu`: o preview a traz (senão o desenho avisa "field not provided").
+  // ME4 gave the `dropdown-menu` items a `selected` column: the preview carries it (otherwise the drawing warns "field not provided").
   const withoutAddedPreview = (id: string, preview: unknown): unknown => {
     const p = preview as { items?: Rec[] } | undefined;
     if (id !== 'dropdown-menu' || p?.items === undefined) return preview;
@@ -63,7 +64,7 @@ describe('M4 — navegação e listas no formato 4', () => {
     };
   };
 
-  it.each(M4)('%s: campos, exemplos, preview, minSize e size iguais aos da v1', (id) => {
+  it.each(M4)('%s: fields, examples, preview, minSize and size equal to those of v1', (id) => {
     const before = (v1.components as Record<string, Rec>)[id]!;
     const type = rawTypes[id]!;
     const now = component(id);
@@ -74,7 +75,7 @@ describe('M4 — navegação e listas no formato 4', () => {
     expect(now.size).toEqual(COMPOSE_SIZES[id] ?? before.size);
   });
 
-  it.each(M4)('%s: o padrão e os exemplos desenham sem aviso em light e dark', (id) => {
+  it.each(M4)('%s: the default and the examples draw without warnings in light and dark', (id) => {
     const catalog = shared;
     const entry = findEntry(catalog, id)!;
     const cases = [{}, ...(entry.examples ?? []).map((e) => e.values)];
@@ -86,7 +87,7 @@ describe('M4 — navegação e listas no formato 4', () => {
     }
   });
 
-  it('a biblioteca valida com 0 erros e só os avisos conhecidos (provisório, #1774)', () => {
+  it('the library validates with 0 errors and only the known warnings (provisional, #1774)', () => {
     const report = validateLibrary({ files, specPath: SPEC_FILE });
     expect(report.errors).toEqual([]);
     expect(unknownWarnings(report.warnings).unexpected).toEqual([]);

@@ -1,7 +1,7 @@
-// EX4 da etapa "expressões que calculam no formato 4" (#897): o date-picker e o time-picker da
-// material3-compose desenham por conta (aritmética, `repeat` por contagem, `$sin`/`$cos`), sem as
-// tabelas de antes, e ganham o campo `interaction`. A regressão contra as cenas de antes da etapa
-// (tests/fixtures/material3-ex4-v1.json) e os limites de `$switch` e `$eq` ficam aqui também.
+// EX4 of the "expressions that compute in format 4" stage (#897): the date-picker and the time-picker of
+// material3-compose draw by computing (arithmetic, `repeat` by count, `$sin`/`$cos`), without the
+// tables of before, and gain the `interaction` field. The regression against the scenes from before the stage
+// (tests/fixtures/material3-ex4-v1.json) and the limits on `$switch` and `$eq` live here too.
 import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import { absoluteBoxes, walk } from '../../src/model/components/scene';
@@ -10,6 +10,7 @@ import { drawIn, files, solid, spec, text, typeOf } from '../support/material3Li
 import v1 from '../fixtures/material3-ex4-v1.json';
 
 const catalog = buildCatalog(files);
+// pt-BR kept: node names of libraries/material3-compose and of tests/fixtures/material3-ex4-v1.json are Portuguese data
 type Values = Parameters<typeof drawIn>[2];
 type Mode = 'light' | 'dark';
 type Drawing = ReturnType<typeof drawIn>;
@@ -38,10 +39,10 @@ const named = (d: Drawing, name: string): SceneNode[] =>
   visibleNodes(d).filter((n) => n.name === name);
 
 // ---------------------------------------------------------------------------------------------
-// date-picker: a grade do mês
+// date-picker: the month grid
 // ---------------------------------------------------------------------------------------------
 
-/** O dia da semana do dia 1 (domingo = 0) e o número de dias, pelo calendário do JS. */
+/** The weekday of day 1 (Sunday = 0) and the number of days, by the JS calendar. */
 function calendar(year: number, month: number) {
   return {
     offset: new Date(Date.UTC(year, month - 1, 1)).getUTCDay(),
@@ -49,14 +50,14 @@ function calendar(year: number, month: number) {
   };
 }
 
-/** A caixa dos dias (a grade menos os 12 de margem de cada lado) e a janela em que as células aparecem. */
+/** The box of the days (the grid minus the 12 of margin on each side) and the window where the cells appear. */
 function gridOf(d: Drawing) {
   const grid = named(d, 'grade')[0]!;
   const [x, y, width, height] = rectOf(d, grid);
   return { x: x! + 12, y: y!, width: width! - 24, height: height! };
 }
 
-/** Os dias que aparecem de fato: os que caem dentro da janela da grade. */
+/** The days that actually appear: those that fall inside the grid window. */
 function shownDays(d: Drawing): Map<number, number[]> {
   const grid = gridOf(d);
   const out = new Map<number, number[]>();
@@ -83,7 +84,7 @@ function expectMonth(year: number, month: number, values: Values = {}) {
   const { offset, days } = calendar(year, month);
   const grid = gridOf(d);
   const rows = Math.ceil((offset + days) / 7);
-  expect(grid.height, `${month}/${year} linhas`).toBe(rows * 48);
+  expect(grid.height, `${month}/${year} rows`).toBe(rows * 48);
   const shown = shownDays(d);
   expect([...shown.keys()].sort((a, b) => a - b)).toEqual(
     Array.from({ length: days }, (_, i) => i + 1),
@@ -100,35 +101,35 @@ function expectMonth(year: number, month: number, values: Values = {}) {
   return { d, grid, offset, days, rows };
 }
 
-describe('EX4 date-picker — o calendário de month e year', () => {
-  it('fevereiro de 2028: 29 dias, o dia 1 na terça, em 5 linhas', () => {
+describe('EX4 date-picker — the calendar from month and year', () => {
+  it('February 2028: 29 days, day 1 on Tuesday, in 5 rows', () => {
     const { d, grid } = expectMonth(2028, 2);
     expect(grid.height).toBe(240);
     expect(shownDays(d).get(1)![0]).toBe(grid.x + 2 * 48);
     expect(shownDays(d).has(30)).toBe(false);
   });
 
-  it('um mês de 30 dias que começa no sábado (novembro de 2025) tem 6 linhas', () => {
+  it('a 30-day month that starts on Saturday (November 2025) has 6 rows', () => {
     const { grid } = expectMonth(2025, 11);
     expect(grid.height).toBe(288);
   });
 
-  it('um mês de 28 dias que começa no domingo (fevereiro de 2026) tem 4 linhas', () => {
+  it('a 28-day month that starts on Sunday (February 2026) has 4 rows', () => {
     const { grid } = expectMonth(2026, 2);
     expect(grid.height).toBe(192);
   });
 
-  it('confere a grade de todos os meses de anos que viram a regra do bissexto', () => {
+  it('checks the grid of every month of the years that exercise the leap-year rule', () => {
     for (const year of [1900, 1999, 2000, 2023, 2024, 2025, 2100]) {
       for (let month = 1; month <= 12; month++) expectMonth(year, month);
     }
-    // 84 meses com a grade conferida dia a dia: 3 s aqui, mais de 5 s no CI com cobertura.
+    // 84 months with the grid checked day by day: 3 s here, more than 5 s in CI with coverage.
   }, 30_000);
 
-  it('sem month ou sem year fica a grade de hoje: 31 dias a partir da quarta', () => {
+  it('without month or without year the grid of today stays: 31 days starting on Wednesday', () => {
     for (const values of [{}, { month: 2 }, { year: 2028 }] as Values[]) {
       const d = drawDate({
-        displayedMonth: 'Outubro de 2025',
+        displayedMonth: 'October 2025',
         selection: 'single',
         ...values,
       });
@@ -140,10 +141,10 @@ describe('EX4 date-picker — o calendário de month e year', () => {
     }
   });
 
-  it('o dia escolhido e o dia final do intervalo ficam no lugar do mês, e um dia que o mês não tem não aparece', () => {
+  it('the chosen day and the final day of the range stay in place in the month, and a day the month does not have does not appear', () => {
     const { d, grid } = expectMonth(2028, 2, { selectedDay: 29 });
     const [marked] = named(d, 'marcado');
-    // 29 de fevereiro de 2028: terça + 28 dias = terça, na linha 4
+    // February 29, 2028: Tuesday + 28 days = Tuesday, in row 4
     expect(rectOf(d, marked!)).toEqual([
       grid.x + 2 * 48 + 4,
       grid.y + 4 * 48 + 4,
@@ -160,7 +161,7 @@ describe('EX4 date-picker — o calendário de month e year', () => {
     expect(named(none, 'marcado')).toEqual([]);
   });
 
-  it('o intervalo atravessa semanas: a faixa vai do centro do dia inicial ao do final, linha por linha', () => {
+  it('the range crosses weeks: the band goes from the center of the start day to that of the end day, row by row', () => {
     const d = drawDate({
       displayedMonth: 'x',
       selection: 'range',
@@ -183,7 +184,7 @@ describe('EX4 date-picker — o calendário de month e year', () => {
           : [Math.min(cur[0], bx!), Math.max(cur[1], bx! + bw!)],
       );
     }
-    // fevereiro de 2028 começa na terça: o dia 3 é a quinta (coluna 4) da linha 0 e o 12 o sábado (coluna 6) da linha 1
+    // February 2028 starts on Tuesday: day 3 is Thursday (column 4) of row 0 and day 12 is Saturday (column 6) of row 1
     expect([...rows.entries()].sort((a, b) => a[0] - b[0])).toEqual([
       [y + 4, [x + 4 * 48 + 24, x + 336]],
       [y + 48 + 4, [x, x + 6 * 48 + 24]],
@@ -195,14 +196,14 @@ describe('EX4 date-picker — o calendário de month e year', () => {
 // date-picker: interaction
 // ---------------------------------------------------------------------------------------------
 
-describe('EX4 date-picker — interaction (o item escolhido)', () => {
+describe('EX4 date-picker — interaction (the chosen item)', () => {
   const STATES: [string, string][] = [
     ['hovered', 'state-hover'],
     ['focused', 'state-focus'],
     ['pressed', 'state-pressed'],
   ];
 
-  it('o campo existe, com none, hovered, focused e pressed, e none por padrão', () => {
+  it('the field exists, with none, hovered, focused and pressed, and none by default', () => {
     const field = typeOf('date-picker').fields.find((f) => f.key === 'interaction');
     expect(field).toMatchObject({
       type: 'enum',
@@ -211,7 +212,7 @@ describe('EX4 date-picker — interaction (o item escolhido)', () => {
     });
   });
 
-  it('sem estado, nenhuma camada de estado desenha', () => {
+  it('without a state, no state layer draws', () => {
     expect(
       named(
         drawDate({ displayedMonth: 'x', selection: 'single', selectedDay: 15 }),
@@ -231,7 +232,7 @@ describe('EX4 date-picker — interaction (o item escolhido)', () => {
     ).toEqual([]);
   });
 
-  it('single: a camada de 40 em on-primary, com a opacidade do estado, sobre o dia escolhido', () => {
+  it('single: the layer of 40 in on-primary, with the state opacity, over the chosen day', () => {
     for (const mode of ['light', 'dark'] as const) {
       for (const [interaction, token] of STATES) {
         const d = drawDate(
@@ -249,7 +250,7 @@ describe('EX4 date-picker — interaction (o item escolhido)', () => {
     }
   });
 
-  it('range: vale para o dia inicial', () => {
+  it('range: applies to the start day', () => {
     const d = drawDate({
       displayedMonth: 'x',
       selection: 'range',
@@ -265,7 +266,7 @@ describe('EX4 date-picker — interaction (o item escolhido)', () => {
     expect(rectOf(d, layer!)).toEqual(rectOf(d, start));
   });
 
-  it('sem escolha, o dia 1, em on-surface', () => {
+  it('without a choice, day 1, in on-surface', () => {
     const d = drawDate({
       displayedMonth: 'x',
       selection: 'single',
@@ -311,8 +312,8 @@ const textIn = (d: Drawing, parent: string): string | undefined => {
 };
 
 /**
- * O número sob a alça (MF4): a cópia dos números em on-primary, dentro da `alça` (que recorta), cujo centro
- * cai no centro da alça. Sem número na posição (minuto fora da grade de 5), nenhum.
+ * The number under the handle (MF4): the copy of the numbers in on-primary, inside the `alça` (which clips), whose center
+ * falls on the center of the handle. With no number at the position (minute off the 5 grid), none.
  */
 function underHandle(d: Drawing): string | undefined {
   const handle = named(d, 'alça')[0]!;
@@ -329,8 +330,8 @@ function underHandle(d: Drawing): string | undefined {
   return (found as TextNode | undefined)?.text;
 }
 
-describe('EX4 time-picker — ponteiro, mostrador e PM sem tabelas', () => {
-  it('às 10:37 em 24 horas, escolhendo o minuto, a alça fica no minuto 37 (222°), no raio externo', () => {
+describe('EX4 time-picker — pointer, dial and PM without tables', () => {
+  it('at 10:37 in 24 hours, choosing the minute, the handle sits at minute 37 (222°), on the outer radius', () => {
     const d = drawTime({
       mode: 'picker',
       hour: 10,
@@ -340,13 +341,13 @@ describe('EX4 time-picker — ponteiro, mostrador e PM sem tabelas', () => {
     });
     expect(near(handleCenter(d), polar(101, 222))).toBe(true);
     expect(near(trackEnd(d), polar(101, 222))).toBe(true);
-    // 37 não está na grade de 5: o Compose não escreve o número dentro da alça (a cópia dos números só cobre 35 e 40 pela metade)
+    // 37 is not on the 5 grid: Compose does not write the number inside the handle (the copy of the numbers only half-covers 35 and 40)
     expect(underHandle(d)).toBeUndefined();
     expect(textIn(d, 'minuto')).toBe('37');
     expect(textIn(d, 'hora')).toBe('10');
   });
 
-  it('às 10:37, escolhendo a hora, a alça fica na hora 10 (300°)', () => {
+  it('at 10:37, choosing the hour, the handle sits at hour 10 (300°)', () => {
     const d = drawTime({
       mode: 'picker',
       hour: 10,
@@ -358,7 +359,7 @@ describe('EX4 time-picker — ponteiro, mostrador e PM sem tabelas', () => {
     expect(underHandle(d)).toBe('10');
   });
 
-  it('às 22:05 em 24 horas, a alça da hora vai para o anel interno (raio 69, 20 h = 300°)', () => {
+  it('at 22:05 in 24 hours, the hour handle goes to the inner ring (radius 69, 20 h = 300°)', () => {
     const d = drawTime({
       mode: 'picker',
       hour: 22,
@@ -370,7 +371,7 @@ describe('EX4 time-picker — ponteiro, mostrador e PM sem tabelas', () => {
     expect(near(trackEnd(d), polar(69, 300))).toBe(true);
   });
 
-  it('às 22:05 em 12 horas: PM, hora 10, minuto com zero à esquerda, alça no minuto 5', () => {
+  it('at 22:05 in 12 hours: PM, hour 10, minute with a leading zero, handle at minute 5', () => {
     const base: Values = { mode: 'picker', hour: 22, minute: 5, is24Hour: 'false' };
     const minute = drawTime({ ...base, selection: 'minute' });
     expect(textIn(minute, 'hora')).toBe('10');
@@ -382,17 +383,17 @@ describe('EX4 time-picker — ponteiro, mostrador e PM sem tabelas', () => {
     expect(solid(pm.fills)).toBe(tok('tertiary-container', 'light'));
     expect(solid(am.fills)).toBeUndefined();
     const hour = drawTime({ ...base, selection: 'hour' });
-    // em 12 horas a hora 22 é 10 h no raio externo
+    // in 12 hours, hour 22 is 10 h on the outer radius
     expect(near(handleCenter(hour), polar(101, 300))).toBe(true);
   });
 
-  it('às 10:37 em 12 horas: AM', () => {
+  it('at 10:37 in 12 hours: AM', () => {
     const d = drawTime({ mode: 'picker', hour: 10, minute: 37, is24Hour: 'false' });
     expect(solid(named(d, 'AM')[0]!.fills)).toBe(tok('tertiary-container', 'light'));
     expect(solid(named(d, 'PM')[0]!.fills)).toBeUndefined();
   });
 
-  it('o mostrador tem 12 números (0 a 11 ou 12 e 1 a 11 em 12 horas), 5 em 5 nos minutos, e o anel interno só em 24 horas', () => {
+  it('the dial has 12 numbers (0 to 11, or 12 and 1 to 11 in 12 hours), every 5 for minutes, and the inner ring only in 24 hours', () => {
     const labels = (v: Values) =>
       visibleNodes(drawTime(v))
         .filter((n): n is TextNode => n.type === 'text' && n.name === 'número')
@@ -455,7 +456,7 @@ describe('EX4 time-picker — ponteiro, mostrador e PM sem tabelas', () => {
   });
 });
 
-describe('EX4 time-picker — interaction (o seletor escolhido)', () => {
+describe('EX4 time-picker — interaction (the chosen selector)', () => {
   const STATES: [string, string][] = [
     ['hovered', 'state-hover'],
     ['focused', 'state-focus'],
@@ -463,7 +464,7 @@ describe('EX4 time-picker — interaction (o seletor escolhido)', () => {
   ];
   const base: Values = { mode: 'picker', hour: 14, minute: 30, is24Hour: 'true' };
 
-  it('o campo existe, com none, hovered, focused e pressed, e none por padrão', () => {
+  it('the field exists, with none, hovered, focused and pressed, and none by default', () => {
     const field = typeOf('time-picker').fields.find((f) => f.key === 'interaction');
     expect(field).toMatchObject({
       type: 'enum',
@@ -473,7 +474,7 @@ describe('EX4 time-picker — interaction (o seletor escolhido)', () => {
     expect(named(drawTime(base), 'estado')).toEqual([]);
   });
 
-  it('a camada cobre o campo da hora (selection hour) ou o do minuto, na cor do texto do campo', () => {
+  it('the layer covers the hour field (selection hour) or the minute one, in the field text color', () => {
     for (const mode of ['light', 'dark'] as const) {
       for (const [interaction, token] of STATES) {
         for (const [selection, field] of [
@@ -491,7 +492,7 @@ describe('EX4 time-picker — interaction (o seletor escolhido)', () => {
     }
   });
 
-  it('vale também no modo input', () => {
+  it('also applies in input mode', () => {
     const d = drawTime({
       ...base,
       mode: 'input',
@@ -504,7 +505,7 @@ describe('EX4 time-picker — interaction (o seletor escolhido)', () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-// Regressão: a cena de antes (tests/fixtures/material3-ex4-v1.json) a ≤ 0,5 px por nó
+// Regression: the scene from before (tests/fixtures/material3-ex4-v1.json) within ≤ 0.5 px per node
 // ---------------------------------------------------------------------------------------------
 
 type Entry = { t: string; n: string; r: number[]; x?: string; d?: string; f?: string };
@@ -522,7 +523,7 @@ const TOL = 0.5;
 const closeRect = (a: number[], b: number[]) =>
   a.every((v, i) => Math.abs(v - b[i]!) <= TOL);
 
-/** Os nomes de antes que a nova construção reparte em outros nós (a prova é pelo texto, pelas caixas e pela união das faixas). */
+/** The names from before that the new construction splits into other nodes (the proof is by text, by boxes and by the union of the bands). */
 const RENAMED: Record<string, string> = {
   'dia escolhido': 'marcado',
   'início do intervalo': 'marcado',
@@ -530,16 +531,16 @@ const RENAMED: Record<string, string> = {
 };
 
 /**
- * Exceção da MF4 (número sob a alça): o nó `valor selecionado` de antes sumiu; o número escolhido é agora a
- * cópia dos números em on-primary dentro da `alça` (`número sob a alça`). A cena de antes não o exige mais,
- * mas o número escolhido continua lá: com o mesmo texto e o centro no do `valor selecionado` de antes.
+ * MF4 exception (number under the handle): the `valor selecionado` node from before is gone; the chosen number is now the
+ * copy of the numbers in on-primary inside the `alça` (`número sob a alça`). The scene from before no longer requires it,
+ * but the chosen number is still there: with the same text and the center on that of the `valor selecionado` from before.
  */
 const MOVED = 'valor selecionado';
 const movedIntoHandle = (
   old: Entry,
   nodes: { name: string; text?: string; rect: number[] }[],
 ): boolean =>
-  // sem texto (minuto fora da grade de 5) não havia número a mover (o teste do ponteiro afirma que nenhuma cópia fica centrada)
+  // without text (minute off the 5 grid) there was no number to move (the pointer test asserts that no copy is centered)
   old.x === '' ||
   nodes.some(
     (n) =>
@@ -564,11 +565,11 @@ function compareScene(scene: Scene, draw: (v: Values, m: Mode) => Drawing) {
   });
   const missing: string[] = [];
   for (const old of scene.nodes) {
-    // as faixas de largura 0 (linhas fora do intervalo) não desenham; as demais vão pela união das linhas
+    // bands of width 0 (rows outside the range) do not draw; the others go by the union of the rows
     if (old.n === 'faixa') continue;
     if (old.n === MOVED) {
       if (!movedIntoHandle(old, now))
-        missing.push(`${scene.id} ${old.n} ${old.x ?? ''} não está sob a alça`);
+        missing.push(`${scene.id} ${old.n} ${old.x ?? ''} is not under the handle`);
       continue;
     }
     const name = RENAMED[old.n] ?? old.n;
@@ -601,31 +602,31 @@ function bandRows(d: Drawing): Record<string, number[]> {
   return rows;
 }
 
-describe('EX4 regressão — as cenas de antes das tabelas, a ≤ 0,5 px por nó', () => {
-  it('date-picker: os exemplos antigos (claro e escuro), os dias escolhidos e os intervalos', () => {
+describe('EX4 regression — the scenes from before the tables, within ≤ 0.5 px per node', () => {
+  it('date-picker: the old examples (light and dark), the chosen days and the ranges', () => {
     let seen = 0;
     for (const [key, value] of Object.entries(scenes)) {
       if (!key.startsWith('date-')) continue;
       const scene = value as Scene;
       const d = compareScene(scene, drawDate);
       const rows = bandRows(d);
-      expect(Object.keys(rows).sort(), `${key} faixas`).toEqual(
+      expect(Object.keys(rows).sort(), `${key} bands`).toEqual(
         Object.keys(scene.bands).sort(),
       );
       for (const [y, [x0, x1]] of Object.entries(scene.bands))
-        expect(closeRect(rows[y]!, [x0!, x1!]), `${key} faixa ${y}`).toBe(true);
+        expect(closeRect(rows[y]!, [x0!, x1!]), `${key} band ${y}`).toBe(true);
       seen++;
     }
     expect(seen).toBe(21);
   });
 
-  it('time-picker: os exemplos antigos (claro e escuro)', () => {
+  it('time-picker: the old examples (light and dark)', () => {
     let seen = 0;
     for (const [key, value] of Object.entries(scenes)) {
       if (!key.startsWith('time-ex')) continue;
       const scene = value as Scene;
       const d = compareScene(scene, drawTime);
-      // o trilho de antes termina no mesmo ponto
+      // the track from before ends at the same point
       for (const old of scene.nodes.filter((n) => n.t === 'path')) {
         const m = /L(-?[\d.]+) (-?[\d.]+)$/.exec(old.d ?? '')!;
         expect(closeRect(trackEnd(d), [Number(m[1]), Number(m[2])]), key).toBe(true);
@@ -635,7 +636,7 @@ describe('EX4 regressão — as cenas de antes das tabelas, a ≤ 0,5 px por nó
     expect(seen).toBe(8);
   });
 
-  it('time-picker: todas as horas (24 e 12 horas) e todos os 60 minutos, a alça, o trilho, o número e o período', () => {
+  it('time-picker: every hour (24 and 12 hours) and all 60 minutes, the handle, the track, the number and the period', () => {
     const sweep = scenes['time-sweep'] as Record<string, Entry[]>;
     let seen = 0;
     for (const [key, entries] of Object.entries(sweep)) {
@@ -662,7 +663,7 @@ describe('EX4 regressão — as cenas de antes das tabelas, a ≤ 0,5 px por nó
         if (old.n === MOVED) {
           expect(
             movedIntoHandle(old, nowBoxes),
-            `${key} ${old.n} ${old.x ?? ''} não está sob a alça`,
+            `${key} ${old.n} ${old.x ?? ''} is not under the handle`,
           ).toBe(true);
           continue;
         }
@@ -695,10 +696,10 @@ describe('EX4 regressão — as cenas de antes das tabelas, a ≤ 0,5 px por nó
 });
 
 // ---------------------------------------------------------------------------------------------
-// Sem tabelas
+// Without tables
 // ---------------------------------------------------------------------------------------------
 
-/** Cada `$switch` com mais de 12 casos e cada `$eq` sobre um campo `number` do tipo. */
+/** Each `$switch` with more than 12 cases and each `$eq` over a `number` field of the type. */
 function offenders(id: 'date-picker' | 'time-picker') {
   const numberFields = new Set(
     typeOf(id)
@@ -713,28 +714,28 @@ function offenders(id: 'date-picker' | 'time-picker') {
     const cases = obj['cases'];
     if ('$switch' in obj && typeof cases === 'object' && cases !== null) {
       const count = Object.keys(cases).length;
-      if (count > 12) found.push(`${path}: $switch de ${count} casos`);
+      if (count > 12) found.push(`${path}: $switch of ${count} cases`);
     }
     const eq = obj['$eq'];
     if (Array.isArray(eq) && typeof eq[0] === 'string' && numberFields.has(eq[0]))
-      found.push(`${path}: $eq sobre o campo number ${eq[0]}`);
+      found.push(`${path}: $eq over the number field ${eq[0]}`);
     for (const [k, v] of Object.entries(obj)) visit(v, `${path}.${k}`);
   };
   visit(JSON.parse(text(`components/${id}.json`)), id);
   return found;
 }
 
-describe('EX4 — sem tabelas enumeradas', () => {
-  it('o date-picker e o time-picker não têm $switch com mais de 12 casos nem $eq sobre campo number', () => {
+describe('EX4 — without enumerated tables', () => {
+  it('the date-picker and the time-picker have no $switch with more than 12 cases nor $eq over a number field', () => {
     expect(offenders('date-picker')).toEqual([]);
     expect(offenders('time-picker')).toEqual([]);
   });
 
-  it('os arquivos ficam bem menores que os 78 kB e 53 kB de antes', () => {
+  it('the files stay much smaller than the 78 kB and 53 kB from before', () => {
     expect(text('components/date-picker.json').length).toBeLessThan(52_000);
-    // O time-picker passou de 36 kB com a cópia dos números dentro da `alça` (MF4, número sob a alça; cresce de 31 kB a ~40 kB):
-    // teto de 41 kB (39.718). A L2 (#1078) posiciona os números pelas âncoras `right` e `bottom` e a cópia sob a alça por
-    // `max(…, -24)`, para nenhum filho passar da caixa do quadro `posição` (aviso `content larger than the box`): teto de 45 kB (hoje 43.643).
+    // The time-picker went past 36 kB with the copy of the numbers inside the `alça` (MF4, number under the handle; grows from 31 kB to ~40 kB):
+    // ceiling of 41 kB (39,718). L2 (#1078) positions the numbers by the `right` and `bottom` anchors and the copy under the handle by
+    // `max(…, -24)`, so no child goes past the box of the `posição` frame (warning `content larger than the box`): ceiling of 45 kB (now 43,643).
     expect(text('components/time-picker.json').length).toBeLessThan(45_000);
   });
 });

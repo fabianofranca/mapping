@@ -1,6 +1,6 @@
-// `planSignatureImport` (etapa #1079, S2; decisões 5, 7, 8, 9 e 12): a regra do que vira campo, a
-// ligação a campos existentes, a expansão pela fábrica, os avisos com o `ref` da ficha, a
-// idempotência e a sincronização. Puro: roda no projeto `model` (Node).
+// `planSignatureImport` (stage #1079, S2; decisions 5, 7, 8, 9 and 12): the rule for what becomes a
+// field, the binding to existing fields, the expansion by the factory, the notices with the
+// signature's `ref`, idempotence and synchronization. Pure: runs in the `model` project (Node).
 import { describe, expect, it } from 'vitest';
 import {
   paramsOutsideSignature,
@@ -47,7 +47,7 @@ const keys = (plan: SignatureImportPlan): string[] => plan.type.fields.map((f) =
 const noticesOf = (notices: SpecNotice[] | undefined): string[] =>
   (notices ?? []).map((n) => `${n.kind}|${n.ref ?? ''}|${n.message}`);
 
-describe('regra por role e value.kind (decisão 5)', () => {
+describe('rule by role and value.kind (decision 5)', () => {
   const params = [
     callback('onClick'),
     { name: 'modifier', role: 'modifier', type: 'Modifier', default: 'Modifier' },
@@ -75,7 +75,7 @@ describe('regra por role e value.kind (decisão 5)', () => {
     { name: 'shape', role: 'value', type: 'Shape', value: { kind: 'opaque' } },
   ];
 
-  it('callback, modifier e state nunca viram campo; slot só com modelo', () => {
+  it('callback, modifier and state never become a field; slot only with a model', () => {
     const plan = run(librarySpec(), { signature: composeSignature(params) });
     expect(keys(plan)).not.toContain('onClick');
     expect(keys(plan)).not.toContain('modifier');
@@ -93,7 +93,7 @@ describe('regra por role e value.kind (decisão 5)', () => {
     ]);
   });
 
-  it('text, boolean, number, integer, dimension e enum', () => {
+  it('text, boolean, number, integer, dimension and enum', () => {
     const plan = run(librarySpec(), { signature: composeSignature(params) });
     expect(field(plan, 'label')).toMatchObject({ type: 'string', default: 'OK' });
     expect(field(plan, 'enabled')).toMatchObject({
@@ -117,20 +117,20 @@ describe('regra por role e value.kind (decisão 5)', () => {
     });
   });
 
-  it('boolean usa as opções do modelo `boolean` da biblioteca', () => {
+  it('boolean uses the options of the library's `boolean` model', () => {
     const spec = librarySpec((s) => {
-      s.fieldModels.compose.boolean = { type: 'enum', options: ['Sim', 'Não'] };
+      s.fieldModels.compose.boolean = { type: 'enum', options: ['Yes', 'No'] };
     });
     const plan = run(spec, { signature: composeSignature([bool('enabled')]) });
     expect(field(plan, 'enabled')).toMatchObject({
       type: 'enum',
-      options: ['Sim', 'Não'],
-      default: 'Sim',
+      options: ['Yes', 'No'],
+      default: 'Yes',
     });
-    expect(plan.code?.values).toEqual({ enabled: { Sim: 'true', Não: 'false' } });
+    expect(plan.code?.values).toEqual({ enabled: { Yes: 'true', No: 'false' } });
   });
 
-  it('color e opaque sem modelo ficam fora, com o aviso pending no tipo', () => {
+  it('color and opaque without a model stay out, with the pending notice on the type', () => {
     const plan = run(librarySpec(), { signature: composeSignature(params) });
     expect(keys(plan)).not.toContain('tint');
     expect(keys(plan)).not.toContain('shape');
@@ -140,7 +140,7 @@ describe('regra por role e value.kind (decisão 5)', () => {
     ]);
   });
 
-  it('o modelo `ignore` deixa o parâmetro fora sem aviso', () => {
+  it('the `ignore` model leaves the parameter out without a notice', () => {
     const plan = run(librarySpec(), {
       signature: composeSignature([
         { name: 'modifier', role: 'value', type: 'Modifier', value: { kind: 'opaque' } },
@@ -150,7 +150,7 @@ describe('regra por role e value.kind (decisão 5)', () => {
     expect(plan.type.notices).toBeUndefined();
   });
 
-  it('o `ignore` do code deixa o parâmetro fora de propósito: sem campo, sem aviso e fora do unmapped', () => {
+  it('the code's `ignore` leaves the parameter out on purpose: no field, no notice and out of unmapped', () => {
     const signature = composeSignature([
       text('label'),
       text('subtitle'),
@@ -173,7 +173,7 @@ describe('regra por role e value.kind (decisão 5)', () => {
     expect(plan.unmapped.map((u) => u.name)).toEqual([]);
   });
 
-  it('o `ignore` vale também pelo nome de chamada (o rótulo externo do Swift)', () => {
+  it('`ignore` also matches by call name (the Swift external label)', () => {
     const plan = run(
       librarySpec((s) => {
         buttonOf(s).code = {
@@ -196,7 +196,7 @@ describe('regra por role e value.kind (decisão 5)', () => {
     expect(plan.unmapped.map((u) => u.name)).toEqual([]);
   });
 
-  it('o argumento de uma fábrica não se liga, só pelo nome, a um campo de outro tipo: vira campo novo com o dono no nome', () => {
+  it('a factory argument does not bind, by name alone, to a field of another type: it becomes a new field with the owner in the name', () => {
     const plan = run(
       librarySpec((s) => {
         buttonOf(s).fields = [
@@ -223,7 +223,7 @@ describe('regra por role e value.kind (decisão 5)', () => {
     });
   });
 
-  it('label, description e chave: o rótulo vem do nome, a descrição da doc, a chave é normalizada', () => {
+  it('label, description and key: the label comes from the name, the description from the doc, the key is normalized', () => {
     const plan = run(librarySpec(), {
       signature: composeSignature([text('content padding'), text('contentText')], (s) => {
         s.doc = { contentText: 'The text shown.' };
@@ -238,8 +238,8 @@ describe('regra por role e value.kind (decisão 5)', () => {
   });
 });
 
-describe('modelos de campo e expansão (decisão 5)', () => {
-  it('like copia options e code.values do campo da biblioteca', () => {
+describe('field models and expansion (decision 5)', () => {
+  it('like copies options and code.values from the library field', () => {
     const plan = run(librarySpec(), {
       signature: composeSignature([colorParam('containerColor')]),
     });
@@ -253,7 +253,7 @@ describe('modelos de campo e expansão (decisão 5)', () => {
     });
   });
 
-  it('a fábrica do padrão expande em um campo por parâmetro, com a chave que colide', () => {
+  it('the default's factory expands into one field per parameter, with the colliding key', () => {
     const plan = run(librarySpec(), {
       signature: composeSignature([
         factory('colors', 'ButtonDefaults.buttonColors', [colorParam('containerColor')]),
@@ -273,7 +273,7 @@ describe('modelos de campo e expansão (decisão 5)', () => {
     });
   });
 
-  it('o modelo expand (PaddingValues) vira um campo por parâmetro, com o molde', () => {
+  it('the expand model (PaddingValues) becomes one field per parameter, with the mold', () => {
     const plan = run(librarySpec(), {
       signature: composeSignature([
         {
@@ -296,7 +296,7 @@ describe('modelos de campo e expansão (decisão 5)', () => {
     });
   });
 
-  it('o parâmetro sem rótulo do Swift vira posicional, com a chave do nome interno', () => {
+  it('the Swift parameter without a label becomes positional, with the key of the internal name', () => {
     const plan = run(librarySpec(), {
       target: { platform: 'swiftui' },
       signature: composeSignature(
@@ -317,8 +317,8 @@ describe('modelos de campo e expansão (decisão 5)', () => {
   });
 });
 
-describe('default e obrigatório', () => {
-  it('default literal vira default; não literal fica sem default', () => {
+describe('default and required', () => {
+  it('a literal default becomes default; a non-literal one stays without default', () => {
     const plan = run(librarySpec(), {
       signature: composeSignature([
         text('label', { value: { kind: 'text', default: 'OK' } }),
@@ -329,11 +329,11 @@ describe('default e obrigatório', () => {
     expect(field(plan, 'hint')).not.toHaveProperty('default');
   });
 
-  it('só o tipo novo (sem campos) ganha campo obrigatório; no tipo existente nasce opcional com diverges', () => {
+  it('only the new type (no fields) gets a required field; on the existing type it is born optional with diverges', () => {
     const required = composeSignature([text('label', { required: true })]);
-    const novo = run(librarySpec(), { signature: required });
-    expect(field(novo, 'label')).toHaveProperty('required', true);
-    expect(novo.type.fields[0]?.notices).toBeUndefined();
+    const fresh = run(librarySpec(), { signature: required });
+    expect(field(fresh, 'label')).toHaveProperty('required', true);
+    expect(fresh.type.fields[0]?.notices).toBeUndefined();
 
     const existing = librarySpec((s) => {
       buttonOf(s).fields = [{ key: 'other', type: 'string' }];
@@ -346,41 +346,41 @@ describe('default e obrigatório', () => {
   });
 });
 
-describe('ligação (decisão 7)', () => {
+describe('binding (decision 7)', () => {
   const spec = (): Spec =>
     librarySpec((s) => {
       const button = buttonOf(s);
       button.fields = [
-        { key: 'titulo', type: 'string' },
+        { key: 'title', type: 'string' },
         { key: 'enabled', type: 'enum', options: ['true', 'false'] },
       ];
       button.code = {
         compose: {
           symbol: 'androidx.compose.material3.Button',
           path: BUTTON_PATH,
-          params: { titulo: 'text' },
+          params: { title: 'text' },
         },
       };
     });
 
-  it('(a) o params que já cita o parâmetro, (b) o nome normalizado, (c) campo novo', () => {
+  it('(a) the params that already cites the parameter, (b) the normalized name, (c) a new field', () => {
     const plan = run(spec(), {
       signature: composeSignature([text('text'), bool('Enabled'), text('badge')]),
     });
     expect(plan.links).toEqual([
-      { param: 'text', field: 'titulo', via: 'params' },
+      { param: 'text', field: 'title', via: 'params' },
       { param: 'Enabled', field: 'enabled', via: 'name' },
       { param: 'badge', field: 'badge', via: 'new' },
     ]);
     expect(plan.fields.map((f) => f.key)).toEqual(['badge']);
     expect(plan.code?.params).toEqual({
-      titulo: 'text',
+      title: 'text',
       enabled: 'Enabled',
       badge: 'badge',
     });
   });
 
-  it('Figma: Style casa com style e as opções casam pelo texto normalizado', () => {
+  it('Figma: Style matches style and the options match by normalized text', () => {
     const base = librarySpec((s) => {
       buttonOf(s).fields = [
         { key: 'style', type: 'enum', options: ['filled', 'outlined'] },
@@ -425,7 +425,7 @@ describe('ligação (decisão 7)', () => {
   });
 });
 
-describe('idempotência e avisos do importador (decisão 8)', () => {
+describe('idempotence and importer notices (decision 8)', () => {
   const signature = composeSignature([
     callback('onClick'),
     text('label', { required: true }),
@@ -437,7 +437,7 @@ describe('idempotência e avisos do importador (decisão 8)', () => {
     { name: 'shape', role: 'value', type: 'Shape', value: { kind: 'opaque' } },
   ]);
 
-  it('importar a mesma ficha duas vezes dá a mesma especialização', () => {
+  it('importing the same signature twice gives the same specialization', () => {
     const first = run(librarySpec(), { signature });
     const second = run(first.spec, { signature, previous: signature });
     expect(JSON.stringify(second.spec)).toBe(JSON.stringify(first.spec));
@@ -446,17 +446,17 @@ describe('idempotência e avisos do importador (decisão 8)', () => {
     expect(second.versionBump).toBe(false);
   });
 
-  it('regrava os avisos com o ref da ficha e não toca nos outros', () => {
+  it('rewrites the notices with the signature's ref and leaves the others alone', () => {
     const spec = librarySpec((s) => {
       buttonOf(s).notices = [
-        { kind: 'deprecated', message: 'autoral', ref: 'issue-1' },
-        { kind: 'pending', message: 'compose: velho', ref: REF },
+        { kind: 'deprecated', message: 'authored', ref: 'issue-1' },
+        { kind: 'pending', message: 'compose: old', ref: REF },
       ];
     });
     const plan = run(spec, { signature });
     const notices = noticesOf(plan.type.notices);
-    expect(notices[0]).toBe('deprecated|issue-1|autoral');
-    expect(notices.some((n) => n.includes('velho'))).toBe(false);
+    expect(notices[0]).toBe('deprecated|issue-1|authored');
+    expect(notices.some((n) => n.includes('old'))).toBe(false);
     expect(notices.slice(1).every((n) => n.startsWith(`pending|${REF}|compose: `))).toBe(
       true,
     );
@@ -468,7 +468,7 @@ describe('idempotência e avisos do importador (decisão 8)', () => {
   });
 });
 
-describe('sincronização (decisão 12)', () => {
+describe('synchronization (decision 12)', () => {
   const previous = composeSignature([
     text('label'),
     text('legacy'),
@@ -477,7 +477,7 @@ describe('sincronização (decisão 12)', () => {
   ]);
   const imported = (): SignatureImportPlan => run(librarySpec(), { signature: previous });
 
-  it('parâmetro novo: campo opcional; versionBump', () => {
+  it('new parameter: optional field; versionBump', () => {
     const next = composeSignature([
       ...(previous.params.map((p) => ({ ...p })) as Json[]),
       text('badge', { required: true }),
@@ -489,7 +489,7 @@ describe('sincronização (decisão 12)', () => {
     expect(plan.versionBump).toBe(true);
   });
 
-  it('parâmetro removido: o campo fica com removed; sugere remove-field; sem quebra', () => {
+  it('removed parameter: the field stays with removed; suggests remove-field; no break', () => {
     const next = composeSignature(
       previous.params.filter((p) => p.name !== 'legacy').map((p) => ({ ...p })) as Json[],
     );
@@ -505,7 +505,7 @@ describe('sincronização (decisão 12)', () => {
     expect(plan.versionBump).toBe(false);
   });
 
-  it('parâmetro já sinalizado como removed: reimportar a mesma ficha não o reporta de novo (idempotência)', () => {
+  it('parameter already flagged as removed: reimporting the same signature does not report it again (idempotence)', () => {
     const next = composeSignature(
       previous.params.filter((p) => p.name !== 'legacy').map((p) => ({ ...p })) as Json[],
     );
@@ -520,7 +520,7 @@ describe('sincronização (decisão 12)', () => {
     expect(again.spec).toEqual(first.spec);
   });
 
-  it('padrão mudado atualiza o default; só por default o contrato não muda', () => {
+  it('changed default updates the default; by default alone the contract does not change', () => {
     const next = composeSignature(
       previous.params.map((p) =>
         p.name === 'radius'
@@ -536,7 +536,7 @@ describe('sincronização (decisão 12)', () => {
     expect(plan.versionBump).toBe(false);
   });
 
-  it('a primeira importação não grava default em campo existente que não tinha (curadoria "vazio = X")', () => {
+  it('the first import does not write a default into an existing field that had none (curation "empty = X")', () => {
     const spec = librarySpec((s) => {
       const button = buttonOf(s);
       button.fields = [{ key: 'radius', type: 'number' }];
@@ -559,7 +559,7 @@ describe('sincronização (decisão 12)', () => {
     expect(field(plan, 'radius')).not.toHaveProperty('default');
   });
 
-  it('opção nova entra no campo; opção que sumiu vira diverges', () => {
+  it('a new option enters the field; an option that vanished becomes diverges', () => {
     const next = composeSignature(
       previous.params.map((p) =>
         p.name === 'size'
@@ -575,7 +575,7 @@ describe('sincronização (decisão 12)', () => {
     expect(plan.versionBump).toBe(true);
   });
 
-  it('o kind do parâmetro mudou: diverges', () => {
+  it('the parameter's kind changed: diverges', () => {
     const next = composeSignature(
       previous.params.map((p) =>
         p.name === 'label' ? { ...p, type: 'Int', value: { kind: 'integer' } } : { ...p },
@@ -587,7 +587,7 @@ describe('sincronização (decisão 12)', () => {
     ]);
   });
 
-  it('renome provável (mesmo tipo, mesma posição): diverges e sugere rename-field', () => {
+  it('probable rename (same type, same position): diverges and suggests rename-field', () => {
     const next = composeSignature(
       previous.params.map((p) =>
         p.name === 'legacy' ? { ...p, name: 'modern' } : { ...p },
@@ -605,7 +605,7 @@ describe('sincronização (decisão 12)', () => {
   });
 });
 
-describe('variantes (decisão 9)', () => {
+describe('variants (decision 9)', () => {
   const spec = (): Spec =>
     librarySpec((s) => {
       const button = buttonOf(s);
@@ -653,7 +653,7 @@ describe('variantes (decisão 9)', () => {
     },
   );
 
-  it('uma ficha por caso: campos em união, calls do caso e unmapped do caso', () => {
+  it('one signature per case: union of fields, the case's calls and the case's unmapped', () => {
     const first = run(spec(), { signature: base });
     const plan = run(first.spec, { variant: 'outlined', signature: outlined });
     expect(plan.signaturePath).toBe('signatures/button.outlined.compose.json');
@@ -667,7 +667,7 @@ describe('variantes (decisão 9)', () => {
     expect(plan.unmapped.map((u) => u.name)).toEqual(['content']);
   });
 
-  it('o mesmo parâmetro sem campo na base e no caso dá avisos diferentes (sem "aviso repetido")', () => {
+  it('the same parameter without a field in the base and in the case gives different notices (no "repeated notice")', () => {
     const inset: SignatureParam = {
       name: 'windowInsets',
       role: 'value',
@@ -694,7 +694,7 @@ describe('variantes (decisão 9)', () => {
     expect(pending[1]?.message).toMatch(/^compose: case `outlined`: the parameter/);
   });
 
-  it('reimportar a ficha base depois da do caso não reordena os avisos (os da ficha ficam onde estavam)', () => {
+  it('reimporting the base signature after the case's does not reorder the notices (the signature's own stay where they were)', () => {
     const inset: SignatureParam = {
       name: 'windowInsets',
       role: 'value',
@@ -718,7 +718,7 @@ describe('variantes (decisão 9)', () => {
     expect(again.spec).toEqual(second.spec);
   });
 
-  it('o símbolo da ficha do caso precisa ser o do caso', () => {
+  it('the symbol of the case signature must be the case's', () => {
     const wrong = composeSignature([text('label')]);
     const result = planSignatureImport(spec(), {
       type: 'button',
@@ -729,7 +729,7 @@ describe('variantes (decisão 9)', () => {
     expect(result).toMatchObject({ ok: false, code: 'signature-mismatch' });
   });
 
-  it('caso que o code não declara', () => {
+  it('case that the code does not declare', () => {
     const result = planSignatureImport(spec(), {
       type: 'button',
       target: { platform: 'compose' },
@@ -740,7 +740,7 @@ describe('variantes (decisão 9)', () => {
   });
 });
 
-describe('erros', () => {
+describe('errors', () => {
   const signature = composeSignature([text('label')]);
   const fail = (spec: Spec, options: Partial<PlanSignatureImportOptions>) =>
     planSignatureImport(spec, {
@@ -751,7 +751,7 @@ describe('erros', () => {
     });
 
   it('type-not-found, platform-not-declared e signature-mismatch', () => {
-    expect(fail(librarySpec(), { type: 'nada' })).toMatchObject({
+    expect(fail(librarySpec(), { type: 'nothing' })).toMatchObject({
       ok: false,
       code: 'type-not-found',
     });
@@ -771,7 +771,7 @@ describe('erros', () => {
     expect(fail(otherPath, {})).toMatchObject({ ok: false, code: 'signature-mismatch' });
   });
 
-  it('ficha de design num alvo de código (e o inverso) é signature-mismatch', () => {
+  it('a design signature on a code target (and the reverse) is signature-mismatch', () => {
     expect(fail(librarySpec(), { target: { system: 'figma' } })).toMatchObject({
       ok: false,
       code: 'signature-mismatch',
@@ -779,7 +779,7 @@ describe('erros', () => {
   });
 });
 
-describe('revisão da S2: ligação, formats, variantes e design', () => {
+describe('S2 review: binding, formats, variants and design', () => {
   const swift = (params: Json[]) =>
     composeSignature(params, (s) => {
       s.source = {
@@ -792,7 +792,7 @@ describe('revisão da S2: ligação, formats, variantes e design', () => {
       };
     });
 
-  it('o params que cita o nome interno do parâmetro Swift liga ao campo existente', () => {
+  it('the params that cites the internal name of the Swift parameter binds to the existing field', () => {
     const spec = librarySpec((s) => {
       const button = buttonOf(s);
       button.fields = [{ key: 'title', type: 'string' }];
@@ -812,18 +812,18 @@ describe('revisão da S2: ligação, formats, variantes e design', () => {
     expect(keys(plan)).toEqual(['title']);
   });
 
-  it('variante: o params da base que a ficha do caso não tem não vira removed', () => {
+  it('variant: the base params that the case signature lacks does not become removed', () => {
     const spec = librarySpec((s) => {
       const button = buttonOf(s);
       button.fields = [
         { key: 'style', type: 'enum', options: ['filled', 'outlined'] },
-        { key: 'titulo', type: 'string' },
+        { key: 'title', type: 'string' },
       ];
       button.code = {
         compose: {
           symbol: 'androidx.compose.material3.Button',
           path: BUTTON_PATH,
-          params: { style: 'style', titulo: 'text' },
+          params: { style: 'style', title: 'text' },
           variants: {
             field: 'style',
             cases: {
@@ -843,10 +843,10 @@ describe('revisão da S2: ligação, formats, variantes e design', () => {
     const plan = run(spec, { variant: 'outlined', signature: outlined });
     expect(plan.changes).toEqual([]);
     expect(plan.suggestedMigrations).toEqual([]);
-    expect(noticesOf(field(plan, 'titulo')?.notices)).toEqual([]);
+    expect(noticesOf(field(plan, 'title')?.notices)).toEqual([]);
   });
 
-  it('o formats do caso curado à mão não é sobrescrito', () => {
+  it('the case's hand-curated formats is not overwritten', () => {
     const spec = librarySpec((s) => {
       const button = buttonOf(s);
       button.fields = [{ key: 'radius', type: 'number' }];
@@ -883,7 +883,7 @@ describe('revisão da S2: ligação, formats, variantes e design', () => {
     });
   });
 
-  it('design: a ficha com parâmetro composto reimportada não duplica o campo nem a source', () => {
+  it('design: a signature with a composite parameter reimported does not duplicate the field or the source', () => {
     const signature = composeSignature(
       [factory('colors', 'Colors', [colorParam('containerColor')])],
       (s) => {
@@ -910,8 +910,8 @@ describe('revisão da S2: ligação, formats, variantes e design', () => {
   });
 });
 
-describe('correção CL1: plataforma da ficha e campo removed (S5-b, S5-a)', () => {
-  it('S5-b: a ficha de código de outra plataforma não é aceita no id da plataforma', () => {
+describe('fix CL1: signature platform and removed field (S5-b, S5-a)', () => {
+  it('S5-b: the code signature of another platform is not accepted under the platform id', () => {
     const result = planSignatureImport(librarySpec(), {
       type: 'button',
       target: { platform: 'swiftui' },
@@ -927,7 +927,7 @@ describe('correção CL1: plataforma da ficha e campo removed (S5-b, S5-a)', () 
   const paramsOf = (spec: Spec): Record<string, string> | undefined =>
     (buttonOf(spec as unknown as Json).code as Json).compose.params;
 
-  it('S5-a: o campo com removed não cita mais o parâmetro que saiu em params', () => {
+  it('S5-a: the field with removed no longer cites in params the parameter that left', () => {
     const first = run(librarySpec(), { signature: previous });
     expect(paramsOf(first.spec)).toMatchObject({ legacy: 'legacy' });
     const plan = run(first.spec, { signature: next, previous });
@@ -935,11 +935,11 @@ describe('correção CL1: plataforma da ficha e campo removed (S5-b, S5-a)', () 
       `removed|${REF}|compose: the parameter \`legacy\` left the signature; the field stays`,
     ]);
     expect(paramsOf(plan.spec)).toEqual({ label: 'label' });
-    // e o validador não acha parâmetro fora da ficha
+    // and the validator finds no parameter outside the signature
     expect(paramsOutsideSignature(next, { params: paramsOf(plan.spec) })).toEqual([]);
   });
 
-  it('S5-a: reimportar depois mantém o aviso removed e o params sem o parâmetro', () => {
+  it('S5-a: reimporting afterwards keeps the removed notice and the params without the parameter', () => {
     const first = run(run(librarySpec(), { signature: previous }).spec, {
       signature: next,
       previous,
@@ -955,14 +955,14 @@ describe('correção CL1: plataforma da ficha e campo removed (S5-b, S5-a)', () 
   });
 });
 
-describe('CL2 R-1: a especialização anterior à 16 não recebe as chaves novas', () => {
+describe('CL2 R-1: a specialization older than 16 does not receive the new keys', () => {
   const v15 = (): Spec =>
     librarySpec((raw) => {
       raw.formatVersion = 15;
       delete raw.fieldModels;
     });
 
-  it('o plano sobre uma spec v15 recusa com erro claro, em vez de devolver spec v15 inválida', () => {
+  it('the plan over a v15 spec refuses with a clear error, instead of returning an invalid v15 spec', () => {
     const result = planSignatureImport(v15(), {
       type: 'button',
       target: { platform: 'compose' },
@@ -975,7 +975,7 @@ describe('CL2 R-1: a especialização anterior à 16 não recebe as chaves novas
     }
   });
 
-  it('a spec v16 segue sendo planejada', () => {
+  it('the v16 spec is still planned', () => {
     const result = planSignatureImport(librarySpec(), {
       type: 'button',
       target: { platform: 'compose' },

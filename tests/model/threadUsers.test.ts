@@ -3,37 +3,37 @@ import { initials, threadUsers, userKey, userLabel } from '../../src/model';
 import { AGENT, HUMAN, T0, T1, T2, message, sampleThread } from './threadFixtures';
 
 describe('userKey / userLabel / initials', () => {
-  it('pessoas são agrupadas pelo e-mail, sem espaços e em minúsculas', () => {
+  it('people are grouped by email, without spaces and lowercased', () => {
     const a = { ...HUMAN, email: ' Marina@Exemplo.com ' };
     const b = { ...HUMAN, name: 'M. Alves' };
     expect(userKey(a)).toBe(userKey(b));
   });
 
-  it('agentes são agrupados pelo nome e não se confundem com pessoas', () => {
+  it('agents are grouped by name and are not confused with people', () => {
     expect(userKey(AGENT)).toBe(userKey({ ...AGENT }));
-    expect(userKey(AGENT)).not.toBe(userKey({ ...AGENT, name: 'Outro' }));
+    expect(userKey(AGENT)).not.toBe(userKey({ ...AGENT, name: 'Other' }));
     expect(userKey(AGENT)).not.toBe(userKey(HUMAN));
   });
 
-  it('o rótulo é o nome', () => {
+  it('the label is the name', () => {
     expect(userLabel(HUMAN)).toBe('Marina Alves');
     expect(userLabel(AGENT)).toBe('Claude Code');
   });
 
-  it('iniciais: primeira letra da primeira e da última palavra', () => {
+  it('initials: first letter of the first and the last word', () => {
     expect(initials(HUMAN)).toBe('MA');
     expect(initials({ ...HUMAN, name: 'ana maria de souza' })).toBe('AS');
     expect(initials({ ...HUMAN, name: '  Cher ' })).toBe('C');
   });
 
-  it('o agente é sempre AG', () => {
+  it('the agent is always AG', () => {
     expect(initials(AGENT)).toBe('AG');
     expect(initials({ ...AGENT, name: 'Zed' })).toBe('AG');
   });
 });
 
 describe('threadUsers', () => {
-  it('lista distinta (pessoas por nome, depois agentes) com a contagem de conversas de cada usuário', () => {
+  it('distinct list (people by name, then agents) with the count of threads of each user', () => {
     const other = { ...HUMAN, name: 'João', email: 'joao@exemplo.com' };
     const t1 = sampleThread({
       id: 't1',
@@ -64,13 +64,13 @@ describe('threadUsers', () => {
     ]);
   });
 
-  it('sem conversas, lista vazia', () => {
+  it('without threads, an empty list', () => {
     expect(threadUsers([])).toEqual([]);
   });
 });
 
-describe('threadUsers: rótulo e ordem (item 50)', () => {
-  it('o rótulo é o nome da última mensagem do usuário, na ordem da entrada', () => {
+describe('threadUsers: label and order (item 50)', () => {
+  it('the label is the name of the user's last message, in the input order', () => {
     const renamed = { ...HUMAN, name: 'Marina A. Silva' };
     const t1 = sampleThread({
       id: 't1',
@@ -78,11 +78,12 @@ describe('threadUsers: rótulo e ordem (item 50)', () => {
     });
     const t2 = sampleThread({ id: 't2', messages: [message('m1', T0, HUMAN)] });
     expect(threadUsers([t1])[0]).toMatchObject({ label: 'Marina A. Silva', count: 1 });
-    // Na entrada, t2 vem depois: a última mensagem da Marina é a dela.
+    // In the input, t2 comes later: Marina's last message is its own.
     expect(threadUsers([t1, t2])[0]).toMatchObject({ label: 'Marina Alves', count: 2 });
   });
 
-  it('a ordenação dos nomes é a do locale fixo (acento não vai para o fim)', () => {
+  // pt-BR kept: the object is the sorting of accented Portuguese names
+  it('name sorting (pt-BR) follows the fixed locale (an accent does not go to the end)', () => {
     const names = ['Zélia', 'Álvaro', 'Bruno'];
     const threads = names.map((name, i) =>
       sampleThread({

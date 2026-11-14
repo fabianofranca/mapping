@@ -1,5 +1,6 @@
-// Resolvedor único dos filhos de um tipo (etapa #559, PD1, decisão 10): cláusulas por camada e
-// grupo, memoizado por especialização, e as três leituras que ele substitui.
+// Single resolver of a type's children (stage #559, PD1, decision 10): clauses by layer and
+// group, memoized per specialization, and the three reads that it replaces.
+// pt-BR kept: shared fixture data (specV11Fixtures: layers `componentes`/`eventos`, groups `navegacao`/`dados`), asserted by tests/mcp
 import { describe, expect, it } from 'vitest';
 import {
   addContainer,
@@ -20,8 +21,8 @@ import { parsedV11, type Json } from './specV11Fixtures';
 
 const owner = (s: Json) => s.layers[0].annotationTypes[0] as Json;
 
-describe('childTypeIds: o conjunto de filhos de um tipo', () => {
-  it('cláusula sem groups: a camada inteira, na ordem da camada', () => {
+describe('childTypeIds: the set of children of a type', () => {
+  it('clause without groups: the whole layer, in the layer's order', () => {
     const spec = parsedV11();
     expect(childTypeIds(spec, 'button')).toEqual([
       'onClick',
@@ -32,7 +33,7 @@ describe('childTypeIds: o conjunto de filhos de um tipo', () => {
     ]);
   });
 
-  it('cláusula com groups: só os tipos da camada que estão em algum grupo, na ordem da camada', () => {
+  it('clause with groups: only the layer's types that are in some group, in the layer's order', () => {
     const spec = parsedV11((s) => {
       owner(s).allowedChildren = [{ layer: 'eventos', groups: ['dados', 'navegacao'] }];
     });
@@ -44,7 +45,7 @@ describe('childTypeIds: o conjunto de filhos de um tipo', () => {
     ]);
   });
 
-  it('lista mista: união dos itens na ordem deles, sem repetir (a 1ª posição vale)', () => {
+  it('mixed list: union of the items in their order, without repeating (the 1st position wins)', () => {
     const spec = parsedV11((s) => {
       owner(s).allowedChildren = [
         'track',
@@ -62,7 +63,7 @@ describe('childTypeIds: o conjunto de filhos de um tipo', () => {
     ]);
   });
 
-  it('um tipo em vários grupos entra uma vez só', () => {
+  it('a type in several groups enters only once', () => {
     const spec = parsedV11((s) => {
       owner(s).allowedChildren = [{ layer: 'eventos', groups: ['navegacao', 'dados'] }];
     });
@@ -70,18 +71,18 @@ describe('childTypeIds: o conjunto de filhos de um tipo', () => {
     expect(ids.filter((id) => id === 'both')).toHaveLength(1);
   });
 
-  it('tipo sem allowedChildren, de outro dono ou inexistente: vazio', () => {
+  it('type without allowedChildren, of another owner or nonexistent: empty', () => {
     const spec = parsedV11();
     expect(childTypeIds(spec, 'image')).toEqual([]);
-    expect(childTypeIds(spec, 'nada')).toEqual([]);
+    expect(childTypeIds(spec, 'nothing')).toEqual([]);
   });
 
-  it('ids em texto continuam valendo', () => {
+  it('text ids are still valid', () => {
     const spec = parsedV11((s) => (owner(s).allowedChildren = ['onHold', 'onClick']));
     expect(childTypeIds(spec, 'button')).toEqual(['onHold', 'onClick']);
   });
 
-  it('é memoizado pela especialização', () => {
+  it('is memoized per specialization', () => {
     const spec = parsedV11();
     expect(childTypeIds(spec, 'button')).toBe(childTypeIds(spec, 'button'));
     expect(ownerTypeIds(spec, 'onClick')).toBe(ownerTypeIds(spec, 'onClick'));
@@ -91,8 +92,8 @@ describe('childTypeIds: o conjunto de filhos de um tipo', () => {
   });
 });
 
-describe('isChildTypeAllowed e ownerTypeIds', () => {
-  it('conferem o conjunto resolvido', () => {
+describe('isChildTypeAllowed and ownerTypeIds', () => {
+  it('check the resolved set', () => {
     const spec = parsedV11((s) => {
       owner(s).allowedChildren = [{ layer: 'eventos', groups: ['dados'] }];
       s.layers[0].annotationTypes[1].allowedChildren = ['onClick'];
@@ -103,10 +104,10 @@ describe('isChildTypeAllowed e ownerTypeIds', () => {
     expect(isChildTypeAllowed(spec, 'text', 'onClick')).toBe(false);
     expect(ownerTypeIds(spec, 'both')).toEqual(['button']);
     expect(ownerTypeIds(spec, 'onClick')).toEqual(['image']);
-    expect(ownerTypeIds(spec, 'nada')).toEqual([]);
+    expect(ownerTypeIds(spec, 'nothing')).toEqual([]);
   });
 
-  it('os donos saem na ordem da especialização', () => {
+  it('the owners come out in the specialization's order', () => {
     const spec = parsedV11((s) => {
       s.layers[0].annotationTypes[2].allowedChildren = [{ layer: 'eventos' }];
       s.layers[0].annotationTypes[1].allowedChildren = [{ layer: 'eventos' }];
@@ -115,8 +116,8 @@ describe('isChildTypeAllowed e ownerTypeIds', () => {
   });
 });
 
-describe('as leituras do projeto passam pelo resolvedor', () => {
-  /** Projeto com a especialização, uma marcação `M1` e um `button` (`A1`) nela. */
+describe('the project reads go through the resolver', () => {
+  /** Project with the specialization, a marking `M1` and a `button` (`A1`) on it. */
   function project(edit?: (s: Json) => void): Project {
     let p = applySpecialization(emptyProject(), parsedV11(edit), { newId: idGen('SL') });
     p = addContainer(p, { id: 'I1', file: 'a.png', width: 100, height: 100 });
@@ -135,7 +136,7 @@ describe('as leituras do projeto passam pelo resolvedor', () => {
     });
   }
 
-  it('childTypesOf lista os filhos da cláusula, com a camada do projeto de cada um', () => {
+  it('childTypesOf lists the clause's children, with each one's project layer', () => {
     const p = project((s) => {
       owner(s).allowedChildren = [{ layer: 'eventos', groups: ['dados'] }, 'onHold'];
     });
@@ -146,7 +147,7 @@ describe('as leituras do projeto passam pelo resolvedor', () => {
     );
   });
 
-  it('isAllowedOwner e ownerTypesOf acompanham a cláusula', () => {
+  it('isAllowedOwner and ownerTypesOf follow the clause', () => {
     const p = project((s) => {
       owner(s).allowedChildren = [{ layer: 'eventos', groups: ['navegacao'] }];
     });
@@ -154,7 +155,7 @@ describe('as leituras do projeto passam pelo resolvedor', () => {
     if (!a1) throw new Error('A1');
     expect(isAllowedOwner(p, { specId: 's', typeId: 'navigate' }, a1)).toBe(true);
     expect(isAllowedOwner(p, { specId: 's', typeId: 'track' }, a1)).toBe(false);
-    expect(isAllowedOwner(p, { specId: 'outra', typeId: 'navigate' }, a1)).toBe(false);
+    expect(isAllowedOwner(p, { specId: 'other', typeId: 'navigate' }, a1)).toBe(false);
     expect(ownerTypesOf(p, { specId: 's', typeId: 'navigate' }).map((t) => t.id)).toEqual(
       ['button'],
     );

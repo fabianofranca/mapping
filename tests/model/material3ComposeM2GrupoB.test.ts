@@ -1,6 +1,6 @@
-// M2 (grupo B) da etapa "Material 3 fiel": lazy-column, lazy-row, lazy-vertical-grid, flow-row, spacer e
-// horizontal-pager. São do foundation (sem arquivo de tokens): o que vale é o `Arrangement`/`Alignment` e
-// os espaçamentos dos campos chegando ao layout do slot, e nenhuma cor literal no que o `Spacer` desenha.
+// M2 (group B) of the "faithful Material 3" stage: lazy-column, lazy-row, lazy-vertical-grid, flow-row, spacer and
+// horizontal-pager. They come from the foundation (no tokens file): what matters is the `Arrangement`/`Alignment` and
+// the fields' spacings reaching the slot layout, and no literal color in what the `Spacer` draws.
 import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import { findSlot, resolveSlotLayout } from '../../src/model/components/arrange';
@@ -20,8 +20,8 @@ function slotLayout(id: string, values: Record<string, string | number>) {
 }
 const version = (id: string) => entry(id).component!.formatVersion;
 
-describe('M2 grupo B — foundation no formato 4', () => {
-  it('lazy-column: Arrangement e Alignment viram justify e align do slot; spacing e contentPadding, gap e padding', () => {
+describe('M2 group B — foundation in format 4', () => {
+  it('lazy-column: Arrangement and Alignment become the slot's justify and align; spacing and contentPadding, gap and padding', () => {
     expect(version('lazy-column')).toBe(4);
     const bottom = slotLayout('lazy-column', {
       verticalArrangement: 'Bottom',
@@ -43,13 +43,13 @@ describe('M2 grupo B — foundation no formato 4', () => {
     expect(
       slotLayout('lazy-column', { verticalArrangement: 'SpaceBetween' }).justify,
     ).toBe('space-between');
-    // reverseLayout liga o `reverse` do slot; o padrão do Compose passa a Bottom (LazyDsl.kt, linhas
-    // 393 e 394), que no eixo invertido é o `start`
+    // reverseLayout turns on the slot's `reverse`; the Compose default becomes Bottom (LazyDsl.kt, lines
+    // 393 and 394), which on the reversed axis is `start`
     expect(slotLayout('lazy-column', { reverseLayout: 'true' }).reverse).toBe(true);
     expect(slotLayout('lazy-column', { reverseLayout: 'false' }).reverse).toBe(false);
     expect(slotLayout('lazy-column', { reverseLayout: 'true' }).justify).toBe('start');
-    // Top explícito com reverseLayout mantém o bloco no topo (justify `end` antes do espelho); sem o
-    // campo (o padrão) o bloco vai ao fim, como o Bottom que o Compose passa nessa combinação (FX5).
+    // An explicit Top with reverseLayout keeps the block at the top (justify `end` before the mirror); without the
+    // field (the default) the block goes to the end, like the Bottom Compose passes in that combination (FX5).
     expect(
       slotLayout('lazy-column', { reverseLayout: 'true', verticalArrangement: 'Top' })
         .justify,
@@ -74,7 +74,7 @@ describe('M2 grupo B — foundation no formato 4', () => {
     ).toBe('center');
   });
 
-  it('lazy-row: horizontalArrangement e verticalAlignment viram justify e align do slot', () => {
+  it('lazy-row: horizontalArrangement and verticalAlignment become the slot's justify and align', () => {
     expect(version('lazy-row')).toBe(4);
     const l = slotLayout('lazy-row', {
       horizontalArrangement: 'End',
@@ -96,7 +96,7 @@ describe('M2 grupo B — foundation no formato 4', () => {
     ).toBe('start');
   });
 
-  it('lazy-vertical-grid: formato 4, grade e contentPadding no slot (L5)', () => {
+  it('lazy-vertical-grid: format 4, grid and contentPadding in the slot (L5)', () => {
     expect(version('lazy-vertical-grid')).toBe(4);
     const layout = slotLayout('lazy-vertical-grid', {
       contentPadding: 16,
@@ -111,7 +111,7 @@ describe('M2 grupo B — foundation no formato 4', () => {
     });
   });
 
-  it('flow-row: horizontalArrangement e itemVerticalAlignment viram justify e align; spacing, gap', () => {
+  it('flow-row: horizontalArrangement and itemVerticalAlignment become justify and align; spacing, gap', () => {
     expect(version('flow-row')).toBe(4);
     const l = slotLayout('flow-row', {
       horizontalArrangement: 'Center',
@@ -123,7 +123,7 @@ describe('M2 grupo B — foundation no formato 4', () => {
     expect(slotLayout('flow-row', { itemVerticalAlignment: 'Bottom' }).align).toBe('end');
   });
 
-  it('spacer: traço e medidas em tokens (outline-variant e outline), light e dark; raio e fonte por token', () => {
+  it('spacer: stroke and measures in tokens (outline-variant and outline), light and dark; radius and font by token', () => {
     expect(version('spacer')).toBe(4);
     for (const m of ['light', 'dark'] as const) {
       const root = drawIn(catalog, entry('spacer'), {}, m).root;
@@ -139,7 +139,7 @@ describe('M2 grupo B — foundation no formato 4', () => {
     }
   });
 
-  it('horizontal-pager: verticalAlignment vira align; pageSpacing, gap; contentPadding, padding', () => {
+  it('horizontal-pager: verticalAlignment becomes align; pageSpacing, gap; contentPadding, padding', () => {
     expect(version('horizontal-pager')).toBe(4);
     const l = slotLayout('horizontal-pager', { pageSpacing: 16, contentPadding: 32 });
     expect(l).toMatchObject({ type: 'row', gap: 16, justify: 'start', align: 'center' });

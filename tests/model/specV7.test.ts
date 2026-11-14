@@ -1,4 +1,4 @@
-// `formatVersion` 7: `floating` no tipo (etapa Marcações espaciais, ME3).
+// `formatVersion` 7: `floating` on the type (Spatial markings stage, ME3).
 import { describe, expect, it } from 'vitest';
 import {
   parseSpec,
@@ -31,8 +31,8 @@ function spec(formatVersion: number, floating?: unknown): unknown {
   };
 }
 
-describe('formatVersion 7: floating no tipo', () => {
-  it('a versão atual é a 16 e as anteriores continuam aceitas', () => {
+describe('formatVersion 7: floating on the type', () => {
+  it('the current version is 16 and the earlier ones are still accepted', () => {
     expect(SPEC_FORMAT_VERSION).toBe(16);
     expect(SPEC_FORMAT_VERSIONS).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
@@ -41,7 +41,7 @@ describe('formatVersion 7: floating no tipo', () => {
       expect(parseSpec(spec(v)).ok).toBe(true);
   });
 
-  it('aceita floating booleano na 7 e o devolve no tipo', () => {
+  it('accepts boolean floating in 7 and returns it on the type', () => {
     const result = parseSpec(spec(7, true));
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -50,7 +50,7 @@ describe('formatVersion 7: floating no tipo', () => {
     expect(off.ok && off.spec.layers[0]?.annotationTypes[0]?.floating).toBe(false);
   });
 
-  it('floating numa versão anterior é o erro "only allowed with formatVersion 7", no caminho exato', () => {
+  it('floating in an earlier version is the error "only allowed with formatVersion 7", at the exact path', () => {
     for (const v of [1, 4, 6]) {
       const result = parseSpec(spec(v, true));
       expect(result.ok).toBe(false);
@@ -64,7 +64,7 @@ describe('formatVersion 7: floating no tipo', () => {
     }
   });
 
-  it('floating que não é booleano é recusado', () => {
-    expect(parseSpec(spec(7, 'sim')).ok).toBe(false);
+  it('floating that is not a boolean is rejected', () => {
+    expect(parseSpec(spec(7, 'yes')).ok).toBe(false);
   });
 });

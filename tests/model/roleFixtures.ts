@@ -9,10 +9,11 @@ import { emptyProject } from './fixtures';
 import { idGen, layerOf } from './specFixtures';
 import { parsedV11, type Json } from './specV11Fixtures';
 
-/** O tipo dono (`button`) da especialização `s` de teste. */
+/** The owner type (`button`) of the test specialization `s`. */
 const owner = (s: Json) => s.layers[0].annotationTypes[0] as Json;
 
-/** Edita a especialização: o `button` ganha papéis (Clique e Pressionar, rótulo "Trigger"). */
+// pt-BR kept: shared fixture data asserted by tests/mcp (role names, layer ids)
+/** Edits the specialization: `button` gains roles (Clique and Pressionar, label "Trigger"). */
 export const withRoles = (s: Json): void => {
   owner(s).childRoles = [
     { id: 'click', name: 'Clique' },
@@ -21,14 +22,14 @@ export const withRoles = (s: Json): void => {
   owner(s).childRolesLabel = 'Trigger';
 };
 
-/** E declara um repositório de documentos. */
+/** And declares a document repository. */
 export const withDocRepo = (s: Json): void => {
   s.docRepos = [{ id: 'design-docs', url: 'https://gitlab.example.com/g/design-docs' }];
 };
 
 /**
- * Projeto com a especialização `s`, a marcação `M1` e dois donos (`A1`, `A2`, tipo `button`) nela.
- * Sem `edit`, o `button` não tem papéis.
+ * Project with the specialization `s`, the marking `M1` and two owners (`A1`, `A2`, type `button`) in it.
+ * Without `edit`, `button` has no roles.
  */
 export function roleProject(edit?: (s: Json) => void): Project {
   let p = applySpecialization(emptyProject(), parsedV11(edit), { newId: idGen('SL') });
@@ -50,7 +51,7 @@ export function roleProject(edit?: (s: Json) => void): Project {
   return p;
 }
 
-/** Cria o filho `typeId` (camada `eventos`) vinculado a `ownerId`, com o papel. */
+/** Creates the child `typeId` (layer `eventos`) linked to `ownerId`, with the role. */
 export function addChild(
   p: Project,
   id: string,
@@ -68,7 +69,7 @@ export function addChild(
   });
 }
 
-/** Força `parentRole` sem a validação do modelo (papel que o dono deixou de oferecer). */
+/** Forces `parentRole` without the model validation (a role the owner no longer offers). */
 export function forceRole(p: Project, id: string, role: string | null): Project {
   return {
     ...p,
@@ -76,7 +77,7 @@ export function forceRole(p: Project, id: string, role: string | null): Project 
   };
 }
 
-/** Declara os repositórios de documentos `design-docs` (com `ref`) e `wiki`. */
+/** Declares the document repositories `design-docs` (with `ref`) and `wiki`. */
 export const withDocRepos = (s: Json): void => {
   s.docRepos = [
     { id: 'design-docs', url: 'https://gitlab.example.com/g/design-docs', ref: 'main' },
@@ -84,7 +85,7 @@ export const withDocRepos = (s: Json): void => {
   ];
 };
 
-/** Projeto com a especialização `s` declarando `design-docs` (com `ref`) e `wiki`. */
+/** Project with the specialization `s` declaring `design-docs` (with `ref`) and `wiki`. */
 export function docReposProject(): Project {
   return roleProject(withDocRepos);
 }

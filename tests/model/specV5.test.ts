@@ -9,8 +9,8 @@ import {
   type SpecIssue,
 } from '../../src/model';
 
-// Especialização formatVersion 5 (etapa Código de instanciação): `repo` em `platforms[]`.
-// v1 a v4 seguem como estavam e recusam `repo`.
+// Specialization formatVersion 5 (Instantiation code stage): `repo` in `platforms[]`.
+// v1 to v4 stay as they were and reject `repo`.
 
 const read = (path: string): string => readFileSync(path, 'utf8');
 const sdui = read('tests/fixtures/sdui-v2.json');
@@ -28,7 +28,7 @@ const REPO = {
   ref: 'v2.3.0',
 };
 
-/** O SDUI (v2) levado para a versão pedida, com `repo` na primeira plataforma. */
+/** The SDUI (v2) taken to the requested version, with `repo` on the first platform. */
 function withRepo(repo: unknown, formatVersion = 5): Json {
   const spec = JSON.parse(sdui) as Json;
   spec.formatVersion = formatVersion;
@@ -38,7 +38,7 @@ function withRepo(repo: unknown, formatVersion = 5): Json {
 
 function issuesOf(spec: Json): SpecIssue[] {
   const result = parseSpec(spec);
-  if (result.ok) throw new Error('era para falhar');
+  if (result.ok) throw new Error('was supposed to fail');
   return result.issues.map(({ path, message }) => ({ path, message }));
 }
 
@@ -49,34 +49,34 @@ function parsed(spec: Json): Spec {
 }
 
 describe('formatVersion 5: repo nas plataformas', () => {
-  it('a versão atual do formato é a 16', () => {
+  it('the current format version is 16', () => {
     expect(SPEC_FORMAT_VERSION).toBe(16);
   });
 
-  it('um repo completo é válido no zod e no JSON Schema e sobrevive à leitura', () => {
+  it('a complete repo is valid in zod and in the JSON Schema and survives parsing', () => {
     const spec = withRepo(REPO);
     expect(jsonValidator.safeParse(spec).success).toBe(true);
     expect(parsed(spec).platforms?.[0]?.repo).toEqual(REPO);
   });
 
-  it('só a url basta; urlTemplate sem {line} também vale', () => {
+  it('only the url is enough; urlTemplate without {line} is also valid', () => {
     expect(parseSpec(withRepo({ url: REPO.url })).ok).toBe(true);
     expect(
       parseSpec(withRepo({ url: REPO.url, urlTemplate: 'https://x.dev/r/{path}' })).ok,
     ).toBe(true);
   });
 
-  it('uma v5 sem repo continua válida', () => {
+  it('a v5 without repo is still valid', () => {
     const spec = JSON.parse(sdui) as Json;
     spec.formatVersion = 5;
     expect(parseSpec(spec).ok).toBe(true);
   });
 
   it.each([
-    ['sem http', 'github.com/acme/android', HTTP],
-    ['com espaço', 'https://github.com/acme android', HTTP],
-    ['vazia', '', HTTP],
-  ])('url %s é erro em platforms[0].repo.url', (_name, url, message) => {
+    ['without http', 'github.com/acme/android', HTTP],
+    ['with space', 'https://github.com/acme android', HTTP],
+    ['empty', '', HTTP],
+  ])('url %s is an error in platforms[0].repo.url', (_name, url, message) => {
     expect(issuesOf(withRepo({ url }))).toContainEqual({
       path: 'platforms[0].repo.url',
       message,
@@ -84,7 +84,7 @@ describe('formatVersion 5: repo nas plataformas', () => {
     expect(jsonValidator.safeParse(withRepo({ url })).success).toBe(false);
   });
 
-  it('url é obrigatória', () => {
+  it('url is required', () => {
     expect(issuesOf(withRepo({ ref: 'main' }))).toContainEqual({
       path: 'platforms[0].repo.url',
       message: 'required',
@@ -92,7 +92,7 @@ describe('formatVersion 5: repo nas plataformas', () => {
     expect(jsonValidator.safeParse(withRepo({ ref: 'main' })).success).toBe(false);
   });
 
-  it('urlTemplate sem {path} é erro', () => {
+  it('urlTemplate without {path} is an error', () => {
     const spec = withRepo({ url: REPO.url, urlTemplate: 'https://github.com/acme/x' });
     expect(issuesOf(spec)).toContainEqual({
       path: 'platforms[0].repo.urlTemplate',
@@ -101,7 +101,7 @@ describe('formatVersion 5: repo nas plataformas', () => {
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });
 
-  it('urlTemplate sem http ou com espaço é erro', () => {
+  it('urlTemplate without http or with a space is an error', () => {
     for (const urlTemplate of ['github.com/{path}', 'https://github.com/a b/{path}']) {
       expect(issuesOf(withRepo({ url: REPO.url, urlTemplate }))).toContainEqual({
         path: 'platforms[0].repo.urlTemplate',
@@ -110,7 +110,7 @@ describe('formatVersion 5: repo nas plataformas', () => {
     }
   });
 
-  it('ref vazio é erro', () => {
+  it('empty ref is an error', () => {
     const spec = withRepo({ url: REPO.url, ref: '' });
     expect(issuesOf(spec)).toContainEqual({
       path: 'platforms[0].repo.ref',
@@ -119,20 +119,20 @@ describe('formatVersion 5: repo nas plataformas', () => {
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });
 
-  it('propriedade desconhecida em repo é erro', () => {
+  it('unknown property in repo is an error', () => {
     const spec = withRepo({ url: REPO.url, branch: 'main' });
     expect(issuesOf(spec).some((i) => i.path === 'platforms[0].repo')).toBe(true);
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });
 
-  it.each([2, 3, 4])('repo numa v%i é erro em platforms[0].repo', (version) => {
+  it.each([2, 3, 4])('repo in a v%i is an error in platforms[0].repo', (version) => {
     expect(issuesOf(withRepo(REPO, version))).toContainEqual({
       path: 'platforms[0].repo',
       message: VERSION_5,
     });
   });
 
-  it('as v1 a v4 de antes (sem repo) continuam válidas', () => {
+  it('the earlier v1 to v4 (without repo) are still valid', () => {
     for (const version of [2, 3, 4]) {
       const spec = JSON.parse(sdui) as Json;
       spec.formatVersion = version;
@@ -147,10 +147,10 @@ describe('formatVersion 5: repo nas plataformas', () => {
     expect(parseSpec(v1).ok).toBe(true);
   });
 
-  it('diffSpecs: repo acrescentado, trocado ou removido não é quebra nem muda a lista', () => {
+  it('diffSpecs: repo added, changed or removed is not a break and does not change the list', () => {
     const before = parsed(withRepo(undefined, 5));
     const added = parsed(withRepo(REPO));
-    const changed = parsed(withRepo({ url: 'https://github.com/acme/outro' }));
+    const changed = parsed(withRepo({ url: 'https://github.com/acme/other' }));
     expect(diffSpecs(before, added)).toEqual([]);
     expect(diffSpecs(added, changed)).toEqual([]);
     expect(diffSpecs(changed, before)).toEqual([]);

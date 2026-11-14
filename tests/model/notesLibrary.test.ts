@@ -1,6 +1,6 @@
-// A biblioteca de notas embutida (`libraries/notas/`, etapa Marcações espaciais, ME3): o pacote
-// é válido, o `index.ts` lista todo arquivo da pasta e a aplicação por padrão usa o caminho
-// comum de qualquer biblioteca (`applySpecialization`).
+// The bundled notes library (`libraries/notas/`, Spatial markings stage, ME3): the package
+// is valid, `index.ts` lists every file in the folder and applying it by default uses the
+// common path of any library (`applySpecialization`).
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -57,41 +57,41 @@ function expectCode(fn: () => unknown, code: string): void {
     expect((e as ModelError).code).toBe(code);
     return;
   }
-  throw new Error(`esperava o erro ${code}`);
+  throw new Error(`expected error ${code}`);
 }
 
 const project = () =>
   createProject({
     name: 'P',
     now: '2026-10-22T00:00:00.000Z',
-    firstLayer: { id: 'L1', name: 'Camada 1', color: '#336699' },
+    firstLayer: { id: 'L1', name: 'Layer 1', color: '#336699' },
   });
 
 describe('pacote libraries/notas', () => {
-  it('o index.ts lista todo arquivo da pasta, exceto o próprio index.ts', () => {
+  it('index.ts lists every file in the folder except index.ts itself', () => {
     const onDisk = listDisk(ROOT)
       .filter((p) => p !== 'index.ts')
       .sort();
     expect([...NOTES_FILES.keys()].sort()).toEqual(onDisk);
   });
 
-  it('o texto embutido é o do arquivo', () => {
+  it('the bundled text is the file's text', () => {
     for (const [path, text] of NOTES_FILES) {
       expect(text, path).toBe(readFileSync(join(ROOT, path), 'utf8'));
     }
   });
 
-  it('valida sem erro e sem aviso nos três níveis (uma biblioteca embutida não abre com aviso)', () => {
+  it('validates with no error and no warning at the three levels (a bundled library does not open with a warning)', () => {
     const files = [...NOTES_FILES].map(([path, text]) => ({ path, text }));
     const report = validateLibrary({ files, specPath: NOTES_SPEC_FILE });
     expect(report.errors).toEqual([]);
-    // O `minSize` (160 × 96) comporta o `preview` e o exemplo com texto curto.
+    // The `minSize` (160 × 96) fits the `preview` and the example with short text.
     expect(report.warnings).toEqual([]);
     expect(report.ok).toBe(true);
     expect(report.summary).toMatchObject({ level: 3, types: 2, components: 2, docs: 2 });
   });
 
-  it('a especialização é a formatVersion 7, versão 3, com a nota e a tabela flutuantes e com componente', () => {
+  it('the specialization is formatVersion 7, version 3, with the floating note and table and with a component', () => {
     const parsed = parseSpecText(NOTES_FILES.get(NOTES_SPEC_FILE) ?? '');
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
@@ -123,7 +123,7 @@ describe('pacote libraries/notas', () => {
     ]);
   });
 
-  it('o componente da tabela é formatVersion 2, usa repeat e tem 2 a 3 linhas no preview', () => {
+  it('the table component is formatVersion 2, uses repeat and has 2 to 3 rows in the preview', () => {
     const component = JSON.parse(NOTES_FILES.get('components/tabela.json') ?? '{}') as {
       formatVersion: number;
       preview: { linhas: unknown[] };
@@ -136,13 +136,13 @@ describe('pacote libraries/notas', () => {
     expect(component.template.children[1]?.field).toBe('linhas');
   });
 
-  it('o documento da tabela diz que a ligação ao alvo é uma seta', () => {
+  it('the table document says the link to the target is an arrow', () => {
     expect(NOTES_FILES.get('docs/tabela.md')).toMatch(/seta/);
   });
 });
 
 describe('applyBundledLibrary', () => {
-  it('aplica como qualquer biblioteca: cópia em specs/notas/, camada Notas e pacote sem a especialização', () => {
+  it('applies like any library: copy in specs/notas/, Notas layer and package without the specialization', () => {
     const base = project();
     expect(hasBundledLibrary(base, NOTES_LIBRARY)).toBe(false);
     const applied = applyBundledLibrary(base, NOTES_LIBRARY, { newId: () => 'LN' });
@@ -154,7 +154,7 @@ describe('applyBundledLibrary', () => {
         file: 'specs/notas/notas.spec.json',
       }),
     ]);
-    expect(applied.project.layers.map((l) => l.name)).toEqual(['Camada 1', 'Notas']);
+    expect(applied.project.layers.map((l) => l.name)).toEqual(['Layer 1', 'Notas']);
     expect(applied.project.layers[1]?.spec).toEqual({
       specId: 'notas',
       layerId: 'notas',
@@ -167,12 +167,12 @@ describe('applyBundledLibrary', () => {
     ]);
   });
 
-  it('aplicar duas vezes falha como em qualquer biblioteca', () => {
+  it('applying twice fails like any library', () => {
     const { project: once } = applyBundledLibrary(project(), NOTES_LIBRARY);
     expectCode(() => applyBundledLibrary(once, NOTES_LIBRARY), 'spec-already-applied');
   });
 
-  it('bundledLibraryDiskFiles dá todos os arquivos com o caminho do projeto', () => {
+  it('bundledLibraryDiskFiles gives every file with the project path', () => {
     const { project: applied } = applyBundledLibrary(project(), NOTES_LIBRARY);
     const files = bundledLibraryDiskFiles(applied, NOTES_LIBRARY);
     expect([...files.keys()].sort()).toEqual([
@@ -188,15 +188,15 @@ describe('applyBundledLibrary', () => {
     });
   });
 
-  it('bundledLibraryDiskFiles sem a biblioteca aplicada falha', () => {
+  it('bundledLibraryDiskFiles without the library applied fails', () => {
     expectCode(() => bundledLibraryDiskFiles(project(), NOTES_LIBRARY), 'not-found');
   });
 });
 
 // ---------------------------------------------------------------------------------------------
-// A atualização da B4 leva um projeto com a versão 1 à 2 (aditiva: um tipo novo, sem migração).
+// The B4 update takes a project from version 1 to 2 (additive: one new type, no migration).
 
-/** A especialização da versão 1: a atual sem a Tabela (e `version: 1`). */
+/** The version 1 specialization: the current one without the Tabela (and `version: 1`). */
 function notesV1(): Spec {
   const parsed = parseSpecText(NOTES_FILES.get(NOTES_SPEC_FILE) ?? '');
   if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
@@ -213,7 +213,7 @@ function notesV2(): Spec {
   return parsed.spec;
 }
 
-describe('atualização da biblioteca de notas da versão 1 para a 2', () => {
+describe('update of the notes library from version 1 to 2', () => {
   function withV1(): Project {
     let p = applySpecialization(project(), notesV1(), { newId: () => 'LN' });
     p = createMarking(p, {
@@ -228,10 +228,10 @@ describe('atualização da biblioteca de notas da versão 1 para a 2', () => {
       layerId: 'LN',
       type: { specId: NOTES_ID, typeId: 'nota' },
     });
-    return setFieldValue(p, 'AN1', 'texto', 'Uma nota da versão 1');
+    return setFieldValue(p, 'AN1', 'texto', 'A version 1 note');
   }
 
-  it('a v2 é uma atualização aditiva: sem quebra, sem perda, sem camada nova, sem pendência nova', () => {
+  it('v2 is an additive update: no break, no loss, no new layer, no new pending item', () => {
     const p = withV1();
     expect(checkSpecApply(p, notesV2())).toBe('update');
     const impact = specializationUpdateImpact(p, notesV2());
@@ -252,7 +252,7 @@ describe('atualização da biblioteca de notas da versão 1 para a 2', () => {
     expect(impact.changes.map((c) => c.code)).toContain('added-type');
   });
 
-  it('atualiza: a versão sobe, a nota fica como estava e a Tabela passa a existir', () => {
+  it('updates: the version goes up, the note stays as it was and the Tabela starts to exist', () => {
     const p = withV1();
     const next = updateSpecialization(p, notesV2(), { newId: () => 'X' });
     expect(next.specializations[0]).toMatchObject({ id: NOTES_ID, version: 3 });
@@ -260,7 +260,7 @@ describe('atualização da biblioteca de notas da versão 1 para a 2', () => {
     expect(next.annotations.find((a) => a.id === 'AN1')).toEqual(
       p.annotations.find((a) => a.id === 'AN1'),
     );
-    // A Tabela já pode ser criada na camada Notas que a v1 tinha criado.
+    // The Tabela can now be created in the Notas layer that v1 had created.
     let q = createMarking(next, {
       id: 'T1',
       containerId: null,
@@ -278,9 +278,9 @@ describe('atualização da biblioteca de notas da versão 1 para a 2', () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-// A Tabela: a anotação e o desenho (o `repeat` do componente).
+// The Tabela: the annotation and the drawing (the component's `repeat`).
 
-describe('tipo Tabela', () => {
+describe('Tabela type', () => {
   const catalog = notesCatalog();
   const component = catalog.get(NOTES_ID)?.byType.get('tabela');
   const type = notesV2().layers[0]!.annotationTypes.find((t) => t.id === 'tabela')!;
@@ -302,8 +302,8 @@ describe('tipo Tabela', () => {
     });
     p = setFieldValue(p, 'AT1', 'titulo', 'checkout_started');
     for (const [id, chave, valor] of [
-      ['R1', 'origem', 'carrinho'],
-      ['R2', 'total', '149,90'],
+      ['R1', 'source', 'cart'],
+      ['R2', 'total', '149.90'],
     ] as const) {
       p = addTableRow(p, 'AT1', 'linhas', id);
       p = setTableCell(p, 'AT1', 'linhas', id, 'chave', chave);
@@ -312,11 +312,11 @@ describe('tipo Tabela', () => {
     return p;
   }
 
-  it('a catalogação acha o componente da Tabela', () => {
+  it('the catalog finds the Tabela component', () => {
     expect(component?.formatVersion).toBe(2);
   });
 
-  it('a anotação nasce sem linhas e a chave é obrigatória', () => {
+  it('the annotation starts with no rows and the key is required', () => {
     let p = notesProject();
     p = createMarking(p, {
       id: 'T1',
@@ -338,13 +338,13 @@ describe('tipo Tabela', () => {
     ]);
   });
 
-  it('desenha o título e uma linha por registro, chave à esquerda e valor à direita', () => {
+  it('draws the title and one row per record, key on the left and value on the right', () => {
     const p = tableProject();
     const annotation = p.annotations.find((a) => a.id === 'AT1')!;
     const { values } = drawingValues(p, annotation, type);
     expect(values.linhas).toEqual([
-      { chave: 'origem', valor: 'carrinho' },
-      { chave: 'total', valor: '149,90' },
+      { chave: 'source', valor: 'cart' },
+      { chave: 'total', valor: '149.90' },
     ]);
     const { root, warnings } = instantiate(
       component!,
@@ -356,21 +356,21 @@ describe('tipo Tabela', () => {
     const texts = collectTexts(root);
     expect(texts.map((t) => t.text)).toEqual([
       'checkout_started',
-      'origem',
-      'carrinho',
+      'source',
+      'cart',
       'total',
-      '149,90',
+      '149.90',
     ]);
-    // Duas linhas empilhadas: a segunda abaixo da primeira; a chave à esquerda do valor.
+    // Two stacked rows: the second below the first; the key to the left of the value.
     const [, key1, value1, key2] = texts;
     expect(key2!.y).toBeGreaterThan(key1!.y);
     expect(value1!.x).toBeGreaterThan(key1!.x);
     expect(value1!.y).toBe(key1!.y);
-    // O valor fica alinhado à direita.
+    // The value is right-aligned.
     expect(value1!.node.style.align).toBe('right');
   });
 
-  it('sem linhas desenha só o título', () => {
+  it('with no rows draws only the title', () => {
     const p = tableProject();
     const empty: Project = {
       ...p,
@@ -400,7 +400,7 @@ interface PlacedText {
   readonly node: TextNode;
 }
 
-/** Os textos da cena na ordem de desenho, com a posição absoluta. */
+/** The scene's texts in drawing order, with the absolute position. */
 function collectTexts(root: FrameNode): PlacedText[] {
   const out: PlacedText[] = [];
   const visit = (node: SceneNode, ox: number, oy: number): void => {
@@ -413,14 +413,15 @@ function collectTexts(root: FrameNode): PlacedText[] {
   return out;
 }
 
-describe('Catálogo com a Tabela', () => {
+describe('Catalog with the Tabela', () => {
   const files = [...NOTES_FILES].map(([path, text]) => ({ path, text }));
   const catalog = buildCatalog(files);
   const entry = findEntry(catalog, 'tabela')!;
 
-  it('o preview chega ao Catálogo com as linhas (cada uma com _id para o formulário do playground)', () => {
+  it('the preview reaches the Catalog with the rows (each with _id for the playground form)', () => {
     expect(catalog.report.errors).toEqual([]);
     expect(entry.component?.formatVersion).toBe(2);
+    // pt-BR kept: bundled library data (libraries/notas preview) asserted verbatim
     expect(entry.previewValues?.linhas).toEqual([
       { _id: 'preview-1', chave: 'origem', valor: 'carrinho' },
       { _id: 'preview-2', chave: 'itens', valor: '3' },
@@ -432,7 +433,7 @@ describe('Catálogo com a Tabela', () => {
     });
   });
 
-  it('desenha o preview da Tabela com uma linha por registro', () => {
+  it('draws the Tabela preview with one row per record', () => {
     const drawing = drawEntry(entry, entry.previewValues ?? {}, approximateMeasurer);
     expect(drawing?.warnings).toEqual([]);
     const texts: string[] = [];
@@ -441,6 +442,7 @@ describe('Catálogo com a Tabela', () => {
       if (node.type === 'frame') node.children.forEach(visit);
     };
     if (drawing) visit(drawing.root);
+    // pt-BR kept: bundled library data (libraries/notas preview) asserted verbatim
     expect(texts).toEqual([
       'checkout_started',
       'origem',
@@ -452,7 +454,8 @@ describe('Catálogo com a Tabela', () => {
     ]);
   });
 
-  it('a Nota segue sem linhas no preview', () => {
+  it('the Nota still has no rows in the preview', () => {
+    // pt-BR kept: bundled library data (libraries/notas preview) asserted verbatim
     expect(findEntry(catalog, 'nota')?.previewValues?.texto).toBe(
       'Escreva aqui o comentário.',
     );
