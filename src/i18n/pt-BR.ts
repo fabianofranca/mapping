@@ -1106,6 +1106,7 @@ export const ptBR: Dictionary = {
     'Schema 11: o endereço dos arquivos saiu do projeto e foi descartado de {platforms} ({templates}). O repositório agora é da especialização: regrave a especialização com repo (formatVersion 5) e atualize-a no projeto.',
   'migration.v13.discardedInherit':
     'Schema 13: a herança de anotações saiu do formato. {count} anotação(ões) valiam também para as marcações descendentes e agora valem só para a própria marcação: {markings}. Nenhuma anotação foi apagada.',
+  'open.repairLog': '{count} reparo(s): {repairs}',
   'repos.title': 'Repositórios',
   'repos.code.title': 'Código',
   'repos.docs.title': 'Documentos',

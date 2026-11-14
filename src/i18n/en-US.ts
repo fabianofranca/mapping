@@ -1106,6 +1106,7 @@ export const enUS = {
     'Schema 11: the file address left the project and was discarded from {platforms} ({templates}). The repository now belongs to the specialization: rewrite the specialization with repo (formatVersion 5) and update it in the project.',
   'migration.v13.discardedInherit':
     'Schema 13: annotation inheritance was removed from the format. {count} annotation(s) also applied to the descendant markings and now apply only to their own marking: {markings}. No annotation was deleted.',
+  'open.repairLog': '{count} repair(s): {repairs}',
   'repos.title': 'Repositories',
   'repos.code.title': 'Code',
   'repos.docs.title': 'Documents',

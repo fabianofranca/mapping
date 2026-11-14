@@ -127,7 +127,7 @@ function imageProject(): Project {
   let p = createProject({
     name: 'Imagens',
     now: NOW,
-    firstLayer: { id: IDS.layer, name: 'Camada 1', color: '#D32F2F' },
+    firstLayer: { id: IDS.layer, name: 'Layer 1', color: '#D32F2F' },
   });
   const sizes: Record<keyof typeof IMAGE_FILES, { width: number; height: number }> = {
     png: IMAGE_SIZE,

@@ -961,6 +961,10 @@ describe('project with inconsistent data', () => {
     // (the controller was loaded again in `load()`: the record is the one of its copy)
     const report = await import('../../src/utils/report');
     expect(report.reportedErrors.value.map((e) => e.context)).toContain('open.repair');
+    // R7.2: the Diagnostics line follows the language (en-US here), not a fixed Portuguese text.
+    expect(
+      report.reportedErrors.value.find((e) => e.context === 'open.repair')?.message,
+    ).toMatch(/^\d+ repair\(s\): /);
 
     session.actions.renameProject('Repaired');
     await session.flush();

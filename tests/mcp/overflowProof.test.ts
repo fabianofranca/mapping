@@ -204,7 +204,7 @@ async function workspace(withFonts: boolean): Promise<Workspace> {
   let p = createProject({
     name: 'Screens',
     now: NOW,
-    firstLayer: { id: LAYER, name: 'Camada 1', color: '#D32F2F' },
+    firstLayer: { id: LAYER, name: 'Layer 1', color: '#D32F2F' },
   });
   p = addContainer(p, { id: PHOTO, file: 'images/photo.png', width: 400, height: 300 });
   p = applySpecialization(p, parsed.spec, { packageSpecName: 'lib.spec.json' });

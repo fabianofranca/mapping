@@ -55,7 +55,7 @@ describe('create_project with the notes library', () => {
       expect.objectContaining({ id: 'notas', file: 'specs/notas/notas.spec.json' }),
     ]);
     expect(parsed.project.layers.map((l) => [l.name, l.spec])).toEqual([
-      ['Camada 1', null],
+      ['Layer 1', null],
       ['Notes', { specId: 'notas', layerId: 'notas' }],
     ]);
   });
@@ -77,7 +77,7 @@ describe('create_project with the notes library', () => {
       }),
     ]);
     expect(project.specializations[0]).not.toHaveProperty('problem');
-    expect(project.layers.map((l) => l.name)).toEqual(['Camada 1', 'Notes']);
+    expect(project.layers.map((l) => l.name)).toEqual(['Layer 1', 'Notes']);
     expect(project.issues.total).toBe(0);
   });
 
@@ -105,7 +105,7 @@ describe('create_project with the notes library', () => {
     });
   });
 
-  it('notes: false creates only the "Camada 1", without specs/', async () => {
+  it('notes: false creates only the "Layer 1", without specs/', async () => {
     const created = ok(
       await mcp.call<{ counts: { layers: number } }>('create_project', {
         path: 'without-notes',
@@ -120,7 +120,7 @@ describe('create_project with the notes library', () => {
     const parsed = deserialize(readFileSync(join(dir, 'mapping.json'), 'utf8'));
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
-    expect(parsed.project.layers.map((l) => l.name)).toEqual(['Camada 1']);
+    expect(parsed.project.layers.map((l) => l.name)).toEqual(['Layer 1']);
     expect(parsed.project.specializations).toEqual([]);
 
     const project = ok(

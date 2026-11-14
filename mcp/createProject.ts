@@ -16,7 +16,7 @@ import { ToolError } from './errors';
 import { Roots, writeFileAtomic } from './paths';
 import { errnoCode, writeNewFile } from './proposalStore';
 
-const DEFAULT_FIRST_LAYER = 'Camada 1';
+const DEFAULT_FIRST_LAYER = 'Layer 1';
 
 async function exists(path: string): Promise<boolean> {
   try {

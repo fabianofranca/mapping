@@ -68,7 +68,7 @@ function sample(): Project {
   let p = createProject({
     name: 'Perspectives',
     now: NOW,
-    firstLayer: { id: id('L1'), name: 'Camada 1', color: '#D32F2F' },
+    firstLayer: { id: id('L1'), name: 'Layer 1', color: '#D32F2F' },
   });
   p = addLayer(p, { id: id('L2'), name: 'Data', color: '#1976D2' });
   p = addContainer(p, { id: id('C1'), file: 'images/a.png', width: 100, height: 100 });

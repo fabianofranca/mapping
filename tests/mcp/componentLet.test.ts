@@ -147,7 +147,7 @@ function writeProject(name: string, card: Doc | null): void {
   let p = createProject({
     name,
     now: NOW,
-    firstLayer: { id: LAYER, name: 'Camada 1', color: '#D32F2F' },
+    firstLayer: { id: LAYER, name: 'Layer 1', color: '#D32F2F' },
   });
   p = applySpecialization(p, parsed.spec, { packageSpecName: 'lib.spec.json' });
   writeFileSync(join(dir, 'mapping.json'), serialize(p));

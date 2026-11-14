@@ -103,7 +103,7 @@ export function checkMessageText(text: string): string {
 
 /** The author of the server's messages: always an agent, without an email (decision 12). */
 export function agentAuthor(name: string | undefined, clientName?: string): ThreadAuthor {
-  const shown = name?.trim() || clientName?.trim() || 'agente';
+  const shown = name?.trim() || clientName?.trim() || 'agent';
   return { kind: 'agent', name: shown, email: null };
 }
 

@@ -276,7 +276,7 @@ export function registerTools(
         firstLayerName: z
           .string()
           .optional()
-          .describe('Name of the first layer (default: "Camada 1").'),
+          .describe('Name of the first layer (default: "Layer 1").'),
         notes: z
           .boolean()
           .optional()

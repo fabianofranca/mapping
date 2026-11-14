@@ -76,7 +76,7 @@ function workspace() {
     createProject({
       name: 'Screens',
       now: NOW,
-      firstLayer: { id: LAYER, name: 'Camada 1', color: '#D32F2F' },
+      firstLayer: { id: LAYER, name: 'Layer 1', color: '#D32F2F' },
     }),
     parsed.spec,
     { packageSpecName: 'lib.spec.json' },

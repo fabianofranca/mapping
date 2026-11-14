@@ -188,7 +188,7 @@ describe('arrow read, annotated and refused where it does not fit', () => {
       {
         op: 'create_annotation',
         marking: arrowRef,
-        layer: 'Camada 1',
+        layer: 'Layer 1',
         name: 'On tap',
         entries: [{ key: 'evento', value: 'click' }],
       },

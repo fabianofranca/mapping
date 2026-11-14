@@ -68,7 +68,7 @@ function collidingProject(): Project {
     now: NOW,
     firstLayer: {
       id: 'cccccccc-0000-4000-8000-000000000001',
-      name: 'Camada 1',
+      name: 'Layer 1',
       color: '#D32F2F',
     },
   });

@@ -146,7 +146,7 @@ const IMPORT_OPERATIONS = [
   {
     op: 'create_annotation',
     marking: '$cartao',
-    layer: 'Camada 1',
+    layer: 'Layer 1',
     entries: [{ key: 'mask', value: '0000 0000 0000 0000' }],
   },
 ];
@@ -588,7 +588,7 @@ describe('new proposal with supersedes (only the corrections)', () => {
         {
           op: 'create_annotation',
           marking: '$cartao',
-          layer: 'Camada 1',
+          layer: 'Layer 1',
           entries: [{ key: 'mask', value: '0000 0000 0000 0000' }],
         },
       ],

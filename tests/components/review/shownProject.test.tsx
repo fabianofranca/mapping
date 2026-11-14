@@ -83,13 +83,13 @@ describe('shown project in the review (shownProject contract)', () => {
       screen
         .getAllByLabelText(t('layer.name'))
         .map((el) => (el as HTMLInputElement).value),
-    ).toEqual(['Camada 1', 'Eventos']);
+    ).toEqual(['Layer 1', 'Eventos']);
     act(() => h.review.setView('current'));
     expect(
       screen
         .getAllByLabelText(t('layer.name'))
         .map((el) => (el as HTMLInputElement).value),
-    ).toEqual(['Camada 1']);
+    ).toEqual(['Layer 1']);
   });
 
   it('the minimap draws the image that exists only in the proposal; in the Current view, none', async () => {
