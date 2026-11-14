@@ -1,0 +1,10 @@
+# Contexto do coordenador medido pelo painel — [Não lançado] (épico `epic/contexto-medido`, PR #1874, MCP sem mudança, schema v19)
+
+## Adicionado
+
+- **`painel.py context <pasta> --medir --max <max_tokens>` mede o contexto e grava com a fonte (para quem conduz o fluxo, #1874, CX1):** o comando roda `scripts/ci/contextUsage.mjs --max <max_tokens>` (com o ambiente da sessão e tempo-limite de 30 s), grava o `pct` (acima de 100 vira 100), o `contextAt` e o `contextFonte` (`sessao`, ou `recente` quando falta a variável `CLAUDE_CODE_SESSION_ID`) e imprime `medido: pct=<pct> contexto=<contexto> fonte=<fonte>`, o `contexto` que serve ao `ctx` do próprio custo na "Troca de sessão". Sem medida (código 1 do script) o comando falha, sem gravar, com o motivo e o caminho de exceção `context <pasta> <pct> --fonte get_session`. Vale também dentro do `apply`. Os erros de uso (`--medir` sem `--max`, `--max` sem `--medir`, `--medir` com `<pct>`, nenhum dos dois, `--fonte` com `--medir`) saem com código 2 e nada gravado.
+- **Fonte da medida e avisos na linha `contexto:` do `show` (para quem conduz o fluxo, #1874, CX1):** a linha passa a `contexto: <pct>% (<quando>, <fonte>)`, com `—` num registro antigo sem fonte. O número à mão (`context <pasta> <pct>`) continua aceito e grava a fonte `manual`; com `--fonte get_session` (único valor aceito) grava `get_session`, o caminho sem medida. Depois do alerta de 35%, o `show` acusa a medida à mão (fonte `manual` ou ausente) e a medida velha (mais de 70 min), os dois com "meça com context --medir".
+
+## Alterado
+
+- **O skill `implementar-fila` passa a medir pelo comando (para quem conduz o fluxo, #1874, CX1):** a conferência de reserva, a lista de comandos e a descrição do `show` em "Painel", a medida e o `ctx` do próprio custo em "Troca de sessão" e o passo 3 de "Na sessão nova" citam `painel.py context <pasta> --medir --max <max_tokens>`, e `<pct> --fonte get_session` quando não há medida. A sessão nova grava o próprio contexto medido ao assumir, e não mais um número à mão. O teto de 35% e a "Troca de sessão" não mudam.
