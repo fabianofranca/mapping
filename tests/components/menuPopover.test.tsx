@@ -1,69 +1,69 @@
 import { cleanup, render, screen } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { t } from '../../src/i18n';
 import { EditorMainBar } from '../../src/app/EditorMainBar';
 import type { ProjectCommands } from '../../src/app/useProjectCommands';
+import { locale } from '../../src/store/settings';
 import { Button } from '../../src/ui/controls';
 import { EditorContext } from '../../src/ui/EditorContext';
 import { MenuPopover } from '../../src/ui/MenuPopover';
 import { sampleProject } from '../model/fixtures';
 import { createHarness } from './harness';
 
-// SA1 (etapa #347): os menus em popover são menus de verdade — itens `menuitem`, foco no
-// primeiro habilitado ao abrir, ↑/↓ circulares, Esc devolve o foco ao gatilho e o gatilho
-// tem `aria-haspopup="menu"`. O mesmo padrão do `ActionMenu`.
+// SA1 (stage #347): popover menus are real menus — `menuitem` items, focus on the first
+// enabled one when opening, circular ↑/↓, Esc returns the focus to the trigger and the trigger
+// has `aria-haspopup="menu"`. The same pattern as the `ActionMenu`.
 
+beforeEach(() => {
+  locale.value = 'en-US';
+});
 afterEach(cleanup);
 
 function renderMenu() {
   render(
-    <MenuPopover label="Projeto" buttonLabel="Projeto: ações">
+    <MenuPopover label="Project" buttonLabel="Project: actions">
       <Button role="menuitem" disabled>
-        Desabilitado
+        Disabled
       </Button>
-      <Button role="menuitem">Exportar</Button>
-      <Button role="menuitem">Fechar</Button>
+      <Button role="menuitem">Export</Button>
+      <Button role="menuitem">Close</Button>
     </MenuPopover>,
   );
-  return screen.getByRole('button', { name: /^Projeto/ });
+  return screen.getByRole('button', { name: /^Project/ });
 }
 
-describe('MenuPopover: menu completo', () => {
-  it('o gatilho anuncia o menu e o nome começa pelo texto visível', () => {
+describe('MenuPopover: complete menu', () => {
+  it('the trigger announces the menu and the name starts with the visible text', () => {
     const trigger = renderMenu();
     expect(trigger.getAttribute('aria-haspopup')).toBe('menu');
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
   });
 
-  it('abre com os itens como menuitem e o foco no primeiro habilitado', async () => {
+  it('opens with the items as menuitem and the focus on the first enabled one', async () => {
     const trigger = renderMenu();
     await userEvent.click(trigger);
     expect(screen.getAllByRole('menuitem').map((i) => i.textContent)).toEqual([
-      'Desabilitado',
-      'Exportar',
-      'Fechar',
+      'Disabled',
+      'Export',
+      'Close',
     ]);
-    expect(document.activeElement).toBe(
-      screen.getByRole('menuitem', { name: 'Exportar' }),
-    );
+    expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: 'Export' }));
   });
 
-  it('↓ e ↑ circulam entre os habilitados', async () => {
+  it('↓ and ↑ cycle through the enabled ones', async () => {
     const trigger = renderMenu();
     const user = userEvent.setup();
     await user.click(trigger);
     await user.keyboard('{ArrowDown}');
-    expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: 'Fechar' }));
+    expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: 'Close' }));
     await user.keyboard('{ArrowDown}');
-    expect(document.activeElement).toBe(
-      screen.getByRole('menuitem', { name: 'Exportar' }),
-    );
+    expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: 'Export' }));
     await user.keyboard('{ArrowUp}');
-    expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: 'Fechar' }));
+    expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: 'Close' }));
   });
 
-  it('Esc fecha e devolve o foco ao gatilho', async () => {
+  it('Esc closes and returns the focus to the trigger', async () => {
     const trigger = renderMenu();
     const user = userEvent.setup();
     await user.click(trigger);
@@ -73,8 +73,8 @@ describe('MenuPopover: menu completo', () => {
   });
 });
 
-describe('menu do projeto', () => {
-  it('o gatilho começa pelo nome do projeto; Exportar e Fechar projeto são menuitem', async () => {
+describe('project menu', () => {
+  it('the trigger starts with the project name; Export and Close project are menuitem', async () => {
     const harness = createHarness(sampleProject());
     const commands = { exportProject: vi.fn(), closeProject: vi.fn() };
     render(

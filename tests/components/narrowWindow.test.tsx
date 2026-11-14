@@ -18,11 +18,11 @@ import { installFakeCanvas } from '../canvas/harness';
 import { sampleProject } from '../model/fixtures';
 import { createHarness } from './harness';
 
-// Fase 5.8: a app é só desktop. Abaixo da largura mínima (900px) ou da altura mínima (720px) o editor dá lugar a
-// um aviso, sem desmontar nada: ao alargar a janela, a seleção, o viewport e o próprio
-// canvas continuam os mesmos.
+// Phase 5.8: the app is desktop only. Below the minimum width (900px) or the minimum height
+// (720px) the editor gives way to a notice, without unmounting anything: when the window
+// widens again, the selection, the viewport and the canvas itself stay the same.
 
-/** `matchMedia` com a janela (largura e altura) controlada pelo teste (o jsdom não tem). */
+/** `matchMedia` with the window (width and height) controlled by the test (jsdom has none). */
 function stubWindowSize(initial: number, initialHeight = 1000) {
   let width = initial;
   let height = initialHeight;
@@ -37,7 +37,7 @@ function stubWindowSize(initial: number, initialHeight = 1000) {
       (!maxH || height <= Number(maxH[1]))
     );
   };
-  // Uma lista separada por vírgula casa se qualquer parte casar.
+  // A comma-separated list matches if any part matches.
   const matches = (query: string) => query.split(',').some((part) => one(part.trim()));
   vi.stubGlobal('matchMedia', (query: string) => {
     const entry = { query, listeners: new Set<() => void>() };
@@ -65,14 +65,14 @@ function stubWindowSize(initial: number, initialHeight = 1000) {
   return resize;
 }
 
-describe('janela estreita', () => {
+describe('narrow window', () => {
   beforeAll(() => {
     installFakeCanvas();
     vi.stubGlobal('requestAnimationFrame', () => 0);
     vi.stubGlobal('cancelAnimationFrame', () => undefined);
   });
   beforeEach(() => {
-    locale.value = 'pt-BR';
+    locale.value = 'en-US';
   });
   afterEach(cleanup);
   afterAll(() => {
@@ -91,21 +91,21 @@ describe('janela estreita', () => {
     return { harness, view, resize };
   }
 
-  it('abaixo do mínimo mostra o aviso no lugar do editor', () => {
+  it('below the minimum shows the notice in place of the editor', () => {
     const { view } = mount(600);
     expect(screen.getByText(t('narrow.title'))).toBeTruthy();
     const editor = view.container.querySelector<HTMLElement>('.editor');
     expect(editor?.hidden).toBe(true);
   });
 
-  it('acima do mínimo não mostra o aviso', () => {
+  it('above the minimum does not show the notice', () => {
     const { view } = mount(1280);
     expect(screen.queryByText(t('narrow.title'))).toBeNull();
     const editor = view.container.querySelector<HTMLElement>('.editor');
     expect(editor?.hidden).toBe(false);
   });
 
-  it('abaixo da altura mínima mostra o aviso, sem desmontar, e volta ao crescer', () => {
+  it('below the minimum height shows the notice, without unmounting, and comes back on growing', () => {
     const { view, resize } = mount(1280);
     const host = view.container.querySelector('.canvas-host');
     act(() => resize.height(719));
@@ -116,7 +116,7 @@ describe('janela estreita', () => {
     expect(view.container.querySelector('.canvas-host')).toBe(host);
   });
 
-  it('volta ao editor ao alargar sem perder seleção, viewport nem o canvas', () => {
+  it('returns to the editor on widening without losing selection, viewport or canvas', () => {
     const { harness, view, resize } = mount(1280);
     const { ui, canvas, view: viewState } = harness.context;
     const markingId = harness.project().markings[0]?.id;
@@ -143,9 +143,9 @@ describe('janela estreita', () => {
     expect(viewState.viewport.value).toEqual(viewport);
   });
 
-  // Etapa #515 (FN1, #446): estreitar de 1280 para 900 px encolhe as janelas laterais, não
-  // as fecha. Só abrir já compacto (< 1200 px) começa com Detalhes recolhido (B2).
-  it('estreitar de 1280 para 900 px, três vezes, mantém Detalhes aberta', () => {
+  // Stage #515 (FN1, #446): narrowing from 1280 to 900 px shrinks the side windows, it does
+  // not close them. Only opening already compact (< 1200 px) starts with Details collapsed (B2).
+  it('narrowing from 1280 to 900 px, three times, keeps Details open', () => {
     const { resize } = mount(1280);
     act(() => showToolWindow('details'));
     for (let i = 0; i < 3; i++) {

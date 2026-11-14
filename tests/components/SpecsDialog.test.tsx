@@ -39,29 +39,29 @@ import { legacySduiText } from '../model/specFixtures';
 import { createHarness, renderLive, type Harness } from './harness';
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
 const exampleText = (name: string) =>
   readFileSync(join(process.cwd(), 'examples', 'specs', `${name}.json`), 'utf8');
 
-/** Versão do conteúdo do exemplo SDUI e quantas camadas ele cria (Componentes, Eventos e Telas). */
+/** Version of the SDUI example content and how many layers it creates (Components, Events and Screens). */
 const SDUI_VERSION = (JSON.parse(exampleText('sdui')) as { version: number }).version;
 const SDUI_LAYERS = 3;
 
-/** Mesma especialização com a versão alterada. */
+/** The same specialization with the version changed. */
 function withVersion(name: string, version: number): string {
   const spec = JSON.parse(exampleText(name)) as { version: number };
   return JSON.stringify({ ...spec, version });
 }
 
-/** Projeto com uma camada livre (L1). */
+/** Project with a free layer (L1). */
 function freeProject(): Project {
   return emptyProject();
 }
 
-/** Projeto só com as camadas da especialização SDUI (sem nenhuma camada livre). */
+/** Project with only the layers of the SDUI specialization (no free layer). */
 function onlySpecLayers(): Project {
   const parsed = parseSpecText(exampleText('sdui'));
   if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
@@ -80,10 +80,10 @@ function setup(project: Project = freeProject(), readOnly = false) {
   ));
   const fileInput = () => {
     const input = document.querySelector<HTMLInputElement>('input[type="file"]');
-    if (!input) throw new Error('sem input de arquivo');
+    if (!input) throw new Error('no file input');
     return input;
   };
-  /** Escolhe um arquivo no seletor (o diálogo usa um `<input type=file>` escondido). */
+  /** Chooses a file in the picker (the dialog uses a hidden `<input type=file>`). */
   const choose = (text: string, name = 'spec.json') =>
     fireEvent.change(fileInput(), {
       target: { files: [new File([text], name, { type: 'application/json' })] },
@@ -91,16 +91,16 @@ function setup(project: Project = freeProject(), readOnly = false) {
   return { harness, onClose, view, choose, user: userEvent.setup() };
 }
 
-/** Diálogo de confirmação com o título dado (fica por cima do menu e aparece após ler o arquivo). */
+/** Confirmation dialog with the given title (it stays above the menu and shows after reading the file). */
 async function dialogTitled(title: string, timeout = 1000): Promise<HTMLElement> {
   const heading = await screen.findByRole('heading', { name: title }, { timeout });
   const dialog = heading.closest('dialog');
-  if (!dialog) throw new Error(`"${title}" não está num diálogo`);
+  if (!dialog) throw new Error(`"${title}" is not in a dialog`);
   return dialog;
 }
 
 describe('SpecsDialog', () => {
-  it('mostra os modos, os tokens e o conjunto de ícones da biblioteca (decisão 16)', () => {
+  it('shows the modes, the tokens and the icon set of the library (decision 16)', () => {
     const spec = libSpec(
       1,
       { c: [buttonType()] },
@@ -117,7 +117,7 @@ describe('SpecsDialog', () => {
     setup(applySpecialization(emptyProject(), spec, { newId: () => `LS${++n}` }));
     const item = document.querySelector<HTMLElement>('.spec-item');
     expect(item).not.toBeNull();
-    const design = within(item!).getByRole('group', { name: 'Tokens do desenho' });
+    const design = within(item!).getByRole('group', { name: 'Drawing tokens' });
     expect(within(design).getByText('light, dark')).toBeTruthy();
     expect(within(design).getByText('primary')).toBeTruthy();
     expect(within(design).getByText('light #1a73e8 · dark #8ab4f8')).toBeTruthy();
@@ -126,33 +126,33 @@ describe('SpecsDialog', () => {
     expect(within(design).getByText('icons/set.json')).toBeTruthy();
   });
 
-  it('biblioteca sem tokens nem ícones não mostra o bloco', () => {
+  it('a library without tokens or icons does not show the block', () => {
     let n = 0;
     setup(applySpecialization(emptyProject(), libSpec(1), { newId: () => `LS${++n}` }));
-    expect(screen.queryByRole('group', { name: 'Tokens do desenho' })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Drawing tokens' })).toBeNull();
   });
 
-  it('sem especializações mostra o aviso e o botão de aplicar', () => {
+  it('without specializations shows the notice and the apply button', () => {
     setup();
-    expect(screen.getByText('Nenhuma especialização aplicada.')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Aplicar especialização…' })).toBeTruthy();
+    expect(screen.getByText('No specialization applied.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Apply specialization…' })).toBeTruthy();
   });
 
-  it('aplica uma especialização: cria as camadas e mostra a mensagem', async () => {
+  it('applies a specialization: creates the layers and shows the message', async () => {
     const { harness, choose } = setup();
     choose(exampleText('sdui'));
     await screen.findByText(
-      new RegExp(`"SDUI" aplicada: ${SDUI_LAYERS} camada\\(s\\) criada\\(s\\)\\.`),
+      new RegExp(`"SDUI" applied: ${SDUI_LAYERS} layer\\(s\\) created\\.`),
     );
     const p = harness.project();
     expect(p.specializations.map((s) => [s.id, s.version])).toEqual([
       ['sdui', SDUI_VERSION],
     ]);
     expect(p.layers.filter((l) => l.spec?.specId === 'sdui')).toHaveLength(SDUI_LAYERS);
-    expect(screen.getByText(`v${SDUI_VERSION} · ${SDUI_LAYERS} camada(s)`)).toBeTruthy();
+    expect(screen.getByText(`v${SDUI_VERSION} · ${SDUI_LAYERS} layer(s)`)).toBeTruthy();
   });
 
-  it('o resultado de uma operação bem-sucedida usa o aviso de sucesso', async () => {
+  it('the result of a successful operation uses the success notice', async () => {
     const { choose } = setup();
     choose(exampleText('sdui'));
     const notice = await screen.findByRole('status');
@@ -160,15 +160,15 @@ describe('SpecsDialog', () => {
     expect(notice.closest('dialog')?.classList.contains('dialog-md')).toBe(true);
   });
 
-  it('campo do tipo removido (codeRef): aplica sem ele e avisa quais foram ignorados', async () => {
+  it('a field of the removed type (codeRef): applies without it and says which were ignored', async () => {
     const { harness, choose } = setup();
     choose(legacySduiText());
-    await screen.findByText(/"SDUI" aplicada/);
+    await screen.findByText(/"SDUI" applied/);
     const notice = screen
       .getAllByRole('status')
-      .find((n) => n.textContent?.startsWith('Campos ignorados'));
+      .find((n) => n.textContent?.startsWith('Ignored fields'));
     expect(notice?.textContent).toBe(
-      'Campos ignorados: screen.implementacao. O tipo de campo "codeRef" saiu do formato; a especialização foi aplicada sem eles. Remova-os do arquivo.',
+      'Ignored fields: screen.implementacao. The "codeRef" field type was removed from the format; the specialization was applied without them. Remove them from the file.',
     );
     const screenType = harness
       .project()
@@ -177,39 +177,39 @@ describe('SpecsDialog', () => {
     expect(screenType?.fields.map((f) => f.key)).toEqual(['nome', 'rota']);
   });
 
-  it('a atualização com o campo removido também avisa; a próxima escolha limpa o aviso', async () => {
+  it('the update with the removed field also warns; the next choice clears the notice', async () => {
     const { choose, user } = setup();
-    // Parte do SDUI legado na versão atual (o do exemplo, v11, exige migração para o legado).
+    // Starts from the legacy SDUI at the current version (the example one, v11, requires migration to the legacy one).
     const legacy = JSON.parse(legacySduiText()) as { version: number };
     choose(JSON.stringify({ ...legacy, version: SDUI_VERSION }));
-    await screen.findByText(/aplicada/);
+    await screen.findByText(/applied/);
 
     choose(JSON.stringify({ ...legacy, version: SDUI_VERSION + 1 }));
-    const dialog = await dialogTitled('Atualizar "SDUI"?');
-    await user.click(within(dialog).getByRole('button', { name: 'Atualizar' }));
-    await screen.findByText(`"SDUI" atualizada para a versão ${SDUI_VERSION + 1}.`);
-    expect(screen.getByText(/^Campos ignorados: screen\.implementacao\./)).toBeTruthy();
+    const dialog = await dialogTitled('Update "SDUI"?');
+    await user.click(within(dialog).getByRole('button', { name: 'Update' }));
+    await screen.findByText(`"SDUI" updated to version ${SDUI_VERSION + 1}.`);
+    expect(screen.getByText(/^Ignored fields: screen\.implementacao\./)).toBeTruthy();
 
-    // Escolher outro arquivo limpa o aviso anterior.
+    // Choosing another file clears the previous notice.
     choose(withVersion('sdui', SDUI_VERSION + 2));
-    await dialogTitled('Atualizar "SDUI"?');
-    expect(screen.queryByText(/^Campos ignorados/)).toBeNull();
+    await dialogTitled('Update "SDUI"?');
+    expect(screen.queryByText(/^Ignored fields/)).toBeNull();
   });
 
-  it('arquivo inválido mostra os problemas e não altera o projeto', async () => {
+  it('an invalid file shows the problems and does not change the project', async () => {
     const { harness, choose } = setup();
-    choose('{ "isto não é uma especialização": true }');
-    const dialog = await dialogTitled('Arquivo de especialização inválido');
-    expect(within(dialog).getByText(/Corrija o arquivo/)).toBeTruthy();
+    choose('{ "this is not a specialization": true }');
+    const dialog = await dialogTitled('Invalid specialization file');
+    expect(within(dialog).getByText(/Fix the file/)).toBeTruthy();
     expect(harness.project().specializations).toHaveLength(0);
   });
 
-  describe('exemplo com texto num campo table', () => {
+  describe('example with text in a table field', () => {
     const tableExample = JSON.stringify({
       format: 'mapping-spec',
       formatVersion: 4,
-      id: 'abas',
-      name: 'Abas',
+      id: 'tabs',
+      name: 'Tabs',
       version: 1,
       layers: [
         {
@@ -218,31 +218,34 @@ describe('SpecsDialog', () => {
           color: '#112233',
           annotationTypes: [
             {
-              id: 'abas',
-              name: 'Abas',
+              id: 'tabs',
+              name: 'Tabs',
               fields: [
                 { key: 'rows', type: 'table', columns: [{ key: 'c', type: 'string' }] },
               ],
-              examples: [{ name: 'Exemplo', values: { rows: 'texto' } }],
+              examples: [{ name: 'Example', values: { rows: 'text' } }],
             },
           ],
         },
       ],
     });
 
-    it('em Português, o problema sai traduzido com o caminho', async () => {
+    // pt-BR kept: the pt-BR rendering of the model message is the object of the test
+    it('in Portuguese (pt-BR), the problem comes out translated with the path', async () => {
+      locale.value = 'pt-BR';
       const { harness, choose } = setup();
       choose(tableExample);
       const dialog = await dialogTitled('Arquivo de especialização inválido');
       expect(
         within(dialog).getByText(
+          // pt-BR kept: the pt-BR translation of the model message is the object of the test
           'layers[0].annotationTypes[0].examples[0].values.rows: campo "table" aceita só a lista de linhas',
         ),
       ).toBeTruthy();
       expect(harness.project().specializations).toHaveLength(0);
     });
 
-    it('em English (US), o problema sai na língua da app', async () => {
+    it('in English (US), the problem comes out in the app language', async () => {
       locale.value = 'en-US';
       const { choose } = setup();
       choose(tableExample);
@@ -252,125 +255,126 @@ describe('SpecsDialog', () => {
           'layers[0].annotationTypes[0].examples[0].values.rows: a "table" field takes only the list of rows',
         ),
       ).toBeTruthy();
+      // pt-BR kept: checks that the pt-BR text does not leak into en-US
       expect(within(dialog).queryByText(/aceita só a lista/)).toBeNull();
     });
   });
 
-  it('mesma versão: avisa que não há nada a fazer', async () => {
+  it('same version: says there is nothing to do', async () => {
     const { harness, choose } = setup();
     choose(exampleText('sdui'));
-    await screen.findByText(/aplicada/);
+    await screen.findByText(/applied/);
     choose(exampleText('sdui'));
-    const dialog = await dialogTitled('Nada a fazer');
+    const dialog = await dialogTitled('Nothing to do');
     expect(
       within(dialog).getByText(
-        new RegExp(`já está no projeto na versão ${SDUI_VERSION}`),
+        new RegExp(`is already in the project at version ${SDUI_VERSION}`),
       ),
     ).toBeTruthy();
     expect(harness.project().specializations[0]?.version).toBe(SDUI_VERSION);
   });
 
-  it('versão maior: pede confirmação e atualiza', async () => {
+  it('higher version: asks for confirmation and updates', async () => {
     const { harness, choose, user } = setup();
     choose(exampleText('sdui'));
-    await screen.findByText(/aplicada/);
+    await screen.findByText(/applied/);
 
     choose(withVersion('sdui', SDUI_VERSION + 1));
-    const dialog = await dialogTitled('Atualizar "SDUI"?');
+    const dialog = await dialogTitled('Update "SDUI"?');
     expect(
-      within(dialog).getByText(`Da versão ${SDUI_VERSION} para a ${SDUI_VERSION + 1}.`),
+      within(dialog).getByText(`From version ${SDUI_VERSION} to ${SDUI_VERSION + 1}.`),
     ).toBeTruthy();
-    // Cancelar não muda nada.
-    await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+    // Cancel changes nothing.
+    await user.click(within(dialog).getByRole('button', { name: 'Cancel' }));
     expect(harness.project().specializations[0]?.version).toBe(SDUI_VERSION);
 
     choose(withVersion('sdui', SDUI_VERSION + 1));
-    const again = await dialogTitled('Atualizar "SDUI"?');
-    await user.click(within(again).getByRole('button', { name: 'Atualizar' }));
-    await screen.findByText(`"SDUI" atualizada para a versão ${SDUI_VERSION + 1}.`);
+    const again = await dialogTitled('Update "SDUI"?');
+    await user.click(within(again).getByRole('button', { name: 'Update' }));
+    await screen.findByText(`"SDUI" updated to version ${SDUI_VERSION + 1}.`);
     expect(harness.project().specializations[0]?.version).toBe(SDUI_VERSION + 1);
   });
 
-  it('"Atualizar versão" só aceita o arquivo da própria especialização', async () => {
+  it('"Update version" only accepts the file of the specialization itself', async () => {
     const { harness, choose, user } = setup();
     choose(exampleText('sdui'));
-    await screen.findByText(/aplicada/);
+    await screen.findByText(/applied/);
     const click = vi
       .spyOn(HTMLInputElement.prototype, 'click')
       .mockImplementation(() => {});
-    await user.click(screen.getByRole('button', { name: 'Atualizar versão…' }));
+    await user.click(screen.getByRole('button', { name: 'Update version…' }));
     click.mockRestore();
     choose(exampleText('modelo-de-dados'));
-    const dialog = await dialogTitled('Arquivo de especialização inválido');
+    const dialog = await dialogTitled('Invalid specialization file');
     expect(
-      within(dialog).getByText(/é da especialização "modelo-dados", não de "sdui"/),
+      within(dialog).getByText(/is for specialization "modelo-dados", not "sdui"/),
     ).toBeTruthy();
     expect(harness.project().specializations.map((s) => s.id)).toEqual(['sdui']);
   });
 
-  it('remover e converter: as camadas viram livres', async () => {
+  it('remove and convert: the layers become free', async () => {
     const { harness, choose, user } = setup();
     choose(exampleText('sdui'));
-    await screen.findByText(/aplicada/);
-    await user.click(screen.getByRole('button', { name: 'Remover' }));
-    const dialog = await dialogTitled('Remover "SDUI"?');
-    // Etapa 8 (8.3), F10: confirmação destrutiva, anunciada como alerta.
+    await screen.findByText(/applied/);
+    await user.click(screen.getByRole('button', { name: 'Remove' }));
+    const dialog = await dialogTitled('Remove "SDUI"?');
+    // Stage 8 (8.3), F10: destructive confirmation, announced as an alert.
     expect(dialog.getAttribute('role')).toBe('alertdialog');
-    const confirm = within(dialog).getByRole('button', { name: 'Converter' });
-    expect(confirm).toHaveProperty('disabled', true); // precisa escolher o modo
+    const confirm = within(dialog).getByRole('button', { name: 'Convert' });
+    expect(confirm).toHaveProperty('disabled', true); // must choose the mode
     await user.click(
-      within(dialog).getByRole('radio', { name: /Converter em camadas livres/ }),
+      within(dialog).getByRole('radio', { name: /Convert to free layers/ }),
     );
     await user.click(confirm);
-    await screen.findByText('"SDUI" removida.');
+    await screen.findByText('"SDUI" removed.');
     const p = harness.project();
     expect(p.specializations).toHaveLength(0);
     expect(p.layers.every((l) => l.spec === null)).toBe(true);
-    expect(p.layers.length).toBe(SDUI_LAYERS + 1); // + a camada livre inicial
+    expect(p.layers.length).toBe(SDUI_LAYERS + 1); // + the initial free layer
   });
 
-  it('remover e apagar: as camadas da especialização somem', async () => {
+  it('remove and delete: the specialization layers disappear', async () => {
     const { harness, choose, user } = setup();
     choose(exampleText('sdui'));
-    await screen.findByText(/aplicada/);
-    await user.click(screen.getByRole('button', { name: 'Remover' }));
-    const dialog = await dialogTitled('Remover "SDUI"?');
-    await user.click(within(dialog).getByRole('radio', { name: /Apagar dados/ }));
-    await user.click(within(dialog).getAllByRole('button', { name: 'Apagar dados' })[0]!);
+    await screen.findByText(/applied/);
+    await user.click(screen.getByRole('button', { name: 'Remove' }));
+    const dialog = await dialogTitled('Remove "SDUI"?');
+    await user.click(within(dialog).getByRole('radio', { name: /Delete data/ }));
+    await user.click(within(dialog).getAllByRole('button', { name: 'Delete data' })[0]!);
     await waitFor(() => expect(harness.project().specializations).toHaveLength(0));
     expect(harness.project().layers.map((l) => l.id)).toEqual(['L1']);
   });
 
-  it('apagar dados fica bloqueado se só restarem camadas da especialização', async () => {
+  it('delete data is blocked if only specialization layers remain', async () => {
     const { harness, user } = setup(onlySpecLayers());
-    await user.click(screen.getByRole('button', { name: 'Remover' }));
-    const dialog = await dialogTitled('Remover "SDUI"?');
-    await user.click(within(dialog).getByRole('radio', { name: /Apagar dados/ }));
-    expect(within(dialog).getByText(/precisa ter ao menos uma camada/)).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Remove' }));
+    const dialog = await dialogTitled('Remove "SDUI"?');
+    await user.click(within(dialog).getByRole('radio', { name: /Delete data/ }));
+    expect(within(dialog).getByText(/needs at least one layer/)).toBeTruthy();
     expect(
-      within(dialog).getAllByRole('button', { name: 'Apagar dados' })[0],
+      within(dialog).getAllByRole('button', { name: 'Delete data' })[0],
     ).toHaveProperty('disabled', true);
     expect(harness.project().specializations).toHaveLength(1);
   });
 
-  it('somente leitura desabilita aplicar, atualizar e remover', () => {
+  it('read-only disables apply, update and remove', () => {
     setup(onlySpecLayers(), true);
-    for (const name of ['Aplicar especialização…', 'Atualizar versão…', 'Remover']) {
+    for (const name of ['Apply specialization…', 'Update version…', 'Remove']) {
       expect(screen.getByRole('button', { name })).toHaveProperty('disabled', true);
     }
   });
 
-  it('Fechar chama onClose', async () => {
+  it('Close calls onClose', async () => {
     const { onClose, user } = setup();
-    await user.click(screen.getByRole('button', { name: 'Fechar' }));
+    await user.click(screen.getByRole('button', { name: 'Close' }));
     expect(onClose).toHaveBeenCalledOnce();
   });
 });
 
-// Pacote de biblioteca (v4): pasta ou zip, os três níveis e o contrato de versão (B2).
+// Library package (v4): folder or zip, the three levels and the version contract (B2).
 const PACKAGE_DIR = join(process.cwd(), 'tests', 'fixtures', 'material3');
 
-/** Caminho relativo ao pacote → texto (`.json`, `.md`) ou bytes, do Material 3 do repositório. */
+/** Path relative to the package → text (`.json`, `.md`) or bytes, from the repository's Material 3. */
 function material3(): Map<string, string> {
   const files = new Map<string, string>();
   const walk = (dir: string, prefix: string) => {
@@ -383,7 +387,7 @@ function material3(): Map<string, string> {
   return files;
 }
 
-/** A pasta em memória que o seletor falso devolve. */
+/** The in-memory folder that the fake picker returns. */
 async function memoryDir(files: ReadonlyMap<string, string>): Promise<MemoryDirectory> {
   const root = new MemoryDirectory('material3');
   for (const [path, text] of files) {
@@ -400,10 +404,10 @@ async function memoryDir(files: ReadonlyMap<string, string>): Promise<MemoryDire
 async function zipOf(files: ReadonlyMap<string, string>, root = ''): Promise<File> {
   const zip = new JSZip();
   for (const [path, text] of files) zip.file(`${root}${path}`, text);
-  return new File([await zip.generateAsync({ type: 'blob' })], 'pacote.zip');
+  return new File([await zip.generateAsync({ type: 'blob' })], 'package.zip');
 }
 
-/** Material 3 com a versão e um ajuste no JSON da especialização. */
+/** Material 3 with the version and an adjustment in the specialization JSON. */
 function material3With(
   edit: (spec: {
     version: number;
@@ -420,7 +424,7 @@ function material3With(
 function fakePicker(dir: MemoryDirectory | null) {
   Object.defineProperty(globalThis, 'showDirectoryPicker', {
     value: vi.fn(async () => {
-      if (!dir) throw new DOMException('cancelado', 'AbortError');
+      if (!dir) throw new DOMException('cancelled', 'AbortError');
       return dir;
     }),
     configurable: true,
@@ -432,62 +436,60 @@ afterEach(() => {
   Reflect.deleteProperty(globalThis, 'showDirectoryPicker');
 });
 
-describe('SpecsDialog: pacote da biblioteca', () => {
+describe('SpecsDialog: library package', () => {
   const zipInput = () => {
     const input = document.querySelector<HTMLInputElement>('input[accept^=".zip"]');
-    if (!input) throw new Error('sem input de zip');
+    if (!input) throw new Error('no zip input');
     return input;
   };
   const chooseZip = (file: File) =>
     fireEvent.change(zipInput(), { target: { files: [file] } });
   const chooseDirectory = async (
     user: ReturnType<typeof userEvent.setup>,
-    name = 'Aplicar pasta…',
+    name = 'Apply folder…',
   ) => {
     await user.click(screen.getByRole('button', { name }));
   };
 
-  it('sem showDirectoryPicker só o zip aparece', () => {
+  it('without showDirectoryPicker only the zip shows', () => {
     setup();
-    expect(screen.queryByRole('button', { name: 'Aplicar pasta…' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Aplicar zip…' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Apply folder…' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Apply zip…' })).toBeTruthy();
   });
 
-  it('pasta: valida (0 erros, 2 avisos), lista os avisos e aplica copiando o pacote', async () => {
+  it('folder: validates (0 errors, 2 warnings), lists the warnings and applies by copying the package', async () => {
     fakePicker(await memoryDir(material3()));
     const { harness, user } = setup();
     await chooseDirectory(user);
-    const dialog = await dialogTitled('Pacote "Material Design 3 (baseline)"', 30_000);
-    expect(within(dialog).getByText(/0 erro\(s\) e 2 aviso\(s\)\./)).toBeTruthy();
-    expect(within(dialog).getByText(/Os avisos não impedem aplicar/)).toBeTruthy();
-    // Os avisos vêm agrupados por arquivo e a lista rola sozinha.
-    expect(
-      within(dialog).getByRole('group', { name: 'Problemas do pacote' }),
-    ).toBeTruthy();
-    expect(within(dialog).getAllByText('aviso').length).toBe(2);
-    await user.click(within(dialog).getByRole('button', { name: 'Aplicar' }));
-    await screen.findByText(/"Material Design 3 \(baseline\)" aplicada/);
+    const dialog = await dialogTitled('Package "Material Design 3 (baseline)"', 30_000);
+    expect(within(dialog).getByText(/0 error\(s\) and 2 warning\(s\)\./)).toBeTruthy();
+    expect(within(dialog).getByText(/Warnings do not prevent applying/)).toBeTruthy();
+    // The warnings come grouped by file and the list scrolls by itself.
+    expect(within(dialog).getByRole('group', { name: 'Package issues' })).toBeTruthy();
+    expect(within(dialog).getAllByText('warning').length).toBe(2);
+    await user.click(within(dialog).getByRole('button', { name: 'Apply' }));
+    await screen.findByText(/"Material Design 3 \(baseline\)" applied/);
     const entry = harness.project().specializations[0];
     expect(entry?.id).toBe('material3');
     expect(entry?.file).toBe('specs/material3/material3.spec.json');
   }, 60_000);
 
-  it('seletor cancelado: nada acontece', async () => {
+  it('cancelled picker: nothing happens', async () => {
     fakePicker(null);
     const { harness, user } = setup();
     await chooseDirectory(user);
-    expect(screen.queryByRole('heading', { name: /Pacote/ })).toBeNull();
+    expect(screen.queryByRole('heading', { name: /Package/ })).toBeNull();
     expect(harness.project().specializations).toHaveLength(0);
   });
 
-  it('zip com pasta-raiz única e zip sem raiz dão o mesmo resultado', async () => {
+  it('a zip with a single root folder and a zip without a root give the same result', async () => {
     for (const root of ['material3/', '']) {
       const { harness, view } = setup();
       chooseZip(await zipOf(material3(), root));
-      const dialog = await dialogTitled('Pacote "Material Design 3 (baseline)"', 30_000);
-      expect(within(dialog).getByText(/0 erro\(s\) e 2 aviso\(s\)\./)).toBeTruthy();
-      fireEvent.click(within(dialog).getByRole('button', { name: 'Aplicar' }));
-      await screen.findByText(/aplicada/);
+      const dialog = await dialogTitled('Package "Material Design 3 (baseline)"', 30_000);
+      expect(within(dialog).getByText(/0 error\(s\) and 2 warning\(s\)\./)).toBeTruthy();
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Apply' }));
+      await screen.findByText(/applied/);
       expect(harness.project().specializations[0]?.file).toBe(
         'specs/material3/material3.spec.json',
       );
@@ -496,89 +498,89 @@ describe('SpecsDialog: pacote da biblioteca', () => {
     }
   }, 90_000);
 
-  it('erro bloqueia: componente ausente desabilita Aplicar e o projeto não muda', async () => {
+  it('an error blocks: a missing component disables Apply and the project does not change', async () => {
     const files = material3();
     files.delete('components/m3-button.json');
     const { harness, user } = setup();
     chooseZip(await zipOf(files));
-    const dialog = await dialogTitled('Pacote "Material Design 3 (baseline)"', 30_000);
-    expect(within(dialog).getByText(/Corrija os erros/)).toBeTruthy();
-    expect(within(dialog).getAllByText('erro').length).toBeGreaterThan(0);
+    const dialog = await dialogTitled('Package "Material Design 3 (baseline)"', 30_000);
+    expect(within(dialog).getByText(/Fix the errors/)).toBeTruthy();
+    expect(within(dialog).getAllByText('error').length).toBeGreaterThan(0);
     expect(within(dialog).getByText(/components\/m3-button\.json/)).toBeTruthy();
-    const apply = within(dialog).getByRole('button', { name: 'Aplicar' });
+    const apply = within(dialog).getByRole('button', { name: 'Apply' });
     expect(apply).toHaveProperty('disabled', true);
-    await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Cancel' }));
     expect(harness.project().specializations).toHaveLength(0);
   }, 60_000);
 
-  it('pacote sem especialização legível: erro claro e nada a aplicar', async () => {
+  it('package without a readable specialization: clear error and nothing to apply', async () => {
     const { harness } = setup();
-    chooseZip(await zipOf(new Map([['docs/leia-me.md', '# oi']])));
-    const dialog = await dialogTitled('Pacote de especialização inválido');
-    expect(within(dialog).getByText(/não tem uma especialização legível/)).toBeTruthy();
-    expect(within(dialog).getByRole('button', { name: 'Aplicar' })).toHaveProperty(
+    chooseZip(await zipOf(new Map([['docs/readme.md', '# hi']])));
+    const dialog = await dialogTitled('Invalid specialization package');
+    expect(within(dialog).getByText(/has no readable specialization/)).toBeTruthy();
+    expect(within(dialog).getByRole('button', { name: 'Apply' })).toHaveProperty(
       'disabled',
       true,
     );
     expect(harness.project().specializations).toHaveLength(0);
   });
 
-  it('zip vazio: mensagem de erro', async () => {
+  it('empty zip: error message', async () => {
     setup();
     chooseZip(await zipOf(new Map()));
-    await screen.findByText('A pasta ou o zip não tem arquivos.');
+    await screen.findByText('The folder or zip has no files.');
   });
 
-  it('arquivo .json v4 sem arquivo do pacote vale isolado: aplica e grava specs/<id>.json', async () => {
+  it('a v4 .json file without package files stands alone: applies and writes specs/<id>.json', async () => {
     const { harness, choose } = setup();
-    // O SDUI de `tests/fixtures/sdui-v2.json` (sem `repo`) declarado como formatVersion 4: nenhuma chave de pacote.
+    // The SDUI of `tests/fixtures/sdui-v2.json` (without `repo`) declared as formatVersion 4: no package key.
     const raw = JSON.parse(readFileSync('tests/fixtures/sdui-v2.json', 'utf8')) as object;
     choose(JSON.stringify({ ...raw, formatVersion: 4 }));
-    await screen.findByText(/"SDUI" aplicada/);
+    await screen.findByText(/"SDUI" applied/);
     const entry = harness.project().specializations[0];
     expect(entry?.file).toBe('specs/sdui.json');
   });
 
-  it('arquivo .json v4 que cita arquivos do pacote é recusado', async () => {
+  it('a v4 .json file that refers to package files is refused', async () => {
     const { harness, choose } = setup();
     choose(material3().get('material3.spec.json') ?? '');
-    const dialog = await dialogTitled('Arquivo de especialização inválido');
-    expect(within(dialog).getByText(/precisa da pasta inteira/)).toBeTruthy();
+    const dialog = await dialogTitled('Invalid specialization file');
+    expect(within(dialog).getByText(/needs the whole folder/)).toBeTruthy();
     expect(harness.project().specializations).toHaveLength(0);
   });
 
-  it('atualizar com pacote: versão maior com contrato respeitado atualiza (passa `previous`)', async () => {
+  it('updating with a package: a higher version with the contract respected updates (passes `previous`)', async () => {
     const { harness, user } = setup();
     chooseZip(await zipOf(material3()));
-    const first = await dialogTitled('Pacote "Material Design 3 (baseline)"', 30_000);
-    await user.click(within(first).getByRole('button', { name: 'Aplicar' }));
-    await screen.findByText(/aplicada/);
+    const first = await dialogTitled('Package "Material Design 3 (baseline)"', 30_000);
+    await user.click(within(first).getByRole('button', { name: 'Apply' }));
+    await screen.findByText(/applied/);
 
-    // Mesma versão: nada a fazer.
+    // Same version: nothing to do.
     chooseZip(await zipOf(material3()));
-    const nothing = await dialogTitled('Nada a fazer', 30_000);
-    await user.click(within(nothing).getByRole('button', { name: 'Fechar' }));
+    const nothing = await dialogTitled('Nothing to do', 30_000);
+    await user.click(within(nothing).getByRole('button', { name: 'Close' }));
 
-    // Versão 2 só aditiva: atualiza.
+    // Version 2 only additive: updates.
     const next = material3With((spec) => {
       spec.version = 2;
     });
     expect(next.size).toBeGreaterThan(0);
-    await user.click(screen.getByRole('button', { name: 'Atualizar de zip…' }));
+    await user.click(screen.getByRole('button', { name: 'Update from zip…' }));
     chooseZip(await zipOf(next));
-    const dialog = await dialogTitled('Pacote "Material Design 3 (baseline)"', 30_000);
-    expect(within(dialog).getByText('Da versão 1 para a 2.')).toBeTruthy();
-    await user.click(within(dialog).getByRole('button', { name: 'Atualizar' }));
-    await screen.findByText(/atualizada para a versão 2/);
+    const dialog = await dialogTitled('Package "Material Design 3 (baseline)"', 30_000);
+    expect(within(dialog).getByText('From version 1 to 2.')).toBeTruthy();
+    await user.click(within(dialog).getByRole('button', { name: 'Update' }));
+    await screen.findByText(/updated to version 2/);
     expect(harness.project().specializations[0]?.version).toBe(2);
   }, 120_000);
 
-  it('atualizar com pacote: quebra sem migração é erro e bloqueia', async () => {
+  it('updating with a package: a break without migration is an error and blocks', async () => {
     const { harness, user } = setup();
     chooseZip(await zipOf(material3()));
-    const first = await dialogTitled('Pacote "Material Design 3 (baseline)"', 30_000);
-    await user.click(within(first).getByRole('button', { name: 'Aplicar' }));
-    await screen.findByText(/aplicada/);
+    const first = await dialogTitled('Package "Material Design 3 (baseline)"', 30_000);
+    await user.click(within(first).getByRole('button', { name: 'Apply' }));
+    await screen.findByText(/applied/);
 
     const broken = material3With((spec) => {
       spec.version = 2;
@@ -587,11 +589,11 @@ describe('SpecsDialog: pacote da biblioteca', () => {
         layer.annotationTypes = layer.annotationTypes.filter((t) => t.id !== 'm3-chip');
     });
     chooseZip(await zipOf(broken));
-    const dialog = await dialogTitled('Pacote "Material Design 3 (baseline)"', 30_000);
+    const dialog = await dialogTitled('Package "Material Design 3 (baseline)"', 30_000);
     expect(
       within(dialog).getAllByText(/m3-chip/, { selector: 'li' }).length,
     ).toBeGreaterThan(0);
-    expect(within(dialog).getByRole('button', { name: 'Atualizar' })).toHaveProperty(
+    expect(within(dialog).getByRole('button', { name: 'Update' })).toHaveProperty(
       'disabled',
       true,
     );
@@ -599,7 +601,7 @@ describe('SpecsDialog: pacote da biblioteca', () => {
   }, 120_000);
 });
 
-// Impacto da atualização da biblioteca com migrações (B4): aditiva, passos, perdas e recusa.
+// Impact of the library update with migrations (B4): additive, steps, losses and refusal.
 function libNext(
   steps: Spec['migrations'] extends infer M ? NonNullable<M> : never,
   edit: (types: ReturnType<typeof buttonType>[]) => void = () => {},
@@ -634,23 +636,21 @@ function renderImpact(project: Project, spec: Spec) {
   return render(<UpdateImpact project={project} impact={impact} current={1} next={2} />);
 }
 
-describe('UpdateImpact: biblioteca com migrações', () => {
+describe('UpdateImpact: library with migrations', () => {
   const base = () =>
     libProject(libSpec(1), [
       { id: 'B1', type: 'button', values: { label: 'OK', size: 3 } },
-      { id: 'B2', type: 'button', values: { label: 'Cancelar' } },
-      { id: 'G1', type: 'badge', values: { text: 'novo' } },
+      { id: 'B2', type: 'button', values: { label: 'Cancel' } },
+      { id: 'G1', type: 'badge', values: { text: 'new' } },
     ]);
 
-  it('aditiva: uma linha, sem lista de passos', () => {
+  it('additive: one line, no step list', () => {
     renderImpact(base(), libNext([]));
-    expect(
-      screen.getByText('Atualização aditiva: os dados ficam como estão.'),
-    ).toBeTruthy();
-    expect(screen.queryByText('Passos da migração')).toBeNull();
+    expect(screen.getByText('Additive update: the data stays as it is.')).toBeTruthy();
+    expect(screen.queryByText('Migration steps')).toBeNull();
   });
 
-  it('com passos: rótulo por operação e contagens', () => {
+  it('with steps: label per operation and counts', () => {
     const next = renameLabel(
       libNext([
         {
@@ -661,14 +661,14 @@ describe('UpdateImpact: biblioteca com migrações', () => {
       ]),
     );
     renderImpact(base(), next);
-    expect(screen.getByText('Passos da migração')).toBeTruthy();
-    expect(screen.getByText('Renomear o campo label → title em button')).toBeTruthy();
-    expect(screen.getByText('2 anotação(ões), 2 valor(es)')).toBeTruthy();
-    expect(screen.queryByText(/Atualização aditiva/)).toBeNull();
-    expect(screen.queryByText(/Esta atualização apaga/)).toBeNull();
+    expect(screen.getByText('Migration steps')).toBeTruthy();
+    expect(screen.getByText('Rename field label → title in button')).toBeTruthy();
+    expect(screen.getByText('2 annotation(s), 2 value(s)')).toBeTruthy();
+    expect(screen.queryByText(/Additive update/)).toBeNull();
+    expect(screen.queryByText(/This update deletes/)).toBeNull();
   });
 
-  it('passo sem efeito neste projeto', () => {
+  it('step with no effect in this project', () => {
     const next = libNext([
       {
         from: 1,
@@ -677,11 +677,11 @@ describe('UpdateImpact: biblioteca com migrações', () => {
       },
     ]);
     renderImpact(base(), next);
-    expect(screen.getByText('Preencher a em chip com x')).toBeTruthy();
-    expect(screen.getByText('nada a mudar neste projeto')).toBeTruthy();
+    expect(screen.getByText('Fill a in chip with x')).toBeTruthy();
+    expect(screen.getByText('nothing to change in this project')).toBeTruthy();
   });
 
-  it('perdas em destaque, total e por passo', () => {
+  it('losses highlighted, total and per step', () => {
     const next = libNext(
       [
         {
@@ -708,27 +708,27 @@ describe('UpdateImpact: biblioteca com migrações', () => {
     const { container } = renderImpact(base(), spec);
     const alert = container.querySelector('p.notice.notice-error');
     expect(alert?.textContent).toBe(
-      'Esta atualização apaga 1 valor(es) e 1 anotação(ões).',
+      'This update deletes 1 value(s) and 1 annotation(s).',
     );
-    expect(screen.getByText(/campo size removido \(valor "3"\)/)).toBeTruthy();
-    expect(screen.getByText(/anotação apagada/)).toBeTruthy();
-    expect(screen.getByText('Remover o tipo badge (apagar as anotações)')).toBeTruthy();
+    expect(screen.getByText(/field size removed \(value "3"\)/)).toBeTruthy();
+    expect(screen.getByText(/annotation deleted/)).toBeTruthy();
+    expect(screen.getByText('Remove type badge (delete the annotations)')).toBeTruthy();
   });
 
-  it('recusada: lista o que falta e some a lista de passos', () => {
+  it('refused: lists what is missing and the step list disappears', () => {
     const next = renameLabel(libNext([]));
     const { container } = renderImpact(base(), next);
     const alert = container.querySelector('div.notice.notice-error');
-    expect(alert?.textContent).toContain('faltam migrações');
+    expect(alert?.textContent).toContain('declared migrations are missing');
     expect(alert?.querySelectorAll('li').length).toBeGreaterThan(0);
-    expect(screen.queryByText('Passos da migração')).toBeNull();
+    expect(screen.queryByText('Migration steps')).toBeNull();
   });
 });
 
-// Passos de papel do vínculo no diálogo de atualização (etapa #557, decisão 11).
+// Link role steps in the update dialog (stage #557, decision 11).
 const ROLE_LIST = [
-  { id: 'click', name: 'Clique' },
-  { id: 'hover', name: 'Foco' },
+  { id: 'click', name: 'Click' },
+  { id: 'hover', name: 'Focus' },
 ];
 
 function roleLib(version: number, roles = ROLE_LIST, over: Partial<Spec> = {}): Spec {
@@ -755,13 +755,18 @@ const roleNext = (
   roles = ROLE_LIST,
 ) => roleLib(2, roles, { migrations: [{ from: 1, to: 2, steps }] });
 
-describe('UpdateImpact: passos de papel (pt-BR)', () => {
-  it('rename-role: rótulo e contagem, sem perda', () => {
+// pt-BR kept: the pt-BR rendering of the role-step labels and losses is the object of this block
+describe('UpdateImpact: role steps (pt-BR)', () => {
+  beforeEach(() => {
+    locale.value = 'pt-BR';
+  });
+
+  it('rename-role: label and count, no loss', () => {
     const { container } = renderImpact(
       roleBase(),
       roleNext(
         [{ op: 'rename-role', type: 'button', from: 'click', to: 'hover' }],
-        [{ id: 'hover', name: 'Foco' }],
+        [{ id: 'hover', name: 'Focus' }],
       ),
     );
     expect(screen.getByText('Renomear o papel click → hover em button')).toBeTruthy();
@@ -769,12 +774,12 @@ describe('UpdateImpact: passos de papel (pt-BR)', () => {
     expect(container.querySelector('p.notice.notice-error')).toBeNull();
   });
 
-  it('remove-role com clear: rótulo, perda "papel limpo" e o total conta como valor', () => {
+  it('remove-role with clear: label, "role cleared" loss and the total counts as a value', () => {
     const { container } = renderImpact(
       roleBase(),
       roleNext(
         [{ op: 'remove-role', type: 'button', role: 'hover', mode: 'clear' }],
-        [{ id: 'click', name: 'Clique' }],
+        [{ id: 'click', name: 'Click' }],
       ),
     );
     expect(
@@ -786,12 +791,12 @@ describe('UpdateImpact: passos de papel (pt-BR)', () => {
     );
   });
 
-  it('remove-role com unlink: contagem de desvinculadas, perda e o total com vínculo(s)', () => {
+  it('remove-role with unlink: count of unlinked, loss and the total with link(s)', () => {
     const { container } = renderImpact(
       roleBase(),
       roleNext(
         [{ op: 'remove-role', type: 'button', role: 'hover', mode: 'unlink' }],
-        [{ id: 'click', name: 'Clique' }],
+        [{ id: 'click', name: 'Click' }],
       ),
     );
     expect(
@@ -804,7 +809,7 @@ describe('UpdateImpact: passos de papel (pt-BR)', () => {
     );
   });
 
-  it('set-role sem e com childType', () => {
+  it('set-role without and with childType', () => {
     const base = libProject(roleLib(1, []), [
       { id: 'B1', type: 'button' },
       { id: 'C1', type: 'chip', parent: 'B1' },
@@ -820,10 +825,10 @@ describe('UpdateImpact: passos de papel (pt-BR)', () => {
     expect(screen.getByText('Dar o papel hover aos filhos chip de button')).toBeTruthy();
   });
 
-  it('quebra de papel sem passo: recusada com a mensagem da quebra', () => {
+  it('role break without a step: refused with the break message', () => {
     const { container } = renderImpact(
       roleBase(),
-      roleLib(2, [{ id: 'click', name: 'Clique' }]),
+      roleLib(2, [{ id: 'click', name: 'Click' }]),
     );
     const alert = container.querySelector('div.notice.notice-error');
     expect(alert?.textContent).toContain('faltam migrações');
@@ -832,17 +837,17 @@ describe('UpdateImpact: passos de papel (pt-BR)', () => {
   });
 });
 
-describe('UpdateImpact: passos de papel (en-US)', () => {
+describe('UpdateImpact: role steps (en-US)', () => {
   beforeEach(() => {
     locale.value = 'en-US';
   });
 
-  it('rótulos, perdas e total', () => {
+  it('labels, losses and total', () => {
     const clear = renderImpact(
       roleBase(),
       roleNext(
         [{ op: 'remove-role', type: 'button', role: 'hover', mode: 'clear' }],
-        [{ id: 'click', name: 'Clique' }],
+        [{ id: 'click', name: 'Click' }],
       ),
     );
     expect(screen.getByText('Remove role hover in button (clear the role)')).toBeTruthy();
@@ -852,7 +857,7 @@ describe('UpdateImpact: passos de papel (en-US)', () => {
       roleBase(),
       roleNext(
         [{ op: 'remove-role', type: 'button', role: 'hover', mode: 'unlink' }],
-        [{ id: 'click', name: 'Clique' }],
+        [{ id: 'click', name: 'Click' }],
       ),
     );
     expect(screen.getByText('Remove role hover in button (unlink)')).toBeTruthy();
@@ -865,7 +870,7 @@ describe('UpdateImpact: passos de papel (en-US)', () => {
       roleBase(),
       roleNext(
         [{ op: 'rename-role', type: 'button', from: 'click', to: 'hover' }],
-        [{ id: 'hover', name: 'Foco' }],
+        [{ id: 'hover', name: 'Focus' }],
       ),
     );
     expect(screen.getByText('Rename role click → hover in button')).toBeTruthy();
@@ -886,10 +891,10 @@ describe('UpdateImpact: passos de papel (en-US)', () => {
   });
 });
 
-describe('SpecsDialog: atualizar biblioteca v4', () => {
+describe('SpecsDialog: update library v4', () => {
   const chooseZip = (file: File) => {
     const input = document.querySelector<HTMLInputElement>('input[accept^=".zip"]');
-    if (!input) throw new Error('sem input de zip');
+    if (!input) throw new Error('no zip input');
     fireEvent.change(input, { target: { files: [file] } });
   };
   const pkg = (spec: Spec) =>
@@ -911,11 +916,11 @@ describe('SpecsDialog: atualizar biblioteca v4', () => {
       ],
     ]);
   const base = () =>
-    libProject(libSpec(1), [{ id: 'G1', type: 'badge', values: { text: 'novo' } }]);
+    libProject(libSpec(1), [{ id: 'G1', type: 'badge', values: { text: 'new' } }]);
 
   beforeEach(() => hideToolWindow('incomplete'));
 
-  it('com pendências: mostra a contagem, atualiza e abre Incompletas', async () => {
+  it('with pending items: shows the count, updates and opens Incomplete', async () => {
     const { harness, user } = setup(base());
     const next = libNext([
       { from: 1, to: 2, steps: [{ op: 'remove-type', type: 'badge', mode: 'convert' }] },
@@ -927,18 +932,18 @@ describe('SpecsDialog: atualizar biblioteca v4', () => {
         annotationTypes: l.annotationTypes.filter((t) => t.id !== 'badge'),
       })),
     };
-    await user.click(screen.getByRole('button', { name: 'Atualizar de zip…' }));
+    await user.click(screen.getByRole('button', { name: 'Update from zip…' }));
     chooseZip(await zipOf(pkg(spec)));
-    const dialog = await dialogTitled('Pacote "Lib"', 30_000);
-    expect(within(dialog).getByText(/1 pendência\(s\) ficam/)).toBeTruthy();
+    const dialog = await dialogTitled('Package "Lib"', 30_000);
+    expect(within(dialog).getByText(/1 pending item\(s\) remain/)).toBeTruthy();
     expect(isToolWindowOpen('incomplete')).toBe(false);
-    await user.click(within(dialog).getByRole('button', { name: 'Atualizar' }));
-    await screen.findByText(/1 pendência\(s\) em Incompletas/);
+    await user.click(within(dialog).getByRole('button', { name: 'Update' }));
+    await screen.findByText(/1 pending item\(s\) in Incomplete/);
     expect(harness.project().specializations[0]?.version).toBe(2);
     expect(isToolWindowOpen('incomplete')).toBe(true);
   }, 60_000);
 
-  it('com pendências: Incompletas guarda a origem; sem o diálogo, fechar leva o foco à faixa', async () => {
+  it('with pending items: Incomplete keeps the origin; without the dialog, closing takes the focus to the strip', async () => {
     const { harness, user, view } = setup(base());
     const next = libNext([
       { from: 1, to: 2, steps: [{ op: 'remove-type', type: 'badge', mode: 'convert' }] },
@@ -950,26 +955,26 @@ describe('SpecsDialog: atualizar biblioteca v4', () => {
         annotationTypes: l.annotationTypes.filter((t) => t.id !== 'badge'),
       })),
     };
-    await user.click(screen.getByRole('button', { name: 'Atualizar de zip…' }));
+    await user.click(screen.getByRole('button', { name: 'Update from zip…' }));
     chooseZip(await zipOf(pkg(spec)));
-    const dialog = await dialogTitled('Pacote "Lib"', 30_000);
-    const confirm = within(dialog).getByRole('button', { name: 'Atualizar' });
+    const dialog = await dialogTitled('Package "Lib"', 30_000);
+    const confirm = within(dialog).getByRole('button', { name: 'Update' });
     confirm.focus();
     fireEvent.click(confirm);
-    await screen.findByText(/1 pendência\(s\) em Incompletas/);
+    await screen.findByText(/1 pending item\(s\) in Incomplete/);
     expect(isToolWindowOpen('incomplete')).toBe(true);
-    // O diálogo fecha e leva a origem guardada junto.
+    // The dialog closes and takes the saved origin with it.
     view.unmount();
     render(
       <EditorContext.Provider value={harness.context}>
         <ToolStrip side="left" />
         <ToolWindow id="incomplete">
-          <button type="button">controle incomplete</button>
+          <button type="button">incomplete control</button>
         </ToolWindow>
       </EditorContext.Provider>,
     );
     expect(confirm.isConnected).toBe(false);
-    screen.getByRole('button', { name: 'controle incomplete' }).focus();
+    screen.getByRole('button', { name: 'incomplete control' }).focus();
     closeToolWindow('incomplete');
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
     expect(document.activeElement).not.toBe(document.body);
@@ -978,32 +983,32 @@ describe('SpecsDialog: atualizar biblioteca v4', () => {
     );
   }, 60_000);
 
-  it('recusada: o Atualizar fica desabilitado e a versão não muda', async () => {
+  it('refused: Update stays disabled and the version does not change', async () => {
     const { harness, user } = setup(base());
     const spec = renameLabel(libNext([]));
-    await user.click(screen.getByRole('button', { name: 'Atualizar de zip…' }));
+    await user.click(screen.getByRole('button', { name: 'Update from zip…' }));
     chooseZip(await zipOf(pkg(spec)));
-    const dialog = await dialogTitled('Pacote "Lib"', 30_000);
-    expect(within(dialog).getByRole('button', { name: 'Atualizar' })).toHaveProperty(
+    const dialog = await dialogTitled('Package "Lib"', 30_000);
+    expect(within(dialog).getByRole('button', { name: 'Update' })).toHaveProperty(
       'disabled',
       true,
     );
-    expect(within(dialog).getByText(/faltam migrações/)).toBeTruthy();
+    expect(within(dialog).getByText(/declared migrations are missing/)).toBeTruthy();
     expect(harness.project().specializations[0]?.version).toBe(1);
   }, 60_000);
 
-  it('quebra de papel sem passo: o Atualizar fica desabilitado e a mensagem cita o papel', async () => {
+  it('role break without a step: Update stays disabled and the message cites the role', async () => {
     const { harness, user } = setup(roleBase());
-    // v11 (sem passo de papel): o papel `hover` sai dos `childRoles` do button.
-    const spec = { ...roleLib(2, [{ id: 'click', name: 'Clique' }]), formatVersion: 11 };
-    await user.click(screen.getByRole('button', { name: 'Atualizar de zip…' }));
+    // v11 (no role step): the `hover` role leaves the `childRoles` of the button.
+    const spec = { ...roleLib(2, [{ id: 'click', name: 'Click' }]), formatVersion: 11 };
+    await user.click(screen.getByRole('button', { name: 'Update from zip…' }));
     chooseZip(await zipOf(pkg(spec as Spec)));
-    const dialog = await dialogTitled('Pacote "Lib"', 30_000);
-    expect(within(dialog).getByRole('button', { name: 'Atualizar' })).toHaveProperty(
+    const dialog = await dialogTitled('Package "Lib"', 30_000);
+    expect(within(dialog).getByRole('button', { name: 'Update' })).toHaveProperty(
       'disabled',
       true,
     );
-    expect(within(dialog).getByText(/faltam migrações/)).toBeTruthy();
+    expect(within(dialog).getByText(/declared migrations are missing/)).toBeTruthy();
     expect(
       within(dialog).getAllByText(/hover/, { selector: 'li' }).length,
     ).toBeGreaterThan(0);
@@ -1011,11 +1016,12 @@ describe('SpecsDialog: atualizar biblioteca v4', () => {
   }, 60_000);
 });
 
-// MB3 (#1358): a especialização solta recusada e a atualização recusada por migração faltando
-// saem na língua da app (decisão 5); em en-US sem palavra do português fora dos parâmetros.
+// MB3 (#1358): the refused loose specialization and the update refused for a missing migration
+// come out in the app language (decision 5); in en-US without any Portuguese word outside the parameters.
+// pt-BR kept: the regex detects Portuguese characters in the en-US output, and the pt-BR tests check the model text
 const PORTUGUESE = /[ãõçáéíóúâêô]/i;
 
-describe('mensagens do modelo na língua da app (MB3)', () => {
+describe('model messages in the app language (MB3)', () => {
   const looseSpec = JSON.stringify({
     format: 'mapping-spec',
     formatVersion: 15,
@@ -1026,7 +1032,7 @@ describe('mensagens do modelo na língua da app (MB3)', () => {
     layers: [],
   });
 
-  it('en-US: a especialização solta recusada mostra o caminho e o problema em inglês', async () => {
+  it('en-US: the refused loose specialization shows the path and the problem in English', async () => {
     locale.value = 'en-US';
     const { choose } = setup();
     choose(looseSpec);
@@ -1037,16 +1043,18 @@ describe('mensagens do modelo na língua da app (MB3)', () => {
     expect(dialog.textContent).not.toMatch(PORTUGUESE);
   });
 
-  it('pt-BR: a especialização solta recusada segue com o texto do modelo', async () => {
+  it('pt-BR: the refused loose specialization keeps the model text', async () => {
+    locale.value = 'pt-BR';
     const { choose } = setup();
     choose(looseSpec);
+    // pt-BR kept: the pt-BR text of the dialog and of the model message is the object of the test
     const dialog = await dialogTitled('Arquivo de especialização inválido');
     expect(dialog.textContent).toContain(
       'platforms[0].repo.url: deve começar com http:// ou https://, sem espaços',
     );
   });
 
-  it('en-US: a atualização recusada lista as quebras sem migração em inglês', () => {
+  it('en-US: the refused update lists the breaks without migration in English', () => {
     locale.value = 'en-US';
     const base = libProject(libSpec(1), [
       { id: 'B1', type: 'button', values: { label: 'OK' } },
@@ -1062,7 +1070,8 @@ describe('mensagens do modelo na língua da app (MB3)', () => {
     for (const item of items) expect(item).not.toMatch(PORTUGUESE);
   });
 
-  it('pt-BR: a atualização recusada segue com o texto do modelo', () => {
+  it('pt-BR: the refused update keeps the model text', () => {
+    locale.value = 'pt-BR';
     const base = libProject(libSpec(1), [
       { id: 'B1', type: 'button', values: { label: 'OK' } },
     ]);
@@ -1070,6 +1079,7 @@ describe('mensagens do modelo na língua da app (MB3)', () => {
     const items = [...container.querySelectorAll('div.notice.notice-error li')].map(
       (li) => li.textContent ?? '',
     );
+    // pt-BR kept: the pt-BR text of the model message is the object of the test
     expect(items).toContain(
       'o campo "label" do tipo "button" foi removido; declare um passo "remove-field" ou "rename-field" em migrations',
     );

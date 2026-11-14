@@ -9,11 +9,11 @@ import { sampleProject } from '../../model/fixtures';
 import { changeOf, propose } from '../../model/proposalFixtures';
 import { openReviewHarness, renderInEditor } from './reviewHarness';
 
-// Etapa #954, fase 4 (itens 54 e 56): a `key` dos avisos é única e as listas de marcações
-// que saem junto dizem "e mais N" quando cortadas.
+// Stage #954, phase 4 (items 54 and 56): the `key` of the notices is unique and the lists of
+// markings that go along say "and N more" when cut off.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   localStorage.clear();
 });
 afterEach(() => {
@@ -21,8 +21,8 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('ReviewHeader › lista do que sai junto com a imagem removida (item 56)', () => {
-  it('diz "e mais N" quando as marcações passam do corte', async () => {
+describe('ReviewHeader › list of what goes along with the removed image (item 56)', () => {
+  it('says "and N more" when the markings exceed the cut', async () => {
     const base = sampleProject();
     let withImage = addContainer(base, {
       id: 'I9',
@@ -37,7 +37,7 @@ describe('ReviewHeader › lista do que sai junto com a imagem removida (item 56
         rect: { x: i * 40, y: 0, width: 30, height: 30 },
       });
     }
-    // A proposta remove a imagem I9 e as 20 marcações.
+    // The proposal removes image I9 and the 20 markings.
     const proposal = propose(withImage, base);
     const h = await openReviewHarness({ project: withImage, proposals: [proposal] });
     expect(h.review.open('P1').ok).toBe(true);
@@ -48,19 +48,19 @@ describe('ReviewHeader › lista do que sai junto com a imagem removida (item 56
       <ReviewHeader target={target} whole={changeOf(proposal, 'image', 'I9')} />,
     );
     const items = document.querySelectorAll('.review-removal-list li');
-    // 12 marcações visíveis + a linha "e mais 8".
+    // 12 visible markings + the "and 8 more" line.
     expect(items).toHaveLength(13);
-    expect(screen.getByText('e mais 8')).toBeTruthy();
+    expect(screen.getByText('and 8 more')).toBeTruthy();
   });
 });
 
-describe('ReviewHeader › key dos avisos (item 54)', () => {
-  it('avisos que só diferem em otherId mantêm o próprio elemento quando o primeiro some', async () => {
+describe('ReviewHeader › key of the notices (item 54)', () => {
+  it('notices that only differ in otherId keep their own element when the first one disappears', async () => {
     const { base, proposal, ids } = richScenario();
     const h = await openReviewHarness({ project: base, proposals: [proposal] });
     expect(h.review.open('P1').ok).toBe(true);
     const real = h.review.derived.validation.value;
-    if (!real) throw new Error('sem validação');
+    if (!real) throw new Error('no validation');
     const issue = (otherId: string) => ({
       code: 'missing-specialization' as const,
       id: 'M1',

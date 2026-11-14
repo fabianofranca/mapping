@@ -19,13 +19,13 @@ import { AT, propose } from '../../model/proposalFixtures';
 import { openHarness, type HarnessOptions } from '../../store/proposalHarness';
 
 /**
- * Sessão real sobre uma pasta em memória com propostas (a mesma de
- * `tests/store/proposalHarness.ts`) e o contexto do editor montado em cima dela, com a
- * revisão (`context.review`) que os componentes leem.
+ * Real session over an in-memory folder with proposals (the same as
+ * `tests/store/proposalHarness.ts`) and the editor context mounted on top of it, with the
+ * review (`context.review`) that the components read.
  */
 export async function openReviewHarness(options: HarnessOptions = {}) {
   const harness = await openHarness(options);
-  // A revisão do harness de store não é usada aqui: o contexto cria a dele.
+  // The store harness review is not used here: the context creates its own.
   harness.review.dispose();
   const context = createEditorContextValue({
     kind: 'folder',
@@ -40,11 +40,12 @@ export async function openReviewHarness(options: HarnessOptions = {}) {
 export type ReviewHarness = Awaited<ReturnType<typeof openReviewHarness>>;
 
 /**
- * Importação nova: projeto recém-criado (sem imagens, só a camada `L1`) e a proposta que
- * cria a camada `L2` "Eventos", a imagem `I1` (800×600, em (0, 0)) e nela a marcação `M1`
- * "Formulário" com uma anotação na camada nova. Nada disso existe fora da prévia.
+ * New import: freshly created project (no images, only layer `L1`) and the proposal that
+ * creates layer `L2` "Eventos", image `I1` (800×600, at (0, 0)) and in it marking `M1`
+ * "Formulário" with an annotation on the new layer. None of this exists outside the preview.
  */
 export function firstImport() {
+  // pt-BR kept: shared fixture data asserted by tests/components and tests/canvas
   const base = createProject({
     name: 'Importação',
     now: AT,
@@ -78,7 +79,7 @@ export function renderInEditor(h: ReviewHarness, children: ComponentChildren) {
   );
 }
 
-/** Os Detalhes da revisão (`ReviewPanel`) com os atalhos do editor ligados (A, R, N, C…). */
+/** The review Details (`ReviewPanel`) with the editor shortcuts on (A, R, N, C…). */
 export function PanelWithShortcuts() {
   const dialogs = { current: null, show() {}, close() {} } as unknown as EditorDialogs;
   const commands = { exportProject: async () => {} } as unknown as ProjectCommands;
@@ -86,7 +87,7 @@ export function PanelWithShortcuts() {
   return <ReviewPanel onGoToAnnotation={() => {}} />;
 }
 
-/** Abre a proposta `P1`, seleciona o nível e monta os Detalhes da revisão com os atalhos. */
+/** Opens proposal `P1`, selects the level and mounts the review Details with the shortcuts. */
 export async function showReviewPanel(
   options: Parameters<typeof openReviewHarness>[0],
   target: Parameters<ReviewHarness['review']['select']>[0],

@@ -43,31 +43,31 @@ function mount(
   );
 }
 
-describe('CanvasNotices — pé do canvas (PV2, decisão 7)', () => {
-  it('o aviso curto vai para o .canvas-overlay-foot, com o papel e o texto de sempre', () => {
+describe('CanvasNotices — canvas foot (PV2, decision 7)', () => {
+  it('the short notice goes to .canvas-overlay-foot, with the usual role and text', () => {
     const harness = createHarness(sampleProject());
     const { container } = mount(harness);
-    act(() => showToast(harness.ui, 'Cada lado precisa ter pelo menos 8 px.'));
+    act(() => showToast(harness.ui, 'Each side must be at least 8 px.'));
     const foot = container.querySelector('.canvas-overlay-foot');
     expect(foot).not.toBeNull();
     const toast = screen.getByRole('status');
     expect(foot?.contains(toast)).toBe(true);
-    expect(toast.textContent).toBe('Cada lado precisa ter pelo menos 8 px.');
+    expect(toast.textContent).toBe('Each side must be at least 8 px.');
     expect(container.querySelector('.canvas-overlay')?.contains(toast)).toBe(false);
   });
 
-  it('o progresso vai para o pé, com aria-live polite', () => {
+  it('the progress goes to the foot, with aria-live polite', () => {
     const harness = createHarness(sampleProject());
-    const { container } = mount(harness, fakeNotices({ progress: 'Importando' }));
+    const { container } = mount(harness, fakeNotices({ progress: 'Importing' }));
     const foot = container.querySelector('.canvas-overlay-foot');
-    const progress = screen.getByText('Importando');
+    const progress = screen.getByText('Importing');
     expect(foot?.contains(progress)).toBe(true);
     expect(progress.getAttribute('aria-live')).toBe('polite');
   });
 
-  // Achado 1.1 (CL1): numa coluna estreita (canvas de 360 px, pé de ~200 px) o aviso quebra em
-  // linhas em vez de cortar o texto com reticências (a medida de verdade está no e2e).
-  it('o aviso do pé quebra linha: sem nowrap nem reticências', () => {
+  // Finding 1.1 (CL1): in a narrow column (360 px canvas, ~200 px foot) the notice wraps onto
+  // lines instead of cutting the text with an ellipsis (the real measurement is in the e2e).
+  it('the foot notice wraps: no nowrap or ellipsis', () => {
     const css = readFileSync('src/theme/canvas.css', 'utf8');
     const rule = /\.canvas-overlay-foot \.notice\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
     expect(rule).not.toBe('');
@@ -76,15 +76,15 @@ describe('CanvasNotices — pé do canvas (PV2, decisão 7)', () => {
     expect(rule).not.toMatch(/overflow:\s*hidden/);
   });
 
-  it('sem aviso curto nem progresso, não há pé', () => {
+  it('without a short notice or progress, there is no foot', () => {
     const harness = createHarness(sampleProject());
     const { container } = mount(harness);
     expect(container.querySelector('.canvas-overlay-foot')).toBeNull();
   });
 });
 
-describe('CanvasNotices — topo do canvas', () => {
-  it('Somente leitura fica no .canvas-overlay', () => {
+describe('CanvasNotices — top of the canvas', () => {
+  it('Read-only goes in .canvas-overlay', () => {
     const harness = createHarness(sampleProject(), true);
     const { container } = mount(harness);
     const top = container.querySelector('.canvas-overlay');
@@ -92,15 +92,15 @@ describe('CanvasNotices — topo do canvas', () => {
     expect(container.querySelector('.canvas-overlay-foot')).toBeNull();
   });
 
-  it('a mensagem de erro fica no .canvas-overlay, não no pé', () => {
+  it('the error message goes in .canvas-overlay, not in the foot', () => {
     const harness = createHarness(sampleProject());
-    const { container } = mount(harness, fakeNotices({ message: 'Deu ruim' }));
+    const { container } = mount(harness, fakeNotices({ message: 'It went wrong' }));
     const alert = screen.getByRole('alert');
     expect(container.querySelector('.canvas-overlay')?.contains(alert)).toBe(true);
     expect(container.querySelector('.canvas-overlay-foot')).toBeNull();
   });
 
-  it('reparo, backup da migração e erro de gravação ficam no .canvas-overlay', () => {
+  it('repair, migration backup and save error go in .canvas-overlay', () => {
     const harness = createHarness(sampleProject());
     Object.assign(harness.context.open, { repaired: [{}] });
     Object.assign(harness.context.session.saveStatus, { value: 'error' });

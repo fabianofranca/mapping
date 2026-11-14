@@ -22,8 +22,8 @@ function setup() {
   return h;
 }
 
-describe('Modo visualização: botão', () => {
-  it('liga e desliga o modo visualização, com aria-pressed, e desabilita Desenhar enquanto ligado', () => {
+describe('View mode: button', () => {
+  it('turns view mode on and off, with aria-pressed, and disables Draw while on', () => {
     const h = setup();
     const button = screen.getByRole('button', { name: t('view.viewMode') });
     const draw = screen.getByRole('button', { name: t('editor.modeDraw') });
@@ -40,7 +40,7 @@ describe('Modo visualização: botão', () => {
     expect(button.getAttribute('aria-pressed')).toBe('false');
   });
 
-  it('entrar no modo abre o painel Mostrar no canvas; sair o fecha', () => {
+  it('entering the mode opens the Show on canvas panel; leaving closes it', () => {
     setup();
     const button = screen.getByRole('button', { name: t('view.viewMode') });
     expect(screen.queryByRole('dialog', { name: t('view.panelTitle') })).toBeNull();
@@ -50,13 +50,13 @@ describe('Modo visualização: botão', () => {
     expect(screen.queryByRole('dialog', { name: t('view.panelTitle') })).toBeNull();
   });
 
-  it('Mostrar no canvas só fica habilitado no modo e reabre o painel', () => {
+  it('Show on canvas is only enabled in the mode and reopens the panel', () => {
     const h = setup();
     const open = screen.getByRole('button', { name: t('view.panelOpen') });
     expect(open.hasAttribute('disabled')).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: t('view.viewMode') }));
     expect(open.hasAttribute('disabled')).toBe(false);
-    // Esc fecha o painel e o modo continua.
+    // Esc closes the panel and the mode stays.
     fireEvent.keyDown(screen.getByRole('dialog', { name: t('view.panelTitle') }), {
       key: 'Escape',
     });
@@ -66,17 +66,17 @@ describe('Modo visualização: botão', () => {
     expect(screen.getByRole('dialog', { name: t('view.panelTitle') })).toBeTruthy();
   });
 
-  it('Alt+H ou Esc para sair do modo deixam o foco em Visualizar, não no body', () => {
+  it('Alt+H or Esc to leave the mode leave focus on View, not on body', () => {
     const h = setup();
     const button = screen.getByRole('button', { name: t('view.viewMode') });
     fireEvent.click(button);
-    // O foco está dentro do painel (primeira caixa); sair pelo Alt+H leva o foco ao Visualizar.
+    // Focus is inside the panel (first box); leaving with Alt+H moves focus to View.
     expect(document.activeElement).not.toBe(document.body);
     act(() => setViewMode(h.ui, false));
     expect(document.activeElement).toBe(button);
   });
 
-  it('Esc no painel aberto ao ligar o modo devolve o foco ao Visualizar', () => {
+  it('Esc in the panel opened when turning the mode on returns focus to View', () => {
     setup();
     const button = screen.getByRole('button', { name: t('view.viewMode') });
     fireEvent.click(button);
@@ -86,7 +86,7 @@ describe('Modo visualização: botão', () => {
     expect(document.activeElement).toBe(button);
   });
 
-  it('painel aberto por Mostrar no canvas devolve o foco a ele ao fechar', () => {
+  it('panel opened by Show on canvas returns focus to it on close', () => {
     setup();
     fireEvent.click(screen.getByRole('button', { name: t('view.viewMode') }));
     const dialog = () => screen.getByRole('dialog', { name: t('view.panelTitle') });
@@ -97,7 +97,7 @@ describe('Modo visualização: botão', () => {
     expect(document.activeElement).toBe(open);
   });
 
-  it('a dica do Visualizar fica suprimida enquanto o painel está aberto', () => {
+  it('the View hint stays suppressed while the panel is open', () => {
     setup();
     const button = screen.getByRole('button', { name: t('view.viewMode') });
     const anchor = () => button.closest('.tooltip-anchor');

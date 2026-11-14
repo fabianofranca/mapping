@@ -10,11 +10,11 @@ import {
 import { richScenario } from '../../store/proposalHarness';
 import { PanelWithShortcuts, openReviewHarness } from './reviewHarness';
 
-// Etapa #515 (FN1, #474): a legenda das marcas é um painel não modal; Esc com o foco
-// dentro fecha, e fechar (X ou Esc) devolve o foco ao botão "Legenda das marcas".
+// Stage #515 (FN1, #474): the mark legend is a non-modal panel; Esc with focus inside
+// closes it, and closing (X or Esc) returns focus to the "Mark legend" button.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
@@ -43,15 +43,15 @@ async function openLegend() {
   return button;
 }
 
-describe('legenda das marcas da revisão', () => {
-  it('o X se chama "Fechar legenda"', async () => {
+describe('review mark legend', () => {
+  it('the X is called "Close legend"', async () => {
     await mount();
     await openLegend();
-    expect(t('review.legend.close')).toBe('Fechar legenda');
-    expect(screen.getByRole('button', { name: 'Fechar legenda' })).toBeTruthy();
+    expect(t('review.legend.close')).toBe('Close legend');
+    expect(screen.getByRole('button', { name: 'Close legend' })).toBeTruthy();
   });
 
-  it('Esc com o foco dentro fecha e o foco volta ao botão que abriu', async () => {
+  it('Esc with focus inside closes it and focus returns to the button that opened it', async () => {
     const h = await mount();
     const button = await openLegend();
     const close = screen.getByRole('button', { name: t('review.legend.close') });
@@ -62,7 +62,7 @@ describe('legenda das marcas da revisão', () => {
     expect(document.activeElement).toBe(button);
   });
 
-  it('fechar pelo X devolve o foco ao botão que abriu', async () => {
+  it('closing with the X returns focus to the button that opened it', async () => {
     const h = await mount();
     const button = await openLegend();
     const close = screen.getByRole('button', { name: t('review.legend.close') });
@@ -73,7 +73,7 @@ describe('legenda das marcas da revisão', () => {
     expect(document.activeElement).toBe(button);
   });
 
-  it('Esc com o foco em outro lugar (fora do canvas) não a fecha', async () => {
+  it('Esc with focus elsewhere (outside the canvas) does not close it', async () => {
     const h = await mount();
     await openLegend();
     const outside = document.createElement('button');
@@ -85,7 +85,7 @@ describe('legenda das marcas da revisão', () => {
     outside.remove();
   });
 
-  it('Esc com o foco no botão da legenda a fecha e o foco fica no botão', async () => {
+  it('Esc with focus on the legend button closes it and focus stays on the button', async () => {
     const h = await mount();
     const button = await openLegend();
     button.focus();
@@ -95,7 +95,7 @@ describe('legenda das marcas da revisão', () => {
     expect(document.activeElement).toBe(button);
   });
 
-  it('aberta pelo L com o foco no canvas, o Esc fecha só a legenda e o seguinte limpa a seleção', async () => {
+  it('opened with L with focus on the canvas, Esc closes only the legend and the next one clears the selection', async () => {
     const h = await mount();
     const canvas = document.createElement('main');
     canvas.setAttribute('data-canvas-area', '');
@@ -106,7 +106,7 @@ describe('legenda das marcas da revisão', () => {
     await settle();
     expect(h.ui.reviewLegend.value).toBe(true);
     expect(document.activeElement).toBe(canvas);
-    h.ui.selection.value = { kind: 'image', id: 'qualquer' };
+    h.ui.selection.value = { kind: 'image', id: 'any' };
     fireEvent.keyDown(canvas, { key: 'Escape' });
     await settle();
     expect(h.ui.reviewLegend.value).toBe(false);
@@ -118,7 +118,7 @@ describe('legenda das marcas da revisão', () => {
     canvas.remove();
   });
 
-  it('L com o foco dentro da legenda a fecha e o foco volta ao botão que abriu', async () => {
+  it('L with focus inside the legend closes it and focus returns to the button that opened it', async () => {
     const h = await mount();
     const button = await openLegend();
     const close = screen.getByRole('button', { name: t('review.legend.close') });
@@ -129,7 +129,7 @@ describe('legenda das marcas da revisão', () => {
     expect(document.activeElement).toBe(button);
   });
 
-  it('L com o foco fora da legenda a fecha sem mexer no foco', async () => {
+  it('L with focus outside the legend closes it without touching focus', async () => {
     const h = await mount();
     await openLegend();
     const outside = document.createElement('button');

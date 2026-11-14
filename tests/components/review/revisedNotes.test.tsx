@@ -7,19 +7,19 @@ import { richScenario } from '../../store/proposalHarness';
 import { openReviewHarness, renderInEditor } from './reviewHarness';
 import { REVISED_AT } from './revisedFixture';
 
-// Nota que subiu de uma mudança retirada (etapa #644, CP3): mostra de onde veio.
+// Note that moved up from a withdrawn change (stage #644, CP3): shows where it came from.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   localStorage.clear();
 });
 afterEach(cleanup);
 
-/** A mudança `rect` foi retirada numa revisão e a nota dela subiu ao nível da proposta. */
+/** The `rect` change was withdrawn in a revision and its note moved up to the proposal level. */
 function withDroppedNote(): Proposal {
   const { proposal, ids } = richScenario();
   const dropped = proposal.changes.find((c) => c.id === ids.rect);
-  if (!dropped) throw new Error('sem a mudança de posição');
+  if (!dropped) throw new Error('no position change');
   return {
     ...proposal,
     formatVersion: 5,
@@ -28,13 +28,13 @@ function withDroppedNote(): Proposal {
       {
         id: 'n1',
         target: { level: 'proposal', id: null },
-        text: 'Mantenha a posição antiga',
+        text: 'Keep the old position',
         at: REVISED_AT,
       },
       {
         id: 'n2',
         target: { level: 'proposal', id: null },
-        text: 'Nota comum',
+        text: 'Ordinary note',
         at: REVISED_AT,
       },
     ],
@@ -51,22 +51,22 @@ function withDroppedNote(): Proposal {
   };
 }
 
-describe('nota que veio de uma mudança retirada', () => {
-  it('mostra "Da mudança retirada: <resumo>" antes do texto, só na nota que subiu', async () => {
+describe('note that came from a withdrawn change', () => {
+  it('shows "From the withdrawn change: <summary>" before the text, only on the note that moved up', async () => {
     const h = await openReviewHarness({ proposals: [withDroppedNote()] });
     expect(h.review.open('P1')).toMatchObject({ ok: true });
     act(() => h.review.select({ level: 'proposal', id: null }));
     renderInEditor(h, <ReviewDetails />);
-    const origin = screen.getByText(/^Da mudança retirada: /);
-    expect(origin.textContent).toContain('Posição');
+    const origin = screen.getByText(/^From the withdrawn change: /);
+    expect(origin.textContent).toContain('Position');
     const [first, second] = screen.getAllByRole('textbox', {
-      name: 'Nota para o agente',
+      name: 'Note for the agent',
     });
-    expect((first as HTMLTextAreaElement).value).toBe('Mantenha a posição antiga');
+    expect((first as HTMLTextAreaElement).value).toBe('Keep the old position');
     expect(
       origin.compareDocumentPosition(first as Node) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-    expect((second as HTMLTextAreaElement).value).toBe('Nota comum');
-    expect(screen.getAllByText(/^Da mudança retirada: /)).toHaveLength(1);
+    expect((second as HTMLTextAreaElement).value).toBe('Ordinary note');
+    expect(screen.getAllByText(/^From the withdrawn change: /)).toHaveLength(1);
   });
 });

@@ -57,14 +57,14 @@ function setup(options: { readOnly?: boolean; busy?: boolean } = {}): Setup {
     setDropTarget: vi.fn(),
   };
   harness.context.canvas.current = canvas as unknown as CanvasController;
-  // Cada arquivo "vira" images/<nome>, exceto os que se chamam "ruim*".
+  // Each file "becomes" images/<name>, except those named "bad*".
   const addImages = vi
     .spyOn(harness.context.session, 'addImages')
     .mockImplementation(async (files) => ({
       added: files
-        .filter((f) => !f.name.startsWith('ruim'))
+        .filter((f) => !f.name.startsWith('bad'))
         .map((f) => `images/${f.name}`),
-      failed: files.filter((f) => f.name.startsWith('ruim')).map((f) => f.name),
+      failed: files.filter((f) => f.name.startsWith('bad')).map((f) => f.name),
     }));
   const replaceImage = vi
     .spyOn(harness.context.session, 'replaceImage')
@@ -83,7 +83,7 @@ function setup(options: { readOnly?: boolean; busy?: boolean } = {}): Setup {
   return {
     harness,
     intake: () => {
-      if (!current) throw new Error('hook não montado');
+      if (!current) throw new Error('hook not mounted');
       return current;
     },
     progress,
@@ -104,16 +104,16 @@ function dropEvent(files: File[], itemCount = files.length): DragEvent {
   return event;
 }
 
-/** Os efeitos assíncronos do `drop` não são aguardáveis: espera a chamada acontecer. */
+/** The async effects of `drop` cannot be awaited: waits for the call to happen. */
 const settled = (fn: () => void) => waitFor(fn);
 
-describe('useImageIntake: vários arquivos', () => {
+describe('useImageIntake: several files', () => {
   let s: Setup;
   beforeEach(() => {
     s = setup();
   });
 
-  it('importa um por vez, mostra o progresso e seleciona a última adicionada', async () => {
+  it('imports one at a time, shows progress and selects the last one added', async () => {
     const files = [png('a.png'), png('b.png'), png('frente.jpg')];
     const input = document.createElement('input');
     Object.defineProperty(input, 'files', { value: files });
@@ -123,42 +123,43 @@ describe('useImageIntake: vários arquivos', () => {
     expect(s.progress.filter((p) => p !== null)).toHaveLength(3);
     expect(s.progress.at(-1)).toBeNull();
     expect(s.messages).toEqual([null]);
-    // `images/frente.jpg` é a imagem I2 do projeto de teste.
+    // pt-BR kept: shared fixture data (file 'frente.jpg' of sampleProject) asserted by tests/
+    // `images/frente.jpg` is image I2 of the test project.
     expect(s.harness.ui.selection.value).toEqual({ kind: 'image', id: 'I2' });
     expect(s.canvas.fitAll).toHaveBeenCalledOnce();
   });
 
-  it('lista os arquivos que falharam e segue com os demais', async () => {
+  it('lists the files that failed and goes on with the others', async () => {
     const input = document.createElement('input');
     Object.defineProperty(input, 'files', {
-      value: [png('ruim1.png'), png('frente.jpg'), png('ruim2.png')],
+      value: [png('bad1.png'), png('frente.jpg'), png('bad2.png')],
     });
     await s.intake().onImagesChosen(input);
 
     expect(s.addImages).toHaveBeenCalledTimes(3);
-    expect(s.messages.at(-1)).toContain('ruim1.png');
-    expect(s.messages.at(-1)).toContain('ruim2.png');
+    expect(s.messages.at(-1)).toContain('bad1.png');
+    expect(s.messages.at(-1)).toContain('bad2.png');
     expect(s.harness.ui.selection.value).toEqual({ kind: 'image', id: 'I2' });
   });
 
-  it('se todas falham, não muda a seleção', async () => {
+  it('if all fail, the selection does not change', async () => {
     const input = document.createElement('input');
-    Object.defineProperty(input, 'files', { value: [png('ruim.png')] });
+    Object.defineProperty(input, 'files', { value: [png('bad.png')] });
     await s.intake().onImagesChosen(input);
     expect(s.harness.ui.selection.value).toBeNull();
     expect(s.canvas.fitAll).not.toHaveBeenCalled();
-    expect(s.messages.at(-1)).toContain('ruim.png');
+    expect(s.messages.at(-1)).toContain('bad.png');
   });
 
-  it('sem arquivos não faz nada', async () => {
+  it('without files does nothing', async () => {
     const input = document.createElement('input');
     await s.intake().onImagesChosen(input);
     expect(s.addImages).not.toHaveBeenCalled();
   });
 });
 
-describe('useImageIntake: colar (Ctrl+V)', () => {
-  it('Ctrl+V sem imagem no evento não faz nada e não bloqueia o padrão', () => {
+describe('useImageIntake: paste (Ctrl+V)', () => {
+  it('Ctrl+V without an image in the event does nothing and does not block the default', () => {
     const s = setup();
     const event = new Event('paste', { cancelable: true }) as ClipboardEvent;
     Object.defineProperty(event, 'clipboardData', { value: { files: [] } });
@@ -167,7 +168,7 @@ describe('useImageIntake: colar (Ctrl+V)', () => {
     expect(s.addImages).not.toHaveBeenCalled();
   });
 
-  it('Ctrl+V com imagem adiciona no centro da vista', async () => {
+  it('Ctrl+V with an image adds at the center of the view', async () => {
     const s = setup();
     const event = new Event('paste', { cancelable: true }) as ClipboardEvent;
     Object.defineProperty(event, 'clipboardData', { value: { files: [png('c.png')] } });
@@ -178,36 +179,36 @@ describe('useImageIntake: colar (Ctrl+V)', () => {
   });
 });
 
-describe('useImageIntake: soltar arquivos', () => {
-  it('um arquivo sobre uma imagem troca o arquivo dela', async () => {
+describe('useImageIntake: dropping files', () => {
+  it('one file over an image replaces its file', async () => {
     const s = setup();
     s.canvas.imageIdAt.mockReturnValue('I1');
-    s.intake().dropHandlers.onDrop(dropEvent([png('nova.png')]));
+    s.intake().dropHandlers.onDrop(dropEvent([png('new.png')]));
     await settled(() => expect(s.replaceImage).toHaveBeenCalledOnce());
     expect(s.replaceImage.mock.calls[0]?.[0]).toBe('I1');
     expect(s.addImages).not.toHaveBeenCalled();
     expect(s.canvas.setDropTarget).toHaveBeenCalledWith(null);
   });
 
-  it('trocar com falha mostra a mensagem', async () => {
+  it('replacing with a failure shows the message', async () => {
     const s = setup();
     s.replaceImage.mockResolvedValue('failed');
     s.canvas.imageIdAt.mockReturnValue('I1');
-    s.intake().dropHandlers.onDrop(dropEvent([png('nova.png')]));
+    s.intake().dropHandlers.onDrop(dropEvent([png('new.png')]));
     await settled(() => expect(s.messages.at(-1)).toBeTruthy());
     expect(s.progress.at(-1)).toBeNull();
   });
 
-  it('trocar uma imagem trancada avisa o motivo', async () => {
+  it('replacing a locked image warns the reason', async () => {
     const s = setup();
     s.replaceImage.mockResolvedValue('locked');
     s.canvas.imageIdAt.mockReturnValue('I1');
-    s.intake().dropHandlers.onDrop(dropEvent([png('nova.png')]));
+    s.intake().dropHandlers.onDrop(dropEvent([png('new.png')]));
     await settled(() => expect(s.messages.at(-1)).toBe(t('image.replaceLocked')));
     expect(s.progress.at(-1)).toBeNull();
   });
 
-  it('um arquivo em área vazia adiciona no ponto do canvas', async () => {
+  it('one file over an empty area adds at the canvas point', async () => {
     const s = setup();
     s.intake().dropHandlers.onDrop(dropEvent([png('d.png')]));
     await settled(() => expect(s.addImages).toHaveBeenCalledOnce());
@@ -215,7 +216,7 @@ describe('useImageIntake: soltar arquivos', () => {
     expect(s.replaceImage).not.toHaveBeenCalled();
   });
 
-  it('vários arquivos sobre uma imagem adicionam todos, sem trocar', async () => {
+  it('several files over an image add all of them, without replacing', async () => {
     const s = setup();
     s.canvas.imageIdAt.mockReturnValue('I1');
     s.intake().dropHandlers.onDrop(dropEvent([png('a.png'), png('b.png')]));
@@ -223,22 +224,22 @@ describe('useImageIntake: soltar arquivos', () => {
     expect(s.replaceImage).not.toHaveBeenCalled();
   });
 
-  it('arquivos que não são imagem são ignorados com aviso', async () => {
+  it('files that are not images are ignored with a notice', async () => {
     const s = setup();
-    s.intake().dropHandlers.onDrop(dropEvent([png('e.png'), text('nota.txt')]));
-    await settled(() => expect(s.messages.at(-1)).toContain('nota.txt'));
+    s.intake().dropHandlers.onDrop(dropEvent([png('e.png'), text('note.txt')]));
+    await settled(() => expect(s.messages.at(-1)).toContain('note.txt'));
     expect(s.addImages).toHaveBeenCalledOnce();
   });
 
-  it('só arquivos que não são imagem: avisa e não adiciona', () => {
+  it('only files that are not images: warns and does not add', () => {
     const s = setup();
-    s.intake().dropHandlers.onDrop(dropEvent([text('nota.txt')]));
-    expect(s.messages.at(-1)).toContain('nota.txt');
+    s.intake().dropHandlers.onDrop(dropEvent([text('note.txt')]));
+    expect(s.messages.at(-1)).toContain('note.txt');
     expect(s.addImages).not.toHaveBeenCalled();
     expect(s.replaceImage).not.toHaveBeenCalled();
   });
 
-  it('somente leitura ou ocupado: ignora o drop', () => {
+  it('read-only or busy: ignores the drop', () => {
     for (const options of [{ readOnly: true }, { busy: true }]) {
       cleanup();
       const s = setup(options);
@@ -248,7 +249,7 @@ describe('useImageIntake: soltar arquivos', () => {
     }
   });
 
-  it('dragover com arquivos mostra o alvo; dragleave limpa', () => {
+  it('dragover with files shows the target; dragleave clears it', () => {
     const s = setup();
     const over = new Event('dragover', { cancelable: true }) as DragEvent;
     Object.defineProperty(over, 'dataTransfer', {
@@ -274,20 +275,23 @@ function dragOverEvent(): DragEvent {
   return event;
 }
 
-describe('useImageIntake: arquivo sobre o canvas sem poder importar (#972)', () => {
+describe('useImageIntake: file over the canvas unable to import (#972)', () => {
   it.each([
-    ['somente leitura', { readOnly: true }],
-    ['ocupado', { busy: true }],
-  ])('%s: dragover cancela a ação padrão e não acende o alvo', (_nome, options) => {
-    const s = setup(options);
-    const event = dragOverEvent();
-    s.intake().dropHandlers.onDragOver(event);
-    expect(event.defaultPrevented).toBe(true);
-    expect(event.dataTransfer?.dropEffect).toBe('none');
-    expect(s.canvas.setDropTarget).not.toHaveBeenCalled();
-  });
+    ['read-only', { readOnly: true }],
+    ['busy', { busy: true }],
+  ])(
+    '%s: dragover cancels the default action and does not light up the target',
+    (_name, options) => {
+      const s = setup(options);
+      const event = dragOverEvent();
+      s.intake().dropHandlers.onDragOver(event);
+      expect(event.defaultPrevented).toBe(true);
+      expect(event.dataTransfer?.dropEffect).toBe('none');
+      expect(s.canvas.setDropTarget).not.toHaveBeenCalled();
+    },
+  );
 
-  it('com permissão: dragover copia e acende o alvo', () => {
+  it('with permission: dragover copies and lights up the target', () => {
     const s = setup();
     const event = dragOverEvent();
     s.intake().dropHandlers.onDragOver(event);

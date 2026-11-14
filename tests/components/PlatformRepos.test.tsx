@@ -8,12 +8,12 @@ import { docReposProject } from '../model/roleFixtures';
 import { ANDROID_REPO, codeProject, withSpecRepo } from '../model/specFixtures';
 import { createHarness, renderLive } from './harness';
 
-// Configurações › Repositórios: a subseção Código mostra o `repo` que a especialização declara
-// (só leitura) e deixa editar apenas o caminho local do clone; a subseção Documentos faz o mesmo
-// com os `docRepos` (etapa #559, PD5).
+// Settings › Repositories: the Code subsection shows the `repo` that the specialization declares
+// (read-only) and lets you edit only the local path of the clone; the Documents subsection does the same
+// with the `docRepos` (stage #559, PD5).
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
@@ -23,35 +23,37 @@ function setup(project = codeProject(), readOnly = false) {
   return { harness, user: userEvent.setup() };
 }
 const group = (name: string) => within(screen.getByRole('group', { name, hidden: true }));
-const LOCAL = 'Caminho local da raiz';
+const LOCAL = 'Local path of the root';
 
 describe('PlatformRepos', () => {
-  it('mostra o repo da especialização em leitura: nome, link comum e ref', () => {
+  it('shows the specialization repo read-only: name, plain link and ref', () => {
     setup();
     const android = group('Android');
     const link = android.getByRole('link', { name: ANDROID_REPO.url, hidden: true });
     expect(link.getAttribute('href')).toBe(ANDROID_REPO.url);
     expect(link.getAttribute('target')).toBe('_blank');
     expect(link.getAttribute('rel')).toBe('noopener noreferrer');
-    expect(android.getByText('referência v1.2.0')).toBeTruthy();
+    expect(android.getByText('ref v1.2.0')).toBeTruthy();
     expect(android.getByText('SDUI')).toBeTruthy();
-    // Só o caminho local é editável.
+    // Only the local path is editable.
     expect(android.getAllByRole('textbox', { hidden: true })).toHaveLength(1);
-    expect(android.queryByText(/não declara o repositório/)).toBeNull();
+    expect(android.queryByText(/does not declare the repository/)).toBeNull();
   });
 
-  it('plataforma sem repo mostra o texto discreto, sem aviso', () => {
+  it('a platform without a repo shows the discreet text, without a warning', () => {
     setup();
     const ios = group('iOS');
     expect(
-      ios.getByText('A especialização não declara o repositório desta plataforma.'),
+      ios.getByText(
+        'The specialization does not declare the repository of this platform.',
+      ),
     ).toBeTruthy();
     expect(ios.queryByRole('link', { hidden: true })).toBeNull();
     expect(ios.queryByRole('status', { hidden: true })).toBeNull();
     expect(ios.queryByRole('alert', { hidden: true })).toBeNull();
   });
 
-  it('repo sem ref não mostra a ref', () => {
+  it('a repo without a ref does not show the ref', () => {
     const project = withSpecRepo(codeProject(), 'sdui', 'ios', {
       url: 'https://github.com/org/app-ios',
     });
@@ -63,13 +65,13 @@ describe('PlatformRepos', () => {
     expect(ios.queryByText(/^ref /)).toBeNull();
   });
 
-  it('o caminho local grava pela action e mostra o erro de caminho inválido', async () => {
+  it('the local path saves through the action and shows the invalid path error', async () => {
     const { harness, user } = setup();
     const ios = group('iOS');
     const local = ios.getByLabelText(LOCAL, { selector: 'input' });
-    await user.type(local, '/absoluto{Enter}');
+    await user.type(local, '/absolute{Enter}');
     expect(ios.getByRole('alert', { hidden: true }).textContent).toMatch(
-      /relativo à pasta do projeto/,
+      /relative to the project folder/,
     );
     expect(harness.project().platformRepos.ios).toBeUndefined();
     await user.clear(local);
@@ -78,11 +80,11 @@ describe('PlatformRepos', () => {
     expect(ios.queryByRole('alert', { hidden: true })).toBeNull();
   });
 
-  it('limpar remove a sobreposição local; sem ela o botão fica desabilitado', async () => {
+  it('clear removes the local override; without it the button is disabled', async () => {
     const { harness, user } = setup();
     const clear = (name: string) =>
       group(name).getByRole('button', {
-        name: `Limpar repositório de ${name}`,
+        name: `Clear the repository of ${name}`,
         hidden: true,
       });
     expect((clear('iOS') as HTMLButtonElement).disabled).toBe(true);
@@ -92,13 +94,13 @@ describe('PlatformRepos', () => {
       (group('Android').getByLabelText(LOCAL, { selector: 'input' }) as HTMLInputElement)
         .value,
     ).toBe('');
-    // O repo da especialização continua: limpar só tira o clone local.
+    // The specialization repo stays: clearing only removes the local clone.
     expect(
       group('Android').getByRole('link', { name: ANDROID_REPO.url, hidden: true }),
     ).toBeTruthy();
   });
 
-  it('somente leitura desabilita o campo e o limpar', () => {
+  it('read-only disables the field and the clear', () => {
     setup(codeProject(), true);
     expect(
       (group('Android').getByLabelText(LOCAL, { selector: 'input' }) as HTMLInputElement)
@@ -107,7 +109,7 @@ describe('PlatformRepos', () => {
   });
 });
 
-/** `codeProject` cuja especialização também declara `docRepos`. */
+/** `codeProject` whose specialization also declares `docRepos`. */
 function codeAndDocsProject(): Project {
   const p = codeProject();
   return {
@@ -131,8 +133,8 @@ function codeAndDocsProject(): Project {
 
 const heading = (name: string) => screen.queryByRole('heading', { name, hidden: true });
 
-describe('PlatformRepos › Documentos', () => {
-  it('lista os docRepos das especializações aplicadas: id, link e ref', () => {
+describe('PlatformRepos › Documents', () => {
+  it('lists the docRepos of the applied specializations: id, link and ref', () => {
     setup(docReposProject());
     const design = group('design-docs');
     expect(design.getByText('design-docs')).toBeTruthy();
@@ -143,18 +145,18 @@ describe('PlatformRepos › Documentos', () => {
     expect(link.getAttribute('href')).toBe('https://gitlab.example.com/g/design-docs');
     expect(link.getAttribute('target')).toBe('_blank');
     expect(link.getAttribute('rel')).toBe('noopener noreferrer');
-    expect(design.getByText('referência main')).toBeTruthy();
-    // Só o caminho local é editável.
+    expect(design.getByText('ref main')).toBeTruthy();
+    // Only the local path is editable.
     expect(design.getAllByRole('textbox', { hidden: true })).toHaveLength(1);
 
     const wiki = group('wiki');
     expect(wiki.getByRole('link', { hidden: true }).getAttribute('href')).toBe(
       'https://gitlab.example.com/g/wiki',
     );
-    expect(wiki.queryByText(/^referência /)).toBeNull();
+    expect(wiki.queryByText(/^ref /)).toBeNull();
   });
 
-  it('o caminho local grava e limpa (texto vazio) em uma entrada de desfazer cada', async () => {
+  it('the local path saves and clears (empty text) in one undo entry each', async () => {
     const { harness, user } = setup(docReposProject());
     const local = group('design-docs').getByLabelText(LOCAL, { selector: 'input' });
     await user.type(local, '../docs{Enter}');
@@ -174,11 +176,11 @@ describe('PlatformRepos › Documentos', () => {
     expect(harness.project().docRepos).toEqual({});
   });
 
-  it('o botão Limpar remove o clone local e fica desabilitado sem ele', async () => {
+  it('the Clear button removes the local clone and is disabled without it', async () => {
     const { harness, user } = setup(docReposProject());
     const clear = () =>
       group('design-docs').getByRole('button', {
-        name: 'Limpar repositório de documentos design-docs',
+        name: 'Clear the document repository design-docs',
         hidden: true,
       }) as HTMLButtonElement;
     expect(clear().disabled).toBe(true);
@@ -195,20 +197,20 @@ describe('PlatformRepos › Documentos', () => {
     });
   });
 
-  it('valor inválido mostra o erro e não grava', async () => {
+  it('an invalid value shows the error and does not save', async () => {
     const { harness, user } = setup(docReposProject());
     const design = group('design-docs');
     await user.type(
       design.getByLabelText(LOCAL, { selector: 'input' }),
-      '/absoluto{Enter}',
+      '/absolute{Enter}',
     );
     expect(design.getByRole('alert', { hidden: true }).textContent).toMatch(
-      /relativo à pasta do projeto/,
+      /relative to the project folder/,
     );
     expect(harness.project().docRepos).toEqual({});
   });
 
-  it('somente leitura desabilita o campo', () => {
+  it('read-only disables the field', () => {
     setup(docReposProject(), true);
     expect(
       (
@@ -219,23 +221,23 @@ describe('PlatformRepos › Documentos', () => {
     ).toBe(true);
   });
 
-  it('a seção chama-se Repositórios, com as subseções Código e Documentos', () => {
+  it('the section is called Repositories, with the Code and Documents subsections', () => {
     setup(codeAndDocsProject());
-    expect(heading('Repositórios')).toBeTruthy();
-    expect(heading('Código')).toBeTruthy();
-    expect(heading('Documentos')).toBeTruthy();
-    expect(heading('Repositórios de código')).toBeNull();
+    expect(heading('Repositories')).toBeTruthy();
+    expect(heading('Code')).toBeTruthy();
+    expect(heading('Documents')).toBeTruthy();
+    expect(heading('Code repositories')).toBeNull();
   });
 
-  it('sem docRepos não aparece a subseção Documentos', () => {
+  it('without docRepos the Documents subsection does not appear', () => {
     setup(codeProject());
-    expect(heading('Código')).toBeTruthy();
-    expect(heading('Documentos')).toBeNull();
+    expect(heading('Code')).toBeTruthy();
+    expect(heading('Documents')).toBeNull();
   });
 
-  it('sem plataformas não aparece a subseção Código', () => {
+  it('without platforms the Code subsection does not appear', () => {
     setup(docReposProject());
-    expect(heading('Documentos')).toBeTruthy();
-    expect(heading('Código')).toBeNull();
+    expect(heading('Documents')).toBeTruthy();
+    expect(heading('Code')).toBeNull();
   });
 });

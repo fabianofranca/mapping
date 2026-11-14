@@ -19,12 +19,12 @@ import { sampleProject } from '../../model/fixtures';
 import { richScenario } from '../../store/proposalHarness';
 import { openReviewHarness, renderInEditor, type ReviewHarness } from './reviewHarness';
 
-// A proposta ligada a uma conversa (decisão 36): o cartão na conversa e o "da conversa" na
-// linha da janela Propostas.
+// The proposal linked to a thread (decision 36): the card in the thread and the "from the
+// thread" in the row of the Proposals window.
 
 beforeEach(() => {
   localStorage.clear();
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
@@ -36,7 +36,7 @@ function proposalThread(
   text: string,
   at: string = T0,
 ): Thread {
-  const url = citationUrl('projeto', sampleProject(), [], {
+  const url = citationUrl('project', sampleProject(), [], {
     kind: 'proposal',
     id: proposalId,
   });
@@ -59,10 +59,10 @@ async function open(proposals: readonly Proposal[], threads: readonly Thread[]) 
 
 const card = () => document.querySelector<HTMLElement>('[data-proposal-card]');
 
-describe('cartão da proposta na conversa', () => {
-  it('título, "N mudanças para revisar" e Revisar abre a revisão', async () => {
+describe('proposal card in the thread', () => {
+  it('title, "N changes to review" and Review opens the review', async () => {
     const { proposal } = richScenario();
-    const thread = proposalThread('tp1', 'P1', 'Proposta:');
+    const thread = proposalThread('tp1', 'P1', 'Proposal:');
     const h = await open([{ ...proposal, title: 'Checkout' }], [thread]);
     renderInEditor(h, <ThreadView thread={thread} />);
     const el = card() as HTMLElement;
@@ -72,27 +72,27 @@ describe('cartão da proposta na conversa', () => {
         t('thread.proposal.changesMany', { count: proposal.changes.length }),
       ),
     ).toBeTruthy();
-    await userEvent.click(within(el).getByRole('button', { name: 'Revisar: Checkout' }));
+    await userEvent.click(within(el).getByRole('button', { name: 'Review: Checkout' }));
     expect(h.review.proposalId.value).toBe('P1');
   });
 
-  it('uma só mudança: singular', async () => {
+  it('a single change: singular', async () => {
     const base = sampleProject();
-    const one = propose(base, renameMarking(base, 'M1', 'Porta nova'), {
+    const one = propose(base, renameMarking(base, 'M1', 'New door'), {
       id: 'P1',
       title: 'Checkout',
     });
     expect(one.changes).toHaveLength(1);
-    const thread = proposalThread('tp1', 'P1', 'Proposta:');
+    const thread = proposalThread('tp1', 'P1', 'Proposal:');
     const h = await open([one], [thread]);
     renderInEditor(h, <ThreadView thread={thread} />);
     expect(screen.getByText(t('thread.proposal.changesOne'))).toBeTruthy();
   });
 
-  it('só conta as mudanças sem decisão', async () => {
+  it('only counts the undecided changes', async () => {
     const { base, proposal } = richScenario();
     const accepted = decided(proposal, base, { level: 'image', id: 'I3' }, 'accepted');
-    const thread = proposalThread('tp1', 'P1', 'Proposta:');
+    const thread = proposalThread('tp1', 'P1', 'Proposal:');
     const h = await open([accepted], [thread]);
     const undecided = h.review.derived.rows.value[0]?.progress.undecided ?? -1;
     expect(undecided).toBeLessThan(proposal.changes.length);
@@ -102,18 +102,18 @@ describe('cartão da proposta na conversa', () => {
     ).toBeTruthy();
   });
 
-  it('proposta aplicada: o estado em texto, sem "para revisar"', async () => {
+  it('applied proposal: the state as text, without "to review"', async () => {
     const { proposal } = richScenario();
-    const thread = proposalThread('tp1', 'P1', 'Proposta:');
+    const thread = proposalThread('tp1', 'P1', 'Proposal:');
     const h = await open([{ ...proposal, status: 'applied' }], [thread]);
     renderInEditor(h, <ThreadView thread={thread} />);
     const el = card() as HTMLElement;
     expect(within(el).getByText(t('proposals.status.applied'))).toBeTruthy();
-    expect(within(el).queryByText(/para revisar/)).toBeNull();
+    expect(within(el).queryByText(/to review/)).toBeNull();
   });
 
-  it('proposta que não existe mais: "Proposta removida", sem botão', async () => {
-    const thread = proposalThread('tp1', 'P9', 'Proposta:');
+  it('proposal that no longer exists: "Proposal removed", no button', async () => {
+    const thread = proposalThread('tp1', 'P9', 'Proposal:');
     const h = await open([], [thread]);
     renderInEditor(h, <ThreadView thread={thread} />);
     const el = card() as HTMLElement;
@@ -121,22 +121,22 @@ describe('cartão da proposta na conversa', () => {
     expect(within(el).queryByRole('button')).toBeNull();
   });
 
-  it('o texto da mensagem continua legível', async () => {
+  it('the message text stays readable', async () => {
     const { proposal } = richScenario();
-    const thread = proposalThread('tp1', 'P1', 'Mandei a proposta:');
+    const thread = proposalThread('tp1', 'P1', 'I sent the proposal:');
     const h = await open([{ ...proposal, title: 'Checkout' }], [thread]);
     renderInEditor(h, <ThreadView thread={thread} />);
-    expect(screen.getByText(/Mandei a proposta:/)).toBeTruthy();
+    expect(screen.getByText(/I sent the proposal:/)).toBeTruthy();
   });
 
-  it('mensagem sem proposta não tem cartão', async () => {
+  it('message without a proposal has no card', async () => {
     const h = await open([], []);
     renderInEditor(h, <ThreadView thread={sampleThread()} />);
     expect(card()).toBeNull();
   });
 });
 
-describe('"da conversa" na linha da proposta', () => {
+describe('"from the thread" in the proposal row', () => {
   async function mount(threads: readonly Thread[]): Promise<ReviewHarness> {
     const { proposal } = richScenario();
     const h = await open([{ ...proposal, title: 'Checkout' }], threads);
@@ -144,31 +144,31 @@ describe('"da conversa" na linha da proposta', () => {
     return h;
   }
 
-  it('mostra "da conversa" e o chip da conversa que a ligou; clicar abre a conversa', async () => {
-    const thread = proposalThread('tp1', 'P1', 'Revisar o checkout');
+  it('shows "from the thread" and the chip of the thread that linked it; clicking opens the thread', async () => {
+    const thread = proposalThread('tp1', 'P1', 'Review the checkout');
     const h = await mount([thread]);
     hideToolWindow('details');
     const row = screen.getByRole('listitem');
     expect(within(row).getByText(t('proposals.fromThread'))).toBeTruthy();
-    const chip = within(row).getByRole('button', { name: /, citação$/ });
-    expect(chip.textContent).toContain('Revisar o checkout');
+    const chip = within(row).getByRole('button', { name: /, citation$/ });
+    expect(chip.textContent).toContain('Review the checkout');
     await userEvent.click(chip);
     expect(selectedThreadId(h.ui)).toBe('tp1');
     expect(isToolWindowOpen('details')).toBe(true);
   });
 
-  it('proposta sem conversa não mostra a ligação', async () => {
+  it('proposal without a thread does not show the link', async () => {
     await mount([]);
     expect(screen.queryByText(t('proposals.fromThread'))).toBeNull();
   });
 
-  it('com duas conversas, vale a primeira que a ligou', async () => {
-    const late = proposalThread('tp2', 'P1', 'Segunda');
-    const early = proposalThread('tp1', 'P1', 'Primeira', '2026-11-05T09:00:00.000Z');
+  it('with two threads, the first one that linked it counts', async () => {
+    const late = proposalThread('tp2', 'P1', 'Second');
+    const early = proposalThread('tp1', 'P1', 'First', '2026-11-05T09:00:00.000Z');
     await mount([late, early]);
     const row = screen.getByRole('listitem');
-    expect(within(row).getByRole('button', { name: /, citação$/ }).textContent).toContain(
-      'Primeira',
-    );
+    expect(
+      within(row).getByRole('button', { name: /, citation$/ }).textContent,
+    ).toContain('First');
   });
 });

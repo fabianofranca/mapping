@@ -10,10 +10,10 @@ import { MultiSelectionPanel } from '../../src/ui/MultiSelectionPanel';
 import { sampleProject } from '../model/fixtures';
 import { createHarness, renderLive } from './harness';
 
-// Seleção múltipla (ME2): o painel de resumo e "Selecionar com o conteúdo" no menu do canvas.
+// Multiple selection (ME2): the summary panel and "Select with contents" in the canvas menu.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
@@ -40,15 +40,15 @@ function renderPanel(readOnly = false) {
 const markings = (h: ReturnType<typeof createHarness>) =>
   h.project().markings.map((m) => [m.id, m.locked]);
 
-describe('painel com vários itens', () => {
-  it('mostra a contagem total e por tipo', () => {
+describe('panel with several items', () => {
+  it('shows the total count and the count per kind', () => {
     renderPanel();
     expect(screen.getByText(t('multi.title', { count: 3 }))).toBeTruthy();
     expect(screen.getByText(t('multi.markings', { count: 2 }))).toBeTruthy();
     expect(screen.getByText(t('multi.containers', { count: 1 }))).toBeTruthy();
   });
 
-  it('Trancar e Destrancar valem para todos, com uma entrada de desfazer cada', async () => {
+  it('Lock and Unlock apply to all, with one undo entry each', async () => {
     const { harness, user } = renderPanel();
     const unlock = screen.getByRole('button', { name: t('multi.unlock') });
     expect((unlock as HTMLButtonElement).disabled).toBe(true);
@@ -72,11 +72,11 @@ describe('painel com vários itens', () => {
     expect(harness.project().markings.find((m) => m.id === 'M1')?.locked).toBe(false);
   });
 
-  it('Excluir pede a confirmação da seleção; desabilitado com item trancado', async () => {
+  it('Delete asks to confirm the selection; disabled with a locked item', async () => {
     const { harness, onDelete, user } = renderPanel();
     await user.click(screen.getByRole('button', { name: t('multi.delete') }));
     expect(onDelete).toHaveBeenCalledWith(items);
-    // M1 trancada e o container dela (I1) fora da seleção: não sai junto, então bloqueia.
+    // M1 locked and its container (I1) outside the selection: it does not go along, so it blocks.
     act(() => {
       harness.actions.setMarkingLocked('M1', true);
     });
@@ -86,7 +86,7 @@ describe('painel com vários itens', () => {
     ).toBe(true);
   });
 
-  it('Envolver cria a marcação pai e a deixa selecionada sozinha', async () => {
+  it('Wrap creates the parent marking and leaves it alone selected', async () => {
     const { harness, user } = renderPanel();
     await user.click(screen.getByRole('button', { name: t('multi.wrap') }));
     const created = harness
@@ -104,11 +104,11 @@ describe('painel com vários itens', () => {
     expect(harness.project().markings.map((m) => m.id)).toEqual(['M1', 'M2', 'M3', 'M4']);
   });
 
-  it('Envolver fica desabilitado sem nada que entre, com a dica', () => {
+  it('Wrap is disabled when nothing fits, with the hint', () => {
     const harness = createHarness(sampleProject());
     const arrow = { kind: 'arrow', id: 'S' } as const;
     const note = { kind: 'marking', id: 'N' } as const;
-    // Item inexistente não conta: nada entra.
+    // A nonexistent item does not count: nothing fits.
     renderLive(harness, (p) => (
       <MultiSelectionPanel
         project={p}
@@ -124,7 +124,7 @@ describe('painel com vários itens', () => {
     expect(button.title).toBe(t('multi.wrapBlocked'));
   });
 
-  it('somente leitura: tudo desabilitado', () => {
+  it('read-only: everything disabled', () => {
     renderPanel(true);
     for (const name of [
       'multi.wrap',
@@ -139,8 +139,8 @@ describe('painel com vários itens', () => {
   });
 });
 
-describe('menu de contexto do canvas: selecionar com o conteúdo', () => {
-  it('seleciona a marcação com as descendentes e fecha o menu', async () => {
+describe('canvas context menu: select with contents', () => {
+  it('selects the marking with its descendants and closes the menu', async () => {
     const harness = createHarness(sampleProject());
     render(
       <EditorContext.Provider value={harness.context}>

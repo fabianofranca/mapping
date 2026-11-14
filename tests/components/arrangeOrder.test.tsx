@@ -15,10 +15,10 @@ import { MarkingPanel } from '../../src/ui/MarkingPanel';
 import { libraryHarness, type LibraryHarness } from './libraryHarness';
 import { renderLive } from './harness';
 
-// B3/P7: campo Ordem e Arrumar (botão, menu do canvas e atalho) nos Detalhes da marcação.
+// B3/P7: Order field and Arrange (button, canvas menu and shortcut) in the marking Details.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
@@ -27,13 +27,13 @@ interface Scene {
   readonly column: string;
   readonly first: string;
   readonly second: string;
-  /** Uma folha de tamanho fixo (sem eixo que dependa do conteúdo), fora da coluna. */
+  /** A fixed-size leaf (no axis that depends on the content), outside the column. */
   readonly leaf: string;
 }
 
-const LONG_LABEL = 'Um rótulo muito mais longo que o botão de antes';
+const LONG_LABEL = 'A label much longer than the previous button';
 
-/** Uma coluna (container) com dois botões dentro e um FAB (folha de tamanho fixo) fora, na I1. */
+/** A column (container) with two buttons inside and a FAB (fixed-size leaf) outside, in I1. */
 async function scene(options: { readOnly?: boolean } = {}): Promise<Scene> {
   const harness = await libraryHarness();
   const add = (typeId: string, parentId: string | null) => {
@@ -57,7 +57,7 @@ async function scene(options: { readOnly?: boolean } = {}): Promise<Scene> {
 const rectOf = (harness: LibraryHarness, id: string) =>
   harness.project().markings.find((m) => m.id === id)!.rect;
 
-/** Põe um rótulo longo no botão (o `hug` da largura passa a pedir outro tamanho). */
+/** Puts a long label on the button (the width `hug` now asks for another size). */
 function lengthen(harness: LibraryHarness, markingId: string): void {
   const annotation = harness
     .project()
@@ -88,11 +88,11 @@ function renderPanel(harness: LibraryHarness, markingId: string) {
 const position = (harness: LibraryHarness, id: string) =>
   siblingPosition(harness.project(), id);
 
-describe('Detalhes: campo Ordem', () => {
-  it('mostra "N de M" e move para trás e para a frente', async () => {
+describe('Details: Order field', () => {
+  it('shows "N of M" and moves backward and forward', async () => {
     const { harness, second, first } = await scene();
     const user = renderPanel(harness, second);
-    expect(screen.getByText('2 de 2')).toBeTruthy();
+    expect(screen.getByText('2 of 2')).toBeTruthy();
     const back = screen.getByRole<HTMLButtonElement>('button', {
       name: t('marking.orderBack'),
     });
@@ -105,18 +105,18 @@ describe('Detalhes: campo Ordem', () => {
     await user.click(back);
     expect(position(harness, second)).toEqual({ index: 0, count: 2 });
     expect(position(harness, first)).toEqual({ index: 1, count: 2 });
-    expect(screen.getByText('1 de 2')).toBeTruthy();
+    expect(screen.getByText('1 of 2')).toBeTruthy();
     expect(back.disabled).toBe(true);
     expect(front.disabled).toBe(false);
 
     await user.click(front);
     expect(position(harness, second)).toEqual({ index: 1, count: 2 });
-    // Uma entrada de desfazer por clique.
+    // One undo entry per click.
     harness.store.undo();
     expect(position(harness, second)).toEqual({ index: 0, count: 2 });
   });
 
-  it('somente leitura: os dois botões ficam desabilitados', async () => {
+  it('read-only: both buttons are disabled', async () => {
     const { harness, first } = await scene({ readOnly: true });
     renderPanel(harness, first);
     for (const name of [t('marking.orderBack'), t('marking.orderFront')]) {
@@ -125,10 +125,10 @@ describe('Detalhes: campo Ordem', () => {
   });
 });
 
-describe('Arrumar', () => {
-  it('o botão só aparece num container que dá para arrumar e avisa o resultado', async () => {
+describe('Arrange', () => {
+  it('the button only shows on a container that can be arranged and announces the result', async () => {
     const { harness, column, first } = await scene();
-    // Tira o botão do lugar para ter o que arrumar.
+    // Moves the button out of place so there is something to arrange.
     harness.actions.moveMarking(first, 3, 3);
     const user = renderPanel(harness, column);
     await user.click(
@@ -136,14 +136,14 @@ describe('Arrumar', () => {
     );
     expect(harness.ui.toast.value).toBe(t('arrange.done'));
 
-    // Já arrumado: nada muda.
+    // Already arranged: nothing changes.
     await user.click(
       screen.getByRole('button', { name: new RegExp(t('arrange.action')) }),
     );
     expect(harness.ui.toast.value).toBe(t('arrange.nothing'));
   });
 
-  it('uma folha sem eixo ajustável não tem o botão', async () => {
+  it('a leaf without an adjustable axis has no button', async () => {
     const { harness, leaf } = await scene();
     renderPanel(harness, leaf);
     expect(
@@ -151,7 +151,7 @@ describe('Arrumar', () => {
     ).toBeNull();
   });
 
-  it('a marcação sem slot com eixo ajustável (botão de largura hug) tem o botão e ajusta numa entrada só (MC3)', async () => {
+  it('a marking without a slot with an adjustable axis (button with hug width) has the button and adjusts in a single entry (MC3)', async () => {
     const { harness, first } = await scene();
     lengthen(harness, first);
     const grown = rectOf(harness, first);
@@ -163,10 +163,10 @@ describe('Arrumar', () => {
     const fitted = rectOf(harness, first);
     expect(fitted.width).toBeGreaterThan(grown.width);
     expect(fitted).toMatchObject({ x: grown.x, y: grown.y, height: grown.height });
-    // Ctrl+Z desfaz o ajuste inteiro, numa entrada só.
+    // Ctrl+Z undoes the whole adjustment, in a single entry.
     harness.store.undo();
     expect(rectOf(harness, first)).toEqual(grown);
-    // Ajustado de novo: "nada a arrumar".
+    // Adjusted again: "nothing to arrange".
     harness.store.redo();
     await user.click(
       screen.getByRole('button', { name: new RegExp(t('arrange.action')) }),
@@ -174,14 +174,14 @@ describe('Arrumar', () => {
     expect(harness.ui.toast.value).toBe(t('arrange.nothing'));
   });
 
-  it('a dica do botão diz o que ele faz: arruma as de dentro ou ajusta ao conteúdo', async () => {
+  it('the button hint says what it does: arranges the inner ones or fits to the content', async () => {
     const { harness, column, first } = await scene();
     expect(arrangeHintKey(harness.context, column)).toBe('arrange.hint');
     expect(arrangeHintKey(harness.context, first)).toBe('arrange.hintFit');
     expect(t('arrange.hintFit')).not.toBe('arrange.hintFit');
   });
 
-  it('a marcação sem eixo ajustável recusa com not-fittable e a mensagem da chave nova', async () => {
+  it('a marking without an adjustable axis refuses with not-fittable and the message of the new key', async () => {
     const { harness, leaf } = await scene();
     expect(harness.actions.arrange(leaf)).toEqual({ ok: false, error: 'not-fittable' });
     expect(t('marking.error.not-fittable')).not.toBe('marking.error.not-fittable');
@@ -191,7 +191,7 @@ describe('Arrumar', () => {
     expect(t('marking.error.not-fittable')).toMatch(/content|fit/i);
   });
 
-  it('somente leitura: desabilitado', async () => {
+  it('read-only: disabled', async () => {
     const { harness, column } = await scene({ readOnly: true });
     renderPanel(harness, column);
     expect(
@@ -201,30 +201,30 @@ describe('Arrumar', () => {
     ).toBe(true);
   });
 
-  it('com avisos, conta e mostra o primeiro', async () => {
+  it('with warnings, counts and shows the first', async () => {
     const { harness, column } = await scene();
     vi.spyOn(harness.actions, 'arrange').mockReturnValue({
       ok: true,
-      value: [rawMessage('não cabe'), rawMessage('outro')],
+      value: [rawMessage('does not fit'), rawMessage('other')],
     });
     const user = renderPanel(harness, column);
     await user.click(
       screen.getByRole('button', { name: new RegExp(t('arrange.action')) }),
     );
     expect(harness.ui.toast.value).toBe(
-      t('arrange.doneWarnings', { count: 2, first: 'não cabe' }),
+      t('arrange.doneWarnings', { count: 2, first: 'does not fit' }),
     );
   });
 
-  it('em en-US o aviso do Arrumar sai em inglês (#945)', async () => {
+  it('in en-US the Arrange warning comes out in English (#945)', async () => {
     const { harness, column } = await scene();
     vi.spyOn(harness.actions, 'arrange').mockReturnValue({
       ok: true,
       value: [
         modelMessage(
           'arrange.overflow',
-          { label: 'Coluna' },
-          'Coluna: conteúdo maior que o container',
+          { label: 'Column' },
+          'Column: content is larger than the container',
         ),
       ],
     });
@@ -236,12 +236,12 @@ describe('Arrumar', () => {
     expect(String(harness.ui.toast.value)).toBe(
       t('arrange.doneWarnings', {
         count: 1,
-        first: 'Coluna: content is larger than the container',
+        first: 'Column: content is larger than the container',
       }),
     );
   });
 
-  it('o menu do canvas oferece Arrumar no container', async () => {
+  it('the canvas menu offers Arrange on the container', async () => {
     const { harness, column, first } = await scene();
     harness.actions.moveMarking(first, 3, 3);
     render(
@@ -257,7 +257,7 @@ describe('Arrumar', () => {
     expect(harness.ui.toast.value).toBe(t('arrange.done'));
   });
 
-  it('o menu do canvas de uma folha sem eixo ajustável não oferece Arrumar', async () => {
+  it('the canvas menu of a leaf without an adjustable axis does not offer Arrange', async () => {
     const { harness, leaf } = await scene();
     render(
       <EditorContext.Provider value={harness.context}>
@@ -271,7 +271,7 @@ describe('Arrumar', () => {
     ).toBeNull();
   });
 
-  it('o menu do canvas oferece Arrumar na marcação sem slot com eixo ajustável (MC3)', async () => {
+  it('the canvas menu offers Arrange on the marking without a slot with an adjustable axis (MC3)', async () => {
     const { harness, first } = await scene();
     lengthen(harness, first);
     const grown = rectOf(harness, first);
@@ -289,7 +289,7 @@ describe('Arrumar', () => {
   });
 });
 
-describe('Arrumar: atalho Alt+Shift+A', () => {
+describe('Arrange: Alt+Shift+A shortcut', () => {
   function Probe() {
     useEditorShortcuts(
       { current: null, show: vi.fn(), close: vi.fn() } as unknown as EditorDialogs,
@@ -309,7 +309,7 @@ describe('Arrumar: atalho Alt+Shift+A', () => {
       }),
     );
 
-  it('arruma o container selecionado e avisa', async () => {
+  it('arranges the selected container and announces it', async () => {
     const { harness, column, first } = await scene();
     harness.actions.moveMarking(first, 3, 3);
     harness.ui.selection.value = { kind: 'marking', id: column };
@@ -326,7 +326,7 @@ describe('Arrumar: atalho Alt+Shift+A', () => {
     );
   });
 
-  it('ajusta a marcação sem slot com eixo ajustável ao conteúdo (MC3)', async () => {
+  it('fits the marking without a slot with an adjustable axis to the content (MC3)', async () => {
     const { harness, first } = await scene();
     lengthen(harness, first);
     const grown = rectOf(harness, first);
@@ -341,7 +341,7 @@ describe('Arrumar: atalho Alt+Shift+A', () => {
     expect(rectOf(harness, first).width).toBeGreaterThan(grown.width);
   });
 
-  it('numa folha sem eixo ajustável ou em somente leitura não faz nada', async () => {
+  it('on a leaf without an adjustable axis or in read-only does nothing', async () => {
     const { harness, leaf } = await scene();
     harness.ui.selection.value = { kind: 'marking', id: leaf };
     render(

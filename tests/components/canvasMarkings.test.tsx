@@ -16,12 +16,13 @@ import { SelectionPanel } from '../../src/ui/SelectionPanel';
 import { sampleProject } from '../model/fixtures';
 import { createHarness, renderLive, type Harness } from './harness';
 
-// ME1: a marcação do canvas (`containerId` nulo) na Árvore, na trilha, na Lista, nas
-// Incompletas e nos Detalhes. O projeto é o da amostra (I1 › M1 › M2 › M3, I2 › M4) com
-// a marcação do canvas "Grupo" em volta dos dois containers e uma nota flutuante.
+// ME1: the canvas marking (null `containerId`) in the Tree, the breadcrumb, the List, the
+// Incomplete and the Details. The project is the sample (I1 › M1 › M2 › M3, I2 › M4) with
+// the canvas marking "Group" around the two containers and a floating note.
+// pt-BR kept: shared fixture data (Porta, Maçaneta, images/frente) asserted by tests/model
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   showToolWindow('tree');
 });
 afterEach(cleanup);
@@ -31,13 +32,13 @@ function canvasProject(): Project {
   p = createMarking(p, {
     id: 'C1',
     containerId: null,
-    name: 'Grupo',
+    name: 'Group',
     rect: { x: -20000, y: -20000, width: 60000, height: 60000 },
   });
   p = createMarking(p, {
     id: 'F1',
     containerId: null,
-    name: 'Nota',
+    name: 'Note',
     floating: true,
     rect: { x: 50000, y: 50000, width: 300, height: 200 },
   });
@@ -53,8 +54,8 @@ function withContext(harness: Harness, ui: preact.ComponentChildren) {
 const rowOf = (name: string) =>
   screen.getByRole('button', { name: new RegExp(`^${name}`) });
 
-describe('Árvore com a raiz Canvas', () => {
-  it('mostra o Canvas com as marcações do canvas e os membros dentro delas', () => {
+describe('Tree with the Canvas root', () => {
+  it('shows the Canvas with the canvas markings and the members inside them', () => {
     const p = canvasProject();
     expect(p.containers.every((c) => c.parentId === 'C1')).toBe(true);
     const harness = createHarness(p);
@@ -63,18 +64,18 @@ describe('Árvore com a raiz Canvas', () => {
       <MarkingTree project={harness.project()} selection={null} onSelect={vi.fn()} />,
     );
     expect(rowOf('Canvas')).toBeTruthy();
-    expect(rowOf('Grupo')).toBeTruthy();
-    expect(rowOf('Nota')).toBeTruthy();
-    // Os containers membros ficam sob o Grupo, com as marcações deles.
+    expect(rowOf('Group')).toBeTruthy();
+    expect(rowOf('Note')).toBeTruthy();
+    // The member containers stay under the Group, with their markings.
     expect(rowOf('Porta')).toBeTruthy();
-    const grupo = rowOf('Grupo').closest('li');
-    expect(grupo?.querySelector('.tree-image')).toBeTruthy();
-    // A flutuante não tem filhos: nenhum nó para abrir.
-    const nota = rowOf('Nota').closest('.tree-row');
-    expect(nota?.querySelector('button.tree-toggle')).toBeNull();
+    const group = rowOf('Group').closest('li');
+    expect(group?.querySelector('.tree-image')).toBeTruthy();
+    // The floating one has no children: no node to open.
+    const note = rowOf('Note').closest('.tree-row');
+    expect(note?.querySelector('button.tree-toggle')).toBeNull();
   });
 
-  it('containers sem pai ficam no nível da raiz Canvas', () => {
+  it('containers without a parent stay at the level of the Canvas root', () => {
     const p = canvasProject();
     const loose = {
       ...p,
@@ -86,11 +87,11 @@ describe('Árvore com a raiz Canvas', () => {
       <MarkingTree project={harness.project()} selection={null} onSelect={vi.fn()} />,
     );
     const top = container.querySelectorAll(':scope > ul > li');
-    // Canvas + dois containers.
+    // Canvas + two containers.
     expect(top).toHaveLength(3);
   });
 
-  it('a raiz Canvas recolhe e abre', async () => {
+  it('the Canvas root collapses and opens', async () => {
     const harness = createHarness(canvasProject());
     withContext(
       harness,
@@ -99,11 +100,11 @@ describe('Árvore com a raiz Canvas', () => {
     await userEvent.click(
       screen.getByRole('button', { name: t('tree.collapse', { name: 'Canvas' }) }),
     );
-    expect(screen.queryByRole('button', { name: /^Grupo/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Group/ })).toBeNull();
     expect(harness.ui.collapsedTree.value.has(treeKey('canvas', ''))).toBe(true);
   });
 
-  it('revealInTree abre a cadeia inteira: marcação de container, container, grupo e Canvas', () => {
+  it('revealInTree opens the whole chain: container marking, container, group and Canvas', () => {
     const harness = createHarness(canvasProject());
     collapseTree(harness.ui, harness.project());
     const collapsed = harness.ui.collapsedTree.value;
@@ -123,7 +124,7 @@ describe('Árvore com a raiz Canvas', () => {
     }
   });
 
-  it('o cadeado do container mostra a trava herdada da marcação do canvas', () => {
+  it('the container padlock shows the lock inherited from the canvas marking', () => {
     const p = canvasProject();
     const locked = {
       ...p,
@@ -139,21 +140,21 @@ describe('Árvore com a raiz Canvas', () => {
   });
 });
 
-describe('trilha', () => {
-  it('container dentro de uma marcação do canvas: Canvas › grupo › container', () => {
+describe('breadcrumb', () => {
+  it('container inside a canvas marking: Canvas › group › container', () => {
     const p = canvasProject();
     const crumbs = crumbsOf(p, { kind: 'image', id: 'I1' });
-    expect(crumbs.map((c) => c.name)).toEqual(['Canvas', 'Grupo', expect.any(String)]);
+    expect(crumbs.map((c) => c.name)).toEqual(['Canvas', 'Group', expect.any(String)]);
     expect(crumbs[0]?.selection).toBeNull();
   });
 
-  it('marcação de container: Canvas › grupo › container › marcações', () => {
+  it('container marking: Canvas › group › container › markings', () => {
     const p = canvasProject();
     const names = crumbsOf(p, { kind: 'marking', id: 'M2' }).map((c) => c.name);
-    expect(names).toEqual(['Canvas', 'Grupo', expect.any(String), 'Porta', 'Maçaneta']);
+    expect(names).toEqual(['Canvas', 'Group', expect.any(String), 'Porta', 'Maçaneta']);
   });
 
-  it('marcação do canvas: Canvas › marcação', async () => {
+  it('canvas marking: Canvas › marking', async () => {
     const harness = createHarness(canvasProject());
     const onSelect = vi.fn();
     harness.ui.selection.value = { kind: 'marking', id: 'C1' };
@@ -165,28 +166,28 @@ describe('trilha', () => {
   });
 });
 
-describe('Lista e Incompletas', () => {
-  it('a Lista tem o grupo Canvas com a marcação do canvas', () => {
+describe('List and Incomplete', () => {
+  it('the List has the Canvas group with the canvas marking', () => {
     const harness = createHarness(canvasProject());
     withContext(harness, <ListView onSelect={vi.fn()} />);
     const header = screen.getByRole('columnheader', { name: t('canvas.name') });
     expect(header).toBeTruthy();
     expect(
-      screen.getByRole('button', { name: t('list.select', { name: 'Grupo' }) }),
+      screen.getByRole('button', { name: t('list.select', { name: 'Group' }) }),
     ).toBeTruthy();
   });
 
-  it('as Incompletas agrupam as pendências do canvas sob Canvas', () => {
+  it('the Incomplete group the canvas pending items under Canvas', () => {
     const harness = createHarness(canvasProject());
     withContext(harness, <IncompleteView onGoToAnnotation={vi.fn()} />);
-    // A anotação sem tipo da amostra é uma pendência; a do canvas cai no grupo Canvas.
+    // The untyped annotation of the sample is a pending item; the canvas one falls in the Canvas group.
     const headers = screen.queryAllByRole('columnheader', { name: t('canvas.name') });
     const incomplete = harness.context.derived.incompleteList.value;
     expect(headers.length).toBe(incomplete.some((g) => g.image === null) ? 1 : 0);
   });
 });
 
-describe('Detalhes', () => {
+describe('Details', () => {
   function renderPanel(markingId: string) {
     const harness = createHarness(canvasProject());
     renderLive(harness, (p) => {
@@ -207,12 +208,12 @@ describe('Detalhes', () => {
     return { harness, user: userEvent.setup() };
   }
 
-  it('marcação do canvas: Container: Canvas, "Pertence a" só leitura e interruptor Flutuante', async () => {
+  it('canvas marking: Container: Canvas, "Belongs to" read-only and Floating switch', async () => {
     const { harness, user } = renderPanel('C1');
     expect(screen.getAllByText(t('marking.container')).length).toBeGreaterThan(0);
     expect(screen.getAllByText(t('canvas.name')).length).toBeGreaterThan(0);
     expect(screen.getAllByText(t('marking.parent')).length).toBeGreaterThan(0);
-    // "Pertence a" não é mais um campo editável.
+    // "Belongs to" is no longer an editable field.
     const section = screen.getByRole('region', { name: t('marking.section') });
     expect(within(section).queryByRole('combobox')).toBeNull();
     const floating = screen.getByRole<HTMLInputElement>('checkbox', {
@@ -225,37 +226,37 @@ describe('Detalhes', () => {
     );
   });
 
-  it('a dica de Posição e Tamanho segue o espaço: unidades do canvas ou pixels do container', () => {
-    // TX1 (#514): a marcação do canvas não está em "pixels da imagem original".
+  it('the Position and Size hint follows the space: canvas units or container pixels', () => {
+    // TX1 (#514): the canvas marking is not in "original image pixels".
     renderPanel('C1');
     const section = screen.getByRole('region', { name: t('marking.section') });
     expect(
       within(section).getAllByText(t('marking.canvasUnitsHint')).length,
     ).toBeGreaterThan(0);
     expect(within(section).queryByText(t('marking.pixelsHint'))).toBeNull();
-    expect(t('marking.canvasUnitsHint')).toBe('Em unidades do canvas');
+    expect(t('marking.canvasUnitsHint')).toBe('In canvas units');
   });
 
-  it('marcação de container: a dica de Posição e Tamanho fala em pixels do container', () => {
+  it('container marking: the Position and Size hint speaks of container pixels', () => {
     renderPanel('M2');
     const section = screen.getByRole('region', { name: t('marking.section') });
     expect(within(section).getAllByText(t('marking.pixelsHint')).length).toBeGreaterThan(
       0,
     );
     expect(within(section).queryByText(t('marking.canvasUnitsHint'))).toBeNull();
-    expect(t('marking.pixelsHint')).toBe('Em pixels do container');
+    expect(t('marking.pixelsHint')).toBe('In container pixels');
   });
 
-  it('marcação de container: mostra o pai assentado e também tem o interruptor', () => {
+  it('container marking: shows the settled parent and also has the switch', () => {
     renderPanel('M2');
     expect(screen.getByText('Porta', { selector: '.props-text' })).toBeTruthy();
-    // Qualquer marcação pode virar flutuante (decisão 10).
+    // Any marking can become floating (decision 10).
     expect(screen.getByRole('checkbox', { name: t('marking.floating') })).toBeTruthy();
-    // x/y/w/h continuam editáveis.
+    // x/y/w/h stay editable.
     expect(screen.getByLabelText('X')).toBeTruthy();
   });
 
-  it('o container mostra a marcação do canvas a que pertence', () => {
+  it('the container shows the canvas marking it belongs to', () => {
     const harness = createHarness(canvasProject());
     renderLive(harness, (p) => (
       <SelectionPanel
@@ -269,6 +270,6 @@ describe('Detalhes', () => {
       />
     ));
     expect(screen.getAllByText(t('marking.parent')).length).toBeGreaterThan(0);
-    expect(screen.getByText('Grupo', { selector: '.props-text' })).toBeTruthy();
+    expect(screen.getByText('Group', { selector: '.props-text' })).toBeTruthy();
   });
 });

@@ -7,7 +7,7 @@ import { TypePicker } from '../../src/ui/TypePicker';
 import { noticeSpec } from './noticeFixtures';
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
@@ -15,28 +15,30 @@ const type = (id: string, name: string, groups?: string[]): SpecAnnotationType =
   ({ id, name, fields: [], ...(groups ? { groups } : {}) }) as SpecAnnotationType;
 
 const groups: SpecLayerGroup[] = [
-  { id: 'nav', name: 'Navegação' },
-  { id: 'dados', name: 'Dados' },
+  { id: 'nav', name: 'Navigation' },
+  { id: 'data', name: 'Data' },
 ];
 const types = [
-  type('onClick', 'Clique', ['nav']),
-  type('track', 'Rastrear', ['dados']),
-  type('misc', 'Variado'),
-  type('acao', 'Ação', ['nav']),
+  type('onClick', 'Click', ['nav']),
+  type('track', 'Track', ['data']),
+  type('misc', 'Misc'),
+  type('action', 'Action', ['nav']),
 ];
 
 describe('TypePicker', () => {
-  it('foca o campo de busca ao abrir, com rótulo e placeholder do total', () => {
+  it('focuses the search field on open, with the total in label and placeholder', () => {
     render(<TypePicker types={types} groups={groups} onChoose={vi.fn()} />);
-    const field = screen.getByRole('searchbox', { name: 'Buscar entre 4 tipos' });
+    const field = screen.getByRole('searchbox', { name: 'Search among 4 types' });
     expect(document.activeElement).toBe(field);
-    expect(field.getAttribute('placeholder')).toBe('Buscar entre 4 tipos');
+    expect(field.getAttribute('placeholder')).toBe('Search among 4 types');
   });
 
-  it('com um tipo só, o campo de busca fica no singular (pt-BR e en-US)', () => {
+  it('with a single type, the search field is singular (pt-BR and en-US)', () => {
+    locale.value = 'pt-BR';
     const { unmount } = render(
       <TypePicker types={[types[0]!]} groups={groups} onChoose={vi.fn()} />,
     );
+    // pt-BR kept: the singular of the pt-BR search label is the object of the test
     expect(screen.getByRole('searchbox', { name: 'Buscar entre 1 tipo' })).toBeTruthy();
     unmount();
     locale.value = 'en-US';
@@ -44,45 +46,45 @@ describe('TypePicker', () => {
     expect(screen.getByRole('searchbox', { name: 'Search among 1 type' })).toBeTruthy();
   });
 
-  it('cabeçalhos de grupo na ordem e "Outros" no fim', () => {
+  it('group headings in order and "Other" last', () => {
     render(<TypePicker types={types} groups={groups} onChoose={vi.fn()} />);
     const headings = screen
       .getAllByRole('heading', { level: 3 })
       .map((h) => h.textContent);
-    expect(headings).toEqual(['Navegação', 'Dados', 'Outros']);
+    expect(headings).toEqual(['Navigation', 'Data', 'Other']);
   });
 
-  it('sem grupos, não há cabeçalhos', () => {
+  it('without groups, there are no headings', () => {
     render(<TypePicker types={types} onChoose={vi.fn()} />);
     expect(screen.queryAllByRole('heading', { level: 3 })).toHaveLength(0);
     expect(screen.getAllByText(/./, { selector: 'strong' })).toHaveLength(4);
   });
 
-  it('busca sem acento e sem caixa filtra e esconde os grupos sem resultado', async () => {
+  it('search without accents or case filters and hides the groups without results', async () => {
     render(<TypePicker types={types} groups={groups} onChoose={vi.fn()} />);
-    await userEvent.setup().keyboard('ACAO');
-    expect(screen.getByText('Ação', { selector: 'strong' })).toBeTruthy();
-    expect(screen.queryByText('Rastrear', { selector: 'strong' })).toBeNull();
+    await userEvent.setup().keyboard('ACTION');
+    expect(screen.getByText('Action', { selector: 'strong' })).toBeTruthy();
+    expect(screen.queryByText('Track', { selector: 'strong' })).toBeNull();
     const headings = screen
       .getAllByRole('heading', { level: 3 })
       .map((h) => h.textContent);
-    expect(headings).toEqual(['Navegação']);
+    expect(headings).toEqual(['Navigation']);
   });
 
-  it('sem resultado mostra "Nenhum tipo com"', async () => {
+  it('no result shows "No type matching"', async () => {
     render(<TypePicker types={types} groups={groups} onChoose={vi.fn()} />);
     await userEvent.setup().keyboard('zzz');
-    expect(screen.getByText('Nenhum tipo com "zzz"')).toBeTruthy();
+    expect(screen.getByText('No type matching "zzz"')).toBeTruthy();
   });
 
-  it('escolher um tipo chama onChoose com ele', async () => {
+  it('choosing a type calls onChoose with it', async () => {
     const onChoose = vi.fn();
     render(<TypePicker types={types} groups={groups} onChoose={onChoose} />);
-    await userEvent.setup().click(screen.getByText('Rastrear', { selector: 'strong' }));
+    await userEvent.setup().click(screen.getByText('Track', { selector: 'strong' }));
     expect(onChoose).toHaveBeenCalledWith(types[1]);
   });
 
-  it('o selo de aviso continua no item', () => {
+  it('the notice badge stays on the item', () => {
     const notice = noticeSpec().layers[0]?.annotationTypes ?? [];
     render(<TypePicker types={notice} onChoose={vi.fn()} />);
     const option = screen

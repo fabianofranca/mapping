@@ -12,16 +12,17 @@ import { sampleProject } from '../model/fixtures';
 import { descriptionOf } from './describedBy';
 import { createHarness, renderLive, type Harness } from './harness';
 
-// Etapa 2.5: o cadeado na Árvore e em Detalhes. A seleção e as anotações seguem livres;
-// só mover, redimensionar e excluir são bloqueados.
+// Stage 2.5: the padlock in the Tree and in the Details. Selection and annotations stay free;
+// only moving, resizing and deleting are blocked.
+// pt-BR kept: shared fixture data asserted by tests/model (sampleProject names 'Porta', 'Maçaneta', 'Fechadura', 'images/lateral.jpg')
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   showToolWindow('tree');
 });
 afterEach(cleanup);
 
-/** O texto da dica (`Tooltip`) de um `IconButton`. */
+/** The tooltip text (`Tooltip`) of an `IconButton`. */
 const tipOf = (button: HTMLElement) =>
   button.parentElement?.querySelector('[data-tooltip]')?.textContent;
 
@@ -56,22 +57,22 @@ function renderMarkingPanel(
   return { harness, onDelete, user: userEvent.setup() };
 }
 
-/** O ícone de ajuda da trava (decisão 8 da #353): só existe com trava. */
-const lockHelp = () => screen.queryByRole('button', { name: 'Sobre a trava' });
+/** The lock help icon (decision 8 of #353): only exists with a lock. */
+const lockHelp = () => screen.queryByRole('button', { name: 'About the lock' });
 
 const lockButton = () =>
   screen.getByRole('button', { name: t('lock.markingLock') }) as HTMLButtonElement;
 
-describe('Detalhes da marcação: cadeado', () => {
-  it('trancada: nome e dica seguem "Trancar marcação", com aria-pressed="true"', async () => {
+describe('Marking Details: padlock', () => {
+  it('locked: name and tooltip stay "Lock marking", with aria-pressed="true"', async () => {
     const { user } = renderMarkingPanel('M2');
     await user.click(lockButton());
-    const locked = screen.getByRole('button', { name: 'Trancar marcação' });
+    const locked = screen.getByRole('button', { name: 'Lock marking' });
     expect(locked.getAttribute('aria-pressed')).toBe('true');
-    expect(tipOf(locked)).toContain('Trancar marcação');
+    expect(tipOf(locked)).toContain('Lock marking');
   });
 
-  it('o botão tranca e destranca, com o estado em aria-pressed e uma entrada de desfazer por clique', async () => {
+  it('the button locks and unlocks, with the state in aria-pressed and one undo entry per click', async () => {
     const { harness, user } = renderMarkingPanel('M2');
     expect(lockButton().getAttribute('aria-pressed')).toBe('false');
     await user.click(lockButton());
@@ -88,16 +89,16 @@ describe('Detalhes da marcação: cadeado', () => {
     expect(marking(harness.project(), 'M2').locked).toBe(true);
   });
 
-  it('o atalho aparece na dica do botão', () => {
+  it('the shortcut appears in the button tooltip', () => {
     renderMarkingPanel('M2');
     expect(lockButton().getAttribute('aria-keyshortcuts')).toBe('Alt+L');
   });
 
-  it('trancada: posição, tamanho e Excluir ficam desabilitados; nome e pai seguem editáveis', async () => {
+  it('locked: position, size and Delete are disabled; name and parent stay editable', async () => {
     const { harness, onDelete, user } = renderMarkingPanel('M2', {
       setup: (h) => h.actions.setMarkingLocked('M2', true),
     });
-    for (const label of ['X', 'Y', 'Largura', 'Altura']) {
+    for (const label of ['X', 'Y', 'Width', 'Height']) {
       expect((screen.getByLabelText(label) as HTMLInputElement).disabled).toBe(true);
     }
     const remove = screen.getByRole('button', { name: t('marking.delete') });
@@ -109,18 +110,18 @@ describe('Detalhes da marcação: cadeado', () => {
     const name = screen.getByLabelText(t('marking.name'));
     expect((name as HTMLInputElement).disabled).toBe(false);
     await user.clear(name);
-    await user.type(name, 'Outro{Enter}');
-    expect(marking(harness.project(), 'M2').name).toBe('Outro');
+    await user.type(name, 'Other{Enter}');
+    expect(marking(harness.project(), 'M2').name).toBe('Other');
   });
 
-  it('destrancada, os campos e o Excluir voltam', () => {
+  it('unlocked, the fields and Delete come back', () => {
     renderMarkingPanel('M2');
     expect((screen.getByLabelText('X') as HTMLInputElement).disabled).toBe(false);
     const remove = screen.getByRole('button', { name: t('marking.delete') });
     expect((remove as HTMLButtonElement).disabled).toBe(false);
   });
 
-  it('filha de um pai trancado: campos desabilitados e um aviso com o nome do pai; o cadeado próprio segue livre', async () => {
+  it('child of a locked parent: fields disabled and a notice with the parent name; its own padlock stays free', async () => {
     const { harness, user } = renderMarkingPanel('M2', {
       setup: (h) => h.actions.setMarkingLocked('M1', true),
     });
@@ -130,8 +131,8 @@ describe('Detalhes da marcação: cadeado', () => {
     expect(descriptionOf(help as HTMLElement)).toBe(
       t('lock.inheritedNotice', { parent: 'Porta' }),
     );
-    expect((screen.getByLabelText('Largura') as HTMLInputElement).disabled).toBe(true);
-    // Só a geometria trava: excluir a filha segue permitido.
+    expect((screen.getByLabelText('Width') as HTMLInputElement).disabled).toBe(true);
+    // Only the geometry locks: deleting the child is still allowed.
     const remove = screen.getByRole('button', { name: t('marking.delete') });
     expect((remove as HTMLButtonElement).disabled).toBe(false);
     expect(lockButton().getAttribute('aria-pressed')).toBe('false');
@@ -139,18 +140,18 @@ describe('Detalhes da marcação: cadeado', () => {
     expect(marking(harness.project(), 'M2').locked).toBe(true);
   });
 
-  it('pai com um filho trancado: nada fica bloqueado nem avisado', () => {
+  it('parent with a locked child: nothing is blocked or warned', () => {
     renderMarkingPanel('M1', { setup: (h) => h.actions.setMarkingLocked('M3', true) });
     expect(document.querySelector('.notice')).toBeNull();
     expect(lockHelp()).toBeNull();
-    for (const label of ['X', 'Y', 'Largura', 'Altura']) {
+    for (const label of ['X', 'Y', 'Width', 'Height']) {
       expect((screen.getByLabelText(label) as HTMLInputElement).disabled).toBe(false);
     }
     const remove = screen.getByRole('button', { name: t('marking.delete') });
     expect((remove as HTMLButtonElement).disabled).toBe(false);
   });
 
-  it('mover o pai pelo X leva o filho trancado junto', async () => {
+  it('moving the parent through X takes the locked child along', async () => {
     const { harness, user } = renderMarkingPanel('M1', {
       setup: (h) => h.actions.setMarkingLocked('M3', true),
     });
@@ -162,7 +163,7 @@ describe('Detalhes da marcação: cadeado', () => {
     expect(marking(harness.project(), 'M3').rect.x).toBe(before.x + 10);
   });
 
-  it('somente leitura: o cadeado fica desabilitado', () => {
+  it('read-only: the padlock is disabled', () => {
     renderMarkingPanel('M2', { readOnly: true });
     expect(lockButton().disabled).toBe(true);
   });
@@ -188,18 +189,18 @@ function renderImagePanel(
   return { harness, onDelete, user: userEvent.setup() };
 }
 
-describe('Detalhes da imagem: cadeado', () => {
+describe('Image Details: padlock', () => {
   const imageLock = () =>
     screen.getByRole('button', { name: t('lock.imageLock') }) as HTMLButtonElement;
 
-  it('tranca e destranca a imagem, com aviso e Excluir bloqueado', async () => {
+  it('locks and unlocks the image, with a notice and Delete blocked', async () => {
     const { harness, onDelete, user } = renderImagePanel('I2');
     await user.click(imageLock());
     expect(harness.project().containers[1]?.locked).toBe(true);
     expect(imageLock().getAttribute('aria-pressed')).toBe('true');
-    expect(screen.getByRole('button', { name: 'Trancar imagem' })).toBe(imageLock());
-    expect(tipOf(imageLock())).toContain('Trancar imagem');
-    // Mesmo tratamento da marcação e da seta: sem o quadro escrito; o ícone ao lado do cadeado.
+    expect(screen.getByRole('button', { name: 'Lock image' })).toBe(imageLock());
+    expect(tipOf(imageLock())).toContain('Lock image');
+    // Same treatment as the marking and the arrow: no written box; the icon next to the padlock.
     expect(document.querySelector('.notice')).toBeNull();
     const help = lockHelp() as HTMLElement;
     expect(descriptionOf(help)).toBe(t('lock.imageNotice'));
@@ -212,13 +213,13 @@ describe('Detalhes da imagem: cadeado', () => {
     expect(harness.project().containers[1]?.locked).toBe(false);
   });
 
-  it('"Trancar todas as marcações desta imagem" é uma entrada só no desfazer', async () => {
+  it('"Lock all markings of this image" is a single undo entry', async () => {
     const { harness, user } = renderImagePanel('I1');
     await user.click(screen.getByRole('button', { name: t('lock.lockAll') }));
     const locked = harness.project().markings.filter((m) => m.locked);
     expect(locked.map((m) => m.id)).toEqual(['M1', 'M2', 'M3']);
     expect(harness.store.revision.value).toBe(1);
-    // Com todas trancadas, o botão oferece destrancar todas.
+    // With all locked, the button offers to unlock all.
     await user.click(screen.getByRole('button', { name: t('lock.unlockAll') }));
     expect(harness.project().markings.some((m) => m.locked)).toBe(false);
     harness.store.undo();
@@ -227,7 +228,7 @@ describe('Detalhes da imagem: cadeado', () => {
     expect(harness.project().markings.some((m) => m.locked)).toBe(false);
   });
 
-  it('imagem sem marcações não mostra "trancar todas"', () => {
+  it('image without markings does not show "lock all"', () => {
     const harness = createHarness(sampleProject());
     harness.actions.removeMarking('M4');
     renderLive(harness, (p) => (
@@ -243,13 +244,13 @@ describe('Detalhes da imagem: cadeado', () => {
     expect(screen.queryByRole('button', { name: t('lock.lockAll') })).toBeNull();
   });
 
-  it('com uma marcação trancada, a imagem ainda pode ser excluída', () => {
+  it('with a locked marking, the image can still be deleted', () => {
     renderImagePanel('I1', { setup: (h) => h.actions.setMarkingLocked('M3', true) });
     const remove = screen.getByRole('button', { name: t('image.delete') });
     expect((remove as HTMLButtonElement).disabled).toBe(false);
   });
 
-  it('somente leitura: os botões de trava ficam desabilitados', () => {
+  it('read-only: the lock buttons are disabled', () => {
     renderImagePanel('I1', { readOnly: true });
     expect(imageLock().disabled).toBe(true);
     expect(
@@ -266,24 +267,24 @@ function renderTree(harness: Harness, onSelect = vi.fn()) {
   return { onSelect, user: userEvent.setup() };
 }
 
-describe('Árvore: cadeado na linha', () => {
+describe('Tree: padlock on the row', () => {
   const treeLock = (name: string) =>
     screen.getByRole('button', {
       name: t('lock.treeLock', { name }),
     }) as HTMLButtonElement;
 
-  // SN2: o nome e a dica são os mesmos nos dois estados; o estado fica no aria-pressed.
-  it('trancado: o nome e a dica seguem "Trancar {nome}", com aria-pressed="true"', async () => {
+  // SN2: the name and the tooltip are the same in both states; the state stays in aria-pressed.
+  it('locked: the name and the tooltip stay "Lock {name}", with aria-pressed="true"', async () => {
     const harness = createHarness(sampleProject());
     const { user } = renderTree(harness);
     await user.click(treeLock('Porta'));
-    const locked = screen.getByRole('button', { name: 'Trancar Porta' });
+    const locked = screen.getByRole('button', { name: 'Lock Porta' });
     expect(locked.getAttribute('aria-pressed')).toBe('true');
-    expect(locked.title).toBe('Trancar Porta');
-    expect(screen.queryByRole('button', { name: 'Destrancar Porta' })).toBeNull();
+    expect(locked.title).toBe('Lock Porta');
+    expect(screen.queryByRole('button', { name: 'Unlock Porta' })).toBeNull();
   });
 
-  it('cada linha de imagem e marcação tem o cadeado, e clicar alterna sem selecionar', async () => {
+  it('each image and marking row has the padlock, and clicking toggles without selecting', async () => {
     const harness = createHarness(sampleProject());
     const { onSelect, user } = renderTree(harness);
     expect(treeLock('Porta').getAttribute('aria-pressed')).toBe('false');
@@ -298,7 +299,7 @@ describe('Árvore: cadeado na linha', () => {
     expect(marking(harness.project(), 'M1').locked).toBe(false);
   });
 
-  it('o descendente de um pai trancado mostra o cadeado esmaecido, sem botão', () => {
+  it('the descendant of a locked parent shows the dimmed padlock, without a button', () => {
     const harness = createHarness(sampleProject());
     harness.actions.setMarkingLocked('M1', true);
     renderTree(harness);
@@ -306,12 +307,12 @@ describe('Árvore: cadeado na linha', () => {
       screen.queryByRole('button', { name: t('lock.treeLock', { name: 'Maçaneta' }) }),
     ).toBeNull();
     const signs = document.querySelectorAll('.tree-lock-inherited');
-    // M2 e M3 herdam; M1 tem o botão próprio.
+    // M2 and M3 inherit; M1 has its own button.
     expect(signs).toHaveLength(2);
     expect(within(signs[0] as HTMLElement).getByText(t('lock.inherited'))).toBeTruthy();
   });
 
-  it('a linha trancada continua selecionável', async () => {
+  it('the locked row is still selectable', async () => {
     const harness = createHarness(sampleProject());
     harness.actions.setMarkingLocked('M2', true);
     const { onSelect, user } = renderTree(harness);
@@ -319,13 +320,13 @@ describe('Árvore: cadeado na linha', () => {
     expect(onSelect).toHaveBeenCalledWith({ kind: 'marking', id: 'M2' });
   });
 
-  it('somente leitura: o estado aparece, mas o botão fica desabilitado', () => {
+  it('read-only: the state shows, but the button is disabled', () => {
     const harness = createHarness(sampleProject(), true);
     renderTree(harness);
     expect(treeLock('Porta').disabled).toBe(true);
   });
 
-  it('o rótulo do botão traz o nome do item', () => {
+  it('the button label carries the item name', () => {
     const harness = createHarness(sampleProject());
     renderTree(harness);
     expect(treeLock('Fechadura').title).toBe(t('lock.treeLock', { name: 'Fechadura' }));

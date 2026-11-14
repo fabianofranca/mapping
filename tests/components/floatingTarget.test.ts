@@ -3,31 +3,32 @@ import { locale } from '../../src/store/settings';
 import { componentDropTarget, componentTarget } from '../../src/ui/componentTarget';
 import { notesHarness } from './notesHarness';
 
-// ME3: o alvo do Adicionar e do soltar para um tipo flutuante é sempre o canvas.
+// ME3: the target of Add and of drop for a floating type is always the canvas.
+// pt-BR kept: bundled notes library type id 'nota' (shared fixture data asserted by tests/model, tests/ui)
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 
 function typeOf(harness: Awaited<ReturnType<typeof notesHarness>>, typeId: string) {
   const type = harness.context.derived.componentTypes.value.find(
     (c) => c.typeId === typeId,
   );
-  if (!type) throw new Error(`tipo ${typeId} não existe`);
+  if (!type) throw new Error(`type ${typeId} does not exist`);
   return type;
 }
 
-describe('componentTarget: tipo flutuante', () => {
-  it('expõe o tipo nota como flutuante e o botão como comum', async () => {
+describe('componentTarget: floating type', () => {
+  it('exposes the note type as floating and the button as common', async () => {
     const h = await notesHarness();
     expect(typeOf(h, 'nota').floating).toBe(true);
     expect(typeOf(h, 'm3-button').floating).toBe(false);
   });
 
-  it('sem seleção, com o centro da vista sobre um container: canvas, no centro da vista', async () => {
+  it('no selection, with the view center over a container: canvas, at the view center', async () => {
     const h = await notesHarness();
     h.ui.selection.value = null;
     const image = h.project().containers[0];
@@ -44,21 +45,21 @@ describe('componentTarget: tipo flutuante', () => {
     });
   });
 
-  it('seleção num container: continua o canvas', async () => {
+  it('selection on a container: still the canvas', async () => {
     const h = await notesHarness();
     h.ui.selection.value = { kind: 'image', id: 'I2' };
     const target = componentTarget(h.context, { floating: true });
     expect(target?.containerId).toBeNull();
     expect(target?.destination.kind).toBe('canvas');
-    // O tipo comum, com a mesma seleção, vai para o container (regressão).
+    // The common type, with the same selection, goes to the container (regression).
     const common = componentTarget(h.context);
     expect(common?.containerId).toBe('I2');
     expect(common?.destination.kind).toBe('container');
   });
 
-  it('seleção numa marcação de container e numa marcação com slot: canvas; o tipo comum entra no slot', async () => {
+  it('selection on a container marking and on a marking with a slot: canvas; the common type goes into the slot', async () => {
     const h = await notesHarness();
-    // Uma coluna (Material 3) tem slot.
+    // A column (Material 3) has a slot.
     const column = h.actions.addComponent({
       containerId: 'I1',
       parentId: null,
@@ -80,7 +81,7 @@ describe('componentTarget: tipo flutuante', () => {
       destination: { kind: 'slot' },
     });
 
-    // Marcação comum de container (sem componente): ainda o canvas para o flutuante.
+    // Plain container marking (no component): still the canvas for the floating one.
     const plain = h.actions.createMarking('I1', {
       x: 10,
       y: 10,
@@ -94,8 +95,8 @@ describe('componentTarget: tipo flutuante', () => {
   });
 });
 
-describe('componentDropTarget: tipo flutuante', () => {
-  it('solto sobre um container cai no canvas, sem encaixe; o tipo comum entra no container', async () => {
+describe('componentDropTarget: floating type', () => {
+  it('dropped over a container lands on the canvas, without snapping; the common type goes into the container', async () => {
     const h = await notesHarness();
     const project = h.project();
     const image = project.containers.find((c) => c.id === 'I1');

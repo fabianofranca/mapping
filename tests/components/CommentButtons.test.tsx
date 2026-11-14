@@ -12,12 +12,12 @@ import { sampleProject } from '../model/fixtures';
 import { AGENT, HUMAN, T0, T1, message, sampleThread } from '../model/threadFixtures';
 import { createHarness, type Harness } from './harness';
 
-// Botões Conversas e Comentar e os itens Comentar / Comentar aqui do menu (CM4, decisões 24 e 25).
+// Threads and Comment buttons and the Comment / Comment here menu items (CM4, decisions 24 and 25).
 
 const WAITING_HUMAN: Thread = sampleThread({
   id: 'h',
   anchor: { kind: 'marking', id: 'M1' },
-  messages: [message('h1', T0, HUMAN, 'oi'), message('h2', T1, AGENT, 'e então?')],
+  messages: [message('h1', T0, HUMAN, 'hi'), message('h2', T1, AGENT, 'and then?')],
 });
 
 async function setup(threads: readonly Thread[] = [], readOnly = false) {
@@ -33,13 +33,13 @@ function mount(h: Harness, ui: preact.ComponentChildren) {
 beforeEach(() => {
   localStorage.clear();
   clearIdentity();
-  setIdentity('Marina Alves', 'marina@exemplo.com');
-  locale.value = 'pt-BR';
+  setIdentity('Marina Alves', 'marina@example.com');
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
-describe('botão Conversas', () => {
-  it('liga e desliga os pinos, com aria-pressed', async () => {
+describe('Threads button', () => {
+  it('turns the pins on and off, with aria-pressed', async () => {
     const h = await setup();
     mount(h, <PinsButton />);
     const button = screen.getByRole('button', { name: t('comments.pins') });
@@ -51,26 +51,26 @@ describe('botão Conversas', () => {
     expect(h.ui.commentPins.value).toBe(false);
   });
 
-  it('desligado, mostra a contagem das conversas que aguardam humano', async () => {
+  it('when off, shows the count of threads awaiting a human', async () => {
     const h = await setup([WAITING_HUMAN]);
     const { container } = mount(h, <PinsButton />);
     expect(container.querySelector('.icon-button-badge')?.textContent).toBe('1');
-    // Ligado, a contagem some (os pinos já mostram).
+    // When on, the count disappears (the pins already show it).
     act(() => {
       h.ui.commentPins.value = true;
     });
     expect(container.querySelector('.icon-button-badge')).toBeNull();
   });
 
-  it('sem conversa aguardando, não mostra contagem', async () => {
+  it('with no thread waiting, shows no count', async () => {
     const h = await setup();
     const { container } = mount(h, <PinsButton />);
     expect(container.querySelector('.icon-button-badge')).toBeNull();
   });
 });
 
-describe('botão Comentar', () => {
-  it('liga os pinos e arma o clique; de novo, desarma', async () => {
+describe('Comment button', () => {
+  it('turns the pins on and arms the click; again, disarms', async () => {
     const h = await setup();
     mount(h, <CommentButton />);
     const button = screen.getByRole('button', { name: t('comments.add') });
@@ -82,7 +82,7 @@ describe('botão Comentar', () => {
     expect(h.ui.commentArm.value).toBeNull();
   });
 
-  it('fica desabilitado no somente leitura', async () => {
+  it('is disabled in read-only', async () => {
     const h = await setup([], true);
     mount(h, <CommentButton />);
     expect(
@@ -90,7 +90,7 @@ describe('botão Comentar', () => {
     ).toBe(true);
   });
 
-  it('fica desabilitado no modo visualização', async () => {
+  it('is disabled in view mode', async () => {
     const h = await setup();
     h.ui.viewMode.value = true;
     mount(h, <CommentButton />);
@@ -100,8 +100,8 @@ describe('botão Comentar', () => {
   });
 });
 
-describe('menu de contexto do canvas', () => {
-  it('Comentar aqui, num lugar vazio, abre o rascunho no ponto sem gravar', async () => {
+describe('canvas context menu', () => {
+  it('Comment here, on an empty spot, opens the draft at the point without saving', async () => {
     const h = await setup();
     const here = { kind: 'point', containerId: null, x: 5, y: 6 } as const;
     h.ui.canvasMenu.value = { x: 10, y: 10, target: null, comment: null, here };
@@ -113,7 +113,7 @@ describe('menu de contexto do canvas', () => {
     expect(h.context.session.threads.list.peek()).toHaveLength(0);
   });
 
-  it('Comentar, sobre um item, abre o rascunho ancorado nele', async () => {
+  it('Comment, on an item, opens the draft anchored to it', async () => {
     const h = await setup();
     h.ui.canvasMenu.value = {
       x: 10,
@@ -128,7 +128,7 @@ describe('menu de contexto do canvas', () => {
     expect(composingAnchor(h.ui)).toEqual({ kind: 'marking', id: 'M1' });
   });
 
-  it('os itens ficam desabilitados no somente leitura', async () => {
+  it('the items are disabled in read-only', async () => {
     const h = await setup([], true);
     h.ui.canvasMenu.value = {
       x: 10,

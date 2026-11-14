@@ -12,22 +12,23 @@ import { MarkingTree } from '../../src/ui/MarkingTree';
 import { sampleProject } from '../model/fixtures';
 import { createHarness, renderLive, type Harness } from './harness';
 
-// Etapa Envolver (EV1, decisão 3): a entrada "Envolver" no menu de contexto do canvas e no ⋯ da
-// linha da Árvore, com a seleção atual (ou só o item da linha, se ele estiver fora dela).
+// Wrap stage (EV1, decision 3): the "Wrap" entry in the canvas context menu and in the ⋯ of the
+// Tree row, with the current selection (or only the row item, if it is outside it).
+// pt-BR kept: shared fixture data (names Porta, Maçaneta, Fechadura, image 'frente.jpg' of sampleProject) asserted by tests/
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   showToolWindow('tree');
 });
 afterEach(cleanup);
 
-/** O projeto de exemplo mais uma nota (marcação flutuante do canvas) e uma seta. */
+/** The sample project plus a note (floating canvas marking) and an arrow. */
 function projectWithNote(): Project {
   let p = sampleProject();
   p = createMarking(p, {
     id: 'F1',
     containerId: null,
-    name: 'Lembrete',
+    name: 'Reminder',
     floating: true,
     rect: { x: 50000, y: 50000, width: 300, height: 200 },
   });
@@ -57,8 +58,8 @@ function openCanvasMenu(harness: Harness, kind: 'i' | 'm' | 'arrow', id: string)
   });
 }
 
-describe('Envolver no menu de contexto do canvas', () => {
-  it('com o alvo dentro de uma seleção de 3, envolve os 3 e seleciona a nova', async () => {
+describe('Wrap in the canvas context menu', () => {
+  it('with the target inside a selection of 3, wraps the 3 and selects the new one', async () => {
     const harness = createHarness(projectWithNote());
     selectItems(harness.ui, [
       { kind: 'marking', id: 'M2' },
@@ -71,7 +72,7 @@ describe('Envolver no menu de contexto do canvas', () => {
 
     const wrap = newMarking(harness);
     expect(wrap).toBeDefined();
-    // M4 é de outro container: a marcação nova é do canvas e os dois containers são filhos dela.
+    // M4 is in another container: the new marking is the canvas's and both containers are its children.
     expect(wrap?.containerId).toBeNull();
     for (const id of ['I1', 'I2']) expect(containerParent(harness, id)).toBe(wrap?.id);
     expect(selectedItems(harness.ui)).toEqual([{ kind: 'marking', id: wrap?.id }]);
@@ -80,7 +81,7 @@ describe('Envolver no menu de contexto do canvas', () => {
     expect(newMarking(harness)).toBeUndefined();
   });
 
-  it('sobre um item só, envolve só ele', async () => {
+  it('over a single item, wraps only it', async () => {
     const harness = createHarness(projectWithNote());
     selectItems(harness.ui, [{ kind: 'marking', id: 'M4' }]);
     renderMenu(harness);
@@ -91,7 +92,7 @@ describe('Envolver no menu de contexto do canvas', () => {
     expect(parentOf(harness, 'M1')).not.toBe(wrap?.id);
   });
 
-  it('a entrada mostra o atalho Ctrl+G', async () => {
+  it('the entry shows the Ctrl+G shortcut', async () => {
     const harness = createHarness(projectWithNote());
     renderMenu(harness);
     openCanvasMenu(harness, 'm', 'M4');
@@ -100,7 +101,7 @@ describe('Envolver no menu de contexto do canvas', () => {
     expect(item.getAttribute('aria-keyshortcuts')).toBe('Control+G');
   });
 
-  it('alvo nota: a entrada fica desabilitada, com a dica', async () => {
+  it('note target: the entry is disabled, with the hint', async () => {
     const harness = createHarness(projectWithNote());
     renderMenu(harness);
     openCanvasMenu(harness, 'm', 'F1');
@@ -111,7 +112,7 @@ describe('Envolver no menu de contexto do canvas', () => {
     expect(item.title).toBe(t('multi.wrapBlocked'));
   });
 
-  it('alvo seta: sem a entrada', async () => {
+  it('arrow target: no entry', async () => {
     const harness = createHarness(projectWithNote());
     renderMenu(harness);
     openCanvasMenu(harness, 'arrow', 'S1');
@@ -119,7 +120,7 @@ describe('Envolver no menu de contexto do canvas', () => {
     expect(wrapItem()).toBeNull();
   });
 
-  it('somente leitura: sem a entrada', async () => {
+  it('read-only: no entry', async () => {
     const harness = createHarness(projectWithNote(), true);
     renderMenu(harness);
     openCanvasMenu(harness, 'm', 'M4');
@@ -128,7 +129,7 @@ describe('Envolver no menu de contexto do canvas', () => {
   });
 });
 
-describe('Envolver no ⋯ da linha da Árvore', () => {
+describe('Wrap in the ⋯ of the Tree row', () => {
   function renderTree(harness: Harness) {
     renderLive(harness, (p) => (
       <MarkingTree project={p} selection={null} onSelect={() => undefined} />
@@ -141,7 +142,7 @@ describe('Envolver no ⋯ da linha da Árvore', () => {
     return screen.getByRole('menu');
   };
 
-  it('item na seleção: envolve a seleção inteira', async () => {
+  it('item in the selection: wraps the whole selection', async () => {
     const harness = createHarness(projectWithNote());
     selectItems(harness.ui, [
       { kind: 'marking', id: 'M2' },
@@ -151,13 +152,13 @@ describe('Envolver no ⋯ da linha da Árvore', () => {
     const menu = await openRow('Maçaneta');
     await userEvent.click(within(menu).getByRole('menuitem', { name: t('multi.wrap') }));
     const wrap = newMarking(harness);
-    // Containers diferentes: a nova é do canvas.
+    // Different containers: the new one is the canvas's.
     expect(wrap?.containerId).toBeNull();
     for (const id of ['I1', 'I2']) expect(containerParent(harness, id)).toBe(wrap?.id);
     expect(selectedItems(harness.ui)).toEqual([{ kind: 'marking', id: wrap?.id }]);
   });
 
-  it('item fora da seleção: envolve só o item da linha', async () => {
+  it('item outside the selection: wraps only the row item', async () => {
     const harness = createHarness(projectWithNote());
     selectItems(harness.ui, [
       { kind: 'marking', id: 'M1' },
@@ -171,7 +172,7 @@ describe('Envolver no ⋯ da linha da Árvore', () => {
     expect(parentOf(harness, 'M1')).not.toBe(wrap?.id);
   });
 
-  it('a imagem (container) também pode ser envolvida', async () => {
+  it('the image (container) can also be wrapped', async () => {
     const harness = createHarness(projectWithNote());
     renderTree(harness);
     const menu = await openRow('images/frente.jpg');
@@ -183,10 +184,10 @@ describe('Envolver no ⋯ da linha da Árvore', () => {
     );
   });
 
-  it('linha de nota: a entrada fica desabilitada, com a dica e o atalho', async () => {
+  it('note row: the entry is disabled, with the hint and the shortcut', async () => {
     const harness = createHarness(projectWithNote());
     renderTree(harness);
-    const menu = await openRow('Lembrete');
+    const menu = await openRow('Reminder');
     const item = within(menu).getByRole('menuitem', {
       name: t('multi.wrap'),
     }) as HTMLButtonElement;
@@ -195,7 +196,7 @@ describe('Envolver no ⋯ da linha da Árvore', () => {
     expect(item.textContent).toContain('Ctrl+G');
   });
 
-  it('somente leitura: sem a entrada', async () => {
+  it('read-only: no entry', async () => {
     const harness = createHarness(projectWithNote(), true);
     renderTree(harness);
     const menu = await openRow('Porta');

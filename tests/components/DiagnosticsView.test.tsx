@@ -23,6 +23,7 @@ import { sampleProject } from '../model/fixtures';
 import { createHarness } from './harness';
 
 beforeEach(() => {
+  locale.value = 'en-US';
   clearReportedErrors();
   vi.spyOn(console, 'error').mockImplementation(() => undefined);
 });
@@ -32,7 +33,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-/** Registro com Copiar e Limpar, como no cabeçalho da janela. */
+/** Log with Copy and Clear, as in the window header. */
 function Diagnostics() {
   return (
     <>
@@ -42,8 +43,8 @@ function Diagnostics() {
   );
 }
 
-describe('Diagnóstico: registro, Copiar e Limpar', () => {
-  it('sem erros, avisa e não oferece limpar', () => {
+describe('Diagnostics: log, Copy and Clear', () => {
+  it('with no errors, it says so and does not offer clearing', () => {
     render(<Diagnostics />);
     expect(screen.getByText(t('diagnostics.empty'))).toBeTruthy();
     expect(
@@ -52,10 +53,10 @@ describe('Diagnóstico: registro, Copiar e Limpar', () => {
     ).toBe(true);
   });
 
-  it('um erro forçado de gravação aparece na lista', async () => {
+  it('a forced save error appears in the list', async () => {
     vi.useFakeTimers();
     const saver = createAutoSaver(async () => {
-      throw new Error('sem permissão de escrita');
+      throw new Error('no write permission');
     }, 100);
     saver.schedule();
     await vi.advanceTimersByTimeAsync(100);
@@ -64,12 +65,12 @@ describe('Diagnóstico: registro, Copiar e Limpar', () => {
 
     render(<Diagnostics />);
     expect(screen.getByText('save')).toBeTruthy();
-    expect(screen.getByText('sem permissão de escrita')).toBeTruthy();
+    expect(screen.getByText('no write permission')).toBeTruthy();
   });
 
-  // Etapa 6 (6.4), achado 6: Hora e Contexto não quebram no meio ("22:3" / "3:36").
-  it('Hora e Contexto ficam numa linha só', () => {
-    reportError('open.repair', new Error('falhou'));
+  // Stage 6 (6.4), finding 6: Time and Context do not break in the middle ("22:3" / "3:36").
+  it('Time and Context stay on a single line', () => {
+    reportError('open.repair', new Error('failed'));
     render(<Diagnostics />);
     const time = screen.getByText((_, el) => el?.tagName === 'TIME');
     expect(time.closest('td')?.classList.contains('diagnostics-nowrap')).toBe(true);
@@ -81,19 +82,19 @@ describe('Diagnóstico: registro, Copiar e Limpar', () => {
     ).toBe(true);
   });
 
-  it('copia a lista como texto e permite limpar', async () => {
+  it('copies the list as text and allows clearing', async () => {
     const user = userEvent.setup();
     const writeText = vi.fn(async () => undefined);
     Object.defineProperty(navigator, 'clipboard', {
       value: { writeText },
       configurable: true,
     });
-    reportError('local.open', new Error('bloqueado'));
+    reportError('local.open', new Error('blocked'));
     render(<Diagnostics />);
 
     await user.click(screen.getByRole('button', { name: t('diagnostics.copy') }));
     expect(writeText).toHaveBeenCalledWith(
-      expect.stringContaining('[local.open] bloqueado'),
+      expect.stringContaining('[local.open] blocked'),
     );
     expect(screen.getByText(t('diagnostics.copied'))).toBeTruthy();
 
@@ -102,7 +103,7 @@ describe('Diagnóstico: registro, Copiar e Limpar', () => {
   });
 });
 
-describe('Diagnóstico: o texto copiado identifica o ambiente', () => {
+describe('Diagnostics: the copied text identifies the environment', () => {
   function mockClipboard() {
     const writeText = vi.fn<(text: string) => Promise<void>>(async () => undefined);
     Object.defineProperty(navigator, 'clipboard', {
@@ -112,10 +113,10 @@ describe('Diagnóstico: o texto copiado identifica o ambiente', () => {
     return writeText;
   }
 
-  it('cabeçalho com build, canal, schema, armazenamento e contagens, sem nomes', async () => {
+  it('header with build, channel, schema, storage and counts, without names', async () => {
     const user = userEvent.setup();
     const writeText = mockClipboard();
-    reportError('local.open', new Error('bloqueado'));
+    reportError('local.open', new Error('blocked'));
     const harness = createHarness(sampleProject());
     const project = harness.project();
     render(
@@ -138,14 +139,14 @@ describe('Diagnóstico: o texto copiado identifica o ambiente', () => {
       `containers: ${project.containers.length}, markings: ${project.markings.length}, annotations: ${project.annotations.length}`,
     );
     expect(text).toContain('pendingSave: no');
-    // O cabeçalho vem antes dos erros.
-    expect(text.indexOf('build: ')).toBeLessThan(text.indexOf('[local.open] bloqueado'));
-    // Privacidade: nem nome do projeto nem caminhos de imagem.
+    // The header comes before the errors.
+    expect(text.indexOf('build: ')).toBeLessThan(text.indexOf('[local.open] blocked'));
+    // Privacy: neither the project name nor image paths.
     expect(text).not.toContain(project.project.name);
     for (const image of project.containers) expect(text).not.toContain(image.file);
   });
 
-  it('em pasta, a linha folder: traz as operações medidas; sem contador (fora de pasta), não há linha', async () => {
+  it('in a folder, the folder: line carries the measured operations; without a counter (outside a folder), there is no line', async () => {
     const user = userEvent.setup();
     const writeText = mockClipboard();
     const harness = createHarness(sampleProject());
@@ -171,7 +172,7 @@ describe('Diagnóstico: o texto copiado identifica o ambiente', () => {
     expect(writeText.mock.calls[2]?.[0]).not.toContain('folder:');
   });
 
-  it('sem erros, Copiar leva o cabeçalho (para relatar um problema sem erro)', async () => {
+  it('with no errors, Copy carries the header (to report a problem without an error)', async () => {
     const user = userEvent.setup();
     const writeText = mockClipboard();
     render(<Diagnostics />);
@@ -180,7 +181,7 @@ describe('Diagnóstico: o texto copiado identifica o ambiente', () => {
   });
 });
 
-describe('Diagnóstico: biblioteca', () => {
+describe('Diagnostics: library', () => {
   const issues = new Map([
     [
       'sdui',
@@ -194,6 +195,7 @@ describe('Diagnóstico: biblioteca', () => {
         {
           file: 'sdui.spec.json',
           path: 'layers[0].annotationTypes[1].component',
+          // pt-BR kept: raw pt-BR fallback message of the model issue, only input data
           message: 'arquivo não encontrado: components/fab.json',
           severity: 'error' as const,
         },
@@ -201,7 +203,7 @@ describe('Diagnóstico: biblioteca', () => {
     ],
   ]);
 
-  it('lista erros e avisos por especialização, com arquivo, caminho e mensagem', () => {
+  it('lists errors and warnings per specialization, with file, path and message', () => {
     const harness = createHarness(sampleProject(), false, { libraryIssues: issues });
     render(
       <EditorContext.Provider value={harness.context}>
@@ -214,11 +216,11 @@ describe('Diagnóstico: biblioteca', () => {
     expect(screen.getByText('content larger than the box')).toBeTruthy();
     expect(screen.getByText(t('library.error'))).toBeTruthy();
     expect(screen.getByText(t('library.warning'))).toBeTruthy();
-    // O registro de erros continua no estado vazio.
+    // The error log stays in the empty state.
     expect(screen.getByText(t('diagnostics.empty'))).toBeTruthy();
   });
 
-  it('sem problemas na biblioteca, a seção não aparece', () => {
+  it('with no library problems, the section does not appear', () => {
     const harness = createHarness(sampleProject());
     render(
       <EditorContext.Provider value={harness.context}>
@@ -228,7 +230,7 @@ describe('Diagnóstico: biblioteca', () => {
     expect(screen.queryByRole('heading', { name: t('diagnostics.library') })).toBeNull();
   });
 
-  it('o Copiar não leva os problemas da biblioteca nem muda o cabeçalho', async () => {
+  it('Copy does not carry the library problems nor change the header', async () => {
     const user = userEvent.setup();
     const writeText = vi.fn<(text: string) => Promise<void>>(async () => undefined);
     Object.defineProperty(navigator, 'clipboard', {
@@ -248,8 +250,8 @@ describe('Diagnóstico: biblioteca', () => {
   });
 });
 
-describe('Diagnóstico: imagens remotas', () => {
-  it('lista as falhas e bloqueios com a URL encurtada e o motivo; só some com a sessão', () => {
+describe('Diagnostics: remote images', () => {
+  it('lists the failures and blocks with the shortened URL and the reason; it only goes away with the session', () => {
     clearRemoteImageIssues();
     render(<Diagnostics />);
     expect(
@@ -257,17 +259,17 @@ describe('Diagnóstico: imagens remotas', () => {
     ).toBeNull();
     act(() => {
       reportRemoteImageIssue(
-        'https://cdn.a.com/img/x.png?token=segredo#f',
+        'https://cdn.a.com/img/x.png?token=secret#f',
         'blocked-consent',
       );
-      reportRemoteImageIssue('https://cdn.a.com/img/x.png?token=segredo#f', 'failed');
+      reportRemoteImageIssue('https://cdn.a.com/img/x.png?token=secret#f', 'failed');
       reportRemoteImageIssue('https://b.com/y.png', 'timeout');
     });
     const section = screen.getByRole('region', { name: t('diagnostics.remoteImages') });
     expect(section.textContent).toContain('https://cdn.a.com/img/x.png');
-    expect(section.textContent).not.toContain('segredo');
-    // A mesma URL aparece uma vez, com a razão mais recente (R15.9: "endereço não aceito"
-    // vira "não carregou" quando a pessoa liga o interruptor e o pedido sai).
+    expect(section.textContent).not.toContain('secret');
+    // The same URL appears once, with the most recent reason (R15.9: "address not accepted"
+    // becomes "did not load" when the person turns the switch on and the request goes out).
     expect(section.textContent).not.toContain(
       t('diagnostics.imageReason.blocked-consent'),
     );
@@ -277,19 +279,19 @@ describe('Diagnóstico: imagens remotas', () => {
     clearRemoteImageIssues();
   });
 
-  it('troca a razão no lugar quando a mesma URL passa de "não aceito" a "não carregou"', () => {
+  it('swaps the reason in place when the same URL goes from "not accepted" to "did not load"', () => {
     clearRemoteImageIssues();
     render(<Diagnostics />);
     act(() => {
-      reportRemoteImageIssue('http://127.0.0.1:8765/foto.png', 'invalid');
+      reportRemoteImageIssue('http://127.0.0.1:8765/photo.png', 'invalid');
       reportRemoteImageIssue('https://b.com/y.png', 'timeout');
-      reportRemoteImageIssue('http://127.0.0.1:8765/foto.png', 'failed');
-      reportRemoteImageIssue('http://127.0.0.1:8765/foto.png', 'failed');
+      reportRemoteImageIssue('http://127.0.0.1:8765/photo.png', 'failed');
+      reportRemoteImageIssue('http://127.0.0.1:8765/photo.png', 'failed');
     });
     const section = screen.getByRole('region', { name: t('diagnostics.remoteImages') });
     const rows = [...section.querySelectorAll('li')].map((li) => li.textContent ?? '');
     expect(rows).toHaveLength(2);
-    expect(rows[0]).toContain('http://127.0.0.1:8765/foto.png');
+    expect(rows[0]).toContain('http://127.0.0.1:8765/photo.png');
     expect(rows[0]).toContain(t('diagnostics.imageReason.failed'));
     expect(rows[0]).not.toContain(t('diagnostics.imageReason.invalid'));
     expect(rows[1]).toContain('https://b.com/y.png');
@@ -297,9 +299,8 @@ describe('Diagnóstico: imagens remotas', () => {
   });
 });
 
-describe('Diagnóstico: pacote grande demais em en-US', () => {
-  it('o problema TOO_BIG aparece traduzido', () => {
-    locale.value = 'en-US';
+describe('Diagnostics: package too big in en-US', () => {
+  it('the TOO_BIG problem appears translated', () => {
     const issues = new Map([
       [
         'sdui',
@@ -307,6 +308,7 @@ describe('Diagnóstico: pacote grande demais em en-US', () => {
           {
             file: '',
             path: '',
+            // pt-BR kept: raw pt-BR fallback message; the test asserts it is NOT shown in en-US
             message:
               'pacote grande demais para conferir (limite de arquivos ou de bytes)',
             severity: 'error' as const,
@@ -322,14 +324,13 @@ describe('Diagnóstico: pacote grande demais em en-US', () => {
       </EditorContext.Provider>,
     );
     expect(screen.getByText(/package too big to check/)).toBeTruthy();
+    // pt-BR kept: asserts that the Portuguese text is absent in en-US
     expect(screen.queryByText(/grande demais/)).toBeNull();
-    locale.value = 'pt-BR';
   });
 });
 
-describe('Diagnóstico: arquivo não encontrado em en-US', () => {
-  it('a mensagem sai traduzida, sem o texto fixo em português', () => {
-    locale.value = 'en-US';
+describe('Diagnostics: file not found in en-US', () => {
+  it('the message comes out translated, without the fixed Portuguese text', () => {
     const issues = new Map([
       [
         'sdui',
@@ -337,6 +338,7 @@ describe('Diagnóstico: arquivo não encontrado em en-US', () => {
           {
             file: 'sdui.spec.json',
             path: 'layers[2].annotationTypes[1].component',
+            // pt-BR kept: raw pt-BR fallback message; the test asserts it is NOT shown in en-US
             message: 'arquivo não encontrado: components/button.json',
             severity: 'error' as const,
             code: 'library.fileNotFound' as const,
@@ -352,25 +354,26 @@ describe('Diagnóstico: arquivo não encontrado em en-US', () => {
       </EditorContext.Provider>,
     );
     expect(screen.getByText(/file not found: components\/button\.json/)).toBeTruthy();
+    // pt-BR kept: asserts that the Portuguese text is absent in en-US
     expect(screen.queryByText(/não encontrado/)).toBeNull();
-    locale.value = 'pt-BR';
   });
 });
 
-describe('Diagnóstico: exemplo com linhas de table (decisão 24 da #897)', () => {
+describe('Diagnostics: example with table rows (decision 24 of #897)', () => {
+  // pt-BR kept: raw pt-BR fallback messages of the issues; the pt-BR test asserts them as rendered
   const issues = new Map([
     [
-      'abas',
+      'tabs',
       [
         {
-          file: 'abas.spec.json',
+          file: 'tabs.spec.json',
           path: 'layers[0].annotationTypes[0].examples[0].values.rows',
           message: 'campo "table" aceita só a lista de linhas',
           severity: 'error' as const,
           code: 'spec.exampleTableNeedsRows' as const,
         },
         {
-          file: 'abas.spec.json',
+          file: 'tabs.spec.json',
           path: 'layers[0].annotationTypes[0].examples[1].values.rows[0].nada',
           message: '"nada" não é coluna de "rows"',
           severity: 'error' as const,
@@ -378,14 +381,14 @@ describe('Diagnóstico: exemplo com linhas de table (decisão 24 da #897)', () =
           params: { key: 'nada', field: 'rows' },
         },
         {
-          file: 'abas.spec.json',
+          file: 'tabs.spec.json',
           path: 'layers[0].annotationTypes[0].examples[1].values.rows[1]',
           message: 'deve ser um objeto (coluna → valor)',
           severity: 'error' as const,
           code: 'spec.exampleRowNotObject' as const,
         },
         {
-          file: 'abas.spec.json',
+          file: 'tabs.spec.json',
           path: 'layers[0].annotationTypes[0].examples[1].values.rows[2].to',
           message: 'coluna "ref" não aceita valor em exemplo',
           severity: 'error' as const,
@@ -403,20 +406,21 @@ describe('Diagnóstico: exemplo com linhas de table (decisão 24 da #897)', () =
     );
   };
 
-  it('em English (US), os quatro problemas saem traduzidos', () => {
-    locale.value = 'en-US';
+  it('in English (US), the four problems come out translated', () => {
     renderList();
     expect(screen.getByText('a "table" field takes only the list of rows')).toBeTruthy();
     expect(screen.getByText('"nada" is not a column of "rows"')).toBeTruthy();
     expect(screen.getByText('must be an object (column → value)')).toBeTruthy();
     expect(screen.getByText('a "ref" column takes no value in an example')).toBeTruthy();
+    // pt-BR kept: asserts that the Portuguese text is absent in en-US
     expect(screen.queryByText(/aceita só/)).toBeNull();
-    locale.value = 'pt-BR';
   });
 
-  it('em Português, os quatro problemas saem em português', () => {
+  it('in Portuguese (pt-BR), the four problems come out in Portuguese', () => {
+    // pt-BR kept: the pt-BR rendering of the four example problems is the object of this test
     locale.value = 'pt-BR';
     renderList();
+    // pt-BR kept: the pt-BR rendering is the object of this test
     expect(screen.getByText('campo "table" aceita só a lista de linhas')).toBeTruthy();
     expect(screen.getByText('"nada" não é coluna de "rows"')).toBeTruthy();
     expect(screen.getByText('deve ser um objeto (coluna → valor)')).toBeTruthy();
@@ -424,8 +428,8 @@ describe('Diagnóstico: exemplo com linhas de table (decisão 24 da #897)', () =
   });
 });
 
-// Fase 1 da #954 (item 7): o "Copiado" volta ao normal e não sobra para um registro vazio.
-describe('Diagnóstico: o resultado da cópia some sozinho', () => {
+// Phase 1 of #954 (item 7): the "Copied" goes back to normal and is not left for an empty log.
+describe('Diagnostics: the copy result disappears by itself', () => {
   function mockWrite() {
     Object.defineProperty(navigator, 'clipboard', {
       value: { writeText: vi.fn(async () => undefined) },
@@ -433,10 +437,10 @@ describe('Diagnóstico: o resultado da cópia some sozinho', () => {
     });
   }
 
-  it('o "Copiado" volta a vazio depois de 2 s', async () => {
+  it('the "Copied" goes back to empty after 2 s', async () => {
     vi.useFakeTimers();
     mockWrite();
-    reportError('local.open', new Error('bloqueado'));
+    reportError('local.open', new Error('blocked'));
     render(<Diagnostics />);
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: t('diagnostics.copy') }));
@@ -449,10 +453,10 @@ describe('Diagnóstico: o resultado da cópia some sozinho', () => {
     expect(screen.getByRole('status').textContent).toBe('');
   });
 
-  it('Copiar e depois Limpar não deixa "Copiado" para um registro vazio', async () => {
+  it('Copy and then Clear does not leave "Copied" for an empty log', async () => {
     vi.useFakeTimers();
     mockWrite();
-    reportError('local.open', new Error('bloqueado'));
+    reportError('local.open', new Error('blocked'));
     render(<Diagnostics />);
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: t('diagnostics.copy') }));

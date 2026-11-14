@@ -16,11 +16,11 @@ import { DiagnosticsView } from '../../src/ui/DiagnosticsView';
 import { EditorContext, type EditorContextValue } from '../../src/ui/EditorContext';
 import { libraryHarness, type LibraryHarness } from './libraryHarness';
 
-// B3/P7: a seção "Componentes" do Diagnóstico (fontes, componentes que não carregaram e os
-// avisos do desenho por marcação).
+// B3/P7: the "Components" section of the Diagnostics (fonts, components that failed to load and the
+// drawing warnings per marking).
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
@@ -31,7 +31,7 @@ const font = (weight: string, style: 'normal' | 'italic' = 'normal') => ({
   path: `specs/material3/fonts/Roboto-${weight}.ttf`,
 });
 
-/** O contexto do harness com fontes e avisos de desenho escolhidos pelo teste. */
+/** The harness context with fonts and drawing warnings chosen by the test. */
 function withInjected(
   harness: LibraryHarness,
   injected: {
@@ -74,14 +74,14 @@ function renderView(context: EditorContextValue) {
 
 const section = () => screen.queryByRole('region', { name: t('diagnostics.components') });
 
-describe('Diagnóstico: Componentes', () => {
-  it('sem nada a mostrar, a seção não aparece', async () => {
+describe('Diagnostics: Components', () => {
+  it('with nothing to show, the section does not appear', async () => {
     const harness = await libraryHarness();
     renderView(withInjected(harness, {}));
     expect(section()).toBeNull();
   });
 
-  it('fontes ausentes ou que falharam, com família, peso, estilo e o motivo', async () => {
+  it('missing or failed fonts, with family, weight, style and the reason', async () => {
     const harness = await libraryHarness();
     renderView(
       withInjected(harness, {
@@ -95,20 +95,19 @@ describe('Diagnóstico: Componentes', () => {
           {
             font: font('700', 'italic'),
             status: 'failed',
-            problem: { code: 'load-failed', message: 'arquivo corrompido' },
+            problem: { code: 'load-failed', message: 'corrupted file' },
           },
         ],
       }),
     );
     const items = within(section() as HTMLElement).getAllByRole('listitem');
     expect(items.map((li) => li.textContent)).toEqual([
-      `Roboto · peso 500 · normal: ${t('diagnostics.fontMissing', { path: 'specs/material3/fonts/Roboto-500.ttf' })}`,
-      `Roboto · peso 700 · itálico: ${t('diagnostics.fontFailed', { detail: 'arquivo corrompido' })}`,
+      `Roboto · weight 500 · normal: ${t('diagnostics.fontMissing', { path: 'specs/material3/fonts/Roboto-500.ttf' })}`,
+      `Roboto · weight 700 · italic: ${t('diagnostics.fontFailed', { detail: 'corrupted file' })}`,
     ]);
   });
 
-  it('em en-US, o estado de cada fonte aparece em inglês', async () => {
-    locale.value = 'en-US';
+  it('the state of each font appears in English', async () => {
     const harness = await libraryHarness();
     renderView(
       withInjected(harness, {
@@ -131,6 +130,7 @@ describe('Diagnóstico: Componentes', () => {
       .getAllByRole('listitem')
       .map((li) => li.textContent)
       .join('\n');
+    // pt-BR kept: asserts that the Portuguese strings are absent in en-US
     expect(text).not.toMatch(
       /arquivo não encontrado|não tem FontFace|ausente|não carregou/,
     );
@@ -139,7 +139,7 @@ describe('Diagnóstico: Componentes', () => {
     expect(text.toLowerCase()).toContain('fontface');
   });
 
-  it('componente que não carregou aparece com a especialização', async () => {
+  it('a component that failed to load appears with the specialization', async () => {
     const harness = await libraryHarness({
       mutate: (files) => files.delete('components/m3-card.json'),
     });
@@ -149,7 +149,7 @@ describe('Diagnóstico: Componentes', () => {
     expect(list.getByText(/m3-card/)).toBeTruthy();
   });
 
-  it('avisos do desenho: nome da marcação, botão que seleciona e a conta dos "não cabe"', async () => {
+  it('drawing warnings: marking name, button that selects and the "does not fit" count', async () => {
     const harness = await libraryHarness();
     const result = harness.actions.addComponent({
       containerId: 'I1',
@@ -176,7 +176,7 @@ describe('Diagnóstico: Componentes', () => {
 
     await userEvent.click(
       view.getByRole('button', {
-        // Instância sem nome: o rótulo é o nome do tipo que ela desenha.
+        // Unnamed instance: the label is the name of the type it draws.
         name: t('diagnostics.selectMarking', { name: 'Button' }),
       }),
     );

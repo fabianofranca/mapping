@@ -18,15 +18,15 @@ import {
   type ChipSpec,
 } from '../../src/ui/comments/editorDom';
 
-// Funções puras de DOM do editor de citações (etapa Comentários, CM5, decisão 30). Rodam no jsdom
-// sobre um `<div>` solto: seleção e cursor reais ficam para o e2e.
+// Pure DOM functions of the citation editor (Comments stage, CM5, decision 30). They run in jsdom
+// on a loose `<div>`: real selection and caret are left to the e2e.
 
 const URL = 'mapping://p/m/ab';
 const spec = (name: string, extra: Partial<ChipSpec> = {}): ChipSpec => ({
   url: URL,
   name,
   broken: false,
-  ariaLabel: `${name}, citação`,
+  ariaLabel: `${name}, citation`,
   ...extra,
 });
 
@@ -52,80 +52,80 @@ const shape = (el: HTMLElement) =>
   );
 
 describe('createChip / updateChip', () => {
-  it('monta o <span> não editável com os dados e o nome acessível, sem HTML cru', () => {
-    const chip = createChip(document, spec('Porta'));
+  it('builds the non-editable <span> with the data and the accessible name, without raw HTML', () => {
+    const chip = createChip(document, spec('Door'));
     expect(chip.tagName).toBe('SPAN');
     expect(chip.getAttribute('contenteditable')).toBe('false');
     expect(chip.getAttribute('role')).toBe('img');
-    expect(chip.getAttribute('aria-label')).toBe('Porta, citação');
+    expect(chip.getAttribute('aria-label')).toBe('Door, citation');
     expect(chip.dataset.url).toBe(URL);
-    expect(chip.dataset.label).toBe('Porta');
+    expect(chip.dataset.label).toBe('Door');
     expect(chip.className).toBe('citation-chip citation-chip-editor');
-    expect(chip.textContent).toBe('Porta');
+    expect(chip.textContent).toBe('Door');
     expect(chip.children).toHaveLength(0);
   });
 
-  it('o nome com < e & fica texto, não vira elemento', () => {
+  it('the name with < and & stays text, does not become an element', () => {
     const chip = createChip(document, spec('<b>x</b> & y'));
     expect(chip.children).toHaveLength(0);
     expect(chip.textContent).toBe('<b>x</b> & y');
   });
 
-  it('quebrado: classe de riscado e a dica', () => {
-    const chip = createChip(document, spec('Velha', { broken: true, title: 'sumiu' }));
+  it('broken: strikethrough class and the hint', () => {
+    const chip = createChip(document, spec('Old', { broken: true, title: 'gone' }));
     expect(chip.classList.contains('citation-chip-broken')).toBe(true);
-    expect(chip.getAttribute('title')).toBe('sumiu');
+    expect(chip.getAttribute('title')).toBe('gone');
   });
 
-  it('updateChip troca nome e estado e diz se mudou algo', () => {
-    const chip = createChip(document, spec('Porta'));
-    expect(updateChip(chip, spec('Porta'))).toBe(false);
-    expect(updateChip(chip, spec('Porta nova', { broken: true, title: 'sumiu' }))).toBe(
+  it('updateChip changes name and state and says whether anything changed', () => {
+    const chip = createChip(document, spec('Door'));
+    expect(updateChip(chip, spec('Door'))).toBe(false);
+    expect(updateChip(chip, spec('New door', { broken: true, title: 'gone' }))).toBe(
       true,
     );
-    expect(chip.textContent).toBe('Porta nova');
-    expect(chip.dataset.label).toBe('Porta nova');
+    expect(chip.textContent).toBe('New door');
+    expect(chip.dataset.label).toBe('New door');
     expect(chip.classList.contains('citation-chip-broken')).toBe(true);
-    expect(updateChip(chip, spec('Porta nova'))).toBe(true);
+    expect(updateChip(chip, spec('New door'))).toBe(true);
     expect(chip.classList.contains('citation-chip-broken')).toBe(false);
     expect(chip.hasAttribute('title')).toBe(false);
   });
 });
 
 describe('renderParts / readParts', () => {
-  it('texto vira nós de texto e <br> por quebra; chip vira o <span>', () => {
+  it('text becomes text nodes and a <br> per break; chip becomes the <span>', () => {
     const el = editor();
     renderParts(
       el,
       [
         { type: 'text', text: 'a\nb ' },
-        { type: 'chip', label: 'Porta', url: URL },
-        { type: 'text', text: ' fim' },
+        { type: 'chip', label: 'Door', url: URL },
+        { type: 'text', text: ' end' },
       ],
       (part) => spec(part.label),
     );
-    expect(shape(el)).toEqual(['"a"', 'br', '"b "', '[Porta]', '" fim"']);
+    expect(shape(el)).toEqual(['"a"', 'br', '"b "', '[Door]', '" end"']);
   });
 
-  it('lê de volta o mesmo documento (ida e volta)', () => {
+  it('reads back the same document (round trip)', () => {
     const el = editor();
     const parts = [
-      { type: 'text', text: 'um\ndois ' },
-      { type: 'chip', label: 'Porta', url: URL },
-      { type: 'text', text: '\n\nfim' },
+      { type: 'text', text: 'one\ntwo ' },
+      { type: 'chip', label: 'Door', url: URL },
+      { type: 'text', text: '\n\nend' },
     ] as const;
     renderParts(el, parts, (part) => spec(part.label));
     expect(readParts(el)).toEqual(parts);
   });
 
-  it('quebra no fim ganha um <br> de preenchimento que a leitura ignora', () => {
+  it('a break at the end gets a filler <br> that the reading ignores', () => {
     const el = editor();
     renderParts(el, [{ type: 'text', text: 'a\n' }], () => spec('x'));
     expect(shape(el)).toEqual(['"a"', 'br', 'fill']);
     expect(readParts(el)).toEqual([{ type: 'text', text: 'a\n' }]);
   });
 
-  it('syncFill tira o preenchimento que ficou sobrando e põe o que falta', () => {
+  it('syncFill removes the leftover filler and adds the missing one', () => {
     const el = editor();
     renderParts(el, [{ type: 'text', text: 'a\n' }], () => spec('x'));
     el.insertBefore(text('b'), el.lastChild);
@@ -136,18 +136,18 @@ describe('renderParts / readParts', () => {
     expect(shape(el)).toEqual(['"a"', 'br', '"b"', 'br', 'fill']);
   });
 
-  it('lê blocos <div>/<p> como linhas, descarta formatação e troca nbsp por espaço', () => {
+  it('reads <div>/<p> blocks as lines, discards formatting and swaps nbsp for a space', () => {
     const el = editor();
     el.append(text('a b'));
     const div = document.createElement('div');
     const bold = document.createElement('b');
-    bold.append(text('negrito'));
+    bold.append(text('bold'));
     div.append(bold);
     el.append(div);
-    expect(readParts(el)).toEqual([{ type: 'text', text: 'a b\nnegrito' }]);
+    expect(readParts(el)).toEqual([{ type: 'text', text: 'a b\nbold' }]);
   });
 
-  it('sem filhos lê vazio', () => {
+  it('no children reads empty', () => {
     expect(readParts(editor())).toEqual([]);
   });
 });
@@ -155,14 +155,14 @@ describe('renderParts / readParts', () => {
 describe('chipBeside / caretAcross', () => {
   function setup() {
     const el = editor();
-    const chip = chipOf('Porta');
+    const chip = chipOf('Door');
     const before = text('ab');
     const after = text('cd');
     el.append(before, chip, after);
     return { el, chip, before, after };
   }
 
-  it('acha o chip colado ao cursor em cada sentido', () => {
+  it('finds the chip next to the caret in each direction', () => {
     const { el, chip, before, after } = setup();
     expect(chipBeside(before, 2, 'forward')).toBe(chip);
     expect(chipBeside(after, 0, 'back')).toBe(chip);
@@ -170,7 +170,7 @@ describe('chipBeside / caretAcross', () => {
     expect(chipBeside(el, 1, 'forward')).toBe(chip);
   });
 
-  it('no meio do texto, ou do outro lado, não há chip', () => {
+  it('in the middle of the text, or on the other side, there is no chip', () => {
     const { before, after } = setup();
     expect(chipBeside(before, 1, 'forward')).toBeNull();
     expect(chipBeside(before, 2, 'back')).toBeNull();
@@ -178,7 +178,7 @@ describe('chipBeside / caretAcross', () => {
     expect(chipBeside(after, 2, 'back')).toBeNull();
   });
 
-  it('ignora nós de texto vazios entre o cursor e o chip', () => {
+  it('ignores empty text nodes between the caret and the chip', () => {
     const el = editor();
     const chip = chipOf('x');
     const empty = text('');
@@ -187,7 +187,7 @@ describe('chipBeside / caretAcross', () => {
     expect(chipBeside(caret, 0, 'back')).toBe(chip);
   });
 
-  it('caretAcross dá o ponto antes ou depois do chip', () => {
+  it('caretAcross gives the point before or after the chip', () => {
     const { el, chip } = setup();
     expect(caretAcross(chip, 'back')).toEqual({ node: el, offset: 1 });
     expect(caretAcross(chip, 'forward')).toEqual({ node: el, offset: 2 });
@@ -203,32 +203,32 @@ describe('triggerAt (@)', () => {
     return triggerAt(node, offset);
   };
 
-  it('no começo, depois de espaço e depois de quebra', () => {
+  it('at the start, after a space and after a break', () => {
     expect(at('@bot')).toMatchObject({ start: 0, end: 4, term: 'bot' });
-    expect(at('veja @bot')).toMatchObject({ start: 5, term: 'bot' });
-    expect(at('veja\n@')).toMatchObject({ start: 5, term: '' });
+    expect(at('look @bot')).toMatchObject({ start: 5, term: 'bot' });
+    expect(at('look\n@')).toMatchObject({ start: 5, term: '' });
     expect(at('@', 1, document.createElement('br'))).toMatchObject({ term: '' });
   });
 
-  it('o termo pode ter espaços (busca com várias palavras)', () => {
-    expect(at('@botão comprar')).toMatchObject({ term: 'botão comprar' });
+  it('the term can have spaces (search with several words)', () => {
+    expect(at('@button buy')).toMatchObject({ term: 'button buy' });
   });
 
-  it('só vale até o cursor', () => {
-    expect(at('@botão', 3)).toMatchObject({ end: 3, term: 'bo' });
+  it('only counts up to the caret', () => {
+    expect(at('@button', 3)).toMatchObject({ end: 3, term: 'bu' });
   });
 
-  it('no meio de palavra (e-mail), depois de chip, ou longe demais, não abre', () => {
+  it('in the middle of a word (e-mail), after a chip, or too far, it does not open', () => {
     expect(at('a@b.com')).toBeNull();
     expect(at('@', 1, chipOf('x'))).toBeNull();
     expect(at(`@${'x'.repeat(41)}`)).toBeNull();
-    expect(at('sem arroba')).toBeNull();
+    expect(at('no at sign')).toBeNull();
     expect(at('@a @b')).toMatchObject({ term: 'b' });
   });
 });
 
 describe('placeChip / insertNodes / insertBreak', () => {
-  it('chip no meio de uma palavra ganha espaço dos dois lados', () => {
+  it('chip in the middle of a word gets a space on both sides', () => {
     const el = editor();
     const node = text('abcd');
     el.append(node);
@@ -237,7 +237,7 @@ describe('placeChip / insertNodes / insertBreak', () => {
     expect(caret).toEqual({ node: el.childNodes[2], offset: 1 });
   });
 
-  it('já cercado de espaço, não duplica; o cursor vai depois do espaço que existe', () => {
+  it('already surrounded by space, does not duplicate; the caret goes after the existing space', () => {
     const el = editor();
     const a = text('ab ');
     const b = text(' cd');
@@ -247,28 +247,28 @@ describe('placeChip / insertNodes / insertBreak', () => {
     expect(caret).toEqual({ node: b, offset: 1 });
   });
 
-  it('no começo e no fim: só o espaço de trás ou de frente', () => {
+  it('at the start and at the end: only the trailing or leading space', () => {
     const el = editor();
     const caret = placeChip(el, null, chipOf('X'));
     expect(shape(el)).toEqual(['[X]', '" "']);
     expect(caret).toEqual({ node: el.lastChild, offset: 1 });
   });
 
-  it('chip ao lado de chip ganha um espaço no meio', () => {
+  it('chip next to a chip gets a space in between', () => {
     const el = editor();
     el.append(chipOf('A'));
     placeChip(el, null, chipOf('B'));
     expect(shape(el)).toEqual(['[A]', '" "', '[B]', '" "']);
   });
 
-  it('insertNodes põe os nós antes da referência e devolve o cursor depois do último', () => {
+  it('insertNodes puts the nodes before the reference and returns the caret after the last one', () => {
     const el = editor();
-    const tail = text('fim');
+    const tail = text('end');
     el.append(tail);
-    const t1 = text('olha ');
+    const t1 = text('look ');
     const chip = chipOf('X');
     const caret = insertNodes(el, tail, [t1, chip]);
-    expect(shape(el)).toEqual(['"olha "', '[X]', '"fim"']);
+    expect(shape(el)).toEqual(['"look "', '[X]', '"end"']);
     expect(caret).toEqual({ node: el, offset: 2 });
     expect(insertNodes(el, null, [text('z')])).toEqual({
       node: el.lastChild,
@@ -276,7 +276,7 @@ describe('placeChip / insertNodes / insertBreak', () => {
     });
   });
 
-  it('insertBreak põe um <br> e o cursor depois dele; no fim, pede o preenchimento', () => {
+  it('insertBreak puts a <br> and the caret after it; at the end, it asks for the filler', () => {
     const el = editor();
     const node = text('ab');
     el.append(node);
@@ -285,7 +285,7 @@ describe('placeChip / insertNodes / insertBreak', () => {
     expect(caret).toEqual({ node: el, offset: 2 });
   });
 
-  it('endPoint fica antes do preenchimento', () => {
+  it('endPoint stays before the filler', () => {
     const el = editor();
     renderParts(el, [{ type: 'text', text: 'a\n' }], () => spec('x'));
     expect(endPoint(el)).toEqual({ node: el, offset: 2 });
@@ -293,7 +293,7 @@ describe('placeChip / insertNodes / insertBreak', () => {
 });
 
 describe('splitAt / clearIfBlank', () => {
-  it('splitAt parte o texto no cursor; em elemento, usa o filho da posição', () => {
+  it('splitAt splits the text at the caret; on an element, it uses the child at the position', () => {
     const el = editor();
     const node = text('abcd');
     const chip = chipOf('X');
@@ -306,7 +306,7 @@ describe('splitAt / clearIfBlank', () => {
     expect(splitAt({ node: el, offset: 9 }).ref).toBeNull();
   });
 
-  it('clearIfBlank limpa o <br> solto que o navegador deixa, mas não o texto nem o chip', () => {
+  it('clearIfBlank clears the stray <br> that the browser leaves, but not the text nor the chip', () => {
     const el = editor();
     el.append(document.createElement('br'));
     expect(clearIfBlank(el)).toBe(true);

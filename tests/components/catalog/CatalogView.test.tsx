@@ -26,7 +26,7 @@ import { createCatalogRenderer } from '../../../src/ui/catalog/renderer';
 import { emptyProject } from '../../model/fixtures';
 import { material3Package, material3Spec } from '../../storage/packageFixture';
 
-// B5: apresentação do Catálogo (lista, página, galeria, playground) sobre o Material 3.
+// B5: presentation of the Catalog (list, page, gallery, playground) over Material 3.
 
 const files = [...material3Package()].map(([path, content]) =>
   typeof content === 'string' ? { path, text: content } : { path, binary: true },
@@ -40,12 +40,12 @@ function renderer() {
 }
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   rasterize.mockClear();
 });
 afterEach(cleanup);
 
-/** Troca campos de uma entrada (o catálogo é de dados simples). */
+/** Swaps fields of an entry (the catalog is plain data). */
 function patched(
   catalog: Catalog,
   typeId: string,
@@ -81,8 +81,8 @@ function view(
 const entryButton = (name: string) =>
   screen.getByRole<HTMLButtonElement>('button', { name: new RegExp(`^${name}`) });
 
-describe('lista', () => {
-  it('lista os 15 componentes por camada, com o ícone de container e sem tamanho', () => {
+describe('list', () => {
+  it('lists the 15 components per layer, with the container icon and without size', () => {
     view();
     const list = screen.getByRole('navigation', { name: t('catalog.view.components') });
     expect(within(list).getAllByRole('button').length).toBe(15);
@@ -102,7 +102,7 @@ describe('lista', () => {
     ).toBeNull();
   });
 
-  it('busca por texto filtra e avisa quando nada bate', async () => {
+  it('text search filters and warns when nothing matches', async () => {
     const { user } = view();
     const search = screen.getByRole('searchbox', { name: t('catalog.view.search') });
     await user.type(search, 'card');
@@ -117,7 +117,7 @@ describe('lista', () => {
     expect(screen.getByText(t('catalog.view.noMatch'))).toBeTruthy();
   });
 
-  it('escolher um item abre a página dele (o primeiro vem aberto no split)', async () => {
+  it('choosing an item opens its page (the first one comes open in the split)', async () => {
     const { user } = view();
     expect(screen.getByRole('article', { name: 'Top app bar' })).toBeTruthy();
     await user.click(entryButton('Chip'));
@@ -125,7 +125,7 @@ describe('lista', () => {
     expect(entryButton('Chip').getAttribute('aria-current')).toBe('true');
   });
 
-  it('setas movem o foco entre os itens', async () => {
+  it('arrows move the focus between the items', async () => {
     const { user } = view();
     const buttons = within(
       screen.getByRole('navigation', { name: t('catalog.view.components') }),
@@ -137,14 +137,14 @@ describe('lista', () => {
     expect(document.activeElement).toBe(buttons[0]);
   });
 
-  it('initialTypeId abre a página do tipo', () => {
+  it('initialTypeId opens the type page', () => {
     view({ initialTypeId: 'm3-fab' });
     expect(screen.getByRole('article', { name: 'FAB' })).toBeTruthy();
   });
 });
 
-describe('página', () => {
-  it('o título de um container leva o ícone de container, sem pílula', () => {
+describe('page', () => {
+  it('the title of a container carries the container icon, without a pill', () => {
     view({ initialTypeId: 'm3-column' });
     const page = screen.getByRole('article', { name: 'Column' });
     expect(within(page).getByRole('img', { name: t('library.container') })).toBeTruthy();
@@ -154,7 +154,7 @@ describe('página', () => {
     expect(within(fab).queryByRole('img', { name: t('library.container') })).toBeNull();
   });
 
-  it('mostra a tabela de propriedades gerada dos campos', () => {
+  it('shows the properties table generated from the fields', () => {
     view({ initialTypeId: 'm3-button' });
     const section = screen.getByRole('region', { name: t('catalog.page.properties') });
     const table = within(section).getByRole('table');
@@ -164,15 +164,15 @@ describe('página', () => {
     expect(within(table).getByText('label')).toBeTruthy();
   });
 
-  it('colunas de tabela aparecem aninhadas', () => {
+  it('table columns appear nested', () => {
     const catalog = patched(base, 'm3-card', {
       fields: [
         {
           key: 'rows',
-          label: 'Linhas',
+          label: 'Rows',
           type: 'table',
           required: true,
-          columns: [{ key: 'cell', label: 'Célula', type: 'string', required: false }],
+          columns: [{ key: 'cell', label: 'Cell', type: 'string', required: false }],
         },
       ],
     });
@@ -181,18 +181,18 @@ describe('página', () => {
     expect(cell.getAttribute('data-depth')).toBe('1');
   });
 
-  it('mostra o documento em markdown', () => {
+  it('shows the document in markdown', () => {
     view({ initialTypeId: 'm3-button' });
     const section = screen.getByRole('region', { name: t('catalog.page.document') });
     expect(section.querySelector('.markdown')).toBeTruthy();
   });
 
-  it('sem documento, mostra a mensagem', () => {
+  it('with no document, shows the message', () => {
     view({ initialTypeId: 'm3-button' }, patched(base, 'm3-button', { docText: null }));
     expect(screen.getByText(t('catalog.page.noDoc'))).toBeTruthy();
   });
 
-  it('imagem do markdown não vira <img>', () => {
+  it('a markdown image does not become <img>', () => {
     const catalog = patched(base, 'm3-button', {
       docText: '![x](https://example.com/a.png)\n\n<img src="x">',
     });
@@ -201,26 +201,26 @@ describe('página', () => {
     expect(section.querySelector('img')).toBeNull();
   });
 
-  it('avisa quando o componente não carregou', () => {
+  it('warns when the component did not load', () => {
     const catalog = patched(base, 'm3-button', {
       component: null,
       componentProblem: modelMessage(
         'catalog.fileMissing',
         { path: 'x.json' },
-        'arquivo ausente (x.json)',
+        'missing file (x.json)',
       ),
       previewValues: null,
     });
     view({ initialTypeId: 'm3-button' }, catalog);
     expect(
       screen.getByText(
-        t('catalog.page.componentProblem', { problem: 'arquivo ausente (x.json)' }),
+        t('catalog.page.componentProblem', { problem: 'missing file (x.json)' }),
       ),
     ).toBeTruthy();
     expect(screen.getByText(t('catalog.playground.noComponent'))).toBeTruthy();
   });
 
-  it('em en-US o problema de um componente ausente sai em inglês (#945)', () => {
+  it('in en-US the problem of a missing component comes out in English (#945)', () => {
     locale.value = 'en-US';
     const component = base.layers
       .flatMap((l) => l.entries)
@@ -231,10 +231,13 @@ describe('página', () => {
     view({ initialTypeId: 'm3-button' }, buildCatalog(missing));
     const page = screen.getByText(/The component did not load/);
     expect(page.textContent).toMatch(/missing file/);
+    // pt-BR kept: asserts that no Portuguese text leaks into en-US
     expect(page.textContent).not.toMatch(/arquivo ausente/);
   });
 
-  it('trocar o idioma com a página aberta troca o aviso do componente ausente, sem montar a vista de novo (#1256, R8.3)', async () => {
+  // pt-BR kept: locale switching test (starts in pt-BR, switches to en-US and back)
+  it('switching the language with the page open switches the missing component notice, without remounting the view (#1256, R8.3) (pt-BR)', async () => {
+    locale.value = 'pt-BR';
     const component = base.layers
       .flatMap((l) => l.entries)
       .find((e) => e.type.id === 'm3-button')?.type.component;
@@ -244,6 +247,7 @@ describe('página', () => {
     const alert = (): string =>
       document.querySelector('.catalog-page .field-error[role="alert"]')?.textContent ??
       '';
+    // pt-BR kept: the Portuguese notice is the object of the test
     expect(alert()).toBe(
       `O componente não carregou: arquivo ausente (${String(component)})`,
     );
@@ -254,13 +258,15 @@ describe('página', () => {
         `The component did not load: missing file (${String(component)})`,
       ),
     );
+    // pt-BR kept: asserts that no Portuguese text leaks into en-US
     expect(alert()).not.toMatch(/arquivo ausente|não carregou/);
 
     locale.value = 'pt-BR';
+    // pt-BR kept: switching back to pt-BR
     await waitFor(() => expect(alert()).toMatch(/^O componente não carregou/));
   });
 
-  it('origens aparecem agrupadas por sistema', () => {
+  it('sources appear grouped by system', () => {
     view({ initialTypeId: 'm3-button' });
     const section = screen.getByRole('region', { name: t('catalog.page.sources') });
     expect(within(section).getAllByRole('heading', { level: 4 }).length).toBeGreaterThan(
@@ -269,7 +275,7 @@ describe('página', () => {
   });
 });
 
-describe('código', () => {
+describe('code', () => {
   const code = [
     {
       platform: { id: 'android', name: 'Android', language: 'Kotlin' },
@@ -277,21 +283,21 @@ describe('código', () => {
       path: 'app/ui/MyButton.kt',
       params: { onClick: 'lambda' },
       values: { variant: { filled: 'Filled' } },
-      notes: 'Usa o tema padrão.',
+      notes: 'Uses the default theme.',
     },
   ];
 
-  it('sem projeto o path é só texto', () => {
+  it('with no project the path is plain text', () => {
     view({ initialTypeId: 'm3-button' }, patched(base, 'm3-button', { code }));
     const section = screen.getByRole('region', { name: t('catalog.page.code') });
     expect(within(section).getByText('MyButton')).toBeTruthy();
     expect(within(section).getByText('app/ui/MyButton.kt').closest('a')).toBeNull();
-    expect(within(section).getByText('Usa o tema padrão.')).toBeTruthy();
+    expect(within(section).getByText('Uses the default theme.')).toBeTruthy();
     expect(within(section).getByText('onClick')).toBeTruthy();
   });
 
   it.each(['pt-BR', 'en-US'] as const)(
-    'a seta entre o parâmetro e o valor vem do t() e fica fora da leitura (%s)',
+    'the arrow between the parameter and the value comes from t() and stays out of the reading (%s)',
     (lang) => {
       locale.value = lang;
       view({ initialTypeId: 'm3-button' }, patched(base, 'm3-button', { code }));
@@ -303,10 +309,13 @@ describe('código', () => {
     },
   );
 
-  // CL1 / D5: as notas do código são Markdown inline, como o Documento: sem crases literais.
-  it('as notas renderizam o Markdown inline (code), sem crases soltas', () => {
+  // CL1 / D5: the code notes are inline Markdown, like the Document: no literal backticks.
+  it('the notes render the inline Markdown (code), without stray backticks', () => {
     const noted = [
-      { ...code[0]!, notes: '`handler` liga à tela e `content = { Text(<label>) }`.' },
+      {
+        ...code[0]!,
+        notes: '`handler` binds to the screen and `content = { Text(<label>) }`.',
+      },
     ];
     view({ initialTypeId: 'm3-button' }, patched(base, 'm3-button', { code: noted }));
     const section = screen.getByRole('region', { name: t('catalog.page.code') });
@@ -315,7 +324,7 @@ describe('código', () => {
     expect(within(section).getByText('content = { Text(<label>) }')).toBeTruthy();
   });
 
-  /** Projeto com a especialização `material3` declarando `android` com esse `repo`. */
+  /** Project with the `material3` specialization declaring `android` with this `repo`. */
   function projectWithRepo(repo: { url: string; urlTemplate?: string }): Project {
     const spec = {
       ...material3Spec(),
@@ -330,7 +339,7 @@ describe('código', () => {
     };
   }
 
-  it('com projeto cuja especialização declara o urlTemplate no repo, o path vira link', () => {
+  it('with a project whose specialization declares the urlTemplate in the repo, the path becomes a link', () => {
     const project = projectWithRepo({
       url: 'https://git.example/repo',
       urlTemplate: 'https://git.example/repo/{path}',
@@ -343,7 +352,7 @@ describe('código', () => {
     );
   });
 
-  it('repo sem urlTemplate (ou só o clone local no projeto) não faz link', () => {
+  it('repo without urlTemplate (or only the local clone in the project) makes no link', () => {
     const project = {
       ...projectWithRepo({ url: 'https://git.example/repo' }),
       platformRepos: { android: { localPath: '../..' } },
@@ -358,7 +367,7 @@ describe('código', () => {
       ...code[0]!,
       variants: {
         field: 'variant',
-        fieldLabel: 'Variante',
+        fieldLabel: 'Variant',
         cases: [
           { value: 'outlined', symbol: 'MyOutlinedButton', path: 'app/ui/MyOutlined.kt' },
           { value: 'text', symbol: 'MyTextButton' },
@@ -367,7 +376,7 @@ describe('código', () => {
     },
   ];
 
-  it('com variants, a base fica e a tabela valor → símbolo aparece embaixo', () => {
+  it('with variants, the base stays and the value → symbol table appears below', () => {
     view(
       { initialTypeId: 'm3-button' },
       patched(base, 'm3-button', { code: withVariants }),
@@ -375,7 +384,7 @@ describe('código', () => {
     const section = screen.getByRole('region', { name: t('catalog.page.code') });
     expect(within(section).getByText('MyButton')).toBeTruthy();
     const table = within(section).getByRole('table', {
-      name: t('catalog.page.codeVariants', { field: 'Variante' }),
+      name: t('catalog.page.codeVariants', { field: 'Variant' }),
     });
     expect(
       within(table)
@@ -386,11 +395,11 @@ describe('código', () => {
       'outlinedMyOutlinedButton app/ui/MyOutlined.kt',
       'textMyTextButton',
     ]);
-    // Sem projeto, o path do caso é só texto.
+    // With no project, the case path is plain text.
     expect(within(table).getByText('app/ui/MyOutlined.kt').closest('a')).toBeNull();
   });
 
-  it('o path do caso vira link pelo repo da especialização', () => {
+  it('the case path becomes a link through the specialization repo', () => {
     const project = projectWithRepo({
       url: 'https://git.example/repo',
       urlTemplate: 'https://git.example/repo/{path}',
@@ -406,19 +415,19 @@ describe('código', () => {
     );
   });
 
-  it('em inglês os textos novos existem', () => {
+  it('the new texts exist in English', () => {
     locale.value = 'en-US';
     view(
       { initialTypeId: 'm3-button' },
       patched(base, 'm3-button', { code: withVariants }),
     );
-    expect(screen.getByRole('table', { name: 'Variants (Variante)' })).toBeTruthy();
+    expect(screen.getByRole('table', { name: 'Variants (Variant)' })).toBeTruthy();
     expect(screen.getByText('Symbol')).toBeTruthy();
   });
 });
 
-describe('galeria', () => {
-  it('gera uma imagem estática por exemplo mais a prévia, com alt do nome', () => {
+describe('gallery', () => {
+  it('generates one static image per example plus the preview, with the name as alt', () => {
     view({ initialTypeId: 'm3-button' });
     const gallery = screen.getByRole('region', { name: t('catalog.gallery.title') });
     const images = within(gallery).getAllByRole('img');
@@ -431,8 +440,8 @@ describe('galeria', () => {
     expect(images[1]?.getAttribute('alt')).toBe(entry?.examples[0]?.name);
   });
 
-  describe('avisos do desenho', () => {
-    // O rasterizador de teste avisa como o `renderSceneToDataUrl` faz depois de desenhar.
+  describe('drawing warnings', () => {
+    // The test rasterizer warns as `renderSceneToDataUrl` does after drawing.
     const warning = { code: 'unknown-node', params: { type: 'STICKY' } } as const;
     const warningRenderer = () =>
       createCatalogRenderer(approximateMeasurer, (_root, options) => {
@@ -440,24 +449,27 @@ describe('galeria', () => {
         return 'data:image/png;base64,fake';
       });
 
-    it('saem no idioma da app: em en-US não há texto em português', () => {
-      locale.value = 'en-US';
+    it('come out in the app language: in en-US there is no Portuguese text', () => {
       view({ initialTypeId: 'm3-button', renderer: warningRenderer() });
       const gallery = screen.getByRole('region', { name: t('catalog.gallery.title') });
       const text = gallery.textContent ?? '';
       expect(text).toContain('Node not drawn (STICKY): only its box is shown');
+      // pt-BR kept: asserts that no Portuguese text leaks into en-US
       expect(text).not.toContain('nó não desenhado');
+      // pt-BR kept: asserts that no Portuguese text leaks into en-US
       expect(text).not.toContain('Nó não desenhado');
     });
 
-    it('em pt-BR saem em português', () => {
+    // pt-BR kept: the object is the Portuguese text of the warning
+    it('in pt-BR they come out in Portuguese', () => {
+      locale.value = 'pt-BR';
       view({ initialTypeId: 'm3-button', renderer: warningRenderer() });
       const gallery = screen.getByRole('region', { name: t('catalog.gallery.title') });
       expect(gallery.textContent).toContain('Nó não desenhado (STICKY): só a caixa');
     });
   });
 
-  it('usa o cache: reabrir a mesma página não rasteriza de novo', async () => {
+  it('uses the cache: reopening the same page does not rasterize again', async () => {
     const engine = renderer();
     const { user } = view({ initialTypeId: 'm3-button', renderer: engine });
     const galleryCalls = () => rasterize.mock.calls.length;
@@ -466,11 +478,11 @@ describe('galeria', () => {
     const after = galleryCalls();
     await user.click(entryButton('Chip'));
     await user.click(entryButton('Button'));
-    // O playground rasteriza de novo; a galeria não: no máximo 2 chamadas a mais (uma por página).
+    // The playground rasterizes again; the gallery does not: at most 2 more calls (one per page).
     expect(galleryCalls() - after).toBeLessThanOrEqual(2);
   });
 
-  it('uma imagem remota que termina de carregar (época das imagens) rasteriza a galeria de novo', () => {
+  it('a remote image that finishes loading (images epoch) rasterizes the gallery again', () => {
     const imagesEpoch = signal(0);
     const engine = createCatalogRenderer(approximateMeasurer, rasterize, imagesEpoch);
     view({ initialTypeId: 'm3-button', renderer: engine });
@@ -490,20 +502,20 @@ describe('galeria', () => {
     expect(after).not.toEqual(before);
   });
 
-  it('exemplo que não desenha mostra o motivo', () => {
+  it('an example that does not draw shows the reason', () => {
     const catalog = patched(base, 'm3-button', {
-      examples: [{ name: 'Quebrado', mode: 'system', system: 'nenhum', file: 'x.json' }],
+      examples: [{ name: 'Broken', mode: 'system', system: 'none', file: 'x.json' }],
     });
     view({ initialTypeId: 'm3-button' }, catalog);
     expect(screen.getByText(t('catalog.gallery.unavailable'))).toBeTruthy();
-    expect(screen.getByText('Quebrado')).toBeTruthy();
+    expect(screen.getByText('Broken')).toBeTruthy();
   });
 });
 
 describe('playground', () => {
   const stage = () => screen.getByRole('region', { name: t('catalog.playground.title') });
 
-  it('editar um campo redesenha', async () => {
+  it('editing a field redraws', async () => {
     const { user } = view({ initialTypeId: 'm3-button' });
     await waitFor(() => expect(within(stage()).getByRole('img')).toBeTruthy());
     const before = within(stage()).getByRole('img').getAttribute('src');
@@ -511,7 +523,7 @@ describe('playground', () => {
       name: /label/i,
     });
     await user.clear(label);
-    await user.type(label, 'Novo texto{Enter}');
+    await user.type(label, 'New text{Enter}');
     await waitFor(() =>
       expect(within(stage()).getByRole('img').getAttribute('src')).not.toBe(before),
     );
@@ -521,7 +533,7 @@ describe('playground', () => {
     const entry = base.layers
       .flatMap((l) => l.entries)
       .find((e) => e.type.id === 'm3-button');
-    if (entry === undefined) throw new Error('sem botão');
+    if (entry === undefined) throw new Error('no button');
     return entry;
   };
   const widthField = () =>
@@ -537,7 +549,7 @@ describe('playground', () => {
       ).width,
     );
 
-  it('a largura começa automática e acompanha o texto', async () => {
+  it('the width starts automatic and follows the text', async () => {
     const { user } = view({ initialTypeId: 'm3-button' });
     expect(widthField().value).toBe(autoWidthOf('Label'));
     expect(heightField().value).toBe('40');
@@ -546,8 +558,8 @@ describe('playground', () => {
       name: /label/i,
     });
     await user.clear(label);
-    await user.type(label, 'Confirmar compra{Enter}');
-    await waitFor(() => expect(widthField().value).toBe(autoWidthOf('Confirmar compra')));
+    await user.type(label, 'Confirm purchase{Enter}');
+    await waitFor(() => expect(widthField().value).toBe(autoWidthOf('Confirm purchase')));
     expect(Number(widthField().value)).toBeGreaterThan(120);
     expect(heightField().value).toBe('40');
     await waitFor(() =>
@@ -555,7 +567,7 @@ describe('playground', () => {
     );
   });
 
-  it('digitar uma largura a torna manual e limitada', async () => {
+  it('typing a width makes it manual and limited', async () => {
     const { user } = view({ initialTypeId: 'm3-button' });
     await user.clear(widthField());
     await user.type(widthField(), '9999{Enter}');
@@ -573,18 +585,18 @@ describe('playground', () => {
       name: /label/i,
     });
     await user.clear(label);
-    await user.type(label, 'Confirmar compra{Enter}');
-    await waitFor(() => expect(label.value).toBe('Confirmar compra'));
+    await user.type(label, 'Confirm purchase{Enter}');
+    await waitFor(() => expect(label.value).toBe('Confirm purchase'));
     expect(widthField().value).toBe('200');
   });
 
-  it('Restaurar valores volta ao inicial e ao automático', async () => {
+  it('Restore values goes back to the initial and to automatic', async () => {
     const { user } = view({ initialTypeId: 'm3-button' });
     const label = within(stage()).getByRole<HTMLInputElement>('textbox', {
       name: /label/i,
     });
     await user.clear(label);
-    await user.type(label, 'Confirmar compra{Enter}');
+    await user.type(label, 'Confirm purchase{Enter}');
     await user.clear(widthField());
     await user.type(widthField(), '200{Enter}');
     await waitFor(() => expect(widthField().value).toBe('200'));
@@ -597,45 +609,45 @@ describe('playground', () => {
   });
 });
 
-describe('navegação', () => {
-  it('abrir outro componente leva a rolagem ao topo (tela cheia)', async () => {
+describe('navigation', () => {
+  it('opening another component takes the scroll to the top (full screen)', async () => {
     const { user, container } = view({ initialTypeId: 'm3-button' });
     const detail = container.querySelector<HTMLElement>('.catalog-detail');
-    if (detail === null) throw new Error('sem detalhe');
+    if (detail === null) throw new Error('no detail');
     detail.scrollTop = 500;
     await user.click(entryButton('Chip'));
     await waitFor(() => expect(detail.scrollTop).toBe(0));
   });
 
-  it('abrir outro componente leva a rolagem ao topo (diálogo)', async () => {
+  it('opening another component takes the scroll to the top (dialog)', async () => {
     const catalog = patched(base, 'm3-card', {
-      docText: '[ir](mapping://material3/m3-chip)',
+      docText: '[go](mapping://material3/m3-chip)',
     });
     const { user } = view({ layout: 'list' }, catalog);
     await user.click(entryButton('Card'));
     const dialog = await screen.findByRole('dialog');
     const body = dialog.querySelector<HTMLElement>('.dialog-body');
-    if (body === null) throw new Error('sem corpo');
+    if (body === null) throw new Error('no body');
     body.scrollTop = 500;
-    await user.click(within(dialog).getByRole('link', { name: 'ir' }));
+    await user.click(within(dialog).getByRole('link', { name: 'go' }));
     await waitFor(() => expect(body.scrollTop).toBe(0));
     expect(within(dialog).getByRole('article', { name: 'Chip' })).toBeTruthy();
   });
 
-  it('destino desconhecido avisa em região de status dentro da área que rola', async () => {
-    const markdown = '[quebrado](mapping://material3/nao-existe)';
+  it('an unknown destination warns in a status region inside the scrolling area', async () => {
+    const markdown = '[broken](mapping://material3/does-not-exist)';
     const catalog = patched(base, 'm3-button', { docText: markdown });
     const { user, container } = view({ initialTypeId: 'm3-button' }, catalog);
-    await user.click(screen.getByRole('link', { name: 'quebrado' }));
+    await user.click(screen.getByRole('link', { name: 'broken' }));
     const notice = await screen.findByRole('status');
-    expect(notice.textContent).toContain('mapping://material3/nao-existe');
+    expect(notice.textContent).toContain('mapping://material3/does-not-exist');
     expect(notice.classList.contains('catalog-notice')).toBe(true);
     expect(container.querySelector('.catalog-detail')?.contains(notice)).toBe(true);
   });
 });
 
 describe('layout list', () => {
-  it('só a lista; escolher abre a página num diálogo', async () => {
+  it('only the list; choosing opens the page in a dialog', async () => {
     const { user } = view({ layout: 'list' });
     expect(screen.queryByRole('article')).toBeNull();
     await user.click(entryButton('Card'));
@@ -648,28 +660,28 @@ describe('layout list', () => {
   });
 });
 
-describe('Adicionar à tela', () => {
-  it('chama o callback com o id do tipo', async () => {
+describe('Add to screen', () => {
+  it('calls the callback with the type id', async () => {
     const onAddToScreen = vi.fn();
     const { user } = view({ initialTypeId: 'm3-button', onAddToScreen });
     await user.click(screen.getByRole('button', { name: t('catalog.page.addToScreen') }));
     expect(onAddToScreen).toHaveBeenCalledWith('m3-button');
   });
 
-  it('desabilitado mostra o motivo no title', () => {
+  it('disabled shows the reason in the title', () => {
     view({
       initialTypeId: 'm3-button',
       onAddToScreen: vi.fn(),
-      addDisabledReason: 'Selecione uma tela',
+      addDisabledReason: 'Select a screen',
     });
     const button = screen.getByRole<HTMLButtonElement>('button', {
       name: t('catalog.page.addToScreen'),
     });
     expect(button.disabled).toBe(true);
-    expect(button.title).toBe('Selecione uma tela');
+    expect(button.title).toBe('Select a screen');
   });
 
-  it('sem callback não há botão', () => {
+  it('with no callback there is no button', () => {
     view({ initialTypeId: 'm3-button' });
     expect(
       screen.queryByRole('button', { name: t('catalog.page.addToScreen') }),
@@ -678,23 +690,23 @@ describe('Adicionar à tela', () => {
 });
 
 describe('links mapping://', () => {
-  it('resolve specId/typeId, só typeId e rejeita o resto', () => {
+  it('resolves specId/typeId, only typeId and rejects the rest', () => {
     expect(resolveCatalogLink(base, 'material3', 'mapping://material3/m3-card')).toBe(
       'm3-card',
     );
     expect(resolveCatalogLink(base, 'material3', 'mapping://m3-card')).toBe('m3-card');
-    expect(resolveCatalogLink(base, 'material3', 'mapping://outro/m3-card')).toBeNull();
+    expect(resolveCatalogLink(base, 'material3', 'mapping://other/m3-card')).toBeNull();
     expect(
-      resolveCatalogLink(base, 'material3', 'mapping://material3/nao-existe'),
+      resolveCatalogLink(base, 'material3', 'mapping://material3/does-not-exist'),
     ).toBeNull();
   });
 
-  it('clicar num link navega; destino desconhecido avisa sem navegar', async () => {
+  it('clicking a link navigates; an unknown destination warns without navigating', async () => {
     const catalog = patched(base, 'm3-button', {
-      docText: '[card](mapping://material3/m3-card) e [fantasma](mapping://material3/xx)',
+      docText: '[card](mapping://material3/m3-card) and [ghost](mapping://material3/xx)',
     });
     const { user } = view({ initialTypeId: 'm3-button' }, catalog);
-    await user.click(screen.getByRole('link', { name: 'fantasma' }));
+    await user.click(screen.getByRole('link', { name: 'ghost' }));
     expect(screen.getByRole('status').textContent).toContain('mapping://material3/xx');
     expect(screen.getByRole('article', { name: 'Button' })).toBeTruthy();
     await user.click(screen.getByRole('link', { name: 'card' }));
@@ -703,8 +715,8 @@ describe('links mapping://', () => {
   });
 });
 
-describe('validação', () => {
-  it('sem problemas mostra a mensagem de pacote válido', () => {
+describe('validation', () => {
+  it('with no problems shows the valid package message', () => {
     const clean: Catalog = {
       ...base,
       report: { ...base.report, issues: [], errors: [], warnings: [] },
@@ -714,12 +726,12 @@ describe('validação', () => {
     expect(summary.textContent).toContain(t('catalog.view.valid'));
   });
 
-  it('lista longa de avisos começa recolhida e expande', async () => {
-    // O pacote do repositório tem poucos avisos: aqui a lista é longa de propósito.
+  it('a long list of warnings starts collapsed and expands', async () => {
+    // The repository package has few warnings: here the list is long on purpose.
     const warnings = Array.from({ length: 8 }, (_, i) => ({
       file: 'material3.spec.json',
       path: `layers[0].annotationTypes[${i}]`,
-      message: `aviso de teste ${i}`,
+      message: `test warning ${i}`,
       severity: 'warning' as const,
     }));
     const long: Catalog = {
@@ -737,11 +749,11 @@ describe('validação', () => {
     ).toBeTruthy();
   });
 
-  it('pacote com erros avisa, lista os problemas e ainda navega', async () => {
+  it('a package with errors warns, lists the problems and still navigates', async () => {
     const broken = new Map(files.map((f) => [f.path, f]));
     broken.set('components/m3-button.json', {
       path: 'components/m3-button.json',
-      text: '{ não é json',
+      text: '{ not json',
     });
     const catalog = buildCatalog([...broken.values()]);
     expect(catalog.report.errors.length).toBeGreaterThan(0);
@@ -764,7 +776,7 @@ describe('validação', () => {
     ).toBeNull();
   });
 
-  it('pacote sem especialização legível renderiza vazio sem lançar', () => {
+  it('a package with no readable specialization renders empty without throwing', () => {
     view({}, buildCatalog([{ path: 'x.json', text: '{}' }]));
     expect(screen.getByText(t('catalog.view.empty'))).toBeTruthy();
   });

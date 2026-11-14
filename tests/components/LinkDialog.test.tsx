@@ -9,7 +9,7 @@ import type { Json } from '../model/specV11Fixtures';
 import { annotationOf, createHarness, renderLive } from './harness';
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
@@ -22,7 +22,7 @@ const rolesAndOneChild = (s: Json) => {
   oneChild(s);
 };
 
-/** Renderiza o cartão de `annotationId`; `visible` limita as camadas visíveis. */
+/** Renders the card of `annotationId`; `visible` limits the visible layers. */
 function setup(
   project: Project,
   annotationId = 'A1',
@@ -51,34 +51,33 @@ function extras(
   return { harness, onGoToAnnotation, onShowLayer, user: userEvent.setup() };
 }
 
-const linkButtons = () => screen.getAllByRole('button', { name: '+ Vincular…' });
+const linkButtons = () => screen.getAllByRole('button', { name: '+ Link…' });
 const openDialog = () => document.querySelector('dialog') as HTMLElement;
 
-describe('Vincular — dono sem papéis', () => {
-  it('nenhum botão "+ <tipo>" direto: um só "+ Vincular…"', () => {
+describe('Link — owner without roles', () => {
+  it('no direct "+ <type>" button: a single "+ Link…"', () => {
     setup(roleProject());
     expect(linkButtons()).toHaveLength(1);
     expect(screen.queryByRole('button', { name: /^\+ onClick/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /^\+ navigate/ })).toBeNull();
   });
 
-  it('com um tipo só ainda abre o diálogo "Vincular a <dono>"', async () => {
+  it('with a single type it still opens the "Link to <owner>" dialog', async () => {
     const { user } = setup(roleProject(oneChild));
     await user.click(linkButtons()[0] as HTMLElement);
     const dialog = openDialog();
-    expect(
-      within(dialog).getByRole('heading', { name: 'Vincular a Button' }),
-    ).toBeTruthy();
+    expect(within(dialog).getByRole('heading', { name: 'Link to Button' })).toBeTruthy();
     expect(
       within(dialog).getByRole('button', { name: /^onClick/, hidden: true }),
     ).toBeTruthy();
     expect(within(dialog).queryByText(/›/)).toBeNull();
   });
 
-  it('mostra os tipos do dono, com os grupos da camada', async () => {
+  it("shows the owner's types, with the layer groups", async () => {
     const { user } = setup(roleProject());
     await user.click(linkButtons()[0] as HTMLElement);
     const dialog = openDialog();
+    // pt-BR kept: shared fixture data asserted by tests/model, tests/mcp (group names of specV11Fixtures)
     expect(
       within(dialog).getByRole('heading', { name: 'Navegação', hidden: true }),
     ).toBeTruthy();
@@ -87,7 +86,7 @@ describe('Vincular — dono sem papéis', () => {
     ).toBeTruthy();
   });
 
-  it('escolher o tipo cria o filho vinculado, na camada do tipo, numa só entrada de desfazer', async () => {
+  it("choosing the type creates the linked child, on the type's layer, in a single undo entry", async () => {
     const { harness, user, onGoToAnnotation } = setup(roleProject());
     const before = harness.project().annotations.length;
     await user.click(linkButtons()[0] as HTMLElement);
@@ -100,6 +99,7 @@ describe('Vincular — dono sem papéis', () => {
     expect(created?.parentAnnotationId).toBe('A1');
     expect(created?.parentRole ?? null).toBeNull();
     expect(created?.type?.typeId).toBe('onHold');
+    // pt-BR kept: shared fixture data asserted by tests/model, tests/mcp (layer name of specV11Fixtures)
     expect(project.layers.find((l) => l.id === created?.layerId)?.name).toBe('Eventos');
     expect(document.querySelector('dialog')).toBeNull();
     expect(onGoToAnnotation).toHaveBeenCalledWith(
@@ -111,9 +111,9 @@ describe('Vincular — dono sem papéis', () => {
     expect(harness.project().annotations).toHaveLength(before);
   });
 
-  it('camada oculta: cria e avisa, sem ir à anotação', async () => {
+  it('hidden layer: creates and warns, without going to the annotation', async () => {
     const { harness, user, onGoToAnnotation } = setup(roleProject(oneChild), 'A1', [
-      'componentes-nao-existe',
+      'components-does-not-exist',
     ]);
     await user.click(linkButtons()[0] as HTMLElement);
     await user.click(
@@ -121,16 +121,16 @@ describe('Vincular — dono sem papéis', () => {
     );
     expect(harness.project().annotations.at(-1)?.parentAnnotationId).toBe('A1');
     expect(onGoToAnnotation).not.toHaveBeenCalled();
-    expect(screen.getByRole('status').textContent).toContain('onClick criado na camada');
+    expect(screen.getByRole('status').textContent).toContain('onClick created in the');
   });
 
-  it('Cancelar fecha sem criar e o foco volta ao "+ Vincular…"', async () => {
+  it('Cancel closes without creating and the focus returns to "+ Link…"', async () => {
     const { harness, user } = setup(roleProject(oneChild));
     const before = harness.project().annotations.length;
     const trigger = linkButtons()[0] as HTMLElement;
     await user.click(trigger);
     await user.click(
-      within(openDialog()).getByRole('button', { name: 'Cancelar', hidden: true }),
+      within(openDialog()).getByRole('button', { name: 'Cancel', hidden: true }),
     );
     expect(document.querySelector('dialog')).toBeNull();
     expect(harness.project().annotations).toHaveLength(before);
@@ -138,22 +138,23 @@ describe('Vincular — dono sem papéis', () => {
   });
 });
 
-describe('Vincular — dono com papéis', () => {
-  it('uma linha por papel, na ordem de childRoles, com "nenhuma" no vazio', () => {
+describe('Link — owner with roles', () => {
+  it('one row per role, in childRoles order, with "none" when empty', () => {
     const project = addChild(roleProject(withRoles), 'E1', 'A1', 'hold', 'onHold');
     setup(project);
     const rows = [...document.querySelectorAll<HTMLElement>('[data-role-row]')];
     expect(rows.map((r) => r.dataset.roleRow)).toEqual(['click', 'hold']);
+    // pt-BR kept: shared fixture data asserted by tests/model, tests/mcp (role name of roleFixtures)
     expect(within(rows[0] as HTMLElement).getByText('Clique:')).toBeTruthy();
-    expect(within(rows[0] as HTMLElement).getByText('nenhuma')).toBeTruthy();
-    expect(within(rows[1] as HTMLElement).queryByText('nenhuma')).toBeNull();
+    expect(within(rows[0] as HTMLElement).getByText('none')).toBeTruthy();
+    expect(within(rows[1] as HTMLElement).queryByText('none')).toBeNull();
     expect(
       within(rows[1] as HTMLElement).getByRole('button', { name: /onHold|onClick/ }),
     ).toBeTruthy();
     expect(linkButtons()).toHaveLength(2);
   });
 
-  it('o filho da linha leva à anotação', async () => {
+  it("the row's child leads to the annotation", async () => {
     const project = addChild(roleProject(withRoles), 'E1', 'A1', 'click');
     const { user, onGoToAnnotation } = setup(project);
     const row = document.querySelector('[data-role-row="click"]') as HTMLElement;
@@ -161,14 +162,15 @@ describe('Vincular — dono com papéis', () => {
     expect(onGoToAnnotation).toHaveBeenCalledWith(expect.objectContaining({ id: 'E1' }));
   });
 
-  it('o "+ Vincular…" da linha abre "Vincular a <dono> › <papel>" e o filho nasce com o papel', async () => {
+  it('the row\'s "+ Link…" opens "Link to <owner> › <role>" and the child is born with the role', async () => {
     const { harness, user } = setup(roleProject(withRoles));
     const before = harness.project().annotations.length;
     const row = document.querySelector('[data-role-row="hold"]') as HTMLElement;
-    await user.click(within(row).getByRole('button', { name: '+ Vincular…' }));
+    await user.click(within(row).getByRole('button', { name: '+ Link…' }));
     const dialog = openDialog();
+    // pt-BR kept: shared fixture data asserted by tests/model, tests/mcp (role name "Pressionar" of roleFixtures)
     expect(
-      within(dialog).getByRole('heading', { name: 'Vincular a Button › Pressionar' }),
+      within(dialog).getByRole('heading', { name: 'Link to Button › Pressionar' }),
     ).toBeTruthy();
     await user.click(
       within(dialog).getByRole('button', { name: /^onClick/, hidden: true }),
@@ -183,37 +185,37 @@ describe('Vincular — dono com papéis', () => {
     expect(harness.project().annotations).toHaveLength(before);
   });
 
-  it('o foco volta ao "+ Vincular…" da linha ao fechar', async () => {
+  it('the focus returns to the row\'s "+ Link…" on close', async () => {
     const { user } = setup(roleProject(rolesAndOneChild));
     const row = document.querySelector('[data-role-row="click"]') as HTMLElement;
-    const trigger = within(row).getByRole('button', { name: '+ Vincular…' });
+    const trigger = within(row).getByRole('button', { name: '+ Link…' });
     await user.click(trigger);
     await user.click(
-      within(openDialog()).getByRole('button', { name: 'Cancelar', hidden: true }),
+      within(openDialog()).getByRole('button', { name: 'Cancel', hidden: true }),
     );
     await vi.waitFor(() => expect(document.querySelector('dialog')).toBeNull());
     await vi.waitFor(() => expect(document.activeElement).toBe(trigger));
   });
 
-  it('sem papel ou com papel inexistente: linha "Sem <rótulo>" com a marca de pendência', () => {
+  it('without a role or with a nonexistent role: "No <label>" row with the pending mark', () => {
     let project = addChild(roleProject(withRoles), 'E1', 'A1', null);
     project = addChild(project, 'E2', 'A1', 'click', 'navigate');
     project = {
       ...project,
       annotations: project.annotations.map((a) =>
-        a.id === 'E2' ? { ...a, parentRole: 'sumiu' } : a,
+        a.id === 'E2' ? { ...a, parentRole: 'vanished' } : a,
       ),
     };
     setup(project);
     const row = document.querySelector('[data-role-row-missing]') as HTMLElement;
-    expect(within(row).getByText('Sem trigger:')).toBeTruthy();
+    expect(within(row).getByText('No trigger:')).toBeTruthy();
     expect(row.querySelector('.issue-badge')).not.toBeNull();
     expect(within(row).getAllByRole('button')).toHaveLength(2);
-    // As duas linhas de papel ficam vazias.
-    expect(screen.getAllByText('nenhuma')).toHaveLength(2);
+    // The two role rows stay empty.
+    expect(screen.getAllByText('none')).toHaveLength(2);
   });
 
-  it('sem rótulo declarado, a linha é "Sem papel"', () => {
+  it('without a declared label, the row is "No role"', () => {
     const project = addChild(
       roleProject((s) => {
         withRoles(s);
@@ -224,15 +226,15 @@ describe('Vincular — dono com papéis', () => {
       null,
     );
     setup(project);
-    expect(screen.getByText('Sem papel:')).toBeTruthy();
+    expect(screen.getByText('No role:')).toBeTruthy();
   });
 
-  it('sem filhos sem papel, a linha "Sem <rótulo>" não aparece', () => {
+  it('without children lacking a role, the "No <label>" row does not appear', () => {
     setup(addChild(roleProject(withRoles), 'E1', 'A1', 'click'));
     expect(document.querySelector('[data-role-row-missing]')).toBeNull();
   });
 
-  it('nenhum botão "+ <tipo>" direto sobra', () => {
+  it('no direct "+ <type>" button is left', () => {
     setup(roleProject(withRoles));
     expect(screen.queryByRole('button', { name: /^\+ on/ })).toBeNull();
   });

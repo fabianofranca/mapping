@@ -13,16 +13,16 @@ import { installFakeCanvas } from '../canvas/harness';
 import { buildLargeTypedProject } from '../model/largeTypedProject';
 import { MemoryDirectory } from '../storage/memoryFs';
 
-// Fase 26: arrastar/redimensionar troca `store.project` a cada `pointermove`, mas a
-// interface só lê o projeto confirmado (`store.committed`) e renderiza no fim do gesto.
+// Phase 26: dragging/resizing swaps `store.project` on every `pointermove`, but the
+// interface only reads the committed project (`store.committed`) and renders at the end of the gesture.
 const MOVES = 30;
 const WATCHED = ['EditorScreen', 'EditorPanel', 'EditorMainBar'] as const;
-/** Um render ao soltar o gesto e, no máximo, mais um de folga. */
+/** One render when the gesture is released and, at most, one more as slack. */
 const MAX_RENDERS = 2;
-/** Monta o editor inteiro; sob cobertura em runner compartilhado do CI passa fácil dos 5 s padrão. */
+/** Mounts the whole editor; under coverage on a shared CI runner it easily exceeds the default 5 s. */
 const MOUNT_TIMEOUT_MS = 30_000;
 
-describe('renderizações da interface durante um gesto', () => {
+describe('interface renders during a gesture', () => {
   const counts = new Map<string, number>();
   const previousDiffed = options.diffed;
 
@@ -46,15 +46,15 @@ describe('renderizações da interface durante um gesto', () => {
   function mountEditor(withPerspective = false) {
     let project = buildLargeTypedProject();
     if (withPerspective) {
-      // Uma perspectiva com todas as raízes nas posições da Principal.
-      const view = buildPerspective(project, { id: 'V', name: 'Vista', startFrom: null });
+      // A perspective with all roots at the Main positions.
+      const view = buildPerspective(project, { id: 'V', name: 'View', startFrom: null });
       project = addPerspective(project, view);
     }
     const session = openSession({
-      storage: createFolderStorage(new MemoryDirectory('grande'), { copyId: 'grande' }),
+      storage: createFolderStorage(new MemoryDirectory('large'), { copyId: 'large' }),
       project,
       readOnly: false,
-      prepareImage: () => Promise.reject(new Error('imagens não são usadas aqui')),
+      prepareImage: () => Promise.reject(new Error('images are not used here')),
       now: () => '2026-10-02T12:00:00.000Z',
     });
     const open: OpenProject = {
@@ -74,14 +74,14 @@ describe('renderizações da interface durante um gesto', () => {
   }
 
   it(
-    `${MOVES} movimentos renderizam EditorScreen, EditorPanel e EditorMainBar no máximo ${MAX_RENDERS} vezes`,
+    `${MOVES} moves render EditorScreen, EditorPanel and EditorMainBar at most ${MAX_RENDERS} times`,
     async () => {
       const { project, session, ui } = mountEditor();
       const { store, actions } = session;
       const marking = project.markings.find((m) => m.parentId === null);
       if (!marking) throw new Error('fixture');
 
-      // Seleciona a marcação (o painel mostra os campos x/y/largura/altura) e deixa assentar.
+      // Selects the marking (the panel shows the x/y/width/height fields) and lets it settle.
       ui.selection.value = { kind: 'marking', id: marking.id };
       await act(async () => {
         await Promise.resolve();
@@ -89,8 +89,8 @@ describe('renderizações da interface durante um gesto', () => {
 
       counts.clear();
       const before = store.committed.value;
-      // Sem `act`: ele agruparia as renderizações; aqui a fila do Preact roda entre os
-      // movimentos, como entre dois eventos do dedo.
+      // Without `act`: it would batch the renders; here the Preact queue runs between the
+      // moves, as between two finger events.
       const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
       {
         expect(actions.beginGesture().ok).toBe(true);
@@ -101,9 +101,9 @@ describe('renderizações da interface durante um gesto', () => {
         expect(counts.get('EditorScreen') ?? 0).toBe(0);
         expect(counts.get('EditorPanel') ?? 0).toBe(0);
         expect(counts.get('EditorMainBar') ?? 0).toBe(0);
-        // Nem o painel da marcação selecionada (suas seções leem o projeto confirmado, não a prévia).
+        // Nor the panel of the selected marking (its sections read the committed project, not the preview).
         expect(counts.get('MarkingPanel') ?? 0).toBe(0);
-        // A prévia mudou o projeto, mas não o confirmado.
+        // The preview changed the project, but not the committed one.
         expect(store.project.value).not.toBe(before);
         expect(store.committed.value).toBe(before);
         actions.commitGesture();
@@ -119,7 +119,7 @@ describe('renderizações da interface durante um gesto', () => {
   );
 
   it(
-    'pan e zoom com uma perspectiva aberta não renderizam a interface nem refazem o projeto à vista',
+    'pan and zoom with an open perspective neither render the interface nor rebuild the project in view',
     async () => {
       const { session, context } = mountEditor(true);
       expect(session.perspective.open('V')).toBe(true);
@@ -129,7 +129,7 @@ describe('renderizações da interface durante um gesto', () => {
       const shown = context.review.derived.shownProject.value;
       const visible = context.derived.visibleLayers.value;
       const controller = context.canvas.current;
-      if (!controller) throw new Error('canvas não montado');
+      if (!controller) throw new Error('canvas not mounted');
 
       counts.clear();
       const settle = () => new Promise((resolve) => setTimeout(resolve, 0));

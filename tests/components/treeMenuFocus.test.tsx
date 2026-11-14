@@ -10,28 +10,29 @@ import { MarkingTree } from '../../src/ui/MarkingTree';
 import { sampleProject } from '../model/fixtures';
 import { createHarness, renderLive, type Harness } from './harness';
 
-// Etapa #1425: depois do Envolver (⋯ da Árvore) e do Mover para a frente, o foco nunca vai ao
-// `body`: volta ao controle de origem ou, se ele sumiu, ao contêiner mais próximo da app.
+// Stage #1425: after Wrap (⋯ of the Tree) and Bring to front, focus never goes to
+// `body`: it returns to the origin control or, if it is gone, to the closest app container.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
 function renderTree(harness: Harness) {
   renderLive(harness, (p) => (
-    // Como na app: a Árvore mora numa janela de ferramenta (`section[data-window]`).
+    // As in the app: the Tree lives in a tool window (`section[data-window]`).
     <section data-window="tree" tabIndex={-1}>
       <MarkingTree project={p} selection={null} onSelect={() => undefined} />
     </section>
   ));
 }
 
-describe('foco depois do Envolver pelo ⋯ da Árvore', () => {
-  it('o foco não vai ao body', async () => {
+describe('focus after Wrap from the ⋯ of the Tree', () => {
+  it('focus does not go to body', async () => {
     const harness = createHarness(sampleProject());
     selectItems(harness.ui, [{ kind: 'marking', id: 'M1' }]);
     renderTree(harness);
+    // pt-BR kept: shared fixture data (marking 'Fechadura' of sampleProject) asserted by tests/
     const name = t('copy.itemActions', { name: 'Fechadura' });
     await userEvent.click(screen.getByRole('button', { name }));
     const menu = screen.getByRole('menu');
@@ -42,9 +43,9 @@ describe('foco depois do Envolver pelo ⋯ da Árvore', () => {
   });
 });
 
-describe('foco depois do Mover para a frente (Detalhes)', () => {
-  it('chegando ao fim da ordem, o foco fica no botão vizinho, não no body', async () => {
-    // M1 e a irmã M5: a `M1` é `1 de 2` e, depois do clique, o botão fica desabilitado.
+describe('focus after Bring to front (Details)', () => {
+  it('reaching the end of the order, focus stays on the neighbor button, not on body', async () => {
+    // M1 and its sibling M5: `M1` is `1 of 2` and, after the click, the button is disabled.
     const harness = createHarness(
       createMarking(sampleProject(), {
         id: 'M5',

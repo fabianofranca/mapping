@@ -14,31 +14,32 @@ import { libraryHarness } from './libraryHarness';
 import { noticeSpec } from './noticeFixtures';
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
 const noticeTypes = () => noticeSpec().layers[0]?.annotationTypes ?? [];
 
-describe('selo na escolha de tipo (TypePicker)', () => {
-  it('mostra o selo nos tipos com aviso e some no tipo sem aviso', () => {
+describe('badge in the type choice (TypePicker)', () => {
+  it('shows the badge on types with a notice and disappears on the type without one', () => {
     render(<TypePicker types={noticeTypes()} onChoose={vi.fn()} />);
     const option = (name: string) =>
       screen.getByText(name, { selector: 'strong' }).closest('button') as HTMLElement;
     expect(
       within(option('Alert')).getByRole('img', {
-        name: /^Aviso Obsoleto: Use variant\./,
+        name: /^Notice Deprecated: Use variant\./,
       }),
     ).toBeTruthy();
     expect(
       within(option('Gone')).getByRole('img', {
-        name: 'Aviso Removido: Saiu do contrato.',
+        // pt-BR kept: shared fixture data asserted by tests/model, tests/components (message of noticeFixtures)
+        name: 'Notice Removed: Saiu do contrato.',
       }),
     ).toBeTruthy();
     expect(within(option('Plain')).queryByRole('img')).toBeNull();
   });
 
-  it('escolher o tipo continua funcionando com aviso', async () => {
+  it('choosing the type still works with a notice', async () => {
     const onChoose = vi.fn();
     render(<TypePicker types={noticeTypes()} onChoose={onChoose} />);
     await userEvent.setup().click(screen.getByText('Gone', { selector: 'strong' }));
@@ -46,8 +47,8 @@ describe('selo na escolha de tipo (TypePicker)', () => {
   });
 });
 
-describe('selo na paleta da Biblioteca', () => {
-  it('aparece no tipo com aviso e não nos outros', async () => {
+describe('badge in the Library palette', () => {
+  it('appears on the type with a notice and not on the others', async () => {
     const harness = await libraryHarness();
     const project = harness.project();
     const patched = {
@@ -88,14 +89,16 @@ describe('selo na paleta da Biblioteca', () => {
         .getByText(name, { selector: '.library-type-name' })
         .closest('li') as HTMLElement;
     expect(
-      within(item('Button')).getByRole('img', { name: 'Aviso Obsoleto: Use Button2.' }),
+      within(item('Button')).getByRole('img', {
+        name: 'Notice Deprecated: Use Button2.',
+      }),
     ).toBeTruthy();
-    expect(within(item('Column')).queryByRole('img', { name: /^Aviso/ })).toBeNull();
+    expect(within(item('Column')).queryByRole('img', { name: /^Notice/ })).toBeNull();
   });
 });
 
-describe('selo no Catálogo (aba Componentes)', () => {
-  it('aparece na entrada com aviso e não nas outras', () => {
+describe('badge in the Catalog (Components tab)', () => {
+  it('appears on the entry with a notice and not on the others', () => {
     const files = [...material3Package()].map(([path, content]) =>
       typeof content === 'string' ? { path, text: content } : { path, binary: true },
     );
@@ -110,7 +113,7 @@ describe('selo no Catálogo (aba Componentes)', () => {
                 ...e,
                 type: {
                   ...e.type,
-                  notices: [{ kind: 'removed' as const, message: 'Saiu.' }],
+                  notices: [{ kind: 'removed' as const, message: 'Gone.' }],
                 },
               }
             : e,
@@ -132,8 +135,8 @@ describe('selo no Catálogo (aba Componentes)', () => {
     const entry = (id: string) =>
       document.querySelector(`.catalog-entry[data-type-id="${id}"]`) as HTMLElement;
     expect(
-      within(entry('m3-button')).getByRole('img', { name: 'Aviso Removido: Saiu.' }),
+      within(entry('m3-button')).getByRole('img', { name: 'Notice Removed: Gone.' }),
     ).toBeTruthy();
-    expect(within(entry('m3-fab')).queryByRole('img', { name: /^Aviso/ })).toBeNull();
+    expect(within(entry('m3-fab')).queryByRole('img', { name: /^Notice/ })).toBeNull();
   });
 });

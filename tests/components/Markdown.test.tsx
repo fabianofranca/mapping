@@ -6,13 +6,13 @@ import { Markdown } from '../../src/ui/markdown/Markdown';
 afterEach(cleanup);
 
 const DOC = [
-  '# Título',
+  '# Title',
   '',
-  'Texto com **forte**, *itálico* e `código`.',
+  'Text with **strong**, *italic* and `code`.',
   '',
   '- a',
   '  - b',
-  '1. um',
+  '1. one',
   '',
   '| A | B |',
   '| :-- | --: |',
@@ -22,17 +22,17 @@ const DOC = [
   'const x = 1;',
   '```',
   '',
-  '[doc](mapping://material3/button) [web](http://evil.example) [js](javascript:alert(1)) [ir](#titulo)',
+  '[doc](mapping://material3/button) [web](http://evil.example) [js](javascript:alert(1)) [go](#title)',
   '',
   '<script>alert(1)</script> <img src=x onerror=alert(1)> ![alt](http://evil.example/a.png)',
 ].join('\n');
 
 describe('Markdown', () => {
-  it('renderiza os elementos do subconjunto', () => {
+  it('renders the elements of the subset', () => {
     const { container } = render(<Markdown text={DOC} />);
-    expect(container.querySelector('h1')?.textContent).toBe('Título');
-    expect(container.querySelector('strong')?.textContent).toBe('forte');
-    expect(container.querySelector('em')?.textContent).toBe('itálico');
+    expect(container.querySelector('h1')?.textContent).toBe('Title');
+    expect(container.querySelector('strong')?.textContent).toBe('strong');
+    expect(container.querySelector('em')?.textContent).toBe('italic');
     expect(container.querySelector('ul ul')).toBeTruthy();
     expect(container.querySelector('ol')).toBeTruthy();
     expect(container.querySelectorAll('thead th')).toHaveLength(2);
@@ -40,7 +40,7 @@ describe('Markdown', () => {
     expect(container.querySelector('pre code')?.textContent).toBe('const x = 1;');
   });
 
-  it('nunca cria script nem img; só http(s) absoluto vira link; HTML aparece como texto', () => {
+  it('never creates script or img; only absolute http(s) becomes a link; HTML appears as text', () => {
     const { container } = render(<Markdown text={DOC} onLink={vi.fn()} />);
     expect(container.querySelector('script')).toBeNull();
     expect(container.querySelector('img')).toBeNull();
@@ -54,7 +54,7 @@ describe('Markdown', () => {
     expect(container.textContent).toContain('js');
   });
 
-  it('onLink só para mapping://', async () => {
+  it('onLink only for mapping://', async () => {
     const user = userEvent.setup();
     const onLink = vi.fn();
     const { container } = render(<Markdown text={DOC} onLink={onLink} />);
@@ -62,23 +62,23 @@ describe('Markdown', () => {
     expect(links).toHaveLength(3);
     await user.click(links.find((a) => a.textContent === 'doc') as HTMLElement);
     expect(onLink).toHaveBeenCalledExactlyOnceWith('mapping://material3/button');
-    await user.click(links.find((a) => a.textContent === 'ir') as HTMLElement);
+    await user.click(links.find((a) => a.textContent === 'go') as HTMLElement);
     expect(onLink).toHaveBeenCalledTimes(1);
   });
 
-  it('link absoluto http(s) abre em outra aba, com rel seguro; relativos e âncoras seguem texto', async () => {
+  it('absolute http(s) link opens in another tab, with safe rel; relative ones and anchors stay text', async () => {
     const user = userEvent.setup();
     const onLink = vi.fn();
     const { container } = render(
       <Markdown
-        text="[a](https://exemplo.com/x) [b](http://exemplo.com) [rel](outro.md) [ftp](ftp://x.com/a)"
+        text="[a](https://example.com/x) [b](http://example.com) [rel](other.md) [ftp](ftp://x.com/a)"
         onLink={onLink}
       />,
     );
     const links = [...container.querySelectorAll('a')];
     expect(links.map((a) => a.getAttribute('href'))).toEqual([
-      'https://exemplo.com/x',
-      'http://exemplo.com',
+      'https://example.com/x',
+      'http://example.com',
     ]);
     for (const a of links) {
       expect(a.getAttribute('target')).toBe('_blank');
@@ -90,7 +90,7 @@ describe('Markdown', () => {
     expect(onLink).not.toHaveBeenCalled();
   });
 
-  it('sem onLink, o link absoluto continua link e o mapping:// vira texto', () => {
+  it('without onLink, the absolute link stays a link and mapping:// becomes text', () => {
     const { container } = render(
       <Markdown text="[doc](mapping://a/b) [w](https://x.io)" />,
     );
@@ -98,15 +98,15 @@ describe('Markdown', () => {
     expect(container.textContent).toBe('doc w');
   });
 
-  it('sem onLink, o link mapping:// vira texto', () => {
+  it('without onLink, the mapping:// link becomes text', () => {
     const { container } = render(<Markdown text="[doc](mapping://a/b)" />);
     expect(container.querySelector('a')).toBeNull();
     expect(container.textContent).toBe('doc');
   });
 
-  it('âncora foca o título do próprio documento, sem colidir entre instâncias', async () => {
+  it('anchor focuses the heading of its own document, without colliding between instances', async () => {
     const user = userEvent.setup();
-    const text = '[ir](#fim)\n\n# Fim';
+    const text = '[go](#end)\n\n# End';
     const { container } = render(
       <div>
         <Markdown text={text} />
@@ -120,14 +120,14 @@ describe('Markdown', () => {
     expect(document.activeElement).toBe(second.querySelector('h1'));
   });
 
-  it('âncora inexistente vira texto', () => {
-    const { container } = render(<Markdown text="[ir](#nada)" />);
+  it('nonexistent anchor becomes text', () => {
+    const { container } = render(<Markdown text="[go](#nothing)" />);
     expect(container.querySelector('a')).toBeNull();
   });
 
-  it('renderiza a citação (> ) como blockquote, sem o sinal solto e sem HTML cru', () => {
+  it('renders the quote (> ) as a blockquote, without the stray sign and without raw HTML', () => {
     const { container } = render(
-      <Markdown text={'> `onClick` liga à lógica.\n> Segue.'} />,
+      <Markdown text={'> `onClick` binds to the logic.\n> Continues.'} />,
     );
     const quote = container.querySelector('blockquote');
     expect(quote?.querySelector('code')?.textContent).toBe('onClick');
@@ -136,15 +136,15 @@ describe('Markdown', () => {
 });
 
 describe('Markdown › lineBreaks', () => {
-  it('sem a opção, a quebra simples vira espaço', () => {
-    const { container } = render(<Markdown text={'linha 1\nlinha 2'} />);
+  it('without the option, a simple break becomes a space', () => {
+    const { container } = render(<Markdown text={'line 1\nline 2'} />);
     expect(container.querySelectorAll('br').length).toBe(0);
-    expect(container.querySelector('p')?.textContent).toBe('linha 1 linha 2');
+    expect(container.querySelector('p')?.textContent).toBe('line 1 line 2');
   });
 
-  it('com lineBreaks, a quebra simples vira <br/>', () => {
-    const { container } = render(<Markdown text={'linha 1\nlinha 2'} lineBreaks />);
+  it('with lineBreaks, a simple break becomes <br/>', () => {
+    const { container } = render(<Markdown text={'line 1\nline 2'} lineBreaks />);
     expect(container.querySelectorAll('p br').length).toBe(1);
-    expect(container.querySelector('p')?.textContent).toBe('linha 1linha 2');
+    expect(container.querySelector('p')?.textContent).toBe('line 1line 2');
   });
 });

@@ -30,11 +30,12 @@ import {
   type ReviewHarness,
 } from './reviewHarness';
 
-// Devolução do portão da 8.2 (achado 7; R5.4a e R5.6 do guia): entre o `store.apply` e a
-// publicação do `proposal.json` com `applied`, a revisão reavaliava as aceitas contra um
-// projeto que já as tinha. A tela mostrava "Aplicar bloqueado" com o id cru da camada
-// recém-criada e "O projeto mudou desde a sua última sessão". Aqui a gravação do
-// `proposal.json` é segurada para olhar a tela no meio do aplicar.
+// Return from the 8.2 gate (finding 7; R5.4a and R5.6 of the guide): between `store.apply`
+// and the publication of `proposal.json` with `applied`, the review re-evaluated the
+// accepted changes against a project that already had them. The screen showed "Apply
+// blocked" with the raw id of the newly created layer and "The project changed since your
+// last session". Here the write of `proposal.json` is held to look at the screen in the
+// middle of the apply.
 
 const frames: FrameRequestCallback[] = [];
 const flushFrames = () => {
@@ -52,9 +53,9 @@ afterAll(() => {
   vi.unstubAllGlobals();
 });
 beforeEach(() => {
-  // A cada teste: o `vi.restoreAllMocks()` do `afterEach` desfaz o contexto 2D falso.
+  // On every test: the `vi.restoreAllMocks()` of `afterEach` undoes the fake 2D context.
   installFakeCanvas();
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   localStorage.clear();
 });
 afterEach(() => {
@@ -62,7 +63,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-/** Segura a próxima gravação do `proposal.json` até `release()`. */
+/** Holds the next write of `proposal.json` until `release()`. */
 function holdProposalWrite(h: ReviewHarness) {
   const original = h.storage.writeProposal.bind(h.storage);
   let release: () => void = () => undefined;
@@ -81,7 +82,7 @@ function holdProposalWrite(h: ReviewHarness) {
   return { reached, release };
 }
 
-/** Nenhum dos dois avisos falsos na tela. */
+/** Neither of the two false warnings on screen. */
 function expectNoFalseWarnings() {
   expect(screen.queryByText(t('review.issue.title'))).toBeNull();
   expect(screen.queryByText(t('review.stale.title'))).toBeNull();
@@ -98,11 +99,11 @@ function renderReview(h: ReviewHarness) {
   );
 }
 
-/** Clica em "Aplicar aceitas" e espera a gravação do `proposal.json` começar. */
+/** Clicks "Apply accepted" and waits for the write of `proposal.json` to start. */
 async function applyAndHold(h: ReviewHarness) {
   const hold = holdProposalWrite(h);
-  const bar = screen.getByRole('region', { name: 'Revisão da proposta' });
-  const button = within(bar).getByRole('button', { name: /Aplicar aceitas · 1/ });
+  const bar = screen.getByRole('region', { name: 'Proposal review' });
+  const button = within(bar).getByRole('button', { name: /Apply accepted · 1/ });
   act(() => button.click());
   await act(async () => {
     await hold.reached;
@@ -110,8 +111,8 @@ async function applyAndHold(h: ReviewHarness) {
   return { hold, bar };
 }
 
-describe('aplicar aceitas sem avisos falsos (devolução do portão da 8.2)', () => {
-  it('R5.4a: aceitar o grupo Projeto e aplicar; no meio e no fim, sem "Aplicar bloqueado" nem "O projeto mudou"', async () => {
+describe('applying accepted changes without false warnings (return from the 8.2 gate)', () => {
+  it('R5.4a: accept the Project group and apply; in the middle and at the end, without "Apply blocked" or "The project changed"', async () => {
     const { base, proposal } = firstImport();
     const h = await openReviewHarness({ project: base, proposals: [proposal] });
     expect(h.review.open('P1').ok).toBe(true);
@@ -121,16 +122,17 @@ describe('aplicar aceitas sem avisos falsos (devolução do portão da 8.2)', ()
     expectNoFalseWarnings();
 
     const { hold, bar } = await applyAndHold(h);
-    // O projeto já tem a camada; a proposta ainda não diz que foi aplicada.
+    // The project already has the layer; the proposal does not yet say it was applied.
+    // pt-BR kept: shared fixture data asserted by tests/components/review (layer name from firstImport)
     expect(h.session.store.committed.value?.layers.map((l) => l.name)).toContain(
       'Eventos',
     );
     expect(h.review.derived.proposal.value?.applied).toEqual({});
     expectNoFalseWarnings();
-    // Enquanto aplica, o botão não aplica de novo e diz por quê.
-    const busy = within(bar).getByRole('button', { name: /Aplicar aceitas/ });
+    // While applying, the button does not apply again and says why.
+    const busy = within(bar).getByRole('button', { name: /Apply accepted/ });
     expect((busy as HTMLButtonElement).disabled).toBe(true);
-    expect(busy.getAttribute('title')).toContain('Aplicando as aceitas…');
+    expect(busy.getAttribute('title')).toContain('Applying the accepted changes…');
 
     await act(async () => {
       hold.release();
@@ -140,16 +142,17 @@ describe('aplicar aceitas sem avisos falsos (devolução do portão da 8.2)', ()
       expect(Object.keys(h.review.derived.proposal.value?.applied ?? {})).toHaveLength(1),
     );
     expectNoFalseWarnings();
+    // pt-BR kept: shared fixture data asserted by tests/components/review (layer name from firstImport)
     expect(h.session.store.committed.value?.layers.map((l) => l.name)).toContain(
       'Eventos',
     );
   });
 
-  it('remoção: o retrato cita um item que já saiu do projeto; painel, níveis e canvas desenham sem lançar', async () => {
+  it('removal: the snapshot cites an item that already left the project; panel, levels and canvas draw without throwing', async () => {
     const base = sampleProject();
     const proposal = propose(base, removeMarking(base, 'M3'), {
       id: 'P1',
-      title: 'Tirar a fechadura',
+      title: 'Remove the lock',
     });
     const h = await openReviewHarness({ project: base, proposals: [proposal] });
     expect(h.review.open('P1').ok).toBe(true);
@@ -174,19 +177,19 @@ describe('aplicar aceitas sem avisos falsos (devolução do portão da 8.2)', ()
       review: h.review,
     });
     flushFrames();
-    // Antes de aplicar: o painel da marcação que sai, do projeto atual (visão Proposto).
-    expect(screen.getAllByText('Será removida').length).toBeGreaterThan(0);
+    // Before applying: the panel of the marking that goes away, from the current project (Proposed view).
+    expect(screen.getAllByText('Will be removed').length).toBeGreaterThan(0);
 
     const { hold } = await applyAndHold(h);
-    // A marcação já saiu do projeto ao vivo (e da prévia): os Detalhes caem no painel da
-    // mudança ("Outras mudanças") e os níveis continuam de pé.
+    // The marking already left the live project (and the preview): Details fall back to the
+    // change panel ("Other changes") and the levels stay up.
     expect(h.session.store.committed.value?.markings.some((m) => m.id === 'M3')).toBe(
       false,
     );
     expect(() => flushFrames()).not.toThrow();
     expectNoFalseWarnings();
-    expect(screen.getByRole('region', { name: 'Outras mudanças' })).toBeTruthy();
-    expect(screen.getByRole('tree', { name: 'Níveis da proposta' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Other changes' })).toBeTruthy();
+    expect(screen.getByRole('tree', { name: 'Proposal levels' })).toBeTruthy();
 
     await act(async () => {
       hold.release();

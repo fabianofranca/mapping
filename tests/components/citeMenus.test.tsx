@@ -21,22 +21,23 @@ import { cadastroProject } from '../model/specFixtures';
 import { sampleThread } from '../model/threadFixtures';
 import { annotationOf, createHarness, renderLive, type Harness } from './harness';
 
-// Citar na conversa, Comentar e Copiar referência nos menus (CM5, decisão 32): campo tipado
-// simples (menu ⋯ novo), par, linha, anotação, item da Árvore, menu do canvas, camada e conversa.
+// Cite in the thread, Comment and Copy reference in the menus (CM5, decision 32): simple typed
+// field (new ⋯ menu), pair, row, annotation, Tree item, canvas menu, layer and thread.
+// pt-BR kept: shared fixture data asserted by tests/model (cadastroProject field keys 'texto', 'atributos'; sampleProject names 'Maçaneta', 'Amassado', 'images/frente.jpg'; harness folder 'projeto')
 
 const disposers: (() => void)[] = [];
 const insert = vi.fn();
 
-/** Abre um compositor (o botão "Citar na conversa" só vale com um aberto). */
+/** Opens a composer (the "Cite in the thread" button only works with one open). */
 function openComposer() {
   disposers.push(registerComposer({ insert }));
 }
 
 beforeEach(() => {
   localStorage.clear();
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   clearIdentity();
-  setIdentity('Marina Alves', 'marina@exemplo.com');
+  setIdentity('Marina Alves', 'marina@example.com');
   showToolWindow('tree');
   insert.mockClear();
 });
@@ -59,7 +60,7 @@ function setupClipboard() {
   return { user, writeText };
 }
 
-/** Tira o nome da pasta do armazenamento: o projeto passa a ser "fora de uma pasta". */
+/** Removes the folder name from the storage: the project becomes "outside a folder". */
 function makeNotAFolder(harness: Harness) {
   Object.defineProperty(harness.context.session.storage, 'folderName', {
     value: undefined,
@@ -76,14 +77,14 @@ function names(menu: HTMLElement): string[] {
     .map((item) => item.textContent ?? '');
 }
 
-describe('campo tipado simples', () => {
+describe('simple typed field', () => {
   function renderField(annotationId: string, key: string, harness: Harness) {
     renderLive(harness, (p: Project) => {
       const annotation = annotationOf(p, annotationId);
       const field = typeOfAnnotation(p, annotation)?.type.fields.find(
         (f) => f.key === key,
       );
-      if (!field) throw new Error(`campo ${key} não existe`);
+      if (!field) throw new Error(`field ${key} does not exist`);
       return (
         <TypedField
           field={field}
@@ -95,14 +96,14 @@ describe('campo tipado simples', () => {
       );
     });
   }
-  const more = () => screen.getByRole('button', { name: /^Ações do campo / });
+  const more = () => screen.getByRole('button', { name: /^Actions for field / });
 
-  it('expõe o campo ao DOM com data-field', () => {
+  it('exposes the field to the DOM with data-field', () => {
     renderField('AB', 'texto', createHarness(cadastroProject()));
     expect(document.querySelector('[data-field="texto"]')).not.toBeNull();
   });
 
-  it('o menu ⋯ tem Copiar referência, Citar na conversa e Comentar', async () => {
+  it('the ⋯ menu has Copy reference, Cite in the thread and Comment', async () => {
     const { user } = setupClipboard();
     renderField('AB', 'texto', createHarness(cadastroProject()));
     await user.click(more());
@@ -113,7 +114,7 @@ describe('campo tipado simples', () => {
     ]);
   });
 
-  it('Copiar referência copia ...//f/<campo>', async () => {
+  it('Copy reference copies ...//f/<field>', async () => {
     const { user, writeText } = setupClipboard();
     renderField('AB', 'texto', createHarness(cadastroProject()));
     await user.click(more());
@@ -125,7 +126,7 @@ describe('campo tipado simples', () => {
     });
   });
 
-  it('Citar na conversa fica desabilitado, com a dica, sem compositor aberto', async () => {
+  it('Cite in the thread is disabled, with the tooltip, with no composer open', async () => {
     const { user } = setupClipboard();
     renderField('AB', 'texto', createHarness(cadastroProject()));
     await user.click(more());
@@ -134,7 +135,7 @@ describe('campo tipado simples', () => {
     expect(cite.getAttribute('title')).toBe(t('cite.needComposer'));
   });
 
-  it('com o compositor aberto, Citar insere o campo e fecha o menu', async () => {
+  it('with the composer open, Cite inserts the field and closes the menu', async () => {
     const { user } = setupClipboard();
     openComposer();
     renderField('AB', 'texto', createHarness(cadastroProject()));
@@ -150,7 +151,7 @@ describe('campo tipado simples', () => {
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
-  it('Comentar abre a conversa ancorada no campo', async () => {
+  it('Comment opens the thread anchored to the field', async () => {
     const { user } = setupClipboard();
     const harness = createHarness(cadastroProject());
     renderField('AB', 'texto', harness);
@@ -168,7 +169,7 @@ describe('campo tipado simples', () => {
     });
   });
 
-  it('fora de uma pasta não há Copiar referência, mas Citar e Comentar valem', async () => {
+  it('outside a folder there is no Copy reference, but Cite and Comment work', async () => {
     const { user } = setupClipboard();
     openComposer();
     const harness = createHarness(cadastroProject());
@@ -184,7 +185,7 @@ describe('campo tipado simples', () => {
     ).toBe(false);
   });
 
-  it('somente leitura: o menu abre, mas Comentar fica desabilitado', async () => {
+  it('read-only: the menu opens, but Comment is disabled', async () => {
     const { user } = setupClipboard();
     renderField('AB', 'texto', createHarness(cadastroProject(), true));
     await user.click(more());
@@ -201,7 +202,7 @@ describe('campo tipado simples', () => {
   });
 });
 
-describe('par (KeyValueGrid)', () => {
+describe('pair (KeyValueGrid)', () => {
   function renderGrid(harness: Harness) {
     renderLive(harness, (p) => (
       <KeyValueGrid
@@ -214,18 +215,18 @@ describe('par (KeyValueGrid)', () => {
     ));
   }
 
-  it('expõe o par ao DOM com data-entry', () => {
+  it('exposes the pair to the DOM with data-entry', () => {
     renderGrid(createHarness(cadastroProject()));
     expect(document.querySelector('[data-entry="EN"]')).not.toBeNull();
     expect(document.querySelector('[data-entry="EA"]')).not.toBeNull();
   });
 
-  it('o menu do par ganha Copiar referência, Citar e Comentar', async () => {
+  it('the pair menu gains Copy reference, Cite and Comment', async () => {
     const { user, writeText } = setupClipboard();
     openComposer();
     const harness = createHarness(cadastroProject());
     renderGrid(harness);
-    await user.click(screen.getByRole('button', { name: 'Ações do par name' }));
+    await user.click(screen.getByRole('button', { name: 'Actions for pair name' }));
     const menu = screen.getByRole('menu');
     expect(names(menu)).toEqual([
       t('annotation.moveEntryUp'),
@@ -239,7 +240,7 @@ describe('par (KeyValueGrid)', () => {
     await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
     expect(parseAnyRef(urlOf(writeText))).toMatchObject({ ref: { type: 'entry' } });
 
-    await user.click(screen.getByRole('button', { name: 'Ações do par name' }));
+    await user.click(screen.getByRole('button', { name: 'Actions for pair name' }));
     await user.click(screen.getByRole('menuitem', { name: t('cite.insert') }));
     expect(insert).toHaveBeenCalledWith({
       kind: 'entry',
@@ -247,7 +248,7 @@ describe('par (KeyValueGrid)', () => {
       entryId: 'EN',
     });
 
-    await user.click(screen.getByRole('button', { name: 'Ações do par name' }));
+    await user.click(screen.getByRole('button', { name: 'Actions for pair name' }));
     await user.click(screen.getByRole('menuitem', { name: t('comments.comment') }));
     expect(harness.ui.composing.value?.anchor).toEqual({
       kind: 'entry',
@@ -256,10 +257,10 @@ describe('par (KeyValueGrid)', () => {
     });
   });
 
-  it('somente leitura: o menu abre; mover e remover ficam desabilitados', async () => {
+  it('read-only: the menu opens; move and remove are disabled', async () => {
     const { user } = setupClipboard();
     renderGrid(createHarness(cadastroProject(), true));
-    await user.click(screen.getByRole('button', { name: 'Ações do par name' }));
+    await user.click(screen.getByRole('button', { name: 'Actions for pair name' }));
     for (const label of [
       t('annotation.moveEntryDown'),
       t('annotation.removeEntry'),
@@ -277,14 +278,14 @@ describe('par (KeyValueGrid)', () => {
   });
 });
 
-describe('linha (TableField)', () => {
+describe('row (TableField)', () => {
   function renderTable(harness: Harness) {
     renderLive(harness, (p: Project) => {
       const annotation = annotationOf(p, 'AC');
       const field = typeOfAnnotation(p, annotation)?.type.fields.find(
         (f) => f.key === 'atributos',
       );
-      if (!field) throw new Error('sem a tabela');
+      if (!field) throw new Error('no table');
       return (
         <TypedField
           field={field}
@@ -296,16 +297,16 @@ describe('linha (TableField)', () => {
       );
     });
   }
-  const more = () => screen.getByRole('button', { name: 'Ações da linha email' });
+  const more = () => screen.getByRole('button', { name: 'Actions for row email' });
 
-  it('expõe a tabela e a linha ao DOM', () => {
+  it('exposes the table and the row to the DOM', () => {
     renderTable(createHarness(cadastroProject()));
     const field = document.querySelector('[data-field="atributos"]');
     expect(field).not.toBeNull();
     expect(field?.querySelector('[data-row-id="R1"]')).not.toBeNull();
   });
 
-  it('o menu da linha ganha Copiar referência, Citar e Comentar', async () => {
+  it('the row menu gains Copy reference, Cite and Comment', async () => {
     const { user, writeText } = setupClipboard();
     openComposer();
     const harness = createHarness(cadastroProject());
@@ -343,14 +344,14 @@ describe('linha (TableField)', () => {
   });
 });
 
-describe('item (Árvore e cartão da anotação)', () => {
+describe('item (Tree and annotation card)', () => {
   function renderTree(harness: Harness) {
     return renderLive(harness, (p) => (
       <MarkingTree project={p} selection={null} onSelect={() => undefined} />
     ));
   }
 
-  it('o ⋯ da marcação tem Citar na conversa e Comentar; Citar insere a marcação', async () => {
+  it('the marking ⋯ has Cite in the thread and Comment; Cite inserts the marking', async () => {
     const { user } = setupClipboard();
     openComposer();
     const harness = createHarness(sampleProject());
@@ -366,7 +367,7 @@ describe('item (Árvore e cartão da anotação)', () => {
     expect(insert).toHaveBeenCalledWith({ kind: 'marking', id: 'M2' });
   });
 
-  it('Comentar na marcação e no container abre a conversa ancorada', async () => {
+  it('Comment on the marking and on the container opens the anchored thread', async () => {
     const { user } = setupClipboard();
     const harness = createHarness(sampleProject());
     renderTree(harness);
@@ -385,7 +386,7 @@ describe('item (Árvore e cartão da anotação)', () => {
     expect(harness.ui.composing.value?.anchor).toEqual({ kind: 'container', id: 'I2' });
   });
 
-  it('fora de uma pasta, a Árvore ainda cita e comenta (sem Copiar referência)', async () => {
+  it('outside a folder, the Tree still cites and comments (no Copy reference)', async () => {
     const { user } = setupClipboard();
     openComposer();
     const harness = createHarness(sampleProject());
@@ -400,7 +401,7 @@ describe('item (Árvore e cartão da anotação)', () => {
     expect(insert).toHaveBeenCalledWith({ kind: 'marking', id: 'M2' });
   });
 
-  it('o cartão da anotação tem o ⋯ com Citar e Comentar (âncora annotation)', async () => {
+  it('the annotation card has the ⋯ with Cite and Comment (annotation anchor)', async () => {
     const { user } = setupClipboard();
     const harness = createHarness(sampleProject());
     renderLive(harness, (p) => {
@@ -418,7 +419,7 @@ describe('item (Árvore e cartão da anotação)', () => {
         />
       );
     });
-    // O compositor do mock entra depois do da seção Conversas: é o mais recente.
+    // The mock composer registers after the Threads section one: it is the most recent.
     openComposer();
     const card = document.querySelector('[data-annotation="A1"]') as HTMLElement;
     await user.click(
@@ -441,7 +442,7 @@ describe('item (Árvore e cartão da anotação)', () => {
   });
 });
 
-describe('menu do canvas', () => {
+describe('canvas menu', () => {
   function renderMenu(harness: Harness) {
     return render(
       <EditorContext.Provider value={harness.context}>
@@ -450,7 +451,7 @@ describe('menu do canvas', () => {
     );
   }
 
-  it('o item do canvas ganha Citar na conversa, sem Comentar duplicado', async () => {
+  it('the canvas item gains Cite in the thread, without a duplicated Comment', async () => {
     const { user } = setupClipboard();
     openComposer();
     const harness = createHarness(sampleProject());
@@ -470,12 +471,12 @@ describe('menu do canvas', () => {
     expect(harness.ui.canvasMenu.value).toBeNull();
   });
 
-  it('a seta também pode ser citada', async () => {
+  it('the arrow can also be cited', async () => {
     const { user } = setupClipboard();
     openComposer();
     const harness = createHarness(sampleProject());
     const added = harness.actions.addArrow('M1', 'M4');
-    if (!added.ok) throw new Error('addArrow falhou');
+    if (!added.ok) throw new Error('addArrow failed');
     const arrowId = harness.project().arrows[0]!.id;
     renderMenu(harness);
     harness.ui.canvasMenu.value = { x: 5, y: 5, target: { kind: 'arrow', id: arrowId } };
@@ -484,7 +485,7 @@ describe('menu do canvas', () => {
     expect(insert).toHaveBeenCalledWith({ kind: 'arrow', id: arrowId });
   });
 
-  it('sem compositor aberto, Citar fica desabilitado', async () => {
+  it('with no composer open, Cite is disabled', async () => {
     const harness = createHarness(sampleProject());
     renderMenu(harness);
     harness.ui.canvasMenu.value = { x: 5, y: 5, target: { kind: 'm', id: 'M3' } };
@@ -495,15 +496,15 @@ describe('menu do canvas', () => {
   });
 });
 
-describe('camada', () => {
+describe('layer', () => {
   const openMenu = async (user: ReturnType<typeof userEvent.setup>, name: string) => {
     await user.click(
-      screen.getByRole('button', { name: `Mais ações da camada ${name}` }),
+      screen.getByRole('button', { name: `More actions for layer ${name}` }),
     );
-    return screen.getByRole('menu', { name: `Mais ações da camada ${name}` });
+    return screen.getByRole('menu', { name: `More actions for layer ${name}` });
   };
 
-  it('Citar na conversa e Copiar referência (l/)', async () => {
+  it('Cite in the thread and Copy reference (l/)', async () => {
     const { user, writeText } = setupClipboard();
     openComposer();
     const harness = createHarness(cadastroProject());
@@ -519,7 +520,7 @@ describe('camada', () => {
     expect(insert).toHaveBeenCalledWith({ kind: 'layer', id: first.id });
   });
 
-  it('fora de uma pasta, a camada só cita', async () => {
+  it('outside a folder, the layer only cites', async () => {
     const { user } = setupClipboard();
     const harness = createHarness(cadastroProject());
     makeNotAFolder(harness);
@@ -530,8 +531,8 @@ describe('camada', () => {
   });
 });
 
-describe('cabeçalho da conversa', () => {
-  it('o ⋯ tem Citar na conversa e Copiar referência (c/)', async () => {
+describe('thread header', () => {
+  it('the ⋯ has Cite in the thread and Copy reference (c/)', async () => {
     const { user, writeText } = setupClipboard();
     const harness = createHarness(sampleProject());
     const thread = sampleThread({ id: 'v1' });
@@ -541,7 +542,7 @@ describe('cabeçalho da conversa', () => {
         <ThreadView thread={thread} />
       </EditorContext.Provider>,
     );
-    // O compositor de resposta da conversa também se registra: o do mock é o mais recente.
+    // The thread reply composer also registers: the mock one is the most recent.
     openComposer();
     await user.click(screen.getByRole('button', { name: t('thread.menu') }));
     const menu = screen.getByRole('menu');

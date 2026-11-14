@@ -8,8 +8,8 @@ import { createHarness } from './harness';
 
 afterEach(cleanup);
 
-describe('Anotações: todas as camadas escondidas', () => {
-  it('Mostrar todas leva o foco a um controle da própria seção, não ao body', () => {
+describe('Annotations: all layers hidden', () => {
+  it('Show all moves focus to a control of its own section, not to the body', () => {
     const h = createHarness(sampleProject());
     const project = h.project();
     const marking = project.markings[0]!;
@@ -32,7 +32,7 @@ describe('Anotações: todas as camadas escondidas', () => {
     button.focus();
     expect(document.activeElement).toBe(button);
     act(() => void fireEvent.click(button));
-    // As camadas voltam a aparecer e o botão sai do DOM.
+    // The layers show up again and the button leaves the DOM.
     view.rerender(tree(project.layers));
     expect(document.activeElement).not.toBe(document.body);
     expect(document.activeElement?.closest('.annotations')).not.toBeNull();

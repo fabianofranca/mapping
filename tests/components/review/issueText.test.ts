@@ -4,10 +4,10 @@ import { locale } from '../../../src/store/settings';
 import { issueText } from '../../../src/ui/review/ReviewHeader';
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 
-it('missing-image: texto legível, sem o código interno', () => {
+it('missing-image: readable text, without the internal code', () => {
   const current = fixtureProject();
   const names = { current, preview: null, proposal: fixtureProposal(current) };
   const text = issueText(names, {
@@ -16,5 +16,6 @@ it('missing-image: texto legível, sem o código interno', () => {
     changeIds: [],
     related: [],
   });
-  expect(text).toBe('Cabeçalho depende de uma imagem que não está no projeto.');
+  // pt-BR kept: shared fixture data asserted by tests/e2e (marking name Cabeçalho from proposalFixture)
+  expect(text).toBe('Cabeçalho depends on an image that is not in the project.');
 });

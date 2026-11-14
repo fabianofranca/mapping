@@ -33,8 +33,8 @@ afterEach(() => {
 const open = () => render(<SettingsDialog onClose={vi.fn()} onShowShortcuts={vi.fn()} />);
 const privacy = () => screen.getByRole('region', { name: t('privacy.title') });
 
-describe('Configurações › Privacidade', () => {
-  it('sem origens, diz que não há; os quatro interruptores começam desligados com o aviso', () => {
+describe('Settings › Privacy', () => {
+  it('without origins, says there are none; the four switches start off with the warning', () => {
     open();
     expect(within(privacy()).getByText(t('privacy.noOrigins'))).toBeTruthy();
     const boxes = within(privacy()).getAllByRole('checkbox');
@@ -50,7 +50,7 @@ describe('Configurações › Privacidade', () => {
     }
   });
 
-  it('lista as origens e Revogar remove a origem', async () => {
+  it('lists the origins and Revoke removes the origin', async () => {
     const user = userEvent.setup();
     allowOrigins(['https://a.com', 'http://a.com']);
     open();
@@ -65,7 +65,7 @@ describe('Configurações › Privacidade', () => {
     expect(within(privacy()).queryByText('https://a.com')).toBeNull();
   });
 
-  it('cada interruptor liga o seu sinal e grava', async () => {
+  it('each switch turns on its signal and saves', async () => {
     const user = userEvent.setup();
     open();
     await user.click(
@@ -88,7 +88,7 @@ describe('Configurações › Privacidade', () => {
     ]).toEqual([true, true, true, true]);
   });
 
-  it('o Sobre mostra quantas origens estão permitidas e o Copiar leva a linha', async () => {
+  it('About shows how many origins are allowed and Copy carries the line', async () => {
     const user = userEvent.setup();
     const writeText = vi.fn<(text: string) => Promise<void>>(async () => undefined);
     Object.defineProperty(navigator, 'clipboard', {
