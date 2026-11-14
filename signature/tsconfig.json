@@ -1,6 +1,6 @@
 {
-  // Extrator de assinaturas (etapa #1079, S3): roda no Node, sem DOM. Compila também o
-  // `src/model/` (a ficha e o `parseSignature`), o que prova que ele não depende de navegador.
+  // Signature extractor (stage #1079, S3): runs on Node, no DOM. It also compiles
+  // `src/model/` (the record and `parseSignature`), which proves it does not depend on a browser.
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "lib": ["ES2022"],

@@ -27,8 +27,8 @@ export { exportButton };
     'o exportButton por seletor global é recusado em %s',
     async (file) => {
       const found = await messages(oldExportButton, file);
-      expect(found.map((m) => m.message).join('\n')).toMatch(/consulta global ao DOM/i);
-      expect(found.map((m) => m.message).join('\n')).toMatch(/seletor por classe/i);
+      expect(found.map((m) => m.message).join('\n')).toMatch(/global DOM query/i);
+      expect(found.map((m) => m.message).join('\n')).toMatch(/class selector/i);
     },
   );
 
@@ -50,7 +50,7 @@ export function f(root: HTMLElement) {
 `;
     const found = await messages(code, 'src/ui/Probe.tsx');
     expect(found).toHaveLength(2);
-    expect(found[0]?.message).toMatch(/seletor por classe/i);
+    expect(found[0]?.message).toMatch(/class selector/i);
   });
 
   it('data-* e role dentro de um ref passam', async () => {
@@ -78,7 +78,7 @@ export function focusedWindow(el: Element) {
     async (file) => {
       const found = await messages(oldFocusedWindow, file);
       expect(found).toHaveLength(2);
-      expect(found.every((m) => /seletor por classe/i.test(m.message))).toBe(true);
+      expect(found.every((m) => /class selector/i.test(m.message))).toBe(true);
     },
   );
 
@@ -105,7 +105,7 @@ export function f(el: Element) {
     async (file) => {
       const code = 'export const f = (s: { saveMapping(): void }) => s.saveMapping();\n';
       const found = await messages(code, file);
-      expect(found.map((m) => m.message).join('\n')).toMatch(/Só a sessão/);
+      expect(found.map((m) => m.message).join('\n')).toMatch(/Only the session/);
     },
   );
 
@@ -118,7 +118,7 @@ export function other(s: { saveMapping(): void }) {
 `;
     const found = (await messages(code, 'src/app/controller.ts')).map((m) => m.message);
     expect(found.join('\n')).toMatch(/createFolderProject/);
-    expect(found.join('\n')).toMatch(/consulta global ao DOM/i);
+    expect(found.join('\n')).toMatch(/global DOM query/i);
   });
 });
 

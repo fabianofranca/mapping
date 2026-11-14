@@ -1,7 +1,7 @@
 import { usageError } from './errors';
 import { READER_NAMES, READERS } from './readers';
 
-// A linha de comando: `mapping-signature <leitor> --file <arquivo> --symbol <nome> [opções]`.
+// The command line: `mapping-signature <reader> --file <file> --symbol <name> [options]`.
 
 export interface CodeArgs {
   readonly kind: 'code';
@@ -41,49 +41,49 @@ const VALUE_OPTIONS = [
 ] as const;
 type ValueOption = (typeof VALUE_OPTIONS)[number];
 
-export const USAGE = `Uso:
-  mapping-signature kotlin --file <arquivo.kt> --symbol <nome> [--path <relativo ao repositório>]
-                           [--ref <commit>] [--also <arquivo.kt>]... [--overload <n>] [--out <ficha.json>]
-  mapping-signature swift --file <arquivo.swift> --symbol <nome> [--path <relativo ao repositório>]
-                          [--ref <commit>] [--also <arquivo.swift>]... [--init <n>] [--out <ficha.json>]
-  mapping-signature figma --file <nós.json> --node <id> [--out <ficha.json>]
+export const USAGE = `Usage:
+  mapping-signature kotlin --file <file.kt> --symbol <name> [--path <relative to the repository>]
+                           [--ref <commit>] [--also <file.kt>]... [--overload <n>] [--out <sheet.json>]
+  mapping-signature swift --file <file.swift> --symbol <name> [--path <relative to the repository>]
+                          [--ref <commit>] [--also <file.swift>]... [--init <n>] [--out <sheet.json>]
+  mapping-signature figma --file <nodes.json> --node <id> [--out <sheet.json>]
   mapping-signature --help
 
-Lê o código-fonte (a função @Composable do kotlin, a struct SwiftUI do swift) ou o JSON de um nó do
-Figma (as componentPropertyDefinitions de um COMPONENT_SET ou COMPONENT) e imprime a ficha de
-assinatura (mapping-signature, formatVersion 1): o formato está em docs/SIGNATURE-FORMAT.md.
+Reads the source code (the @Composable function in kotlin, the SwiftUI struct in swift) or the JSON of a
+Figma node (the componentPropertyDefinitions of a COMPONENT_SET or COMPONENT) and prints the signature
+sheet (mapping-signature, formatVersion 1): the format is in docs/SIGNATURE-FORMAT.md.
 
-Leitores: ${READER_NAMES.join(', ')}
+Readers: ${READER_NAMES.join(', ')}
 
-Opções:
-  --file <arquivo>      o arquivo que define a função ou a struct (kotlin, swift) ou o JSON do Figma
-  --symbol <nome>       o nome da função ou da struct, simples (Button) ou completo (androidx.compose.material3.Button,
-                        DS.ProfileCard); no swift o prefixo é guardado como veio (módulo ou tipo que envolve a struct)
-  --node <id>           o id do nó do Figma (12:34; 12-34, como na URL, também vale)
-  --path <caminho>      o caminho do arquivo relativo à raiz do repositório (vai em source.path);
-                        sem ele vale o --file, se for relativo
-  --ref <commit>        o commit, a tag ou o branch lido (vai em source.ref)
-  --also <arquivo>      outro arquivo onde procurar enum (e, no kotlin, object …Defaults com as fábricas); repetível
-  --overload <n>        kotlin: a sobrecarga a usar (0 em diante, na ordem do arquivo, contando as @Deprecated)
-  --init <n>            swift: o init a usar (0 em diante, na ordem da struct, contando os deprecated);
-                        sem init escrito, 0 é o memberwise
-  --out <arquivo>       grava a ficha neste arquivo em vez de imprimir (não cria pastas)
-  --help                mostra este texto
+Options:
+  --file <file>         the file that defines the function or the struct (kotlin, swift) or the Figma JSON
+  --symbol <name>       the name of the function or struct, simple (Button) or full (androidx.compose.material3.Button,
+                        DS.ProfileCard); in swift the prefix is kept as it came (module or type that wraps the struct)
+  --node <id>           the id of the Figma node (12:34; 12-34, as in the URL, also works)
+  --path <path>         the file path relative to the repository root (goes in source.path);
+                        without it the --file is used, if relative
+  --ref <commit>        the commit, tag or branch read (goes in source.ref)
+  --also <file>         another file to look for enum in (and, in kotlin, object …Defaults with the factories); repeatable
+  --overload <n>        kotlin: the overload to use (0 onwards, in file order, counting the @Deprecated ones)
+  --init <n>            swift: the init to use (0 onwards, in struct order, counting the deprecated ones);
+                        with no written init, 0 is the memberwise one
+  --out <file>          writes the sheet to this file instead of printing it (does not create folders)
+  --help                shows this text
 
-Códigos de saída: 0 ok; 1 erro de extração; 2 erro de uso.
+Exit codes: 0 ok; 1 extraction error; 2 usage error.
 `;
 
 function takeValue(argv: readonly string[], index: number): string {
   const value = argv[index + 1];
   if (value === undefined || value.startsWith('--')) {
-    throw usageError(`${argv[index]} precisa de um valor`);
+    throw usageError(`${argv[index]} needs a value`);
   }
   return value;
 }
 
 function parseIndex(option: string, text: string): number {
   if (!/^\d+$/.test(text))
-    throw usageError(`${option} deve ser um inteiro de 0 em diante`);
+    throw usageError(`${option} must be an integer from 0 onwards`);
   return Number(text);
 }
 
@@ -95,18 +95,18 @@ function readerFrom(argv: readonly string[]): string {
   const reader = argv[0];
   if (reader === undefined || reader.startsWith('--')) {
     throw usageError(
-      `informe o leitor (${READER_NAMES.join(', ')}); use --help para ver o uso`,
+      `give the reader (${READER_NAMES.join(', ')}); use --help to see the usage`,
     );
   }
   if (!READER_NAMES.includes(reader)) {
     throw usageError(
-      `leitor desconhecido: ${reader}; disponíveis: ${READER_NAMES.join(', ')}`,
+      `unknown reader: ${reader}; available: ${READER_NAMES.join(', ')}`,
     );
   }
   return reader;
 }
 
-/** As opções (depois do leitor): cada uma com o seu valor; `--also` pode repetir. */
+/** The options (after the reader): each with its value; `--also` may repeat. */
 function readOptions(argv: readonly string[]): {
   values: Map<ValueOption, string>;
   also: string[];
@@ -116,16 +116,16 @@ function readOptions(argv: readonly string[]): {
   for (let i = 1; i < argv.length; i += 2) {
     const arg = argv[i]!;
     if (arg !== '--also' && !isValueOption(arg))
-      throw usageError(`argumento desconhecido: ${arg}`);
+      throw usageError(`unknown argument: ${arg}`);
     const value = takeValue(argv, i);
     if (arg === '--also') also.push(value);
-    else if (values.has(arg)) throw usageError(`${arg} foi informado mais de uma vez`);
+    else if (values.has(arg)) throw usageError(`${arg} was given more than once`);
     else values.set(arg, value);
   }
   return { values, also };
 }
 
-/** Recusa a opção que o leitor não aceita (`--init` no kotlin, `--symbol` no figma…). */
+/** Rejects the option the reader does not accept (`--init` in kotlin, `--symbol` in figma…). */
 function checkAllowed(
   reader: string,
   values: Map<ValueOption, string>,
@@ -137,12 +137,12 @@ function checkAllowed(
     if (allowed.includes(option)) continue;
     const owners = READER_NAMES.filter((name) => READERS[name]!.options.includes(option));
     throw usageError(
-      `a opção ${option} não vale para ${reader} (vale para ${owners.join(', ')})`,
+      `the option ${option} does not apply to ${reader} (it applies to ${owners.join(', ')})`,
     );
   }
 }
 
-/** Lê a linha de comando; erro de uso vira `CliError` com código 2. */
+/** Reads the command line; a usage error becomes a `CliError` with code 2. */
 export function parseArgs(argv: readonly string[]): Parsed {
   if (argv.includes('--help') || argv.includes('-h')) return { help: true };
   const reader = readerFrom(argv);
@@ -157,16 +157,16 @@ function buildArgs(
   also: string[],
 ): RunArgs {
   const file = values.get('--file');
-  if (file === undefined) throw usageError('falta --file <arquivo>');
+  if (file === undefined) throw usageError('missing --file <file>');
   const out = values.get('--out');
   const outPart = out === undefined ? {} : { out };
   if (READERS[reader]!.kind === 'design') {
     const node = values.get('--node');
-    if (node === undefined) throw usageError('falta --node <id>');
+    if (node === undefined) throw usageError('missing --node <id>');
     return { kind: 'design', reader, file, node, ...outPart };
   }
   const symbol = values.get('--symbol');
-  if (symbol === undefined) throw usageError('falta --symbol <nome>');
+  if (symbol === undefined) throw usageError('missing --symbol <name>');
   const path = values.get('--path');
   const ref = values.get('--ref');
   const overload = values.get('--overload');

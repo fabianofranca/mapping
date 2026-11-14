@@ -1,10 +1,10 @@
 /**
- * Visualizador embutível: a árvore das instâncias de uma tela, pronta para o hospedeiro
- * desenhar numa lista ou num painel (a seleção e o hover voltam ao viewer por `setSelection`
- * e `setHover`). Puro, sem DOM.
+ * Embeddable viewer: the tree of a screen's instances, ready for the host to
+ * draw in a list or a panel (selection and hover go back to the viewer through `setSelection`
+ * and `setHover`). Pure, no DOM.
  *
- * A ordem é a de `renderOrder` (pai antes dos filhos, irmãos na ordem da lista) e o critério
- * de raiz também: um `parentId` que não existe na tela vale como nível da tela.
+ * The order is that of `renderOrder` (parent before children, siblings in list order) and the root
+ * criterion is too: a `parentId` that does not exist on the screen counts as the screen level.
  */
 import type { Library } from '../src/model/components/library';
 import { instanceLabel } from '../src/model/components/library';
@@ -12,27 +12,27 @@ import type { Instance, Screen } from '../src/model/components/screen';
 
 export interface TreeNode {
   readonly id: string;
-  /** Ausente nas raízes (inclusive quando o `parentId` da instância não existe na tela). */
+  /** Absent on roots (including when the instance's `parentId` does not exist on the screen). */
   readonly parentId?: string;
-  /** 0 nas raízes. */
+  /** 0 on roots. */
   readonly depth: number;
-  /** `instanceLabel(tipo, valores)`; tipo desconhecido (ou sem biblioteca): o `typeId`. */
+  /** `instanceLabel(type, values)`; unknown type (or no library): the `typeId`. */
   readonly label: string;
   readonly typeId: string;
-  /** Ausente quando o tipo não existe na biblioteca. */
+  /** Absent when the type does not exist in the library. */
   readonly typeName?: string;
   readonly instance: Instance;
   readonly children: readonly TreeNode[];
 }
 
-/** As raízes da tela, na ordem de desenho, com os filhos aninhados. */
+/** The screen's roots, in drawing order, with the children nested. */
 export function screenTree(
   screen: Screen,
   library: Library | undefined,
 ): readonly TreeNode[] {
   const types = new Map((library?.types ?? []).map((t) => [t.id, t]));
   const known = new Set(screen.instances.map((i) => i.id));
-  // Filhos por pai (`undefined` = raízes), na ordem da lista: uma passada só.
+  // Children by parent (`undefined` = roots), in list order: a single pass.
   const byParent = new Map<string | undefined, Instance[]>();
   for (const instance of screen.instances) {
     const parent =
@@ -60,7 +60,7 @@ export function screenTree(
   return build(undefined, 0);
 }
 
-/** A árvore em lista, em pré-ordem (a mesma ordem de `renderOrder`). */
+/** The tree as a list, in pre-order (the same order as `renderOrder`). */
 export function flattenTree(nodes: readonly TreeNode[]): readonly TreeNode[] {
   const out: TreeNode[] = [];
   const visit = (list: readonly TreeNode[]): void => {

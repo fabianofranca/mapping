@@ -1,17 +1,17 @@
 /**
- * Imagens remotas do visualizador embutível. Desligadas por padrão:
- * sem a opção `remoteImages`, nenhum `Image` é criado e nada vai à rede.
+ * Remote images of the embeddable viewer. Off by default:
+ * without the `remoteImages` option, no `Image` is created and nothing goes over the network.
  *
- * Ligadas, valem as duas portas, na versão do hospedeiro: a URL passa na política pura do
- * modelo (`checkRemoteImageUrl`: só `https:`, sem usuário e senha, sem rede local) **e** a
- * origem passa na função `allowOrigin(origin)` que o HOSPEDEIRO fornece (padrão: recusar tudo).
- * O visualizador não guarda consentimento nem tem interface para pedir: quem decide é o site.
- * Nunca usa o interruptor "servidor sem CORS" da app (a imagem é sempre pedida com
- * `crossOrigin = 'anonymous'`), de modo que nenhuma imagem contamina o canvas e o `toDataURL`
- * do visualizador continua válido (e roda com `pixelSafe`).
+ * When on, both gates apply, in the host's version: the URL passes the model's pure policy
+ * (`checkRemoteImageUrl`: `https:` only, no user and password, no local network) **and** the
+ * origin passes the `allowOrigin(origin)` function that the HOST provides (default: refuse all).
+ * The viewer stores no consent and has no interface to ask for it: the site decides.
+ * It never uses the app's "server without CORS" switch (the image is always requested with
+ * `crossOrigin = 'anonymous'`), so no image taints the canvas and the viewer's `toDataURL`
+ * stays valid (and runs with `pixelSafe`).
  *
- * O carregador é o do produto (`RemoteImageLoader`: concorrência, tempo limite, tamanho máximo,
- * bitmap reduzido, `no-referrer`), um por visualizador, destruído em `dispose()`.
+ * The loader is the product's (`RemoteImageLoader`: concurrency, timeout, maximum size,
+ * downscaled bitmap, `no-referrer`), one per viewer, destroyed in `dispose()`.
  */
 import {
   RemoteImageLoader,
@@ -23,9 +23,9 @@ import type { AllowOrigin } from './allowOrigin';
 export type { AllowOrigin };
 
 export interface ViewerRemoteImages {
-  /** O estado da URL (inicia a carga se for preciso; nunca lança). */
+  /** The URL's state (starts the load if needed; never throws). */
   resolve(url: string): RemoteImageView;
-  /** Avisa (com a URL como o componente a escreveu) quando o estado de uma imagem muda. */
+  /** Notifies (with the URL as the component wrote it) when an image's state changes. */
   subscribe(listener: (url: string) => void): () => void;
   dispose(): void;
 }
@@ -42,13 +42,13 @@ export function createViewerRemoteImages(
   allowOrigin: AllowOrigin | undefined,
   loader: RemoteImageLoader = new RemoteImageLoader(),
 ): ViewerRemoteImages {
-  // O carregador trabalha com a URL normalizada pela política; o desenho, com a do campo.
+  // The loader works with the URL normalized by the policy; the drawing, with the field's.
   const rawUrls = new Map<string, Set<string>>();
-  // URLs normalizadas que o carregador já avisou uma vez (carregou ou falhou). Um segundo aviso
-  // da mesma URL é a expulsão do cache (limite de 64): a tela não recarrega a imagem por causa
-  // disso, senão com mais URLs distintas que o cache ela entraria em recarga contínua.
+  // Normalized URLs the loader has already announced once (loaded or failed). A second notice
+  // for the same URL is the cache eviction (limit of 64): the screen does not reload the image
+  // because of it, otherwise with more distinct URLs than the cache it would reload forever.
   const announced = new Set<string>();
-  // Normalizadas cujo aviso de expulsão está sendo repassado à tela agora.
+  // Normalized URLs whose eviction notice is being passed on to the screen right now.
   const evicting = new Set<string>();
   return {
     resolve(url) {
@@ -61,7 +61,7 @@ export function createViewerRemoteImages(
       const known = rawUrls.get(check.url);
       if (known) known.add(url);
       else rawUrls.set(check.url, new Set([url]));
-      // A tela só repinta o que acabou de ser expulso com o reservado; quem pede de novo é ela.
+      // The screen only repaints what was just evicted with the placeholder; it is the one that asks again.
       if (evicting.has(check.url)) return { state: 'loading' };
       return loader.request(check.url, { allowNoCors: false });
     },

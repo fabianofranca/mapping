@@ -1,6 +1,6 @@
-// A análise do texto de um tipo Swift (já normalizado nos espaços): atributos na frente
-// (`@escaping`, `@ViewBuilder`), `?` e parênteses que envolvem, função (`->` no nível de cima),
-// nome simples e genéricos. Sobre o texto, não sobre os tokens: serve também ao tipo inferido.
+// Parsing the text of a Swift type (already whitespace-normalized): leading attributes
+// (`@escaping`, `@ViewBuilder`), wrapping `?` and parentheses, function (`->` at the top level),
+// simple name and generics. Over the text, not the tokens: it also serves the inferred type.
 
 const LEADING_ATTRIBUTE = /^@[\w.]+(?:\([^)]*\))?\s*/;
 const SPECIFIER = /^(?:inout|borrowing|consuming|isolated|sending)\s+/;
@@ -35,7 +35,7 @@ export function splitType(text: string): TypeParts {
   return { attributes, specifier, core };
 }
 
-/** O índice do `)` que fecha o `(` de `from` (ou -1). */
+/** The index of the `)` that closes the `(` at `from` (or -1). */
 function closingParen(text: string, from: number): number {
   let depth = 0;
   for (let i = from; i < text.length; i++) {
@@ -45,7 +45,7 @@ function closingParen(text: string, from: number): number {
   return -1;
 }
 
-/** Tira os `?`/`!` do fim e os parênteses que envolvem o tipo inteiro: `(() -> Void)?` → `() -> Void`. */
+/** Strips the trailing `?`/`!` and the parentheses wrapping the whole type: `(() -> Void)?` → `() -> Void`. */
 export function unwrap(text: string): string {
   let core = text.trim();
   for (;;) {
@@ -57,7 +57,7 @@ export function unwrap(text: string): string {
   }
 }
 
-/** O índice do `->` no nível de cima (fora de parênteses, colchetes e `<>`), ou -1. */
+/** The index of the top-level `->` (outside parentheses, brackets and `<>`), or -1. */
 export function topLevelArrow(text: string): number {
   let depth = 0;
   for (let i = 0; i < text.length; i++) {
@@ -71,7 +71,7 @@ export function topLevelArrow(text: string): number {
   return -1;
 }
 
-/** O nome do tipo sem os genéricos nem `some`/`any`, qualificado como veio (`Binding<Bool>` → `Binding`); vazio se não é um nome. */
+/** The type name without generics or `some`/`any`, qualified as it came (`Binding<Bool>` → `Binding`); empty if it is not a name. */
 export function baseName(text: string): string {
   const inner = unwrap(text).replace(/^(?:some|any)\s+/, '');
   const angle = inner.indexOf('<');
@@ -79,7 +79,7 @@ export function baseName(text: string): string {
   return PLAIN_NAME.test(head) ? head : '';
 }
 
-/** O nome simples do tipo, sem qualificação, só se não há genéricos (`Swift.Int` → `Int`); vazio se não é um nome simples. */
+/** The type's simple name, without qualification, only if there are no generics (`Swift.Int` → `Int`); empty if it is not a simple name. */
 export function simpleName(text: string): string {
   const inner = unwrap(text);
   return PLAIN_NAME.test(inner) ? inner.slice(inner.lastIndexOf('.') + 1) : '';
@@ -88,7 +88,7 @@ export function simpleName(text: string): string {
 export const lastSegment = (name: string): string =>
   name.slice(name.lastIndexOf('.') + 1);
 
-/** O que vem depois do `->` de um tipo função (o tipo que devolve). */
+/** What comes after the `->` of a function type (the type it returns). */
 export function returnType(text: string): string {
   const arrow = topLevelArrow(text);
   return arrow < 0 ? '' : text.slice(arrow + 2).trim();

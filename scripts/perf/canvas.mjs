@@ -1,14 +1,14 @@
-// `npm run perf:canvas`: mede o canvas num Chromium de verdade, contra o dist/index.html (rode
-// `npm run build` antes). Fora do CI (tempo de navegador varia demais). Imprime a tabela.
-//   npm run perf:canvas                    2.000 e 5.000 marcações
-//   npm run perf:canvas -- 500 2000        outros tamanhos (múltiplos de 100)
-// Opções (sem nenhuma, a tabela é a de sempre):
-//   --setas <n>      n setas no cenário (padrão: metade das marcações)
-//   --sem-setas      "Mostrar setas" desligado (mapping.showArrows = off no localStorage)
-//   --componentes    acrescenta, em cada container, as 21 instâncias da tela M3_SCREEN (Material 3;
-//                    a biblioteca vai para specs/material3/ da pasta)
-//   --vezes <k>      roda k vezes e imprime a mediana de cada célula (padrão 1)
-// O Chromium vem do Playwright; PLAYWRIGHT_CHROMIUM_EXECUTABLE aponta outro, se preciso.
+// `npm run perf:canvas`: measures the canvas in a real Chromium, against dist/index.html (run
+// `npm run build` first). Outside CI (browser timing varies too much). Prints the table.
+//   npm run perf:canvas                    2,000 and 5,000 markings
+//   npm run perf:canvas -- 500 2000        other sizes (multiples of 100)
+// Options (with none, the table is the usual one):
+//   --setas <n>      n arrows in the scenario (default: half the markings)
+//   --sem-setas      "Show arrows" off (mapping.showArrows = off in localStorage)
+//   --componentes    adds, in each container, the 21 instances of the M3_SCREEN screen (Material 3;
+//                    the library goes to the folder's specs/material3/)
+//   --vezes <k>      runs k times and prints the median of each cell (default 1)
+// Chromium comes from Playwright; PLAYWRIGHT_CHROMIUM_EXECUTABLE points to another one, if needed.
 import { build } from 'esbuild';
 import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -68,13 +68,13 @@ try {
 }
 
 const extras = [
-  arrows !== undefined ? `${arrows} setas` : null,
-  noArrows ? 'sem setas' : null,
-  components ? 'com componentes' : null,
-  times > 1 ? `mediana de ${times} execuções` : null,
+  arrows !== undefined ? `${arrows} arrows` : null,
+  noArrows ? 'no arrows' : null,
+  components ? 'with components' : null,
+  times > 1 ? `median of ${times} runs` : null,
 ].filter(Boolean);
 console.log(
-  `\nperf:canvas — Chromium ${browser.version()}, janela 1280×860, ms (mediana)` +
+  `\nperf:canvas — Chromium ${browser.version()}, window 1280×860, ms (median)` +
     (extras.length > 0 ? ` — ${extras.join(', ')}` : ''),
 );
 console.table(rows);
@@ -85,8 +85,8 @@ async function measure(size) {
     locale: 'pt-BR',
   });
   const page = await context.newPage();
-  // Soma do tempo dos callbacks de `requestAnimationFrame` (o quadro do controller e o desenho
-  // do Konva) e conta os canvases limpos (`clearRect`): duas por camada redesenhada (cena e acerto).
+  // Sums the time of the `requestAnimationFrame` callbacks (the controller's frame and Konva's
+  // drawing) and counts the cleared canvases (`clearRect`): two per redrawn layer (scene and hit).
   await page.addInitScript(
     ([folder, hideArrows]) => {
       window.__frameMs = 0;
@@ -114,7 +114,7 @@ async function measure(size) {
         try {
           localStorage.setItem('mapping.showArrows', 'off');
         } catch {
-          // sem armazenamento: as setas ficam ligadas
+          // no storage: the arrows stay on
         }
       }
     },
@@ -189,7 +189,7 @@ async function measure(size) {
       const r = await page.evaluate(() => [window.__frameMs, window.__clears.size]);
       if (i >= 2) {
         ms.push(r[0]);
-        layers = Math.max(layers, r[1] / 2); // cada camada limpa o canvas da cena e o de acerto
+        layers = Math.max(layers, r[1] / 2); // each layer clears the scene canvas and the hit canvas
       }
     }
     return { ms: median(ms), layers };
@@ -212,7 +212,7 @@ async function measure(size) {
     .getByRole('button', { name: 'Desenhar' })
     .click()
     .catch(() => undefined);
-  // Seleciona a primeira marcação pela árvore e lê a caixa dela na tela (`data-selection-box`).
+  // Selects the first marking through the tree and reads its box on screen (`data-selection-box`).
   await page.locator('.tree-row').first().click();
   await page.waitForFunction(
     () => document.querySelector('.canvas-host')?.dataset.selectionBox,
@@ -262,7 +262,7 @@ async function measure(size) {
   };
 }
 
-/** Argumentos: tamanhos (números) e as opções `--setas <n>`, `--sem-setas`, `--componentes`, `--vezes <k>`. */
+/** Arguments: sizes (numbers) and the options `--setas <n>`, `--sem-setas`, `--componentes`, `--vezes <k>`. */
 function parseArgs(argv) {
   const out = {
     sizes: [],
@@ -273,7 +273,7 @@ function parseArgs(argv) {
   };
   const count = (flag, raw) => {
     const n = Number(raw);
-    if (!Number.isInteger(n) || n < 0) throw new Error(`${flag} pede um número inteiro`);
+    if (!Number.isInteger(n) || n < 0) throw new Error(`${flag} needs an integer`);
     return n;
   };
   for (let i = 0; i < argv.length; i++) {
@@ -282,13 +282,13 @@ function parseArgs(argv) {
     else if (arg === '--sem-setas') out.noArrows = true;
     else if (arg === '--componentes') out.components = true;
     else if (arg === '--vezes') out.times = Math.max(1, count(arg, argv[++i]));
-    else if (arg.startsWith('--')) throw new Error(`opção desconhecida: ${arg}`);
+    else if (arg.startsWith('--')) throw new Error(`unknown option: ${arg}`);
     else if (Number(arg)) out.sizes.push(Number(arg));
   }
   return out;
 }
 
-/** Mediana de cada célula numérica das execuções (a coluna `marcações` é a mesma em todas). */
+/** Median of each numeric cell across the runs (the `marcações` column is the same in all of them). */
 function medianRow(runs) {
   const first = runs[0];
   return Object.fromEntries(
@@ -301,7 +301,7 @@ function medianRow(runs) {
   );
 }
 
-/** Espera os quadros agendados (o do controller e o do Konva que ele agenda). */
+/** Waits for the scheduled frames (the controller's and the Konva one it schedules). */
 async function settle(page) {
   await page.evaluate(
     () =>

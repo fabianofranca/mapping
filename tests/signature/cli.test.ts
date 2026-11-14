@@ -63,7 +63,7 @@ describe('--help e erros de uso (exit 2)', () => {
     const result = spawnBundle(BUNDLE_CJS, ['rust', '--file', 'a.rs', '--symbol', 'X']);
     expect(result.code).toBe(2);
     expect(result.stderr).toContain(
-      'leitor desconhecido: rust; disponíveis: kotlin, swift, figma',
+      'unknown reader: rust; available: kotlin, swift, figma',
     );
   });
 
@@ -241,7 +241,7 @@ describe('--out', () => {
       dir,
     );
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain('erro interno');
+    expect(result.stderr).toContain('internal error');
     expect(result.stderr).toContain('repeated');
     expect(readdirSync(dir)).toEqual(['A.kt']);
   });

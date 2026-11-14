@@ -1,9 +1,9 @@
-// KDoc: o texto de cada `@param nome …` (as linhas de continuação recolhidas num texto só, sem o
-// `*` da margem e com os espaços normalizados). Outras tags (`@sample`, `@return`) encerram o `@param`.
+// KDoc: the text of each `@param name …` (continuation lines collapsed into one text, without the
+// margin `*` and with normalized whitespace). Other tags (`@sample`, `@return`) end the `@param`.
 
 const PARAM_TAG = /^@param(?:\[(\w+)\]|\s+(\w+))\s*(.*)$/;
 
-// O texto de uma linha do KDoc, sem a margem (a abertura, o asterisco e o fechamento).
+// The text of a KDoc line, without the margin (the opening, the asterisk and the closing).
 function stripMargin(line: string): string {
   return line
     .replace(/^\s*\/\*\*?/, '')
@@ -12,7 +12,7 @@ function stripMargin(line: string): string {
     .trim();
 }
 
-/** Nome do parâmetro → texto do `@param`, na ordem em que aparecem. */
+/** Parameter name → `@param` text, in the order they appear. */
 export function parseParamDocs(raw: string | undefined): Map<string, string> {
   const docs = new Map<string, string>();
   if (raw === undefined) return docs;

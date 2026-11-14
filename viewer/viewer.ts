@@ -1,32 +1,34 @@
 /**
- * Visualizador embutível: mostra UMA tela da biblioteca de componentes num contêiner do
- * hospedeiro, sem framework. Cria o próprio `Konva.Stage` com duas camadas: a de conteúdo (o
- * `artboard` com o fundo da tela no índice 0 do grupo e, por cima, o `ScreenRenderer`) e a de
- * overlay (retângulos de hover e de seleção, `listening: false`).
+ * Embeddable viewer: shows ONE screen of the component library in a host container, with no
+ * framework. It creates its own `Konva.Stage` with two layers: the content one (the `artboard`
+ * with the screen background at index 0 of the group and, on top of it, the `ScreenRenderer`) and
+ * the overlay one (hover and selection rectangles, `listening: false`).
  *
- * A escala e a posição (enquadramento) ficam no STAGE, não nos grupos: as duas camadas
- * compartilham a mesma transformação e o overlay acompanha o conteúdo, com as caixas em
- * coordenadas da tela. Não há pan nem zoom pela roda: o hospedeiro dimensiona o contêiner e o
- * `ResizeObserver` (quando existe) reenquadra. O desenho acontece no máximo uma vez por quadro.
+ * Scale and position (framing) live on the STAGE, not on the groups: both layers share the same
+ * transformation and the overlay follows the content, with the boxes in screen coordinates. There
+ * is no pan or wheel zoom: the host sizes the container and the `ResizeObserver` (when it exists)
+ * reframes. Drawing happens at most once per frame.
  *
- * Interação: por padrão o ponteiro avisa `onHover`/`onClick`. Com `interactive: false` (ou
- * `setInteractive(false)`) o canvas vira só imagem: o ponteiro não faz nada, mas `setSelection`
- * e `setHover` continuam valendo (seleção e hover vindos do hospedeiro, ex.: uma árvore), assim
- * como `clientToScreen`, `instanceAt` e `boxOf`.
+ * Interaction: by default the pointer reports `onHover`/`onClick`. With `interactive: false` (or
+ * `setInteractive(false)`) the canvas becomes image-only: the pointer does nothing, but
+ * `setSelection` and `setHover` keep working (selection and hover coming from the host, e.g. a
+ * tree), as do `clientToScreen`, `instanceAt` and `boxOf`.
  *
- * A tela vem de duas fontes: `screen` (já pronta) ou `source` (um JSON externo, traduzido pela
- * origem declarada na especialização e arrumado por `screenFromSource` com o mesmo medidor do
- * desenho). `source` definido vence `screen`. A tela é recalculada quando a biblioteca ou o
- * `source` mudam (identidade) e no `redraw()`; `onSource` recebe cada resultado (avisos e
- * `error`). Sem biblioteca, ou com `error`, nada é desenhado.
+ * The screen comes from two sources: `screen` (already built) or `source` (an external JSON,
+ * translated by the origin declared in the specialization and laid out by `screenFromSource` with
+ * the same measurer as the drawing). A defined `source` wins over `screen`. The screen is
+ * recomputed when the library or `source` change (identity) and on `redraw()`; `onSource`
+ * receives each result (warnings and `error`). Without a library, or with `error`, nothing is
+ * drawn.
  *
- * As fontes são do hospedeiro: depois que uma fonte carregar, chame `redraw()` para remedir os
- * textos. O módulo não registra fonte e, por padrão, não faz requisição de rede.
+ * Fonts belong to the host: after a font loads, call `redraw()` to re-measure the texts. The
+ * module does not register fonts and, by default, makes no network request.
  *
- * Imagens remotas (nó `image` do componente): desligadas por padrão. Com `remoteImages: true`,
- * a URL precisa passar na política (só `https:`, sem rede local) e a origem, na função
- * `allowOrigin` do hospedeiro (sem ela, tudo é recusado e o componente desenha o reservado). A
- * CSP (`img-src`) é do site hospedeiro. Ver `remoteImages.ts` e o `PACKAGE-README.md`.
+ * Remote images (the component's `image` node): off by default. With `remoteImages: true`, the
+ * URL must pass the policy (only `https:`, no local network) and the origin must pass the host's
+ * `allowOrigin` function (without it, everything is refused and the component draws the
+ * placeholder). The CSP (`img-src`) belongs to the host site. See `remoteImages.ts` and
+ * `PACKAGE-README.md`.
  */
 import Konva from 'konva/lib/Core';
 import { Group } from 'konva/lib/Group';
@@ -52,22 +54,23 @@ import {
 export interface ViewerInput {
   readonly library: Library | undefined;
   readonly screen: Screen | undefined;
-  /** JSON externo já parseado; definido, a tela é a calculada a partir dele e `screen` é ignorado. */
+  /** External JSON, already parsed; when defined, the screen is the one computed from it and `screen` is ignored. */
   readonly source: unknown;
-  /** Origem da especialização usada em `source` (ausente = a primeira). */
+  /** Specialization origin used for `source` (absent = the first). */
   readonly sourceSystem: string | undefined;
   /**
-   * Modo dos tokens do desenho (`light`, `dark`…, os `modes` da especialização). Ausente, ou um
-   * modo que a especialização não declara, vale o primeiro modo. Trocá-lo redesenha sem
-   * recarregar a biblioteca nem a tela.
+   * Mode of the drawing tokens (`light`, `dark`…, the specialization's `modes`). Absent, or a
+   * mode the specialization does not declare, means the first mode. Changing it redraws without
+   * reloading the library or the screen.
    */
   readonly drawingMode: string | undefined;
   /**
-   * Direção de leitura da tela calculada de `source` (`ltr`, o padrão, ou `rtl`): vai ao
-   * `layoutScreen` (espelha as raízes, as âncoras lógicas e os slots) e ao motor dos componentes.
-   * Ausente, vale a `screen.direction` da origem; uma `screen` pronta (sem `source`) já traz as
-   * caixas e a direção (`Screen.direction`, só em `rtl`) e não é recalculada: o interior de cada
-   * componente segue a direção da tela, e esta opção, se dada, vence.
+   * Reading direction of the screen computed from `source` (`ltr`, the default, or `rtl`): it
+   * goes to `layoutScreen` (mirrors the roots, the logical anchors and the slots) and to the
+   * component engine. Absent, the origin's `screen.direction` applies; a ready-made `screen`
+   * (without `source`) already carries the boxes and the direction (`Screen.direction`, only in
+   * `rtl`) and is not recomputed: the inside of each component follows the screen's direction,
+   * and this option, if given, wins.
    */
   readonly direction: Direction | undefined;
 }
@@ -75,87 +78,88 @@ export interface ViewerInput {
 export interface ViewerOptions {
   readonly library?: Library;
   readonly screen?: Screen;
-  /** JSON externo (ver `ViewerInput.source`); vence `screen`. */
+  /** External JSON (see `ViewerInput.source`); wins over `screen`. */
   readonly source?: unknown;
   readonly sourceSystem?: string;
-  /** Modo inicial dos tokens do desenho (ver `ViewerInput.drawingMode`); muda por `update`. */
+  /** Initial mode of the drawing tokens (see `ViewerInput.drawingMode`); changed through `update`. */
   readonly drawingMode?: string;
-  /** Direção de leitura inicial (ver `ViewerInput.direction`); muda por `update`. */
+  /** Initial reading direction (see `ViewerInput.direction`); changed through `update`. */
   readonly direction?: Direction;
-  /** Resultado de cada cálculo da tela a partir de `source` (tela, avisos e `error`). */
+  /** Result of each computation of the screen from `source` (screen, warnings and `error`). */
   readonly onSource?: (result: SourceResult) => void;
-  /** O ponteiro entrou/saiu de uma instância (`undefined` = nenhuma). */
+  /** The pointer entered/left an instance (`undefined` = none). */
   readonly onHover?: (id: string | undefined) => void;
-  /** Clique (botão principal) numa instância ou no fundo (`undefined`); x,y em px da tela. */
+  /** Click (primary button) on an instance or on the background (`undefined`); x,y in screen px. */
   readonly onClick?: (id: string | undefined, event: { x: number; y: number }) => void;
-  /** Avisos da instanciação por instância, a cada atualização que redesenhou algo. */
+  /** Instantiation warnings per instance, on each update that redrew something. */
   readonly onWarnings?: (byInstance: InstanceWarnings) => void;
   readonly measure?: TextMeasurer;
   /**
-   * Fonte padrão dos textos sem `family` (os `font-sans`/`font-mono` embutidos nos tokens).
-   * Padrão: a pilha dos tokens da app (`--font-sans`/`--font-mono`), a mesma da app. Uma
-   * especialização que redefine `font-sans` nos `tokens` vence.
+   * Default font of the texts without `family` (the `font-sans`/`font-mono` built into the tokens).
+   * Default: the app's token stack (`--font-sans`/`--font-mono`), the same as the app. A
+   * specialization that redefines `font-sans` in its `tokens` wins.
    */
   readonly fonts?: HostFonts;
-  /** Como a tela cabe no contêiner: `'contain'` (padrão, com margem `padding`) ou uma escala fixa. */
+  /** How the screen fits the container: `'contain'` (default, with `padding` margin) or a fixed scale. */
   readonly fit?: 'contain' | number;
-  /** Margem, em px do contêiner, do enquadramento `'contain'` (padrão 16). */
+  /** Margin, in container px, of the `'contain'` framing (default 16). */
   readonly padding?: number;
   /**
-   * O ponteiro seleciona/realça (padrão `true`). Com `false` o canvas é só imagem: nenhum
-   * `onHover`/`onClick`; `setSelection` e `setHover` do hospedeiro seguem funcionando.
+   * The pointer selects/highlights (default `true`). With `false` the canvas is image-only: no
+   * `onHover`/`onClick`; the host's `setSelection` and `setHover` keep working.
    */
   readonly interactive?: boolean;
-  /** Cores do realce (CSS); padrões: seleção '#1A63CC', hover 'rgba(26, 99, 204, 0.8)'. */
+  /** Highlight colors (CSS); defaults: selection '#1A63CC', hover 'rgba(26, 99, 204, 0.8)'. */
   readonly selectionColor?: string;
   readonly hoverColor?: string;
   /**
-   * Mostra as imagens remotas dos componentes (padrão `false`: nenhuma requisição, o reservado
-   * no lugar). Ligada, só `https:` e só as origens que `allowOrigin` aceitar.
+   * Shows the components' remote images (default `false`: no request, the placeholder in their
+   * place). When on, only `https:` and only the origins `allowOrigin` accepts.
    */
   readonly remoteImages?: boolean;
   /**
-   * Decide, por origem (ex.: `https://cdn.exemplo.com`), se a imagem pode ser pedida. Padrão:
-   * recusar tudo. Só vale com `remoteImages: true`; é lida na criação do visualizador.
+   * Decides, per origin (e.g. `https://cdn.example.com`), whether the image may be requested.
+   * Default: refuse everything. Only applies with `remoteImages: true`; it is read when the
+   * viewer is created.
    */
   readonly allowOrigin?: AllowOrigin;
 }
 
 export interface Viewer {
-  /** Redesenha só o que mudou (identidade de biblioteca, tela e instâncias). Campos omitidos ficam. */
+  /** Redraws only what changed (identity of library, screen and instances). Omitted fields stay. */
   update(input: Partial<ViewerInput>): void;
-  /** Re-instancia tudo e recalcula a tela de `source` (ex.: as fontes do hospedeiro carregaram). */
+  /** Re-instantiates everything and recomputes the screen from `source` (e.g. the host's fonts loaded). */
   redraw(): void;
-  /** Realce de seleção (borda sólida); vazio = nenhuma. */
+  /** Selection highlight (solid border); empty = none. */
   setSelection(ids: readonly string[]): void;
-  /** Realce de hover vindo do hospedeiro (ex.: a lista ao lado); não dispara `onHover`. */
+  /** Hover highlight coming from the host (e.g. the list beside it); does not fire `onHover`. */
   setHover(id: string | undefined): void;
   /**
-   * Liga/desliga a interação do ponteiro (ver `ViewerOptions.interactive`). Ao desligar com
-   * hover do ponteiro ativo, `onHover(undefined)` é chamado uma vez.
+   * Turns pointer interaction on/off (see `ViewerOptions.interactive`). Turning it off while
+   * the pointer's hover is active calls `onHover(undefined)` once.
    */
   setInteractive(on: boolean): void;
-  /** Reaplica o enquadramento (também automático ao redimensionar o contêiner). */
+  /** Reapplies the framing (also automatic when the container is resized). */
   fit(): void;
   scale(): number;
-  /** Retângulo da instância na tela (px da tela). */
+  /** The instance's rectangle on the screen (screen px). */
   boxOf(id: string): Box | undefined;
   instanceAt(point: { x: number; y: number }): string | undefined;
-  /** Converte um ponto do DOM (`clientX/clientY`) em px da tela. */
+  /** Converts a DOM point (`clientX/clientY`) to screen px. */
   clientToScreen(client: { x: number; y: number }): { x: number; y: number };
   warnings(): InstanceWarnings;
-  /** A tela desenhada: a calculada de `source` ou a passada em `screen` (`undefined` = nenhuma). */
+  /** The drawn screen: the one computed from `source` or the one passed in `screen` (`undefined` = none). */
   screen(): Screen | undefined;
-  /** PNG da tela (sem os realces). */
+  /** PNG of the screen (without the highlights). */
   toDataURL(pixelRatio?: number): string;
   dispose(): void;
 }
 
-/** Teto do pixel ratio do Konva: telas 3× redesenham 2,25× mais pixels que 2× por nada visível no visualizador. */
+/** Cap on Konva's pixel ratio: 3× screens redraw 2.25× more pixels than 2× for nothing visible in the viewer. */
 const MAX_PIXEL_RATIO = 2;
 let pixelRatioCapped = false;
 
-/** Aplica o teto uma vez, na criação do primeiro visualizador (importar o módulo não mexe no Konva). */
+/** Applies the cap once, when the first viewer is created (importing the module does not touch Konva). */
 function capPixelRatio(): void {
   if (pixelRatioCapped) return;
   pixelRatioCapped = true;
@@ -163,13 +167,13 @@ function capPixelRatio(): void {
   Konva.pixelRatio = Math.min(device, MAX_PIXEL_RATIO);
 }
 
-/** `#rrggbb` + alfa → `rgba(r, g, b, a)`. */
+/** `#rrggbb` + alpha → `rgba(r, g, b, a)`. */
 function withAlpha(hex: string, alpha: number): string {
   const value = Number.parseInt(hex.slice(1), 16);
   return `rgba(${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255}, ${alpha})`;
 }
 
-/** Cores padrão do realce: o acento do tema claro; o hover leva a opacidade do token. */
+/** Default highlight colors: the light theme's accent; hover takes the token's opacity. */
 const SELECT_COLOR = tokenValue('color-accent', 'light');
 const HOVER_COLOR = withAlpha(
   SELECT_COLOR,
@@ -177,7 +181,7 @@ const HOVER_COLOR = withAlpha(
 );
 const DEFAULT_PADDING = 16;
 const MIN_SCALE = 0.01;
-/** Tela "vazia" entregue ao renderer quando o hospedeiro limpa a tela. */
+/** "Empty" screen handed to the renderer when the host clears the screen. */
 const EMPTY_SCREEN: Screen = {
   id: '',
   name: '',
@@ -199,7 +203,7 @@ export function createViewer(
 
   let interactive = options.interactive ?? true;
 
-  /** Área útil do contêiner: o `clientWidth/Height` sem o padding, e a origem depois da borda e do padding. */
+  /** Usable area of the container: `clientWidth/Height` without the padding, and the origin after the border and padding. */
   const contentBox = (): { width: number; height: number; left: number; top: number } => {
     const style = getComputedStyle(container);
     const px = (value: string): number => Number.parseFloat(value) || 0;
@@ -225,8 +229,8 @@ export function createViewer(
     width: initialBox.width,
     height: initialBox.height,
   });
-  // O tamanho muda por `resizeStage`, que redesenha uma vez só (o ouvinte do Konva redesenharia
-  // de forma síncrona a cada uma das duas propriedades).
+  // The size changes through `resizeStage`, which redraws only once (Konva's listener would
+  // redraw synchronously on each of the two properties).
   stage.off('widthChange.konva heightChange.konva');
   const content = new Layer();
   const overlay = new Layer({ listening: false });
@@ -249,7 +253,7 @@ export function createViewer(
     sans: tokenValue('font-sans', 'light'),
     mono: tokenValue('font-mono', 'light'),
   };
-  /** A biblioteca recebida, com os tokens do modo e a fonte do hospedeiro nos componentes. */
+  /** The received library, with the mode's tokens and the host's font in the components. */
   const baked = new WeakMap<Library, Map<string, Library>>();
   let drawingMode: string | undefined = options.drawingMode;
   const withFonts = (lib: Library | undefined): Library | undefined => {
@@ -261,7 +265,7 @@ export function createViewer(
     byMode.set(key, hit);
     return hit;
   };
-  // `pixelSafe` sempre: o `toDataURL` abaixo lê pixels, então nenhuma imagem `opaque` é desenhada.
+  // Always `pixelSafe`: the `toDataURL` below reads pixels, so no `opaque` image is drawn.
   const images = options.remoteImages
     ? createViewerRemoteImages(options.allowOrigin)
     : undefined;
@@ -278,11 +282,11 @@ export function createViewer(
   let source: unknown = options.source;
   let sourceSystem: string | undefined = options.sourceSystem;
   let direction: Direction | undefined = options.direction;
-  /** A tela efetiva: a calculada de `source` (se definido) ou `passedScreen`. */
+  /** The effective screen: the one computed from `source` (if defined) or `passedScreen`. */
   let screen: Screen | undefined = passedScreen;
   let selection: readonly string[] = [];
   let hoverId: string | undefined;
-  /** O que o ponteiro está sobre (para só avisar `onHover` quando muda). */
+  /** What the pointer is over (so `onHover` is only reported when it changes). */
   let pointerId: string | undefined;
   let fittedKey: string | undefined;
   let frame = 0;
@@ -300,7 +304,7 @@ export function createViewer(
     });
   };
 
-  /** Ajusta o tamanho do stage ao do contêiner; `true` se mudou (quem chama redesenha, uma vez). */
+  /** Fits the stage size to the container's; `true` if it changed (the caller redraws, once). */
   const syncSize = (): boolean => {
     const { width, height } = contentBox();
     if (stage.width() === width && stage.height() === height) return false;
@@ -308,7 +312,7 @@ export function createViewer(
     return true;
   };
 
-  /** Chave do enquadramento: tamanho da tela e do stage (contêiner mudou = enquadrar de novo). */
+  /** Framing key: size of the screen and of the stage (container changed = frame again). */
   const fitKeyOf = (current: Screen): string =>
     `${current.width}x${current.height}@${stage.width()}x${stage.height()}`;
 
@@ -332,15 +336,15 @@ export function createViewer(
       });
       fittedKey = fitKeyOf(screen);
     }
-    // O Konva redesenha as camadas na hora ao redimensionar (uma vez, já com a escala nova);
-    // sem mudança de tamanho, o quadro cuida disso.
+    // Konva redraws the layers right away when resizing (once, already with the new scale);
+    // with no size change, the frame takes care of it.
     if (resized) stage._resizeDOM();
     else if (screen) draw();
   };
 
   const boxOf = (id: string): Box | undefined => renderer.instanceOf(id)?.box;
 
-  /** Hover e seleção seguem as caixas atuais (a tela pode ter mudado). */
+  /** Hover and selection follow the current boxes (the screen may have changed). */
   const syncOverlay = (): void => {
     const selected = new Set(selection);
     for (const [id, rect] of selectionRects) {
@@ -373,7 +377,7 @@ export function createViewer(
 
   const emitWarnings = (): void => options.onWarnings?.(renderer.warnings());
 
-  /** Recalcula a tela efetiva; com `source` e biblioteca, avisa `onSource`. */
+  /** Recomputes the effective screen; with `source` and a library, reports `onSource`. */
   const resolveScreen = (): void => {
     if (source === undefined) {
       screen = passedScreen;
@@ -432,7 +436,7 @@ export function createViewer(
     syncOverlay();
   };
 
-  /** Liga/desliga o ponteiro; ao desligar, o hover que veio dele é limpo (o hospedeiro é avisado). */
+  /** Turns the pointer on/off; when turned off, the hover that came from it is cleared (the host is notified). */
   const applyInteractive = (on: boolean): void => {
     interactive = on;
     stage.listening(on);
@@ -459,7 +463,7 @@ export function createViewer(
   });
 
   let observer: ResizeObserver | undefined;
-  /** O redimensionamento é aplicado no próximo quadro, uma vez, por mais avisos que cheguem. */
+  /** The resize is applied on the next frame, once, no matter how many notifications arrive. */
   let resizeFrame = 0;
   const scheduleResize = (): void => {
     if (disposed || resizeFrame) return;
@@ -507,12 +511,12 @@ export function createViewer(
       }
       if ('drawingMode' in input && input.drawingMode !== drawingMode) {
         drawingMode = input.drawingMode;
-        // com `source`, a tela sai da biblioteca já com os tokens do modo
+        // with `source`, the screen comes out of the library already with the mode's tokens
         if (source !== undefined) recompute = true;
       }
       if ('screen' in input && input.screen !== passedScreen) {
         passedScreen = input.screen;
-        if (source === undefined) recompute = true; // com `source`, `screen` é ignorado
+        if (source === undefined) recompute = true; // with `source`, `screen` is ignored
       }
       if (recompute) resolveScreen();
       sync(false);

@@ -1,7 +1,7 @@
 {
-  // Declarações de tipo do visualizador embutível: `npm run build:viewer` gera
-  // dist-viewer/types/. O tsc segue os imports a partir das duas entradas. O `react.tsx` usa o
-  // pragma `@jsxImportSource react` por arquivo (o tsconfig raiz usa preact).
+  // Type declarations of the embeddable viewer: `npm run build:viewer` generates
+  // dist-viewer/types/. tsc follows the imports from the two entries. `react.tsx` uses the
+  // `@jsxImportSource react` pragma per file (the root tsconfig uses preact).
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "noEmit": false,

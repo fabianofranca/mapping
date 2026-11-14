@@ -23,12 +23,12 @@ import { findFunctions, type FunctionDecl } from './functions';
 import { chooseOverload } from './overloads';
 import { parseParams } from './params';
 
-// Leitor Kotlin (`mapping-signature/kotlin@1`): a ficha de uma função `@Composable` a partir do
-// texto do arquivo. Regras e limites em signature/README.md.
+// Kotlin reader (`mapping-signature/kotlin@1`): the record of a `@Composable` function from the
+// file text. Rules and limits in signature/README.md.
 
 export const KOTLIN_EXTRACTOR = 'mapping-signature/kotlin@1';
 
-/** O `package` do arquivo: `package a.b.c` (vazio se não houver). */
+/** The file's `package`: `package a.b.c` (empty if there is none). */
 function packageOf(stream: TokenStream): string {
   const index = stream.tokens.findIndex(
     (t, i) => t.kind === 'ident' && t.text === 'package' && !isPunct(stream, i - 1, '.'),
@@ -49,21 +49,21 @@ function load(file: { name: string; text: string }): KotlinFile {
   return { stream, pkg: packageOf(stream) };
 }
 
-/** O nome simples do `--symbol` (último segmento), conferindo o prefixo contra o `package` do arquivo. */
+/** The simple name of the `--symbol` (last segment), checking the prefix against the file's `package`. */
 function simpleName(symbol: string, pkg: string, fileName: string): string {
   const cut = symbol.lastIndexOf('.');
   if (cut < 0) return symbol;
   const prefix = symbol.slice(0, cut);
   if (prefix !== pkg) {
-    const declared = pkg === '' ? 'não declara package' : `declara o package ${pkg}`;
+    const declared = pkg === '' ? 'declares no package' : `declares the package ${pkg}`;
     throw new CliError(
-      `--symbol ${symbol}: o prefixo ${prefix} não é o package do arquivo (${fileName} ${declared})`,
+      `--symbol ${symbol}: the prefix ${prefix} is not the file's package (${fileName} ${declared})`,
     );
   }
   return symbol.slice(cut + 1);
 }
 
-/** As constantes de todos os `enum class` do arquivo e dos `--also` (a primeira declaração de cada nome vale). */
+/** The constants of every `enum class` in the file and in the `--also` files (the first declaration of each name wins). */
 function collectEnums(files: readonly KotlinFile[]): EnumTable {
   const all = new Map<string, readonly string[]>();
   for (const file of files) {
@@ -73,7 +73,7 @@ function collectEnums(files: readonly KotlinFile[]): EnumTable {
   return all;
 }
 
-/** Acrescenta a fábrica ao parâmetro (que perde o `value`, como no exemplo do formato). */
+/** Adds the factory to the parameter (which loses its `value`, as in the format's example). */
 function withFactory(param: SignatureParam, found: FoundFactory): SignatureParam {
   const { name, role, type, default: def, required } = param;
   return {
@@ -88,7 +88,7 @@ function withFactory(param: SignatureParam, found: FoundFactory): SignatureParam
 
 interface Resolved {
   readonly params: SignatureParam[];
-  /** Os KDoc das fábricas, por nome do parâmetro. */
+  /** The factories' KDoc, by parameter name. */
   readonly factoryDocs: Map<string, Map<string, string>>;
 }
 
@@ -109,7 +109,7 @@ function resolveFactories(
   return { params: resolved, factoryDocs };
 }
 
-/** O `doc` na ordem dos parâmetros: `nome` e, depois, `nome.paramDaFábrica`. */
+/** The `doc` in parameter order: `name` and, after it, `name.factoryParam`. */
 function buildDoc(
   params: readonly SignatureParam[],
   own: Map<string, string>,
@@ -138,7 +138,7 @@ export function extractKotlin(request: CodeRequest): Signature {
   const candidates = candidatesOf(main.stream, name);
   if (candidates.length === 0) {
     throw new CliError(
-      `função @Composable ${name} não encontrada em ${request.file.name}`,
+      `@Composable function ${name} not found in ${request.file.name}`,
     );
   }
   const chosen = chooseOverload(main.stream, candidates, name, request.overload);

@@ -1,5 +1,5 @@
-// Erros que a CLI traduz em código de saída: 1 é falha de extração (sintaxe, símbolo ausente,
-// sobrecarga ambígua, arquivo ilegível, ficha inválida) e 2 é erro de uso (argumento faltando).
+// Errors that the CLI translates into an exit code: 1 is an extraction failure (syntax, missing symbol,
+// ambiguous overload, unreadable file, invalid signature record) and 2 is a usage error (missing argument).
 
 export type ExitCode = 1 | 2;
 
@@ -13,7 +13,7 @@ export class CliError extends Error {
   }
 }
 
-/** Erro de uso (exit 2). */
+/** Usage error (exit 2). */
 export function usageError(message: string): CliError {
   return new CliError(message, 2);
 }

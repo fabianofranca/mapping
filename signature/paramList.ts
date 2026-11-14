@@ -1,8 +1,8 @@
 import { isOpener, isPunct, topLevel, type TokenStream } from './tokens';
 
-// A lista de parâmetros, comum aos leitores: separa por vírgulas no nível de cima (parênteses,
-// chaves, colchetes e `<>` de genéricos não separam) e lê as anotações (`@Nome`, `@Nome(args)`)
-// que vêm antes de um parâmetro ou de uma declaração.
+// The parameter list, shared by the readers: splits on top-level commas (parentheses,
+// braces, brackets and generic `<>` do not split) and reads the annotations (`@Name`, `@Name(args)`)
+// that come before a parameter or a declaration.
 
 export interface Range {
   readonly from: number;
@@ -14,7 +14,7 @@ interface AngleState {
   inDefault: boolean;
 }
 
-/** Um `<` abre genérico no tipo; no padrão, só quando cola no identificador que vem antes (`listOf<A>()`). */
+/** A `<` opens a generic in the type; in the default, only when it sticks to the preceding identifier (`listOf<A>()`). */
 function opensAngle(stream: TokenStream, index: number, inDefault: boolean): boolean {
   if (!inDefault) return true;
   const previous = stream.tokens[index - 1];
@@ -30,7 +30,7 @@ function trackAngle(stream: TokenStream, index: number, state: AngleState): void
   else if (token.text === '>' && state.angle > 0) state.angle--;
 }
 
-/** Os intervalos de tokens de cada parâmetro da lista `(open … close)`; a vírgula final é aceita. */
+/** The token ranges of each parameter in the list `(open … close)`; a trailing comma is accepted. */
 export function splitParams(stream: TokenStream, open: number, close: number): Range[] {
   const ranges: Range[] = [];
   const state: AngleState = { angle: 0, inDefault: false };
@@ -51,12 +51,12 @@ export interface Annotations {
   readonly names: readonly string[];
 }
 
-/** O token `index` cola no anterior (sem espaço)? Os argumentos de uma anotação vêm colados: `@Composable () -> Unit` não os tem. */
+/** Does the token `index` stick to the previous one (no space)? An annotation's arguments come attached: `@Composable () -> Unit` has none. */
 function adjacent(stream: TokenStream, index: number): boolean {
   return stream.tokens[index - 1]?.end === stream.tokens[index]?.start;
 }
 
-/** O último segmento do nome (qualificado) que começa em `from`, e o índice depois dele. */
+/** The last segment of the (qualified) name starting at `from`, and the index after it. */
 function lastSegment(stream: TokenStream, from: number): { name: string; next: number } {
   let name = stream.tokens[from]?.text ?? '';
   let next = from + 1;
@@ -68,16 +68,16 @@ function lastSegment(stream: TokenStream, from: number): { name: string; next: n
 }
 
 export interface Attribute {
-  /** O último segmento do nome (`@a.b.Nome` → `Nome`). */
+  /** The last segment of the name (`@a.b.Name` → `Name`). */
   readonly name: string;
-  /** Índice do `@` e o do token depois da anotação (com os argumentos, se houver). */
+  /** Index of the `@` and that of the token after the annotation (with the arguments, if any). */
   readonly start: number;
   readonly end: number;
-  /** Índice do `(` dos argumentos, se a anotação os tem. */
+  /** Index of the `(` of the arguments, if the annotation has them. */
   readonly args?: number;
 }
 
-/** A anotação que começa no `@` de `from` (`@Nome`, `@a.b.Nome`, `@param:Nome`, com argumentos opcionais). */
+/** The annotation starting at the `@` of `from` (`@Name`, `@a.b.Name`, `@param:Name`, with optional arguments). */
 export function readAttribute(stream: TokenStream, from: number): Attribute {
   let i = from + 1;
   if (isPunct(stream, i + 1, ':')) i += 2;
@@ -93,7 +93,7 @@ export function readAttribute(stream: TokenStream, from: number): Attribute {
   };
 }
 
-/** As anotações que começam em `from` (`@Nome`, `@a.b.Nome`, `@param:Nome`, com argumentos opcionais). */
+/** The annotations starting at `from` (`@Name`, `@a.b.Name`, `@param:Name`, with optional arguments). */
 export function readAnnotations(
   stream: TokenStream,
   from: number,
@@ -109,10 +109,10 @@ export function readAnnotations(
   return { end: i, names };
 }
 
-/** Os valores de cada `enum` conhecido (do arquivo e dos `--also`): nome → opções, na ordem. */
+/** The values of each known `enum` (from the file and the `--also` ones): name → options, in order. */
 export type EnumTable = ReadonlyMap<string, readonly string[]>;
 
-/** O `=` do padrão (o primeiro no nível de cima), se houver. */
+/** The `=` of the default (the first at top level), if any. */
 export function findEquals(
   stream: TokenStream,
   from: number,

@@ -1,12 +1,12 @@
-// Regenera tests/support/durations.json (caminho relativo → segundos) para o sequenciador
-// de shards (tests/support/timedSequencer.ts). Mede como o CI: os 4 shards, um depois do
-// outro, com cobertura e sem relatório. Medir a suíte inteira de uma vez infla os arquivos de
-// componentes (o jsdom disputa CPU) e desequilibra os shards; com um só worker o Vitest
-// derruba o processo (vmThreads). O tempo de um arquivo muda um pouco com os vizinhos de shard,
-// então rodar de novo refina (cada rodada usa a divisão da anterior). Leva ~3 min; só precisa
-// rodar quando a suíte mudar muito. Tempo desatualizado desequilibra, nunca perde arquivo.
-//   npm run test:durations                    roda os 4 shards e grava os tempos
-//   npm run test:durations -- a.json b.json   usa relatórios já gerados (`--reporter=json`)
+// Regenerates tests/support/durations.json (relative path → seconds) for the shard
+// sequencer (tests/support/timedSequencer.ts). Measures like CI: the 4 shards, one after the
+// other, with coverage and no report. Measuring the whole suite at once inflates the component
+// files (jsdom competes for CPU) and unbalances the shards; with a single worker Vitest
+// kills the process (vmThreads). A file's time changes a little with its shard neighbors,
+// so running again refines it (each round uses the split of the previous one). Takes ~3 min; only
+// needs to run when the suite changes a lot. Stale times unbalance, but never lose a file.
+//   npm run test:durations                    runs the 4 shards and writes the times
+//   npm run test:durations -- a.json b.json   uses already generated reports (`--reporter=json`)
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -17,7 +17,7 @@ const SHARDS = 4;
 const root = process.cwd();
 const target = join(root, 'tests/support/durations.json');
 
-/** Relatório `--reporter=json` do Vitest → pares [caminho relativo, segundos com 1 casa]. */
+/** Vitest `--reporter=json` report → pairs [relative path, seconds with 1 decimal place]. */
 function durationsFromReport(file) {
   const report = JSON.parse(readFileSync(file, 'utf8'));
   return report.testResults.map((result) => [
@@ -52,7 +52,7 @@ try {
   const entries = files.flatMap(durationsFromReport);
   const sorted = entries.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
   writeFileSync(target, JSON.stringify(Object.fromEntries(sorted), null, 2) + '\n');
-  process.stdout.write(`${sorted.length} arquivos em ${relative(root, target)}\n`);
+  process.stdout.write(`${sorted.length} files in ${relative(root, target)}\n`);
 } finally {
   if (dir) rmSync(dir, { recursive: true, force: true });
 }

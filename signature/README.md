@@ -1,21 +1,21 @@
-# signature/: o extrator de fichas de assinatura (`mapping-signature`)
+# signature/: the signature sheet extractor (`mapping-signature`)
 
-Uma CLI em Node, sem dependência, que lê o **código-fonte** de uma função `@Composable` (Kotlin) ou de uma `struct` SwiftUI, ou o **JSON de um nó do Figma**, e imprime a **ficha de assinatura** dele (`mapping-signature`, `formatVersion` 1; formato em [`docs/SIGNATURE-FORMAT.md`](../docs/SIGNATURE-FORMAT.md)). É o `source.extractor: "mapping-signature/<leitor>@1"` da ficha, e há três leitores: `kotlin`, `swift` e `figma`. Os três dão fichas do mesmo formato, importadas pela mesma tool.
+A dependency-free Node CLI that reads the **source code** of a `@Composable` function (Kotlin) or of a SwiftUI `struct`, or the **JSON of a Figma node**, and prints its **signature sheet** (`mapping-signature`, `formatVersion` 1; format in [`docs/SIGNATURE-FORMAT.md`](../docs/SIGNATURE-FORMAT.md)). It is the sheet's `source.extractor: "mapping-signature/<reader>@1"`, and there are three readers: `kotlin`, `swift` and `figma`. All three produce sheets of the same format, imported by the same tool.
 
-O servidor MCP **nunca lê código**; quem lê é este script, na máquina do dono, no repositório dele. O que ele devolve é só o JSON que a especialização cita em `signature`.
+The MCP server **never reads code**; this script does, on the owner's machine, in the owner's repository. All it returns is the JSON that the specialization cites in `signature`.
 
-## Uso
+## Usage
 
 ```bash
-node tools/mapping-signature.mjs kotlin --file <arquivo.kt> --symbol <nome> [--path <relativo ao repositório>] [--ref <commit>]
-                                 [--also <arquivo.kt>]... [--overload <n>] [--out <ficha.json>]
-node tools/mapping-signature.mjs swift  --file <arquivo.swift> --symbol <nome> [--path <relativo ao repositório>] [--ref <commit>]
-                                 [--also <arquivo.swift>]... [--init <n>] [--out <ficha.json>]
-node tools/mapping-signature.mjs figma  --file <nós.json> --node <id> [--out <ficha.json>]
+node tools/mapping-signature.mjs kotlin --file <file.kt> --symbol <name> [--path <relative to the repository>] [--ref <commit>]
+                                 [--also <file.kt>]... [--overload <n>] [--out <sheet.json>]
+node tools/mapping-signature.mjs swift  --file <file.swift> --symbol <name> [--path <relative to the repository>] [--ref <commit>]
+                                 [--also <file.swift>]... [--init <n>] [--out <sheet.json>]
+node tools/mapping-signature.mjs figma  --file <nodes.json> --node <id> [--out <sheet.json>]
 node tools/mapping-signature.mjs --help
 ```
 
-No repositório do Mapping, depois do `npm run build:signature` (ou do `build:mcp`), os dois arquivos saem em `dist-mcp/`: `mapping-signature.js` (CommonJS, o que os roteiros chamam) e `mapping-signature.mjs` (ESM, o que a Release publica e o `setup.sh` instala em `tools/`). Os dois são o mesmo código e dão a mesma saída, byte a byte.
+In the Mapping repository, after `npm run build:signature` (or `build:mcp`), the two files land in `dist-mcp/`: `mapping-signature.js` (CommonJS, what the scripts call) and `mapping-signature.mjs` (ESM, what the Release publishes and `setup.sh` installs in `tools/`). Both are the same code and give the same output, byte for byte.
 
 | Opção                | O que faz                                                                                                                                                                     |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -29,11 +29,11 @@ No repositório do Mapping, depois do `npm run build:signature` (ou do `build:mc
 | `--node <id>`        | `figma`: o id do nó (`12:34`; `12-34`, como vem na URL, também vale).                                                                                                         |
 | `--out <ficha.json>` | Grava a ficha neste arquivo em vez de imprimir. É o **único** arquivo que o script grava: ele cria o arquivo, não cria pastas.                                                |
 
-`source.symbol` é sempre `<package do arquivo>.<nome>` (só o nome, se o arquivo não declara `package`). A ficha sai com 2 espaços de indentação, as chaves na ordem do tipo (`src/model/signatures/types.ts`) e `\n` no fim.
+`source.symbol` is always `<file's package>.<name>` (just the name, if the file declares no `package`). The sheet comes out with 2-space indentation, the keys in the type's order (`src/model/signatures/types.ts`) and `\n` at the end.
 
-Códigos de saída: **0** ok; **1** erro de extração (sintaxe, símbolo ou nó ausente, sobrecarga ou `init` ambíguo, arquivo ilegível, ficha que não passa no `parseSignature`); **2** erro de uso (argumento faltando ou desconhecido, leitor desconhecido, opção que não é do leitor: `a opção --init não vale para kotlin (vale para swift)`). As mensagens vão para o stderr, em português; o erro de sintaxe sai como `<arquivo>:<linha>:<coluna>: <mensagem>`.
+Exit codes: **0** ok; **1** extraction error (syntax, missing symbol or node, ambiguous overload or `init`, unreadable file, sheet that fails `parseSignature`); **2** usage error (missing or unknown argument, unknown reader, option that does not belong to the reader: `the option --init does not apply to kotlin (it applies to swift)`). Messages go to stderr, in English; the syntax error comes out as `<file>:<line>:<column>: <message>`.
 
-Antes de escrever, a ficha passa no `parseSignature` (o mesmo do importador e do `validate_library`); se falhar, o erro é interno (exit 1) e nada é impresso nem gravado.
+Before writing, the sheet goes through `parseSignature` (the same one as the importer and `validate_library`); if it fails, the error is internal (exit 1) and nothing is printed or written.
 
 ## O que o leitor Kotlin faz
 

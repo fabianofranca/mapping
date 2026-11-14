@@ -9,9 +9,9 @@ import {
 import { CliError } from '../errors';
 import type { DesignRequest } from '../request';
 
-// Leitor Figma (`mapping-signature/figma@1`): a ficha de um `COMPONENT_SET` ou `COMPONENT` a partir
-// das `componentPropertyDefinitions` dele, no JSON que o agente salvou (a resposta de
-// `GET /v1/files/:key/nodes`, a do arquivo inteiro ou o nó solto). Não lê a rede: só o arquivo.
+// Figma reader (`mapping-signature/figma@1`): the sheet of a `COMPONENT_SET` or `COMPONENT` from
+// its `componentPropertyDefinitions`, in the JSON the agent saved (the response of
+// `GET /v1/files/:key/nodes`, the whole-file one or the bare node). It does not read the network: only the file.
 
 export const FIGMA_EXTRACTOR = 'mapping-signature/figma@1';
 
@@ -20,10 +20,10 @@ type Json = Record<string, unknown>;
 const isRecord = (value: unknown): value is Json =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-/** O id como a API o escreve (`12:34`); a URL do Figma usa `12-34`. */
+/** The id as the API writes it (`12:34`); the Figma URL uses `12-34`. */
 const normalizeId = (id: string): string => id.replace(/-/g, ':');
 
-/** O primeiro objeto, em ordem de documento, com este `id` e um `type` (o nó; as tabelas `components` não têm `id`). */
+/** The first object, in document order, with this `id` and a `type` (the node; the `components` tables have no `id`). */
 function findNode(root: unknown, wanted: string): Json | undefined {
   const stack: unknown[] = [root];
   while (stack.length > 0) {
@@ -46,7 +46,7 @@ function findNode(root: unknown, wanted: string): Json | undefined {
 
 const SUFFIX = /^(.+)#(\d+:\d+)$/;
 
-/** O texto do padrão que a ficha guarda: texto, número e booleano; o resto (ids de instância) não. */
+/** The default text the sheet keeps: text, number and boolean; the rest (instance ids) is not kept. */
 function defaultText(value: unknown): string | undefined {
   return typeof value === 'string' ||
     typeof value === 'number' ||
@@ -68,7 +68,7 @@ function variantValue(definition: Json, text: string | undefined): SignatureValu
     : { kind: 'enum', options: list };
 }
 
-/** O `value` de uma propriedade `VARIANT`, `BOOLEAN` ou `TEXT`. */
+/** The `value` of a `VARIANT`, `BOOLEAN` or `TEXT` property. */
 function valueOf(
   type: string,
   definition: Json,
@@ -91,7 +91,7 @@ function readParam(key: string, definition: unknown): SignatureParam {
   const suffix = SUFFIX.exec(key);
   const name = suffix === null ? key : suffix[1]!;
   if (!isRecord(definition) || typeof definition.type !== 'string') {
-    throw new CliError(`a propriedade "${name}" não tem type`);
+    throw new CliError(`the property "${name}" has no type`);
   }
   const type = definition.type;
   const text = defaultText(definition.defaultValue);
@@ -131,26 +131,26 @@ function parseJson(request: DesignRequest): unknown {
     return JSON.parse(request.file.text) as unknown;
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
-    throw new CliError(`${request.file.name}: JSON inválido: ${reason}`);
+    throw new CliError(`${request.file.name}: invalid JSON: ${reason}`);
   }
 }
 
-/** O nó pedido, conferido: um `COMPONENT_SET` ou `COMPONENT` com as definições de propriedade. */
+/** The requested node, checked: a `COMPONENT_SET` or `COMPONENT` with the property definitions. */
 function componentNode(request: DesignRequest): { node: Json; definitions: Json } {
   const node = findNode(parseJson(request), normalizeId(request.node));
   if (node === undefined) {
-    throw new CliError(`nó ${request.node} não encontrado em ${request.file.name}`);
+    throw new CliError(`node ${request.node} not found in ${request.file.name}`);
   }
-  const label = `o nó ${request.node} ("${String(node.name)}")`;
+  const label = `the node ${request.node} ("${String(node.name)}")`;
   if (node.type !== 'COMPONENT_SET' && node.type !== 'COMPONENT') {
     throw new CliError(
-      `${label} é do tipo ${String(node.type)}; esperado COMPONENT_SET ou COMPONENT`,
+      `${label} is of type ${String(node.type)}; expected COMPONENT_SET or COMPONENT`,
     );
   }
   const definitions = node.componentPropertyDefinitions;
   if (!isRecord(definitions)) {
     throw new CliError(
-      `${label} não tem componentPropertyDefinitions; se é uma variante de um component set, use o id do COMPONENT_SET`,
+      `${label} has no componentPropertyDefinitions; if it is a variant of a component set, use the id of the COMPONENT_SET`,
     );
   }
   return { node, definitions };

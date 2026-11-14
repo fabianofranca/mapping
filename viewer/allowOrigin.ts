@@ -1,6 +1,6 @@
 /**
- * O hospedeiro decide por origem (`https://cdn.exemplo.com`); lançar equivale a recusar.
- * Fica sozinho, sem imports, para as declarações do pacote não puxarem o carregador de imagens
- * (e, com ele, `@preact/signals`).
+ * The host decides by origin (`https://cdn.example.com`); throwing is the same as refusing.
+ * It stands alone, with no imports, so the package declarations do not pull in the image loader
+ * (and, with it, `@preact/signals`).
  */
 export type AllowOrigin = (origin: string) => boolean;
