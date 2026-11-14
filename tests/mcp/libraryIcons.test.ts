@@ -78,7 +78,7 @@ describe('validate_library com icons', () => {
     const result = ok(await mcp.call<Validated>('validate_library', { path: 'errado' }));
     expect(result.valid).toBe(false);
     expect(result.errors.map((e) => `${e.file} ${e.path}: ${e.message}`)).toContain(
-      'icons/set.json icons.Check: nome inválido; use [a-z0-9][a-z0-9-_]*',
+      'icons/set.json icons.Check: invalid name; use [a-z0-9][a-z0-9-_]*',
     );
   });
 

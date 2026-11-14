@@ -48,7 +48,7 @@ describe('provide no slot (decisão 8)', () => {
       'template.children[0].provide: empty name',
     ]);
     expect(validateComponent(withChild(slot({ provide: { ink: true } })))).toEqual([
-      'template.children[0].provide.ink: expected texto or número',
+      'template.children[0].provide.ink: expected text or a number',
     ]);
     expect(validateComponent(withChild(slot({ provide: 'ink' })))).toEqual([
       'template.children[0].provide: expected an object',

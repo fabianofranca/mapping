@@ -157,7 +157,7 @@ describe('slot com layout no formato', () => {
     (rect.template.children as object[]).push({ type: 'rect', layout: { type: 'row' } });
     expect(
       validateComponent(rect).some((p) =>
-        p.includes('só nós do tipo frame aceitam layout'),
+        p.includes('only nodes of type frame accept layout'),
       ),
     ).toBe(true);
   });

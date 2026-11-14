@@ -194,17 +194,17 @@ describe('parseComponent: raiz', () => {
     expectProblem(
       problemsAfter((c) => (c.id = 'Botão Grande')),
       'id',
-      'padrão',
+      'matching',
     );
     expectProblem(
       problemsAfter((c) => (c.id = '-x')),
       'id',
-      'padrão',
+      'matching',
     );
     expectProblem(
       problemsAfter((c) => (c.id = '')),
       'id',
-      'padrão',
+      'matching',
     );
   });
 
@@ -212,12 +212,12 @@ describe('parseComponent: raiz', () => {
     expectProblem(
       problemsAfter((c) => (c.name = ' ')),
       'name',
-      'não vazio',
+      'non-empty',
     );
     expectProblem(
       problemsAfter((c) => (c.description = 3)),
       'description',
-      'texto',
+      'text',
     );
   });
 
@@ -225,35 +225,35 @@ describe('parseComponent: raiz', () => {
     expectProblem(
       problemsAfter((c) => delete c.size),
       'size',
-      'obrigatório',
+      'required field',
     );
     expectProblem(
       problemsAfter((c) => (c.size.width = 0)),
       'size.width',
-      'positivo',
+      'positive',
     );
     expectProblem(
       problemsAfter((c) => (c.size.height = '40')),
       'size.height',
-      'positivo',
+      'positive',
     );
   });
 
   it('minSize maior que size', () => {
     const problems = problemsAfter((c) => (c.minSize = { width: 200, height: 10 }));
-    expectProblem(problems, 'minSize', 'maior que size');
+    expectProblem(problems, 'minSize', 'greater than size');
   });
 
   it('preview com valor de tipo inválido', () => {
     expectProblem(
       problemsAfter((c) => (c.preview.flag = true)),
       'preview.flag',
-      'texto, número ou null',
+      'text, a number or null',
     );
     expectProblem(
       problemsAfter((c) => (c.preview = [])),
       'preview',
-      'objeto',
+      'object',
     );
   });
 
@@ -261,7 +261,7 @@ describe('parseComponent: raiz', () => {
     expectProblem(
       problemsAfter((c) => delete c.template),
       'template',
-      'obrigatório',
+      'required field',
     );
     const problems = problemsAfter((c) => (c.template = { type: 'rect' }));
     expectProblem(problems, 'template.type', 'frame');
@@ -276,15 +276,15 @@ describe('parseComponent: raiz', () => {
   });
 
   it('entrada que não é objeto', () => {
-    expect(validateComponent(null)).toEqual(['componente: expected an object']);
-    expect(validateComponent([])).toEqual(['componente: expected an object']);
+    expect(validateComponent(null)).toEqual(['component: expected an object']);
+    expect(validateComponent([])).toEqual(['component: expected an object']);
   });
 });
 
 describe('parseComponent: nós', () => {
-  it('tipo de nó desconhecido', () => {
+  it('unknown node type', () => {
     const problems = problemsAfter((c) => (c.template.children[1].type = 'blob'));
-    expectProblem(problems, 'template.children[1].type', 'tipo de nó desconhecido');
+    expectProblem(problems, 'template.children[1].type', 'unknown node type');
   });
 
   it('chave desconhecida em nó (erro de digitação)', () => {
@@ -301,7 +301,7 @@ describe('parseComponent: nós', () => {
     expectProblem(
       problemsAfter((c) => (c.template.children[0].height = -1)),
       'template.children[0].height',
-      'maior ou igual a 0',
+      'greater than or equal to 0',
     );
   });
 
@@ -309,13 +309,13 @@ describe('parseComponent: nós', () => {
     expectProblem(
       problemsAfter((c) => (c.template.opacity = 2)),
       'template.opacity',
-      'entre 0 e 1',
+      'between 0 and 1',
     );
     // literal dentro da expressão segue a mesma regra
     expectProblem(
       problemsAfter((c) => (c.template.children[1].opacity.then = 5)),
       'template.children[1].opacity.then',
-      'entre 0 e 1',
+      'between 0 and 1',
     );
   });
 
@@ -327,8 +327,8 @@ describe('parseComponent: nós', () => {
       anchors.middle = true;
     });
     const base = 'template.children[2].children[0].anchors';
-    expectProblem(problems, `${base}.left`, 'número');
-    expectProblem(problems, `${base}.centerX`, 'booleano');
+    expectProblem(problems, `${base}.left`, 'a number');
+    expectProblem(problems, `${base}.centerX`, 'boolean');
     expectProblem(problems, `${base}.middle`, 'unknown key: middle');
   });
 
@@ -336,19 +336,19 @@ describe('parseComponent: nós', () => {
     const problems = problemsAfter((c) => {
       c.template.fill.cases.danger.stops = [{ offset: 0, color: '#fff' }];
     });
-    expectProblem(problems, 'template.fill.cases.danger.stops', 'ao menos 2');
+    expectProblem(problems, 'template.fill.cases.danger.stops', 'at least 2');
   });
 
   it('parada com offset fora de 0..1', () => {
     const problems = problemsAfter(
       (c) => (c.template.fill.cases.danger.stops[1].offset = 3),
     );
-    expectProblem(problems, 'template.fill.cases.danger.stops[1].offset', 'entre 0 e 1');
+    expectProblem(problems, 'template.fill.cases.danger.stops[1].offset', 'between 0 and 1');
   });
 
   it('borda sem cor', () => {
     const problems = problemsAfter((c) => delete c.template.stroke.color);
-    expectProblem(problems, 'template.stroke.color', 'obrigatório');
+    expectProblem(problems, 'template.stroke.color', 'required field');
   });
 
   it('borda com align inválido e sombra sem cor', () => {
@@ -357,12 +357,12 @@ describe('parseComponent: nós', () => {
       delete c.template.shadow.color;
     });
     expectProblem(problems, 'template.stroke.align', 'inside, center, outside');
-    expectProblem(problems, 'template.shadow.color', 'obrigatório');
+    expectProblem(problems, 'template.shadow.color', 'required field');
   });
 
   it('cornerRadius inválido', () => {
     const problems = problemsAfter((c) => (c.template.cornerRadius = [1, 2]));
-    expectProblem(problems, 'template.cornerRadius', '4 números');
+    expectProblem(problems, 'template.cornerRadius', '4 numbers');
   });
 
   it('layout inválido', () => {
@@ -376,7 +376,7 @@ describe('parseComponent: nós', () => {
 
   it('texto sem text', () => {
     const problems = problemsAfter((c) => delete c.template.children[1].text);
-    expectProblem(problems, 'template.children[1].text', 'obrigatório');
+    expectProblem(problems, 'template.children[1].text', 'required field');
   });
 
   it('fonte com peso fora de 100..900 e alinhamento inválido', () => {
@@ -384,7 +384,7 @@ describe('parseComponent: nós', () => {
       c.template.children[1].font.weight = 1000;
       c.template.children[1].font.align = 'distribuido';
     });
-    expectProblem(problems, 'template.children[1].font.weight', '100 e 900');
+    expectProblem(problems, 'template.children[1].font.weight', '100 and 900');
     expectProblem(
       problems,
       'template.children[1].font.align',
@@ -396,12 +396,12 @@ describe('parseComponent: nós', () => {
     expectProblem(
       problemsAfter((c) => delete c.template.children[0].viewBox),
       'template.children[0].viewBox',
-      'obrigatório',
+      'required field',
     );
     expectProblem(
       problemsAfter((c) => (c.template.children[0].viewBox = [16, 0])),
       'template.children[0].viewBox',
-      'positivos',
+      'positive',
     );
   });
 
@@ -452,21 +452,21 @@ describe('parseComponent: visible e italic como BoolExpr', () => {
 
   it('$has com valor que não é texto é inválido', () => {
     const problems = problemsAfter((c) => (c.template.children[0].visible = { $has: 3 }));
-    expectProblem(problems, 'template.children[0].visible.$has', 'chave de campo');
+    expectProblem(problems, 'template.children[0].visible.$has', 'field key');
   });
 
   it('condição direta inválida em italic e com operador extra', () => {
     expectProblem(
       problemsAfter((c) => (c.template.children[1].font.italic = { $has: 3 })),
       'template.children[1].font.italic.$has',
-      'chave de campo',
+      'field key',
     );
     expectProblem(
       problemsAfter(
         (c) => (c.template.children[0].visible = { $has: 'a', $not: { $field: 'b' } }),
       ),
       'template.children[0].visible',
-      'mais de um operador',
+      'more than one operator',
     );
   });
 
@@ -474,7 +474,7 @@ describe('parseComponent: visible e italic como BoolExpr', () => {
     expectProblem(
       problemsAfter((c) => (c.template.children[0].visible = 'sim')),
       'template.children[0].visible',
-      'booleano',
+      'boolean',
     );
   });
 });
@@ -485,7 +485,7 @@ describe('parseComponent: expressões', () => {
       (c) =>
         (c.template.children[0].visible = { $field: 'icon', $switch: 'x', cases: {} }),
     );
-    expectProblem(problems, 'template.children[0].visible', 'mais de um operador');
+    expectProblem(problems, 'template.children[0].visible', 'more than one operator');
   });
 
   it('chave desconhecida dentro de expressão', () => {
@@ -499,7 +499,7 @@ describe('parseComponent: expressões', () => {
 
   it('$if sem then', () => {
     const problems = problemsAfter((c) => delete c.template.stroke.color.then);
-    expectProblem(problems, 'template.stroke.color.then', 'obrigatório');
+    expectProblem(problems, 'template.stroke.color.then', 'required field');
   });
 
   it('$eq que não é lista', () => {
@@ -518,7 +518,7 @@ describe('parseComponent: expressões', () => {
 
   it('condição sem operador ou com operador desconhecido', () => {
     const problems = problemsAfter((c) => (c.template.stroke.color.$if = { $nope: 'x' }));
-    expectProblem(problems, 'template.stroke.color.$if', 'sem operador');
+    expectProblem(problems, 'template.stroke.color.$if', 'without an operator');
   });
 
   it('literal do tipo errado dentro de then', () => {
@@ -535,7 +535,7 @@ describe('parseComponent: expressões', () => {
     expectProblem(
       problemsAfter((c) => (c.template.children[1].text.$concat[0] = true)),
       'template.children[1].text.$concat[0]',
-      'texto ou número',
+      'text or a number',
     );
   });
 
@@ -546,7 +546,7 @@ describe('parseComponent: expressões', () => {
       c.template.fill.cases = [];
     });
     expectProblem(problems, 'template.fill.default', 'expected a color');
-    expectProblem(problems, 'template.fill.cases', 'objeto de casos');
+    expectProblem(problems, 'template.fill.cases', 'object of cases');
   });
 
   it('$field com chave vazia e default do tipo errado', () => {
@@ -557,9 +557,9 @@ describe('parseComponent: expressões', () => {
     expectProblem(
       problems,
       'template.children[1].text.$concat[0].$field',
-      'chave de campo',
+      'field key',
     );
-    expectProblem(problems, 'template.children[0].visible.default', 'booleano');
+    expectProblem(problems, 'template.children[0].visible.default', 'boolean');
   });
 });
 
@@ -575,10 +575,10 @@ describe('validateComponent e parseComponent', () => {
     });
     expect(problems).toHaveLength(6);
     expectProblem(problems, 'format', 'mapping-component');
-    expectProblem(problems, 'id', 'padrão');
-    expectProblem(problems, 'size', 'obrigatório');
+    expectProblem(problems, 'id', 'matching');
+    expectProblem(problems, 'size', 'required field');
     expectProblem(problems, 'template.children[0].width', '"fill", "hug"');
-    expectProblem(problems, 'template.children[1].opacity', 'entre 0 e 1');
+    expectProblem(problems, 'template.children[1].opacity', 'between 0 and 1');
     expectProblem(problems, 'template.children[2].children[1].children', 'frame');
   });
 
@@ -622,8 +622,8 @@ describe('validateComponent e parseComponent', () => {
     if (bad.ok) return;
     expect(bad.issues).toHaveLength(1);
     expect(bad.issues[0]?.path).toBe('');
-    expect(bad.issues[0]?.message).toMatch(/^JSON inválido: /);
-    expect(bad.errors[0]).toMatch(/^JSON inválido: /);
+    expect(bad.issues[0]?.message).toMatch(/^invalid JSON: /);
+    expect(bad.errors[0]).toMatch(/^invalid JSON: /);
   });
 });
 
@@ -839,7 +839,7 @@ describe('parseComponent: operações numéricas e comparações (formato 4)', (
   });
 
   it('operação fora de posição numérica é recusada; chave estranha também', () => {
-    expectProblem(problems({ fill: { $add: [1, 2] } }), 'template.fill', 'número');
+    expectProblem(problems({ fill: { $add: [1, 2] } }), 'template.fill', 'a number');
     expectProblem(
       problems({ gap: { $add: [1, 2], extra: 1 } }),
       'template.layout.gap.extra',
@@ -848,7 +848,7 @@ describe('parseComponent: operações numéricas e comparações (formato 4)', (
     expectProblem(
       problems({ gap: { $add: [1, 2], $mul: [1, 2] } }),
       'template.layout.gap',
-      'mais de um operador',
+      'more than one operator',
     );
   });
 });

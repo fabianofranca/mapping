@@ -62,7 +62,7 @@ describe('validateLibrary: conjunto de ícones', () => {
     const bad = read('icons/set.json').replace('"check"', '"Check"');
     const report = validateLibrary({ files: pack({ 'icons/set.json': bad }) });
     expect(brief(report.errors)).toContain(
-      'error icons/set.json icons.Check: nome inválido; use [a-z0-9][a-z0-9-_]*',
+      'error icons/set.json icons.Check: invalid name; use [a-z0-9][a-z0-9-_]*',
     );
   });
 

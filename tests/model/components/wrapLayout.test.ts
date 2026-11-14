@@ -376,13 +376,13 @@ describe('wrap: validação', () => {
   it('valores inválidos', () => {
     expect(issues(flow({ wrap: 'sim' })).join('\n')).toMatch(/template\.layout\.wrap/);
     expect(issues(flow({ wrap: 'wrap', lineGap: -1 })).join('\n')).toMatch(
-      /template\.layout\.lineGap: .*maior ou igual a 0/,
+      /template\.layout\.lineGap: .*greater than or equal to 0/,
     );
     expect(issues(flow({ wrap: 'wrap', maxPerLine: 0 })).join('\n')).toMatch(
-      /template\.layout\.maxPerLine: .*inteiro/,
+      /template\.layout\.maxPerLine: .*integer/,
     );
     expect(issues(flow({ wrap: 'wrap', maxLines: 1.5 })).join('\n')).toMatch(
-      /template\.layout\.maxLines: .*inteiro/,
+      /template\.layout\.maxLines: .*integer/,
     );
   });
 

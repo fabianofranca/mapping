@@ -219,7 +219,7 @@ describe('component messages', () => {
     expect(parsed.ok).toBe(false);
     if (parsed.ok) return;
     expect(parsed.issues[0]?.code).toBe('library.invalidJson');
-    expect(parsed.issues[0]?.message).toMatch(/^JSON inválido: /);
+    expect(parsed.issues[0]?.message).toMatch(/^invalid JSON: /);
   });
 
   it('the library validator passes on the component code', () => {
@@ -300,7 +300,7 @@ describe('icon messages', () => {
     expect(parsed.ok).toBe(false);
     if (parsed.ok) return;
     expect(parsed.issues[0]?.code).toBe('library.invalidJson');
-    expect(parsed.issues[0]?.message).toMatch(/^JSON inválido: /);
+    expect(parsed.issues[0]?.message).toMatch(/^invalid JSON: /);
   });
 });
 

@@ -1975,7 +1975,7 @@ function collectIssues(
   checkKeys(input, ROOT_KEYS, '', out);
 
   if (input.format !== COMPONENT_FORMAT)
-    add(out, 'format', `esperava "${COMPONENT_FORMAT}"`);
+    add(out, 'format', `expected "${COMPONENT_FORMAT}"`);
   const version = input.formatVersion;
   if (!(COMPONENT_FORMAT_VERSIONS as readonly unknown[]).includes(version))
     add(
@@ -2156,7 +2156,7 @@ export function parseComponentText(text: string): ComponentParseResult {
     const issues: ComponentIssue[] = [
       {
         path: '',
-        message: `JSON inválido: ${message}`,
+        message: `invalid JSON: ${message}`,
         code: 'library.invalidJson',
         params: { detail: message },
       },

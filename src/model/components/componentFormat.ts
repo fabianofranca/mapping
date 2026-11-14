@@ -122,7 +122,7 @@ export type Expr<T> =
   | { readonly $cos: Expr<number> }
   /** Number of rows of the `table` field (v4; with no rows, 0). */
   | { readonly $rows: string }
-  /** Width or height of the instance in image px (v4; in the drawing proof and in `hug`, the component's `size`). */
+  /** Width or height of the instance in image px (v4; in the drawing proof and in `hug`, `size`). */
   | { readonly $size: 'width' | 'height' }
   /**
    * Number of measured lines of the `text` node of the given name (v4; at most `maxLines`, empty
@@ -234,9 +234,9 @@ export interface FontSpec {
   readonly decoration?: Expr<'none' | 'underline' | 'line-through'>;
   /** `word` (default) wraps by word; `none` is one line per paragraph. formatVersion 4 only. */
   readonly wrap?: Expr<'word' | 'none'>;
-  /** Text that does not fit ends in `…` (width with `wrap: none`; height with `maxLines`). v4 only. */
+  /** Text that does not fit ends in `…` (width with `wrap: none`; height with `maxLines`). v4. */
   readonly ellipsis?: BoolExpr;
-  /** Maximum lines (integer ≥ 1); the last one takes the `…` (with `ellipsis`) or is cut. v4 only. */
+  /** Maximum lines (integer ≥ 1); the last takes the `…` (with `ellipsis`) or is cut. v4 only. */
   readonly maxLines?: Expr<number>;
 }
 
@@ -260,27 +260,28 @@ export type IntrinsicSize = 'min-content' | 'max-content';
 export type SizeSpec = number | 'fill' | 'hug' | IntrinsicSize | `${number}%`;
 
 /**
- * Âncoras no pai com `layout: none`: distância da borda, como as constraints do Figma. Na
- * `formatVersion` 4 cada valor pode ser uma expressão; a que não produz número vale como âncora
- * ausente.
+ * Anchors in the parent with `layout: none`: distance from the edge, like Figma's constraints. In
+ * `formatVersion` 4 each value can be an expression; one that produces no number counts as an
+ * absent anchor.
  */
 export interface Anchors {
   readonly left?: Expr<number>;
   readonly right?: Expr<number>;
   /**
-   * Lógicas (v4), no eixo horizontal: `start` é a borda de onde a leitura começa (esquerda em `ltr`,
-   * direita em `rtl`) e `end` a oposta. `start` não combina com `left` nem `end` com `right`.
+   * Logical (v4), on the horizontal axis: `start` is the edge where reading begins (left in `ltr`,
+   * right in `rtl`) and `end` the opposite. `start` does not combine with `left`, nor `end` with
+   * `right`.
    */
   readonly start?: Expr<number>;
   readonly end?: Expr<number>;
   readonly top?: Expr<number>;
   readonly bottom?: Expr<number>;
-  /** Centraliza no eixo (ignora left/right ou top/bottom). */
+  /** Centers on the axis (ignores left/right or top/bottom). */
   readonly centerX?: BoolExpr;
   readonly centerY?: BoolExpr;
 }
 
-/** Tipo de layout de um quadro ou slot. */
+/** Layout type of a frame or slot. */
 export type LayoutType = 'none' | 'row' | 'column' | 'grid';
 export type LayoutAlign = 'start' | 'center' | 'end' | 'stretch' | 'baseline';
 export type LayoutJustify =
@@ -291,55 +292,55 @@ export type LayoutJustify =
   | 'space-around'
   | 'space-evenly'
   | 'stretch';
-/** Quebra de fileira (v4): `none` (padrão), `wrap` ou `wrap-reverse`, como o `flex-wrap` do CSS. */
+/** Row wrapping (v4): `none` (default), `wrap` or `wrap-reverse`, like CSS's `flex-wrap`. */
 export type LayoutWrap = 'none' | 'wrap' | 'wrap-reverse';
 
 /**
- * Layout dos filhos. Na `formatVersion` 4, `type`, `align` e `justify` aceitam expressão (o valor
- * resolvido é conferido no desenho: fora do conjunto, cai no padrão com o aviso
- * `valor inválido em layout.<chave>: <valor>`); com `type` literal `"none"` valem só `type`,
- * `align` (eixo vertical) e `justify` (eixo horizontal), com `start` (padrão), `center`, `end` e
- * `stretch` (v4): alinham os filhos sem âncora naquele eixo; a âncora do filho vence. O
- * `justify: "stretch"` vale só no `none`; em `row`/`column` é inválido.
+ * Layout of the children. In `formatVersion` 4, `type`, `align` and `justify` accept an expression
+ * (the resolved value is checked at drawing: outside the set, it falls back to the default with
+ * the warning `invalid value in layout.<key>: <value>`); with a literal `type` `"none"` only
+ * `type`, `align` (vertical axis) and `justify` (horizontal axis) apply, with `start` (default),
+ * `center`, `end` and `stretch` (v4): they align the children without an anchor on that axis; the
+ * child's anchor wins. `justify: "stretch"` only applies in `none`; in `row`/`column` it is invalid.
  */
 export interface LayoutSpec {
   readonly type: Expr<LayoutType>;
   readonly gap?: Expr<number>;
-  /** Um valor, [vertical, horizontal] ou [cima, direita, baixo, esquerda]. */
+  /** One value, [vertical, horizontal] or [top, right, bottom, left]. */
   readonly padding?: Expr<
     number | readonly [number, number] | readonly [number, number, number, number]
   >;
   /**
-   * No eixo cruzado. `baseline` (v4, só em `row`): os filhos se alinham pela primeira linha de
-   * base, como o `alignByBaseline` do Compose e o `align-items: baseline` do CSS.
+   * On the cross axis. `baseline` (v4, only in `row`): the children align by the first baseline,
+   * like Compose's `alignByBaseline` and CSS's `align-items: baseline`.
    */
   readonly align?: Expr<LayoutAlign>;
-  /** No eixo principal (`space-around` e `space-evenly` só na v4). */
+  /** On the main axis (`space-around` and `space-evenly` only in v4). */
   readonly justify?: Expr<LayoutJustify>;
   /**
-   * Os filhos em ordem inversa no eixo principal e o `start` passa a ser o fim, como
-   * `row-reverse`/`column-reverse` do CSS (v4; booleano ou expressão; padrão `false`).
+   * The children in reverse order on the main axis and `start` becomes the end, like CSS's
+   * `row-reverse`/`column-reverse` (v4; boolean or expression; default `false`).
    */
   readonly reverse?: BoolExpr;
   /**
-   * Quebra de fileira (v4; só em `row`/`column`): com `wrap` ou `wrap-reverse`, o filho que não
-   * cabe no que resta do eixo principal vai para a linha seguinte, como o `flex-wrap` do CSS (o
-   * `FlowRow`/`FlowColumn` do Compose). `wrap-reverse` empilha as linhas no sentido contrário do
-   * eixo cruzado. Padrão `none`.
+   * Row wrapping (v4; only in `row`/`column`): with `wrap` or `wrap-reverse`, a child that does not
+   * fit in what is left of the main axis goes to the next line, like CSS's `flex-wrap` (Compose's
+   * `FlowRow`/`FlowColumn`). `wrap-reverse` stacks the lines in the opposite direction of the
+   * cross axis. Default `none`.
    */
   readonly wrap?: Expr<LayoutWrap>;
-  /** Espaço entre as linhas, em px (v4; só com `wrap`; padrão 0). O `gap` fica entre os filhos da linha. */
+  /** Space between the lines, in px (v4; only with `wrap`; default 0). `gap` is within a line. */
   readonly lineGap?: Expr<number>;
-  /** Filhos por linha, no máximo (v4; só com `wrap`; inteiro ≥ 1; o `maxItemsInEachRow` do Compose). */
+  /** Children per line, at most (v4; only with `wrap`; integer ≥ 1; Compose's `maxItemsInEachRow`). */
   readonly maxPerLine?: Expr<number>;
-  /** Linhas, no máximo (v4; só com `wrap`; inteiro ≥ 1): os filhos além da última não são desenhados. */
+  /** Lines, at most (v4; only with `wrap`; integer ≥ 1): children beyond the last are not drawn. */
   readonly maxLines?: Expr<number>;
   /**
-   * Grade (`type: "grid"`, v4; exatamente uma das quatro trilhas, números ou expressão): `columns`
-   * (inteiro ≥ 1) é o `GridCells.Fixed` do Compose e o `repeat(n, 1fr)` do CSS; `minColumnWidth`
-   * (> 0) o `GridCells.Adaptive` e o `repeat(auto-fit, minmax(x, 1fr))`; `rows` e `minRowHeight` os
-   * mesmos na grade horizontal (que preenche colunas, o `LazyHorizontalGrid`). O `gap` fica entre
-   * as trilhas e o `lineGap` entre as linhas de fluxo.
+   * Grid (`type: "grid"`, v4; exactly one of the four tracks, numbers or expression): `columns`
+   * (integer ≥ 1) is Compose's `GridCells.Fixed` and CSS's `repeat(n, 1fr)`; `minColumnWidth`
+   * (> 0) is `GridCells.Adaptive` and `repeat(auto-fit, minmax(x, 1fr))`; `rows` and `minRowHeight`
+   * the same on the horizontal grid (which fills columns, `LazyHorizontalGrid`). `gap` stays between
+   * the tracks and `lineGap` between the flow lines.
    */
   readonly columns?: Expr<number>;
   readonly minColumnWidth?: Expr<number>;
@@ -348,70 +349,71 @@ export interface LayoutSpec {
 }
 
 // ---------------------------------------------------------------------------------------
-// Nós do template
+// Template nodes
 // ---------------------------------------------------------------------------------------
 
 interface TemplateNodeBase {
-  /** Nome do nó (aparece na árvore e no hover); opcional. */
+  /** Name of the node (appears in the tree and on hover); optional. */
   readonly name?: string;
   readonly visible?: BoolExpr;
   readonly opacity?: Expr<number>;
   /**
-   * `formatVersion` 4: gira o nó (e os filhos de um quadro, com o `clip` dele) em graus, no
-   * sentido horário, em volta do centro da caixa. É só desenho, como o `transform` do CSS: não
-   * muda layout, medida, `hug` nem a caixa do nó. Não vale na raiz. Sem valor, ou 0, não gira.
+   * `formatVersion` 4: rotates the node (and a frame's children, with its `clip`) in degrees,
+   * clockwise, around the center of the box. It is drawing only, like CSS's `transform`: it does
+   * not change layout, measure, `hug` or the node's box. Not valid on the root. Without a value,
+   * or 0, it does not rotate.
    */
   readonly rotation?: Expr<number>;
   /**
-   * `formatVersion` 4: fixa a direção de leitura da subárvore (literal `ltr` ou `rtl`), em vez de
-   * seguir a do container: um número de telefone, um trecho de código. O nó é posto pelo pai na
-   * direção dele; o que está dentro do nó segue a que ele fixa.
+   * `formatVersion` 4: pins the reading direction of the subtree (literal `ltr` or `rtl`), instead
+   * of following the container's: a phone number, a snippet of code. The node is placed by its
+   * parent in the parent's direction; what is inside the node follows the one it pins.
    */
   readonly direction?: Direction;
-  /** Tamanho no eixo; aceita expressão na `formatVersion` 4 (valor inválido cai no padrão, com aviso). */
+  /** Size on the axis; accepts an expression in `formatVersion` 4 (invalid: default plus warning). */
   readonly width?: Expr<SizeSpec>;
   readonly height?: Expr<SizeSpec>;
   /**
-   * Limites do tamanho (px, `formatVersion` 4; aceitam expressão), aplicados depois do
-   * `fill`/`hug`/`%` e antes do `minSize` da instância. Um `fill` que bate no `max` devolve a
-   * sobra aos outros `fill` do mesmo pai, como o flexbox.
+   * Size limits (px, `formatVersion` 4; accept an expression), applied after `fill`/`hug`/`%` and
+   * before the instance's `minSize`. A `fill` that hits the `max` gives the leftover back to the
+   * other `fill`s of the same parent, like flexbox.
    */
   readonly minWidth?: Expr<number>;
   readonly maxWidth?: Expr<number>;
   readonly minHeight?: Expr<number>;
   readonly maxHeight?: Expr<number>;
   /**
-   * Trilhas que o nó ocupa num pai `layout: grid` (v4; inteiro ≥ 1, expressão; limitado ao número
-   * de trilhas; padrão 1), como o `GridItemSpan` do Compose e o `grid-column: span n` do CSS.
+   * Tracks the node occupies in a `layout: grid` parent (v4; integer ≥ 1, expression; limited to
+   * the number of tracks; default 1), like Compose's `GridItemSpan` and CSS's `grid-column: span n`.
    */
   readonly span?: Expr<number>;
   /**
-   * Peso do nó `fill` no eixo principal de um pai `row`/`column` (v4; número > 0, expressão; padrão
-   * 1): o que sobra é repartido na proporção dos pesos, como o `Modifier.weight` do Compose e o
-   * `flex-grow` do CSS.
+   * Weight of the `fill` node on the main axis of a `row`/`column` parent (v4; number > 0,
+   * expression; default 1): what is left is split in proportion to the weights, like Compose's
+   * `Modifier.weight` and CSS's `flex-grow`.
    */
   readonly weight?: Expr<number>;
-  /** Só com pai `layout: none`. */
+  /** Only with a `layout: none` parent. */
   readonly anchors?: Anchors;
   readonly fill?: Expr<FillSpec>;
   readonly stroke?: StrokeSpec;
-  /** Uma sombra, ou (v4) de 1 a 4: a primeira fica por cima, como o `box-shadow` do CSS. */
+  /** One shadow, or (v4) 1 to 4: the first sits on top, like CSS's `box-shadow`. */
   readonly shadow?: ShadowSpec | readonly ShadowSpec[];
-  /** Na v4 cada item da lista também aceita `$token` de número. */
+  /** In v4 each item of the list also accepts a number `$token`. */
   readonly cornerRadius?: Expr<number | readonly [Radius, Radius, Radius, Radius]>;
 }
 
 export interface FrameTemplate extends TemplateNodeBase {
   readonly type: 'frame';
-  /** Recorta os filhos pela caixa (padrão: só a raiz recorta). Expressão só na v4. */
+  /** Clips the children to the box (default: only the root clips). Expression only in v4. */
   readonly clip?: BoolExpr;
   readonly layout?: LayoutSpec;
   readonly children?: readonly TemplateNode[];
   /**
-   * Variáveis do quadro (v4, só no arquivo escrito): nome → expressão, usadas com
-   * `{ "$var": "nome" }` neste quadro e nos descendentes. O `parseComponent` troca os `$var` pelo
-   * conteúdo e devolve o quadro **sem** `let`: quem usa o componente lido (motor, raster,
-   * visualizador, Catálogo) nunca o vê (`variables.ts`).
+   * Frame variables (v4, only in the written file): name → expression, used with
+   * `{ "$var": "name" }` in this frame and in the descendants. `parseComponent` swaps the `$var`s
+   * for the content and returns the frame **without** `let`: whoever uses the parsed component
+   * (engine, raster, viewer, Catalog) never sees it (`variables.ts`).
    */
   readonly let?: Readonly<Record<string, unknown>>;
 }
@@ -425,13 +427,13 @@ export interface EllipseTemplate extends TemplateNodeBase {
 }
 
 /**
- * Um trecho de um texto rico (`runs`, `formatVersion` 4). Os trechos de um nó quebram linha como
- * UM texto só, pela palavra; cada chave aceita expressão e o `text` é avaliado como o `text` do
- * nó. `weight`, `italic`, `family`, `size` e `decoration` sobrepõem os do `font` do nó, e
- * `color` o `color` do nó; `lineHeight`, `letterSpacing`, `align`, `verticalAlign`, `wrap`,
- * `ellipsis` e `maxLines` continuam só do nó. Com `background`, o trecho vira uma caixa em linha
- * (o "chip"): um bloco inquebrável de `padding` (número para os dois eixos ou `[vertical,
- * horizontal]`) e `radius` de canto. `padding` e `radius` sem `background` não têm efeito.
+ * A run of rich text (`runs`, `formatVersion` 4). The runs of a node break lines as ONE text only,
+ * by word; each key accepts an expression and the `text` is evaluated like the node's `text`.
+ * `weight`, `italic`, `family`, `size` and `decoration` override those of the node's `font`, and
+ * `color` the node's `color`; `lineHeight`, `letterSpacing`, `align`, `verticalAlign`, `wrap`,
+ * `ellipsis` and `maxLines` remain the node's only. With `background`, the run becomes an inline
+ * box (the "chip"): an unbreakable block with `padding` (a number for both axes or `[vertical,
+ * horizontal]`) and corner `radius`. `padding` and `radius` without `background` have no effect.
  */
 export interface TextRunTemplate {
   readonly text: Expr<string | number>;
@@ -441,32 +443,32 @@ export interface TextRunTemplate {
   readonly decoration?: Expr<'none' | 'underline' | 'line-through'>;
   readonly family?: Expr<string>;
   readonly size?: Expr<number>;
-  /** Cor de fundo da caixa em linha (`none` = sem caixa). */
+  /** Background color of the inline box (`none` = no box). */
   readonly background?: Expr<Color>;
   readonly radius?: Expr<number>;
   readonly padding?: Expr<number | readonly [number, number]>;
 }
 
 /**
- * Texto do nó: `text` (um estilo só) **ou** `runs` (trechos com estilo próprio, só na
- * `formatVersion` 4); os dois juntos não valem, e um deles é obrigatório.
+ * Text of the node: `text` (a single style) **or** `runs` (runs with their own style, only in
+ * `formatVersion` 4); both together are not valid, and one of them is required.
  */
 export interface TextTemplate extends TemplateNodeBase {
   readonly type: 'text';
   readonly text?: Expr<string | number>;
   readonly runs?: readonly TextRunTemplate[];
   readonly font?: FontSpec;
-  /** Cor do texto (`fill` do nó). Padrão: `#000000`. */
+  /** Text color (the node's `fill`). Default: `#000000`. */
   readonly color?: Expr<Color>;
   /**
-   * Distâncias pela linha de base (v4), como o `Modifier.paddingFromBaseline(top, bottom)` do
-   * Compose (px ≥ 0): `top` do topo da caixa do nó à primeira linha de base; `bottom`, da última
-   * linha de base ao fundo da caixa.
+   * Distances from the baseline (v4), like Compose's `Modifier.paddingFromBaseline(top, bottom)`
+   * (px ≥ 0): `top` from the top of the node's box to the first baseline; `bottom`, from the last
+   * baseline to the bottom of the box.
    */
   readonly baselinePadding?: BaselinePadding;
   /**
-   * Escopo da linha de um `repeat` (`$r0_1`), posto pela expansão no nó cuja contagem de linhas um
-   * `$lines` da mesma linha cita; nunca vem do arquivo (o parser recusa a chave).
+   * Scope of a `repeat` row (`$r0_1`), placed by the expansion on the node whose line count a
+   * `$lines` of the same row cites; it never comes from the file (the parser refuses the key).
    */
   readonly linesScope?: string;
 }
@@ -478,97 +480,99 @@ export interface BaselinePadding {
 
 export interface PathTemplate extends TemplateNodeBase {
   readonly type: 'path';
-  /** Dados SVG, desenhados numa caixa `viewBox` e escalados para a caixa do nó. */
+  /** SVG data, drawn in a `viewBox` box and scaled to the node's box. */
   readonly d: Expr<string>;
   readonly viewBox: readonly [number, number];
   readonly fillRule?: 'nonzero' | 'evenodd';
-  /** Espelha o desenho na horizontal quando a direção do nó é `rtl` (v4; padrão `false`). */
+  /** Mirrors the drawing horizontally when the node's direction is `rtl` (v4; default `false`). */
   readonly mirror?: BoolExpr;
 }
 
 /**
- * Espaço reservado para outro componente (ex.: o ícone de um botão, o conteúdo de um cartão).
- * No laboratório desenha só um contorno tracejado com o nome; na app, seria preenchido pela
- * marcação filha.
+ * Space reserved for another component (e.g. a button's icon, a card's content).
+ * In the lab it draws only a dashed outline with the name; in the app, it would be filled by the
+ * child marking.
  */
 export interface SlotTemplate extends TemplateNodeBase {
   readonly type: 'slot';
   readonly label?: Expr<string>;
   /**
-   * Como as instâncias filhas se organizam dentro do slot (componente com slot): `row`/`column`
-   * posicionam os filhos pela ordem entre irmãos e gravam os retângulos deles; `none` (ou
-   * ausente) deixa cada filho no próprio retângulo. `gap` e `padding` podem vir de campos.
+   * How the child instances are organized inside the slot (component with a slot): `row`/`column`
+   * position the children by sibling order and save their rectangles; `none` (or absent) leaves
+   * each child in its own rectangle. `gap` and `padding` can come from fields.
    */
   readonly layout?: LayoutSpec;
   /**
-   * Recorta as marcações filhas pela caixa do slot (v4; booleano ou expressão; padrão `false`):
-   * o desenho da filha só aparece dentro dela.
+   * Clips the child markings to the slot's box (v4; boolean or expression; default `false`):
+   * the child's drawing only appears inside it.
    */
   readonly clip?: BoolExpr;
   /**
-   * Cor herdada (v4): valores que o slot oferece às marcações filhas, pelo nome (livre, sem nome de
-   * plataforma). Cada valor é resolvido no pai (campos, tokens e modo dele) e a filha o lê com
-   * `{ "$provided": "<nome>", "default": … }`, como o `CompositionLocal` do Compose. Valor que não
-   * produz nada não oferece: o ancestral mais acima vale.
+   * Inherited color (v4): values that the slot offers to the child markings, by name (free, no
+   * platform name). Each value is resolved in the parent (its fields, tokens and mode) and the
+   * child reads it with `{ "$provided": "<name>", "default": … }`, like Compose's
+   * `CompositionLocal`. A value that produces nothing does not offer: the ancestor further up wins.
    */
   readonly provide?: Readonly<Record<string, Expr<string | number>>>;
 }
 
 /**
- * Tabela desenhada (`formatVersion` 2): repete o `template` (o desenho de **uma** linha) por
- * linha do campo `table` do tipo. Dentro do `template`, `{ "$field": "<coluna>" }` (e `$has`,
- * `$eq`, `$switch`) lê a coluna da linha; uma coluna **sombreia** o campo do tipo de mesmo nome
- * (o campo continua valendo para o que não é coluna). As linhas se empilham em `direction`
- * (`column`, o padrão, ou `row`) com `gap`. O nó se comporta como um quadro `hug` no eixo das
- * linhas e `fill` no outro, e o `template` é `hug` no eixo das linhas, se não disser o contrário.
- * Sem linhas, o nó fica vazio. Não pode ter `repeat` nem `slot` dentro. Só `name`, `visible`,
- * `opacity`, `width`, `height` e `anchors` valem no nó: o desenho (fundo, borda, cantos) é do
- * `template` de cada linha ou do quadro que envolve o `repeat`.
+ * Drawn table (`formatVersion` 2): repeats the `template` (the drawing of **one** row) for each
+ * row of the type's `table` field. Inside the `template`, `{ "$field": "<column>" }` (and `$has`,
+ * `$eq`, `$switch`) reads the row's column; a column **shadows** the type's field of the same name
+ * (the field remains valid for what is not a column). The rows stack in `direction`
+ * (`column`, the default, or `row`) with `gap`. The node behaves like a `hug` frame on the axis of
+ * the rows and `fill` on the other, and the `template` is `hug` on the rows' axis, unless it says
+ * otherwise.
+ * With no rows, the node is empty. It cannot contain `repeat` or `slot`. Only `name`, `visible`,
+ * `opacity`, `width`, `height` and `anchors` apply to the node: the drawing (background, border,
+ * corners) belongs to the `template` of each row or to the frame that wraps the `repeat`.
  */
 export interface RepeatTemplate extends Omit<TemplateNodeBase, 'direction'> {
   readonly type: 'repeat';
-  /** Chave do campo `table` do tipo cujas linhas se repetem (exatamente um de `field` e `count`). */
+  /** Key of the type's `table` field whose rows repeat (exactly one of `field` and `count`). */
   readonly field?: string;
   /**
-   * `formatVersion` 4: o `template` se repete `max(0, floor(count))` vezes, até 1000 (acima, 1000
-   * com o aviso `repeat limitado a 1000 linhas: <nó>`). Dentro dele, `{ "$field": "$index" }` é o
-   * índice da linha (0, 1, …), também no `repeat` por `field`; o do `repeat` mais interno vale.
+   * `formatVersion` 4: the `template` repeats `max(0, floor(count))` times, up to 1000 (above that,
+   * 1000 with the warning `repeat limited to 1000 rows: <node name>`). Inside it,
+   * `{ "$field": "$index" }` is the
+   * row index (0, 1, …), also in the `repeat` by `field`; the innermost `repeat`'s wins.
    */
   readonly count?: Expr<number>;
   readonly direction?: 'column' | 'row';
-  /** Espaço entre as linhas (px). */
+  /** Space between the rows (px). */
   readonly gap?: Expr<number>;
   /**
-   * `formatVersion` 4: `"fill"` faz o `repeat` ocupar o eixo do pai (como um filho `fill`) e
-   * dividir o eixo das linhas igualmente entre elas, menos os `gap`s; o tamanho `fill` (ou
-   * omitido) do `template` no eixo das linhas vale a fração. `"none"` (padrão): o `repeat` é
-   * `hug` no eixo das linhas.
+   * `formatVersion` 4: `"fill"` makes the `repeat` take the parent's axis (like a `fill` child) and
+   * divide the rows' axis equally among them, minus the `gap`s; the `template`'s `fill` (or omitted)
+   * size on the rows' axis is the fraction. `"none"` (default): the `repeat` is `hug` on the rows'
+   * axis.
    */
   readonly distribute?: 'none' | 'fill';
   /**
-   * `formatVersion` 4: o layout das linhas (`row`, `column` ou `grid`, completo) no lugar de
-   * `direction` + `gap`; os dois juntos não valem. Sem ele, nada muda. `distribute: "fill"` não
-   * combina com `grid`.
+   * `formatVersion` 4: the layout of the rows (`row`, `column` or `grid`, complete) in place of
+   * `direction` + `gap`; both together are not valid. Without it, nothing changes.
+   * `distribute: "fill"` does not combine with `grid`.
    */
   readonly layout?: LayoutSpec;
   /**
-   * `formatVersion` 4: quebra do `repeat` em linha (`direction: "row"`; em `column`, as colunas), com
-   * o mesmo sentido de `layout.wrap`, `lineGap`, `maxPerLine` e `maxLines` de um quadro (o `repeat`
-   * não tem `layout`).
+   * `formatVersion` 4: wrapping of the `repeat` in a line (`direction: "row"`; in `column`, the
+   * columns), with the same meaning as `layout.wrap`, `lineGap`, `maxPerLine` and `maxLines` of a
+   * frame (the `repeat` has no `layout`).
    */
   readonly wrap?: Expr<LayoutWrap>;
   readonly lineGap?: Expr<number>;
   readonly maxPerLine?: Expr<number>;
   readonly maxLines?: Expr<number>;
-  /** O desenho de uma linha. */
+  /** The drawing of one row. */
   readonly template: FrameTemplate;
 }
 
-/** Como a imagem ocupa a caixa. `fill-width`, `fill-height`, `scale-down` e `none` são da `formatVersion` 4. */
+/** How the image fills the box. `fill-width`, `fill-height`, `scale-down`, `none`: `formatVersion` 4. */
 export type ImageFit =
   'cover' | 'contain' | 'fill' | 'fill-width' | 'fill-height' | 'scale-down' | 'none';
 
-/** Os valores de `ImageFit` que só existem na `formatVersion` 4. */
+/** The `ImageFit` values that only exist in `formatVersion` 4. */
 export const IMAGE_FITS_V4: readonly ImageFit[] = [
   'fill-width',
   'fill-height',
@@ -577,14 +581,14 @@ export const IMAGE_FITS_V4: readonly ImageFit[] = [
 ];
 
 /**
- * Imagem remota (`formatVersion` 3). O `src` é a URL `https://` da imagem e é **restrito**: só um
- * texto literal ou exatamente `{ "$field": "<campo>" }` (campo `string` do tipo, ou coluna
- * `string` dentro de um `repeat`). Nenhuma outra expressão (`$concat`, `$switch`, `$if`) vale,
- * para o componente não montar a URL com dados de outros campos e enviá-los ao servidor de quem
- * escreveu a especialização. `fit` (padrão `cover`) diz como a imagem ocupa a caixa. O `fill` do
- * nó é o **fundo** atrás da imagem. `width`/`height` não aceitam `hug`: a arrumação nunca
- * depende da imagem baixada. O modelo nunca baixa a imagem; quem desenha decide (o reservado
- * aparece enquanto não houver imagem pronta ou liberada).
+ * Remote image (`formatVersion` 3). `src` is the image's `https://` URL and is **restricted**: only
+ * a literal text or exactly `{ "$field": "<field>" }` (a `string` field of the type, or a `string`
+ * column inside a `repeat`). No other expression (`$concat`, `$switch`, `$if`) is valid, so the
+ * component does not build the URL with data from other fields and send it to the server of whoever
+ * wrote the specialization. `fit` (default `cover`) says how the image fills the box. The node's
+ * `fill` is the **background** behind the image. `width`/`height` do not accept `hug`: the layout
+ * never depends on the downloaded image. The model never downloads the image; whoever draws
+ * decides (the placeholder appears while there is no ready or allowed image).
  */
 export interface ImageTemplate extends TemplateNodeBase {
   readonly type: 'image';
@@ -593,11 +597,12 @@ export interface ImageTemplate extends TemplateNodeBase {
 }
 
 /**
- * Ícone do conjunto da biblioteca (`formatVersion` 4; `icons` da especialização). `name` é o
- * nome no conjunto (literal ou expressão); `color` pinta os caminhos sem cor própria e os que
- * pedem a cor do nó (`fill`/`stroke` `true`); `strokeWidth` (unidades do `viewBox`) troca a
- * largura de todos os traços. O `name` é o do ícone (não há nome de nó). `hug` mede o `viewBox` do ícone. Nome fora do conjunto: reservado
- * com o aviso `ícone desconhecido: <nome>`; um nome literal fora do conjunto é erro da biblioteca.
+ * Icon from the library's set (`formatVersion` 4; `icons` of the specialization). `name` is the
+ * name in the set (literal or expression); `color` paints the paths without their own color and
+ * those that ask for the node's color (`fill`/`stroke` `true`); `strokeWidth` (`viewBox` units)
+ * swaps the width of all strokes. The `name` is the icon's (there is no node name). `hug` measures
+ * the icon's `viewBox`. Name outside the set: placeholder
+ * with the warning `unknown icon: <name>`; a literal name outside the set is a library error.
  */
 export interface IconTemplate extends Omit<TemplateNodeBase, 'name'> {
   readonly type: 'icon';
@@ -605,8 +610,8 @@ export interface IconTemplate extends Omit<TemplateNodeBase, 'name'> {
   readonly color?: Expr<Color>;
   readonly strokeWidth?: Expr<number>;
   /**
-   * Espelha o ícone na horizontal quando a direção do nó é `rtl` (v4). Ausente vale o `mirror` do
-   * ícone no conjunto (`mapping-icons` formatVersion 2), que por sua vez vale `false`.
+   * Mirrors the icon horizontally when the node's direction is `rtl` (v4). Absent, the icon's `mirror`
+   * in the set (`mapping-icons` formatVersion 2) applies, which in turn is `false`.
    */
   readonly mirror?: BoolExpr;
 }
@@ -623,28 +628,30 @@ export type TemplateNode =
   | IconTemplate;
 
 // ---------------------------------------------------------------------------------------
-// Arquivo
+// File
 // ---------------------------------------------------------------------------------------
 
 /**
- * Como a instância se dimensiona quando chega **sem retângulo** (tela a partir de um JSON
- * externo, arrumada por `layoutScreen` em `layout.ts`): px fixos, `"fill"` (ocupa o espaço que
- * o pai dá nesse eixo), `"hug"` (do conteúdo: o template medido, ou os filhos do slot) ou, na v4,
- * `"min-content"`/`"max-content"` (a medida intrínseca). Eixo ausente = px de `size`. Não vale para
- * instâncias com retângulo (editor, `*.screen.json`).
+ * How the instance is sized when it arrives **without a rectangle** (screen from an external
+ * JSON, laid out by `layoutScreen` in `layout.ts`): fixed px, `"fill"` (takes the space the
+ * parent gives on that axis), `"hug"` (from the content: the measured template, or the slot's
+ * children) or, in v4,
+ * `"min-content"`/`"max-content"` (the intrinsic measure). Absent axis = px of `size`. Not valid for
+ * instances with a rectangle (editor, `*.screen.json`).
  */
 export type InstanceSizeSpec = number | 'fill' | 'hug' | IntrinsicSize;
 
 /**
- * `sizing` por eixo: o valor literal ou, na v4, uma expressão que dá número ≥ 0, `"fill"` ou `"hug"`,
- * avaliada com os valores da instância (`$size` e `$lines` não valem aqui).
+ * `sizing` per axis: the literal value or, in v4, an expression that gives a number ≥ 0, `"fill"`
+ * or `"hug"`,
+ * evaluated with the instance's values (`$size` and `$lines` do not apply here).
  */
 export interface ComponentSizing {
   readonly width?: Expr<InstanceSizeSpec>;
   readonly height?: Expr<InstanceSizeSpec>;
 }
 
-/** Pontos de ancoragem do desenho em pixels de tela (`screen.anchor`). */
+/** Anchor points of the drawing in screen pixels (`screen.anchor`). */
 export const SCREEN_ANCHORS = [
   'center',
   'top-left',
@@ -659,16 +666,17 @@ export const SCREEN_ANCHORS = [
 export type ScreenAnchor = (typeof SCREEN_ANCHORS)[number];
 
 /**
- * Desenho em pixels de tela (v4, só na raiz do arquivo): o template é desenhado no `size` do
- * componente em pixels de tela, em qualquer zoom, ancorado no ponto `anchor` do retângulo da
- * marcação (que continua em pixels da imagem). O desenho pode passar do retângulo.
+ * Drawing in screen pixels (v4, only at the file's root): the template is drawn at the component's
+ * `size` in screen pixels, at any zoom, anchored at the `anchor` point of the marking's
+ * rectangle (which stays in image pixels). The drawing may go beyond the rectangle.
  */
 export interface ScreenSpec {
   readonly anchor?: ScreenAnchor;
 }
 
-// Os lados e o alinhamento da âncora têm uma só definição, em `../types` (o formato do projeto, que
-// não importa daqui): o arquivo do componente os reexporta.
+// The sides and the alignment of the anchor have a single definition, in `../types` (the project
+// format, which
+// does not import from here): the component file re-exports them.
 export {
   ANCHOR_ALIGNS,
   ANCHOR_SIDES,
@@ -677,10 +685,10 @@ export {
 } from '../anchorSides';
 
 /**
- * Como o tipo prefere encostar na âncora (v4, só na raiz do arquivo): os padrões de `side`, `align`
- * e `offset` de uma marcação que declara âncora sem dizê-los. Tudo opcional: ausentes valem `top`,
- * `center` e `{ main: 0, cross: 0 }`. O `offset` é em UNIDADES do componente (a densidade do
- * container o converte em pixels ao aplicar); ver `componentAnchorDefaults`.
+ * How the type prefers to touch the anchor (v4, only at the file's root): the defaults of `side`,
+ * `align` and `offset` of a marking that declares an anchor without stating them. All optional:
+ * absent ones are `top`, `center` and `{ main: 0, cross: 0 }`. `offset` is in component UNITS (the
+ * container's density converts it to pixels when applying); see `componentAnchorDefaults`.
  */
 export interface ComponentAnchor {
   readonly side?: AnchorSide;
@@ -691,45 +699,46 @@ export interface ComponentAnchor {
 export interface ComponentFile {
   readonly format: typeof COMPONENT_FORMAT;
   readonly formatVersion: ComponentFormatVersion;
-  /** Id do componente (único na especialização); o tipo da especialização aponta para o arquivo. */
+  /** Id of the component (unique in the specialization); the type's `component` points to the file. */
   readonly id: string;
   readonly name: string;
   readonly description?: string;
-  /** Tamanho inicial da instância ao ser criada (px). */
+  /** Initial size of the instance when created (px). */
   readonly size: { readonly width: number; readonly height: number };
-  /** Tamanho mínimo (px), para o redimensionar não quebrar o desenho. */
+  /** Minimum size (px), so that resizing does not break the drawing. */
   readonly minSize?: { readonly width: number; readonly height: number };
-  /** Dimensionamento sem retângulo (ver `ComponentSizing`); ausente = `size` nos dois eixos. */
+  /** Sizing without a rectangle (see `ComponentSizing`); absent = `size` on both axes. */
   readonly sizing?: ComponentSizing;
-  /** Desenho em pixels de tela ancorado no retângulo da marcação (v4); ver `ScreenSpec`. */
+  /** Drawing in screen pixels anchored to the marking's rectangle (v4); see `ScreenSpec`. */
   readonly screen?: ScreenSpec;
-  /** Como o tipo prefere encostar na âncora (v4); ver `ComponentAnchor`. */
+  /** How the type prefers to touch the anchor (v4); see `ComponentAnchor`. */
   readonly anchor?: ComponentAnchor;
   /**
-   * Valores de pré-visualização dos campos (biblioteca e instância nova): os campos vêm do
-   * tipo da especialização; aqui só os valores de exemplo.
+   * Preview values of the fields (library and new instance): the fields come from the
+   * specialization's type; here only the example values.
    */
   readonly preview?: FieldValues;
-  /** Raiz do desenho: ocupa o retângulo inteiro da instância. */
+  /** Root of the drawing: takes the whole rectangle of the instance. */
   readonly template: FrameTemplate;
   /**
-   * Tokens do modo de desenho (nome → valor), postos pelo catálogo ao carregar a especialização;
-   * nunca vêm do arquivo (o parser recusa a chave). Ver `tokens.ts`.
+   * Tokens of the drawing mode (name → value), set by the catalog when loading the specialization;
+   * they never come from the file (the parser refuses the key). See `tokens.ts`.
    */
   readonly resolvedTokens?: Readonly<Record<string, string | number>>;
   /**
-   * Os tokens de cada modo declarado (`tokens.modes`), postos pelo catálogo: o desenho escolhe a
-   * tabela do modo efetivo da marcação sem recarregar o componente. Ausente = só `resolvedTokens`.
+   * The tokens of each declared mode (`tokens.modes`), set by the catalog: the drawing picks the
+   * table of the marking's effective mode without reloading the component. Absent = only
+   * `resolvedTokens`.
    */
   readonly resolvedTokensByMode?: Readonly<
     Record<string, Readonly<Record<string, string | number>>>
   >;
-  /** Conjunto de ícones da especialização (`icons`), posto pelo catálogo; nunca vem do arquivo. */
+  /** Icon set of the specialization (`icons`), set by the catalog; never comes from the file. */
   readonly resolvedIcons?: IconSet;
 }
 
-/** Como o tipo da especialização referencia o componente (chave nova, formatVersion 4 do spec). */
+/** How the specialization's type references the component (new key, spec formatVersion 4). */
 export interface ComponentRef {
-  /** Caminho do arquivo relativo ao da especialização, ex.: `components/button.json`. */
+  /** Path of the file relative to the specialization's, e.g. `components/button.json`. */
   readonly component: string;
 }

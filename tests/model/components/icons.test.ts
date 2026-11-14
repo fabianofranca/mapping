@@ -55,21 +55,21 @@ describe('parseIconsFile', () => {
     const result = parseIconsFile({ ...FILE, icons: { Check: FILE.icons.check } });
     expect(result.ok).toBe(false);
     if (!result.ok)
-      expect(result.errors.join('\n')).toContain('icons.Check: nome inválido');
+      expect(result.errors.join('\n')).toContain('icons.Check: invalid name');
   });
 
   it('recusa paths vazio', () => {
     const result = parseIconsFile({ ...FILE, icons: { check: { paths: [] } } });
     expect(result.ok).toBe(false);
     if (!result.ok)
-      expect(result.errors.join('\n')).toContain('icons.check.paths: esperava');
+      expect(result.errors.join('\n')).toContain('icons.check.paths: expected');
   });
 
   it('recusa formatVersion 3 com mensagem de versão (1 e 2 valem)', () => {
     const result = parseIconsFile({ ...FILE, formatVersion: 3 });
     expect(result.ok).toBe(false);
     if (!result.ok)
-      expect(result.errors.join('\n')).toContain('formatVersion: deve ser 1 ou 2');
+      expect(result.errors.join('\n')).toContain('formatVersion: must be 1 or 2');
     expect(parseIconsFile({ ...FILE, formatVersion: 1 }).ok).toBe(true);
     expect(parseIconsFile({ ...FILE, formatVersion: 2 }).ok).toBe(true);
   });
@@ -87,7 +87,7 @@ describe('parseIconsFile', () => {
     );
     try {
       locale.value = 'pt-BR';
-      expect(messageText(message)).toBe('deve ser 1 ou 2');
+      expect(messageText(message)).toBe('must be 1 or 2');
       locale.value = 'en-US';
       expect(messageText(message)).toBe('must be 1 or 2');
     } finally {
@@ -120,7 +120,7 @@ describe('parseIconsFile', () => {
     expect(result.ok).toBe(false);
     if (!result.ok)
       expect(result.errors).toContain(
-        'icons.back.mirror: só é permitido com formatVersion 2',
+        'icons.back.mirror: only allowed with formatVersion 2',
       );
   });
 
@@ -135,7 +135,7 @@ describe('parseIconsFile', () => {
       const text = bad.errors.join('\n');
       expect(text).toContain('viewBox: required field');
       expect(text).toContain('icons.x.paths[0].cap');
-      expect(text).toContain('icons.x.paths[0].extra: chave desconhecida');
+      expect(text).toContain('icons.x.paths[0].extra: unknown key');
     }
   });
 });
