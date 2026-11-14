@@ -52,6 +52,7 @@ export type ModelMessageCode = keyof typeof modelMessagesEnUS extends infer K
     : never
   : never;
 
+// portuguese-guard:begin pt-BR part of the bilingual module (decision 2 of #741)
 export const modelMessagesPtBR: Record<keyof typeof modelMessagesEnUS, string> = {
   ...templatePtBR,
   'model.catalog.fileMissing': 'arquivo ausente ({path})',
@@ -73,3 +74,4 @@ export const modelMessagesPtBR: Record<keyof typeof modelMessagesEnUS, string> =
   'model.icons.invalid': 'icons: {at}{reason}',
   'model.icons.invalidFallback': 'icons: conjunto de ícones inválido',
 };
+// portuguese-guard:end

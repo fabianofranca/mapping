@@ -2,8 +2,15 @@
 // because a script, a skill or a scheduled prompt reads or writes them. Changing one of them
 // means changing its producer and every reader in the same PR, so the list is closed: a term
 // is added only after checking that something really matches on it. `source` is the
-// repo-relative file that produces or reads the term. A later guard test accepts these terms
-// inside backticks or quotes only; no test uses the list yet.
+// repo-relative file that produces or reads the term. The guard
+// (`tests/tooling/portugueseGuard.test.ts`, decision 10 of #741) accepts these terms inside
+// backticks or quotes only; the `record-titles` terms are also accepted without quotes on the
+// heading lines and at the start of a line of the records in `changelog/` and
+// `docs/design-system/`, where they are the fixed titles (decision 3).
+//
+// The rest of this file is the guard's exception list (decision 2 of #741): whole files and
+// folders (`PORTUGUESE_PATHS`), a managed block of a file (`PORTUGUESE_BLOCK_FILES`) and single
+// lines (`PORTUGUESE_LINES`). Every entry has a reason; an entry without one is a test failure.
 
 export type ProtocolGroup =
   // Values the queue panel (`painel.py`) writes or reads: statuses, stages, session kinds,
@@ -1789,5 +1796,783 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     term: 'Versão inválida: "${version}" (esperado x.y.z).',
     source: 'scripts/release/stableRelease.mjs',
     group: 'error-messages',
+  },
+  // ID10 sweep: terms added by area A1 (skills, docs/FLOW.md)
+  // ID10 sweep: terms added by area A2 (queue tests)
+  // ID10 sweep: terms added by area A3 (other tooling tests, scripts/ci, scripts/release, pwa)
+  // ID10 sweep: terms added by area B (docs, changelog, libraries, examples, scripts/testing)
+  // ID10 sweep: terms added by area C (src, viewer, other tests)
+];
+
+// ---------------------------------------------------------------------------------------------
+// Exception list of the Portuguese guard (decision 2 of #741). Nothing outside it may carry
+// Portuguese; a new entry needs a reason and fits one of the cases that decision 2 allows.
+// ---------------------------------------------------------------------------------------------
+
+/** A file (`path`) or a folder (`path` ending in `/`) that may carry Portuguese as a whole. */
+export interface PathException {
+  readonly path: string;
+  /** Files inside a folder entry that are NOT exempt (they are scanned as any other file). */
+  readonly except?: readonly string[];
+  /** The file carries a `pt-BR kept:` comment with the reason (the test checks it is still there). */
+  readonly annotated?: boolean;
+  readonly reason: string;
+}
+
+/**
+ * Test files that keep Portuguese on purpose and say why in a `pt-BR kept:` comment (phase ID6):
+ * shared fixture data (names of `sampleProject` and the like), the object of a test that is the
+ * Portuguese text itself, or a value the engine matches. The reason below is the one in the file.
+ */
+export const ANNOTATED_FILES: readonly PathException[] = [
+  {
+    path: 'tests/app/shortcuts.test.ts',
+    annotated: true,
+    reason:
+      'ç is the character macOS Option+C produces (a key value, not Portuguese text)',
+  },
+  {
+    path: 'tests/canvas/harness.ts',
+    annotated: true,
+    reason:
+      "shared fixture data asserted by tests/canvas/renderers, tests/canvas/input and tests/app (layer 'Lataria', markings 'Porta' and 'Maçaneta', annotation 'Amassado' and its pairs)",
+  },
+  {
+    path: 'tests/canvas/renderPerformance.test.ts',
+    annotated: true,
+    reason:
+      'shared fixture data asserted by tests/model (tests/fixtures/material3 node names and values)',
+  },
+  {
+    path: 'tests/canvas/renderers/markings.test.ts',
+    annotated: true,
+    reason:
+      'shared fixture data (sampleProject) asserted by tests/model, tests/components',
+  },
+  {
+    path: 'tests/canvas/renderers/overlay.test.ts',
+    annotated: true,
+    reason:
+      'shared fixture data (sampleProject) asserted by tests/model, tests/components',
+  },
+  {
+    path: 'tests/components/CitationEditor.test.tsx',
+    annotated: true,
+    reason: 'shared fixture data asserted by tests/model (sampleProject)',
+  },
+  {
+    path: 'tests/components/CommentsWindow.test.tsx',
+    annotated: true,
+    reason: 'shared fixture data asserted by tests/model (threadFixtures HUMAN email)',
+  },
+  {
+    path: 'tests/components/Composer.test.tsx',
+    annotated: true,
+    reason: 'shared fixture data asserted by tests/model (sampleProject)',
+  },
+  {
+    path: 'tests/components/Details.test.tsx',
+    annotated: true,
+    reason: 'shared fixture data asserted by tests/model (specFixtures)',
+  },
+  {
+    path: 'tests/components/DiagnosticsComponents.test.tsx',
+    annotated: true,
+    reason: 'asserts that the Portuguese strings are absent in en-US',
+  },
+  {
+    path: 'tests/components/DiagnosticsView.test.tsx',
+    annotated: true,
+    reason: 'raw pt-BR fallback message of the model issue, only input data',
+  },
+  {
+    path: 'tests/components/Home.test.tsx',
+    annotated: true,
+    reason:
+      'the object of the test is accent- and case-insensitive search of Portuguese text',
+  },
+  {
+    path: 'tests/components/LinkDialog.test.tsx',
+    annotated: true,
+    reason:
+      'shared fixture data asserted by tests/model, tests/mcp (group names of specV11Fixtures)',
+  },
+  {
+    path: 'tests/components/ReadingDirection.test.tsx',
+    annotated: true,
+    reason: 'the object of this half of the test is the Portuguese dictionary',
+  },
+  {
+    path: 'tests/components/SameLayerLink.test.tsx',
+    annotated: true,
+    reason:
+      'shared fixture data asserted by tests/model (role name "Falha" of sameLayerFixtures)',
+  },
+  {
+    path: 'tests/components/SpecsDialog.test.tsx',
+    annotated: true,
+    reason: 'the pt-BR rendering of the model message is the object of the test',
+  },
+  {
+    path: 'tests/components/TableRefCell.test.tsx',
+    annotated: true,
+    reason:
+      'shared fixture data (names such as Alvo, alvos, Cliente.cpf, Glossário.termo) asserted by tests/model and tests/store',
+  },
+  {
+    path: 'tests/components/arrowLinks.test.tsx',
+    annotated: true,
+    reason:
+      'shared fixture data (Porta, Maçaneta, Lataria, Vidros) asserted by tests/model',
+  },
+  {
+    path: 'tests/components/arrows.test.tsx',
+    annotated: true,
+    reason: 'shared fixture data (Porta, Maçaneta) asserted by tests/model',
+  },
+  {
+    path: 'tests/components/bottomWindows.test.tsx',
+    annotated: true,
+    reason:
+      'shared fixture data (Porta, Maçaneta, Vidros, amassado, trinca, Título, Clique) asserted by tests/model',
+  },
+  {
+    path: 'tests/components/canvasMarkings.test.tsx',
+    annotated: true,
+    reason:
+      'shared fixture data (Porta, Maçaneta, images/frente) asserted by tests/model',
+  },
+  {
+    path: 'tests/components/catalog/CatalogView.test.tsx',
+    annotated: true,
+    reason: 'asserts that no Portuguese text leaks into en-US',
+  },
+  {
+    path: 'tests/components/citeMenus.test.tsx',
+    annotated: true,
+    reason:
+      "shared fixture data asserted by tests/model (cadastroProject field key 'texto'; sampleProject names 'Maçaneta', 'Amassado', 'images/frente.jpg'; harness folder 'projeto')",
+  },
+  {
+    path: 'tests/components/copyActions.test.tsx',
+    annotated: true,
+    reason:
+      "shared fixture data asserted by tests/model (sampleProject names 'Maçaneta', 'images/frente.jpg' and the harness folder 'projeto')",
+  },
+  {
+    path: 'tests/components/crumbsPath.test.tsx',
+    annotated: true,
+    reason:
+      "shared fixture data asserted by tests/model (sampleProject names 'Porta', 'Maçaneta' and the review fixture 'Formulário')",
+  },
+  {
+    path: 'tests/components/editorWindows.test.tsx',
+    annotated: true,
+    reason:
+      "shared fixture data asserted by tests/model (sampleProject names 'Porta', 'Maçaneta')",
+  },
+  {
+    path: 'tests/components/locks.test.tsx',
+    annotated: true,
+    reason:
+      "shared fixture data asserted by tests/model (sampleProject names 'Porta', 'Maçaneta', 'Fechadura', 'images/lateral.jpg')",
+  },
+  {
+    path: 'tests/components/noticeFixtures.ts',
+    annotated: true,
+    reason:
+      'shared fixture data asserted by tests/components and tests/model (spec id, names and notice messages)',
+  },
+  {
+    path: 'tests/components/review/details.test.tsx',
+    annotated: true,
+    reason:
+      'shared fixture data asserted by tests/model and tests/store (names from sampleProject, richScenario and firstImport: Porta, Fechadura, Lataria, Vidros, Amassado, gravidade, Formulário, Importação, Eventos)',
+  },
+  {
+    path: 'tests/components/review/itemHeader.test.tsx',
+    annotated: true,
+    reason:
+      'shared fixture data asserted by tests/store and tests/model (names Porta, Maçaneta, Vidros, Formulário from richScenario, sampleProject and firstImport)',
+  },
+  {
+    path: 'tests/components/review/navigation.test.tsx',
+    annotated: true,
+    reason:
+      'shared fixture data asserted by tests/model (names from sampleProject, e.g. Vidros, tipo)',
+  },
+  {
+    path: 'tests/components/review/programmaticFocusPaths.test.tsx',
+    annotated: true,
+    reason:
+      'shared fixture data asserted by tests/model (annotation name Título from cadastroProject)',
+  },
+  {
+    path: 'tests/components/review/reviewHarness.tsx',
+    annotated: true,
+    reason: 'shared fixture data asserted by tests/components and tests/canvas',
+  },
+  {
+    path: 'tests/components/review/reviewMode.test.tsx',
+    annotated: true,
+    reason:
+      "shared fixture data (item 'Botão') asserted by tests/store and tests/components",
+  },
+  {
+    path: 'tests/components/review/revisedFixture.ts',
+    annotated: true,
+    reason: 'shared fixture data asserted by tests/store (revisedGuard)',
+  },
+  {
+    path: 'tests/components/review/shownProject.test.tsx',
+    annotated: true,
+    reason:
+      "shared fixture data (marking 'Formulário' from firstImport) asserted by tests/components Read at each use: the language is only set in `beforeEach`.",
+  },
+  {
+    path: 'tests/components/treeWindow.test.tsx',
+    annotated: true,
+    reason:
+      'shared fixture data (names Porta, Maçaneta, Fechadura, Lataria, Vidros, image files lateral/frente of sampleProject) asserted by tests/',
+  },
+  {
+    path: 'tests/components/viewModePanel.test.tsx',
+    annotated: true,
+    reason:
+      "shared fixture data (layers 'Camada A', 'Camada B', 'Só dados' of viewModeFixtures) asserted by tests/canvas and tests/store",
+  },
+  {
+    path: 'tests/components/wrapMenus.test.tsx',
+    annotated: true,
+    reason:
+      "shared fixture data (names Porta, Maçaneta, Fechadura, image 'frente.jpg' of sampleProject) asserted by tests/",
+  },
+  {
+    path: 'tests/e2e/helpShortcutsLine.spec.ts',
+    annotated: true,
+    reason: 'the object of the test is the width of the pt-BR text of the shortcuts row',
+  },
+  {
+    path: 'tests/model/annotations.test.ts',
+    annotated: true,
+    reason:
+      "the keys and values 'tipo', 'gravidade' and 'média' come from the sampleProject fixture",
+  },
+  {
+    path: 'tests/model/citations.test.ts',
+    annotated: true,
+    reason:
+      'the names titulo, campos, alvos, cpf, nome, termo, Cliente, Lista, Alvos and Glossário come from refColumnFixtures (data of the fixture) Project: I1 (a.png) with M1, M2, M3 (unnamed); AM (model "Cliente", table campos with the row',
+  },
+  {
+    path: 'tests/model/citeTargets.test.ts',
+    annotated: true,
+    reason:
+      'the names titulo, campos, alvos, cpf, nome, termo, solto, principal, Modelo, Cliente, Alvos and Glossário come from refColumnFixtures (data of the fixture)',
+  },
+  {
+    path: 'tests/model/codeBlueprint.test.ts',
+    annotated: true,
+    reason:
+      'the names, keys, values and notes asserted here (Formulário, Cadastrar, Componentes, Eventos, texto, estilo, ...) come from specFixtures / variantsFixtures (data of the fixtures)',
+  },
+  {
+    path: 'tests/model/codeLocations.test.ts',
+    annotated: true,
+    reason: 'platform name of the sdui example, which is Portuguese data.',
+  },
+  {
+    path: 'tests/model/components/expressions.test.ts',
+    annotated: true,
+    reason:
+      "'não' is in the engine's falsy set (FALSY_TEXT in src/model/components/expressions.ts)",
+  },
+  {
+    path: 'tests/model/components/instantiate.test.ts',
+    annotated: true,
+    reason:
+      'boolean enum values "sim"/"não" of the engine (FALSY_TEXT in expressions.ts)',
+  },
+  {
+    path: 'tests/model/components/library.test.ts',
+    annotated: true,
+    reason:
+      'the default label of the button in viewer/samples/samples.ts (pt-BR sample data)',
+  },
+  {
+    path: 'tests/model/components/material3.test.ts',
+    annotated: true,
+    reason:
+      'boolean enum value and slot name of the pt-BR Material 3 sample (viewer/samples/samplesMaterial3.ts)',
+  },
+  {
+    path: 'tests/model/components/origin.test.ts',
+    annotated: true,
+    reason: 'default screen id of the engine (src/model/components/origin.ts)',
+  },
+  {
+    path: 'tests/model/invalidFixtures.ts',
+    annotated: true,
+    reason:
+      'the generated JSON in tests/fixtures/invalid/ must stay byte-identical (outside this batch)',
+  },
+  {
+    path: 'tests/model/invariants.test.ts',
+    annotated: true,
+    reason: 'name comes from sampleProject in fixtures.ts (outside this batch)',
+  },
+  {
+    path: 'tests/model/itemRef.test.ts',
+    annotated: true,
+    reason: 'the non-ASCII character is the object of the encoding test',
+  },
+  {
+    path: 'tests/model/markdown.test.ts',
+    annotated: true,
+    reason: 'the accents stripped from the slug are the object of the test',
+  },
+  {
+    path: 'tests/model/material3ComposeM2.test.ts',
+    annotated: true,
+    reason: "'não cabe' is the pt-BR text of the warning emitted by src/model",
+  },
+  {
+    path: 'tests/model/material3ComposeM3.test.ts',
+    annotated: true,
+    reason: "'não cabe' is the pt-BR text of the warning emitted by src/model",
+  },
+  {
+    path: 'tests/model/material3ComposeM4.test.ts',
+    annotated: true,
+    reason: "'não cabe' is the pt-BR text of the warning emitted by src/model",
+  },
+  {
+    path: 'tests/model/material3ComposeM4GrupoA.test.ts',
+    annotated: true,
+    reason: "'não cabe' is the pt-BR text of the warning emitted by src/model",
+  },
+  {
+    path: 'tests/model/material3ComposeM4GrupoC.test.ts',
+    annotated: true,
+    reason: "'não cabe' is the pt-BR text of the warning emitted by src/model",
+  },
+  {
+    path: 'tests/model/material3ComposeM5.test.ts',
+    annotated: true,
+    reason: "'não cabe' is the pt-BR text of the warning emitted by src/model",
+  },
+  {
+    path: 'tests/model/material3ComposeM5DatePicker.test.ts',
+    annotated: true,
+    reason: "'não cabe' is the pt-BR text of the warning emitted by src/model",
+  },
+  {
+    path: 'tests/model/material3ComposeM5GrupoA.test.ts',
+    annotated: true,
+    reason: "'não cabe' is the pt-BR text of the warning emitted by src/model",
+  },
+  {
+    path: 'tests/model/material3ExpressoesEx4.test.ts',
+    annotated: true,
+    reason:
+      'node names of libraries/material3-compose and of tests/fixtures/material3-ex4-v1.json are Portuguese data',
+  },
+  {
+    path: 'tests/model/material3ExpressoesEx6Carousel.test.ts',
+    annotated: true,
+    reason:
+      'node names of libraries/material3-compose and of tests/fixtures/material3-ex6-v1.json are Portuguese data',
+  },
+  {
+    path: 'tests/model/material3ExpressoesEx6Slider.test.ts',
+    annotated: true,
+    reason:
+      'node names of libraries/material3-compose and of tests/fixtures/material3-ex6-v1.json are Portuguese data',
+  },
+  {
+    path: 'tests/model/material3Mc5GrupoA.test.ts',
+    annotated: true,
+    reason:
+      'the warning texts may come in pt-BR (`não cabe`, `$lines instável`) as well as in English',
+  },
+  {
+    path: 'tests/model/material3Mf4Regression.test.ts',
+    annotated: true,
+    reason:
+      'the frozen fixture tests/fixtures/material3-mf4-before.json holds the Portuguese node and example names (EXCEPTIONS, L2_EXAMPLES): they are mapped to the English ones the library draws now (tests/support/material3OldNames.ts)',
+  },
+  {
+    path: 'tests/model/proposalChanges.test.ts',
+    annotated: true,
+    reason: 'shared fixture data (sampleProject entries) asserted by other tests',
+  },
+  {
+    path: 'tests/model/refAnnotation.test.ts',
+    annotated: true,
+    reason:
+      'shared fixture data (refAnnotationFixtures) asserted by tests/components and tests/ui',
+  },
+  {
+    path: 'tests/model/refAnnotationFixtures.ts',
+    annotated: true,
+    reason:
+      'shared fixture data (ids, names and keys of the spec) asserted by tests/components, tests/ui and tests/model',
+  },
+  {
+    path: 'tests/model/refColumn.test.ts',
+    annotated: true,
+    reason:
+      'shared fixture data (refColumnFixtures) asserted by tests/components and tests/store',
+  },
+  {
+    path: 'tests/model/refColumnFixtures.ts',
+    annotated: true,
+    reason:
+      'shared fixture data (spec ids, names and keys; project names and values) asserted by tests/components, tests/store and tests/model',
+  },
+  {
+    path: 'tests/model/refGrammar.test.ts',
+    annotated: true,
+    reason: 'accented characters are the object of the round-trip test',
+  },
+  {
+    path: 'tests/model/repair.test.ts',
+    annotated: true,
+    reason: 'shared fixture data (sampleProject names) asserted by other tests',
+  },
+  {
+    path: 'tests/model/scaleProject.ts',
+    annotated: true,
+    reason:
+      "shared fixture data asserted by tests/scale/mcp (mcpGrowth expects 'Dúvida')",
+  },
+  {
+    path: 'tests/model/schemaV4.test.ts',
+    annotated: true,
+    reason:
+      'shared fixture data (cadastroProject, specProject, sampleProject: Portuguese field keys, names and values) asserted by tests/mcp, tests/components and others',
+  },
+  {
+    path: 'tests/model/serialization.test.ts',
+    annotated: true,
+    reason:
+      'unicode (accents) is the object of the test, in the shared sampleProject entries',
+  },
+  {
+    path: 'tests/model/specFixtures.ts',
+    annotated: true,
+    reason:
+      'shared fixture data asserted by tests/mcp, tests/components, tests/store, tests/storage, tests/app and tests/model (Portuguese marking names, field keys and values, layer ids)',
+  },
+  {
+    path: 'tests/model/specV11.test.ts',
+    annotated: true,
+    reason:
+      'shared fixture data (specV11Fixtures: layers `componentes`/`eventos`, groups `navegacao`/`dados`, names `Navegação`/`Dados`), asserted by tests/mcp',
+  },
+  {
+    path: 'tests/model/specV11Fixtures.ts',
+    annotated: true,
+    reason:
+      'shared fixture data (ids and names asserted by tests/mcp, tests/components and tests/model) /',
+  },
+  {
+    path: 'tests/model/specV4.test.ts',
+    annotated: true,
+    reason:
+      'shared fixture data asserted by tests/model/spec.test.ts (tests/fixtures/specs/biblioteca.json)',
+  },
+  {
+    path: 'tests/model/threadFilters.test.ts',
+    annotated: true,
+    reason: 'accent-insensitive search is the object of the text filter tests below',
+  },
+  {
+    path: 'tests/model/threadUsers.test.ts',
+    annotated: true,
+    reason: 'the object is the sorting of accented Portuguese names',
+  },
+  {
+    path: 'tests/model/typeChoice.test.ts',
+    annotated: true,
+    reason: 'accent-insensitive search is the object (Botão, ação, Cartão below)',
+  },
+  {
+    path: 'tests/model/typedDisplay.test.ts',
+    annotated: true,
+    reason:
+      'shared fixture data asserted by tests/mcp, tests/components, tests/examples (cadastroProject/codeProject)',
+  },
+  {
+    path: 'tests/scale/mcp/mcpGrowth.scale.ts',
+    annotated: true,
+    reason:
+      'shared fixture data (thread text `Dúvida` of buildScaleThreads in tests/model/scaleProject.ts)',
+  },
+  {
+    path: 'tests/store/proposalHarness.ts',
+    annotated: true,
+    reason:
+      "shared fixture data (names 'Porta dianteira', 'Botão' and the path 'nova.webp') asserted by tests/components and tests/store",
+  },
+  {
+    path: 'tests/store/viewModeFixtures.ts',
+    annotated: true,
+    reason:
+      'shared fixture data asserted by tests/components, tests/canvas (spec id, layer and type names)',
+  },
+  {
+    path: 'tests/support/material3Library.ts',
+    annotated: true,
+    reason:
+      'the names of the examples of the FROZEN v1 fixture (tests/fixtures/material3-*-v1.json), which stay in Portuguese',
+  },
+  {
+    path: 'tests/support/material3OldNames.ts',
+    annotated: true,
+    reason: 'the keys are Portuguese data of the frozen fixtures.',
+  },
+  {
+    path: 'tests/ui/changeText.test.ts',
+    annotated: true,
+    reason:
+      'shared fixture data asserted by tests/model, tests/components (marking names of sampleProject)',
+  },
+  {
+    path: 'tests/ui/labels.test.ts',
+    annotated: true,
+    reason: 'the test checks the default name in both locales',
+  },
+  {
+    path: 'tests/ui/relativeTime.test.ts',
+    annotated: true,
+    reason:
+      'the object of most tests is the pt-BR relative-time text (and the en-US one in one test)',
+  },
+  {
+    path: 'tests/ui/specHelp.test.ts',
+    annotated: true,
+    reason: 'matches the pt-BR help text',
+  },
+  {
+    path: 'tests/ui/specPackageImport.test.ts',
+    annotated: true,
+    reason: 'a multi-byte accented character is the test data (UTF-8 byte count)',
+  },
+  {
+    path: 'tests/ui/suggestions.test.ts',
+    annotated: true,
+    reason: 'accented Portuguese letters are the object (Unicode word characters)',
+  },
+  {
+    path: 'tests/utils/search.test.ts',
+    annotated: true,
+    reason: 'accent normalization of Portuguese text is the object',
+  },
+];
+
+export const PORTUGUESE_PATHS: readonly PathException[] = [
+  ...ANNOTATED_FILES,
+  // ID10 sweep: file entries added by area A1
+  // ID10 sweep: file entries added by area A2
+  // ID10 sweep: file entries added by area A3
+  // ID10 sweep: file entries added by area B
+  // ID10 sweep: file entries added by area C
+  {
+    path: 'tests/tooling/portugueseAllowlist.ts',
+    reason:
+      'this list: it holds the Portuguese protocol terms of decision 16 and quotes the exempted text in the reasons',
+  },
+  {
+    path: 'tests/tooling/portugueseGuard.test.ts',
+    reason: 'the tests of the guard itself feed it Portuguese sample lines and terms',
+  },
+  {
+    path: 'tests/fixtures/material3-mf4-before.json',
+    reason:
+      'frozen render snapshot taken before the Material 3 names were translated, input of the MF4 regression test',
+  },
+  {
+    path: 'tests/fixtures/material3/',
+    reason:
+      'fixture copy of a Material 3 package whose node names, keys and values are Portuguese data asserted by tests/model (annotated there)',
+  },
+  {
+    path: 'tests/fixtures/specs/biblioteca.json',
+    reason:
+      'shared fixture specification whose names are asserted by tests/model/spec.test.ts and specV4.test.ts',
+  },
+  {
+    path: 'tests/fixtures/sdui-v2.json',
+    reason:
+      'frozen old SDUI example specification (Portuguese platform and field names), input of the migration tests',
+  },
+  {
+    path: 'tests/fixtures/sdui-v3.json',
+    reason:
+      'frozen old SDUI example specification (Portuguese platform and field names), input of the migration tests',
+  },
+  {
+    path: 'tests/fixtures/invalid/',
+    reason:
+      'invalid-project fixtures: stored project data (field keys and option values such as "obrigatorio": "não") in Portuguese, like projects saved before the translation',
+  },
+  {
+    path: 'tests/fixtures/workspace/AGENTS.old.md',
+    reason:
+      'frozen copy of the old Portuguese AGENTS.md, input of the test that updates the managed block of an existing file',
+  },
+  {
+    path: 'src/i18n/pt-BR.ts',
+    reason:
+      'the pt-BR dictionary of the app (decision 2 of #741): the app stays bilingual',
+  },
+  {
+    path: 'src/i18n/modelMessagesTemplatesPtBR.ts',
+    reason:
+      'the pt-BR templates of the model messages, part of the bilingual app (decision 2 of #741)',
+  },
+  {
+    path: 'tests/i18n/',
+    reason:
+      'locale tests: they check the pt-BR text of the dictionaries and messages, and feed the model with the Portuguese strings it must translate (decision 2 of #741)',
+  },
+  {
+    path: 'tests/fixtures/material3-ex4-v1.json',
+    reason:
+      'frozen snapshot (v1) of the Material 3 package with the old Portuguese text: input of the migration tests; tests/support/material3V1Text.ts adopts the current text',
+  },
+  {
+    path: 'tests/fixtures/material3-ex6-v1.json',
+    reason:
+      'frozen snapshot (v1) of the Material 3 package with the old Portuguese text, input of the migration tests',
+  },
+  {
+    path: 'tests/fixtures/material3-m2-v1.json',
+    reason:
+      'frozen snapshot (v1) of the Material 3 package with the old Portuguese text, input of the migration tests',
+  },
+  {
+    path: 'tests/fixtures/material3-m3-v1.json',
+    reason:
+      'frozen snapshot (v1) of the Material 3 package with the old Portuguese text, input of the migration tests',
+  },
+  {
+    path: 'tests/fixtures/material3-m4-v1.json',
+    reason:
+      'frozen snapshot (v1) of the Material 3 package with the old Portuguese text, input of the migration tests',
+  },
+  {
+    path: 'tests/fixtures/material3-m5-v1.json',
+    reason:
+      'frozen snapshot (v1) of the Material 3 package with the old Portuguese text, input of the migration tests',
+  },
+  {
+    path: 'mappings-workspace/',
+    // setup.sh and watch-comments.mjs are copies of examples/workspace/ that
+    // mappingsWorkspaceSync.test.ts requires equal; AGENTS.md is scanned in its managed block.
+    except: [
+      'mappings-workspace/setup.sh',
+      'mappings-workspace/watch-comments.mjs',
+      'mappings-workspace/AGENTS.md',
+    ],
+    reason:
+      "the owner's mapping data, isolated from the code (CLAUDE.md, decision 18 of #741): projects, specializations, design-system tools and notes in Portuguese",
+  },
+];
+
+/**
+ * Files whose Portuguese lives in a block marked in the file itself, between a line with
+ * the begin marker (`PORTUGUESE_BLOCK_MARKERS.begin`, followed by the reason) and a line with the
+ * end marker (`PORTUGUESE_BLOCK_MARKERS.end`), in any comment syntax.
+ * Everything outside the blocks is scanned. The marker needs a reason.
+ */
+export const PORTUGUESE_BLOCK_MARKERS = {
+  begin: 'portuguese-guard:' + 'begin',
+  end: 'portuguese-guard:' + 'end',
+} as const;
+
+/**
+ * Files scanned only inside the block between two marker lines (the rest of the file is
+ * exempt): `mappings-workspace/AGENTS.md` keeps the managed block in English (the sync test
+ * requires it equal to `examples/workspace/AGENTS.md`) and the rest is the owner's data.
+ */
+export interface BlockOnlyException {
+  readonly path: string;
+  readonly begin: string;
+  readonly end: string;
+  readonly reason: string;
+}
+
+export const PORTUGUESE_BLOCK_ONLY: readonly BlockOnlyException[] = [
+  {
+    path: 'mappings-workspace/AGENTS.md',
+    begin: 'mapping:begin',
+    end: 'mapping:end',
+    reason:
+      "only the managed block is scanned (it is English and equal to examples/workspace/AGENTS.md); the rest of the file is the owner's data (decision 18 of #741)",
+  },
+];
+
+/** One line (or the lines that match `pattern`) of a file (or folder) that may keep Portuguese. */
+export interface LineException {
+  readonly path: string;
+  readonly pattern: RegExp;
+  readonly reason: string;
+}
+
+export const PORTUGUESE_LINES: readonly LineException[] = [
+  {
+    path: 'src/i18n/en-US.ts',
+    pattern: /'language\.pt-BR': 'Português \(Brasil\)'/,
+    reason:
+      'the name of the pt-BR language in its own language, as the language selector shows it',
+  },
+  {
+    path: 'examples/workspace/AGENTS.md',
+    pattern:
+      /^<!-- mapping:begin \(gerenciado pelo setup\.sh; não edite entre estas linhas\) -->$/,
+    reason:
+      'the begin marker of the managed block: setup.sh finds it in workspaces already installed, so its text cannot change',
+  },
+  {
+    path: 'mappings-workspace/AGENTS.md',
+    pattern:
+      /^<!-- mapping:begin \(gerenciado pelo setup\.sh; não edite entre estas linhas\) -->$/,
+    reason:
+      'copy of the begin marker of the managed block (see examples/workspace/AGENTS.md)',
+  },
+  {
+    path: 'scripts/release/workspaceAssets.mjs',
+    pattern: /gerenciado pelo setup\.sh; não edite entre estas linhas/,
+    reason:
+      'the begin marker of the managed block, matched by setup.sh in installed workspaces',
+  },
+  {
+    path: 'examples/workspace/setup.sh',
+    pattern: /^## Fluxo típico'$/,
+    reason:
+      'the last heading of OLD_HEADINGS, which recognizes the Portuguese AGENTS.md of older installs',
+  },
+  {
+    path: 'mappings-workspace/setup.sh',
+    pattern: /^## Fluxo típico'$/,
+    reason: 'copy of examples/workspace/setup.sh (the sync test requires it equal)',
+  },
+];
+
+/** Files of the repository that are not text or are generated and checked by another test. */
+export const GUARD_SKIPPED_PATHS: readonly {
+  readonly path: string;
+  readonly reason: string;
+}[] = [
+  {
+    path: 'public/guide/',
+    reason:
+      "the interactive guide generated by `npm run build:guide` from scripts/guide/ (bilingual: its pt-BR strings are the guide's own); a test checks that it is up to date, and its source is scanned",
+  },
+  {
+    path: 'package-lock.json',
+    reason: 'generated by npm; the names it lists are not text we write',
   },
 ];

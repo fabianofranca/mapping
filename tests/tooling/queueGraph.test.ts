@@ -155,7 +155,7 @@ describe('painel.py — queue graph (GF1, #1761)', () => {
   );
 
   it(
-    'd. the arrows, only the transitive reduction (no #1→#5), ordered by para and then by de',
+    'd. the arrows, only the transitive reduction (no #1→#5), ordered by `para` and then by `de`',
     () => {
       acceptanceQueue();
       expect(arrows()).toEqual([

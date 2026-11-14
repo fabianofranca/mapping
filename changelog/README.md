@@ -1,6 +1,6 @@
 # Changelog
 
-One file per epic (or stage) merged into `main`, with what changed for people who use the app and the MCP server, in pt-BR. Format inspired by [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). The details of each stage are in the closed issues with the `in-progress` label (`em-andamento` until 2026-11-03) and, before them, in the git history.
+One file per epic (or stage) merged into `main`, with what changed for people who use the app and the MCP server, in English. Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The details of each stage are in the closed issues with the `in-progress` label (`em-andamento` until 2026-11-03) and, before them, in the git history.
 
 ## Rule
 

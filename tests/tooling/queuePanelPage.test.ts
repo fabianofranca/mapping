@@ -167,7 +167,7 @@ describe('queue panel page: list fields of the meta', () => {
 
 // Phase PA1 (stage #1840): the "Progress" card draws the track per wave from `meta.grafoNos` and
 // `meta.grafoSetas` (list or JSON text), joins the `queue` row by `issue` and shows the phases
-// as chips; the "Completed" card lists the `concluída` rows of the `queue` per Brasília day.
+// as chips; the "Completed" card lists the `concluída` rows of the `queue` per Brasilia day.
 const BASE = 'https://github.com/fabianofranca/mapping';
 
 /** A queue row with the fields the card reads. */
@@ -802,7 +802,7 @@ describe('queue panel page: "Completed" card (PA1)', () => {
     }),
     queueRow({
       issue: '#30',
-      title: 'Past midnight in UTC, but still Friday in Brasília '.repeat(3),
+      title: 'Past midnight in UTC, but still Friday in Brasilia '.repeat(3),
       status: 'concluída',
       kind: 'bug',
       order: 3,
@@ -853,7 +853,7 @@ describe('queue panel page: "Completed" card (PA1)', () => {
     ).toEqual(['#30', '#20', '#10', '#40', '#50']);
   });
 
-  it('groups by Brasília day: 01:30Z falls on the previous day; the most recent open, the others in details', () => {
+  it('groups by Brasilia day: 01:30Z falls on the previous day; the most recent open, the others in details', () => {
     mount();
     expect(days()).toEqual([
       { label: 'Fri 13/11 · 3', issues: ['#30', '#20', '#10'], inside: false },
@@ -925,7 +925,7 @@ describe('queue panel page: "Completed" card (PA1)', () => {
 });
 
 // Phase PA2 (stage #1840, decisions 10 to 13): the "Queue cost" card gets the sums (total, per
-// completed stage, per queue hour), the column per Brasília day stacked by kind, the bars per kind and
+// completed stage, per queue hour), the column per Brasilia day stacked by kind, the bars per kind and
 // of the 8 most expensive stages, and today's table collapsed into a `<details>`.
 describe('queue panel page: "Queue cost" card (PA2)', () => {
   const KINDS = [
@@ -1032,7 +1032,7 @@ describe('queue panel page: "Queue cost" card (PA2)', () => {
     });
   });
 
-  describe('per Brasília day, stacked by kind', () => {
+  describe('per Brasilia day, stacked by kind', () => {
     const SESS_DAY: Row[] = [
       sess('a', 'fase', '#10', 1.5, { created: '2026-11-13T01:30:00Z' }),
       sess('b', 'testador', '#10', 2.5, { created: '2026-11-13T15:00:00Z' }),
@@ -1052,7 +1052,7 @@ describe('queue panel page: "Queue cost" card (PA2)', () => {
         }),
       );
 
-    it('custoDia gives one row per (Brasília) day and kind; without created it uses cost.at', () => {
+    it('custoDia gives one row per (Brasilia) day and kind; without created it uses cost.at', () => {
       const panel = mount({ sessions: SESS_DAY });
       const r = panel.data('custoDia');
       expect(r.status).toBe('ok');

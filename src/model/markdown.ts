@@ -519,11 +519,11 @@ function takeQuote(lines: readonly string[], start: number): [string[], number] 
 
 /** Paragraph from the lines: a space between them or, with `lineBreaks`, break nodes. */
 function paragraphInlines(
-  para: readonly string[],
+  paragraphLines: readonly string[],
   lineBreaks: boolean,
 ): MarkdownInline[] {
-  if (!lineBreaks) return parseInlines(para.join(' '));
-  return withBreaks(parseInlines(para.join('\n')));
+  if (!lineBreaks) return parseInlines(paragraphLines.join(' '));
+  return withBreaks(parseInlines(paragraphLines.join('\n')));
 }
 
 /** Replaces the `\n` in the texts with `break` nodes (and the one in inline code with a space). */
@@ -657,17 +657,17 @@ function parseBlocks(
       i = next;
       continue;
     }
-    const para: string[] = [line.trim()];
+    const paragraphLines: string[] = [line.trim()];
     i++;
     while (
       i < lines.length &&
       (lines[i] as string).trim() !== '' &&
       !startsBlock(lines, i)
     ) {
-      para.push((lines[i] as string).trim());
+      paragraphLines.push((lines[i] as string).trim());
       i++;
     }
-    blocks.push({ type: 'paragraph', inlines: paragraphInlines(para, lineBreaks) });
+    blocks.push({ type: 'paragraph', inlines: paragraphInlines(paragraphLines, lineBreaks) });
   }
   return blocks;
 }

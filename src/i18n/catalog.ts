@@ -95,6 +95,7 @@ export const catalogEnUS = {
   'catalog.drawWarning.stroke-image-gray': 'Stroke with an image drawn in gray.',
 } as const;
 
+// portuguese-guard:begin pt-BR part of the bilingual module (decision 2 of #741)
 export const catalogPtBR: Record<keyof typeof catalogEnUS, string> = {
   'catalog.view.validation': 'Validação do pacote',
   'catalog.view.valid': 'Pacote válido, sem erros nem avisos.',
@@ -187,3 +188,4 @@ export const catalogPtBR: Record<keyof typeof catalogEnUS, string> = {
     'Traço com gradiente radial desenhado com a primeira cor.',
   'catalog.drawWarning.stroke-image-gray': 'Traço com imagem desenhado em cinza.',
 };
+// portuguese-guard:end

@@ -135,14 +135,14 @@ describe('implementar-fila: page and SKILL.md cite ciWait (CV3, decisions 16 and
   });
 
   it('the "PR that waits for the coordinator" paragraph writes and clears ciWait', () => {
-    const para = between(
+    const section = between(
       skill,
       '**PR that waits for the coordinator:**',
       'When the phase notifies',
     );
-    expect(para).toContain('ciWait="PR #<n>"');
-    expect(para).toContain('ciWaitAt=now');
-    expect(para).toContain('ciWait=');
+    expect(section).toContain('ciWait="PR #<n>"');
+    expect(section).toContain('ciWaitAt=now');
+    expect(section).toContain('ciWait=');
   });
 
   it('"Fallback checks" checks each PR of the ciWait and cites ciWait in the worst case', () => {

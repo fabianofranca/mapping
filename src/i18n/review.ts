@@ -512,6 +512,7 @@ export const reviewEnUS = {
   'review.revisedNotice.reviewLabel': 'Review {title}, revised by the agent',
 } as const;
 
+// portuguese-guard:begin pt-BR part of the bilingual module (decision 2 of #741)
 export const reviewPtBR: Record<keyof typeof reviewEnUS, string> = {
   'review.state.undecided': 'Sem decisão',
   'review.state.accepted': 'Aceita',
@@ -1018,3 +1019,4 @@ export const reviewPtBR: Record<keyof typeof reviewEnUS, string> = {
   'review.revisedNotice.review': 'Revisar',
   'review.revisedNotice.reviewLabel': 'Revisar {title}, revisada pelo agente',
 };
+// portuguese-guard:end

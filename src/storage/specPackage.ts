@@ -63,7 +63,7 @@ export async function readSpecPackage(
 const TOO_BIG: AppLibraryIssue = {
   file: '',
   path: '',
-  message: 'pacote grande demais para conferir (limite de arquivos ou de bytes)',
+  message: 'package too big to check (file or byte limit)',
   severity: 'error',
   // The interface shows the translated text (`library.packageTooBig`), not this message.
   code: 'package-too-big',

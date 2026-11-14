@@ -248,17 +248,17 @@ async function measure(size) {
   await context.close();
   const f = (x) => Math.round(x * 10) / 10;
   return {
-    marcações: size,
-    'abrir (ms de quadro)': f(open),
-    'abrir (relógio)': openWall,
-    'pan (quadro)': f(pan.ms),
-    'pan (camadas)': pan.layers,
-    'zoom (quadro)': f(zoom.ms),
-    'zoom (camadas)': zoom.layers,
-    'edição (quadro)': f(edit.ms),
-    'edição (camadas)': edit.layers,
-    'arrasto 10 moves (soma)': f(dragSample.ms),
-    'arrasto (camadas)': dragSample.layers,
+    markings: size,
+    'open (frame ms)': f(open),
+    'open (wall clock)': openWall,
+    'pan (frame)': f(pan.ms),
+    'pan (layers)': pan.layers,
+    'zoom (frame)': f(zoom.ms),
+    'zoom (layers)': zoom.layers,
+    'edit (frame)': f(edit.ms),
+    'edit (layers)': edit.layers,
+    'drag 10 moves (sum)': f(dragSample.ms),
+    'drag (layers)': dragSample.layers,
   };
 }
 
@@ -288,13 +288,13 @@ function parseArgs(argv) {
   return out;
 }
 
-/** Median of each numeric cell across the runs (the `marcações` column is the same in all of them). */
+/** Median of each numeric cell across the runs (the `markings` column is the same in all of them). */
 function medianRow(runs) {
   const first = runs[0];
   return Object.fromEntries(
     Object.keys(first).map((key) => [
       key,
-      key === 'marcações'
+      key === 'markings'
         ? first[key]
         : Math.round(median(runs.map((r) => r[key])) * 10) / 10,
     ]),

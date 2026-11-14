@@ -21,7 +21,7 @@ import type {
   TableRow,
 } from './types';
 
-// Strong references (`ref`) between annotations. See docs/FORMAT.md, "Referências (`ref`)".
+// Strong references (`ref`) between annotations. See docs/FORMAT.md, "References (`ref`)".
 
 /** Texts used in the labels; the interface passes the translated ones. */
 export interface LabelTexts {

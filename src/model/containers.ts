@@ -313,7 +313,7 @@ export const IMAGES_DIR = 'images';
 
 /**
  * Comparison key for file names: NFC and lowercase. On NTFS/APFS `Foto.jpg` and
- * `foto.jpg` are the same file, and the decomposed name (`é` = `e` + accent) becomes the composed one
+ * `foto.jpg` are the same file, and the decomposed name (an accented letter written as the letter + a combining accent) becomes the composed one
  * when written; the uniqueness of the names the app and the MCP create is decided by this key. The
  * stored name keeps the case it came with.
  */

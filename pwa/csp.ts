@@ -114,7 +114,7 @@ export function injectCsp(html: string, profile: CspProfile): string {
     return `${withoutOld.slice(0, end)}\n    ${meta}${withoutOld.slice(end)}`;
   }
   const head = /<head[^>]*>/i.exec(withoutOld);
-  if (!head) throw new Error('index.html sem <head>: não há onde colocar a CSP');
+  if (!head) throw new Error('index.html has no <head>: nowhere to put the CSP');
   const end = head.index + head[0].length;
   return `${withoutOld.slice(0, end)}\n    ${meta}${withoutOld.slice(end)}`;
 }
@@ -139,7 +139,7 @@ export function verifyCsp(html: string, profile: CspProfile): string[] {
   if (!meta) return ['o index.html não tem a CSP em <meta http-equiv>'];
   const content = /\scontent=(?:"([^"]*)"|'([^']*)')/i.exec(meta[0]);
   const policy = content?.[1] ?? content?.[2];
-  if (policy === undefined) return ['a CSP do index.html não tem o atributo content'];
+  if (policy === undefined) return ['the CSP of the index.html has no content attribute'];
   const directives = parseDirectives(policy);
 
   for (const [name, expected] of fixedDirectives(profile)) {
@@ -161,7 +161,7 @@ export function verifyCsp(html: string, profile: CspProfile): string[] {
   }
   if (/'unsafe-(inline|eval|hashes)'|'strict-dynamic'/i.test(policy)) {
     problems.push(
-      "a CSP não pode ter 'unsafe-inline', 'unsafe-eval' nem 'unsafe-hashes'",
+      "the CSP must not have 'unsafe-inline', 'unsafe-eval' or 'unsafe-hashes'",
     );
   }
 
@@ -186,17 +186,17 @@ export function verifyCsp(html: string, profile: CspProfile): string[] {
     /\ssrc\s*=/i.test(attrs) ? all : `<${tag}${attrs}></${tag}>`,
   );
   if (/<script\b[^>]*\ssrc\s*=/i.test(markup)) {
-    problems.push('há <script src> externo: o JS precisa estar embutido');
+    problems.push('there is an external <script src>: the JS must be embedded');
   }
   if (/<link\b[^>]*\brel=["']?stylesheet/i.test(markup)) {
-    problems.push('há <link rel="stylesheet"> externo: o CSS precisa estar embutido');
+    problems.push('there is an external <link rel="stylesheet">: the CSS must be embedded');
   }
   const tags = markup.match(/<[a-z][^>]*>/gi) ?? [];
   if (tags.some((tag) => /\sstyle\s*=/i.test(tag))) {
-    problems.push('há atributo style="" no HTML (use classes e o CSS embutido)');
+    problems.push('there is an atributo style="" in the HTML (use classes and the embedded CSS)');
   }
   if (tags.some((tag) => /\son[a-z]+\s*=/i.test(tag))) {
-    problems.push('há handler inline (onclick etc.) no HTML');
+    problems.push('there is a handler inline (onclick etc.) in the HTML');
   }
   return problems;
 }
@@ -206,7 +206,7 @@ export function applyCsp(html: string, profile: CspProfile): string {
   const result = injectCsp(html, profile);
   const problems = verifyCsp(result, profile);
   if (problems.length > 0) {
-    throw new Error(`CSP inválida no index.html:\n- ${problems.join('\n- ')}`);
+    throw new Error(`Invalid CSP in the index.html:\n- ${problems.join('\n- ')}`);
   }
   return result;
 }

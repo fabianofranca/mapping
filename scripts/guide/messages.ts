@@ -65,6 +65,7 @@ export interface GuideMessages {
 }
 
 /** Names of the example project's items that the texts mention: `[en-US, pt-BR]` per key. */
+// portuguese-guard:begin pt-BR names of the example project in the guide (decision 2 of #741)
 export const NAMES: Readonly<Record<string, Readonly<Record<GuideLocale, string>>>> = {
   signup: { 'en-US': 'Sign up', 'pt-BR': 'Cadastro' },
   login: { 'en-US': 'Login', 'pt-BR': 'Login' },
@@ -108,6 +109,7 @@ export const NAMES: Readonly<Record<string, Readonly<Record<GuideLocale, string>
   triggerClick: { 'en-US': 'Click', 'pt-BR': 'Clique' },
   triggerPress: { 'en-US': 'Press', 'pt-BR': 'Pressionar' },
 };
+// portuguese-guard:end
 
 const enUS: GuideMessages = {
   pageTitle: 'Mapping guide',
@@ -237,6 +239,7 @@ const enUS: GuideMessages = {
   ],
 };
 
+// portuguese-guard:begin pt-BR strings of the interactive guide (decision 2 of #741)
 const ptBR: GuideMessages = {
   pageTitle: 'Guia do Mapping',
   noscript: 'Este guia precisa de JavaScript.',
@@ -364,6 +367,7 @@ const ptBR: GuideMessages = {
     },
   ],
 };
+// portuguese-guard:end
 
 export const GUIDE_MESSAGES: Readonly<Record<GuideLocale, GuideMessages>> = {
   'en-US': enUS,
