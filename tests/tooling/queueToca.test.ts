@@ -1,8 +1,8 @@
 // @vitest-environment node
-// Fase TA1 (etapa #1812, decisões 1 a 7 e 12): o `toca` da ficha lista arquivos e seções. Pasta, `**`, padrão
-// fora da regra, documento com seções inteiro e âncora fora da forma dão `ficha incompleta (toca: <citação>)`;
-// o comando `painel.py toca "<citações>"` confere uma lista. Fase TA2 (decisões 10 e 12): os textos dos skills
-// e dos docs dizem a regra só nas seções do "Toca em:".
+// Phase TA1 (stage #1812, decisions 1 to 7 and 12): the ficha's `toca` lists files and sections. A folder, `**`,
+// a pattern outside the rule, a whole document with sections and an anchor outside the form give
+// `ficha incompleta (toca: <citation>)`; the command `painel.py toca "<citations>"` checks a list. Phase TA2
+// (decisions 10 and 12): the skill and doc texts state the rule only in the sections of the "Toca em:".
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -12,8 +12,8 @@ import { between, section } from '../support/textSlice';
 
 const SCRIPT = '.claude/skills/implementar-fila/painel/painel.py';
 const NOW = '2026-11-13T10:00:00Z';
-// Testes que sobem dezenas de subprocessos do painel.py: folga para o CI sob carga.
-const TEMPO_SUBPROCESSOS = 60_000;
+// Tests that spawn dozens of painel.py subprocesses: headroom for CI under load.
+const SUBPROCESS_TIMEOUT = 60_000;
 
 let dir = '';
 
@@ -25,32 +25,32 @@ function runRaw(...args: string[]) {
   return spawnSync('python3', [SCRIPT, '--now', NOW, ...args], { encoding: 'utf8' });
 }
 
-function vagas(): string {
+function slots(): string {
   const meta = JSON.parse(readFileSync(path.join(dir, 'meta.json'), 'utf8')) as Array<
     Record<string, unknown>
   >;
   return String(meta[0]?.vagas);
 }
 
-function motivos(): string[] {
-  return vagas().split(' · ').slice(1);
+function reasons(): string[] {
+  return slots().split(' · ').slice(1);
 }
 
 function ficha(dep: string, toca: string, schema = 'não'): string {
   return `dep=${dep} | nivel=impact: low | mcp=não | schema=${schema} | toca=${toca}`;
 }
 
-function etapa(issue: string, plan: string, ...extra: string[]) {
-  run('row', dir, issue, `title=Etapa ${issue}`, `plan=${plan}`, ...extra);
+function stage(issue: string, plan: string, ...extra: string[]) {
+  run('row', dir, issue, `title=Stage ${issue}`, `plan=${plan}`, ...extra);
 }
 
-/** O motivo da candidata #2, sozinha na fila, com o `toca` dado. */
-function motivo(toca: string): string | undefined {
-  etapa('#2', ficha('nenhuma', toca));
-  return motivos().find((m) => m.startsWith('#2 '));
+/** The reason for candidate #2, alone in the queue, with the given `toca`. */
+function reason(toca: string): string | undefined {
+  stage('#2', ficha('nenhuma', toca));
+  return reasons().find((m) => m.startsWith('#2 '));
 }
 
-const INVALIDAS = [
+const INVALID = [
   'src/model/',
   'src/model',
   'tests/tooling/**',
@@ -65,10 +65,10 @@ const INVALIDAS = [
   'CLAUDE.md',
   '.claude/skills/implementar-fila/SKILL.md',
   'docs/TESTING.md#R9.12',
-  'docs/FLOW.md#Paralelo',
+  'docs/FLOW.md#Parallel',
 ];
 
-const VALIDAS = [
+const VALID = [
   'src/model/markings.ts',
   'tests/storage/folder*.test.ts',
   'docs/TESTING.md#R9',
@@ -78,14 +78,14 @@ const VALIDAS = [
   'docs/ARCHITECTURE.md#performance',
   'CLAUDE.md#architecture-rules',
   'CLAUDE.md#inicio',
-  '.claude/skills/implementar-fila/SKILL.md#paralelo',
-  'docs/nao-existe.md',
+  '.claude/skills/implementar-fila/SKILL.md#parallel',
+  'docs/does-not-exist.md',
   'viewer/README.md',
   'viewer/README.md#a',
   'package.json',
 ];
 
-describe('painel.py — validação do toca na ficha (TA1, #1812)', () => {
+describe('painel.py — toca validation in the ficha (TA1, #1812)', () => {
   beforeEach(() => {
     dir = mkdtempSync(path.join(tmpdir(), 'toca-'));
     run('init', dir);
@@ -97,27 +97,27 @@ describe('painel.py — validação do toca na ficha (TA1, #1812)', () => {
   });
 
   it(
-    'pasta, **, padrão fora da regra, documento inteiro e âncora fora da forma dão ficha incompleta (toca: <citação>)',
+    'folder, **, pattern outside the rule, whole document and anchor outside the form give ficha incompleta (toca: <citation>)',
     () => {
-      for (const c of INVALIDAS) {
-        expect(motivo(c), c).toBe(`#2 ficha incompleta (toca: ${c})`);
+      for (const c of INVALID) {
+        expect(reason(c), c).toBe(`#2 ficha incompleta (toca: ${c})`);
       }
     },
-    TEMPO_SUBPROCESSOS,
+    SUBPROCESS_TIMEOUT,
   );
 
   it(
-    'arquivo, padrão com prefixo, seção na forma, documento novo e arquivo novo valem',
+    'file, pattern with a prefix, section in the form, new document and new file are valid',
     () => {
-      for (const c of [...VALIDAS, 'src/x.ts (novo)']) {
-        expect(motivo(c), c).toBe('#2 começa');
+      for (const c of [...VALID, 'src/x.ts (novo)']) {
+        expect(reason(c), c).toBe('#2 começa');
       }
     },
-    TEMPO_SUBPROCESSOS,
+    SUBPROCESS_TIMEOUT,
   );
 
   it(
-    'o que não conta é filtrado antes da validação',
+    'what does not count is filtered before the validation',
     () => {
       for (const c of [
         'changelog/',
@@ -126,19 +126,20 @@ describe('painel.py — validação do toca na ficha (TA1, #1812)', () => {
         'docs/design-system/x.md',
         'mcp/version.ts',
         'docs/TESTING-NUVEM.md#blocos',
+        'docs/TESTING-NUVEM.md#full-round-in-blocks',
       ]) {
-        expect(motivo(`src/a.ts, ${c}`), c).toBe('#2 começa');
+        expect(reason(`src/a.ts, ${c}`), c).toBe('#2 começa');
       }
     },
-    TEMPO_SUBPROCESSOS,
+    SUBPROCESS_TIMEOUT,
   );
 
-  it('ordem e combinação: dep antes, a primeira citação inválida é a citada, fases depois; ? continua (toca)', () => {
-    etapa('#1', ficha('?', 'docs/TESTING.md'));
-    etapa('#2', ficha('nenhuma', 'src/a.ts, src/model/, docs/TESTING.md'));
-    etapa('#3', `${ficha('nenhuma', 'src/b.ts, tests/**')} | fases=?`);
-    etapa('#4', ficha('nenhuma', '?'));
-    expect(motivos().slice(0, 4)).toEqual([
+  it('order and combination: dep first, the first invalid citation is the one cited, fases after; ? stays (toca)', () => {
+    stage('#1', ficha('?', 'docs/TESTING.md'));
+    stage('#2', ficha('nenhuma', 'src/a.ts, src/model/, docs/TESTING.md'));
+    stage('#3', `${ficha('nenhuma', 'src/b.ts, tests/**')} | fases=?`);
+    stage('#4', ficha('nenhuma', '?'));
+    expect(reasons().slice(0, 4)).toEqual([
       '#1 ficha incompleta (dep, toca: docs/TESTING.md)',
       '#2 ficha incompleta (toca: src/model/)',
       '#3 ficha incompleta (toca: tests/**, fases)',
@@ -147,13 +148,13 @@ describe('painel.py — validação do toca na ficha (TA1, #1812)', () => {
     expect(run('show', dir)).toContain('fichas a refazer: #1 #2 #3 #4');
   });
 
-  it('a etapa começada com citação antiga entra nas fichas a refazer e continua segurando como hoje', () => {
-    etapa('#1', ficha('nenhuma', 'src/model/'), 'status=em andamento');
-    etapa('#2', ficha('nenhuma', 'src/model/a.ts'));
-    etapa('#3', ficha('nenhuma', 'docs/TESTING.md'), 'status=esperando dono');
-    etapa('#4', ficha('nenhuma', 'docs/TESTING.md#R9'));
-    etapa('#5', ficha('nenhuma', 'src/b.ts'));
-    expect(motivos().slice(0, 3)).toEqual([
+  it('a started stage with an old citation enters the fichas a refazer and keeps holding as today', () => {
+    stage('#1', ficha('nenhuma', 'src/model/'), 'status=em andamento');
+    stage('#2', ficha('nenhuma', 'src/model/a.ts'));
+    stage('#3', ficha('nenhuma', 'docs/TESTING.md'), 'status=esperando dono');
+    stage('#4', ficha('nenhuma', 'docs/TESTING.md#R9'));
+    stage('#5', ficha('nenhuma', 'src/b.ts'));
+    expect(reasons().slice(0, 3)).toEqual([
       '#2 arquivo src/model/a.ts com #1',
       '#4 arquivo docs/TESTING.md#R9 com #3',
       '#5 começa',
@@ -161,48 +162,45 @@ describe('painel.py — validação do toca na ficha (TA1, #1812)', () => {
     expect(run('show', dir)).toContain('fichas a refazer: #1 #3');
   });
 
-  it('o ? no meio da lista também deixa a ficha incompleta (achado da revisão)', () => {
-    etapa('#1', ficha('nenhuma', 'src/a.ts, ?'));
-    expect(motivos()[0]).toBe('#1 ficha incompleta (toca: ?)');
+  it('a ? in the middle of the list also leaves the ficha incomplete (review finding)', () => {
+    stage('#1', ficha('nenhuma', 'src/a.ts, ?'));
+    expect(reasons()[0]).toBe('#1 ficha incompleta (toca: ?)');
     expect(run('show', dir)).toContain('fichas a refazer: #1');
   });
 
-  it('a exclusiva não passa pela validação (só o ? a deixa incompleta)', () => {
-    etapa('#1', ficha('nenhuma', 'tests/**, docs/FLOW.md'), 'exclusive=sim');
-    expect(motivos()[0]).toBe('#1 começa');
+  it('the exclusive does not go through the validation (only ? leaves it incomplete)', () => {
+    stage('#1', ficha('nenhuma', 'tests/**, docs/FLOW.md'), 'exclusive=sim');
+    expect(reasons()[0]).toBe('#1 começa');
     expect(run('show', dir)).toContain('fichas a refazer: nenhuma');
     run('row', dir, '#1', `plan=${ficha('nenhuma', '?')}`);
-    expect(motivos()[0]).toBe('#1 ficha incompleta (toca)');
+    expect(reasons()[0]).toBe('#1 ficha incompleta (toca)');
     expect(run('show', dir)).toContain('fichas a refazer: #1');
   });
 
-  it('a linha que deixa de ser exclusiva passa pela validação', () => {
-    etapa('#1', ficha('nenhuma', 'tests/**'), 'exclusive=sim');
+  it('a row that stops being exclusive goes through the validation', () => {
+    stage('#1', ficha('nenhuma', 'tests/**'), 'exclusive=sim');
     run('row', dir, '#1', 'exclusive=');
-    expect(motivos()[0]).toBe('#1 ficha incompleta (toca: tests/**)');
+    expect(reasons()[0]).toBe('#1 ficha incompleta (toca: tests/**)');
   });
 });
 
-describe('painel.py toca "<citações>" (TA1, decisão 7)', () => {
-  it('lista válida: ok e código 0', () => {
+describe('painel.py toca "<citations>" (TA1, decision 7)', () => {
+  it('valid list: ok and code 0', () => {
     const r = runRaw('toca', 'src/a.ts, docs/TESTING.md#R9');
     expect(r.status).toBe(0);
     expect(r.stdout).toBe('ok\n');
-    const todas = runRaw(
-      'toca',
-      VALIDAS.join(', ') + ', `./src/x.ts` (novo), changelog/',
-    );
-    expect(todas.stdout).toBe('ok\n');
-    expect(todas.status).toBe(0);
+    const all = runRaw('toca', VALID.join(', ') + ', `./src/x.ts` (novo), changelog/');
+    expect(all.stdout).toBe('ok\n');
+    expect(all.status).toBe(0);
   });
 
-  it('uma linha por citação inválida, com o motivo, e código 1', () => {
-    const um = runRaw('toca', 'src/model/');
-    expect(um.status).toBe(1);
-    expect(um.stdout).toBe('inválida: src/model/ — pasta\n');
+  it('one line per invalid citation, with the reason, and code 1', () => {
+    const one = runRaw('toca', 'src/model/');
+    expect(one.status).toBe(1);
+    expect(one.stdout).toBe('inválida: src/model/ — pasta\n');
     const r = runRaw(
       'toca',
-      'src/a.ts, src/model, `src/**/x.ts`, src/i18n/*, docs/TESTING*.md, docs/TESTING.md, docs/TESTING.md#R9.12, docs/FLOW.md#Paralelo, docs/design-system/',
+      'src/a.ts, src/model, `src/**/x.ts`, src/i18n/*, docs/TESTING*.md, docs/TESTING.md, docs/TESTING.md#R9.12, docs/FLOW.md#Parallel, docs/design-system/',
     );
     expect(r.status).toBe(1);
     expect(r.stdout.split('\n').filter(Boolean)).toEqual([
@@ -212,20 +210,20 @@ describe('painel.py toca "<citações>" (TA1, decisão 7)', () => {
       'inválida: docs/TESTING*.md — padrão',
       'inválida: docs/TESTING.md — documento inteiro',
       'inválida: docs/TESTING.md#R9.12 — âncora',
-      'inválida: docs/FLOW.md#Paralelo — âncora',
+      'inválida: docs/FLOW.md#Parallel — âncora',
     ]);
   });
 
-  it('? diz que a ficha não diz e sai com 1, sozinho ou no meio da lista', () => {
+  it('? says the ficha does not say and exits with 1, alone or in the middle of the list', () => {
     const r = runRaw('toca', '?');
     expect(r.status).toBe(1);
     expect(r.stdout).toBe('inválida: ? — a ficha não diz\n');
-    const meio = runRaw('toca', 'src/a.ts, ?');
-    expect(meio.status).toBe(1);
-    expect(meio.stdout).toBe('inválida: ? — a ficha não diz\n');
+    const middle = runRaw('toca', 'src/a.ts, ?');
+    expect(middle.status).toBe(1);
+    expect(middle.stdout).toBe('inválida: ? — a ficha não diz\n');
   });
 
-  it('a pasta e o documento se leem na raiz do repositório, não no diretório atual', () => {
+  it('the folder and the document are read at the repository root, not in the current directory', () => {
     const cwd = mkdtempSync(path.join(tmpdir(), 'toca-cwd-'));
     try {
       const script = path.resolve(SCRIPT);
@@ -243,7 +241,7 @@ describe('painel.py toca "<citações>" (TA1, decisão 7)', () => {
     }
   });
 
-  it('não entra no lote do apply (código 2, como o slug)', () => {
+  it('does not enter the apply batch (code 2, like slug)', () => {
     dir = mkdtempSync(path.join(tmpdir(), 'toca-'));
     try {
       run('init', dir);
@@ -260,8 +258,8 @@ describe('painel.py toca "<citações>" (TA1, decisão 7)', () => {
   });
 });
 
-describe('painel.py toca — correções da revisão (CL1, #1812)', () => {
-  const conflita = (a: string, b: string): boolean => {
+describe('painel.py toca — review fixes (CL1, #1812)', () => {
+  const conflicts = (a: string, b: string): boolean => {
     const d = mkdtempSync(path.join(tmpdir(), 'toca-cl1-'));
     try {
       run('init', d);
@@ -285,42 +283,42 @@ describe('painel.py toca — correções da revisão (CL1, #1812)', () => {
   };
 
   it(
-    'achado 1: dois globs que casam o mesmo arquivo conflitam; `?` e `[...]` não são aceitos',
+    'finding 1: two globs that match the same file conflict; `?` and `[...]` are not accepted',
     () => {
-      expect(conflita('tests/a*x.ts', 'tests/ab*.ts')).toBe(true);
-      expect(conflita('tests/a*.ts', 'tests/b*.ts')).toBe(false);
-      expect(conflita('tests/a*.ts', 'tests/abc.ts')).toBe(true);
+      expect(conflicts('tests/a*x.ts', 'tests/ab*.ts')).toBe(true);
+      expect(conflicts('tests/a*.ts', 'tests/b*.ts')).toBe(false);
+      expect(conflicts('tests/a*.ts', 'tests/abc.ts')).toBe(true);
       for (const c of ['tests/a?.ts', 'tests/[ab].ts']) {
         const r = runRaw('toca', c);
         expect(r.status, c).toBe(1);
         expect(r.stdout, c).toBe(`inválida: ${c} — padrão\n`);
       }
     },
-    TEMPO_SUBPROCESSOS,
+    SUBPROCESS_TIMEOUT,
   );
 
-  it('achado 2: o slug minúsculo do roteiro (#r9) é rejeitado e a caixa não esconde conflito', () => {
+  it('finding 2: the lowercase script slug (#r9) is rejected and the case does not hide a conflict', () => {
     const r = runRaw('toca', 'docs/TESTING.md#r9');
     expect(r.status).toBe(1);
     expect(r.stdout).toBe('inválida: docs/TESTING.md#r9 — âncora\n');
   });
 
-  it('achado 3: a âncora é conferida contra os `##` do arquivo existente', () => {
+  it('finding 3: the anchor is checked against the `##` of the existing file', () => {
     const r = runRaw(
       'toca',
-      'docs/FLOW.md#para-a-sesao-da-fase, docs/FLOW.md#para-a-sessao-da-fase, docs/FLOW.md#inicio, docs/novo-doc.md#qualquer',
+      'docs/FLOW.md#for-the-phase-sesion, docs/FLOW.md#for-the-phase-session, docs/FLOW.md#inicio, docs/novo-doc.md#qualquer',
     );
-    expect(r.stdout).toBe('inválida: docs/FLOW.md#para-a-sesao-da-fase — âncora\n');
+    expect(r.stdout).toBe('inválida: docs/FLOW.md#for-the-phase-sesion — âncora\n');
     expect(r.status).toBe(1);
   });
 
-  it('achado 4: o texto da Ficha da etapa cobre a linha exclusiva', () => {
-    const fila = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
-    const ficha = section(fila, '### Ficha da etapa');
+  it('finding 4: the Stage ficha text covers the exclusive line', () => {
+    const queue = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
+    const ficha = section(queue, '### Stage ficha');
     expect(ficha).toContain('exclusive=sim');
   });
 
-  it('achado 5: a validação do toca não repete o acesso ao sistema de arquivos', () => {
+  it('finding 5: the toca validation does not repeat the file system access', () => {
     const py = `
 import importlib.util, os, sys
 spec = importlib.util.spec_from_file_location("painel", sys.argv[1])
@@ -334,90 +332,90 @@ for name in ("isdir", "isfile", "exists"):
     setattr(os.path, name, wrap)
 plan = "dep=nenhuma | nivel=impact: low | mcp=não | schema=não | toca=docs/FLOW.md#inicio, src/a.ts, tests/a*.ts"
 m.incomplete_fields(plan)
-uma = n["c"]
+once = n["c"]
 for _ in range(20):
     m.incomplete_fields(plan)
-print(uma, n["c"])
+print(once, n["c"])
 `;
     const r = spawnSync('python3', ['-c', py, SCRIPT], { encoding: 'utf8' });
     expect(r.stderr).toBe('');
-    const [uma, depois] = r.stdout.trim().split(' ').map(Number);
-    expect(depois).toBe(uma); // 20 repetições não acessam o disco de novo
+    const [once, after] = r.stdout.trim().split(' ').map(Number);
+    expect(after).toBe(once); // 20 repetitions do not access the disk again
   });
 
-  it('achado 6: fora da árvore esperada a raiz vem do git ou do .git, ou a conferência falha segura', () => {
-    const base = mkdtempSync(path.join(tmpdir(), 'toca-raiz-'));
+  it('finding 6: outside the expected tree the root comes from git or .git, or the check fails safe', () => {
+    const base = mkdtempSync(path.join(tmpdir(), 'toca-root-'));
     try {
-      const copia = path.join(base, 'painel.py');
-      writeFileSync(copia, readFileSync(SCRIPT));
+      const copy = path.join(base, 'painel.py');
+      writeFileSync(copy, readFileSync(SCRIPT));
       const repo = path.resolve('.');
-      const noRepo = spawnSync('python3', [copia, 'toca', 'src/model, CLAUDE.md'], {
+      const inRepo = spawnSync('python3', [copy, 'toca', 'src/model, CLAUDE.md'], {
         cwd: repo,
         encoding: 'utf8',
       });
-      expect(noRepo.stdout.split('\n').filter(Boolean)).toEqual([
+      expect(inRepo.stdout.split('\n').filter(Boolean)).toEqual([
         'inválida: src/model — pasta',
         'inválida: CLAUDE.md — documento inteiro',
       ]);
-      const fora = spawnSync('python3', [copia, 'toca', 'src/model'], {
+      const outside = spawnSync('python3', [copy, 'toca', 'src/model'], {
         cwd: base,
         encoding: 'utf8',
       });
-      expect(fora.status).toBe(1);
-      expect(fora.stdout).toBe('inválida: src/model — raiz do repositório não achada\n');
+      expect(outside.status).toBe(1);
+      expect(outside.stdout).toBe(
+        'inválida: src/model — raiz do repositório não achada\n',
+      );
     } finally {
       rmSync(base, { recursive: true, force: true });
     }
   });
 });
 
-describe('os textos da regra do toca (TA2, #1812, decisão 12)', () => {
-  const fila = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
-  const detalhar = readFileSync('.claude/skills/detalhar-backlog/SKILL.md', 'utf8');
+describe('the texts of the toca rule (TA2, #1812, decision 12)', () => {
+  const queue = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
+  const detail = readFileSync('.claude/skills/detalhar-backlog/SKILL.md', 'utf8');
   const process = readFileSync('docs/PROCESS.md', 'utf8');
   const flow = readFileSync('docs/FLOW.md', 'utf8');
 
-  it('a "Ficha da etapa" manda rodar o painel.py toca, cita #inicio e diz "nunca pasta"', () => {
-    const ficha = section(fila, '### Ficha da etapa');
+  it('the "Stage ficha" says to run painel.py toca, cites #inicio and says "never a folder"', () => {
+    const ficha = section(queue, '### Stage ficha');
     expect(ficha).toContain('painel.py toca');
     expect(ficha).toContain('#inicio');
-    expect(ficha).toContain('nunca pasta');
+    expect(ficha).toContain('never a folder');
   });
 
-  it('o "Paralelo" diz o motivo ficha incompleta (toca: <citação>)', () => {
-    expect(section(fila, '## Paralelo')).toContain('ficha incompleta (toca:');
+  it('the "Parallel" gives the reason ficha incompleta (toca: <citation>)', () => {
+    expect(section(queue, '## Parallel')).toContain('ficha incompleta (toca:');
   });
 
-  it('o "Painel" lista o comando painel.py toca', () => {
-    expect(section(fila, '## Painel')).toContain('painel.py toca');
+  it('the "Panel" lists the command painel.py toca', () => {
+    expect(section(queue, '## Panel')).toContain('painel.py toca');
   });
 
-  it('o "3. Por etapa" cita a citação inválida e, no "Entre etapas", o refazer sem editar issue', () => {
-    const etapa = section(fila, '## 3. Por etapa');
-    expect(etapa).toContain('citação inválida');
-    const entre = etapa.slice(etapa.indexOf('7. **Entre etapas:**'));
-    expect(entre).toContain('fichas a refazer');
-    expect(entre).toContain('"Toca em:" das sub-issues');
-    expect(entre).toContain('sem editar');
+  it('the "3. Per stage" cites the invalid citation and, in "Between stages", the redo without editing an issue', () => {
+    const perStage = section(queue, '## 3. Per stage');
+    expect(perStage).toContain('invalid citation');
+    const between7 = perStage.slice(perStage.indexOf('7. **Between stages:**'));
+    expect(between7).toContain('fichas a refazer');
+    expect(between7).toContain('"Toca em:" of the phase sub-issues');
+    expect(between7).toContain('without editing');
   });
 
-  it('o briefing do detalhar-backlog confere o "Toca em:" com o painel.py toca e cita #inicio', () => {
-    const briefing = between(
-      detalhar,
-      '3. Rascunhe o plano inteiro',
-      '5. Decisão de produto',
-    );
+  it('the detalhar-backlog briefing checks the "Toca em:" with painel.py toca and cites #inicio', () => {
+    const briefing = between(detail, '3. Draft the whole plan', '5. Product decision');
     expect(briefing).toContain('painel.py toca');
     expect(briefing).toContain('#inicio');
-    // a conferência é uma frase própria, depois da lista do que cada fase leva (revisão: não no meio dela)
+    // the check is a sentence of its own, after the list of what each phase carries (review: not in the middle of it)
     expect(briefing.indexOf('painel.py toca')).toBeGreaterThan(
-      briefing.indexOf('os checkboxes e o aceite'),
+      briefing.indexOf('the checkboxes and the acceptance'),
     );
   });
 
-  it('o docs/PROCESS.md e o docs/FLOW.md dizem "nunca pasta"', () => {
-    const linha = process.split('\n').find((l) => l.includes('**Detalhar uma etapa:**'));
-    expect(linha).toContain('nunca pasta');
-    expect(section(flow, '## Para o dono, nos três chats')).toContain('nunca pasta');
+  it('docs/PROCESS.md and docs/FLOW.md say "never a folder"', () => {
+    const line = process.split('\n').find((l) => l.includes('**Detailing a stage:**'));
+    expect(line).toContain('never a folder');
+    expect(section(flow, '## For the owner, in the three chats')).toContain(
+      'never a folder',
+    );
   });
 });
