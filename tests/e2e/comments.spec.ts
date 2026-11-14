@@ -207,7 +207,7 @@ async function projectWithField(page: Page): Promise<Point> {
   await setIdentity(page);
   const at = await namedMarking(page, 1 / 3, 'Door');
   await applySpecialization(page, SDUI);
-  await page.getByRole('button', { name: 'Add annotation to layer Componentes' }).click();
+  await page.getByRole('button', { name: 'Add annotation to layer Components' }).click();
   await page.getByRole('button', { name: /^Input/ }).click();
   const id = page.getByLabel('id', { exact: true });
   await id.fill('input_name');
