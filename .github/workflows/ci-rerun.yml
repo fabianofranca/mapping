@@ -81,9 +81,9 @@ jobs:
           REASON: ${{ steps.decide.outputs.reason }}
         run: |
           if [ "$OUTCOME" != "success" ]; then
-            echo "não reexecuta: the decision failed ($OUTCOME); see the log of the previous step" >> "$GITHUB_STEP_SUMMARY"
+            echo "does not rerun: the decision failed ($OUTCOME); see the log of the previous step" >> "$GITHUB_STEP_SUMMARY"
           elif [ "$RERUN" = "true" ]; then
-            echo "reexecuta: abandonados $ABANDONED" >> "$GITHUB_STEP_SUMMARY"
+            echo "reruns: abandoned $ABANDONED" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "não reexecuta: $REASON" >> "$GITHUB_STEP_SUMMARY"
+            echo "does not rerun: $REASON" >> "$GITHUB_STEP_SUMMARY"
           fi

@@ -1267,8 +1267,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   },
   { term: 'abaixo de 2 KiB', source: '.github/workflows/ci.yml', group: 'script-output' },
   { term: 'não tem a CSP', source: 'pwa/csp.ts', group: 'script-output' },
-  { term: 'atributo style', source: 'pwa/csp.ts', group: 'script-output' },
-  { term: 'handler inline', source: 'pwa/csp.ts', group: 'script-output' },
   {
     term: 'o perfil static não pode ter a diretiva',
     source: 'pwa/csp.ts',
@@ -2229,11 +2227,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'issue-markers',
   },
   { term: 'Exceção ao Button:', source: 'docs/DESIGN-SYSTEM.md', group: 'issue-markers' },
-  {
-    term: 'não reexecuta:',
-    source: '.github/workflows/ci-rerun.yml',
-    group: 'script-output',
-  },
   {
     term: 'Madrugadão',
     source: '.claude/skills/implementar-fila/SKILL.md',

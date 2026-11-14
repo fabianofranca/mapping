@@ -196,11 +196,11 @@ export function verifyCsp(html: string, profile: CspProfile): string[] {
   const tags = markup.match(/<[a-z][^>]*>/gi) ?? [];
   if (tags.some((tag) => /\sstyle\s*=/i.test(tag))) {
     problems.push(
-      'there is an atributo style="" in the HTML (use classes and the embedded CSS)',
+      'there is a style="" attribute in the HTML (use classes and the embedded CSS)',
     );
   }
   if (tags.some((tag) => /\son[a-z]+\s*=/i.test(tag))) {
-    problems.push('there is a handler inline (onclick etc.) in the HTML');
+    problems.push('there is an inline handler (onclick etc.) in the HTML');
   }
   return problems;
 }
