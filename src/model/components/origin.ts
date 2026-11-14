@@ -1,16 +1,16 @@
 /**
- * Motor dos componentes (etapa Biblioteca): declaração de origem executável (fase L2). A especialização diz
- * como ler um JSON externo (SDUI de um backend, por exemplo) e transformá-lo numa tela:
+ * Component engine (Library stage): executable origin declaration (phase L2). The specialization says
+ * how to read an external JSON (a backend's SDUI, for example) and turn it into a screen:
  *
- * - `origins` (raiz da especialização): onde ficam a largura, a altura e as raízes da tela, e
- *   quais chaves do nó são o tipo, as props e os filhos;
- * - `sources` nos tipos e nos campos (o mesmo formato da `formatVersion` 3, com `slot` e
- *   `ignore` a mais): a que tipo externo cada tipo corresponde e de que caminho de `props` vem
- *   cada campo.
+ * - `origins` (root of the specialization): where the screen's width, height and roots are, and
+ *   which node keys are the type, the props and the children;
+ * - `sources` in the types and fields (the same format as `formatVersion` 3, with `slot` and
+ *   `ignore` added): which external type each type corresponds to and which `props` path each
+ *   field comes from.
  *
- * O núcleo não conhece nenhum sistema: `system` é só um nome. `translateSource` produz a árvore
- * sem geometria (`LayoutScreen`); `screenFromSource` a arruma (`layoutScreen`) numa `Screen`.
- * Puro, sem DOM, e nunca lança: o que não deu certo vira `error` ou aviso.
+ * The core knows no system: `system` is just a name. `translateSource` produces the tree
+ * without geometry (`LayoutScreen`); `screenFromSource` arranges it (`layoutScreen`) into a `Screen`.
+ * Pure, no DOM, and never throws: what did not work becomes an `error` or a warning.
  */
 import { mergeMessages, textsOf } from '../messages/collector';
 import { templateMessage, type ModelMessageTemplateCode } from '../messages';
@@ -38,29 +38,29 @@ import { originCodeForText, originSpecCodeForText } from '../messages/textLookup
 import { isRecord } from '../isRecord';
 
 // ---------------------------------------------------------------------------------------
-// Tipos
+// Types
 // ---------------------------------------------------------------------------------------
 
 export type Literal = string | number;
 
-/** Um literal, ou um caminho (com tradução de valores e valor padrão). */
+/** A literal, or a path (with value translation and a default value). */
 export type ValueSource =
   | Literal
   | {
       readonly path: string;
-      /** Valor de origem (texto) → valor traduzido. */
+      /** Source value (text) → translated value. */
       readonly values?: Readonly<Record<string, string>>;
       readonly default?: Literal;
     };
 
 export interface RootSource {
-  /** Caminho da raiz no documento; `[*]` = cada elemento da lista vira uma raiz. */
+  /** Path of the root in the document; `[*]` = each element of the list becomes a root. */
   readonly path: string;
-  /** Âncora na tela (caminho relativo ao nó da raiz); ausente = no fluxo. */
+  /** Anchor on the screen (path relative to the root node); absent = in the flow. */
   readonly anchor?: ValueSource;
-  /** Margem das bordas da âncora, em px (caminho relativo ao nó da raiz). */
+  /** Margin from the anchor's edges, in px (path relative to the root node). */
   readonly margin?: ValueSource;
-  /** Id do tipo desenhado por baixo da raiz, cobrindo a tela (película de modal). */
+  /** Id of the type drawn underneath the root, covering the screen (modal scrim). */
   readonly scrim?: string;
 }
 
@@ -70,32 +70,32 @@ export interface ScreenSource {
   readonly width: ValueSource;
   readonly height: ValueSource;
   readonly background?: ValueSource;
-  /** Direção de leitura da tela (padrão `ltr`); repassada ao `layoutScreen`. Só literal. */
+  /** Reading direction of the screen (default `ltr`); passed on to `layoutScreen`. Literal only. */
   readonly direction?: Direction;
   readonly roots: readonly RootSource[];
 }
 
-/** Jeito de a origem produzir a tela: `tree` (padrão, JSON de backend) ou `measured` (retângulos medidos). */
+/** How the origin produces the screen: `tree` (default, backend JSON) or `measured` (measured rectangles). */
 export const ORIGIN_KINDS = ['tree', 'measured'] as const;
 export type OriginKind = (typeof ORIGIN_KINDS)[number];
 
-/** Chaves do nó de uma árvore medida: fixas (`{ type, id?, classes?, rect, props?, children? }`). */
+/** Keys of the node of a measured tree: fixed (`{ type, id?, classes?, rect, props?, children? }`). */
 const MEASURED_NODE: Origin['node'] = {
   type: 'type',
   props: 'props',
   children: 'children',
 };
-/** Tela sem raízes: uma origem `measured` não gera tela, só marcações (`importMeasured`). */
+/** Screen without roots: a `measured` origin generates no screen, only markings (`importMeasured`). */
 const MEASURED_SCREEN: ScreenSource = { width: 0, height: 0, roots: [] };
 
 /**
- * Origem como a especialização a guarda e grava (`Spec.origins`): a `measured` não tem `node` nem
- * `screen` (o leitor recusa as duas chaves), a `tree` tem os dois.
+ * Origin as the specialization stores and writes it (`Spec.origins`): the `measured` one has no `node` or
+ * `screen` (the reader refuses both keys), the `tree` one has both.
  */
 export type SpecOrigin = Omit<Origin, 'node' | 'screen'> &
   Partial<Pick<Origin, 'node' | 'screen'>>;
 
-/** Tira de uma origem `measured` o `node` e a `screen` fixos internos: é a forma que se grava e se relê. */
+/** Removes the fixed internal `node` and `screen` from a `measured` origin: it is the form that is written and reread. */
 export function toSpecOrigin(origin: Origin): SpecOrigin {
   if (origin.kind !== 'measured') return origin;
   return {
@@ -108,48 +108,48 @@ export function toSpecOrigin(origin: Origin): SpecOrigin {
 
 export interface Origin {
   readonly system: string;
-  /** `tree` (padrão) ou `measured` (formatVersion 15): esta não tem `node`, `screen` nem `examples` próprios. */
+  /** `tree` (default) or `measured` (formatVersion 15): the latter has no `node`, `screen` or `examples` of its own. */
   readonly kind?: OriginKind;
   readonly name?: string;
-  /** Chaves do nó no documento. */
+  /** Keys of the node in the document. */
   readonly node: {
     readonly type: string;
     readonly props: string;
     readonly children: string;
   };
   readonly screen: ScreenSource;
-  /** Tradução de um booleano JSON para texto, nos campos sem `values` próprio. */
+  /** Translation of a JSON boolean to text, in the fields without their own `values`. */
   readonly booleans?: { readonly true: string; readonly false: string };
-  /** Telas de exemplo (JSON inteiro de uma tela) no pacote da especialização. */
+  /** Example screens (whole JSON of a screen) in the specialization's package. */
   readonly examples?: readonly OriginExample[];
 }
 
-/** Uma tela de exemplo de um sistema externo: nome único na origem e arquivo `.json` do pacote. */
+/** An example screen of an external system: a name unique in the origin and a `.json` file of the package. */
 export interface OriginExample {
   readonly name: string;
   readonly file: string;
 }
 
-/** `sources` de um tipo de anotação (formato v3 + `slot` e `ignore`). */
+/** `sources` of an annotation type (v3 format + `slot` and `ignore`). */
 export interface TypeSource {
   readonly system: string;
   readonly id?: string;
   readonly name?: string;
-  /** Nome do nó `slot` do template que recebe os filhos (ausente = o slot do componente). */
+  /** Name of the template's `slot` node that receives the children (absent = the component's slot). */
   readonly slot?: string;
-  /** Props aceitas e não desenhadas (sem aviso de propriedade desconhecida). */
+  /** Props accepted and not drawn (without an unknown-property warning). */
   readonly ignore?: readonly string[];
 }
 
 /**
- * `sources` de um campo. Numa origem executável o caminho do valor dentro de `props` vem de
- * `path` (obrigatório ali, conferido por `readField`) e `name` é só o nome da propriedade de
- * origem; nos demais sistemas vale `name`. Nunca se lê o caminho de `name`.
+ * `sources` of a field. In an executable origin the path of the value inside `props` comes from
+ * `path` (required there, checked by `readField`) and `name` is just the name of the source
+ * property; in the other systems `name` applies. The path is never read from `name`.
  */
 export interface FieldSource {
   readonly system: string;
   readonly name?: string;
-  /** Caminho do valor dentro de `props` do nó externo (`a.b[0].c`, sem `[*]`). */
+  /** Path of the value inside the external node's `props` (`a.b[0].c`, without `[*]`). */
   readonly path?: string;
   readonly values?: Readonly<Record<string, string>>;
 }
@@ -157,10 +157,10 @@ export interface FieldSource {
 export interface TranslateResult {
   readonly layout?: LayoutScreen;
   readonly warnings: string[];
-  /** Os mesmos avisos com código e parâmetros (`warnings` = textos destes, na mesma ordem). */
+  /** The same warnings with code and parameters (`warnings` = the texts of these, in the same order). */
   readonly messages: readonly ModelMessage[];
   readonly error?: string;
-  /** O `error` com código e parâmetros (`error` = o texto dele); ausente se o erro foi uma exceção. */
+  /** The `error` with code and parameters (`error` = its text); absent if the error was an exception. */
   readonly errorMessage?: ModelMessage;
 }
 
@@ -173,17 +173,17 @@ export interface SourceResult {
 }
 
 export interface SourceOptions {
-  /** Sistema da origem; ausente = a primeira origem da especialização. */
+  /** System of the origin; absent = the first origin of the specialization. */
   readonly system?: string;
-  /** Direção de leitura da tela; vence a `screen.direction` da origem (ausente = a da origem, senão `ltr`). */
+  /** Reading direction of the screen; beats the origin's `screen.direction` (absent = the origin's, otherwise `ltr`). */
   readonly direction?: Direction;
 }
 
 // ---------------------------------------------------------------------------------------
-// Caminhos: `a.b[0].c`
+// Paths: `a.b[0].c`
 // ---------------------------------------------------------------------------------------
 
-/** Chave (texto), índice (número) ou `[*]` (`null`). */
+/** Key (text), index (number) or `[*]` (`null`). */
 export type PathSegment = string | number | null;
 
 export type ParsedPath =
@@ -223,7 +223,7 @@ export function parsePath(text: string): ParsedPath {
   return { ok: true, segments };
 }
 
-/** `['a', 'b', 0, 'c']` → `a.b[0].c` (`null` vira `[*]`). */
+/** `['a', 'b', 0, 'c']` → `a.b[0].c` (`null` becomes `[*]`). */
 export function formatPath(segments: readonly PathSegment[]): string {
   let out = '';
   for (const segment of segments) {
@@ -240,7 +240,7 @@ export interface ReadResult {
 
 const NOT_FOUND: ReadResult = { found: false };
 
-/** Lê o caminho em `root`. `[*]` e valor `null`/`undefined` contam como não encontrado. */
+/** Reads the path in `root`. `[*]` and a `null`/`undefined` value count as not found. */
 export function readPath(
   root: unknown,
   path: string | readonly PathSegment[],
@@ -268,7 +268,7 @@ export function readPath(
   return { found: true, value: current };
 }
 
-/** Expande os `[*]` do caminho: um resultado por elemento, com o caminho concreto. */
+/** Expands the `[*]` of the path: one result per element, with the concrete path. */
 function expandPath(
   root: unknown,
   segments: readonly PathSegment[],
@@ -299,7 +299,7 @@ function expandPath(
 }
 
 // ---------------------------------------------------------------------------------------
-// Validação (estrita, com caminho)
+// Validation (strict, with a path)
 // ---------------------------------------------------------------------------------------
 
 function nonEmptyString(value: unknown): value is string {
@@ -307,11 +307,11 @@ function nonEmptyString(value: unknown): value is string {
 }
 
 /**
- * Um problema da declaração das origens como dado: o `path` é o caminho em texto
- * (`origins[0].screen.roots[1].path`), o `message` o texto pt-BR sem o caminho e o `code` e os
- * `params` o do catálogo de mensagens do modelo (a interface traduz). Quem monta o texto com um
- * valor do usuário (chave, âncora, nome, caminho) o emite já com o código, por `codedProblem`, e
- * não se acha o código lendo o texto de volta.
+ * A problem in the origins declaration as data: `path` is the path as text
+ * (`origins[0].screen.roots[1].path`), `message` the pt-BR text without the path, and `code` and
+ * `params` those of the model message catalog (the interface translates it). Whoever builds the text with a
+ * user value (key, anchor, name, path) emits it already with the code, through `codedProblem`, and
+ * the code is not found by reading the text back.
  */
 export interface OriginProblem {
   readonly path: string;
@@ -320,14 +320,14 @@ export interface OriginProblem {
   readonly params?: Readonly<Record<string, string | number>>;
 }
 
-/** O problema como texto (`caminho: mensagem`), o formato da biblioteca dos componentes. */
+/** The problem as text (`path: message`), the format of the components library. */
 export function originProblemText(problem: OriginProblem): string {
   return `${problem.path}: ${problem.message}`;
 }
 
 /**
- * Acrescenta um problema de texto constante; o código sai pelo texto exato (catálogo `origins`,
- * depois `spec`), sem padrão: texto com valor do usuário vai por `codedProblem`.
+ * Adds a problem with constant text; the code comes from the exact text (the `origins` catalog,
+ * then `spec`), without a pattern: text with a user value goes through `codedProblem`.
  */
 function problem(problems: OriginProblem[], path: string, message: string): void {
   const hit = originCodeForText(message) ?? originSpecCodeForText(message);
@@ -336,7 +336,7 @@ function problem(problems: OriginProblem[], path: string, message: string): void
   );
 }
 
-/** Acrescenta um problema do catálogo com parâmetros: o texto é o do modelo preenchido. */
+/** Adds a problem from the catalog with parameters: the text is the filled-in template. */
 function codedProblem(
   problems: OriginProblem[],
   path: string,
@@ -359,7 +359,7 @@ function checkKeys(
   }
 }
 
-/** Confere um caminho; `wildcard` libera `[*]` (só em `roots[].path`). */
+/** Checks a path; `wildcard` allows `[*]` (only in `roots[].path`). */
 function checkPath(
   value: unknown,
   path: string,
@@ -545,7 +545,7 @@ function directionKey(direction: Direction | undefined): { direction?: Direction
   return direction === undefined ? {} : { direction };
 }
 
-/** `screen.direction`: literal `ltr` ou `rtl` (ausente = padrão); outro valor é problema no caminho da chave. */
+/** `screen.direction`: literal `ltr` or `rtl` (absent = default); another value is a problem at the key's path. */
 function parseScreenDirection(
   raw: unknown,
   path: string,
@@ -579,7 +579,7 @@ function parseBooleans(
     : undefined;
 }
 
-/** Origem `measured`: só `system`, `kind`, `name` e `booleans` (o nó e a árvore são fixos). */
+/** `measured` origin: only `system`, `kind`, `name` and `booleans` (the node and the tree are fixed). */
 function parseMeasuredOrigin(
   raw: Record<string, unknown>,
   path: string,
@@ -681,7 +681,7 @@ function parseOrigin(
   };
 }
 
-/** `examples` de uma origem: `name` não vazio e único, `file` caminho de pacote `.json`. */
+/** `examples` of an origin: non-empty, unique `name`, `file` a `.json` package path. */
 function parseOriginExamples(
   raw: unknown,
   path: string,
@@ -726,9 +726,9 @@ function parseOriginExamples(
 }
 
 /**
- * `origins` da especialização. Estrito: chave desconhecida é problema, com o caminho
- * (`origins[0].screen.roots[1].path: …`). Uma origem com problema é descartada; as outras
- * seguem. `[*]` só vale em `roots[].path`.
+ * `origins` of the specialization. Strict: an unknown key is a problem, with the path
+ * (`origins[0].screen.roots[1].path: …`). An origin with a problem is discarded; the others
+ * carry on. `[*]` only applies in `roots[].path`.
  */
 export function parseOrigins(
   raw: unknown,
@@ -755,7 +755,7 @@ export function parseOrigins(
   return { origins, problems };
 }
 
-/** `sources` de um tipo (qualquer sistema). Entrada malformada vira problema e é descartada. */
+/** `sources` of a type (any system). A malformed entry becomes a problem and is discarded. */
 export function parseTypeSources(
   raw: unknown,
   path: string,
@@ -805,7 +805,7 @@ export function parseTypeSources(
   return out;
 }
 
-/** `sources` de um campo (qualquer sistema). */
+/** `sources` of a field (any system). */
 export function parseFieldSources(
   raw: unknown,
   path: string,
@@ -848,7 +848,7 @@ export function parseFieldSources(
 }
 
 // ---------------------------------------------------------------------------------------
-// Tradução
+// Translation
 // ---------------------------------------------------------------------------------------
 
 function isScalar(value: unknown): value is string | number | boolean {
@@ -857,7 +857,7 @@ function isScalar(value: unknown): value is string | number | boolean {
   );
 }
 
-/** Valor de uma `ValueSource` no documento (ou no nó): traduzido por `values`, senão `default`. */
+/** Value of a `ValueSource` in the document (or in the node): translated by `values`, otherwise `default`. */
 function readSource(source: ValueSource | undefined, doc: unknown): unknown {
   if (source === undefined) return undefined;
   if (typeof source !== 'object') return source;
@@ -900,13 +900,13 @@ function firstKey(path: string): string | undefined {
   return typeof first === 'string' ? first : undefined;
 }
 
-/** O que o valor de um campo precisa do campo (da biblioteca ou da especialização). */
+/** What a field's value needs from the field (from the library or the specialization). */
 export type FieldLike = Pick<
   FieldDef,
   'key' | 'type' | 'options' | 'default' | 'sources'
 >;
 
-/** O que o valor de um campo precisa da origem: o sistema, os booleanos e a chave das props. */
+/** What a field's value needs from the origin: the system, the booleans and the props key. */
 export interface FieldContext {
   readonly origin: Pick<Origin, 'system' | 'booleans'> & {
     readonly node: Pick<Origin['node'], 'props'>;
@@ -914,7 +914,7 @@ export interface FieldContext {
   readonly messages: ModelMessage[];
 }
 
-/** O valor de um campo lido de `props` pelo `path` da `source` do sistema (com `values`); avisa o que não serve. */
+/** The value of a field read from `props` by the system `source`'s `path` (with `values`); warns about what does not fit. */
 export function translateFieldValue(
   field: FieldLike,
   props: Record<string, unknown>,
@@ -924,7 +924,7 @@ export function translateFieldValue(
   const fallback: FieldValue = field.default ?? null;
   const source = field.sources.find((s) => s.system === ctx.origin.system);
   if (!source) return fallback;
-  // Entrada sem `path` (a biblioteca já a registrou como problema) não lê nada.
+  // An entry without `path` (the library already recorded it as a problem) reads nothing.
   if (source.path === undefined) return fallback;
   const read = readPath(props, source.path);
   if (!read.found) return fallback;
@@ -1091,8 +1091,8 @@ function describeSourceKey(source: ValueSource, fallback: string): string {
 }
 
 /**
- * A origem que traduz o JSON: a de `system`; sem ele, a primeira de `kind` `tree` (a `measured`
- * não gera tela). Só com origens `measured`, o erro manda passar o `system`.
+ * The origin that translates the JSON: that of `system`; without it, the first of `kind` `tree` (the `measured` one
+ * does not generate a screen). With only `measured` origins, the error says to pass the `system`.
  */
 function pickOrigin(
   origins: readonly Origin[],
@@ -1176,12 +1176,12 @@ function translate(
   return result(messages, { layout });
 }
 
-/** O resultado da tradução: `warnings` são os textos das `messages`, na mesma ordem. */
+/** The result of the translation: `warnings` are the texts of the `messages`, in the same order. */
 function result(
   messages: ModelMessage[],
   rest: {
     readonly layout?: LayoutScreen;
-    /** Erro que a exceção trouxe (texto do motor JavaScript, sem código). */
+    /** Error that the exception carried (text from the JavaScript engine, no code). */
     readonly error?: string;
     readonly errorMessage?: ModelMessage;
   },
@@ -1200,10 +1200,10 @@ function messageOf(error: unknown): string {
 }
 
 /**
- * JSON externo → tela sem geometria, pela origem declarada (`options.system`; sem ele, a
- * primeira). Nunca lança: falha vira `error` (sem `layout`). Avisos: tipo externo sem tipo de
- * anotação (o nó e a subárvore ficam de fora), propriedade desconhecida, valor fora das
- * opções, valor que não é simples, âncora inválida.
+ * External JSON → screen without geometry, by the declared origin (`options.system`; without it, the
+ * first). Never throws: a failure becomes `error` (without `layout`). Warnings: external type without an
+ * annotation type (the node and the subtree are left out), unknown property, value outside the
+ * options, value that is not simple, invalid anchor.
  */
 export function translateSource(
   library: Library,
@@ -1217,7 +1217,7 @@ export function translateSource(
   }
 }
 
-/** O erro da tradução com o código; sem erro (nem layout), o `origins.error.noResult`. */
+/** The error of the translation with the code; without an error (or a layout), `origins.error.noResult`. */
 function errorOf(
   translated: TranslateResult,
 ): Pick<SourceResult, 'error' | 'errorMessage'> {
@@ -1230,7 +1230,7 @@ function errorOf(
     : { error: translated.error, errorMessage: translated.errorMessage };
 }
 
-/** `translateSource` + `layoutScreen`: do JSON externo à `Screen` pronta para desenhar. Nunca lança. */
+/** `translateSource` + `layoutScreen`: from the external JSON to the `Screen` ready to draw. Never throws. */
 export function screenFromSource(
   library: Library,
   json: unknown,

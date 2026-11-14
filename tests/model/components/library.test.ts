@@ -52,8 +52,8 @@ describe('library', () => {
         ),
       }));
       const lib = loadLibrary(specFiles({ layers }));
-      expect(lib.problems).toContain('button: caminho fora da biblioteca: ../x.json');
-      expect(lib.problems.some((p) => p.includes('não encontrado'))).toBe(false);
+      expect(lib.problems).toContain('button: path outside the library: ../x.json');
+      expect(lib.problems.some((p) => p.includes('not found'))).toBe(false);
       expect(lib.types.find((t) => t.id === 'button')?.component).toBeUndefined();
     });
 
@@ -78,13 +78,13 @@ describe('library', () => {
           ],
         }),
       );
-      expect(lib.problems).toEqual(['fonts[1]: caminho fora da biblioteca: ../R.ttf']);
+      expect(lib.problems).toEqual(['fonts[1]: path outside the library: ../R.ttf']);
       expect(lib.fonts.map((f) => f.family)).toEqual(['Roboto']);
     });
 
     it('ícones: problema `icons` com o texto citado', () => {
       const lib = loadLibrary(specFiles({ icons: '../icons.json' }));
-      expect(lib.problems).toEqual(['icons: caminho fora da biblioteca: ../icons.json']);
+      expect(lib.problems).toEqual(['icons: path outside the library: ../icons.json']);
       expect(lib.icons).toBeUndefined();
     });
   });
@@ -134,7 +134,7 @@ describe('library', () => {
     files.push({ path: 'components/quebrado.json', text: '{oops' });
     const lib = loadLibrary(files);
     expect(
-      lib.problems.some((p) => p.includes('avatar') && p.includes('não encontrado')),
+      lib.problems.some((p) => p.includes('avatar') && p.includes('not found')),
     ).toBe(true);
     expect(
       lib.problems.some((p) =>
@@ -147,7 +147,7 @@ describe('library', () => {
     );
     expect(
       lib.problems.some(
-        (p) => p.includes('quebrado.json') && p.includes('JSON inválido'),
+        (p) => p.includes('quebrado.json') && p.includes('invalid JSON'),
       ),
     ).toBe(true);
     expect(lib.types.find((t) => t.id === 'button')?.component).toBeDefined();
@@ -162,7 +162,7 @@ describe('library', () => {
     ];
     const lib = loadLibrary(twice);
     expect(lib.specId).toBe('lab-components');
-    expect(lib.problems[0]).toMatch(/2 especializações/);
+    expect(lib.problems[0]).toMatch(/2 specializations/);
   });
 
   describe('origens e sources', () => {
@@ -270,7 +270,7 @@ describe('library', () => {
         ),
       );
       expect(lib.problems).toContain(
-        'origins[0].screen.roots[0].scrim: tipo inexistente: nao-existe',
+        'origins[0].screen.roots[0].scrim: nonexistent type: nao-existe',
       );
     });
 
@@ -289,7 +289,7 @@ describe('library', () => {
         specWith({ sources: [{ system: 'sdui', name: 'Card', slot: 'outro' }] }),
       );
       expect(wrong.problems).toEqual([
-        `card.sources[0].slot: o slot do componente é "${slotName}", não "outro"`,
+        `card.sources[0].slot: the component's slot is "${slotName}", not "outro"`,
       ]);
       // Componente sem slot: o botão.
       const buttonFile = SAMPLE_FILES.find((f) => f.path.endsWith('button.json'))!;
@@ -322,7 +322,7 @@ describe('library', () => {
         buttonFile,
       ]);
       expect(noSlot.problems).toEqual([
-        'button.sources[0].slot: o componente não tem slot',
+        'button.sources[0].slot: the component has no slot',
       ]);
     });
 
@@ -345,8 +345,8 @@ describe('library', () => {
         }),
       );
       expect(lib.problems).toEqual([
-        'card.fields[0].sources[0].values: só vale em campo enum',
-        'card.fields[1].sources[0].values.Y: destino fora de options: zzz',
+        'card.fields[0].sources[0].values: only valid on an enum field',
+        'card.fields[1].sources[0].values.Y: target outside options: zzz',
       ]);
     });
 
@@ -427,7 +427,7 @@ describe('library', () => {
         ),
       );
       expect(lib.problems).toEqual([
-        'card.fields[0].sources[0].path: obrigatório em sistema declarado em origins',
+        'card.fields[0].sources[0].path: required in a system declared in origins',
       ]);
     });
 

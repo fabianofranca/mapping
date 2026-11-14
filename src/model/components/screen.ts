@@ -1,7 +1,7 @@
 /**
- * Motor dos componentes (etapa Biblioteca): a tela sem imagem. Uma tela é um retângulo em branco com
- * instâncias; cada instância é um retângulo (como uma marcação) com o tipo da especialização
- * e os valores dos campos (como uma anotação). Funções puras e imutáveis.
+ * Component engine (Library stage): the screen without an image. A screen is a blank rectangle with
+ * instances; each instance is a rectangle (like a marking) with the specialization's type
+ * and the field values (like an annotation). Pure, immutable functions.
  */
 import type { Box } from './box';
 import type { Direction, FieldRow, FieldValue, FieldValues } from './componentFormat';
@@ -10,12 +10,12 @@ export type { Box };
 
 export interface Instance {
   readonly id: string;
-  /** Id do tipo de anotação na especialização (que aponta para o componente). */
+  /** Id of the annotation type in the specialization (which points to the component). */
   readonly typeId: string;
-  /** Retângulo absoluto na tela (também para filhos de componentes com slot). */
+  /** Absolute rectangle on the screen (also for children of components with a slot). */
   readonly box: Box;
   readonly values: FieldValues;
-  /** Componente com slot (instância) a que pertence; ausente = nível da tela. A ordem entre irmãos é a ordem na lista. */
+  /** Component with a slot (instance) it belongs to; absent = screen level. Sibling order is the order in the list. */
   readonly parentId?: string;
 }
 
@@ -24,11 +24,11 @@ export interface Screen {
   readonly name: string;
   readonly width: number;
   readonly height: number;
-  /** Cor de fundo da tela (CSS). */
+  /** Background color of the screen (CSS). */
   readonly background: string;
   /**
-   * Direção de leitura da tela (R2, #1107). Só aparece em `rtl` (ausente = `ltr`): o `layoutScreen`
-   * já espelhou as caixas e o desenho usa a mesma direção ao instanciar o interior de cada componente.
+   * Reading direction of the screen (R2, #1107). Only appears as `rtl` (absent = `ltr`): `layoutScreen`
+   * already mirrored the boxes and the drawing uses the same direction when instantiating the inside of each component.
    */
   readonly direction?: Direction;
   readonly instances: readonly Instance[];
@@ -54,7 +54,7 @@ export function addInstance(screen: Screen, instance: Omit<Instance, 'id'>): Scr
   };
 }
 
-/** Remove só a instância; os filhos sobem para o pai dela. */
+/** Removes only the instance; the children go up to its parent. */
 export function removeInstance(screen: Screen, id: string): Screen {
   const removed = screen.instances.find((i) => i.id === id);
   if (!removed) return screen;
@@ -70,7 +70,7 @@ export function removeInstance(screen: Screen, id: string): Screen {
   return { ...screen, instances };
 }
 
-/** Muda o retângulo; mover (x/y) leva os descendentes junto, como as marcações da app. */
+/** Changes the rectangle; moving (x/y) takes the descendants along, like the app's markings. */
 export function updateBox(screen: Screen, id: string, box: Box): Screen {
   const current = screen.instances.find((i) => i.id === id);
   if (!current) return screen;
@@ -87,13 +87,13 @@ export function updateBox(screen: Screen, id: string, box: Box): Screen {
   return { ...screen, instances };
 }
 
-/** Remove a instância e os descendentes. */
+/** Removes the instance and the descendants. */
 export function removeSubtree(screen: Screen, id: string): Screen {
   const gone = new Set([id, ...descendantsOf(screen, id)]);
   return { ...screen, instances: screen.instances.filter((i) => !gone.has(i.id)) };
 }
 
-/** Filhos por pai (ausente = raiz), na ordem da lista; um passo só, memoizado pela lista (imutável). */
+/** Children by parent (absent = root), in list order; a single pass, memoized by the (immutable) list. */
 const childIndexCache = new WeakMap<
   readonly Instance[],
   Map<string | undefined, Instance[]>
@@ -115,11 +115,11 @@ export function childrenOf(screen: Screen, parentId: string | undefined): Instan
   return (childIndex(screen).get(parentId) ?? []).slice();
 }
 
-/** Ids dos descendentes, em pré-ordem. */
+/** Ids of the descendants, in pre-order. */
 export function descendantsOf(screen: Screen, id: string): string[] {
   const index = childIndex(screen);
   const out: string[] = [];
-  // Defesa: uma tela montada à mão com ciclo não trava (cada instância entra uma vez).
+  // Defense: a hand-built screen with a cycle does not hang (each instance enters once).
   const seen = new Set<string>();
   const visit = (parent: string) => {
     for (const child of index.get(parent) ?? []) {
@@ -145,11 +145,11 @@ export function ancestorsOf(screen: Screen, id: string): string[] {
   return out;
 }
 
-/** Ordem de desenho: pai antes dos filhos (pré-ordem a partir do nível da tela). */
+/** Drawing order: parent before children (pre-order from the screen level). */
 export function renderOrder(screen: Screen): Instance[] {
   const out: Instance[] = [];
   const known = new Set(screen.instances.map((i) => i.id));
-  // Filhos por pai efetivo (pai ausente = raiz), na ordem da lista: um passo só, O(n).
+  // Children by effective parent (absent parent = root), in list order: a single pass, O(n).
   const byParent = new Map<string | undefined, Instance[]>();
   for (const child of screen.instances) {
     const parent =
@@ -169,8 +169,8 @@ export function renderOrder(screen: Screen): Instance[] {
 }
 
 /**
- * Põe a instância dentro de um componente com slot (ou no nível da tela, com `undefined`) numa
- * posição entre os irmãos. Recusa ciclos (um ancestral não pode virar filho do descendente).
+ * Puts the instance inside a component with a slot (or at the screen level, with `undefined`) at
+ * a position among the siblings. Refuses cycles (an ancestor cannot become a child of its descendant).
  */
 export function setParent(
   screen: Screen,
@@ -187,14 +187,14 @@ export function setParent(
   const siblings = rest.filter((i) => (i.parentId ?? undefined) === parentId);
   const at =
     index === undefined ? siblings.length : Math.max(0, Math.min(index, siblings.length));
-  // Insere antes do irmão que ocupa a posição `at` (ou no fim da lista).
+  // Inserts before the sibling that occupies position `at` (or at the end of the list).
   const anchor = siblings[at];
   const position = anchor ? rest.indexOf(anchor) : rest.length;
   const instances = [...rest.slice(0, position), moved, ...rest.slice(position)];
   return { ...screen, instances };
 }
 
-/** Move a instância uma posição entre os irmãos (`-1` para trás, `+1` para a frente). */
+/** Moves the instance one position among the siblings (`-1` backward, `+1` forward). */
 export function moveSibling(screen: Screen, id: string, delta: -1 | 1): Screen {
   const instance = screen.instances.find((i) => i.id === id);
   if (!instance) return screen;
@@ -202,7 +202,7 @@ export function moveSibling(screen: Screen, id: string, delta: -1 | 1): Screen {
   const index = siblings.findIndex((i) => i.id === id);
   const target = index + delta;
   if (index < 0 || target < 0 || target >= siblings.length) return screen;
-  // `setParent` indexa entre os irmãos sem a própria instância: `target` serve aos dois sentidos.
+  // `setParent` indexes among the siblings without the instance itself: `target` serves both directions.
   return setParent(screen, id, instance.parentId ?? undefined, target);
 }
 
@@ -221,7 +221,7 @@ export function setValue(
   return patch(screen, id, (i) => ({ ...i, values: { ...i.values, [key]: value } }));
 }
 
-/** Traz a instância para a frente (fim da lista = desenhada por último). */
+/** Brings the instance to the front (end of the list = drawn last). */
 export function bringToFront(screen: Screen, id: string): Screen {
   const instance = screen.instances.find((i) => i.id === id);
   if (!instance) return screen;
@@ -258,7 +258,7 @@ function roundBox(box: Box): Box {
   };
 }
 
-/** Serialização da tela (arquivo `*.screen.json` do laboratório). */
+/** Screen serialization (the lab's `*.screen.json` file). */
 export function serializeScreen(screen: Screen): string {
   return JSON.stringify({ format: SCREEN_FORMAT, formatVersion: 1, ...screen }, null, 2);
 }
@@ -267,14 +267,14 @@ function isCell(v: unknown): v is string | number | null {
   return typeof v === 'string' || typeof v === 'number' || v === null;
 }
 
-/** Uma linha de tabela: só as células de texto, número ou `null` ficam; o resto da célula é descartado. */
+/** A table row: only the text, number or `null` cells stay; the rest of the cell is discarded. */
 function parseRow(raw: object): FieldRow {
   const row: Record<string, string | number | null> = {};
   for (const [k, v] of Object.entries(raw)) if (isCell(v)) row[k] = v;
   return row;
 }
 
-/** Valores de uma instância: texto, número, `null` ou tabela (lista de objetos; item que não é objeto é descartado). */
+/** Values of an instance: text, number, `null` or a table (list of objects; an item that is not an object is discarded). */
 function parseValues(raw: unknown): Record<string, FieldValue> {
   const values: Record<string, FieldValue> = {};
   if (typeof raw !== 'object' || raw === null) return values;
@@ -290,28 +290,28 @@ function parseValues(raw: unknown): Record<string, FieldValue> {
   return values;
 }
 
-/** Recusa `id` repetido, `parentId` que é a própria instância, que não existe ou que fecha um ciclo. */
+/** Refuses a repeated `id`, a `parentId` that is the instance itself, does not exist or closes a cycle. */
 function checkHierarchy(instances: readonly Instance[]): void {
   const byId = new Map<string, Instance>();
   instances.forEach((inst, index) => {
     if (byId.has(inst.id))
-      throw new Error(`Tela inválida: instances[${index}].id repetido (${inst.id})`);
+      throw new Error(`Invalid screen: instances[${index}].id is duplicated (${inst.id})`);
     byId.set(inst.id, inst);
   });
   instances.forEach((inst, index) => {
     if (inst.parentId === undefined) return;
-    const where = `Tela inválida: instances[${index}].parentId`;
+    const where = `Invalid screen: instances[${index}].parentId`;
     if (inst.parentId === inst.id)
-      throw new Error(`${where} aponta para a própria instância`);
+      throw new Error(`${where} points to the instance itself`);
     if (!byId.has(inst.parentId))
-      throw new Error(`${where} não existe na tela (${inst.parentId})`);
+      throw new Error(`${where} does not exist in the screen (${inst.parentId})`);
     const seen = new Set<string>([inst.id]);
     for (
       let up = byId.get(inst.parentId);
       up !== undefined;
       up = up.parentId === undefined ? undefined : byId.get(up.parentId)
     ) {
-      if (seen.has(up.id)) throw new Error(`${where} forma um ciclo`);
+      if (seen.has(up.id)) throw new Error(`${where} forms a cycle`);
       seen.add(up.id);
     }
   });
@@ -319,24 +319,24 @@ function checkHierarchy(instances: readonly Instance[]): void {
 
 export function parseScreen(input: unknown): Screen {
   if (typeof input !== 'object' || input === null)
-    throw new Error('Tela inválida: não é um objeto');
+    throw new Error('Invalid screen: not an object');
   const r = input as Record<string, unknown>;
   if (r.format !== SCREEN_FORMAT)
-    throw new Error(`Tela inválida: format deve ser "${SCREEN_FORMAT}"`);
+    throw new Error(`Invalid screen: format must be "${SCREEN_FORMAT}"`);
   const num = (v: unknown, name: string): number => {
     if (typeof v !== 'number' || !Number.isFinite(v))
-      throw new Error(`Tela inválida: ${name} deve ser número`);
+      throw new Error(`Invalid screen: ${name} must be a number`);
     return v;
   };
   const str = (v: unknown, name: string): string => {
-    if (typeof v !== 'string') throw new Error(`Tela inválida: ${name} deve ser texto`);
+    if (typeof v !== 'string') throw new Error(`Invalid screen: ${name} must be text`);
     return v;
   };
   if (!Array.isArray(r.instances))
-    throw new Error('Tela inválida: instances deve ser lista');
+    throw new Error('Invalid screen: instances must be a list');
   const instances: Instance[] = r.instances.map((raw, index) => {
     if (typeof raw !== 'object' || raw === null)
-      throw new Error(`Tela inválida: instances[${index}]`);
+      throw new Error(`Invalid screen: instances[${index}]`);
     const i = raw as Record<string, unknown>;
     const b = (typeof i.box === 'object' && i.box !== null ? i.box : {}) as Record<
       string,
@@ -363,7 +363,7 @@ export function parseScreen(input: unknown): Screen {
     width: num(r.width, 'width'),
     height: num(r.height, 'height'),
     background: typeof r.background === 'string' ? r.background : '#FFFFFF',
-    // Só `rtl` vira chave (ausente = `ltr`); um valor inválido é ignorado, como `name` e `background`.
+    // Only `rtl` becomes a key (absent = `ltr`); an invalid value is ignored, like `name` and `background`.
     ...(r.direction === 'rtl' ? { direction: 'rtl' as const } : {}),
     instances,
   };

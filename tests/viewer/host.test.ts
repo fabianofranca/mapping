@@ -123,7 +123,7 @@ describe('loadLibraryFromUrl', () => {
     const { fetch } = fakeFetch(bodies);
     const library = await loadLibraryFromUrl(SPEC_URL, { fetch });
     expect(library.problems).toHaveLength(1);
-    expect(library.problems[0]).toContain('arquivo do componente não encontrado');
+    expect(library.problems[0]).toContain('component file not found');
     expect(library.problems[0]).toContain('components/button.json');
     expect(library.types.find((t) => t.id === 'button')?.component).toBeUndefined();
     expect(library.types.find((t) => t.id === 'card')?.component).toBeDefined();
@@ -157,7 +157,7 @@ describe('loadLibraryFromUrl', () => {
     });
     expect(first.icons).toBeUndefined();
     expect(first.problems).toHaveLength(1);
-    expect(first.problems[0]).toContain('arquivo de ícones não encontrado');
+    expect(first.problems[0]).toContain('icon file not found');
     expect(first.types.find((t) => t.id === 'card')?.component).toBeDefined();
 
     const { fetch: inner } = fakeFetch(withIcons());
@@ -167,7 +167,7 @@ describe('loadLibraryFromUrl', () => {
     }) as typeof globalThis.fetch;
     const second = await loadLibraryFromUrl(SPEC_URL, { fetch: offline });
     expect(second.problems).toHaveLength(1);
-    expect(second.problems[0]).toContain('arquivo de ícones não encontrado');
+    expect(second.problems[0]).toContain('icon file not found');
   });
 
   it('com fonts: false os ícones continuam sendo pedidos', async () => {

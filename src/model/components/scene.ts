@@ -6,7 +6,7 @@
  * drawn on the canvas without a network:
  * no remote fonts, images by `imageRef` or effects that the 2D canvas does not have.
  *
- * Convenções:
+ * Conventions:
  * - Units in design px, with no screen conversion.
  * - `transform` is the node's 2D matrix **relative to its parent** (a, b, c, d, e, f, as in CSS/SVG:
  *   x' = a·x + c·y + e; y' = b·x + d·y + f). The node's geometry (`width`/`height`, `d`,
