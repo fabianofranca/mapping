@@ -186,3 +186,65 @@ test.describe('anchor of the resolved conversation (900 × 720)', () => {
     });
   }
 });
+
+// CL1 (stage #741, finding 4.12): with Details open at 900 × 720 the Status column and the
+// search field are narrow; a cut text must end in an ellipsis (or be whole), never be chopped.
+// The opening does not depend on the language (the other tests of this file are en-US).
+for (const locale of ['en-US', 'pt-BR'] as const) {
+  test.describe(`Comments with Details open (900 × 720, ${locale})`, () => {
+    test.use({ viewport: { width: 900, height: 720 }, locale });
+
+    test('status badges and the search placeholder are whole or end in an ellipsis', async ({
+      page,
+    }) => {
+      await page.goto('/');
+      await page
+        .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
+        .setInputFiles({
+          name: 'full-example.zip',
+          mimeType: 'application/zip',
+          buffer: readFileSync(EXAMPLE_ZIP),
+        });
+      await expect(page.locator('.canvas-host')).toBeVisible();
+      await page.getByText('Email', { exact: true }).first().click();
+      await page.keyboard.press('Control+Shift+3');
+      await expect(page.locator('.panel-details')).toBeVisible();
+      await page.keyboard.press('Control+Shift+0');
+      await page.locator('.comments-filters select').first().selectOption({ index: 0 });
+      await expect(page.locator('.comments-row .comments-badge').first()).toBeVisible();
+      const report = await page.evaluate(() => {
+        const ellipsized = (el: Element | null) => {
+          if (!el) return false;
+          const s = getComputedStyle(el);
+          return s.overflow === 'hidden' && s.textOverflow === 'ellipsis';
+        };
+        const badges = [
+          ...document.querySelectorAll('.comments-row .comments-badge'),
+        ].map((badge) => {
+          const text = badge.querySelector('.comments-badge-text');
+          return {
+            text: (badge.textContent ?? '').trim(),
+            ellipsis: ellipsized(text),
+            cut: text ? text.scrollWidth > text.clientWidth : false,
+          };
+        });
+        const search = document.querySelector<HTMLInputElement>(
+          '.comments-filters input[type=search]',
+        );
+        return {
+          badges,
+          placeholder: search ? getComputedStyle(search).textOverflow : null,
+        };
+      });
+      expect(report.badges.length).toBeGreaterThan(0);
+      for (const badge of report.badges) {
+        expect(badge.ellipsis, `badge "${badge.text}" has no ellipsis on its text`).toBe(
+          true,
+        );
+      }
+      expect(report.placeholder, 'the search placeholder has no ellipsis').toBe(
+        'ellipsis',
+      );
+    });
+  });
+}

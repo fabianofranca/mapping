@@ -214,7 +214,7 @@ function StatusBadge({ thread }: { readonly thread: Thread }) {
         title={t('comments.badge.resolved')}
       >
         <Icon name="check" />
-        {t('comments.badge.resolved')}
+        <span class="comments-badge-text">{t('comments.badge.resolved')}</span>
       </span>
     );
   }
@@ -228,7 +228,7 @@ function StatusBadge({ thread }: { readonly thread: Thread }) {
   return (
     <span class={`comments-badge comments-badge-${who ?? 'open'}`} title={t(key)}>
       {who !== null && <Icon name={STATE_ICON[who]} />}
-      {t(key)}
+      <span class="comments-badge-text">{t(key)}</span>
     </span>
   );
 }
