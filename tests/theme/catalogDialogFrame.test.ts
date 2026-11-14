@@ -42,7 +42,11 @@ describe('diálogo do Catálogo (CL1)', () => {
     expect(rule(catalog, '.catalog-table td:last-child')).toMatch(
       /overflow-wrap:\s*anywhere/,
     );
-    expect(rule(catalog, '.catalog-page .markdown td')).toMatch(
+    // CL1 (sobras do testador, 1.3): só a última coluna do markdown; as outras não partem palavra.
+    expect(rule(catalog, '.catalog-page .markdown td:last-child')).toMatch(
+      /overflow-wrap:\s*anywhere/,
+    );
+    expect(rule(catalog, '.catalog-page .markdown td')).not.toMatch(
       /overflow-wrap:\s*anywhere/,
     );
   });

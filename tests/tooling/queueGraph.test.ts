@@ -94,8 +94,8 @@ describe('painel.py — grafo da fila (GF1, #1761)', () => {
         '#9',
         '#5',
         '#6',
-        '#8',
         '#7',
+        '#8',
       ]);
       expect(nos().map((n) => n.onda)).toEqual([0, 0, 1, 1, 1, 2, 3, 4, 5]);
     },
@@ -114,8 +114,8 @@ describe('painel.py — grafo da fila (GF1, #1761)', () => {
         '#4': 2,
         '#5': 3,
         '#6': 4,
-        '#8': 5,
-        '#7': 6,
+        '#7': 5,
+        '#8': 6,
         '#9': null,
       });
     },
@@ -317,6 +317,31 @@ describe('painel.py — grafo da fila (GF1, #1761)', () => {
       expect(no('#4').estado).toBe('livre');
       expect(nos().some((n) => n.issue === '#1')).toBe(false);
       expect(setas().some((s) => s.de === '#1')).toBe(false);
+    },
+    TEMPO_SUBPROCESSOS,
+  );
+
+  it(
+    'l. a exclusiva da frente fica sozinha numa onda antes da candidata que ela segura (#1813, decisão 6)',
+    () => {
+      run('start', dir, '--paralelo', '9');
+      etapa('#1', ficha('nenhuma', 'a.ts'), 'status=em andamento');
+      etapa('#2', ficha('nenhuma', 'b.ts'), 'exclusive=sim');
+      etapa('#3', ficha('nenhuma', 'c.ts'));
+      expect(no('#3')).toMatchObject({
+        estado: 'exclusiva',
+        motivo: 'segurada para a exclusiva #2',
+      });
+      expect(no('#2')).toMatchObject({
+        estado: 'exclusiva',
+        motivo: 'exclusiva (espera a fila esvaziar)',
+      });
+      expect(nos().map((n) => [n.issue, n.onda])).toEqual([
+        ['#1', 0],
+        ['#2', 1],
+        ['#3', 2],
+      ]);
+      expect(setas()).toEqual([]);
     },
     TEMPO_SUBPROCESSOS,
   );

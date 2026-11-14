@@ -1,0 +1,5 @@
+# Achado só de severidade baixa vai ao fechamento sem reteste — 2026-11-13 (épico `epic/low-sem-reteste`, PR #1838, MCP 0.39.1 sem mudança, schema v19)
+
+## Alterado
+
+- **Achado só de severidade baixa vai da correção ao fechamento, sem reteste (para quem conduz o fluxo, #1814):** quando os achados de uma rodada do testador (❌, observações que são defeito e defeitos pendentes) são **todos de severidade baixa**, a correção é feita como sempre e, mesclada no épico, a etapa segue ao fechamento sem rodada de reteste; a conferência antes e depois da própria correção faz o papel dele, inclusive quando muda `src/` (teste visto falhando antes, ou captura antes e depois no achado visual). Na rodada mista, o reteste cobre só os achados high e medium; o achado low que a correção não reproduz leva reteste só dele. A severidade da observação e do defeito pendente vem da escala da seção 7 do `docs/TESTING.md`, na dúvida a maior, e a sub-issue de correção grava `reteste: sim|não`. O `docs/FLOW.md`, o `docs/PROCESS.md` e o `implementar-fila` dizem a regra; o fluxo manual, a rodada avulsa do dono e o limite de cinco rodadas não mudam.

@@ -8,12 +8,31 @@ de `meta.paralelo` (`start --paralelo N`) e de `meta.merged` (`merged`); `contex
 do coordenador (alerta acima de CONTEXT_LIMIT). `show` imprime `vagas:`, `começar agora:`, `contexto:`.
 Ficha incompleta (decisão 11 da #1532): `dep`, `toca` ou `fases` em `?` (ou `dep` e `toca` sem o campo) dá o motivo
 `ficha incompleta (<campos>)` e entra em `fichas a refazer:` do `show`; a etapa começada com `toca=?` segue conflitando
-com toda candidata (`arquivo ? com #N`). `exclusive=sim` na linha (`exclusive=` limpa) faz a etapa começar só com a fila
+com toda candidata (`arquivo ? com #N`). O `toca=` lista arquivos e seções (#1812): um arquivo, um padrão de arquivos
+(`*` só no último segmento, que não começa por `*`, e nunca em `docs/`, em `.claude/` nem num `.md` da raiz), uma seção de
+documento com seções (`docs/TESTING.md#R9`, `CLAUDE.md#regras-de-arquitetura`) ou um documento com seções que ainda não
+existe, citado inteiro. Pasta (termina em `/` ou `/**`, ou existe na raiz do repositório), `**`, padrão fora dessa forma,
+documento com seções existente sem âncora e âncora fora da forma (no `docs/TESTING.md`, `R<n>`, `RP`, `RF`, `RA`, `RB`, um
+slug ou `inicio`; nos outros, um slug ou `inicio`) dão `ficha incompleta (toca: <primeira citação inválida>)` e entram em
+`fichas a refazer:`, inclusive na etapa já começada, cujas citações antigas seguem na comparação como hoje até a ficha ser
+refeita; a linha `exclusive=sim` não passa por essa validação (só o `?` a deixa incompleta). `toca "<citações separadas
+por vírgula>"` confere uma lista: `ok` (código 0) ou uma linha `inválida: <citação> — <motivo>` por citação (código 1).
+`conflito "<toca>" [--pasta <dir>] [--com "#N=<toca>"]…` (decisão 9 da #1864, só leitura, fora do `apply`) confere um `toca` contra
+as etapas começadas e não mescladas da pasta, as que o `show` lista em `começar agora:` e cada `--com`, com o mesmo cálculo da fila:
+`livre` (código 0, também sem `--pasta` e sem `--com`), uma linha `conflito: <citação> com #N (<status>|começa agora|fora do painel)`
+por etapa em conflito (código 1) ou `inválida: <citação> — <motivo>` (código 2).
+`exclusive=sim` na linha (`exclusive=` limpa) faz a etapa começar só com a fila
 sem etapa começada e não mesclada (`exclusiva (espera a fila esvaziar)`). Começada e ainda não mesclada, ela segura todas
 as outras em qualquer estado (`em andamento`, `aguardando` com `started`, `esperando dono`, `falhou`), e o motivo diz o
 estado: `exclusiva #N <status>` (`em andamento` também para a que começa no mesmo cálculo). A saída é só do dono: com a ordem
 dele escrita no chat da fila, o coordenador grava `row '#N' exclusive=` e o `log` "exclusiva #N liberada pelo dono" (decisões
-2 e 3 da #1595). Todo `.md` sob `docs/`, os `.md` da raiz (`CLAUDE.md`, `README.md`) e os `.claude/skills/*/SKILL.md` se comparam
+2 e 3 da #1595). A exclusiva na frente drena a fila (#1813): a primeira candidata pela `order`, sem `hold`, com a ficha
+completa, as dependências mescladas e que não começa neste cálculo, se for exclusiva, segura as candidatas de depois dela
+(`segurada para a exclusiva #N`, depois de `exclusiva #N <status>` e antes de `exclusiva (espera a fila esvaziar)`) até a
+última começada ser mesclada; comum na frente que espera arquivo, schema ou vaga é a primeira e não há drenagem. O `show`
+diz `drenando para a exclusiva: #N` (ou `nenhuma`) depois de `começar agora:`; nada se grava (recalculado em toda gravação).
+Todo `.md` sob `docs/`, os `.md` da raiz (`CLAUDE.md`, `README.md`) e os `.claude/skills/*/SKILL.md` são os documentos
+com seções, e se comparam
 por seção (`docs/ARCHITECTURE.md#desempenho`, `CLAUDE.md#regras-de-arquitetura`; o `docs/TESTING.md` por roteiro, `#R12`); os outros
 arquivos, inclusive os `.md` de outras pastas, contam inteiros; `slug "<título>"` imprime o slug de um `##`.
 `ciWait` (o PR cujo CI espera o coordenador, ex. `PR #7`) e `ciWaitAt` (desde quando; `ciWait=` limpa os
@@ -79,7 +98,9 @@ Grafo da fila (etapa #1761): toda gravação grava, logo depois de `vagas` e `va
 ordem onda, `rank` (`null` por último) e `order`; `estado` é `rodando`, `dono`, `arquivo`, `dep`, `exclusiva`, `segurada`, `livre`
 ou `ficha`, lido do motivo que o `slots_plan` deu à candidata. Ondas, em rodadas: a 0 tem as começadas e as que começam agora; a
 cada rodada entram as que só dependem de nós já postos (as que esperam arquivo, vaga ou a exclusiva que roda ficam na 1), e a
-exclusiva entra sozinha, a primeira pela `order`, se só houver exclusiva elegível; num ciclo, o que sobra entra junto na última.
+exclusiva da frente (a primeira pela `order`, sem `hold` e com a ficha completa) entra sozinha depois das comuns que vêm antes
+dela e antes das que ela segura (`estado` `exclusiva`, motivo `segurada para a exclusiva #N`); num ciclo, o que sobra entra
+junto na última.
 `rank` (1, 2, 3…): as `aguardando` sem `started`, menos `segurada` e `ficha`, por onda e `order`; as outras ficam `null`. Seta
 `{de, para, tipo}` (`de` segura `para`): `dep` pelo `dep=` da ficha entre nós (sem `:main` nem `meta.merged`), só a redução
 transitiva, e `arquivo` de `#N` quando o motivo é `arquivo <x> com #N` ou `schema com #N`.
@@ -89,12 +110,14 @@ Só biblioteca padrão. Uso: painel.py [--now ISO] <subcomando> DIR ...
 import argparse
 import datetime
 import fnmatch
+import functools
 import json
 import math
 import os
 import re
 import shlex
 import statistics
+import subprocess
 import sys
 import unicodedata
 
@@ -227,7 +250,7 @@ class Sessao:
             # A ficha completou fases: a mudança entra na publicação, mesmo num `context`, que sozinho é quieto.
             self.touch("queue")
             self.loud = True
-        text, _, items, reasons = slots_plan(self.get("queue"), meta[0])
+        text, _, items, reasons, _ = slots_plan(self.get("queue"), meta[0])
         meta[0]["vagas"] = text
         meta[0]["vagasItens"] = items
         meta[0]["grafoNos"], meta[0]["grafoSetas"] = queue_graph(self.get("queue"), meta[0], reasons)
@@ -989,7 +1012,7 @@ def cmd_published(a):
     print("alterados: meta.json")
 
 
-BATCH_REJECTED = ("show", "apply", "init", "published", "slug", "costs", "roles", "requests", "import")
+BATCH_REJECTED = ("show", "apply", "init", "published", "slug", "toca", "conflito", "costs", "roles", "requests", "import")
 
 
 def batch_lines(src):
@@ -1047,7 +1070,9 @@ def cmd_apply(a):
 IGNORED_PREFIXES = ("changelog/", "docs/design-system/")
 IGNORED_EXACT = ("mcp/version.ts", "docs/TESTING-NUVEM.md#blocos")
 SECTION_GLOB = ".claude/skills/*/SKILL.md"  # além de todo `.md` de docs/ e da raiz: comparados por âncora (seção `##`)
+TESTING_DOC = "docs/TESTING.md"  # as âncoras dele também são roteiros (`R<n>`, `RP`, `RF`, `RA`, `RB`)
 STARTED_STATUS = ("em andamento", "esperando dono", "falhou")
+EXCLUSIVE_WAITS = "exclusiva (espera a fila esvaziar)"  # a exclusiva que espera a fila esvaziar (e drena, se na frente)
 STARTS_NOW = "começa"  # o motivo da candidata que o `slots_plan` faz começar agora (o grafo a põe na onda 0)
 
 
@@ -1067,9 +1092,8 @@ def norm_path(x):
     return x
 
 
-def toca_list(plan):
-    """Citações do `toca=` já normalizadas, sem as que não contam; `?` se a ficha não diz."""
-    raw = plan_field(plan, "toca")
+def norm_toca(raw):
+    """Citações de um `toca=` já normalizadas, sem as que não contam; `?` se não diz nada."""
     if raw is None or raw.strip() in ("", "?"):
         return ["?"]
     # Anotação entre parênteses depois do caminho ("x.ts (novo método)") não faz parte dele.
@@ -1081,6 +1105,113 @@ def toca_list(plan):
             continue
         out.append(x)
     return out
+
+
+def toca_list(plan):
+    """Citações do `toca=` já normalizadas, sem as que não contam; `?` se a ficha não diz."""
+    return norm_toca(plan_field(plan, "toca"))
+
+
+@functools.lru_cache(maxsize=None)
+def repo_root():
+    """A raiz do repositório: a pasta acima do `painel.py` que tem `.git` (arquivo ou pasta) ou, instalado
+    fora dele (`~/.claude/skills`), a que `git rev-parse --show-toplevel` dá no diretório atual. `None` se
+    nenhuma das duas acha: a conferência falha em vez de supor uma raiz (`toca_invalid`)."""
+    d = os.path.dirname(os.path.abspath(__file__))
+    while True:
+        if os.path.exists(os.path.join(d, ".git")):
+            return d
+        up = os.path.dirname(d)
+        if up == d:
+            break
+        d = up
+    try:
+        out = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    top = out.stdout.strip()
+    return top if out.returncode == 0 and top else None
+
+
+def is_folder(p):
+    """Pasta: termina em `/` ou `/**`, ou existe como pasta na raiz do repositório."""
+    return p.endswith(("/", "/**")) or os.path.isdir(os.path.join(repo_root() or "", p))
+
+
+def bad_pattern(p):
+    """Padrão fora da decisão 1: `*` fora do último segmento, último segmento que começa por `*`,
+    ou padrão em `docs/`, em `.claude/` ou num `.md` da raiz (lá se cita o arquivo e a seção)."""
+    if any(c in p for c in "?[]"):
+        return True  # só o `*` é padrão: `covers` e `glob_overlap` não entendem `?` nem `[...]`
+    if "*" not in p:
+        return False
+    segs = p.split("/")
+    if any("*" in s for s in segs[:-1]) or segs[-1].startswith("*"):
+        return True
+    return p.startswith(("docs/", ".claude/")) or (len(segs) == 1 and p.endswith(".md"))
+
+
+@functools.lru_cache(maxsize=None)
+def doc_slugs(p):
+    """Slugs dos `##` do arquivo `p` (fora dos blocos de código) mais `inicio`; `None` se o arquivo não existe."""
+    path = os.path.join(repo_root() or "", p)
+    if not os.path.isfile(path):
+        return None
+    slugs, fence = {"inicio"}, False
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            if line.startswith("```"):
+                fence = not fence
+            elif not fence and line.startswith("## "):
+                slugs.add(slugify(line[3:]))
+    return slugs
+
+
+def bad_anchor(p, anc):
+    """Âncora fora da decisão 2: no `docs/TESTING.md`, `R<n>`, `RP`, `RF`, `RA`, `RB` (em maiúscula) ou o slug de
+    um `##`; nos outros, o slug de um `##` do arquivo (a saída do `painel.py slug`) ou `inicio`. Documento que
+    ainda não existe aceita qualquer slug (a fase o cria)."""
+    if p == TESTING_DOC and re.fullmatch(r"R(\d+|P|F|A|B)", anc):
+        return False
+    if not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", anc) or re.fullmatch(r"r(\d+|p|f|a|b)", anc):
+        return True
+    slugs = doc_slugs(p)
+    return slugs is not None and anc not in slugs
+
+
+@functools.lru_cache(maxsize=None)
+def toca_invalid(x):
+    """Motivo pelo qual a citação não vale (decisão 2 da #1812), na ordem em que se confere; "" se vale.
+
+    A citação já vem normalizada e fora do filtro do que não conta. Pasta e documento existentes se leem na
+    raiz do repositório (`repo_root`), nunca no diretório atual. A âncora se confere contra os `##` do arquivo
+    existente (`doc_slugs`). O resultado é memoizado por citação: o arquivo não muda durante um comando.
+    """
+    if x == "?":
+        return "a ficha não diz"  # `?` no meio de uma lista (o campo todo em `?` dá só `toca`)
+    if repo_root() is None:
+        return "raiz do repositório não achada"  # sem a raiz, pasta e documento não se conferem: falha segura
+    p, _, anc = x.partition("#")
+    if is_folder(p):
+        return "pasta"
+    if "**" in p:
+        return "**"
+    if bad_pattern(p):
+        return "padrão"
+    if not by_section(p):
+        return ""  # arquivo (com ou sem âncora): conta inteiro, como hoje
+    if not anc:
+        return "documento inteiro" if os.path.isfile(os.path.join(repo_root(), p)) else ""
+    return "âncora" if bad_anchor(p, anc) else ""
+
+
+def first_invalid(cites):
+    """(citação, motivo) da primeira citação inválida da lista; (None, "") se todas valem."""
+    for x in cites:
+        why = toca_invalid(x)
+        if why:
+            return x, why
+    return None, ""
 
 
 def covers(a, b):
@@ -1102,6 +1233,27 @@ def by_section(path):
     return path.startswith("docs/") or "/" not in path or fnmatch.fnmatchcase(path, SECTION_GLOB)
 
 
+def glob_overlap(a, b):
+    """Dois padrões com `*` (que casa qualquer sequência, inclusive `/`) casam algum caminho em comum?"""
+    seen = {}
+
+    def go(i, j):
+        if (i, j) in seen:
+            return seen[i, j]
+        if i == len(a) and j == len(b):
+            r = True
+        elif i < len(a) and a[i] == "*":
+            r = go(i + 1, j) or (j < len(b) and go(i, j + 1))
+        elif j < len(b) and b[j] == "*":
+            r = go(i, j + 1) or (i < len(a) and go(i + 1, j))
+        else:
+            r = i < len(a) and j < len(b) and a[i] == b[j] and go(i + 1, j + 1)
+        seen[i, j] = r
+        return r
+
+    return go(0, 0)
+
+
 def same_target(a, b):
     """Duas citações do `toca=` mexem no mesmo lugar? (seção ou roteiro, pasta, arquivo)"""
     if a == "?" or b == "?":
@@ -1109,10 +1261,12 @@ def same_target(a, b):
     pa, _, anc_a = a.partition("#")
     pb, _, anc_b = b.partition("#")
     if pa != pb:
+        if "*" in pa and "*" in pb and not pa.endswith(("/", "/**")) and not pb.endswith(("/", "/**")):
+            return glob_overlap(pa, pb)
         return covers(pa, pb) or covers(pb, pa)
     if not by_section(pa):
         return True
-    return not anc_a or not anc_b or anc_a == anc_b
+    return not anc_a or not anc_b or anc_a.lower() == anc_b.lower()
 
 
 def first_conflict(mine, other):
@@ -1140,22 +1294,36 @@ def dep_state(plan):
     return deps or None
 
 
-def incomplete_fields(plan):
-    """Campos da ficha que faltam: `dep` e `toca` em `?` ou ausentes; `fases` só em `?` ou vazio."""
+def incomplete_fields(plan, exclusive=False):
+    """Campos da ficha que faltam: `dep` e `toca` em `?` ou ausentes; `fases` só em `?` ou vazio.
+
+    Decisão 6 da #1812: a primeira citação inválida do `toca=` dá `toca: <citação>`. A linha exclusiva não passa
+    por essa validação (`exclusive`): o `toca` dela não entra na conta, porque ela espera a fila esvaziar.
+    """
     out = []
     if dep_state(plan) is None:
         out.append("dep")
-    if toca_list(plan) == ["?"]:
+    cites = toca_list(plan)
+    if cites == ["?"]:
         out.append("toca")
+    elif not exclusive:
+        bad, _ = first_invalid(cites)
+        if bad:
+            out.append(f"toca: {bad}")
     fases = plan_field(plan, "fases")
     if fases is not None and fases.strip() in ("", "?"):
         out.append("fases")
     return out
 
 
+def row_incomplete(r):
+    """Campos que faltam na ficha da linha, respeitando o `exclusive` dela."""
+    return incomplete_fields(r.get("plan", ""), r.get("exclusive") == "sim")
+
+
 def redo_rows(q):
     """Linhas não concluídas com a ficha incompleta (a ficha se refaz no ciclo)."""
-    return [r for r in q if r["status"] != "concluída" and incomplete_fields(r.get("plan", ""))]
+    return [r for r in q if r["status"] != "concluída" and row_incomplete(r)]
 
 
 def changes_schema(plan):
@@ -1163,9 +1331,10 @@ def changes_schema(plan):
     return v is None or v.strip() != "não"
 
 
-def plan_block(plan, merged, done):
+def plan_block(r, merged, done):
     """Motivo de a ficha segurar a etapa: ficha incompleta ou dependência fora da `main`; "" se não segura."""
-    miss = incomplete_fields(plan)
+    plan = r.get("plan", "")
+    miss = row_incomplete(r)
     if miss:
         return "ficha incompleta (" + ", ".join(miss) + ")"
     miss = [d for d, st in dep_state(plan) or []
@@ -1173,28 +1342,36 @@ def plan_block(plan, merged, done):
     return "dep " + ", ".join(miss) if miss else ""
 
 
-def exclusive_block(r, taking):
+def exclusive_block(r, taking, front=""):
     """Decisão 12: a exclusiva só começa com ninguém começado; com uma exclusiva começada, ninguém começa.
 
     Decisões 2 e 3 da #1595: a exclusiva segura a fila em qualquer estado, e o motivo diz o `status` da linha
     (`falhou`, `esperando dono`, `aguardando` com `started`); `em andamento` e a que começa no mesmo cálculo dão
-    `em andamento`.
+    `em andamento`. Decisões 3 e 4 da #1813: com a exclusiva na frente (`front`, o `#N`), as candidatas de depois dela
+    dão `segurada para a exclusiva #N`; ela mesma, e a exclusiva que não está na frente, dão `exclusiva (espera a fila
+    esvaziar)`.
     """
     for o in taking:
         if o.get("exclusive") == "sim":
             # `aguardando` sem `started` é a que começa no mesmo cálculo (entrou em `taking` agora)
             state = "em andamento" if o["status"] == "aguardando" and not o.get("started") else o["status"]
             return f"exclusiva {o['issue']} {state}"
+    if front:
+        return f"segurada para a exclusiva {front}"
     if r.get("exclusive") == "sim" and taking:
-        return "exclusiva (espera a fila esvaziar)"
+        return EXCLUSIVE_WAITS
     return ""
 
 
 def slots_plan(q, meta):
-    """(texto de meta.vagas, [issues que começam agora], pedaços do texto, motivos); decisões 4 e 5 da #1440.
+    """(texto de meta.vagas, [issues que começam agora], pedaços do texto, motivos, exclusiva na frente).
 
-    Os motivos (decisão 4 da #1761) são `{issue: (texto do motivo, #N que segura)}` por candidata; o `#N` só vem nos
-    motivos `arquivo <x> com #N` e `schema com #N`, senão é "".
+    Decisões 4 e 5 da #1440. Os motivos (decisão 4 da #1761) são `{issue: (texto do motivo, #N que segura)}` por
+    candidata; o `#N` só vem nos motivos `arquivo <x> com #N` e `schema com #N`, senão é "".
+
+    Decisão 1 da #1813: a exclusiva na frente é a primeira candidata, pela `order`, sem `hold`, com a ficha completa e
+    as dependências mescladas, que não começa neste cálculo, se for exclusiva e esperar a fila esvaziar ("" se a primeira
+    é comum, ou se não há). Recalculada a cada chamada, sem estado.
     """
     n = meta.get("paralelo") or DEFAULT_PARALELO
     merged = set(meta.get("merged", []))
@@ -1208,14 +1385,19 @@ def slots_plan(q, meta):
     now_list = []
     reasons = {}
     taking = list(started)
+    front, decided = "", False
     for r in cands:
         plan = r.get("plan", "")
         holder = ""
         why = r.get("hold") or ""
+        counts = not why
         if not why:
-            why = plan_block(plan, merged, done)
+            why = plan_block(r, merged, done)
+            counts = not why
         if not why:
-            why = exclusive_block(r, taking)
+            why = exclusive_block(r, taking, front)
+            if why == EXCLUSIVE_WAITS and not decided:
+                front = r["issue"]
         mine = toca_list(plan)
         if not why:
             for o in taking:
@@ -1236,11 +1418,12 @@ def slots_plan(q, meta):
                 taking.append(r)
             else:
                 why = "vagas cheias"
+        decided = decided or (counts and why != STARTS_NOW)
         parts.append(f"{r['issue']} {why}")
         reasons[r["issue"]] = (why, holder)
     if free > 0:
         parts.append("nenhuma ready elegível")
-    return " · ".join(parts), now_list, parts, reasons
+    return " · ".join(parts), now_list, parts, reasons, front
 
 
 # --- grafo da fila (etapa #1761) ---
@@ -1268,7 +1451,7 @@ def candidate_state(r, why):
         return "segurada"
     if why.startswith("ficha incompleta"):
         return "ficha"
-    if r.get("exclusive") == "sim" or why.startswith("exclusiva"):
+    if r.get("exclusive") == "sim" or why.startswith(("exclusiva", "segurada para a exclusiva")):
         return "exclusiva"
     if why.startswith("dep "):
         return "dep"
@@ -1305,8 +1488,28 @@ def reduce_deps(issue, deps, anc):
             if not any(q != p and p in anc[q] and q not in anc[p] for q in mine)]
 
 
+def eligible_exclusive(r):
+    """Exclusiva sem `hold` e com a ficha completa: a que pode ficar na frente da ordem (decisão 6 da #1813)."""
+    return (r.get("exclusive") == "sim" and not r.get("hold")
+            and not row_incomplete(r))
+
+
+def wave_round(pending, ready):
+    """As linhas de uma rodada das ondas; `E` é a primeira exclusiva elegível entre as prontas (decisão 6 da #1813).
+
+    Entram as comuns que vêm antes de `E` na `order`, mais as comuns com `hold` ou ficha incompleta (em qualquer
+    posição); sem nenhuma delas, `E` sozinha; sem `E`, todas as comuns; sem comuns nem `E`, a primeira pronta; num ciclo,
+    o que sobra entra junto.
+    """
+    front = next((r for r in ready if eligible_exclusive(r)), None)
+    plain = [r for r in ready if r.get("exclusive") != "sim"]
+    before = [r for r in plain if front is None or r["order"] < front["order"]
+              or r.get("hold") or row_incomplete(r)]
+    return before or ([front] if front else ready[:1]) or pending
+
+
 def assign_waves(rows, wave, deps):
-    """Decisão 6 da #1761: simulação em rodadas; `wave` já traz a onda 0 e recebe as outras."""
+    """Decisões 6 da #1761 e da #1813: simulação em rodadas; `wave` já traz a onda 0 e recebe as outras."""
     w = 0
     total = len({r["issue"] for r in rows})  # issue repetida em duas linhas conta uma vez
     while len(wave) < total:
@@ -1315,14 +1518,7 @@ def assign_waves(rows, wave, deps):
         if not pending:
             break
         ready = [r for r in pending if all(d in wave for d in deps[r["issue"]])]
-        plain = [r for r in ready if r.get("exclusive") != "sim"]
-        if plain:
-            chosen = plain
-        elif ready:
-            chosen = ready[:1]
-        else:
-            chosen = pending  # ciclo: o que sobrou entra junto e a simulação termina
-        for r in chosen:
+        for r in wave_round(pending, ready):
             wave[r["issue"]] = w
 
 
@@ -1443,6 +1639,76 @@ def cmd_slug(a):
     print(slugify(a.title))
 
 
+def invalid_lines(cites):
+    """As linhas `inválida: <citação> — <motivo>` das citações que não valem (a lista vazia se todas valem)."""
+    out = []
+    for x in cites:
+        why = toca_invalid(x)
+        if why:
+            out.append(f"inválida: {x} — {why}")
+    return out
+
+
+def cmd_toca(a):
+    """Confere uma lista de citações do `toca=` (decisão 7 da #1812): `ok` (0) ou `inválida: … — <motivo>` (1)."""
+    bad = invalid_lines(norm_toca(a.cites))
+    if bad:
+        print("\n".join(bad))
+        return 1
+    print("ok")
+    return 0
+
+
+def conflict_others(d):
+    """[(#N, status, citações)] da pasta que um `toca` novo precisa respeitar, como o `slots_plan` as lê: as começadas
+    (`is_started`) e as que ele faz começar agora. Só lê."""
+    q, m = load(d, "queue"), load(d, "meta")
+    starting = slots_plan(q, m[0] if m else {})[1]
+    out = []
+    for r in q:
+        if is_started(r):
+            out.append((r["issue"], r["status"], toca_list(r.get("plan", ""))))
+        elif r["issue"] in starting:
+            out.append((r["issue"], "começa agora", toca_list(r.get("plan", ""))))
+    return out
+
+
+def parse_com(items):
+    """`--com "#N=<toca>"` → [(#N, citações)]; sem o `=` ou com o número fora de `#N` é erro de uso."""
+    out = []
+    for item in items or []:
+        num, sep, cites = item.partition("=")
+        if not sep:
+            raise Erro(f"--com '{item}' inválido (use \"#N=<toca>\")")
+        out.append((norm_issue(num), norm_toca(cites)))
+    return out
+
+
+def conflict_lines(mine, others):
+    """Uma linha `conflito: <citação> com #N (<status>)` por etapa de `others` que mexe no mesmo lugar."""
+    out = []
+    for n, status, cites in others:
+        cite = first_conflict(mine, cites)
+        if cite:
+            out.append(f"conflito: {cite} com {n} ({status})")
+    return out
+
+
+def cmd_conflito(a):
+    """Confere um `toca` contra a fila (decisão 9 da #1864): `livre` (0), `conflito: …` (1) ou `inválida: …` (2)."""
+    extra = parse_com(a.com)
+    mine = norm_toca(a.toca)
+    bad = invalid_lines(mine)
+    if bad:
+        print("\n".join(bad))
+        return 2
+    others = conflict_others(a.pasta) if a.pasta else []
+    others += [(n, "fora do painel", cites) for n, cites in extra]
+    found = conflict_lines(mine, others)
+    print("\n".join(found) if found else "livre")
+    return 1 if found else 0
+
+
 def cmd_show(a):
     q, m, lg = (load(a.dir, n) for n in FILES)
     if a.issue:
@@ -1456,9 +1722,10 @@ def cmd_show(a):
         print(f"  {st}: {sum(1 for r in q if r['status'] == st)}")
     meta = m[0] if m else {}
     print(f"atual: {meta.get('current') or '—'}")
-    vagas, agora, _, _ = slots_plan(q, meta)
+    vagas, agora, _, _, drena = slots_plan(q, meta)
     print(f"vagas: {vagas}")
     print("começar agora: " + (" ".join(agora) or "nenhuma"))
+    print(f"drenando para a exclusiva: {drena or 'nenhuma'}")
     print(f"início: {meta.get('runStart') or '—'}  atualizado: {meta.get('updatedAt', '—')}")
     print(f"reserva: {meta.get('reserve') or '—'}")
     redo = redo_rows(q)
@@ -1572,6 +1839,14 @@ def build_parser():
     sp = sub.add_parser("slug", help="imprime o slug de um título `##` (âncora de seção)")
     sp.add_argument("title", metavar="título")
     sp.set_defaults(fn=cmd_slug)
+    sp = sub.add_parser("toca", help="confere citações do toca= (arquivos e seções): ok, ou `inválida: … — <motivo>` e código 1")
+    sp.add_argument("cites", metavar="citações", help="separadas por vírgula, como no toca= da ficha")
+    sp.set_defaults(fn=cmd_toca)
+    sp = sub.add_parser("conflito", help="confere um toca contra a fila (só leitura): livre (0), `conflito: … com #N (…)` (1) ou `inválida: …` (2)")
+    sp.add_argument("toca", metavar="toca", help="citações separadas por vírgula, como no toca= da ficha")
+    sp.add_argument("--pasta", help="pasta do painel: as começadas e não mescladas e as de `começar agora:` contam")
+    sp.add_argument("--com", action="append", metavar="#N=<toca>", help="etapa de fora do painel e o toca dela (repetível)")
+    sp.set_defaults(fn=cmd_conflito)
     sp = sub.add_parser("costs", help="total, por tipo e por etapa (lê só o meta; --desde <ISO> filtra por created)")
     sp.add_argument("--desde", help="só as sessões com created a partir desta data (ISO UTC)")
     sp.add_argument("dir", help="pasta dos arquivos JSON")
@@ -1587,11 +1862,10 @@ def main(argv=None):
     try:
         if a.now:
             NOW_OVERRIDE = check_iso(a.now)
-        a.fn(a)
+        return a.fn(a) or 0
     except Erro as e:
         print(f"erro: {e}", file=sys.stderr)
         return 2
-    return 0
 
 
 if __name__ == "__main__":

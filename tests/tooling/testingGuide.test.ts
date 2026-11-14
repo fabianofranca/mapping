@@ -1406,8 +1406,9 @@ describe('docs/TESTING-NUVEM.md enxuto e TESTING-NUVEM-CONSULTA.md (#1533, TE1)'
   const cloud = read('docs/TESTING-NUVEM.md');
   const consulta = read('docs/TESTING-NUVEM-CONSULTA.md');
 
-  it('o TESTING-NUVEM.md tem até 32.000 caracteres', () => {
-    expect(cloud.length).toBeLessThanOrEqual(32_000);
+  // Teto subiu de 32.000 para 32.500 na etapa #1712 (restauração da redação anterior ao PR #1709).
+  it('o TESTING-NUVEM.md tem até 32.500 caracteres', () => {
+    expect(cloud.length).toBeLessThanOrEqual(32_500);
   });
 
   it('o CONSULTA traz as três chaves e o TESTING-NUVEM.md aponta para o secao de cada uma', () => {

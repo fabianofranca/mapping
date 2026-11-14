@@ -516,6 +516,16 @@ button.layer-group-label:hover {
   white-space: nowrap;
 }
 
+/* Camada sem anotação (CL1, 1.4): "Nenhuma anotação nesta camada." fica numa nota abaixo do
+   cabeçalho, que quebra em linhas em vez de virar "Nenhu…" e não tira espaço do nome nem do selo. */
+.layer-group-empty {
+  margin: 0;
+  padding: 0 var(--space-2) var(--space-1)
+    calc(var(--space-2) + var(--control-icon) + var(--space-1-5));
+  font: var(--t-text-small);
+  color: var(--color-text-muted);
+}
+
 .layer-group-head .issue-badge {
   margin: 0;
 }

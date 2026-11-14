@@ -62,8 +62,9 @@
 
 .catalog-entry {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--space-0-5) var(--space-1);
   width: 100%;
   min-height: var(--row-height);
   padding: 0 var(--space-2);
@@ -90,9 +91,9 @@
 }
 
 .catalog-entry-name {
-  flex: 1;
-  min-width: 0;
-  overflow-wrap: anywhere;
+  /* O nome nunca parte no meio (CL1, 1.3): sem espaço ao lado, o selo desce para a linha de baixo. */
+  flex: 1 1 auto;
+  overflow-wrap: break-word;
 }
 
 .catalog-detail {
@@ -191,7 +192,14 @@
   overflow-wrap: anywhere;
 }
 
+/* Só a última coluna parte um identificador longo (como na tabela Campos); as outras não partem a
+   palavra, senão o navegador as espreme ("enu/m"; CL1, 1.3) e a moldura rola na horizontal. */
 .catalog-page .markdown td {
+  overflow-wrap: normal;
+}
+
+.catalog-page .markdown td:last-child {
+  min-width: calc(var(--space-4) * 10);
   overflow-wrap: anywhere;
 }
 

@@ -10,3 +10,4 @@ dist-viewer-demo
 examples/exemplo-completo/specs/
 .cache
 .vitest
+__pycache__/

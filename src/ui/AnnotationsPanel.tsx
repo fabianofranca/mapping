@@ -427,11 +427,7 @@ function LayerGroup({
   );
 
   // O resumo corta com reticências na janela estreita: o `title` mostra o texto inteiro.
-  const summary = empty
-    ? t('annotation.emptySection')
-    : collapsed && first
-      ? annotationSummary(project, first)
-      : '';
+  const summary = !empty && collapsed && first ? annotationSummary(project, first) : '';
 
   const heading = (
     <>
@@ -495,6 +491,7 @@ function LayerGroup({
           onClick={onAdd}
         />
       </div>
+      {empty && <p class="layer-group-empty">{t('annotation.emptySection')}</p>}
       {hasBody && !collapsed && <div class="layer-group-body">{children}</div>}
     </div>
   );

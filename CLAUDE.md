@@ -82,7 +82,7 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
 
 - O dono do projeto usa o Claude Code **pelo celular** e não roda nada localmente.
 - **Início de sessão:** a sessão trabalha direto na pasta do repositório (sem worktree, salvo pedido do dono), no branch que estiver em uso. Antes de qualquer tarefa nova, vá para a `main` atualizada (`git switch main && git pull --ff-only`) e crie dali o branch do épico; se houver alteração não commitada ou o branch em uso não estiver mesclado, pergunte ao dono antes de trocar.
-- Nada se implementa sem uma issue `ready` (ou `in-progress`, ao retomar), e tudo chega à `main` por um épico (`epic/<nome>`, com PR para a `main`); cada fase é um branch curto com PR para o épico.
+- Nada se implementa sem uma issue `ready` (ou `in-progress`, ao retomar), e tudo chega à `main` por um épico (`epic/<nome>`, com PR para a `main`); cada fase é um branch curto com PR para o épico. A exceção é a via rápida: ajuste pequeno de processo vai num épico de um PR só, sem `ready` nem fases, pelo skill `/via-rapida` (`.claude/skills/via-rapida/SKILL.md`; "salvo a via rápida").
 - Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm test && npm run build` precisam passar.
 - **Antes de abrir issue, branch, PR ou sessão, leia o [`docs/PROCESS.md`](docs/PROCESS.md)** (as seções que valem para a tarefa): planejamento nas issues, rótulos, bugs, fluxo automatizado, revisão de código, roteiros de teste, descrição de PR, uso de modelos e etapas. As mensagens prontas estão em [`docs/FLOW.md`](docs/FLOW.md).
 
