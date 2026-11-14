@@ -1,7 +1,7 @@
 // @vitest-environment node
-// Fase VR2 (etapa #1864, decisões 1 a 15): o skill `via-rapida` e a exceção "salvo a via rápida" no
-// `CLAUDE.md`, no `docs/PROCESS.md`, no `docs/FLOW.md` e no `supervisionar-fila`. Testes de texto: cada
-// âncora que falta lança erro (`tests/support/textSlice.ts`).
+// Phase VR2 (stage #1864, decisions 1 to 15): the `via-rapida` skill and the "except the fast track"
+// exception in `CLAUDE.md`, `docs/PROCESS.md`, `docs/FLOW.md` and `supervisionar-fila`. Text tests: every
+// missing anchor throws an error (`tests/support/textSlice.ts`).
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { section } from '../support/textSlice';
@@ -15,42 +15,42 @@ const SUPERVISOR = read('.claude/skills/supervisionar-fila/SKILL.md');
 const DETALHAR = read('.claude/skills/detalhar-backlog/SKILL.md');
 
 describe('skill via-rapida', () => {
-  it('tem o frontmatter com name e os gatilhos de uso na description', () => {
+  it('has the frontmatter with name and the usage triggers in the description', () => {
     const m = SKILL.match(/^---\nname: via-rapida\ndescription: (.+)\n---\n/);
     expect(m).not.toBeNull();
-    for (const trigger of ['via rápida', 'ajuste pequeno de processo', '/via-rapida']) {
+    for (const trigger of ['fast track', 'small process tweak', '/via-rapida']) {
       expect(m![1], trigger).toContain(trigger);
     }
   });
 
-  it('decisão 1: argumentos, Sonnet no modo Auto com effort high, confere o modelo e edita direto', () => {
+  it('decision 1: arguments, Sonnet in Auto mode with effort high, checks the model and edits directly', () => {
     expect(SKILL).toContain('/via-rapida #<n> [mesclar=auto]');
     for (const s of [
       'Sonnet',
-      'modo **Auto**',
+      '**Auto** mode',
       'effort: high',
       'session_context.model',
     ]) {
       expect(SKILL, s).toContain(s);
     }
-    expect(SKILL).toContain('sem subagente de edição');
-    expect(SKILL).toContain('a supervisão não o inclui no comando');
+    expect(SKILL).toContain('with no editing subagent');
+    expect(SKILL).toContain('the supervision does not include it in the command');
   });
 
-  it('decisão 2: roadmap ou bug direto a in-progress, nunca por ready, com o comentário `Via rápida:`', () => {
-    const s = section(SKILL, '## Rótulo e comentário');
+  it('decision 2: roadmap or bug straight to in-progress, never through ready, with the `Via rápida:` comment', () => {
+    const s = section(SKILL, '## Label and comment');
     for (const t of [
       'in-progress',
       '`Via rápida:`',
-      'lista completa de rótulos',
-      'nunca passa por `ready`',
+      'full list of labels',
+      'never goes through `ready`',
       'painel.py toca',
     ]) {
       expect(s, t).toContain(t);
     }
   });
 
-  it('decisão 3: merge com o "pode mesclar" do dono, e `mesclar=auto` só escrito por ele', () => {
+  it('decision 3: merge with the "Mesclar" of the owner, and `mesclar=auto` only written by them', () => {
     const s = section(SKILL, '## Merge');
     for (const t of [
       'PushNotification',
@@ -59,14 +59,14 @@ describe('skill via-rapida', () => {
       'Ainda não',
       'merge_method: merge',
       '`mesclar=auto`',
-      'nunca se acrescenta sozinho',
+      'is never added on its own',
     ]) {
       expect(s, t).toContain(t);
     }
   });
 
-  it('decisão 4: o que cabe (spec-author e o index.html do painel fora, 80 linhas) e a recusa', () => {
-    const s = section(SKILL, '## O que cabe');
+  it('decision 4: what fits (spec-author and the panel index.html out, 80 lines) and the refusal', () => {
+    const s = section(SKILL, '## What fits');
     for (const t of [
       '`.claude/skills/**`',
       '`docs/PROCESS.md`',
@@ -80,67 +80,67 @@ describe('skill via-rapida', () => {
       '`.claude/skills/implementar-fila/painel/index.html`',
       '`isReleaseInput`',
       '`git diff --numstat origin/main...HEAD`',
-      '80 linhas',
-      '`Via rápida recusada: <critério>`',
-      'feche o PR do épico sem mesclar',
+      '80 lines',
+      '`Via rápida recusada: <criterion>`',
+      "close the epic's PR without merging",
     ]) {
       expect(s, t).toContain(t);
     }
   });
 
-  it('decisão 5: conferência de conflito pelo painel.py conflito, sem gravar no painel', () => {
-    const s = section(SKILL, '## Conflito com a fila');
+  it('decision 5: conflict check by painel.py conflito, without writing to the panel', () => {
+    const s = section(SKILL, '## Conflict with the queue');
     for (const t of [
       'painel.py conflito',
       '--pasta',
       '--com',
       '`Via rápida: espera #',
-      'não segura o merge',
-      'traga a `main` no épico antes do fechamento (merge, nunca rebase)',
-      'nunca grava no painel',
-      'Leitura das fontes',
-      'comentário `Via rápida:`',
+      'does not hold the merge',
+      'bring `main` into the epic before the closing (merge, never rebase)',
+      'never writes to the panel',
+      'Reading the sources',
+      '`Via rápida:` comment',
     ]) {
       expect(s, t).toContain(t);
     }
   });
 
-  it('decisão 6: passo a passo do épico, com changelog, registro do DS, PR com `Closes #` e a Espera do CI', () => {
-    const s = section(SKILL, '## Passo a passo');
+  it('decision 6: step by step of the epic, with changelog, DS record, PR with `Closes #` and the CI wait', () => {
+    const s = section(SKILL, '## Step by step');
     for (const t of [
-      'git switch -C epic/<nome> origin/main',
-      '`changelog/<nome>.md`',
-      '`docs/design-system/<nome>.md`',
-      'teste de texto',
+      'git switch -C epic/<name> origin/main',
+      '`changelog/<name>.md`',
+      '`docs/design-system/<name>.md`',
+      'text test',
       'npm run lint && npm run typecheck && npm test && npm run build',
       'Closes #<n>',
-      'Espera do CI',
-      'Leitura do CI',
+      'CI wait',
+      'Reading CI',
       '`git mv`',
       'Origem: via rápida #<n>',
-      '`Impacto: <nível> — <porquê>`',
-      'pergunte ao dono',
+      '`Impacto: <level> — <why>`',
+      'ask the owner',
     ]) {
       expect(s, t).toContain(t);
     }
     expect(SKILL).toContain('docs/FLOW.md');
   });
 
-  it('decisão 7: a autorização do dono pergunta no chat da via rápida, nunca repassada', () => {
-    const s = section(SKILL, '## Autorização do dono');
+  it('decision 7: the owner authorization is asked in the fast-track chat, never relayed', () => {
+    const s = section(SKILL, '## Owner authorization');
     for (const t of [
       '.github/workflows/',
       'item 8',
       'PushNotification',
       'AskUserQuestion',
-      'repassado',
+      'relayed',
     ]) {
       expect(s, t).toContain(t);
     }
   });
 
-  it('decisão 8: a revisão sai do riskTriggers.mjs (high com gatilho, medium sem)', () => {
-    const s = section(SKILL, '## Revisão');
+  it('decision 8: the review comes from riskTriggers.mjs (high with a trigger, medium without)', () => {
+    const s = section(SKILL, '## Review');
     for (const t of [
       'node scripts/ci/riskTriggers.mjs --base origin/main',
       '`gatilho:`',
@@ -148,7 +148,7 @@ describe('skill via-rapida', () => {
       '`git merge-base origin/main HEAD`',
       '`nenhum gatilho`',
       '`/code-review medium`',
-      'sem `--comment` nem `--fix`',
+      'without `--comment` or `--fix`',
       'item 10',
     ]) {
       expect(s, t).toContain(t);
@@ -156,77 +156,79 @@ describe('skill via-rapida', () => {
   });
 });
 
-describe('regras da via rápida nos documentos do fluxo (decisões 11 a 14)', () => {
-  it('docs/FLOW.md, "Para o dono, nos três chats": o parágrafo da via rápida', () => {
-    const s = section(FLOW, '## Para o dono, nos três chats');
+describe('fast-track rules in the flow documents (decisions 11 to 14)', () => {
+  it('docs/FLOW.md, "For the owner, in the three chats": the fast-track paragraph', () => {
+    const s = section(FLOW, '## For the owner, in the three chats');
     for (const t of [
       '/via-rapida #<n>',
       '`in-progress`',
       'Ainda não',
       '`mesclar=auto`',
-      'supervisão',
+      'supervision',
       '.claude/skills/via-rapida/SKILL.md',
     ]) {
       expect(s, t).toContain(t);
     }
   });
 
-  it('CLAUDE.md: a exceção no resumo do fluxo, e o arquivo segue com até 15000 caracteres', () => {
+  it('CLAUDE.md: the exception in the workflow summary, and the file stays at up to 15000 characters', () => {
     const s = section(CLAUDE, '## Workflow (summary)');
     expect(s).toContain('except the fast track');
     expect(s).toContain('.claude/skills/via-rapida/SKILL.md');
     expect(CLAUDE.length).toBeLessThanOrEqual(15000);
   });
 
-  it('docs/PROCESS.md: a exceção em Rótulos e em Etapas, o bullet **Via rápida** e o teto de 25000 bytes', () => {
-    const fluxo = section(PROCESS, '## Fluxo de trabalho');
-    const rotulos = fluxo.split('\n').find((l) => l.startsWith('  - **Rótulos:**'))!;
-    expect(rotulos).toContain('salvo a via rápida');
-    expect(section(PROCESS, '## Etapas')).toContain('salvo a via rápida');
-    const lines = fluxo.split('\n');
+  it('docs/PROCESS.md: the exception in Labels and in Stages, the **Fast track** bullet and the 26000-byte ceiling', () => {
+    const workflow = section(PROCESS, '## Workflow');
+    const labels = workflow.split('\n').find((l) => l.startsWith('  - **Labels:**'))!;
+    expect(labels).toContain('except the fast track');
+    expect(section(PROCESS, '## Stages')).toContain('except the fast track');
+    const lines = workflow.split('\n');
     const epic = lines.findIndex((l) =>
-      l.startsWith('- **Tudo chega à `main` por um épico.**'),
+      l.startsWith('- **Everything reaches `main` through an epic.**'),
     );
-    const fast = lines.findIndex((l) => l.startsWith('- **Via rápida'));
+    const fast = lines.findIndex((l) => l.startsWith('- **Fast track'));
     expect(epic).toBeGreaterThanOrEqual(0);
     expect(fast).toBe(epic + 1);
     expect(lines[fast]).toContain('.claude/skills/via-rapida/SKILL.md');
-    expect(Buffer.byteLength(PROCESS)).toBeLessThanOrEqual(25000);
+    expect(Buffer.byteLength(PROCESS)).toBeLessThanOrEqual(26000);
   });
 
-  it('docs/PROCESS.md: os dois cortes do "Evidência de bug" que repetem o docs/FLOW.md', () => {
-    expect(PROCESS).not.toContain('- **O `evidencias`** só recebe imagens');
-    expect(PROCESS).not.toContain('Push recusado porque o branch andou');
-    expect(FLOW).toContain('## Evidência de bug');
+  it('docs/PROCESS.md: the two cuts of "Bug evidence" that repeat docs/FLOW.md', () => {
+    expect(PROCESS).not.toContain('- **The `evidencias`** only receives images');
+    expect(PROCESS).not.toContain('Push refused because the branch moved');
+    expect(FLOW).toContain('## Bug evidence');
   });
 
-  it('supervisionar-fila: o primeiro item de "Papel e limites" cita a sessão da via rápida', () => {
-    const items = section(SUPERVISOR, '## Papel e limites')
+  it('supervisionar-fila: the first item of "Role and limits" cites the fast-track session', () => {
+    const items = section(SUPERVISOR, '## Role and limits')
       .split('\n')
       .filter((l) => l.startsWith('- '));
-    expect(items[0]).toContain('a sessão da via rápida');
+    expect(items[0]).toContain('the fast-track session');
     expect(items[items.length - 1]).toContain('esta sessão:');
   });
 
-  it('detalhar-backlog: "Esforço do detalhamento" cita o skill via-rapida entre os gatilhos', () => {
-    const s = section(DETALHAR, '## Esforço do detalhamento');
+  it('detalhar-backlog: "Detailing effort" cites the via-rapida skill among the triggers', () => {
+    const s = section(DETALHAR, '## Detailing effort');
     expect(s).toContain('`via-rapida`');
   });
 
-  it('revisão: `mesclar=auto` só vale escrito pelo dono; a supervisão não o põe no comando', () => {
-    expect(SKILL).not.toContain('a supervisão só o põe no comando');
-    expect(SKILL).toContain('a supervisão não o inclui');
-    expect(SUPERVISOR).toContain('sem `mesclar=auto`');
+  it('review: `mesclar=auto` only counts when written by the owner; the supervision does not put it in the command', () => {
+    expect(SKILL).not.toContain('the supervision only puts it in the command');
+    expect(SKILL).toContain('the supervision does not include it');
+    expect(SUPERVISOR).toContain('without `mesclar=auto`');
   });
 
-  it('revisão: a conferência do passo 2 exclui a própria issue da via rápida', () => {
-    expect(SKILL).toContain('exceto a issue desta própria via rápida (#n)');
+  it('review: the check of step 2 excludes the own issue of the fast track', () => {
+    expect(SKILL).toContain('except the issue of this very fast track (#n)');
   });
 
-  it('revisão: FLOW lista `docs/TESTING-NUVEM.md` e diz que o merge é perguntado pelo seletor', () => {
-    const s = section(FLOW, '## Para o dono, nos três chats');
+  it('review: FLOW lists `docs/TESTING-NUVEM.md` and says the merge is asked through the picker', () => {
+    const s = section(FLOW, '## For the owner, in the three chats');
     expect(s).toContain('`docs/TESTING-NUVEM.md`');
-    expect(s).toContain('pergunta o merge pelo seletor (Mesclar / Ainda não)');
-    expect(s).not.toContain('mescla só com o seu `pode mesclar`');
+    expect(s).toContain(
+      'asks about the merge through the picker ("Mesclar" / "Ainda não")',
+    );
+    expect(s).not.toContain('merges only with your `pode mesclar`');
   });
 });

@@ -1,8 +1,8 @@
 // @vitest-environment node
-// Etapa #1699, fase CM1 (decisões 1 a 11): a medida de contexto pelo transcript local da própria
-// sessão (`scripts/ci/contextUsage.mjs`) e os textos do fluxo que passam a usá-la. A unidade e a CLI
-// rodam com fixtures `.jsonl` numa pasta temporária (`CLAUDE_CONFIG_DIR` e
-// `CLAUDE_CODE_SESSION_ID` no `env` do processo); o resto é teste de texto.
+// Stage #1699, phase CM1 (decisions 1 to 11): the context measure through the session's own local
+// transcript (`scripts/ci/contextUsage.mjs`) and the flow texts that start to use it. The unit and the CLI
+// run with `.jsonl` fixtures in a temporary folder (`CLAUDE_CONFIG_DIR` and
+// `CLAUDE_CODE_SESSION_ID` in the process `env`); the rest is a text test.
 import { spawnSync } from 'node:child_process';
 import {
   mkdirSync,
@@ -15,7 +15,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-// @ts-expect-error módulo .mjs sem declaração de tipos
+// @ts-expect-error .mjs module without type declarations
 import { lastContext } from '../../scripts/ci/contextUsage.mjs';
 import { scriptMeasureProblems } from '../support/contextMeasure';
 import { between, section } from '../support/textSlice';
@@ -27,7 +27,7 @@ interface Usage {
 }
 const lastOf = lastContext as (text: string) => number | null;
 
-/** Linha de mensagem do assistente, no formato real do transcript (subconjunto das chaves). */
+/** Assistant message line, in the real transcript format (a subset of the keys). */
 function assistant(
   usage: Usage,
   extra: { isSidechain?: boolean; model?: string } = {},
@@ -67,7 +67,7 @@ interface Run {
   values: Record<string, string>;
 }
 
-/** Cria `<config>/projects/p/<id>.jsonl` com as linhas e devolve a pasta de configuração. */
+/** Creates `<config>/projects/p/<id>.jsonl` with the lines and returns the config folder. */
 function transcript(id: string, lines: string[]): { config: string; file: string } {
   const config = join(dir, `cfg-${counter++}`);
   const folder = join(config, 'projects', 'p');
@@ -93,13 +93,13 @@ function cli(args: string[], env: Record<string, string | undefined>): Run {
   return { status: r.status, stdout: r.stdout, stderr: r.stderr, values };
 }
 
-describe('CM1 — contextUsage.mjs: a conta (decisão 2)', () => {
-  it('a última mensagem do fio principal ganha', () => {
+describe('CM1 — contextUsage.mjs: the count (decision 2)', () => {
+  it('the last message of the main thread wins', () => {
     const text = [main(100_000), user, main(120_000), user].join('\n');
     expect(lastOf(text)).toBe(120_000);
   });
 
-  it('linhas isSidechain, <synthetic>, de soma 0 e não-JSON ficam de fora', () => {
+  it('isSidechain, <synthetic>, zero-sum and non-JSON lines are left out', () => {
     const text = [
       main(150_000),
       assistant(
@@ -116,19 +116,19 @@ describe('CM1 — contextUsage.mjs: a conta (decisão 2)', () => {
     expect(lastOf(text)).toBe(150_000);
   });
 
-  it('usage sem cache_creation_input_tokens conta 0 para ele', () => {
+  it('a usage without cache_creation_input_tokens counts 0 for it', () => {
     const text = assistant({ input_tokens: 3, cache_read_input_tokens: 40_000 });
     expect(lastOf(text)).toBe(40_003);
   });
 
-  it('sem mensagem do assistente com usage dá null', () => {
-    expect(lastOf([user, '', 'não é json'].join('\n'))).toBeNull();
+  it('without an assistant message with usage it gives null', () => {
+    expect(lastOf([user, '', 'not json'].join('\n'))).toBeNull();
     expect(lastOf('')).toBeNull();
   });
 });
 
-describe('CM1 — contextUsage.mjs: a CLI (decisões 1 e 3)', () => {
-  it('lê o transcript do CLAUDE_CODE_SESSION_ID e imprime as chaves, com fonte=sessao', () => {
+describe('CM1 — contextUsage.mjs: the CLI (decisions 1 and 3)', () => {
+  it('reads the transcript of CLAUDE_CODE_SESSION_ID and prints the keys, with fonte=sessao', () => {
     const { config, file } = transcript('abc', [user, main(112_697)]);
     const r = cli([], { CLAUDE_CONFIG_DIR: config, CLAUDE_CODE_SESSION_ID: 'abc' });
     expect(r.status).toBe(0);
@@ -149,11 +149,11 @@ describe('CM1 — contextUsage.mjs: a CLI (decisões 1 e 3)', () => {
     });
   });
 
-  it('sem a variável, fonte=recente: o mais novo direto em projects/*/, ignorando subagents/', () => {
-    const { config, file } = transcript('velho', [main(50_000)]);
+  it('without the variable, fonte=recente: the newest directly in projects/*/, ignoring subagents/', () => {
+    const { config, file } = transcript('old', [main(50_000)]);
     const folder = join(config, 'projects', 'p');
-    const novo = join(folder, 'novo.jsonl');
-    writeFileSync(novo, main(70_000) + '\n');
+    const newest = join(folder, 'novo.jsonl');
+    writeFileSync(newest, main(70_000) + '\n');
     mkdirSync(join(folder, 'novo', 'subagents'), { recursive: true });
     const sub = join(folder, 'novo', 'subagents', 'agent-1.jsonl');
     writeFileSync(
@@ -161,31 +161,39 @@ describe('CM1 — contextUsage.mjs: a CLI (decisões 1 e 3)', () => {
       assistant({ input_tokens: 1, cache_read_input_tokens: 900_000 }) + '\n',
     );
     utimesSync(file, new Date('2026-01-01T00:00:00Z'), new Date('2026-01-01T00:00:00Z'));
-    utimesSync(novo, new Date('2026-01-02T00:00:00Z'), new Date('2026-01-02T00:00:00Z'));
+    utimesSync(
+      newest,
+      new Date('2026-01-02T00:00:00Z'),
+      new Date('2026-01-02T00:00:00Z'),
+    );
     utimesSync(sub, new Date('2026-01-03T00:00:00Z'), new Date('2026-01-03T00:00:00Z'));
     const r = cli([], { CLAUDE_CONFIG_DIR: config });
     expect(r.status).toBe(0);
     expect(r.values).toMatchObject({
       contexto: '70000',
       fonte: 'recente',
-      arquivo: novo,
+      arquivo: newest,
     });
   });
 
-  it('o mesmo id em duas pastas de projects/: vale o transcript mais recente', () => {
+  it('the same id in two projects/ folders: the most recent transcript counts', () => {
     const { config, file } = transcript('dup', [main(10_000)]);
-    const outra = join(config, 'projects', 'q');
-    mkdirSync(outra, { recursive: true });
-    const novo = join(outra, 'dup.jsonl');
-    writeFileSync(novo, main(20_000) + '\n');
+    const other = join(config, 'projects', 'q');
+    mkdirSync(other, { recursive: true });
+    const newer = join(other, 'dup.jsonl');
+    writeFileSync(newer, main(20_000) + '\n');
     utimesSync(file, new Date('2026-01-01T00:00:00Z'), new Date('2026-01-01T00:00:00Z'));
-    utimesSync(novo, new Date('2026-01-02T00:00:00Z'), new Date('2026-01-02T00:00:00Z'));
+    utimesSync(newer, new Date('2026-01-02T00:00:00Z'), new Date('2026-01-02T00:00:00Z'));
     const r = cli([], { CLAUDE_CONFIG_DIR: config, CLAUDE_CODE_SESSION_ID: 'dup' });
-    expect(r.values).toMatchObject({ contexto: '20000', fonte: 'sessao', arquivo: novo });
+    expect(r.values).toMatchObject({
+      contexto: '20000',
+      fonte: 'sessao',
+      arquivo: newer,
+    });
   });
 
-  it('--arquivo lê esse arquivo, com fonte=arquivo', () => {
-    const { file } = transcript('qualquer', [main(33_333)]);
+  it('--arquivo reads that file, with fonte=arquivo', () => {
+    const { file } = transcript('any', [main(33_333)]);
     const r = cli(['--arquivo', file], {});
     expect(r.status).toBe(0);
     expect(r.values).toMatchObject({
@@ -196,7 +204,7 @@ describe('CM1 — contextUsage.mjs: a CLI (decisões 1 e 3)', () => {
     });
   });
 
-  it('--teto: 300000 não está acima, 300001 está (o padrão é 300000)', () => {
+  it('--teto: 300000 is not above, 300001 is (the default is 300000)', () => {
     const a = transcript('a', [main(300_000)]);
     const b = transcript('b', [main(300_001)]);
     const env = (c: string, id: string) => ({
@@ -209,7 +217,7 @@ describe('CM1 — contextUsage.mjs: a CLI (decisões 1 e 3)', () => {
     expect(cli(['--teto', '300001'], env(b.config, 'b')).values.acima).toBe('false');
   });
 
-  it('--max imprime pct, arredondado para cima, depois de arquivo=', () => {
+  it('--max prints pct, rounded up, after arquivo=', () => {
     const { file } = transcript('m', [main(350_001)]);
     const r = cli(['--arquivo', file, '--max', '1000000'], {});
     expect(r.status).toBe(0);
@@ -218,24 +226,24 @@ describe('CM1 — contextUsage.mjs: a CLI (decisões 1 e 3)', () => {
     expect(cli(['--arquivo', file], {}).values.pct).toBeUndefined();
   });
 
-  it('sem medida dá código 1, com contexto=? e motivo=', () => {
-    const vazio = transcript('v', [user]);
-    const r = cli([], { CLAUDE_CONFIG_DIR: vazio.config, CLAUDE_CODE_SESSION_ID: 'v' });
+  it('without a measure gives code 1, with contexto=? and motivo=', () => {
+    const empty = transcript('v', [user]);
+    const r = cli([], { CLAUDE_CONFIG_DIR: empty.config, CLAUDE_CODE_SESSION_ID: 'v' });
     expect(r.status).toBe(1);
     expect(r.values.contexto).toBe('?');
     expect(r.values.motivo).toBeTruthy();
 
-    const semArquivo = cli([], {
-      CLAUDE_CONFIG_DIR: join(dir, 'nao-existe'),
+    const noFile = cli([], {
+      CLAUDE_CONFIG_DIR: join(dir, 'does-not-exist'),
       CLAUDE_CODE_SESSION_ID: 'x',
     });
-    expect(semArquivo.status).toBe(1);
-    expect(semArquivo.values.contexto).toBe('?');
-    expect(semArquivo.values.motivo).toBeTruthy();
+    expect(noFile.status).toBe(1);
+    expect(noFile.values.contexto).toBe('?');
+    expect(noFile.values.motivo).toBeTruthy();
   });
 
-  // Achado CL1.2: `mil` (para cima) e `acima` (valor exato) têm de contar a mesma história.
-  it('CL1.2: 300001 dá mil=301 e acima=true; 299500 dá mil=300 e acima=false', () => {
+  // Finding CL1.2: `mil` (rounded up) and `acima` (exact value) must tell the same story.
+  it('CL1.2: 300001 gives mil=301 and acima=true; 299500 gives mil=300 and acima=false', () => {
     const a = transcript('a', [main(300_001)]);
     const b = transcript('b', [main(299_500)]);
     const ra = cli([], { CLAUDE_CONFIG_DIR: a.config, CLAUDE_CODE_SESSION_ID: 'a' });
@@ -244,28 +252,35 @@ describe('CM1 — contextUsage.mjs: a CLI (decisões 1 e 3)', () => {
     expect(rb.values).toMatchObject({ mil: '300', acima: 'false' });
   });
 
-  it('CL1.2: com teto em múltiplo de mil, acima=true exatamente quando o mil mostrado passa do teto em mil', () => {
-    for (const teto of [100_000, 250_000, 300_000]) {
-      for (const n of [teto - 1000, teto - 1, teto, teto + 1, teto + 999, teto + 1000]) {
+  it('CL1.2: with a ceiling that is a multiple of a thousand, acima=true exactly when the shown mil passes the ceiling in thousands', () => {
+    for (const ceiling of [100_000, 250_000, 300_000]) {
+      for (const n of [
+        ceiling - 1000,
+        ceiling - 1,
+        ceiling,
+        ceiling + 1,
+        ceiling + 999,
+        ceiling + 1000,
+      ]) {
         const t = transcript('t', [main(n)]);
-        const r = cli(['--teto', String(teto)], {
+        const r = cli(['--teto', String(ceiling)], {
           CLAUDE_CONFIG_DIR: t.config,
           CLAUDE_CODE_SESSION_ID: 't',
         });
-        expect(r.values.acima, `teto ${teto}, contexto ${n}`).toBe(
-          String(Number(r.values.mil) > teto / 1000),
+        expect(r.values.acima, `ceiling ${ceiling}, context ${n}`).toBe(
+          String(Number(r.values.mil) > ceiling / 1000),
         );
       }
     }
   });
 
-  it('CL1.3: flag repetida dá código 2 e diz qual', () => {
+  it('CL1.3: a repeated flag gives code 2 and says which', () => {
     const r = cli(['--teto', '1', '--teto', '2'], {});
     expect(r.status).toBe(2);
     expect(r.stderr).toMatch(/--teto.*(repetid|duas vezes)/);
   });
 
-  it('CL1.3: valor que começa com -- dá código 2 e diz que a flag pede um valor', () => {
+  it('CL1.3: a value that starts with -- gives code 2 and says the flag needs a value', () => {
     const r = cli(['--arquivo', '--x.jsonl'], {});
     expect(r.status).toBe(2);
     expect(r.stderr).toMatch(/--arquivo pede um valor/);
@@ -277,10 +292,10 @@ describe('CM1 — contextUsage.mjs: a CLI (decisões 1 e 3)', () => {
     expect(r3.stderr).toMatch(/--arquivo pede um valor/);
   });
 
-  it('CL1.3: token solto dá código 2 e é chamado de solto, em qualquer posição', () => {
+  it('CL1.3: a stray token gives code 2 and is called stray, in any position', () => {
     for (const args of [
-      ['solto', '--teto', '5'],
-      ['--teto', '5', 'solto'],
+      ['stray', '--teto', '5'],
+      ['--teto', '5', 'stray'],
       ['--teto', '5', '7'],
     ]) {
       const r = cli(args, {});
@@ -289,7 +304,7 @@ describe('CM1 — contextUsage.mjs: a CLI (decisões 1 e 3)', () => {
     }
   });
 
-  it('erro de uso dá código 2, com a mensagem no stderr', () => {
+  it('a usage error gives code 2, with the message on stderr', () => {
     const r1 = cli(['--teto'], {});
     expect(r1.status).toBe(2);
     expect(r1.stderr).toContain('Uso:');
@@ -302,192 +317,193 @@ describe('CM1 — contextUsage.mjs: a CLI (decisões 1 e 3)', () => {
   });
 });
 
-describe('CM1 — textos do fluxo que usam a medida (decisões 5 a 10)', () => {
+describe('CM1 — flow texts that use the measure (decisions 5 to 10)', () => {
   const flow = readFileSync('docs/FLOW.md', 'utf8');
-  const nuvem = readFileSync('docs/TESTING-NUVEM.md', 'utf8');
-  const fila = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
-  const supervisao = readFileSync('.claude/skills/supervisionar-fila/SKILL.md', 'utf8');
+  const cloud = readFileSync('docs/TESTING-NUVEM.md', 'utf8');
+  const queue = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
+  const supervision = readFileSync('.claude/skills/supervisionar-fila/SKILL.md', 'utf8');
 
-  const phase = section(flow, '## Para a sessão da fase');
-  const item3 = between(phase, '3. Subagentes e esforço', '4. Todo briefing');
-  const teto = item3.slice(item3.indexOf('   - **Teto de contexto da fase:**'));
-  const item7 = between(phase, '7. Ao terminar, avise', '8. ');
+  const phase = section(flow, '## For the phase session');
+  const item3 = between(phase, '3. Subagents and effort', '4. Every briefing');
+  const ceiling = item3.slice(item3.indexOf('   - **Phase context ceiling:**'));
+  const item7 = between(phase, '7. When done, notify', '8. ');
 
-  it('FLOW item 3: a medida é o script, e o get_session fica de fora por ler 0 no turno', () => {
-    expect(teto).toContain('`node scripts/ci/contextUsage.mjs`');
-    expect(teto).toContain('`acima=true`');
-    expect(teto).toContain('300 mil');
-    expect(teto).toContain('300.000');
-    expect(teto).toContain('`external_metadata.context_usage.used_tokens`');
-    expect(teto).toMatch(/só muda no fim de um turno/);
-    expect(teto).toContain('item 8');
+  it('FLOW item 3: the measure is the script, and get_session is left out because it reads 0 in the turn', () => {
+    expect(ceiling).toContain('`node scripts/ci/contextUsage.mjs`');
+    expect(ceiling).toContain('`acima=true`');
+    expect(ceiling).toContain('300 thousand');
+    expect(ceiling).toContain('300,000');
+    expect(ceiling).toContain('`external_metadata.context_usage.used_tokens`');
+    expect(ceiling).toMatch(/only changes at the end of a turn/);
+    expect(ceiling).toContain('item 8');
   });
 
-  it('FLOW item 3: a transição pelo git show e o "sem medida"', () => {
-    expect(teto).toContain('git show origin/main:scripts/ci/contextUsage.mjs');
-    expect(teto).toContain('`Contexto: sem medida (<motivo>)`');
-    expect(teto).toContain('código 1');
+  it('FLOW item 3: the transition through git show and the "no measurement"', () => {
+    expect(ceiling).toContain('git show origin/main:scripts/ci/contextUsage.mjs');
+    expect(ceiling).toContain('`Contexto: sem medida (<motivo>)`');
+    expect(ceiling).toContain('code 1');
   });
 
-  it('FLOW item 3: o número do pedido de troca é o mil do script', () => {
-    expect(teto).toContain('`mil`');
-    expect(teto).toContain(
+  it('FLOW item 3: the number in the switch request is the mil of the script', () => {
+    expect(ceiling).toContain('`mil`');
+    expect(ceiling).toContain(
       '`Troca de sessão da fase <código>: contexto <n> mil; passagem em',
     );
   });
 
-  it('FLOW item 7: o aviso final traz a linha Contexto', () => {
+  it('FLOW item 7: the final notice carries the Contexto line', () => {
     expect(item7).toContain('`Contexto: <mil> mil`');
     expect(item7).toContain('`Contexto: sem medida (<motivo>)`');
   });
 
-  const contexto = between(nuvem, '**Context up to 300 thousand.**', '\n\n');
-  const entrega = between(
-    nuvem,
+  const context = between(cloud, '**Context up to 300 thousand.**', '\n\n');
+  const delivery = between(
+    cloud,
     '**Delivery, at the end of the round:**',
     '6. **Paste the Summary',
   );
-  const aviso = entrega.slice(entrega.indexOf('5. **Notify the coordinator**'));
+  const notice = delivery.slice(delivery.indexOf('5. **Notify the coordinator**'));
 
-  it('TESTING-NUVEM: o testador mede antes de cada lote e antes do aviso, sem ação nova', () => {
-    expect(contexto).toContain('300 thousand');
-    expect(contexto).toContain('`node scripts/ci/contextUsage.mjs`');
-    expect(contexto).toContain('before handing over each batch');
-    expect(contexto).toContain('before the notice');
-    expect(contexto).toContain('`Context per batch: ');
-    expect(contexto).toContain('"What got in the way"');
-    expect(contexto).toContain('`get_session`');
-    expect(contexto).toContain('or calling the owner');
+  it('TESTING-NUVEM: the tester measures before each batch and before the notice, with no new action', () => {
+    expect(context).toContain('300 thousand');
+    expect(context).toContain('`node scripts/ci/contextUsage.mjs`');
+    expect(context).toContain('before handing over each batch');
+    expect(context).toContain('before the notice');
+    expect(context).toContain('`Context per batch: ');
+    expect(context).toContain('"What got in the way"');
+    expect(context).toContain('`get_session`');
+    expect(context).toContain('or calling the owner');
   });
 
-  it('TESTING-NUVEM: o aviso termina com "; contexto <mil> mil" nos três formatos', () => {
-    expect(aviso).toContain('`; contexto <n> mil`');
-    expect(aviso).toContain('`; contexto sem medida (<reason>)`');
-    expect(aviso).toContain('19min32s; `contexto ');
-    expect(aviso).toMatch(/Grupo 2 de 3: [^"]*; `contexto \d+ mil`"/);
-    expect(aviso).toMatch(/Bloco 2 de 5: [^"]*; `contexto \d+ mil`"/);
+  it('TESTING-NUVEM: the notice ends with "; contexto <mil> mil" in the three formats', () => {
+    expect(notice).toContain('`; contexto <n> mil`');
+    expect(notice).toContain('`; contexto sem medida (<reason>)`');
+    expect(notice).toContain('19min32s; `contexto ');
+    expect(notice).toMatch(/Grupo 2 de 3: [^"]*; `contexto \d+ mil`"/);
+    expect(notice).toMatch(/Bloco 2 de 5: [^"]*; `contexto \d+ mil`"/);
   });
 
-  const porEtapa = section(fila, '## 3. Por etapa');
-  const troca = section(fila, '## Troca de sessão');
+  const perStage = section(queue, '## 3. Per stage');
+  const switching = section(queue, '## Session switch');
 
-  it('implementar-fila: a conferência de reserva mede com --max e cai no get_session sem medida', () => {
-    const conferencia = between(
-      porEtapa,
-      '- Na conferência, o **primeiro passo** é o contexto',
-      '- Depois, confira se o skill',
+  it('implementar-fila: the fallback check measures with --max and falls back to get_session with no measure', () => {
+    const check = between(
+      perStage,
+      '- At the check, the **first step** is the context',
+      '- Then check whether the skill',
     );
-    expect(conferencia).toContain(
-      '`node scripts/ci/contextUsage.mjs --max <max_tokens>`',
-    );
-    expect(conferencia).toContain(
-      '`painel.py context <pasta> --medir --max <max_tokens>`',
-    );
-    expect(conferencia).toContain(
-      '`painel.py context <pasta> <pct> --fonte get_session`',
-    );
-    expect(conferencia).toContain('`pct`');
-    expect(conferencia).toContain('`used_tokens`');
+    expect(check).toContain('`node scripts/ci/contextUsage.mjs --max <max_tokens>`');
+    expect(check).toContain('`painel.py context <pasta> --medir --max <max_tokens>`');
+    expect(check).toContain('`painel.py context <pasta> <pct> --fonte get_session`');
+    expect(check).toContain('`pct`');
+    expect(check).toContain('`used_tokens`');
   });
 
-  it('implementar-fila: o passo 3 de "Na sessão nova" grava o contexto com --medir --max <max_tokens>', () => {
-    const nova = between(fila, '**Na sessão nova**', '## Fim');
-    expect(nova).toContain('--medir --max <max_tokens>');
-    expect(nova).not.toContain('`painel.py context <pasta> <pct>`');
+  it('implementar-fila: step 3 of "In the new session" records the context with --medir --max <max_tokens>', () => {
+    const fresh = between(queue, '**In the new session**', '## End');
+    expect(fresh).toContain('--medir --max <max_tokens>');
+    expect(fresh).not.toContain('`painel.py context <pasta> <pct>`');
+    expect(fresh).not.toContain('`painel.py context <folder> <pct>`');
   });
 
-  it('implementar-fila: a "Troca de sessão" mede com --max e o ctx do próprio custo vem do script', () => {
-    expect(troca).toContain('`node scripts/ci/contextUsage.mjs --max <max_tokens>`');
-    expect(troca).toContain('`painel.py context <pasta> --medir --max <max_tokens>`');
-    expect(troca).toContain('`painel.py context <pasta> <pct> --fonte get_session`');
-    const antiga = between(troca, '**Na sessão antiga:**', '2. Crie a sessão nova');
-    expect(antiga).toContain('`ctx`');
-    expect(antiga).toContain('`contexto` do script');
-    expect(antiga).toContain('`usd`');
+  it('implementar-fila: the "Session switch" measures with --max and the ctx of its own cost comes from the script', () => {
+    expect(switching).toContain('`node scripts/ci/contextUsage.mjs --max <max_tokens>`');
+    expect(switching).toContain('`painel.py context <pasta> --medir --max <max_tokens>`');
+    expect(switching).toContain('`painel.py context <pasta> <pct> --fonte get_session`');
+    const old = between(
+      switching,
+      '**In the old session:**',
+      '2. Create the new session',
+    );
+    expect(old).toContain('`ctx`');
+    expect(old).toContain("the script's `contexto`");
+    expect(old).toContain('`usd`');
   });
 
-  it('implementar-fila: "Custo" tem o ainda trabalhando e a sentinela com o log divergente', () => {
-    const custo = between(porEtapa, '- **Custo:**', '- **Só se arquivam ids registrados');
-    expect(custo).toContain('`status_bucket`');
-    expect(custo).toContain('`working`');
-    expect(custo).toContain('`ainda trabalhando`');
-    expect(custo).toContain('Sentinela');
-    expect(custo).toContain('0 ≤ ctx − n ≤ 15');
-    expect(custo).toContain(
+  it('implementar-fila: "Cost" has the still-working case and the sentinel with the divergent log', () => {
+    const cost = between(
+      perStage,
+      '- **Cost:**',
+      '- **Only ids registered in the panel are archived',
+    );
+    expect(cost).toContain('`status_bucket`');
+    expect(cost).toContain('`working`');
+    expect(cost).toContain('`ainda trabalhando`');
+    expect(cost).toContain('Sentinel');
+    expect(cost).toContain('0 ≤ ctx − n ≤ 15');
+    expect(cost).toContain(
       '<rótulo>: medida de contexto divergente (aviso <n> mil, get_session <ctx> mil)',
     );
-    expect(custo).toContain('A etapa não para');
+    expect(cost).toContain('The stage does not stop');
   });
 
-  const custoTexto = between(
-    porEtapa,
-    '- **Custo:**',
-    '- **Só se arquivam ids registrados',
+  const costText = between(
+    perStage,
+    '- **Cost:**',
+    '- **Only ids registered in the panel are archived',
   );
 
-  it('CL1.1: o "ainda trabalhando" tem limite de 2 repetições e diz o que fazer no mesmo ciclo da send_message', () => {
-    expect(custoTexto).toMatch(/no máximo 2 vezes/);
-    expect(custoTexto).toContain('terceira leitura');
-    expect(custoTexto).toContain('custo lido com a sessão ainda trabalhando');
-    expect(custoTexto).toMatch(/send_message[^.]*mesmo ciclo[^.]*ciclo seguinte/);
+  it('CL1.1: the "ainda trabalhando" has a limit of 2 repetitions and says what to do in the same cycle as the send_message', () => {
+    expect(costText).toMatch(/at most 2 times/);
+    expect(costText).toContain('third reading');
+    expect(costText).toContain('custo lido com a sessão ainda trabalhando');
+    expect(costText).toMatch(/send_message[^.]*same cycle[^.]*next cycle/);
   });
 
-  it('CL1.7: a sentinela só vale com o turno terminado e a divergência é registro, nunca trava', () => {
-    const sentinela = custoTexto.slice(custoTexto.indexOf('**Sentinela:**'));
-    expect(sentinela).toMatch(/só vale com o turno (dela |da filha )?terminado/);
-    expect(sentinela).toContain('registro');
-    expect(sentinela).toMatch(/nunca (trava|para)/);
-    expect(sentinela).toContain('não é prova de que a medida está errada');
+  it('CL1.7: the sentinel only counts with the turn finished and the divergence is a record, never blocks', () => {
+    const sentinel = costText.slice(costText.indexOf('**Sentinel:**'));
+    expect(sentinel).toMatch(/only counts with the (child's )?turn finished/);
+    expect(sentinel).toContain('record');
+    expect(sentinel).toMatch(/never (blocks|stops)/);
+    expect(sentinel).toContain('is not proof that the measure is wrong');
   });
 
-  it('CL1.6: o TESTING-NUVEM guarda o motivo do pkill e o exemplo do corte de 25.000 (não são do épico)', () => {
-    expect(nuvem).toContain(
+  it('CL1.6: TESTING-NUVEM keeps the reason for the pkill and the example of the 25,000 cut (they do not belong to the epic)', () => {
+    expect(cloud).toContain(
       '`pkill -f chrome` (it kills the shell itself and makes Chrome restore tabs)',
     );
-    expect(nuvem).toContain('(for example, the 25,000 cut or a missing excerpt)');
-    // Teto subiu de 32.000 para 32.500 na etapa #1712 (restauração da redação anterior ao PR #1709).
-    expect(nuvem.length).toBeLessThanOrEqual(32_500);
+    expect(cloud).toContain('(for example, the 25,000 cut or a missing excerpt)');
+    // The ceiling went from 32,000 to 32,500 in stage #1712 (restoring the wording from before PR #1709).
+    expect(cloud.length).toBeLessThanOrEqual(32_500);
   });
 
-  it('CL1.5: a medida endurecida pega o texto que volta à medida antiga (mutação)', () => {
-    const phase = section(flow, '## Para a sessão da fase');
-    const item3 = between(phase, '3. Subagentes e esforço', '4. Todo briefing');
-    const teto = item3.slice(item3.indexOf('   - **Teto de contexto da fase:**'));
+  it('CL1.5: the hardened measure catches the text that goes back to the old measure (mutation)', () => {
+    const phase = section(flow, '## For the phase session');
+    const item3 = between(phase, '3. Subagents and effort', '4. Every briefing');
+    const ceiling = item3.slice(item3.indexOf('   - **Phase context ceiling:**'));
     const sup = between(
-      section(supervisao, '## Troca de sessão'),
-      '**Tamanho e base.**',
-      '**Troca no retorno',
+      section(supervision, '## Session switch'),
+      '**Size and baseline.**',
+      '**Switch on return',
     );
-    expect(scriptMeasureProblems(teto)).toEqual([]);
+    expect(scriptMeasureProblems(ceiling)).toEqual([]);
     expect(scriptMeasureProblems(sup)).toEqual([]);
-    for (const original of [teto, sup]) {
-      const antigaComoInstrucao = original
-        .replaceAll('`node scripts/ci/contextUsage.mjs`', 'o `get_session`')
-        .replace(/Não é o `external/, 'É o `external')
-        .replace(/, não o `external/, ', e o `external');
-      // A asserção antiga (só citar o `used_tokens`) continua passando no texto mutado…
-      expect(antigaComoInstrucao).toContain(
-        '`external_metadata.context_usage.used_tokens`',
-      );
-      // …e a nova não.
-      expect(scriptMeasureProblems(antigaComoInstrucao).length).toBeGreaterThan(0);
+    for (const original of [ceiling, sup]) {
+      const oldAsInstruction = original
+        .replaceAll('`node scripts/ci/contextUsage.mjs`', 'the `get_session`')
+        .replace(/It is not the `external/, 'It is the `external')
+        .replace(/, not the `external/, ', and the `external');
+      // The old assertion (just citing the `used_tokens`) still passes on the mutated text…
+      expect(oldAsInstruction).toContain('`external_metadata.context_usage.used_tokens`');
+      // …and the new one does not.
+      expect(scriptMeasureProblems(oldAsInstruction).length).toBeGreaterThan(0);
     }
   });
 
-  it('implementar-fila: a mudança é pequena (a regra de skill grande é de 60 linhas)', () => {
-    expect(fila.split('\n').length).toBeLessThan(540);
-    expect(section(fila, '## Regras desta fila')).not.toContain('contextUsage');
+  it('implementar-fila: the change is small (the large-skill rule is 60 lines)', () => {
+    expect(queue.split('\n').length).toBeLessThan(540);
+    expect(section(queue, '## Rules of this queue')).not.toContain('contextUsage');
   });
 
-  it('supervisionar-fila: "Tamanho e base" mede pelo script, base no fim do primeiro turno e ~50% pelo pct', () => {
-    const supTroca = section(supervisao, '## Troca de sessão');
-    const tamanho = between(supTroca, '**Tamanho e base.**', '**Troca no retorno');
-    expect(tamanho).toContain('`node scripts/ci/contextUsage.mjs`');
-    expect(tamanho).toContain('`contexto`');
-    expect(tamanho).toContain('--max <max_tokens>');
-    expect(tamanho).toContain('`pct`');
-    expect(tamanho).toContain('no fim do primeiro turno');
-    expect(tamanho).toContain('~50%');
-    expect(tamanho).toContain('`external_metadata.context_usage.used_tokens`');
+  it('supervisionar-fila: "Size and baseline" measures through the script, baseline at the end of the first turn and ~50% through the pct', () => {
+    const supSwitch = section(supervision, '## Session switch');
+    const size = between(supSwitch, '**Size and baseline.**', '**Switch on return');
+    expect(size).toContain('`node scripts/ci/contextUsage.mjs`');
+    expect(size).toContain('`contexto`');
+    expect(size).toContain('--max <max_tokens>');
+    expect(size).toContain('`pct`');
+    expect(size).toContain("end of this session's first turn");
+    expect(size).toContain('~50%');
+    expect(size).toContain('`external_metadata.context_usage.used_tokens`');
   });
 });

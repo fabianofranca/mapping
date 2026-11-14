@@ -299,8 +299,8 @@ const cardButton = (issue: string) =>
   card(issue)?.querySelector<HTMLButtonElement>('button');
 const bands = () =>
   Array.from(document.querySelectorAll('#mp-grafo .onda')).map((f) => ({
-    rotulo: f.querySelector('.parada .rot')?.textContent,
-    qtd: f.querySelector('.parada .qtd')?.textContent,
+    label: f.querySelector('.parada .rot')?.textContent,
+    count: f.querySelector('.parada .qtd')?.textContent,
     issues: Array.from(f.querySelectorAll<HTMLElement>('article')).map(
       (a) => a.dataset.issue,
     ),
@@ -723,7 +723,7 @@ describe.each(FORMS)('queue panel page: "Progress" card (PA1), %s', (_forma, wra
       ]),
     });
     panel.render();
-    expect(bands().map((f) => [f.rotulo, f.issues])).toEqual([
+    expect(bands().map((f) => [f.label, f.issues])).toEqual([
       ['Now', ['#1', '#2']],
       ['Wave 1', ['#3']],
     ]);
@@ -834,9 +834,9 @@ describe('queue panel page: "Completed" card (PA1)', () => {
   const days = () =>
     Array.from(document.querySelectorAll<HTMLElement>('#mp-concluidas .dia')).map(
       (d) => ({
-        rotulo: d.querySelector('.dia-rot')?.textContent,
+        label: d.querySelector('.dia-rot')?.textContent,
         issues: Array.from(d.querySelectorAll('.cl a.num')).map((a) => a.textContent),
-        dentro: d.closest('details') !== null,
+        inside: d.closest('details') !== null,
       }),
     );
   const line = (issue: string) =>
@@ -1148,7 +1148,7 @@ describe('queue panel page: "Queue cost" card (PA2)', () => {
           sess('4', 'fase', '#20', 2.25),
         ],
       });
-      expect(NOMES('#mp-custo-tipo')).toEqual([
+      expect(NAMES('#mp-custo-tipo')).toEqual([
         { name: 'fase', value: 'US$ 3,75 · 2 sessions' },
         { name: 'testador', value: 'US$ 0,50 · 1 session' },
         { name: 'supervisor', value: 'US$ 4,00 · 1 session' },
@@ -1168,7 +1168,7 @@ describe('queue panel page: "Queue cost" card (PA2)', () => {
         sess(`s${i}`, 'fase', `#${100 + i}`, i + 1),
       );
       mount({ sessions });
-      const n = NOMES('#mp-custo-etapas');
+      const n = NAMES('#mp-custo-etapas');
       expect(n).toHaveLength(8);
       expect(n[0]).toEqual({ name: '#109', value: 'US$ 10,00' });
       expect(n[7]).toEqual({ name: '#102', value: 'US$ 3,00' });

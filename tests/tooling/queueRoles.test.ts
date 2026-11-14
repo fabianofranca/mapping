@@ -1,6 +1,7 @@
 // @vitest-environment node
-// Etapa #1532, fase FM4 (decisões 7 e 8): o painel registra a sessão atual de cada papel (coordenador e
-// supervisor), a troca de coordenador é aos 35% e só se arquivam ids registrados.
+// Stage #1532, phase FM4 (decisions 7 and 8): the panel records the current session of each role
+// (coordinator and supervisor), the coordinator switch happens at 35% and only registered ids are
+// archived.
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -32,8 +33,8 @@ beforeEach(() => {
 });
 afterEach(() => rmSync(dir, { recursive: true, force: true }));
 
-describe('painel.py role / roles (decisão 7)', () => {
-  it('role grava id, n, at e link; o seguinte do mesmo papel soma 1', () => {
+describe('painel.py role / roles (decision 7)', () => {
+  it('role writes id, n, at and link; the next one of the same role adds 1', () => {
     run('role', dir, 'coordenador', 'session_a');
     expect((meta().roles as Record<string, unknown>).coordenador).toEqual({
       id: 'session_a',
@@ -52,7 +53,7 @@ describe('painel.py role / roles (decisão 7)', () => {
     });
   });
 
-  it('role guarda o id anterior em previous, e id vazio ou n inválido não quebram (revisão)', () => {
+  it('role keeps the previous id in previous, and an empty id or an invalid n do not break (review)', () => {
     run('role', dir, 'coordenador', 'session_a');
     run('role', dir, 'coordenador', 'session_b');
     expect(
@@ -68,7 +69,7 @@ describe('painel.py role / roles (decisão 7)', () => {
     expect(runRaw('roles', dir).status).toBe(0);
   });
 
-  it('os papéis têm contagem própria e o papel inválido sai com código 2', () => {
+  it('the roles have their own count and an invalid role exits with code 2', () => {
     run('role', dir, 'supervisor', 'session_s');
     expect((meta().roles as Record<string, Record<string, unknown>>).supervisor?.n).toBe(
       1,
@@ -77,7 +78,7 @@ describe('painel.py role / roles (decisão 7)', () => {
     expect(bad.status).toBe(2);
   });
 
-  it('roles imprime coordenador e supervisor, ou —', () => {
+  it('roles prints coordenador and supervisor, or —', () => {
     expect(run('roles', dir)).toBe('coordenador —\nsupervisor —\n');
     run('role', dir, 'coordenador', 'session_a');
     run('role', dir, 'coordenador', 'session_b');
@@ -87,16 +88,16 @@ describe('painel.py role / roles (decisão 7)', () => {
     );
   });
 
-  it('dois role coordenador seguidos dão "coordenador 2" no roles', () => {
+  it('two consecutive role coordenador give "coordenador 2" in roles', () => {
     run('role', dir, 'coordenador', 'session_a');
     run('role', dir, 'coordenador', 'session_b');
     expect(run('roles', dir)).toContain('coordenador 2: session_b');
   });
 
-  it('role com o id já registrado não muda nada: n, previous, at, link e o meta.json ficam iguais (#1628)', () => {
+  it('role with the already registered id changes nothing: n, previous, at, link and meta.json stay the same (#1628)', () => {
     run('role', dir, 'coordenador', 'session_a');
     run('role', dir, 'coordenador', 'session_b');
-    const antes = readFileSync(path.join(dir, 'meta.json'), 'utf8');
+    const before = readFileSync(path.join(dir, 'meta.json'), 'utf8');
     const out = execFileSync(
       'python3',
       [
@@ -114,26 +115,26 @@ describe('painel.py role / roles (decisão 7)', () => {
     expect(
       (meta().roles as Record<string, Record<string, unknown>>).coordenador,
     ).toMatchObject({ id: 'session_b', n: 2, previous: 'session_a' });
-    expect(readFileSync(path.join(dir, 'meta.json'), 'utf8')).toBe(antes);
+    expect(readFileSync(path.join(dir, 'meta.json'), 'utf8')).toBe(before);
     expect(out).toContain('já é o registrado');
     expect(out).toContain('alterados: nenhum');
   });
 
-  it('role repetido dentro do apply não grava a linha e o resto do lote grava (#1628)', () => {
+  it('a repeated role inside the apply does not write the line and the rest of the batch is written (#1628)', () => {
     run('role', dir, 'coordenador', 'session_a');
     run('role', dir, 'coordenador', 'session_b');
-    const antes = (meta().roles as Record<string, unknown>).coordenador;
-    const lote = path.join(dir, 'lote.txt');
-    writeFileSync(lote, 'role coordenador session_b\ncontext 40\n');
-    const r = runRaw('apply', dir, lote);
+    const before = (meta().roles as Record<string, unknown>).coordenador;
+    const batch = path.join(dir, 'batch.txt');
+    writeFileSync(batch, 'role coordenador session_b\ncontext 40\n');
+    const r = runRaw('apply', dir, batch);
     expect(r.status).toBe(0);
     expect(r.stdout).toContain('já é o registrado');
     expect(r.stdout).toContain('alterados: meta.json');
-    expect(meta().roles).toEqual({ coordenador: antes });
+    expect(meta().roles).toEqual({ coordenador: before });
     expect(meta().context).toBe(40);
   });
 
-  it('role com id diferente do registrado soma 1 e guarda o previous (#1628)', () => {
+  it('role with an id different from the registered one adds 1 and keeps the previous (#1628)', () => {
     run('role', dir, 'coordenador', 'session_a');
     run('role', dir, 'coordenador', 'session_b');
     run('role', dir, 'coordenador', 'session_c');
@@ -142,7 +143,7 @@ describe('painel.py role / roles (decisão 7)', () => {
     ).toMatchObject({ id: 'session_c', n: 3, previous: 'session_b' });
   });
 
-  it('show: context 35 não avisa; 36 avisa "acima de 35%"', () => {
+  it('show: context 35 does not warn; 36 warns "acima de 35%"', () => {
     run('context', dir, '35');
     expect(run('show', dir)).not.toContain('troque de sessão');
     run('context', dir, '36');
@@ -150,7 +151,7 @@ describe('painel.py role / roles (decisão 7)', () => {
   });
 });
 
-describe('painel.py roles --sessao (etapa #1643, SV1, decisões 3 e 4)', () => {
+describe('painel.py roles --sessao (stage #1643, SV1, decisions 3 and 4)', () => {
   const BASE_LINES = 'coordenador 2: session_c2\nsupervisor 2: session_s2\n';
 
   function setMeta(patch: Record<string, unknown>) {
@@ -159,209 +160,215 @@ describe('painel.py roles --sessao (etapa #1643, SV1, decisões 3 e 4)', () => {
     Object.assign(m[0]!, patch);
     writeFileSync(file, JSON.stringify(m));
   }
-  /** Coordenador `session_c1` → `session_c2` e supervisor `session_s1` → `session_s2`. */
+  /** Coordinator `session_c1` → `session_c2` and supervisor `session_s1` → `session_s2`. */
   function registerBoth() {
     run('role', dir, 'coordenador', 'session_c1');
     run('role', dir, 'coordenador', 'session_c2');
     run('role', dir, 'supervisor', 'session_s1');
     run('role', dir, 'supervisor', 'session_s2');
   }
-  const sessao = (id: string) => run('roles', '--sessao', id, dir);
+  const forSession = (id: string) => run('roles', '--sessao', id, dir);
 
-  it('registrada: o id é o roles.supervisor.id', () => {
+  it('registrada: the id is roles.supervisor.id', () => {
     registerBoth();
-    expect(sessao('session_s2')).toBe(`${BASE_LINES}esta sessão: registrada\n`);
+    expect(forSession('session_s2')).toBe(`${BASE_LINES}esta sessão: registrada\n`);
   });
 
-  it('coordenador: o roles.coordenador.id, o .previous ou uma entrada kind=coordenador em meta.sessions', () => {
+  it('coordenador: roles.coordenador.id, its .previous or a kind=coordenador entry in meta.sessions', () => {
     registerBoth();
-    const linha = 'esta sessão: coordenador (não supervisiona)\n';
-    expect(sessao('session_c2')).toBe(BASE_LINES + linha);
-    expect(sessao('session_c1')).toBe(BASE_LINES + linha);
+    const line = 'esta sessão: coordenador (não supervisiona)\n';
+    expect(forSession('session_c2')).toBe(BASE_LINES + line);
+    expect(forSession('session_c1')).toBe(BASE_LINES + line);
     setMeta({ sessions: [{ id: 'session_c0', kind: 'coordenador' }] });
-    expect(sessao('session_c0')).toBe(BASE_LINES + linha);
+    expect(forSession('session_c0')).toBe(BASE_LINES + line);
   });
 
-  it('antiga: o roles.supervisor.previous ou uma entrada kind=supervisor em meta.sessions', () => {
+  it('antiga: roles.supervisor.previous or a kind=supervisor entry in meta.sessions', () => {
     registerBoth();
-    const linha = 'esta sessão: antiga (atual: session_s2)\n';
-    expect(sessao('session_s1')).toBe(BASE_LINES + linha);
+    const line = 'esta sessão: antiga (atual: session_s2)\n';
+    expect(forSession('session_s1')).toBe(BASE_LINES + line);
     setMeta({ sessions: [{ id: 'session_s0', kind: 'supervisor' }] });
-    expect(sessao('session_s0')).toBe(BASE_LINES + linha);
+    expect(forSession('session_s0')).toBe(BASE_LINES + line);
   });
 
-  it('sucessora: outro id, com um supervisor registrado', () => {
+  it('sucessora: another id, with a registered supervisor', () => {
     registerBoth();
-    expect(sessao('session_nova')).toBe(
+    expect(forSession('session_nova')).toBe(
       `${BASE_LINES}esta sessão: sucessora (antecessor: session_s2)\n`,
     );
     setMeta({ sessions: [{ id: 'session_f', kind: 'fase' }] });
-    expect(sessao('session_f')).toContain('sucessora (antecessor: session_s2)');
+    expect(forSession('session_f')).toContain('sucessora (antecessor: session_s2)');
   });
 
-  it('nova: sem roles.supervisor, e também com o painel sem roles', () => {
-    expect(sessao('session_x')).toBe(
+  it('nova: without roles.supervisor, and also with a panel without roles', () => {
+    expect(forSession('session_x')).toBe(
       'coordenador —\nsupervisor —\nesta sessão: nova (nenhum supervisor registrado)\n',
     );
     run('role', dir, 'coordenador', 'session_c1');
-    expect(sessao('session_x')).toBe(
+    expect(forSession('session_x')).toBe(
       'coordenador 1: session_c1\nsupervisor —\nesta sessão: nova (nenhum supervisor registrado)\n',
     );
-    expect(sessao('session_c1')).toContain('coordenador (não supervisiona)');
+    expect(forSession('session_c1')).toContain('coordenador (não supervisiona)');
     const file = path.join(dir, 'meta.json');
     const m = JSON.parse(readFileSync(file, 'utf8')) as Array<Record<string, unknown>>;
     delete m[0]!.roles;
     writeFileSync(file, JSON.stringify(m));
-    expect(sessao('session_x')).toContain('nova (nenhum supervisor registrado)');
+    expect(forSession('session_x')).toContain('nova (nenhum supervisor registrado)');
   });
 
-  it('a primeira que casa vale: registrada, coordenador, antiga, sucessora, nova', () => {
+  it('the first that matches wins: registrada, coordenador, antiga, sucessora, nova', () => {
     registerBoth();
-    // o mesmo id como supervisor registrado e como coordenador anterior: vale registrada
+    // the same id as registered supervisor and as previous coordinator: registrada wins
     setMeta({ sessions: [{ id: 'session_s2', kind: 'coordenador' }] });
-    expect(sessao('session_s2')).toContain('esta sessão: registrada');
-    // o mesmo id como supervisor anterior e como coordenador: vale coordenador
+    expect(forSession('session_s2')).toContain('esta sessão: registrada');
+    // the same id as previous supervisor and as coordinator: coordenador wins
     setMeta({
       sessions: [
         { id: 'session_s1', kind: 'coordenador' },
         { id: 'session_s1', kind: 'supervisor' },
       ],
     });
-    expect(sessao('session_s1')).toContain('esta sessão: coordenador (não supervisiona)');
+    expect(forSession('session_s1')).toContain(
+      'esta sessão: coordenador (não supervisiona)',
+    );
   });
 
-  it('--sessao com espaços ou quebra de linha em volta vale o id sem eles (revisão)', () => {
+  it('--sessao with spaces or a line break around it counts as the id without them (review)', () => {
     registerBoth();
-    expect(sessao(' session_s2\n')).toBe(`${BASE_LINES}esta sessão: registrada\n`);
-    expect(sessao('session_s1 ')).toContain('antiga (atual: session_s2)');
+    expect(forSession(' session_s2\n')).toBe(`${BASE_LINES}esta sessão: registrada\n`);
+    expect(forSession('session_s1 ')).toContain('antiga (atual: session_s2)');
   });
 
-  it('--sessao vazio (ou só espaços) sai com código 2 e a mensagem', () => {
-    for (const vazio of ['', '  ']) {
-      const r = runRaw('roles', '--sessao', vazio, dir);
+  it('an empty --sessao (or only spaces) exits with code 2 and the message', () => {
+    for (const blank of ['', '  ']) {
+      const r = runRaw('roles', '--sessao', blank, dir);
       expect(r.status).toBe(2);
       expect(r.stderr).toContain('o id da sessão não pode ser vazio');
       expect(r.stdout).toBe('');
     }
   });
 
-  it('sem --sessao a saída é a de hoje, byte a byte', () => {
+  it("without --sessao the output is today's, byte by byte", () => {
     registerBoth();
     expect(run('roles', dir)).toBe(BASE_LINES);
   });
 
-  it('roles --sessao não entra no apply e não grava nada', () => {
+  it('roles --sessao does not enter the apply and writes nothing', () => {
     registerBoth();
-    const antes = readFileSync(path.join(dir, 'meta.json'), 'utf8');
-    sessao('session_nova');
-    expect(readFileSync(path.join(dir, 'meta.json'), 'utf8')).toBe(antes);
-    const lote = path.join(dir, 'lote.txt');
-    writeFileSync(lote, 'roles --sessao session_nova\n');
-    expect(runRaw('apply', dir, lote).status).toBe(2);
+    const before = readFileSync(path.join(dir, 'meta.json'), 'utf8');
+    forSession('session_nova');
+    expect(readFileSync(path.join(dir, 'meta.json'), 'utf8')).toBe(before);
+    const batch = path.join(dir, 'batch.txt');
+    writeFileSync(batch, 'roles --sessao session_nova\n');
+    expect(runRaw('apply', dir, batch).status).toBe(2);
   });
 });
 
-describe('implementar-fila: "Achar ou criar", passo 1, acha o painel pelo fixado (etapa #1643, SV1, decisão 2)', () => {
+describe('implementar-fila: "Find or create", step 1, finds the panel by the pinned one (stage #1643, SV1, decision 2)', () => {
   const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
-  const achar = section(skill, '## Painel');
-  const passo1 = between(achar, '\n1. `Artifact` `list`', '\n2. Achou:');
+  const find = section(skill, '## Panel');
+  const step1 = between(find, '\n1. `Artifact` `list`', '\n2. Found:');
 
-  it('lista os candidatos pelos três títulos, com limit 50, os fixados primeiro e depois o mais recente', () => {
-    expect(passo1).toContain('scope: "mine"');
-    expect(passo1).toContain('limit: 50');
-    for (const titulo of [
+  it('lists the candidates by the three titles, with limit 50, the pinned ones first and then the newest', () => {
+    expect(step1).toContain('scope: "mine"');
+    expect(step1).toContain('limit: 50');
+    for (const title of [
       'Estado da execução',
       'Fila de desenvolvimento',
       'Mapping Fila',
     ]) {
-      expect(passo1).toContain(`"${titulo}"`);
+      expect(step1).toContain(`"${title}"`);
     }
-    expect(passo1).toContain('pinned');
-    expect(passo1).toMatch(/do mais recente ao mais antigo/);
+    expect(step1).toContain('pinned');
+    expect(step1).toMatch(/from newest to oldest/);
   });
 
-  it('o painel é o primeiro cujo meta tem roles, lido por ArtifactData get e Artifact read com out_dir', () => {
-    expect(passo1).toContain('ArtifactData');
-    expect(passo1).toContain('datasets');
-    expect(passo1).toContain('`meta`');
-    expect(passo1).toContain('out_dir');
-    expect(passo1).toMatch(/painel\.py roles/);
-    expect(passo1).toMatch(/—/);
-    expect(passo1).toContain('painel=novo');
-    // ao menos um papel registrado (não os dois) e para no primeiro que serve (revisão)
-    expect(passo1).toMatch(/ao menos um papel/);
-    expect(passo1).toMatch(/pare no primeiro/);
+  it('the panel is the first whose meta has roles, read by ArtifactData get and Artifact read with out_dir', () => {
+    expect(step1).toContain('ArtifactData');
+    expect(step1).toContain('datasets');
+    expect(step1).toContain('`meta`');
+    expect(step1).toContain('out_dir');
+    expect(step1).toMatch(/painel\.py roles/);
+    expect(step1).toMatch(/—/);
+    expect(step1).toContain('painel=novo');
+    // at least one registered role (not both) and it stops at the first that fits (review)
+    expect(step1).toMatch(/at least one role/);
+    expect(step1).toMatch(/stop at the first/);
   });
 });
 
-describe('implementar-fila: troca aos 35% e uma sessão ativa por papel (decisões 7 e 8)', () => {
+describe('implementar-fila: switch at 35% and one active session per role (decisions 7 and 8)', () => {
   const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
   const flow = readFileSync('docs/FLOW.md', 'utf8');
 
-  it('"1. Começo" dá o título "Fila — coordenador <n>" e registra o papel', () => {
-    const comeco = section(skill, '## 1. Começo');
-    expect(comeco).toContain('Fila — coordenador <n>');
-    expect(comeco).toContain('role');
-    expect(comeco).toContain('prefixo "Fila — coordenador"');
+  it('"1. Start" gives the title "Fila — coordenador <n>" and registers the role', () => {
+    const start = section(skill, '## 1. Start');
+    expect(start).toContain('Fila — coordenador <n>');
+    expect(start).toContain('role');
+    expect(start).toContain('prefix "Fila — coordenador"');
   });
 
-  it('"Painel" descreve o previous e o registro repetido; o item 4 só pede o registro sem esta sessão (#1628)', () => {
-    const painel = section(skill, '## Painel');
-    expect(painel).toContain('previous');
-    expect(painel).toContain('já é o registrado');
-    const troca = section(skill, '## Troca de sessão');
-    const nova = troca.slice(troca.indexOf('**Na sessão nova**'));
-    const passo4 = nova.slice(nova.indexOf('\n4. '));
-    expect(passo4).toContain('só se o `roles` não traz esta sessão');
+  it('"Panel" describes the previous and the repeated registration; item 4 only asks to register when the roles lack this session (#1628)', () => {
+    const panel = section(skill, '## Panel');
+    expect(panel).toContain('previous');
+    expect(panel).toContain('já é o registrado');
+    const switching = section(skill, '## Session switch');
+    const newSession = switching.slice(switching.indexOf('**In the new session**'));
+    const step4 = newSession.slice(newSession.indexOf('\n4. '));
+    expect(step4).toContain('only if `roles` does not list this session');
   });
 
-  it('"Troca de sessão": 35%, título do sucessor, role, archive_session e conferência no get_session', () => {
-    const troca = section(skill, '## Troca de sessão');
-    expect(troca).toContain('Acima de 35%');
-    expect(troca).not.toContain('60%');
-    expect(troca).toContain('Fila — coordenador <n>');
-    const nova = troca.slice(troca.indexOf('**Na sessão nova**'));
-    expect(nova).toContain('role');
-    expect(nova).toContain('archive_session');
-    const passo4 = nova.slice(nova.indexOf('4. '));
-    expect(passo4).toMatch(
-      /get_session[^\n]*estado arquivado|estado arquivado[^\n]*get_session/,
+  it('"Session switch": 35%, successor title, role, archive_session and the check in get_session', () => {
+    const switching = section(skill, '## Session switch');
+    expect(switching).toContain('Above 35%');
+    expect(switching).not.toContain('60%');
+    expect(switching).toContain('Fila — coordenador <n>');
+    const newSession = switching.slice(switching.indexOf('**In the new session**'));
+    expect(newSession).toContain('role');
+    expect(newSession).toContain('archive_session');
+    const step4 = newSession.slice(newSession.indexOf('4. '));
+    expect(step4).toMatch(
+      /get_session[^\n]*archived state|archived state[^\n]*get_session/,
     );
     expect(
-      troca.slice(
-        troca.indexOf('**Na sessão antiga:**'),
-        troca.indexOf('**Na sessão nova**'),
+      switching.slice(
+        switching.indexOf('**In the old session:**'),
+        switching.indexOf('**In the new session**'),
       ),
-    ).toMatch(/role <pasta> coordenador <id novo>/);
-    expect(troca).toContain('`previous`');
-    expect(troca).toContain('https://claude.ai/code/<id novo>');
-    expect(nova).toMatch(/nova tentativa/);
-    expect(nova).toContain('PushNotification');
-    const antiga = between(troca, '**Na sessão antiga:**', '**Na sessão nova**');
-    expect(antiga).toMatch(/não age/);
+    ).toMatch(/role <pasta> coordenador <new id>/);
+    expect(switching).toContain('`previous`');
+    expect(switching).toContain('https://claude.ai/code/<new id>');
+    expect(newSession).toMatch(/once more/);
+    expect(newSession).toContain('PushNotification');
+    const oldSession = between(
+      switching,
+      '**In the old session:**',
+      '**In the new session**',
+    );
+    expect(oldSession).toMatch(/does not act/);
   });
 
-  it('"Arquivar as sessões": só ids registrados no painel; a sessão que não é a registrada não age', () => {
-    const bloco = skill.slice(skill.indexOf('**Arquivar as sessões**'));
-    expect(bloco).toMatch(/só se arquivam ids registrados no painel/i);
-    expect(bloco).toContain('meta.sessions');
-    expect(bloco).toContain('`anterior`');
-    expect(skill).toMatch(/não é a registrada/);
+  it('"Archive the sessions": only ids registered in the panel; a session that is not the registered one does not act', () => {
+    const block = skill.slice(skill.indexOf('**Archive the sessions**'));
+    expect(block).toMatch(/only ids registered in the panel are archived/i);
+    expect(block).toContain('meta.sessions');
+    expect(block).toContain('`anterior`');
+    expect(skill).toMatch(/that is not the one registered/);
     expect(skill).toMatch(
-      /send_message[^\n]*sessão atual|sessão atual[^\n]*send_message/,
+      /send_message[^\n]*current session|current session[^\n]*send_message/,
     );
   });
 
-  it('"Conferências de reserva" usa 35%', () => {
-    const conf = skill.slice(skill.indexOf('**Conferências de reserva:**'));
-    expect(conf.slice(0, conf.indexOf('## '))).toContain('acima de 35%');
+  it('"Fallback checks" uses 35%', () => {
+    const checks = skill.slice(skill.indexOf('**Fallback checks:**'));
+    expect(checks.slice(0, checks.indexOf('## '))).toContain('acima de 35%');
   });
 
-  it('"Para o dono, nos três chats" diz 35% e o arquivamento', () => {
-    const dono = section(flow, '## Para o dono, nos três chats');
-    expect(dono).toMatch(/conferência de hora em hora[^\n]*contexto[^\n]*35%/);
-    expect(dono).toMatch(/acima de 35%/);
-    expect(dono).not.toContain('60%');
-    expect(dono).toMatch(/anterior[^\n]*arquivad/);
+  it('"For the owner, in the three chats" says 35% and the archiving', () => {
+    const owner = section(flow, '## For the owner, in the three chats');
+    expect(owner).toMatch(/hourly check[^\n]*context[^\n]*35%/);
+    expect(owner).toMatch(/above 35%/);
+    expect(owner).not.toContain('60%');
+    expect(owner).toMatch(/archives the previous/);
   });
 });
