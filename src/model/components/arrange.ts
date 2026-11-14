@@ -662,12 +662,14 @@ function instanceBaseline(
   types: ReadonlyMap<string, TypeDef>,
   child: Instance,
   measure: TextMeasurer,
+  direction: Direction,
 ): number | undefined {
   const raw = types.get(child.typeId)?.component;
   if (!raw) return undefined;
   return instantiate(tokenizedComponent(raw), child.values, child.box, {
     measure,
     idPrefix: child.id,
+    ...(direction === 'rtl' ? { direction } : {}),
   }).firstBaseline;
 }
 
@@ -690,7 +692,7 @@ function childTargets(
   if (!box) return null;
   const baselines =
     layout.align === 'baseline'
-      ? children.map((child) => instanceBaseline(types, child, measure))
+      ? children.map((child) => instanceBaseline(types, child, measure, direction))
       : [];
   return layoutChildren(
     box,

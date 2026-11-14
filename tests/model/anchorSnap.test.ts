@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import {
   addContainer,
   createMarking,
+  setMarkingRect,
   setContainerDensity,
   setMarkingAnchor,
   setProjectDirection,
@@ -44,6 +45,9 @@ function base(anchor: MarkingAnchor = { to: 'T' }): Project {
     to: 'CT',
   });
 }
+
+const moveMarkingTo = (p: Project, id: string, to: { x: number; y: number }): Project =>
+  setMarkingRect(p, id, { ...marking(p, id).rect, ...to });
 
 const snap = (p: Project, id = 'M', options?: Parameters<typeof snapToAnchor>[2]) =>
   snapToAnchor(p, id, options);
@@ -195,6 +199,36 @@ describe('snapToAnchor: limites, trava e sem mudança', () => {
       base({ to: 'T', side: 'end', align: 'start', offset: { main: 1000, cross: 0 } }),
     );
     expect(at(right.project).x).toBe(900);
+  });
+
+  it('a marcação já no limite que o encosto prenderia mantém o aviso (achado 4 do CL2)', () => {
+    let p = base({
+      to: 'T',
+      side: 'end',
+      align: 'start',
+      offset: { main: 1000, cross: 0 },
+    });
+    p = moveMarkingTo(p, 'M', { x: 900, y: 300 });
+    const { project, warnings } = snap(p);
+    expect(project).toBe(p);
+    expect(warnings.map((w) => w.code)).toEqual(['arrange.outside']);
+  });
+
+  it('o seguidor perto da borda não sai do container nem solta a âncora (achado 3 do CL2)', () => {
+    let p = base({ to: 'T', side: 'end', align: 'start' });
+    p = createMarking(p, {
+      id: 'F',
+      containerId: 'I1',
+      rect: { x: 880, y: 600, width: 100, height: 40 },
+    });
+    p = setMarkingAnchor(p, 'F', { to: 'M' });
+    const { project, warnings } = snap(p);
+    const f = marking(project, 'F');
+    expect(f.containerId).toBe('I1');
+    expect(f.anchor?.to).toBe('M');
+    expect(f.rect.x + f.rect.width).toBeLessThanOrEqual(1000);
+    expect(f.rect.x).toBeGreaterThanOrEqual(0);
+    expect(warnings.map((w) => w.code)).toEqual(['arrange.outside']);
   });
 
   it('no canvas não há limite nem aviso', () => {

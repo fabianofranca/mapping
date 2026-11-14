@@ -1213,6 +1213,7 @@ export const enUS: Dictionary = {
   'anchor.target': 'Anchored to',
   'anchor.targetHint':
     'The marking sits against this one, in the same container. Moving the anchor moves the anchored markings; resizing it does not.',
+  'anchor.targetLimited': 'Only the first {count} markings of the container are listed.',
   'anchor.none': 'None',
   'anchor.side': 'Side',
   'anchor.sideTop': 'Above',

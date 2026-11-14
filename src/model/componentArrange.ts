@@ -779,23 +779,54 @@ export function snapToAnchor(
   options?: SnapToAnchorOptions,
 ): ArrangeResult {
   const marking = projectIndex(p).markings.get(markingId) ?? fail('not-found', markingId);
-  const { rect, clamped } = snappedRect(p, marking, options);
-  if (sameRect(rect, marking.rect)) return { project: p, warnings: [] };
+  const snapped = snappedRect(p, marking, options);
+  const followers = withAnchoredFollowers(p, [markingId]);
+  const { dx, dy, limited } = followersDelta(p, marking, snapped.rect, followers);
+  const warnings = snapped.clamped || limited ? [clampedWarning(p, marking)] : [];
+  if (dx === 0 && dy === 0) return { project: p, warnings };
   if (markingLockStates(p).has(markingId)) fail('locked');
   // As filhas e as ancoradas nela (e as ancoradas dessas) andam o mesmo deslocamento, como em
   // `moveMarking`; o tamanho não muda, então o deslocamento é o do canto.
-  const dx = rect.x - marking.rect.x;
-  const dy = rect.y - marking.rect.y;
-  const followers = withAnchoredFollowers(p, [markingId]);
   const next = {
     ...p,
-    markings: p.markings.map((m) => {
-      if (m.id === markingId) return { ...m, rect };
-      return followers.has(m.id) ? { ...m, rect: translateRect(m.rect, dx, dy) } : m;
-    }),
+    markings: p.markings.map((m) =>
+      followers.has(m.id) ? { ...m, rect: translateRect(m.rect, dx, dy) } : m,
+    ),
   };
-  return {
-    project: settleFrom(p, next, options),
-    warnings: clamped ? [clampedWarning(p, marking)] : [],
-  };
+  return { project: settleFrom(p, next, options), warnings };
+}
+
+/**
+ * O deslocamento do encosto, reduzido para que o conjunto que anda junto (`followers`, a
+ * marcação inclusive) continue dentro da imagem do container: um seguidor que saísse dela seria
+ * convertido em marcação do canvas pelo assentar, soltando a âncora sem aviso. Sem container
+ * (canvas) não há limite. `limited`: o deslocamento teve de ser reduzido além do prendido na
+ * própria marcação.
+ */
+function followersDelta(
+  p: Project,
+  marking: Marking,
+  rect: Rect,
+  followers: ReadonlySet<string>,
+): { readonly dx: number; readonly dy: number; readonly limited: boolean } {
+  const wanted = { dx: rect.x - marking.rect.x, dy: rect.y - marking.rect.y };
+  const index = projectIndex(p);
+  const container =
+    marking.containerId === null ? undefined : index.containers.get(marking.containerId);
+  if (container === undefined) return { ...wanted, limited: false };
+  const bounds = imagePixelRect(container);
+  let [loX, hiX, loY, hiY] = [-Infinity, Infinity, -Infinity, Infinity];
+  for (const id of followers) {
+    const r = (index.markings.get(id) as Marking).rect;
+    loX = Math.max(loX, bounds.x - r.x);
+    hiX = Math.min(hiX, bounds.x + bounds.width - (r.x + r.width));
+    loY = Math.max(loY, bounds.y - r.y);
+    hiY = Math.min(hiY, bounds.y + bounds.height - (r.y + r.height));
+  }
+  // Conjunto mais largo que a imagem não tem deslocamento que o caiba: não anda nesse eixo.
+  const fit = (v: number, lo: number, hi: number): number =>
+    lo > hi ? 0 : Math.min(Math.max(v, lo), hi);
+  const dx = fit(wanted.dx, loX, hiX);
+  const dy = fit(wanted.dy, loY, hiY);
+  return { dx, dy, limited: dx !== wanted.dx || dy !== wanted.dy };
 }

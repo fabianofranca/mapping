@@ -115,6 +115,18 @@ describe('proposta com a direção de leitura', () => {
     expect(applied.direction).toBe('rtl');
   });
 
+  it('proposta antiga do projeto (sem direction no from nem no to) mantém a direção atual', () => {
+    const rtl = setProjectDirection(base, 'rtl');
+    const proposal = build(setProjectDrawingMode(base, 'dark'), base);
+    expect(proposal.changes).toMatchObject([
+      { entity: 'project', from: { drawingMode: null }, to: { drawingMode: 'dark' } },
+    ]);
+    expect(proposal.changes[0]?.to).not.toHaveProperty('direction');
+    const applied = accept(rtl, proposal);
+    expect(applied.drawingMode).toBe('dark');
+    expect(applied.direction).toBe('rtl');
+  });
+
   it('direction fora de ltr/rtl (container ou projeto) é recusada ao ler', () => {
     const container = JSON.parse(
       serializeProposal(build(setContainerDirection(base, 'c1', 'rtl'))),

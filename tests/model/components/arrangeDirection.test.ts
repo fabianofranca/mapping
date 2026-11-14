@@ -306,3 +306,119 @@ describe('arrange com direção', () => {
     ]);
   });
 });
+
+describe('arrange: linha de base do filho na direção (achado 6 do CL2)', () => {
+  // `dir`: o texto de 22/28 só aparece em rtl, antes do de 14/20; a primeira linha de base do
+  // filho muda com a direção. Numa row `align: baseline`, o `txt` (14/20) acompanha a dele.
+  async function ys(direction: 'ltr' | 'rtl'): Promise<number[]> {
+    const { arrange } = await import('../../../src/model/components/arrange');
+    const { approximateMeasurer } =
+      await import('../../../src/model/components/instantiate');
+    const { loadLibrary } = await import('../../../src/model/components/library');
+    const comp = (id: string, template: unknown) =>
+      JSON.stringify({
+        format: 'mapping-component',
+        formatVersion: 4,
+        id,
+        name: id,
+        size: { width: 100, height: 40 },
+        template,
+      });
+    const text = (size: number, lineHeight: number, extra = {}) => ({
+      type: 'text',
+      text: 'Texto',
+      font: { size, lineHeight },
+      ...extra,
+    });
+    const library = loadLibrary([
+      {
+        path: 'spec.json',
+        text: JSON.stringify({
+          format: 'mapping-spec',
+          formatVersion: 4,
+          id: 'm',
+          name: 'M',
+          version: 1,
+          layers: [
+            {
+              id: 'l',
+              name: 'L',
+              annotationTypes: ['row', 'dir', 'txt'].map((id) => ({
+                id,
+                name: id,
+                component: `components/${id}.json`,
+                fields: [],
+              })),
+            },
+          ],
+        }),
+      },
+      {
+        path: 'components/row.json',
+        text: comp('row', {
+          type: 'frame',
+          name: 'row',
+          layout: { type: 'none' },
+          children: [
+            { type: 'slot', name: 's', layout: { type: 'row', align: 'baseline' } },
+          ],
+        }),
+      },
+      {
+        path: 'components/dir.json',
+        text: comp('dir', {
+          type: 'frame',
+          name: 'dir',
+          layout: { type: 'none' },
+          children: [text(22, 28, { visible: { $direction: 'rtl' } }), text(14, 20)],
+        }),
+      },
+      {
+        path: 'components/txt.json',
+        text: comp('txt', {
+          type: 'frame',
+          name: 'txt',
+          layout: { type: 'none' },
+          children: [text(14, 20)],
+        }),
+      },
+    ]);
+    expect(library.problems).toEqual([]);
+    const kid = (id: string, typeId: string) => ({
+      id,
+      typeId,
+      values: {},
+      parentId: 'p',
+      box: { x: 0, y: 0, width: 100, height: 40 },
+    });
+    const screen = {
+      id: 's',
+      name: 'S',
+      width: 400,
+      height: 100,
+      background: '#fff',
+      instances: [
+        {
+          id: 'p',
+          typeId: 'row',
+          values: {},
+          box: { x: 0, y: 0, width: 300, height: 100 },
+        },
+        kid('a', 'dir'),
+        kid('b', 'txt'),
+      ],
+    } as unknown as Screen;
+    const out = arrange(screen, library, approximateMeasurer, direction);
+    return out.instances.filter((i) => i.parentId).map((i) => i.box.y);
+  }
+
+  it('em ltr os dois ficam na mesma linha de base', async () => {
+    const [a, b] = await ys('ltr');
+    expect(b).toBe(a);
+  });
+
+  it('em rtl o filho tem a linha de base do desenho rtl: o de 14 desce 7 px', async () => {
+    const [a, b] = await ys('rtl');
+    expect((b as number) - (a as number)).toBe(7);
+  });
+});
