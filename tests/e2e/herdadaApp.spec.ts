@@ -1,6 +1,6 @@
 // R25.83 to R25.86 (MF3) through the interface: the library that `scripts/testing/herdada.mjs` builds, the
 // Card with a Text inside (the child) and another loose Text on the screen. The child draws in the color the Card
-// offers (the blue `default` of the empty `ink`; red after the `Tinta` field is `#D32F2F`) and the
+// offers (the blue `default` of the empty `ink`; red after the `Ink` field is `#D32F2F`) and the
 // loose Text, in its green `default`. The color is read from the PNG crop of the canvas (as the script does),
 // and `mapping.json` stores nothing of the drawing.
 import { execFileSync } from 'node:child_process';
@@ -208,10 +208,9 @@ test('R25.84 to R25.86: the child inherits the Card color and the disk does not 
   expect(before[1]).toBe(0);
   expect(before[2]).toBeGreaterThan(300);
 
-  // R25.86: the Card's `Tinta` field is `#D32F2F`: the child turns red, the loose Text does not change.
+  // R25.86: the Card's `Ink` field is `#D32F2F`: the child turns red, the loose Text does not change.
   await page.locator('.tree-row').filter({ hasText: 'Card' }).first().click();
-  // pt-BR kept: field label `Tinta` comes from scripts/testing/herdada.mjs (outside this batch)
-  const ink = page.getByLabel('Tinta', { exact: true });
+  const ink = page.getByLabel('Ink', { exact: true });
   await ink.fill('#D32F2F');
   await ink.press('Tab');
   await page.waitForTimeout(1500);
