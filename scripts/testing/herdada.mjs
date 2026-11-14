@@ -1,16 +1,17 @@
-// herdada.mjs: node herdada.mjs <pasta da biblioteca>
-// Prepara uma cópia de `m3-tokens` para o épico "Material 3 fiel, o resto" (R25.83 em diante): a
-// cor herdada da `formatVersion` 4 (`provide` no slot e `$provided` na filha). Troca dois
-// componentes e acrescenta o campo `ink` ao tipo `card`:
-//   - `card` (300 × 120, fundo `#FFF8E1`): um `slot` `conteudo` (10 de folga nos quatro lados,
-//     layout `none`) que oferece `content-color`, com `{ "$field": "ink", "default": "#1976D2" }`:
-//     a cor do campo `ink` do Card, ou azul se ele estiver vazio;
-//   - `text` (200 × 70): um texto `HHHH` em negrito de 56 px (o campo `text`, padrão `HHHH`) cuja
-//     `color` é `{ "$provided": "content-color", "default": "#2E7D32" }`: a cor que o ancestral
-//     mais próximo oferece, ou verde se nenhum oferece.
-// Um Text dentro do Card sai azul (ou da cor do `ink`); um Text solto na tela sai verde.
-// Também tira o campo `interaction` do `card` (o componente mínimo não o desenha), como o
-// `tokens.mjs` do R25.22; sem efeito se a cópia já não o tem.
+// herdada.mjs: node herdada.mjs <library folder>
+// Prepares a copy of `m3-tokens` for the "faithful Material 3, the rest" epic (R25.83 onwards): the
+// inherited color of `formatVersion` 4 (`provide` on the slot and `$provided` on the child). It
+// replaces two components and adds the `ink` field to the `card` type:
+//   - `card` (300 × 120, background `#FFF8E1`): a `slot` `conteudo` (10 of margin on all four sides,
+//     layout `none`) that offers `content-color`, with `{ "$field": "ink", "default": "#1976D2" }`:
+//     the color of the Card's `ink` field, or blue if it is empty;
+//   - `text` (200 × 70): a 56 px bold `HHHH` text (the `text` field, default `HHHH`) whose
+//     `color` is `{ "$provided": "content-color", "default": "#2E7D32" }`: the color the nearest
+//     ancestor offers, or green if none does.
+// A Text inside the Card comes out blue (or in the `ink` color); a Text loose on the screen comes
+// out green.
+// It also removes the `interaction` field from `card` (the minimal component does not draw it), like
+// `tokens.mjs` of R25.22; no effect if the copy no longer has it.
 import fs from 'node:fs';
 
 const dir = process.argv[2];
@@ -22,17 +23,17 @@ for (const layer of spec.layers)
       type.fields = type.fields.filter((f) => f.key !== 'interaction' && f.key !== 'ink');
       type.fields.push({
         key: 'ink',
-        label: 'Tinta',
+        label: 'Ink',
         type: 'string',
         description:
-          'Cor (#RRGGBB) que o Card oferece ao conteúdo dele (content-color); vazia, vale o azul #1976D2.',
+          'Color (#RRGGBB) the Card offers to its content (content-color); when empty, the blue #1976D2 applies.',
       });
       type.examples = (type.examples ?? []).filter(
         (e) => e.values?.interaction === undefined,
       );
     }
-    // O `text` mínimo (200 × 70, texto de 56 px) não comporta os exemplos do Material 3: sem eles a
-    // prova de desenho não avisa `conteúdo maior que a caixa`.
+    // The minimal `text` (200 × 70, 56 px text) does not fit the Material 3 examples: without them the
+    // drawing proof does not warn `content larger than the box`.
     else if (type.id === 'text') delete type.examples;
 fs.writeFileSync(specFile, JSON.stringify(spec, null, 2));
 

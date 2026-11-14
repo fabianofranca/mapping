@@ -5,9 +5,9 @@ import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-// Achado 4.2 da #954: o roteiro R3.10 a R3.17 do `docs/TESTING.md` dizia que o pacote
-// `libraries/material3-compose/` está na versão 2, e ele já estava na 3. O teste amarra o texto
-// do guia à versão que a especialização do pacote declara, e as cópias `mat-vN` à cadeia.
+// Finding 4.2 of #954: the R3.10 to R3.17 script of `docs/TESTING.md` said that the
+// `libraries/material3-compose/` package is at version 2, and it was already at 3. The test ties the
+// guide text to the version the package specialization declares, and the `mat-vN` copies to the chain.
 
 const guide = readFileSync('docs/TESTING.md', 'utf8');
 const spec = JSON.parse(
@@ -15,44 +15,44 @@ const spec = JSON.parse(
 ) as { version: number };
 const row = (id: string): string => {
   const line = guide.split('\n').find((l) => l.startsWith(`| ${id} |`));
-  if (!line) throw new Error(`linha ${id} ausente`);
+  if (!line) throw new Error(`row ${id} missing`);
   return line;
 };
 
-describe('R3.10 a R3.17 do guia seguem a versão do pacote Material 3 (Compose)', () => {
+describe('R3.10 to R3.17 of the guide follow the Material 3 (Compose) package version', () => {
   const v = spec.version;
 
-  it('R3.10 mostra a versão do pacote na janela e na linha', () => {
-    expect(row('R3.10')).toContain(`"v${v} · 50 tipo(s)`);
-    expect(row('R3.10')).toContain(`"v${v} · 3 camada(s)"`);
+  it('R3.10 shows the package version in the window and in the row', () => {
+    expect(row('R3.10')).toContain(`"v${v} · 50 type(s)`);
+    expect(row('R3.10')).toContain(`"v${v} · 3 layer(s)"`);
   });
 
-  it('o preparo gera mat-v(N+1) a mat-v(N+4) a partir da versão atual', () => {
-    expect(guide).toContain(`\`mat-v${v + 1}\` a \`mat-v${v + 4}\``);
-    expect(guide).toContain(`já está na versão ${v};`);
+  it('the setup generates mat-v(N+1) to mat-v(N+4) from the current version', () => {
+    expect(guide).toContain(`\`mat-v${v + 1}\` to \`mat-v${v + 4}\``);
+    expect(guide).toContain(`already at version ${v};`);
     expect(guide).toContain(`s['version'] = ${v + 1}`);
     expect(guide).toContain(`'from': ${v + 1}, 'to': ${v + 2}`);
   });
 
-  it('R3.14 a R3.17 usam as versões deslocadas', () => {
-    expect(row('R3.14')).toContain(`na versão ${v})`);
+  it('R3.14 to R3.17 use the shifted versions', () => {
+    expect(row('R3.14')).toContain(`at version ${v})`);
     expect(row('R3.14')).toContain(`\`mat-v${v + 1}\``);
-    expect(row('R3.14')).toContain(`Da versão ${v} para a ${v + 1}.`);
+    expect(row('R3.14')).toContain(`From version ${v} to ${v + 1}.`);
     expect(row('R3.15')).toContain(`\`mat-v${v + 2}\``);
     expect(row('R3.16')).toContain(`\`mat-v${v + 3}\``);
     expect(row('R3.17')).toContain(`\`mat-v${v + 4}\``);
   });
 });
 
-// Achado do reteste da #1271: o `evolve.py` do guia tinha os ramos v4..v7 trocados e quebrava com
-// `KeyError 'migrations'`. O teste roda o script do guia na cadeia que o preparo manda e confere cada cópia.
-describe('o evolve.py do guia gera a cadeia mat-v(N+1) a mat-v(N+4)', () => {
+// Retest finding of #1271: the guide's `evolve.py` had the v4..v7 branches swapped and broke with
+// `KeyError 'migrations'`. The test runs the guide script on the chain the setup asks for and checks each copy.
+describe('the guide evolve.py generates the mat-v(N+1) to mat-v(N+4) chain', () => {
   const v = spec.version;
-  const after = guide.slice(guide.indexOf('**Preparo do R3.14 a R3.17**'));
+  const after = guide.slice(guide.indexOf('**Preparing R3.14 to R3.17**'));
   const script = /```python\n([\s\S]*?)```/.exec(after)?.[1];
 
-  it('roda sem erro e cada cópia tem a versão, os campos e as migrações certos', () => {
-    if (!script) throw new Error('script evolve.py ausente no guia');
+  it('runs without error and each copy has the right version, fields and migrations', () => {
+    if (!script) throw new Error('evolve.py script missing from the guide');
     const dir = mkdtempSync(join(tmpdir(), 'evolve-'));
     try {
       writeFileSync(join(dir, 'evolve.py'), script);
@@ -110,7 +110,7 @@ describe('o evolve.py do guia gera a cadeia mat-v(N+1) a mat-v(N+4)', () => {
     }
   });
 
-  it('o mat-v5 do R3.18 é válido: slider em décimos (enum) e exemplos só com décimos, sem migrations', () => {
+  it('the mat-v5 of R3.18 is valid: slider in tenths (enum) and examples only with tenths, without migrations', () => {
     const dir = mkdtempSync(join(tmpdir(), 'evolve5-'));
     try {
       writeFileSync(join(dir, 'evolve.py'), script!);
@@ -153,7 +153,7 @@ describe('o evolve.py do guia gera a cadeia mat-v(N+1) a mat-v(N+4)', () => {
     }
   });
 
-  it('o R3.15 diz que o Desfazer volta à versão N+1 do specs', () => {
-    expect(row('R3.15')).toContain(`volta a \`"version": ${v + 1}\``);
+  it('R3.15 says that Undo goes back to version N+1 of the specs', () => {
+    expect(row('R3.15')).toContain(`goes back to \`"version": ${v + 1}\``);
   });
 });

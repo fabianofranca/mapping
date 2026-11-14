@@ -1,5 +1,5 @@
-// Achados 2 e 3 do relato da #838: os scripts do R25.22/R25.23 e as pastas do R25.43/R25.44 do
-// docs/TESTING.md, rodados de verdade contra o pacote do repositório, dão o que o guia promete.
+// Findings 2 and 3 of the report of #838: the R25.22/R25.23 scripts and the R25.43/R25.44 folders of
+// docs/TESTING.md, really run against the repository package, give what the guide promises.
 import { execFileSync } from 'node:child_process';
 import { cpSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -46,8 +46,8 @@ const MSG_15 = 'only allowed with formatVersion 15';
 const MSG_16 = 'only allowed with formatVersion 16';
 
 /**
- * Com a especialização baixada para a 14, só há erros de versão: os da 15 (`tokens`, `icons`, `structural`) e, com o pacote
- * na 16, os da 16 (`fieldModels` e `signature`, `ignore`, `calls` e `formats` do `code.compose`, em cada tipo e caso).
+ * With the specialization lowered to 14, there are only version errors: those of 15 (`tokens`, `icons`, `structural`) and, with the package
+ * at 16, those of 16 (`fieldModels` and `signature`, `ignore`, `calls` and `formats` of `code.compose`, in each type and case).
  */
 function onlyVersionErrors(
   errors: readonly { message: string; path: string }[],
@@ -60,27 +60,27 @@ function onlyVersionErrors(
   );
 }
 
-describe('R25.22 e R25.23: o tokens.mjs do guia mescla os tokens do pacote', () => {
+describe('R25.22 and R25.23: the guide tokens.mjs merges the package tokens', () => {
   const ok = copyPackage('m3-tokens');
   execFileSync('node', [tokensMjs, ok]);
-  const erro = copyPackage('m3-tokens-erro');
-  execFileSync('node', [tokensMjs, erro, 'erro']);
+  const failing = copyPackage('m3-tokens-erro');
+  execFileSync('node', [tokensMjs, failing, 'erro']);
   const v14 = copyPackage('m3-tokens-v14');
   execFileSync('node', [tokensMjs, v14]);
   editJson(join(v14, 'material3-compose.spec.json'), (s) => {
     s.formatVersion = 14;
   });
 
-  it('m3-tokens: valid, sem erro e só com avisos conhecidos, 50 tipos e 50 componentes', () => {
+  it('m3-tokens: valid, no error and only known warnings, 50 types and 50 components', () => {
     const report = validate(ok);
     expect(report.errors).toEqual([]);
     expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
     expect(report.ok).toBe(true);
-    // Valida o pacote inteiro (229 exemplos): passa de 5 s com a cobertura ligada no CI.
+    // Validates the whole package (229 examples): takes over 5 s with coverage on in CI.
   }, 30_000);
 
-  it('m3-tokens-erro: exatamente os dois erros do card.json', () => {
-    const report = validate(erro);
+  it('m3-tokens-erro: exactly the two errors of card.json', () => {
+    const report = validate(failing);
     expect(report.ok).toBe(false);
     expect(report.errors.map((e) => e.file)).toEqual([
       'components/card.json',
@@ -92,7 +92,7 @@ describe('R25.22 e R25.23: o tokens.mjs do guia mescla os tokens do pacote', () 
     ]);
   }, 30_000);
 
-  it('m3-tokens-v14: tokens e icons pedem a 15 e todo o resto é da 16 (fieldModels e assinaturas)', () => {
+  it('m3-tokens-v14: tokens and icons ask for 15 and everything else is from 16 (fieldModels and signatures)', () => {
     const report = validate(v14);
     expect(report.ok).toBe(false);
     expect(report.errors.every((e) => e.file === 'material3-compose.spec.json')).toBe(
@@ -108,7 +108,7 @@ describe('R25.22 e R25.23: o tokens.mjs do guia mescla os tokens do pacote', () 
   }, 30_000);
 });
 
-describe('R25.43 e R25.44: as pastas de tela do guia', () => {
+describe('R25.43 and R25.44: the screen folders of the guide', () => {
   const colorField = typeOf('divider').fields.find((f) => f.key === 'color');
   const dividerColors = colorField?.type === 'enum' ? colorField.options : [];
   const divider = (dir: string) => join(dir, 'components/divider.json');
@@ -116,21 +116,21 @@ describe('R25.43 e R25.44: as pastas de tela do guia', () => {
   const issues = (dir: string) =>
     validate(dir).errors.map((e) => `${e.file}:${e.path}:${e.message}`);
 
-  const tela = copyPackage('m3-tela');
-  editJson(divider(tela), (c) => {
+  const screen = copyPackage('m3-tela');
+  editJson(divider(screen), (c) => {
     c.formatVersion = 4;
     c.screen = { anchor: 'top-left' };
     const template = c.template as { children: { stroke?: unknown }[] };
     template.children[0]!.stroke = { color: '#000000', width: 2, scale: false };
   });
-  const telaV3 = join(work, 'm3-tela-v3');
-  cpSync(tela, telaV3, { recursive: true });
-  editJson(divider(telaV3), (c) => {
+  const screenV3 = join(work, 'm3-tela-v3');
+  cpSync(screen, screenV3, { recursive: true });
+  editJson(divider(screenV3), (c) => {
     c.formatVersion = 3;
   });
   const structural = (dir: string, version: number, dropComponent: boolean) =>
     editJson(specOf(dir), (spec) => {
-      // como o `node -e` do guia: sobe até `version` (`Math.max`) ou, para o `st9`, baixa de propósito
+      // like the guide's `node -e`: raises up to `version` (`Math.max`) or, for `st9`, lowers on purpose
       spec.formatVersion =
         version >= 15 ? Math.max(spec.formatVersion as number, version) : version;
       const layers = spec.layers as { annotationTypes: Record<string, unknown>[] }[];
@@ -141,33 +141,33 @@ describe('R25.43 e R25.44: as pastas de tela do guia', () => {
       }
     });
   const st = join(work, 'm3-tela-st');
-  cpSync(tela, st, { recursive: true });
+  cpSync(screen, st, { recursive: true });
   structural(st, 15, false);
   const st9 = join(work, 'm3-tela-st9');
-  cpSync(tela, st9, { recursive: true });
+  cpSync(screen, st9, { recursive: true });
   structural(st9, 14, true);
 
-  it('m3-tela: valid, sem erro e só com avisos conhecidos', () => {
-    const report = validate(tela);
+  it('m3-tela: valid, no error and only known warnings', () => {
+    const report = validate(screen);
     expect(report.errors).toEqual([]);
     expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
   }, 30_000);
 
-  it('m3-tela-v3: erros "only allowed with formatVersion 4", todos no divider', () => {
+  it('m3-tela-v3: "only allowed with formatVersion 4" errors, all in the divider', () => {
     const msg = 'only allowed with formatVersion 4';
-    expect(issues(telaV3).sort()).toEqual(
+    expect(issues(screenV3).sort()).toEqual(
       [
         'screen',
         'template.children[0].stroke.scale',
         'template.children[0].layout.type',
         'template.children[0].children[1].width',
         'template.children[0].children[1].height',
-        // a cor do papel escolhido (MF5): um `$token` em cada caso do `$switch` e no padrão
+        // the chosen role's color (MF5): a `$token` in each case of the `$switch` and in the default
         ...dividerColors.map(
           (role) => `template.children[0].children[1].fill.cases.${role}`,
         ),
         'template.children[0].children[1].fill.default',
-        // o recuo por ponta (MF5): o tamanho das duas pontas vem de expressão
+        // the per-end inset (MF5): the size of the two ends comes from an expression
         'template.children[0].children[0].width',
         'template.children[0].children[0].height',
         'template.children[0].children[2].width',
@@ -178,13 +178,13 @@ describe('R25.43 e R25.44: as pastas de tela do guia', () => {
     );
   });
 
-  it('m3-tela-st: um erro, o tipo estrutural com component', () => {
+  it('m3-tela-st: one error, the structural type with a component', () => {
     expect(issues(st)).toEqual([
       'material3-compose.spec.json:layers[2].annotationTypes[25].structural:a structural type does not draw: it cannot have a component',
     ]);
   });
 
-  it('m3-tela-st9 (formatVersion 14): structural, tokens e icons pedem a 15 e o resto é da 16', () => {
+  it('m3-tela-st9 (formatVersion 14): structural, tokens and icons ask for 15 and the rest is from 16', () => {
     const errors = validate(st9).errors;
     expect(onlyVersionErrors(errors)).toBe(true);
     expect(

@@ -1,4 +1,4 @@
-// R26 (Importing the signature): the helper `scripts/testing/assinatura.mjs` writes the `spec` and the sheet of the
+// R26 (Import the signature): the helper `scripts/testing/assinatura.mjs` writes the `spec` and the sheet of the
 // nth reply of `plan_signature_import` in the stdio client's output, and checks that reimporting
 // changes nothing. The test builds the output in the format of `mcp-stdio-client.mjs`.
 import { spawnSync } from 'node:child_process';
@@ -60,7 +60,7 @@ describe('assinatura.mjs (R26)', () => {
     mkdirSync(pacote);
     const r = run('gravar', saida, pacote, ficha, 'lib.spec.json', '2');
     expect(r.status, r.stderr).toBe(0);
-    expect(r.stdout).toContain('gravado: lib.spec.json e signatures/b.json');
+    expect(r.stdout).toContain('written: lib.spec.json and signatures/b.json');
     expect(JSON.parse(readFileSync(path.join(pacote, 'lib.spec.json'), 'utf8'))).toEqual(
       SPEC,
     );
@@ -86,11 +86,11 @@ describe('assinatura.mjs (R26)', () => {
     mkdirSync(pacote);
     const r = run('gravar', saida, pacote, ficha, 'lib.spec.json');
     expect(r.status).toBe(2);
-    expect(r.stderr).toContain('fora do pacote');
+    expect(r.stderr).toContain('goes outside the package');
     expect(existsSync(path.join(dir, 'fora'))).toBe(false);
   });
 
-  it('igual: says igual and exits with 0; diferente exits with 1', () => {
+  it('igual: says equal and exits with 0; different exits with 1', () => {
     const saida = path.join(dir, 'saida.txt');
     writeFileSync(
       saida,
@@ -98,10 +98,10 @@ describe('assinatura.mjs (R26)', () => {
     );
     const arquivo = path.join(dir, 'lib.spec.json');
     writeFileSync(arquivo, JSON.stringify(SPEC, null, 2));
-    expect(run('igual', saida, arquivo).stdout.trim()).toBe('igual');
+    expect(run('igual', saida, arquivo).stdout.trim()).toBe('equal');
     writeFileSync(arquivo, JSON.stringify({ ...SPEC, version: 3 }));
     const r = run('igual', saida, arquivo);
-    expect(r.stdout.trim()).toBe('diferente');
+    expect(r.stdout.trim()).toBe('different');
     expect(r.status).toBe(1);
   });
 
@@ -121,7 +121,7 @@ describe('assinatura.mjs (R26)', () => {
     expect(erro.stderr).toContain('signature-invalid');
     const falta = run('igual', saida, path.join(dir, 'x.json'), '3');
     expect(falta.status).toBe(2);
-    expect(falta.stderr).toContain('não tem a resposta 3');
+    expect(falta.stderr).toContain('has no response 3');
     expect(run().status).toBe(2);
   });
 });

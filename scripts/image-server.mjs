@@ -1,16 +1,16 @@
-// Servidor de imagens do roteiro R15 (docs/TESTING.md): serve o `foto.png` da própria pasta em
-// http://127.0.0.1:8765, SEM nenhum cabeçalho de CORS (é o ponto do teste), e anota cada pedido
-// em `servidor.log` (uma linha: hora, método, caminho e o cabeçalho `Origin`, ou `none`).
-// Precisa rodar no MESMO computador do Chrome. Só Node, sem dependências:
-//   node servidor-imagens.mjs        (ou o `iniciar-servidor.cmd` que o roteiro manda criar)
-// `GET /parar` (só do próprio computador) encerra o servidor.
+// Image server of test script R15 (docs/TESTING.md): serves the `foto.png` in its own folder at
+// http://127.0.0.1:8765, WITHOUT any CORS header (that is the point of the test), and logs each request
+// in `servidor.log` (one line: time, method, path and the `Origin` header, or `none`).
+// It must run on the SAME computer as Chrome. Node only, no dependencies:
+//   node image-server.mjs        (or the `iniciar-servidor.cmd` that the test script has you create)
+// `GET /parar` (from the computer itself only) shuts the server down.
 import { createServer } from 'node:http';
 import { appendFileSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-/** Cria o servidor (sem ouvir). `dir` tem o `foto.png`; `logFile` recebe uma linha por pedido. */
+/** Creates the server (without listening). `dir` has the `foto.png`; `logFile` gets one line per request. */
 export function createImageServer({ dir, logFile }) {
   const server = createServer((request, response) => {
     const path = (request.url ?? '/').split('?')[0];
@@ -21,14 +21,14 @@ export function createImageServer({ dir, logFile }) {
     );
     if (path === '/parar') {
       response.writeHead(200, { 'content-type': 'text/plain' });
-      response.end('parado');
+      response.end('stopped');
       server.close();
       server.closeAllConnections();
       return;
     }
     if (path !== '/foto.png') {
       response.writeHead(404, { 'content-type': 'text/plain' });
-      response.end('não há');
+      response.end('not found');
       return;
     }
     let photo;
@@ -36,10 +36,10 @@ export function createImageServer({ dir, logFile }) {
       photo = readFileSync(join(dir, 'foto.png'));
     } catch {
       response.writeHead(404, { 'content-type': 'text/plain' });
-      response.end('foto.png não está na pasta do servidor');
+      response.end('foto.png is not in the server folder');
       return;
     }
-    // Sem `Access-Control-Allow-Origin` de propósito, e sem cache (cada pedido aparece no log).
+    // No `Access-Control-Allow-Origin` on purpose, and no cache (each request shows up in the log).
     response.writeHead(200, {
       'content-type': 'image/png',
       'cache-control': 'no-store',
@@ -55,7 +55,7 @@ if (isMain) {
   const server = createImageServer({ dir, logFile: join(dir, 'servidor.log') });
   server.listen(8765, '127.0.0.1', () => {
     process.stdout.write(
-      'Servidor de imagens em http://127.0.0.1:8765 (GET /parar encerra)\n',
+      'Image server at http://127.0.0.1:8765 (GET /parar shuts it down)\n',
     );
   });
 }

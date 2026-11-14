@@ -1,5 +1,5 @@
-// Preparo do R8.5 (achado 1.1, etapa #1533): `mat-sem-badge` precisa estar numa versão acima da
-// do pacote instalado, senão a app responde "Nada a fazer" e nunca chega ao erro do `badge`.
+// Setup of R8.5 (finding 1.1, stage #1533): `mat-sem-badge` must be at a version above the
+// installed package's, otherwise the app answers "Nothing to do" and never reaches the `badge` error.
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -10,7 +10,7 @@ import type { Spec } from '../../src/model/spec';
 
 const read = (file: string): Spec => JSON.parse(readFileSync(file, 'utf8')) as Spec;
 
-describe('scripts/testing/r85-prep.sh (achado 1.1)', () => {
+describe('scripts/testing/r85-prep.sh (finding 1.1)', () => {
   let out = '';
   beforeAll(() => {
     out = mkdtempSync(path.join(tmpdir(), 'r85-'));
@@ -21,7 +21,7 @@ describe('scripts/testing/r85-prep.sh (achado 1.1)', () => {
   });
   afterAll(() => rmSync(out, { recursive: true, force: true }));
 
-  it('mat-sem-badge tem versão acima do pacote instalado e a migração do badge falta', () => {
+  it('mat-sem-badge has a version above the installed package and the badge migration is missing', () => {
     const installed = read('libraries/material3-compose/material3-compose.spec.json');
     const prepared = read(path.join(out, 'mat-sem-badge/material3-compose.spec.json'));
     expect(prepared.version).toBeGreaterThan(installed.version);

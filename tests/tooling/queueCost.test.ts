@@ -634,15 +634,15 @@ describe('docs e skill: o teto do testador conferido pela fila (TC2, decisões 8
     expect(painel).toMatch(/acima do teto do testador \(300 mil\): <id> <ctx>/);
   });
 
-  it('o "Contexto até 300 mil" não manda mais mover roteiros nem chamar o dono', () => {
-    const i = nuvem.indexOf('**Contexto até 300 mil.**');
+  it('the "Context up to 300 thousand" paragraph no longer says to move scripts or call the owner', () => {
+    const i = nuvem.indexOf('**Context up to 300 thousand.**');
     const trecho = nuvem.slice(i, nuvem.indexOf('\n\n', i));
-    expect(trecho).not.toMatch(/move roteiros entre os 5 blocos/);
-    expect(trecho).not.toMatch(/chama o dono/);
-    expect(trecho).toMatch(/toda sessão do testador/);
-    expect(trecho).toMatch(/sessão principal/);
-    expect(trecho).toMatch(/subagentes? por lote/);
-    expect(trecho).toMatch(/sem segurar a etapa/);
+    expect(trecho).not.toMatch(/move (test )?scripts between the (5 )?blocks/);
+    expect(trecho).not.toMatch(/\bcalls? the owner/);
+    expect(trecho).toMatch(/every tester session/);
+    expect(trecho).toMatch(/main session/);
+    expect(trecho).toMatch(/subagents? per batch/);
+    expect(trecho).toMatch(/without holding up the stage/);
     expect(trecho).toMatch(/Teto de contexto do testador/);
   });
 

@@ -1,35 +1,35 @@
 #!/usr/bin/env bash
-# Sobe o ambiente de teste da nuvem (docs/TESTING.md, apêndice A, receitas 1 a 3; e
-# docs/TESTING-NUVEM.md, "Primeiros 10 minutos", itens 1 a 7): build local, servidor estático,
-# build do MCP, tela virtual (Xvfb), D-Bus, AT-SPI e o Chrome for Testing com um perfil novo.
+# Brings up the cloud test environment (docs/TESTING.md, appendix A, recipes 1 to 3; and
+# docs/TESTING-NUVEM.md, "First 10 minutes", items 1 to 7): local build, static server,
+# MCP build, virtual screen (Xvfb), D-Bus, AT-SPI and Chrome for Testing with a fresh profile.
 #
-# Uso:
-#   scripts/testing/cloud-up.sh <pasta-da-rodada> [--restart-chrome | --check-packages]
+# Usage:
+#   scripts/testing/cloud-up.sh <round-folder> [--restart-chrome | --check-packages]
 #
-# Sem --restart-chrome: sobe tudo do zero e confere os itens 4 a 7 dos "Primeiros 10 minutos".
-# Com --restart-chrome: receita 3 do apêndice A (fecha o Chrome pelo CDP, nunca `pkill -f chrome`,
-# e sobe de novo sem duplicar abas).
+# Without --restart-chrome: brings everything up from scratch and checks items 4 to 7 of the "First 10 minutes".
+# With --restart-chrome: recipe 3 of appendix A (closes Chrome through CDP, never `pkill -f chrome`,
+# and brings it up again without duplicating tabs).
 #
-# Com --check-packages: só a pré-conferência dos pacotes (abaixo), para o teste.
+# With --check-packages: only the packages pre-check (below), for the test.
 #
-# Começa conferindo os pacotes do ambiente (xdotool, openbox, import, at-spi, pyatspi e o Chrome).
-# Faltando algum, instala com até 5 tentativas (`CLOUD_UP_RETRY_SLEEP`, padrão 15 s; o apt-get do
-# setup do ambiente às vezes recebe 503) e confere de novo; ainda faltando, sai com o código 14 e a
-# lista. O Chrome não se instala: a falta dele dá 14 direto.
+# It starts by checking the environment's packages (xdotool, openbox, import, at-spi, pyatspi and Chrome).
+# If any is missing, it installs them with up to 5 attempts (`CLOUD_UP_RETRY_SLEEP`, default 15 s; the apt-get of the
+# environment setup sometimes gets a 503) and checks again; if still missing, it exits with code 14 and the
+# list. Chrome is not installed: its absence gives 14 right away.
 #
-# Decisão desta fase: cada conferência tem seu próprio código de saída (10 a 13), para o relato
-# distinguir qual falhou sem precisar reler o texto do erro (10 a 13; 14 = pacote faltando).
+# Decision of this phase: each check has its own exit code (10 to 13), so the report can
+# tell which one failed without rereading the error text (10 to 13; 14 = missing package).
 set -euo pipefail
 
 if [ $# -lt 1 ]; then
-  echo "Uso: $0 <pasta-da-rodada> [--restart-chrome | --check-packages]" >&2
+  echo "Usage: $0 <round-folder> [--restart-chrome | --check-packages]" >&2
   exit 1
 fi
 
-# Resolve a pasta da rodada para absoluta antes de qualquer `cd` (um caminho relativo apontaria
-# para outro lugar depois do `cd "$REPO_DIR"`).
+# Resolve the round folder to absolute before any `cd` (a relative path would point somewhere
+# else after the `cd "$REPO_DIR"`).
 mkdir -p "$1"
-RODADA="$(cd "$1" && pwd)"
+ROUND_DIR="$(cd "$1" && pwd)"
 shift
 RESTART_CHROME=0
 CHECK_PACKAGES=0
@@ -40,8 +40,8 @@ elif [ "${1:-}" = "--check-packages" ]; then
 fi
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-S="$RODADA/apoio"
-mkdir -p "$S" "$RODADA/anexos"
+S="$ROUND_DIR/apoio"
+mkdir -p "$S" "$ROUND_DIR/anexos"
 export APOIO="$S"
 
 CHROME_CMD=(
@@ -51,33 +51,33 @@ CHROME_CMD=(
   --window-position=0,0 --window-size=1600,1200 http://localhost:8080/
 )
 
-# Caminhos conferidos na pré-conferência (as variáveis só existem para o teste).
+# Paths checked in the pre-check (the variables only exist for the test).
 ATSPI_LAUNCHER="${CLOUD_UP_ATSPI_LAUNCHER:-/usr/libexec/at-spi-bus-launcher}"
 CHROME_BIN="${CLOUD_UP_CHROME:-/opt/pw-browsers/chromium}"
 ATSPI_PYTHON="${CLOUD_UP_PYTHON:-/usr/bin/python3.12}"
 PACKAGES=(xdotool at-spi2-core python3-pyatspi openbox imagemagick)
 
-# Imprime, um por linha, o que falta no ambiente (vazio = tudo no lugar).
+# Prints, one per line, what is missing from the environment (empty = everything in place).
 missing_packages() {
   local c
   for c in xdotool openbox import; do
     command -v "$c" >/dev/null 2>&1 || echo "$c"
   done
   [ -e "$ATSPI_LAUNCHER" ] || echo "$ATSPI_LAUNCHER"
-  # O pyatspi do apt vale para o python do sistema (o que o cloud.mjs e o atspi-allow.py usam); o
-  # `python3` do PATH pode ser outra versão, onde ele não carrega: tenta o do sistema e, de reserva, o do PATH.
+  # The apt pyatspi is for the system python (the one cloud.mjs and atspi-allow.py use); the
+  # `python3` on the PATH may be another version, where it does not load: try the system one and, as a fallback, the PATH one.
   "$ATSPI_PYTHON" -c 'import pyatspi' >/dev/null 2>&1 \
     || python3 -c 'import pyatspi' >/dev/null 2>&1 || echo "python3 pyatspi"
   [ -e "$CHROME_BIN" ] || echo "$CHROME_BIN"
 }
 
-# Pré-conferência (etapa #1533, decisão 12): instala o que falta com retry; sai 14 se não couber.
+# Pre-check (stage #1533, decision 12): installs what is missing with retry; exits 14 if it does not fit.
 ensure_packages() {
-  local faltam
-  faltam=$(missing_packages)
-  [ -z "$faltam" ] && return 0
+  local missing
+  missing=$(missing_packages)
+  [ -z "$missing" ] && return 0
   if [ ! -e "$CHROME_BIN" ]; then
-    echo "ERRO: pacotes faltando (o Chrome não se instala): $(printf '%s ' $faltam)" >&2
+    echo "ERROR: missing packages (Chrome is not installed): $(printf '%s ' $missing)" >&2
     exit 14
   fi
   local apt=(apt-get)
@@ -91,9 +91,9 @@ ensure_packages() {
     fi
     [ "$i" -lt 5 ] && sleep $((i * ${CLOUD_UP_RETRY_SLEEP:-15}))
   done
-  faltam=$(missing_packages)
-  if [ -n "$faltam" ]; then
-    echo "ERRO: pacotes faltando depois de 5 tentativas: $(printf '%s ' $faltam)" >&2
+  missing=$(missing_packages)
+  if [ -n "$missing" ]; then
+    echo "ERROR: missing packages after 5 attempts: $(printf '%s ' $missing)" >&2
     exit 14
   fi
 }
@@ -105,24 +105,24 @@ if [ "$CHECK_PACKAGES" -eq 1 ]; then
 fi
 
 check_one_tab() {
-  local linhas
-  linhas=$(curl -s localhost:9222/json/list | grep '"url"' | grep -v 'chrome[:-]' || true)
+  local lines
+  lines=$(curl -s localhost:9222/json/list | grep '"url"' | grep -v 'chrome[:-]' || true)
   local n
-  n=$(printf '%s\n' "$linhas" | grep -c . || true)
+  n=$(printf '%s\n' "$lines" | grep -c . || true)
   if [ "$n" -ne 1 ]; then
-    echo "ERRO: item 7 (abas) falhou: esperava exatamente 1 aba http://localhost:8080/, achei $n:" >&2
-    printf '%s\n' "$linhas" >&2
+    echo "ERROR: item 7 (tabs) failed: expected exactly 1 tab http://localhost:8080/, found $n:" >&2
+    printf '%s\n' "$lines" >&2
     exit 13
   fi
 }
 
 start_display_and_chrome() {
   export DISPLAY=:99
-  # Os processos que ficam de pé sobem com `setsid`, stdin de /dev/null e saída num log: nenhum
-  # segura o terminal nem o pipe de quem chamou o script (`... | tail`), então ele volta sozinho.
+  # The processes that stay up start with `setsid`, stdin from /dev/null and output to a log: none
+  # holds the terminal or the pipe of whoever called the script (`... | tail`), so it returns on its own.
   setsid Xvfb :99 -screen 0 1600x1200x24 </dev/null >"$S/xvfb.log" 2>&1 &
-  # Espera o soquete do X aparecer: 1 s de `sleep` não basta sempre, e o openbox falha calado
-  # ("Failed to open the display") se nascer antes do Xvfb estar de pé.
+  # Wait for the X socket to appear: 1 s of `sleep` is not always enough, and openbox fails silently
+  # ("Failed to open the display") if it starts before Xvfb is up.
   for _ in $(seq 1 50); do
     [ -e /tmp/.X11-unix/X99 ] && break
     sleep 0.2
@@ -136,17 +136,17 @@ start_display_and_chrome() {
 }
 
 if [ "$RESTART_CHROME" -eq 1 ]; then
-  # O servidor persistente do `cloud.mjs run` segura a conexão CDP: para antes de fechar o Chrome
-  # (o próximo `run` sobe outro, ligado ao Chrome novo).
+  # The persistent server of `cloud.mjs run` holds the CDP connection: stop it before closing Chrome
+  # (the next `run` starts another, connected to the new Chrome).
   if [ -f "$S/cloud.pid" ]; then
-    # Só mata se o pid ainda é de um `cloud.mjs` (o número pode ter sido reaproveitado).
+    # Only kill it if the pid still belongs to a `cloud.mjs` (the number may have been reused).
     if tr '\0' ' ' <"/proc/$(cat "$S/cloud.pid")/cmdline" 2>/dev/null | grep -q 'cloud.mjs'; then
       kill "$(cat "$S/cloud.pid")" 2>/dev/null || true
     fi
   fi
   rm -f "$S/cloud.sock" "$S/cloud.pid"
-  # Receita 3 (nuvem): nunca `pkill -f chrome` (mata a própria shell também e conta como
-  # "Crashed", restaurando abas). Fecha pelo CDP e espera o processo sumir de verdade.
+  # Recipe 3 (cloud): never `pkill -f chrome` (it kills the shell itself too and counts as
+  # "Crashed", restoring tabs). Close through CDP and wait for the process to really go away.
   (cd "$REPO_DIR" && node --input-type=module -e "
     import { chromium } from 'playwright';
     const browser = await chromium.connectOverCDP('http://localhost:9222');
@@ -171,7 +171,7 @@ if [ "$RESTART_CHROME" -eq 1 ]; then
   fi
   sleep 2
   check_one_tab
-  echo "cloud-up.sh --restart-chrome: ok, uma aba só."
+  echo "cloud-up.sh --restart-chrome: ok, a single tab."
   exit 0
 fi
 
@@ -182,14 +182,14 @@ ensure_packages
 cd "$REPO_DIR"
 BUILD_LOG="$S/build.log"
 : >"$BUILD_LOG"
-# Etapa #1148, decisão 5: a saída do npm vai para apoio/build.log; com falha, as últimas 40
-# linhas aparecem aqui e o script sai com o código do comando (como antes, por causa do set -e).
+# Stage #1148, decision 5: npm's output goes to apoio/build.log; on failure, the last 40
+# lines show up here and the script exits with the command's code (as before, because of set -e).
 run_logged() {
   echo "+ $*" >>"$BUILD_LOG"
   local rc=0
   "$@" >>"$BUILD_LOG" 2>&1 || rc=$?
   if [ "$rc" -ne 0 ]; then
-    echo "ERRO: '$*' falhou (código $rc); últimas 40 linhas de $BUILD_LOG:" >&2
+    echo "ERROR: '$*' failed (code $rc); last 40 lines of $BUILD_LOG:" >&2
     tail -n 40 "$BUILD_LOG" >&2
     exit "$rc"
   fi
@@ -197,14 +197,14 @@ run_logged() {
 run_logged npm ci
 run_logged npm run build
 
-# A redireção vai no grupo todo: o subshell que espera o servidor também larga o pipe de quem
-# chamou o script (com ela só no `python3`, um `| tail` nunca fechava).
+# The redirection goes on the whole group: the subshell that waits for the server also lets go of the pipe of whoever
+# called the script (with it only on `python3`, a `| tail` never closed).
 (cd dist && exec setsid python3 -m http.server 8080 --bind 127.0.0.1) </dev/null >"$S/http.log" 2>&1 &
 
 run_logged npm run build:mcp
 MCP_VERSION_OUTPUT=$(node dist-mcp/mapping-mcp.js --version)
 
-# Espera o servidor estático com tentativas até um prazo de 15 s.
+# Wait for the static server, retrying up to a 15 s deadline.
 STATUS=""
 for _ in $(seq 1 30); do
   STATUS=$(curl -sI http://localhost:8080/ 2>/dev/null | head -1 || true)
@@ -212,29 +212,29 @@ for _ in $(seq 1 30); do
   sleep 0.5
 done
 if ! printf '%s' "$STATUS" | grep -q '200'; then
-  echo "ERRO: item 4 (servidor estático) falhou: $STATUS" >&2
+  echo "ERROR: item 4 (static server) failed: $STATUS" >&2
   exit 10
 fi
 
 SOURCE_VERSION=$(grep "SERVER_VERSION = '" "$REPO_DIR/mcp/version.ts" | sed -E "s/.*SERVER_VERSION = '([^']+)'.*/\1/")
 if ! printf '%s' "$MCP_VERSION_OUTPUT" | grep -qF -- "$SOURCE_VERSION"; then
-  echo "ERRO: item 5 (versão do MCP) falhou: esperava conter '$SOURCE_VERSION', recebi '$MCP_VERSION_OUTPUT'" >&2
+  echo "ERROR: item 5 (MCP version) failed: expected to contain '$SOURCE_VERSION', got '$MCP_VERSION_OUTPUT'" >&2
   exit 11
 fi
 
 start_display_and_chrome
 
-# `|| true`: o `timeout` expirado (código 124) não pode abortar o script pelo `set -e`; o `if`
-# abaixo dá a mensagem do item 6 e o `exit 12`.
-JANELA=$(timeout 15 bash -c "
+# `|| true`: the expired `timeout` (code 124) must not abort the script through `set -e`; the `if`
+# below gives the item 6 message and the `exit 12`.
+CHROME_WINDOW=$(timeout 15 bash -c "
   while true; do
     W=\$(xdotool search --onlyvisible --name 'Mapping' 2>/dev/null | head -1)
     if [ -n \"\$W\" ]; then echo \"\$W\"; break; fi
     sleep 0.5
   done
 " || true)
-if [ -z "$JANELA" ]; then
-  echo "ERRO: item 6 (janela do Chrome) falhou: xdotool não achou janela 'Mapping'." >&2
+if [ -z "$CHROME_WINDOW" ]; then
+  echo "ERROR: item 6 (Chrome window) failed: xdotool found no 'Mapping' window." >&2
   exit 12
 fi
 
@@ -242,4 +242,4 @@ check_one_tab
 
 node "$REPO_DIR/scripts/testing/cloud.mjs" mark ambiente end
 
-echo "cloud-up.sh: ambiente de pé, conferências 4 a 7 passaram."
+echo "cloud-up.sh: environment up, checks 4 to 7 passed."

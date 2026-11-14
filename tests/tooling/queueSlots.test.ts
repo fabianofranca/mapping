@@ -185,8 +185,8 @@ describe('painel.py — vagas (VG1, #1440)', () => {
       expect(motivo('docs/design-system/a.md', 'docs/design-system/a.md')).toBe(
         '#2 começa',
       );
-      expect(motivo('docs/TESTING-NUVEM.md', 'docs/TESTING-NUVEM.md#ambiente')).toBe(
-        '#2 arquivo docs/TESTING-NUVEM.md#ambiente com #1',
+      expect(motivo('docs/TESTING-NUVEM.md', 'docs/TESTING-NUVEM.md#environment')).toBe(
+        '#2 arquivo docs/TESTING-NUVEM.md#environment com #1',
       );
       expect(motivo('tests/tooling/', 'tests/tooling/a.test.ts')).toBe(
         '#2 arquivo tests/tooling/a.test.ts com #1',

@@ -1,10 +1,10 @@
-// Servidor local que imita o GitHub para o R21 (etapa #877): o download direto da release, a API
-// de assets e a CDN deles, servindo os arquivos de uma pasta. Só Node, sem dependências.
-//   node scripts/testing/mock-github-release.mjs <pasta da release> [--direct <status>] [--api <status>]
-// --direct troca a resposta do download direto (ex.: 504); --api, a do JSON da release e dos assets.
-// Escuta em 127.0.0.1, porta livre; a primeira linha da saída é a URL base (aponte
-// MAPPING_GITHUB_BASE para ela e MAPPING_GITHUB_API para <base>/api); cada requisição vira uma
-// linha "GET <caminho>" depois dela. Encerra com Ctrl+C ou kill.
+// Local server that imitates GitHub for R21 (stage #877): the release's direct download, the assets
+// API and their CDN, serving the files of a folder. Node only, no dependencies.
+//   node scripts/testing/mock-github-release.mjs <release folder> [--direct <status>] [--api <status>]
+// --direct changes the response of the direct download (e.g. 504); --api, that of the release JSON and of the assets.
+// Listens on 127.0.0.1, on a free port; the first output line is the base URL (point
+// MAPPING_GITHUB_BASE at it and MAPPING_GITHUB_API at <base>/api); each request becomes a
+// "GET <path>" line after it. Ends with Ctrl+C or kill.
 import { readFileSync, readdirSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { join } from 'node:path';
@@ -18,7 +18,7 @@ const option = (name) => {
 };
 if (!dir) {
   console.error(
-    'uso: node mock-github-release.mjs <pasta da release> [--direct <status>] [--api <status>]',
+    'usage: node mock-github-release.mjs <release folder> [--direct <status>] [--api <status>]',
   );
   process.exit(2);
 }
@@ -31,7 +31,7 @@ const API = '/api/repos/fabianofranca/mapping';
 const server = createServer((req, res) => {
   const url = req.url ?? '';
   console.log(`${req.method} ${url}`);
-  const send = (status, body = 'erro', headers = {}) => {
+  const send = (status, body = 'error', headers = {}) => {
     res.writeHead(status, headers);
     res.end(body);
   };

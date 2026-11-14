@@ -1,7 +1,8 @@
-// Gerador do projeto grande dos passos do R12 (etapa canvas-escala): uma pasta com o `mapping.json`
-// de N marcações (metade de setas), containers de fundo sem arquivo; sem rede e sem imagem.
-//   node scripts/testing/large-project.mjs --marcacoes 2000 --pasta <pasta>
-// N é múltiplo de 20 (100 marcações por container). Imprime o caminho do `mapping.json`.
+// Generator of the large project for the R12 steps (canvas-scale stage): a folder with the
+// `mapping.json` of N markings (half of them arrows), background containers without a file; no
+// network and no image.
+//   node scripts/testing/large-project.mjs --marcacoes 2000 --pasta <folder>
+// N is a multiple of 100 (100 markings per container). Prints the path of the `mapping.json`.
 import { build } from 'esbuild';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -15,7 +16,7 @@ const count = Number(option('marcacoes'));
 const folder = option('pasta');
 if (!Number.isInteger(count) || count < 100 || count % 100 !== 0 || !folder) {
   console.error(
-    'uso: large-project.mjs --marcacoes <n, múltiplo de 100> --pasta <pasta>',
+    'usage: large-project.mjs --marcacoes <n, a multiple of 100> --pasta <folder>',
   );
   process.exit(2);
 }

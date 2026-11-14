@@ -73,7 +73,7 @@ const VALIDAS = [
   'tests/storage/folder*.test.ts',
   'docs/TESTING.md#R9',
   'docs/TESTING.md#RP',
-  'docs/TESTING.md#8-roteiros',
+  'docs/TESTING.md#8-test-scripts',
   'docs/TESTING.md#inicio',
   'docs/ARCHITECTURE.md#performance',
   'CLAUDE.md#architecture-rules',

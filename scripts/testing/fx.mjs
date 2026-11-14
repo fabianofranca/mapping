@@ -1,7 +1,7 @@
-// fx.mjs: node fx.mjs <pasta da biblioteca>
-// Troca o `card` de uma cópia de `m3-tokens` por um componente de formato 4 com as chaves novas
-// do épico "formato 4, extensões" (R25.71 ao R25.74): `stroke.offset`, `wrap: none` cortado,
-// `$token` com `alpha` e raio por `$token`, e `space-evenly` com `reverse`.
+// fx.mjs: node fx.mjs <library folder>
+// Replaces the `card` of a copy of `m3-tokens` with a format 4 component with the new keys of the
+// "format 4, extensions" epic (R25.71 to R25.74): `stroke.offset`, a clipped `wrap: none`,
+// `$token` with `alpha` and radius by `$token`, and `space-evenly` with `reverse`.
 import fs from 'node:fs';
 
 const file = process.argv[2] + '/components/card.json';
@@ -23,13 +23,13 @@ const card = {
     fill: '#FFFFFF',
     layout: { type: 'none' },
     children: [
-      // O anel afastado 4 da forma, por fora (raio 8 + 4).
+      // The ring 4 away from the shape, on the outside (radius 8 + 4).
       rect(30, 30, 80, 30, {
         cornerRadius: 8,
         fill: '#E0E0E0',
         stroke: { color: '#000000', width: 2, align: 'outside', offset: 4 },
       }),
-      // A linha que passa da caixa de 40 px sai cortada no meio da letra.
+      // The line that overflows the 40 px box comes out cut in the middle of a letter.
       {
         type: 'text',
         anchors: { left: 150, top: 20 },
@@ -42,17 +42,17 @@ const card = {
           size: 16,
           lineHeight: 20,
           wrap: 'none',
-          // Uma linha só, cortada pela caixa de propósito: o maxLines diz isso ao motor, que não avisa
-          // "texto maior que a caixa" (o R25.71 espera só os avisos de parâmetro fora da ficha).
+          // A single line, cut by the box on purpose: maxLines tells the engine so, which then does not
+          // warn "text larger than the box" (R25.71 expects only the parameter-outside-the-sheet warnings).
           maxLines: 1,
         },
       },
-      // Raio e cor por token; a cor com metade do alfa.
+      // Radius and color by token; the color at half alpha.
       rect(30, 85, 60, 25, {
         cornerRadius: { $token: 'corner-small' },
         fill: { $token: 'primary', alpha: 0.5 },
       }),
-      // Dois quadrados com vão igual em volta, na ordem invertida (o azul vem primeiro).
+      // Two squares with equal gaps around them, in reversed order (the blue one comes first).
       {
         type: 'frame',
         anchors: { left: 120, top: 70 },
