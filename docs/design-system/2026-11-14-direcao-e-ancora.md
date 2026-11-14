@@ -1,4 +1,4 @@
-# Direção de leitura (RTL) e âncora entre marcações — [Não lançado] (épico `epic/direcao-e-ancora`)
+# Direção de leitura (RTL) e âncora entre marcações — 2026-11-14 (épico `epic/direcao-e-ancora`)
 
 ## Pendências
 
@@ -9,8 +9,9 @@ A fase R1 (direção no motor, no formato do componente, nas telas sem geometria
 
 ## Sincronização
 
-Preenchida no fechamento do épico.
+Gravado no artefato **Mapping** em 2026-11-14: versão 88 (`1794622204-661c`, guias e índice). Guias: `Canvas.md` (linha de ligação da âncora, em `--color-border-control` com o halo `cv-halo`), `MarkingPanel` (seção **Âncora** e campo **Direção** dos Detalhes do container) e `SettingsDialog` (seção **Direção de leitura**). Nenhum token, componente ou ícone novo; o `tokens.json` não mudou.
 
 ## Ficou sem gravar
 
-Preenchido no fechamento do épico.
+- Previews (`preview.html`) de `MarkingPanel` (seção Âncora, campo Direção), `SettingsDialog` (Direção de leitura) e `Canvas`/`CanvasMarking` (linha de ligação). Motivo: regenerar um preview exige conferir os temas claro e escuro num navegador e reconstruir o `bundle.css` com as regras novas (`src/theme/*.css`), o que muda o que as outras prévias desenham e foge de "mexer só no que a entrega mudou"; fica para um épico de sincronia do `bundle.css`, junto da pendência já aberta em `2026-11-13-sobras-do-testador.md`.
+- A seção somente leitura do Diagnóstico (`DiagnosticsDirection`, só com `rtl`). Motivo: o artefato não tem guia nem preview do Diagnóstico para estender.
