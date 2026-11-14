@@ -92,11 +92,9 @@ describe('library', () => {
   it('instanceLabel: a table value (array/object) counts as empty, never [object Object]', () => {
     const button = loadLibrary(SAMPLE_FILES).types.find((t) => t.id === 'button')!;
     const label = button.labelField!;
-    // pt-BR kept: the default label of the button in viewer/samples/samples.ts (pt-BR sample data)
-    expect(instanceLabel(button, { [label]: [{ a: 'x' }] })).toBe('Botão');
-    // pt-BR kept: same sample default label
+    expect(instanceLabel(button, { [label]: [{ a: 'x' }] })).toBe('Button');
     expect(instanceLabel(button, { [label]: { a: 'x' } as unknown as FieldValue })).toBe(
-      'Botão',
+      'Button',
     );
     expect(instanceLabel(button, { [label]: 42 })).toBe('42');
   });
@@ -118,17 +116,15 @@ describe('library', () => {
       'disabled',
       'action',
     ]);
-    // pt-BR kept: the preview values of the button in viewer/samples/samples.ts (pt-BR sample data)
     expect(initialValues(button!)).toEqual({
-      label: 'Entrar',
+      label: 'Sign in',
       variant: 'primary',
-      icon: 'não',
-      disabled: 'não',
+      icon: 'no',
+      disabled: 'no',
       action: null,
     });
     expect(instanceLabel(button!, { label: 'Save' })).toBe('Save');
-    // pt-BR kept: the default label of the button in viewer/samples/samples.ts (pt-BR sample data)
-    expect(instanceLabel(button!, { label: '  ' })).toBe('Botão');
+    expect(instanceLabel(button!, { label: '  ' })).toBe('Button');
   });
 
   it('records a missing file, an invalid component and broken JSON as problems, without taking down the rest', () => {

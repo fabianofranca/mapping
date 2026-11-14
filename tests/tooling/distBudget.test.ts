@@ -112,7 +112,7 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     expect(bug).toContain('14 KiB (14336 bytes)');
     expect(bug).toContain('32 KiB');
     expect(bug).not.toContain('grew');
-    expect(bug).not.toContain('subidas desde');
+    expect(bug).not.toContain('raises since');
     expect(rest).toEqual([]);
   });
 
@@ -161,7 +161,7 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     const lines = raise({ size: CEILING + 1, review: atLimit - 1 }).split('\n');
     expect(lines[0]).toMatch(new RegExp(`^sobe: ${CEILING} → ${CEILING + KIB16} `));
     expect(lines[1]).toMatch(
-      /^bug: .*65537 bytes contando com esta.*64 KiB \(65536 bytes\)/,
+      /^bug: .*65537 bytes counting this one.*64 KiB \(65536 bytes\)/,
     );
     expect(lines).toHaveLength(2);
   });
@@ -175,11 +175,11 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     expect(lines[1]).toMatch(/^bug: /);
     const reasons = (lines[1] ?? '').slice('bug: '.length).split('; ');
     expect(reasons).toHaveLength(3);
-    expect(reasons[0]).toContain('excesso');
+    expect(reasons[0]).toContain('excess');
     expect(reasons[1]).toContain('grew');
-    expect(reasons[2]).toContain('subidas desde');
+    expect(reasons[2]).toContain('raises since');
     // `since` uses the new ceiling (2 steps), not just the first: 2 × 16,384 + 100,000.
-    expect(reasons[0]).toContain('a subida foi de 32 KiB');
+    expect(reasons[0]).toContain('the raise was 32 KiB');
     expect(reasons[2]).toContain(
       `add up to ${2 * KIB16 + 100000} bytes counting this one`,
     );
@@ -288,7 +288,7 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     };
     expect(after.indexHtmlMaxBytes).toBe(odd + KIB16);
     expect(after.history.at(-1)).not.toMatch(/\d+\.\d+\.\d+ KiB/);
-    expect(after.history.at(-1)).toContain('(1.904,5 KiB)');
+    expect(after.history.at(-1)).toContain('(1,904.5 KiB)');
   });
 
   it('--ci exits with 2 and the message that points to scripts/ci/dist-budget.json (decision 3)', () => {

@@ -1,13 +1,13 @@
-# Workspace de mapeamentos no repositório — [Não lançado] (épico `epic/mappings-workspace`)
+# Mappings workspace in the repository — [Não lançado] (épico `epic/mappings-workspace`)
 
 ## Pendências
 
-Pendências: nenhuma (sem UI do app; só a pasta `mappings-workspace/`, o `.mcp.json` e a configuração de lint).
+Pending: none (no app UI; only the `mappings-workspace/` folder, the `.mcp.json` and the lint configuration).
 
 ## Sincronização
 
-Nenhuma gravação no artefato Mapping do Claude Design: o épico não mudou componentes, tokens nem ícones da app. A biblioteca `mapping-ds` (o design system como especialização) passa a morar em `mappings-workspace/especializacoes/mapping-ds/`, sem mudança de conteúdo.
+Nothing was written to the Mapping artifact of Claude Design: the epic did not change components, tokens or icons of the app. The `mapping-ds` library (the design system as a specialization) now lives in `mappings-workspace/especializacoes/mapping-ds/`, with no change of content.
 
 ## Ficou sem gravar
 
-Nenhuma gravação no artefato Mapping do Claude Design: o épico não mudou componentes, tokens nem ícones da app.
+Nothing was written to the Mapping artifact of Claude Design: the epic did not change components, tokens or icons of the app.

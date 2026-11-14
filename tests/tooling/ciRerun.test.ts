@@ -65,7 +65,7 @@ describe('expected jobs, read from ci.yml', () => {
   it('a matrix of another format makes the script fail', () => {
     const yaml =
       'jobs:\n  test:\n    strategy:\n      matrix:\n        os: [a, b]\n        node: [1, 2]\n    runs-on: x\n';
-    expect(() => expectedOf(yaml)).toThrow(/matriz/);
+    expect(() => expectedOf(yaml)).toThrow(/matrix/);
   });
 });
 

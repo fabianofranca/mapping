@@ -2351,6 +2351,45 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'script-output',
   },
   // ID10 sweep: terms added by area B (docs, changelog, libraries, examples, scripts/testing)
+  {
+    term: 'Selecione onde este site pode salvar mudanças',
+    source: 'scripts/testing/cloud.mjs',
+    group: 'names',
+  },
+  {
+    term: 'Selecione uma pasta que este site pode ver',
+    source: 'scripts/testing/cloud.mjs',
+    group: 'names',
+  },
+  { term: 'título', source: 'scripts/testing/round-guide.mjs', group: 'script-output' },
+  {
+    term: 'já é o registrado; nada mudou',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'Versões',
+    source: 'tests/tooling/designSystemLog.test.ts',
+    group: 'record-titles',
+  },
+  {
+    term: 'Versão',
+    source: 'tests/tooling/designSystemLog.test.ts',
+    group: 'record-titles',
+  },
+  {
+    term: 'Versão N não foi gravada',
+    source: 'tests/tooling/designSystemLog.test.ts',
+    group: 'record-titles',
+  },
+  {
+    term: 'Nada gravado ainda:',
+    source: 'tests/tooling/designSystemLog.test.ts',
+    group: 'record-titles',
+  },
+  { term: 'group="Comentários"', source: 'docs/DESIGN-SYSTEM.md', group: 'names' },
+  { term: 'group="Diálogos"', source: 'docs/DESIGN-SYSTEM.md', group: 'names' },
+  { term: 'CR por épico', source: 'docs/FLOW.md', group: 'names' },
   // ID10 sweep: terms added by area C (src, viewer, other tests)
 ];
 
@@ -2644,18 +2683,6 @@ export const ANNOTATED_FILES: readonly PathException[] = [
       'boolean enum values "sim"/"não" of the engine (FALSY_TEXT in expressions.ts)',
   },
   {
-    path: 'tests/model/components/library.test.ts',
-    annotated: true,
-    reason:
-      'the default label of the button in viewer/samples/samples.ts (pt-BR sample data)',
-  },
-  {
-    path: 'tests/model/components/material3.test.ts',
-    annotated: true,
-    reason:
-      'boolean enum value and slot name of the pt-BR Material 3 sample (viewer/samples/samplesMaterial3.ts)',
-  },
-  {
     path: 'tests/model/components/origin.test.ts',
     annotated: true,
     reason: 'default screen id of the engine (src/model/components/origin.ts)',
@@ -2928,6 +2955,11 @@ export const PORTUGUESE_PATHS: readonly PathException[] = [
   // ID10 sweep: file entries added by area A3
   // ID10 sweep: file entries added by area B
   // ID10 sweep: file entries added by area C
+  {
+    path: 'tests/e2e/fixtures/avisos-demo.spec.json',
+    reason:
+      'fixture data that tests/tooling/testingGuide.test.ts requires equal to the Portuguese JSON block of script R18 in docs/TESTING.md (the notices messages)',
+  },
   {
     path: 'tests/tooling/portugueseAllowlist.ts',
     reason:
@@ -3203,6 +3235,236 @@ export const PORTUGUESE_LINES: readonly LineException[] = [
     pattern: /\bde: '[^']*'(, para: |\s*\})|\bpara: |para: string/,
     reason:
       '`para` is a key of the graph arrows that painel.py emits (`de`, `para`, `tipo`), frozen vocabulary of decision 16',
+  },
+  {
+    path: '.claude/skills/implementar-fila/painel/painel.py',
+    pattern: /\{de, para, tipo\}|"para": k/,
+    reason:
+      'the keys de/para/tipo of the arrows of meta.grafoSetas, written by painel.py and read by the panel page and the graph tests',
+  },
+  {
+    path: '.claude/skills/implementar-fila/painel/painel.py',
+    pattern: /v\.strip\(\) != "não"/,
+    reason:
+      'the ficha value "não" of mcp= and schema= (no MCP or schema change), the frozen panel value the queue tests write',
+  },
+  {
+    path: '.claude/skills/implementar-fila/painel/painel.py',
+    pattern: /troque de sessão agora \(\\"Troca de sessão\\"\)/,
+    reason:
+      'the context note of the show output, matched verbatim by tests/tooling/queueContext.test.ts and queueSlots.test.ts',
+  },
+  {
+    path: '.claude/skills/implementar-fila/painel/index.html',
+    pattern: /\.para\b|'para'|\bpara: /,
+    reason:
+      'the key para of the arrows of meta.grafoSetas ({de, para, tipo}), which painel.py writes and the page reads',
+  },
+  {
+    path: '.claude/skills/supervisionar-fila/passagem/index.html',
+    pattern: /<title>Supervisão da fila<\/title>/,
+    reason:
+      'the artifact name "Supervisão da fila", which the skill looks up by name and tests/tooling/supervisorSkill.test.ts matches',
+  },
+  {
+    path: '.claude/skills/implementar-fila/SKILL.md',
+    pattern: /kind: fase, correção, testador, reteste/,
+    reason:
+      'the session kinds painel.py accepts in kind= (frozen panel values), listed in the usage reference',
+  },
+  // ID10 sweep: line entries added by area A3
+  {
+    path: 'tests/tooling/cloudHelpers.test.ts',
+    pattern: /Selecione uma pasta que este site pode ver/,
+    reason:
+      "the title of Chrome's read-folder dialog in pt-BR, which OPEN_DIALOG_TITLES must recognise (fixture data)",
+  },
+  {
+    path: 'tests/tooling/cloudHelpers.test.ts',
+    pattern: /'ãé✅'|'ç'/,
+    reason:
+      'accented characters are the object of the test: the body and the output cross a socket chunk whole',
+  },
+  {
+    path: 'tests/tooling/scriptsCli.test.ts',
+    pattern: /cópia-|répository|accént|ação ✓|Buffer\.from\('ç'\)/,
+    reason:
+      'accented paths and output are the object of the tests (the CLIs must handle non-ASCII text)',
+  },
+  {
+    path: 'tests/tooling/roundGuide.test.ts',
+    pattern: /\bquando\b/,
+    reason:
+      '`quando` is the field name of the exported SECOES_SOB_DEMANDA records of scripts/testing/round-guide.mjs',
+  },
+  // ID10 sweep: line entries added by area B
+  {
+    path: 'docs/TESTING.md',
+    pattern: /Português \(Brasil\)/,
+    reason:
+      'the name of the pt-BR language in its own language, as the language selector shows it, in the pt-BR steps R8.x and R11.15 and their quoted pt-BR checks',
+  },
+  {
+    path: 'docs/TESTING.md',
+    pattern: /conteúdo maior que a caixa: switch|Ir para Árvore de marcações/,
+    reason:
+      'the pt-BR texts of the app that the pt-BR checks of R8.5c and R11.10 assert (quoted UI text)',
+  },
+  {
+    path: 'docs/TESTING.md',
+    pattern: /Fluxo típico/,
+    reason:
+      'the headings of the Portuguese AGENTS.md of older installs, which the awk of the step matches',
+  },
+  {
+    path: 'docs/TESTING.md',
+    pattern: /Quando o cartão abraça|O contrato aceita avatar; o SDK ainda não/,
+    reason:
+      'sample text whose wrapping R25.9 measures (scripts/testing/fiel.mjs) and the copy of the avisos-demo e2e fixture that testingGuide.test.ts compares',
+  },
+  {
+    path: 'docs/TESTING.md',
+    pattern:
+      /Sair da página\?|Sair do site\?|Selecione onde|Selecione uma pasta|Não permitir|contém\s.*arquivos do sistema|Permitir que este site|Aviso: este site pode conferir/,
+    reason:
+      "titles and buttons of Chrome's own dialogs in pt-BR, which the cloud recipes look for (runtime data of the browser)",
+  },
+  {
+    path: 'docs/COMPONENT-FORMAT.md',
+    pattern: /"não", "nao"|\["sim", "não"\]/,
+    reason:
+      'the false values the engine recognizes and the stored options of a boolean enum field (decision 7 of #741)',
+  },
+  {
+    path: 'libraries/kotlin/',
+    pattern: /"não"/,
+    reason:
+      'the Kotlin options `sim`/`não` stay as stored data (decision 7 of #741): option, default and example values',
+  },
+  {
+    path: 'examples/specs/sdui.json',
+    pattern: /"não": "no"/,
+    reason: 'option value `não` of the boolean mapping, stored data (decision 7 of #741)',
+  },
+  {
+    path: 'examples/libraries/sdui-backend/sdui-backend.spec.json',
+    pattern: /"não": "no"/,
+    reason: 'option value `não` of the boolean mapping, stored data (decision 7 of #741)',
+  },
+  {
+    path: 'scripts/testing/fiel.mjs',
+    pattern: /Quando o cartão abraça/,
+    reason:
+      'sample text whose wrapping the R25.9 measurements of docs/TESTING.md depend on (W 150 to 202, H 56)',
+  },
+  {
+    path: 'scripts/testing/round-guide.mjs',
+    pattern: /\bquando\b/,
+    reason:
+      'field `quando` of SECOES_SOB_DEMANDA (Portuguese-named API: chave, titulo, fonte), read by tests/tooling/roundGuide.test.ts',
+  },
+  {
+    path: 'scripts/testing/round-guide.d.mts',
+    pattern: /\bquando\b/,
+    reason: 'type of the `quando` field of SECOES_SOB_DEMANDA (see round-guide.mjs)',
+  },
+  {
+    path: 'changelog/english.md',
+    pattern: /Português \(Brasil\)|`sim`\/`não`/,
+    reason:
+      'the pt-BR language name in its own language, and the Kotlin option values that stay as stored data (decision 7 of #741)',
+  },
+  // ID10 sweep: line entries added by area C
+  {
+    path: 'src/model/components/componentFormat.ts',
+    pattern: /"não"/,
+    reason:
+      'the boolean text `"não"` that the components engine treats as false (FALSY_TEXT in expressions.ts; stored data, decision 7 of #741)',
+  },
+  {
+    path: 'src/model/components/expressions.ts',
+    pattern: /não/,
+    reason:
+      'FALSY_TEXT: the engine treats the Portuguese boolean words `não`/`nao` as false because stored projects use them (decision 7 of #741)',
+  },
+  {
+    path: 'tests/e2e/guide.spec.ts',
+    pattern: /'Próximo'|'Containers e marcações'|'Trancada e posição a revisar'/,
+    reason:
+      'the pt-BR half of the bilingual interactive guide: the test checks the pt-BR strings of the guide',
+  },
+  {
+    path: 'tests/examples/guide.test.ts',
+    pattern:
+      /Container com marcações|Containers e marcações|você\|clique\|camada\|marcação/,
+    reason:
+      'the pt-BR half of the bilingual interactive guide, and the Portuguese words the test forbids in the English texts',
+  },
+  {
+    path: 'tests/mcp/code.test.ts',
+    pattern: /Formulário|Título/,
+    reason:
+      'shared fixture data: the marking `Formulário` and the annotation `Título` of the `cadastro` workspace project (tests/mcp/workspace.ts, specFixtures), asserted across tests/mcp',
+  },
+  {
+    path: 'tests/mcp/imageFixtures.ts',
+    pattern: /Formulário|Título/,
+    reason:
+      'shared fixture data: the marking `Formulário` and the annotation `Título` of the `cadastro` workspace project (tests/mcp/workspace.ts, specFixtures), asserted across tests/mcp',
+  },
+  {
+    path: 'tests/mcp/images.test.ts',
+    pattern: /Formulário|Título/,
+    reason:
+      'shared fixture data: the marking `Formulário` and the annotation `Título` of the `cadastro` workspace project (tests/mcp/workspace.ts, specFixtures), asserted across tests/mcp',
+  },
+  {
+    path: 'tests/mcp/read.test.ts',
+    pattern: /Formulário|Título/,
+    reason:
+      'shared fixture data: the marking `Formulário` and the annotation `Título` of the `cadastro` workspace project (tests/mcp/workspace.ts, specFixtures), asserted across tests/mcp',
+  },
+  {
+    path: 'tests/mcp/threads.test.ts',
+    pattern: /Formulário|Título/,
+    reason:
+      'shared fixture data: the marking `Formulário` and the annotation `Título` of the `cadastro` workspace project (tests/mcp/workspace.ts, specFixtures), asserted across tests/mcp',
+  },
+  {
+    path: 'tests/mcp/threadsRefs.test.ts',
+    pattern: /Formulário|Título/,
+    reason:
+      'shared fixture data: the marking `Formulário` and the annotation `Título` of the `cadastro` workspace project (tests/mcp/workspace.ts, specFixtures), asserted across tests/mcp',
+  },
+  {
+    path: 'tests/mcp/workspace.ts',
+    pattern: /Formulário|Título/,
+    reason:
+      'shared fixture data: the marking `Formulário` and the annotation `Título` of the `cadastro` workspace project (tests/mcp/workspace.ts, specFixtures), asserted across tests/mcp',
+  },
+  {
+    path: 'tests/mcp/write.test.ts',
+    pattern: /Formulário|Título/,
+    reason:
+      'shared fixture data: the marking `Formulário` and the annotation `Título` of the `cadastro` workspace project (tests/mcp/workspace.ts, specFixtures), asserted across tests/mcp',
+  },
+  {
+    path: 'tests/mcp/justificadoScript.test.ts',
+    pattern: /véu|translúcido/,
+    reason:
+      'node names of the component written by scripts/testing/justificado.mjs, which the test looks up',
+  },
+  {
+    path: 'tests/mcp/previewInBatch.test.ts',
+    pattern: /disabled: 'não'/,
+    reason:
+      'the default value of the boolean field `disabled` of the frozen fixture material3-m3-v1.json (stored data)',
+  },
+  {
+    path: 'tests/model/fixtures.ts',
+    pattern: /Maçaneta|média/,
+    reason:
+      'shared fixture data (sampleProject: marking Maçaneta, pair value média) asserted by tests/model, tests/store and tests/components',
   },
 ];
 

@@ -394,6 +394,6 @@ describe('custo.py (decision 19)', () => {
       encoding: 'utf8',
     });
     expect(bad.status).toBe(2);
-    expect(bad.stderr).toContain('linha 1');
+    expect(bad.stderr).toContain('line 1');
   });
 });

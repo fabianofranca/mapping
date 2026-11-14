@@ -13,9 +13,11 @@ Create a roadmap issue (or bug, if it is a defect): <idea or problem>. Origin: <
 Portuguese (what the owner types):
 
 <!-- portuguese-guard:begin what the owner types in the chat stays in Portuguese -->
+
 ```text
 Crie uma issue roadmap (ou bug, se for defeito): <ideia ou problema>. Origem: <de onde veio>.
 ```
+
 <!-- portuguese-guard:end -->
 
 For a bug, the agent first looks for an identical issue or one that groups it and sets the severity label (`severity: high`, `severity: medium` or `severity: low`), as `docs/PROCESS.md` says ("Bugs and visual evidence"). The `roadmap` is born with the impact label (`impact: high`, `impact: medium` or `impact: low`) and the `Impacto:` line in the body ("Issue planning" › Impact); the message does not need to ask for it.
@@ -29,9 +31,11 @@ Detail issue #<roadmap or bug> as a stage, with the phases and the models table 
 Portuguese (what the owner types):
 
 <!-- portuguese-guard:begin what the owner types in the chat stays in Portuguese -->
+
 ```text
 Detalhe a issue #<roadmap ou bug> como etapa, com as fases e a tabela de modelos (linha Orquestrador e coluna Testador). Pergunte o que for decisão de produto. Ao terminar, ponha o rótulo `ready` e tire o `roadmap` (o `bug` e o `impact:` ficam).
 ```
+
 <!-- portuguese-guard:end -->
 
 To detail at once all the `roadmap` and `bug` issues that are not `ready` yet (in a chat in Auto mode): `/detalhar-backlog`. The skill (`.claude/skills/detalhar-backlog/SKILL.md`) creates an Opus subagent (`Agent` tool, in the background) that proposes merging issues into a single epic, to have fewer MCP versions and a single tester round. Then it creates up to 3 Opus detailing subagents at a time and brings their questions to the owner through the question picker, always with a recommended option; the answers go back to the same subagent through `SendMessage`. Since the `Agent` tool accepts `effort`, each unit runs at high effort when the skill's criteria point to it (schema or format, writing of `mapping.json`, cross-cutting architecture, large plan) and at medium otherwise (`alto=#a,#b` forces high, `alto=nenhum` puts everything at medium), with no manual prompt for the owner. Before writing the plan, each detailing checks it against the code of `main` (files, versions, scripts, phases the size of one session, and overlap with the other `ready` and `in-progress` ones). Each stage comes out with the `**Depende de:**` line, which gives the implementation order, and with the "`Toca em:`" of each phase in files and sections, never a folder or a whole document, checked with `painel.py toca`; the `Depende de` covers the `ready` and `in-progress` ones that touch the same files (not counting the records of each epic nor `mcp/version.ts`; it compares `docs/TESTING.md` per script, every `docs/*.md`, the root `.md` files (`CLAUDE.md`, `README.md`) and the `SKILL.md` files per `##` section (`docs/ARCHITECTURE.md#performance`, `CLAUDE.md#architecture-rules`) and does not count the table of blocks, `docs/TESTING-NUVEM.md#full-round-in-blocks`), and every issue the skill creates carries the line `Origem: etapa #<n>`.
@@ -45,9 +49,11 @@ Implement stage #<stage> in the automated flow. Call me only to confirm the merg
 Portuguese (what the owner types):
 
 <!-- portuguese-guard:begin what the owner types in the chat stays in Portuguese -->
+
 ```text
 Implemente a etapa #<etapa> no fluxo automatizado. Me chame só para confirmar o merge.
 ```
+
 <!-- portuguese-guard:end -->
 
 To confirm the final merge, the owner replies in the implementation chat: `pode mesclar`.
@@ -113,6 +119,7 @@ CI runs only on PRs (`pull_request`), once per commit: a branch without a PR has
 The orchestrator creates the session with `create_session`: `model` and `effort` from the table, `source_url` of the repository, `source_revision` = `epic/<name>`, never `permission_mode: plan`. Message:
 
 <!-- portuguese-guard:begin frozen session-to-session message templates matched by tests -->
+
 ```text
 Você é o agente da fase <código> — <título> da etapa #<etapa> do repositório `fabianofranca/mapping`, no fluxo automatizado (docs/PROCESS.md, "Automated flow"). The owner does not follow this session: do not ask them anything, except the item 8 authorization, which they answer in this session's chat.
 
@@ -158,6 +165,7 @@ Você é o agente da fase <código> — <título> da etapa #<etapa> do repositó
 
 Coordenador: `<id da sessão do orquestrador>`
 ```
+
 <!-- portuguese-guard:end -->
 
 ## Fix phase
@@ -170,9 +178,11 @@ With ❌ in the report **or with a pending defect** (the "Defeitos pendentes" of
 The orchestrator finds the "Mapping - testes" environment with `list_environments` and creates the session with `create_session`, the repository's `source_url` and `source_revision` = `epic/<name>`:
 
 <!-- portuguese-guard:begin frozen session-to-session message templates matched by tests -->
+
 ```text
 Read `docs/TESTING-NUVEM.md` and run in modo dirigido: <scripts from the last phase's sub-issue>. Passada visual: <list from the sub-issue, or "nenhuma">. Branch `epic/<name>`, commit `<hash>`. Relato na sub-issue #<last phase>. Tag da release: <mcp-v…-rc.n, or "sem R21">. Whole R0 first. Coordenador: `<id da sessão do orquestrador>`.
 ```
+
 <!-- portuguese-guard:end -->
 
 The release tag blank is always filled in: if the list carries R21 (it tests the real release), the epic's rc (`mcp-v<version>-rc.<n>`); if it does not, `sem R21`.
@@ -180,9 +190,11 @@ The release tag blank is always filled in: if the list carries R21 (it tests the
 Retest, after the fix (only the steps of the findings, never the whole script; findings of low severity stay out of the retest, except one the fix did not reproduce, and an all-low round skips it; R0 only R0.1 and the steps the findings depend on; visual pass only of the windows and dialogs of the findings). The pending defects that were fixed come in through the script steps they affect; with no affected step, the fix's automated test is enough, and a fix of pending defects only, with no script step, skips the retest:
 
 <!-- portuguese-guard:begin frozen session-to-session message templates matched by tests -->
+
 ```text
 Read `docs/TESTING-NUVEM.md` and run in modo dirigido: findings <numbers> of the report at <comment link><and the steps <list> that the pending-defect fixes affect>. Branch `epic/<name>`, commit `<fix hash>`. Relato na sub-issue #<fix phase>. Tag da release: <mcp-v…-rc.n, or "sem R21">. R0 only R0.1 and the steps the findings depend on. Coordenador: `<id da sessão do orquestrador>`.
 ```
+
 <!-- portuguese-guard:end -->
 
 ## Directed round in groups

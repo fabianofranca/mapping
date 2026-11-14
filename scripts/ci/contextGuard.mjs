@@ -125,7 +125,7 @@ export function warningText(contexto, jumps) {
       : 'none recorded';
   return (
     `Context hook: this session is at ${mil} thousand, above the trigger of ${GATILHO / 1000} thousand ` +
-    `(ceiling ${TETO_MIL} thousand; sub-item "Phase context ceiling" do item 3 de "For the phase session", ` +
+    `(ceiling ${TETO_MIL} thousand; sub-item "Phase context ceiling" of item 3 of "For the phase session", ` +
     `docs/FLOW.md). If the phase PR is not open yet and this is not session 5 of 5, ` +
     `hand over now (steps 1 to 5 of the handover), with <n> = ${mil}. ` +
     `With the PR open, or in session 5 of 5, carry on. ` +

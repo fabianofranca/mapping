@@ -69,6 +69,7 @@ A large tool result does not go away from the context: it stays there until the 
 Subagent briefing (a single one for all the candidate issues, with `model: "haiku"`):
 
 <!-- portuguese-guard:begin frozen ficha briefing: its field values are read by painel.py -->
+
 ```text
 Read on GitHub (fabianofranca/mapping), read-only, the issues <#a #b ...>: the body, the sub-issues (get_sub_issues) and the body of each sub-issue. Write nothing. For each issue, return ONE line, and nothing else:
 #<n> | <short title> | dep=<each number of the **Depende de:** with its state, `#a:main,#b:aberta` (an issue closed as completed, with the epic merged, counts as `:main`; closed any other way, `:aberta`), or "nenhuma"> | nivel=<severity: x or impact: x> | mcp=<não, or minor/patch and the requested version> | schema=<não, or vN> | epico=<epic/name> | fases=<code:#sub-issue:coordinator effort, comma-separated, in order> | toca=<files (or pattern with prefix, such as `tests/storage/folder*.test.ts`) and sections of the "Toca em:" of all phases, comma-separated, never a folder nor a whole document with sections, in the format of the `painel.py` comparison: `docs/TESTING.md` by script (`docs/TESTING.md#R12`) and the blocks table as `docs/TESTING-NUVEM.md#full-round-in-blocks`> | testador=<scripts of the Testador section of the last phase; "completa" if it asks for the full round> ; visual=<list or "nenhuma"> ; <tester model and effort>
@@ -78,6 +79,7 @@ Every `docs/*.md` (except `docs/TESTING.md`, by script), the root `.md` files (`
 Convert the old citations in the `toca=`: `docs/TESTING.md` cited with scripts in prose ("R18: …", "R9.12, R12.3") becomes one per script (`docs/TESTING.md#R9,docs/TESTING.md#R12`; a step or range counts as the whole script, and the on-demand ones are `#RP`, `#RF`, `#RA` and `#RB`); without a script, or with a section that is not a script, it goes by the `##` (`docs/TESTING.md#7-how-to-report-a-problem`; `docs/TESTING.md#8-test-scripts` is only the introduction of section 8). `docs/TESTING-NUVEM.md` cited only by the count ("count", "the table", "Steps") becomes `docs/TESTING-NUVEM.md#full-round-in-blocks`; cited for anything else, it goes by the `##` section (`docs/TESTING-NUVEM.md#report`).
 Also convert the folder and the whole document (never a folder nor a whole document with sections): the folder becomes the files under it that the issue cites (with none, the ones the plan describes, found in the code); the generated folder, the generated file that changes with it (`examples/full-example/` becomes `examples/full-example.zip`, `public/guide/` becomes `public/guide/index.html`); the pattern without prefix (`src/i18n/*`), the files it matches and the issue cites; the whole document, the sections the issue cites in prose or, without them, the ones the plan describes, reading the document; a new file without a name is dropped, and one with a name goes in (`src/model/direction.ts (novo)`). Before returning, run `painel.py toca "<the row's toca=>"` on each row and only return the row with `ok` (the `exclusive=sim` stage is the exception: the panel does not validate its `toca=`, so a folder or whole document there does not prevent the return, and the `inválida:` of `toca` is only a warning); what the issue and the code do not say stays `?`, never the folder or the whole document.
 ```
+
 <!-- portuguese-guard:end -->
 
 Write each line with `row '#n' plan="<the line>"` (and `title`). The phases in `fases=` enter by themselves into `phases`, as `todo`, from the ficha ("Panel", "Phases of the row"). Without the state in `dep=`, the old ficha counts as an open dependency.
@@ -132,11 +134,13 @@ Follow `docs/FLOW.md` ("Orchestrator — step by step" and the messages), with w
    The message is **short** (do not copy the text of "For the phase session" from `docs/FLOW.md`; the child reads it):
 
    <!-- portuguese-guard:begin frozen phase message template, matched by tests -->
+
    ```text
    Fase <código> — <título> da etapa #<etapa> (sub-issue #<fase>), of the repository `fabianofranca/mapping`, in the automated flow. Epic `epic/<name>`, short branch `<branch>`. Follow the "For the phase session" message of `docs/FLOW.md` (items 1 to 9) with these values; subagents and effort: those of the sub-issue. Item 10 (`/code-review` review): <level, or "not applicable">. Label `mcp-rc`: <yes, or "no">.
    <queue lines, below>
    Coordenador: `<id>`
    ```
+
    <!-- portuguese-guard:end -->
 
    The queue lines, before "Coordenador":

@@ -1,13 +1,13 @@
-# Material 3 com estados de interação — [Não lançado] (épico `epic/material3-estados`)
+# Material 3 with interaction states — [Não lançado] (épico `epic/material3-estados`)
 
 ## Pendências
 
-Nenhuma. O épico só mexe na biblioteca `material3-compose`, na documentação da skill e dos formatos e nos roteiros; nenhum componente, token ou ícone do design system da app muda.
+None. The epic only touches the `material3-compose` library, the documentation of the skill and of the formats and the scripts; no component, token or icon of the app's design system changes.
 
 ## Sincronização
 
-Nada a gravar no artefato **Mapping**: o épico não muda componente, token nem ícone da app.
+Nothing to write to the **Mapping** artifact: the epic does not change a component, token or icon of the app.
 
 ## Ficou sem gravar
 
-Nada.
+None.

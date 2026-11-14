@@ -667,7 +667,10 @@ function parseBlocks(
       paragraphLines.push((lines[i] as string).trim());
       i++;
     }
-    blocks.push({ type: 'paragraph', inlines: paragraphInlines(paragraphLines, lineBreaks) });
+    blocks.push({
+      type: 'paragraph',
+      inlines: paragraphInlines(paragraphLines, lineBreaks),
+    });
   }
   return blocks;
 }

@@ -2,10 +2,10 @@
 
 ## Alterado
 
-- **The sheet's `toca=` accepts only files and sections (for whoever drives the flow, #1812, phase TA1):** the citation now accepts only a file (or a pattern with a prefix, such as `tests/storage/folder*.test.ts`) and a document section (`docs/TESTING.md#R9`, `CLAUDE.md#architecture-rules`). A folder (`src/model/`), `**`, a pattern without a prefix, a document with sections taken whole (`docs/TESTING.md`) and an anchor out of form give `ficha incompleta (toca: <citação>)` on the panel, and the sheet has to be redone (`fichas a refazer:` of `show`).
+- **The sheet's `toca=` accepts only files and sections (for whoever drives the flow, #1812, phase TA1):** the citation now accepts only a file (or a pattern with a prefix, such as `tests/storage/folder*.test.ts`) and a document section (`docs/TESTING.md#R9`, `CLAUDE.md#architecture-rules`). A folder (`src/model/`), `**`, a pattern without a prefix, a document with sections taken whole (`docs/TESTING.md`) and an anchor out of form give `ficha incompleta (toca: <citation>)` on the panel, and the sheet has to be redone (`fichas a refazer:` of `show`).
 - **Practical effect:** a stage no longer holds back another that only touches a different file in the same folder or a different section of the same document. The queue ran with 1 of 8 slots for about 25 h because of this.
 - **Stage already started:** one started with an old citation keeps conflicting as it does today until the sheet is redone. The `exclusive=sim` line does not go through this validation.
-- **New command `python3 .claude/skills/implementar-fila/painel/painel.py toca "<citações separadas por vírgula>"`:** prints `ok` (code 0) or one `inválida: <citação> — <motivo>` line per citation (code 1). It does not go into `apply`.
+- **New command `python3 .claude/skills/implementar-fila/painel/painel.py toca "<citations separated by commas>"`:** prints `ok` (code 0) or one `inválida: <citation> — <reason>` line per citation (code 1). It does not go into `apply`.
 - **The detailing and the sheet write the "Toca em:" in files and sections (for whoever drives the flow, #1812, phase TA2):** `/detalhar-backlog`, the "Ficha da etapa" of `implementar-fila`, `docs/PROCESS.md` and `docs/FLOW.md` now ask for files (or a pattern with a prefix) and sections, never a folder or a whole document, and check the list with `painel.py toca` before writing. The "Entre etapas" says to redo, in the same merge cycle, the sheets in `fichas a refazer:` from the "Toca em:" of the phase sub-issues, without editing an issue.
 
 ## Corrigido

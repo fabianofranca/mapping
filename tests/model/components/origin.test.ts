@@ -629,9 +629,8 @@ describe('translateSource: the field path comes from path, never from name', () 
   });
 });
 
-// pt-BR kept: boolean enum values of the pt-BR Material 3 sample (viewer/samples/samplesMaterial3.ts)
-const YES = 'sim';
-const NO = 'não';
+const YES = 'yes';
+const NO = 'no';
 
 describe('contract: Material 3 and the settings SDUI', () => {
   it('translates settings.sdui.json without any warning and with the expected tree', () => {

@@ -10,7 +10,7 @@
   - `onCanvas(page, { x, y })` returns `{ ok, element }`: does the point fall on the canvas, or is the minimap, a window or the bar on top of it? It is the single check for `ponto`, `drag` and `paletteDrag`.
   - `viewCenter(page)` returns the center of the view, in screen px and in canvas units.
   - `arrowHandlesOf(page)` returns the middle and the handles of the selected arrow already as a screen point, or `null` (with `parseArrowHandles` and `parseContainerBoxes`, the pure parts).
-- The `Seleção:` line of `state()`, after `Foco:`, says what the click selected: `marcação "Lado" (<id>)`, `seta "A → B" (<id>)`, `container "Tela" (<id>)` or `nenhuma` (without a folder or with a proposal item in the review, `marking <id>`).
+- The `Selection:` line of `state()`, after `Focus:`, says what the click selected: `marking "Side" (<id>)`, `arrow "A → B" (<id>)`, `container "Screen" (<id>)` or `none` (without a folder or with a proposal item in the review, `marking <id>`).
 - Appendix A of `docs/TESTING.md` gains the three attributes, the view center, the visible area, the overlay, the example with the arrow and the `menuitemradio` of the stroke menu.
 
 ## Alterado

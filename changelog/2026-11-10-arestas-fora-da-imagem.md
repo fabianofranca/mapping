@@ -2,7 +2,7 @@
 
 ## Adicionado
 
-- MCP: `add_container` accepts `beside` (reference, id or `$alias` of a container): the new one is born to its right (right edge + gap), with the top aligned and the **same `scale`**; an occupied spot goes to the nearest free space, keeping the scale. Exclusive with `center` (`invalid-arguments`). Works with `file` and with a background; the guide's batch ("Conteúdo fora da imagem") now uses it.
+- MCP: `add_container` accepts `beside` (reference, id or `$alias` of a container): the new one is born to its right (right edge + gap), with the top aligned and the **same `scale`**; an occupied spot goes to the nearest free space, keeping the scale. Exclusive with `center` (`invalid-arguments`). Works with `file` and with a background; the guide's batch ("Content outside the image") now uses it.
 
 ## Alterado
 

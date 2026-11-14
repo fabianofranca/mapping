@@ -290,7 +290,7 @@ describe('GC1 — contextGuard.mjs: the state and the trigger (decisions 5, 6 an
     expect(text).toContain('271 thousand');
     expect(text).toContain('270 thousand');
     expect(text).toContain('hand over');
-    expect(text).toContain('5 de 5');
+    expect(text).toContain('5 of 5');
     expect(text).toContain('Subagent: ignore this notice');
     expect(text).not.toContain('\n');
     expect(stateOf(b).ultimoAviso).toBe(TRIGGER + 1);
@@ -306,7 +306,7 @@ describe('GC1 — contextGuard.mjs: the state and the trigger (decisions 5, 6 an
 
     appendFileSync(box.transcript, measure(280_001) + '\n');
     const out = warningOf(hook(box));
-    expect(out.hookSpecificOutput.additionalContext).toContain('281 mil');
+    expect(out.hookSpecificOutput.additionalContext).toContain('281 thousand');
     expect(stateOf(box).ultimoAviso).toBe(280_001);
   });
 });
@@ -323,7 +323,7 @@ describe('GC1 — contextGuard.mjs: the measure drops after a compaction (review
 
     appendFileSync(box.transcript, measure(275_000) + '\n');
     const out = warningOf(hook(box));
-    expect(out.hookSpecificOutput.additionalContext).toContain('275 mil');
+    expect(out.hookSpecificOutput.additionalContext).toContain('275 thousand');
     expect(stateOf(box).ultimoAviso).toBe(275_000);
   });
 
@@ -356,10 +356,10 @@ describe('GC1 — contextGuard.mjs: the jumps (decision 7)', () => {
 
     const bash = `Bash: ${command.slice(0, 40)}`;
     expect(bash).toBe('Bash: npm run lint && npm run typecheck && npm');
-    expect(text).toContain('290 mil');
-    const agent = text.indexOf('Agent: Write the test +90 mil');
-    const read = text.indexOf('Read: docs/FLOW.md +70 mil');
-    const first = text.indexOf(`${bash} +31 mil`);
+    expect(text).toContain('290 thousand');
+    const agent = text.indexOf('Agent: Write the test +90 thousand');
+    const read = text.indexOf('Read: docs/FLOW.md +70 thousand');
+    const first = text.indexOf(`${bash} +31 thousand`);
     expect(agent).toBeGreaterThan(-1);
     expect(read).toBeGreaterThan(agent);
     expect(first).toBeGreaterThan(read);
