@@ -1,7 +1,9 @@
-// Mensagens do modelo que a interface traduz (`ModelMessage`: código + parâmetros; ver
-// `src/model/modelMessage.ts`). A chave é `model.<código>`. Entram nos dicionários por
-// `...modelMessagesPtBR` / `...modelMessagesEnUS`. Mesmas chaves e mesmos {parâmetros} nos dois
-// idiomas; o pt-BR é idêntico ao `text` que o modelo devolve (o que o MCP segue emitindo).
+// Model messages that the interface translates (`ModelMessage`: code + parameters; see
+// `src/model/modelMessage.ts`). The key is `model.<code>`. They enter the dictionaries through
+// `...modelMessagesEnUS` / `...modelMessagesPtBR`. en-US is the base: it defines the keys (the
+// template codes of the model plus the ones written below) and pt-BR is typed against it, with the
+// same keys and the same {parameters}. The pt-BR text is identical to the `text` the model returns
+// (what the MCP keeps emitting).
 
 import {
   MODEL_MESSAGE_TEMPLATES,
@@ -13,45 +15,12 @@ import type { versionMessages } from '../model/messages/versions';
 import { engineEnUS } from './modelMessagesEngine';
 import { componentEnUS, iconsFileEnUS, originsEnUS } from './modelMessagesComponent';
 
-/** As chaves `model.<código>` do catálogo do modelo, com o texto pt-BR dele (sem repetir o texto). */
+/** The `model.<code>` keys of the model catalog, with its pt-BR text (the text is not repeated). */
 const templatePtBR = Object.fromEntries(
   Object.entries(MODEL_MESSAGE_TEMPLATES).map(([code, text]) => [`model.${code}`, text]),
 ) as { readonly [C in ModelMessageTemplateCode as `model.${C}`]: string };
 
-export const modelMessagesPtBR = {
-  ...templatePtBR,
-  // Catálogo (src/model/catalog.ts)
-  'model.catalog.fileMissing': 'arquivo ausente ({path})',
-  'model.catalog.invalidComponent': 'componente inválido',
-  'model.catalog.typeOutside': 'tipo "{typeId}" fora da especialização',
-  'model.catalog.typeNoComponent': 'tipo "{typeId}" sem componente',
-  'model.catalog.invalidProblem': '{at}{reason}',
-  // Arrumar (src/model/componentArrange.ts)
-  'model.arrange.overflow': '{label}: conteúdo maior que o container',
-  'model.arrange.outside': '{label}: não cabe em {where}',
-  // Referências nos valores do desenho (src/model/componentValues.ts)
-  'model.value.refBroken': 'referência quebrada: {key}',
-  'model.value.refCycle': 'referência em ciclo: {key}',
-  'model.value.refDeep': 'referência em mais de um nível: {key}',
-  // Carga dos componentes da especialização (src/model/componentCatalog.ts)
-  'model.components.outsideLibrary': '{typeId}: caminho fora da biblioteca: {path}',
-  'model.components.fileMissing': '{typeId}: arquivo ausente ({path})',
-  'model.components.invalid': '{typeId}: {at}{reason}',
-  'model.components.invalidFallback': '{typeId}: componente inválido',
-  'model.icons.outsideLibrary': 'icons: caminho fora da biblioteca: {path}',
-  'model.icons.fileMissing': 'icons: arquivo ausente ({path})',
-  'model.icons.invalid': 'icons: {at}{reason}',
-  'model.icons.invalidFallback': 'icons: conjunto de ícones inválido',
-} as const;
-
-/** Os códigos conhecidos (a chave sem o prefixo `model.`). */
-export type ModelMessageCode = keyof typeof modelMessagesPtBR extends infer K
-  ? K extends `model.${infer C}`
-    ? C
-    : never
-  : never;
-
-/** en-US dos códigos do catálogo `library` (termos do formato, ids e caminhos não se traduzem). */
+/** en-US of the `library` catalog codes (format terms, ids and paths are not translated). */
 const libraryEnUS: {
   readonly [C in keyof typeof libraryMessages as `model.${C}`]: string;
 } = {
@@ -178,7 +147,7 @@ const libraryEnUS: {
     'example screen "{name}" of the system "{system}": {reason}',
 };
 
-/** en-US dos códigos do catálogo `spec` (termos do formato, chaves, ids e caminhos não se traduzem). */
+/** en-US of the `spec` catalog codes (format terms, keys, ids and paths are not translated). */
 const specEnUS: { readonly [C in keyof typeof specMessages as `model.${C}`]: string } = {
   'model.spec.required': 'required',
   'model.spec.mustBeText': 'must be text',
@@ -381,7 +350,7 @@ const specEnUS: { readonly [C in keyof typeof specMessages as `model.${C}`]: str
   'model.spec.tokenModesSameType':
     'the modes of a token must have the same type (text or number)',
   'model.spec.iconsPathShape': 'must be the path of a .json file in the package',
-  // Textos padrão do zod, no inglês do zod
+  // Default zod texts, in zod's English
   'model.spec.zod.invalid_type':
     'Invalid input: expected {expected}, received {received}',
   'model.spec.zod.unrecognized_keys': 'Unrecognized keys: {keys}',
@@ -395,7 +364,7 @@ const specEnUS: { readonly [C in keyof typeof specMessages as `model.${C}`]: str
   'model.spec.zod.not_multiple_of': 'Invalid number: must be a multiple of {divisor}',
 };
 
-/** en-US dos códigos do catálogo `versions` (avisos da especialização e quebras sem migração). */
+/** en-US of the `versions` catalog codes (specialization notices and breaks without a migration). */
 const versionsEnUS: {
   readonly [C in keyof typeof versionMessages as `model.${C}`]: string;
 } = {
@@ -461,7 +430,7 @@ const versionsEnUS: {
     'the type "{typeId}" was removed; declare a "remove-type" or "rename-type" step in migrations',
 };
 
-export const modelMessagesEnUS: Record<keyof typeof modelMessagesPtBR, string> = {
+export const modelMessagesEnUS = {
   ...libraryEnUS,
   ...specEnUS,
   ...versionsEnUS,
@@ -469,16 +438,20 @@ export const modelMessagesEnUS: Record<keyof typeof modelMessagesPtBR, string> =
   ...iconsFileEnUS,
   ...originsEnUS,
   ...engineEnUS,
+  // Catalog (src/model/catalog.ts)
   'model.catalog.fileMissing': 'missing file ({path})',
   'model.catalog.invalidComponent': 'invalid component',
   'model.catalog.typeOutside': 'type "{typeId}" is outside the specialization',
   'model.catalog.typeNoComponent': 'type "{typeId}" has no component',
   'model.catalog.invalidProblem': '{at}{reason}',
+  // Arrange (src/model/componentArrange.ts)
   'model.arrange.overflow': '{label}: content is larger than the container',
   'model.arrange.outside': '{label}: does not fit in {where}',
+  // References in the drawing values (src/model/componentValues.ts)
   'model.value.refBroken': 'broken reference: {key}',
   'model.value.refCycle': 'reference cycle: {key}',
   'model.value.refDeep': 'reference through more than one level: {key}',
+  // Loading the specialization components (src/model/componentCatalog.ts)
   'model.components.outsideLibrary': '{typeId}: path outside the library: {path}',
   'model.components.fileMissing': '{typeId}: missing file ({path})',
   'model.components.invalid': '{typeId}: {at}{reason}',
@@ -487,4 +460,36 @@ export const modelMessagesEnUS: Record<keyof typeof modelMessagesPtBR, string> =
   'model.icons.fileMissing': 'icons: missing file ({path})',
   'model.icons.invalid': 'icons: {at}{reason}',
   'model.icons.invalidFallback': 'icons: invalid icon set',
+} as const satisfies {
+  // Every template code of the model has an en-US text (the extra keys above are allowed).
+  readonly [C in ModelMessageTemplateCode as `model.${C}`]: string;
+} & Readonly<Record<string, string>>;
+
+/** The known codes (the key without the `model.` prefix). */
+export type ModelMessageCode = keyof typeof modelMessagesEnUS extends infer K
+  ? K extends `model.${infer C}`
+    ? C
+    : never
+  : never;
+
+export const modelMessagesPtBR: Record<keyof typeof modelMessagesEnUS, string> = {
+  ...templatePtBR,
+  'model.catalog.fileMissing': 'arquivo ausente ({path})',
+  'model.catalog.invalidComponent': 'componente inválido',
+  'model.catalog.typeOutside': 'tipo "{typeId}" fora da especialização',
+  'model.catalog.typeNoComponent': 'tipo "{typeId}" sem componente',
+  'model.catalog.invalidProblem': '{at}{reason}',
+  'model.arrange.overflow': '{label}: conteúdo maior que o container',
+  'model.arrange.outside': '{label}: não cabe em {where}',
+  'model.value.refBroken': 'referência quebrada: {key}',
+  'model.value.refCycle': 'referência em ciclo: {key}',
+  'model.value.refDeep': 'referência em mais de um nível: {key}',
+  'model.components.outsideLibrary': '{typeId}: caminho fora da biblioteca: {path}',
+  'model.components.fileMissing': '{typeId}: arquivo ausente ({path})',
+  'model.components.invalid': '{typeId}: {at}{reason}',
+  'model.components.invalidFallback': '{typeId}: componente inválido',
+  'model.icons.outsideLibrary': 'icons: caminho fora da biblioteca: {path}',
+  'model.icons.fileMissing': 'icons: arquivo ausente ({path})',
+  'model.icons.invalid': 'icons: {at}{reason}',
+  'model.icons.invalidFallback': 'icons: conjunto de ícones inválido',
 };

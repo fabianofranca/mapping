@@ -18,14 +18,14 @@ import {
   text as m3Text,
 } from '../support/material3Library';
 
-// Guarda (MB6, #1361, decisão 15): nenhum problema ou aviso dos módulos da etapa #1263 chega à
-// interface sem `code`. As entradas vêm de `tests/support/invalidInputs.ts` (documentos válidos
-// estragados de forma sistemática). A lista EXCEPTIONS é a única saída: cada entrada diz o motivo.
+// Guard (MB6, #1361, decision 15): no problem or warning from the stage #1263 modules reaches the
+// interface without a `code`. The inputs come from `tests/support/invalidInputs.ts` (valid documents
+// systematically broken). The EXCEPTIONS list is the only way out: each entry states the reason.
 
 /**
- * Exceções declaradas (decisão 6 e "Fora" da etapa): nenhuma hoje. O texto do `JSON.parse` entra
- * como `{detail}` de `JSON inválido: {detail}`, que tem código; um código do zod fora da lista da
- * decisão 6 só entra aqui, com o motivo, se a guarda o achar.
+ * Declared exceptions (decision 6 and the stage's "Out" list): none today. The `JSON.parse` text enters
+ * as the `{detail}` of `JSON inválido: {detail}`, which has a code; a zod code outside the decision 6
+ * list only enters here, with the reason, if the guard finds it.
  */
 const EXCEPTIONS: { readonly match: RegExp; readonly reason: string }[] = [];
 
@@ -61,8 +61,8 @@ const iconsSet = JSON.parse(readFixture('icons/icons/set.json')) as unknown;
 const m3Spec = JSON.parse(m3Text(SPEC_FILE)) as unknown;
 const m3Button = JSON.parse(m3Text('components/button.json')) as unknown;
 
-describe('guarda: todo problema e aviso do modelo tem código', () => {
-  it('a especialização (parseSpec, specWarnings, diffSpecs)', () => {
+describe('guard: every model problem and warning has a code', () => {
+  it('the specialization (parseSpec, specWarnings, diffSpecs)', () => {
     const valid = parseSpec(m3Spec);
     expect(valid.ok).toBe(true);
     for (const doc of [
@@ -91,10 +91,10 @@ describe('guarda: todo problema e aviso do modelo tem código', () => {
     }
     expect(checked).toBeGreaterThan(500);
     expect(problems).toEqual([]);
-    // 120 s como os testes vizinhos: leva ~24 s (igual no épico sem a CL2) e estourou os 60 s no shard sobrecarregado do CI.
+    // 120 s like the neighboring tests: takes ~24 s (the same on the epic without CL2) and exceeded 60 s on the overloaded CI shard.
   }, 120_000);
 
-  it('o componente (parseComponent)', () => {
+  it('the component (parseComponent)', () => {
     for (const doc of [
       ...brokenDocuments(m3Button, 120),
       ...brokenDocuments(iconsComponent, 80),
@@ -107,7 +107,7 @@ describe('guarda: todo problema e aviso do modelo tem código', () => {
     expect(problems).toEqual([]);
   });
 
-  it('o arquivo de ícones (parseIconsText)', () => {
+  it('the icons file (parseIconsText)', () => {
     for (const doc of brokenDocuments(iconsSet, 120)) {
       const result = parseIconsText(JSON.stringify(doc));
       if (!result.ok) check('icons', result.issues);
@@ -116,7 +116,7 @@ describe('guarda: todo problema e aviso do modelo tem código', () => {
     expect(problems).toEqual([]);
   });
 
-  it('o validador da biblioteca (validateLibrary)', () => {
+  it('the library validator (validateLibrary)', () => {
     const small = [
       { path: 'icons.spec.json', doc: iconsSpec },
       { path: 'components/badge.json', doc: iconsComponent },
@@ -131,12 +131,12 @@ describe('guarda: todo problema e aviso do modelo tem código', () => {
         check('library', validateLibrary({ files, level: 3 }).issues);
       }
     }
-    // arquivo ausente, vazio, solto e JSON quebrado (a biblioteca grande, uma vez cada)
+    // missing, empty, stray file and broken JSON (the large library, once each)
     const base = m3Files.filter((f) => f.text !== undefined);
     const dropped = base.filter((f) => f.path !== 'components/button.json');
-    check('library/ausente', validateLibrary({ files: dropped, level: 3 }).issues);
+    check('library/missing', validateLibrary({ files: dropped, level: 3 }).issues);
     const extra = [...base, { path: 'extra.json', text: '{}' }];
-    check('library/solto', validateLibrary({ files: extra, level: 3 }).issues);
+    check('library/stray', validateLibrary({ files: extra, level: 3 }).issues);
     const brokenJson = base.map((f) =>
       f.path === 'components/button.json' ? { ...f, text: '{' } : f,
     );
@@ -145,7 +145,7 @@ describe('guarda: todo problema e aviso do modelo tem código', () => {
     expect(problems).toEqual([]);
   }, 120_000);
 
-  it('o motor de desenho (instantiate): messages acompanham warnings', () => {
+  it('the drawing engine (instantiate): messages follow warnings', () => {
     for (const doc of brokenDocuments(m3Button, 120)) {
       const parsed = parseComponentText(JSON.stringify(doc));
       if (!parsed.ok) continue;
@@ -158,15 +158,18 @@ describe('guarda: todo problema e aviso do modelo tem código', () => {
       expect(out.messages.map((m) => m.text)).toEqual([...out.warnings]);
       for (const m of out.messages) expect(isModelMessageTemplateCode(m.code)).toBe(true);
     }
-    // 120 s como os testes vizinhos: leva ~1,3 s, mas estourou os 5 s padrão no shard sobrecarregado do CI (CL2).
+    // 120 s like the neighboring tests: takes ~1.3 s, but exceeded the default 5 s on the overloaded CI shard (CL2).
   }, 120_000);
 
-  it('a guarda reprova um problema sem código', () => {
-    check('simulado', [{ message: 'sem código' }, { message: 'x', code: 'nao.existe' }]);
+  it('the guard rejects a problem without a code', () => {
+    check('simulated', [
+      { message: 'no code' },
+      { message: 'x', code: 'does.not.exist' },
+    ]);
     expect(problems).toHaveLength(2);
   });
 
-  it('JSON quebrado sai com código (o texto do JSON.parse fica no {detail})', () => {
+  it('broken JSON comes out with a code (the JSON.parse text stays in {detail})', () => {
     for (const parsed of [
       parseSpecText('{'),
       parseComponentText('{'),
@@ -179,7 +182,7 @@ describe('guarda: todo problema e aviso do modelo tem código', () => {
     expect(problems).toEqual([]);
   });
 
-  it('o auxiliar lê os arquivos da biblioteca (sanidade)', () => {
+  it('the helper reads the library files (sanity)', () => {
     expect(readdirSync(ROOT).length).toBeGreaterThan(0);
     expect(readFileSync(join(ROOT, SPEC_FILE), 'utf8').length).toBeGreaterThan(0);
   });

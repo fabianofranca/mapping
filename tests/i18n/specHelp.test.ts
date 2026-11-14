@@ -3,13 +3,13 @@ import { describe, expect, it } from 'vitest';
 import { specHelpSections } from '../../src/i18n/specHelp';
 import { SPEC_FORMAT_VERSION } from '../../src/model/spec';
 
-// A página "Ajuda → Especializações" (pt-BR) e o docs/SPEC-FORMAT.md descrevem o mesmo
-// formato. Para não divergirem, cada seção da ajuda precisa ter no documento uma seção
-// `## <mesmo título>` com os mesmos blocos de código e todos os termos citados.
+// The "Help → Specializations" page (en-US) and docs/SPEC-FORMAT.md describe the same format. So
+// that they do not diverge, each help section needs a `## <same title>` section in the document
+// with the same code blocks and every term cited.
 
 const doc = readFileSync('docs/SPEC-FORMAT.md', 'utf8');
 
-/** Seções de nível 2 (`## título`) do documento, com o texto até a próxima. */
+/** Level-2 sections (`## title`) of the document, with the text up to the next one. */
 function docSections(markdown: string): Map<string, string> {
   const sections = new Map<string, string>();
   let title: string | null = null;
@@ -31,7 +31,7 @@ function docSections(markdown: string): Map<string, string> {
   return sections;
 }
 
-/** Blocos de código cercados (```), sem a linha de abertura e de fechamento. */
+/** Fenced code blocks (```), without the opening and closing lines. */
 function codeBlocks(markdown: string): string[] {
   return [...markdown.matchAll(/```[^\n]*\n([\s\S]*?)\n```/g)].map((m) => m[1] ?? '');
 }
@@ -79,10 +79,10 @@ function normalized(code: string): string {
 
 const sections = docSections(doc);
 
-describe('ajuda de especializações × docs/SPEC-FORMAT.md', () => {
+describe('specializations help × docs/SPEC-FORMAT.md', () => {
   const help = specHelpSections('en-US');
 
-  it('tem as mesmas seções, na mesma ordem', () => {
+  it('has the same sections, in the same order', () => {
     const titles = [...sections.keys()];
     const helpTitles = help.map((s) => s.title);
     expect(titles.filter((t) => helpTitles.includes(t))).toEqual(helpTitles);
@@ -90,28 +90,28 @@ describe('ajuda de especializações × docs/SPEC-FORMAT.md', () => {
 
   it.each(help.map((s) => [s.title, s] as const))('%s', (title, section) => {
     const body = sections.get(title);
-    expect(body, `falta "## ${title}" no SPEC-FORMAT.md`).toBeDefined();
+    expect(body, `missing "## ${title}" in SPEC-FORMAT.md`).toBeDefined();
     const text = body ?? '';
     const blocks = codeBlocks(text).map(normalized);
     for (const block of section.blocks) {
       if (block.kind === 'code') expect(blocks).toContain(normalized(block.code));
       if (block.kind === 'terms') {
         for (const { term } of block.items) {
-          expect(text, `termo "${term}"`).toContain(`\`${term}\``);
+          expect(text, `term "${term}"`).toContain(`\`${term}\``);
         }
       }
     }
   });
 });
 
-describe('ajuda de especializações: versão e estrutura', () => {
+describe('specializations help: version and structure', () => {
   type Locale = 'pt-BR' | 'en-US';
   const range: Record<Locale, string> = {
     'pt-BR': `1 a ${SPEC_FORMAT_VERSION}`,
     'en-US': `1 to ${SPEC_FORMAT_VERSION}`,
   };
 
-  /** Texto de todos os blocos de uma seção (parágrafos e itens de listas). */
+  /** Text of all the blocks of a section (paragraphs and list items). */
   function sectionText(locale: Locale, id: string): string {
     const section = specHelpSections(locale).find((s) => s.id === id);
     const parts: string[] = [];
@@ -123,7 +123,7 @@ describe('ajuda de especializações: versão e estrutura', () => {
   }
 
   it.each(['pt-BR', 'en-US'] as const)(
-    '%s: a raiz e as regras citam o intervalo atual',
+    '%s: the root and the rules cite the current range',
     (locale) => {
       const format = sectionText(locale, 'format');
       expect(format).toContain(`formatVersion (${range[locale]})`);
@@ -132,7 +132,7 @@ describe('ajuda de especializações: versão e estrutura', () => {
     },
   );
 
-  /** Forma da página: seções, tipo dos blocos e tamanho de cada lista. */
+  /** Shape of the page: sections, block kinds and the size of each list. */
   function shape(locale: Locale): unknown {
     return specHelpSections(locale).map((s) => ({
       id: s.id,
@@ -146,7 +146,39 @@ describe('ajuda de especializações: versão e estrutura', () => {
     }));
   }
 
-  it('pt-BR e en-US têm a mesma estrutura', () => {
+  it('pt-BR and en-US have the same structure', () => {
     expect(shape('en-US')).toEqual(shape('pt-BR'));
+  });
+
+  /** The file-format content of a section: the terms listed and the code minus its prose. */
+  function format(locale: Locale): unknown {
+    return specHelpSections(locale).map((s) => ({
+      id: s.id,
+      terms: s.blocks.flatMap((b) =>
+        b.kind === 'terms' ? b.items.map((i) => i.term) : [],
+      ),
+      code: s.blocks.flatMap((b) => (b.kind === 'code' ? [normalized(b.code)] : [])),
+    }));
+  }
+
+  it('pt-BR and en-US describe the same format (same terms, ids and code, only the prose differs)', () => {
+    expect(format('pt-BR')).toEqual(format('en-US'));
+  });
+
+  it('the en-US page carries no Portuguese (prose, terms and sample code)', () => {
+    // Accented letters, plus words that are Portuguese only: names the examples used to carry
+    // and the title of a section that the en-US prose cited by its Portuguese name.
+    const portuguese =
+      /[ãõçáéíóúâêôà]|\b(Componentes|Eventos|Celular|Clique|Pressionar|Navegação|Tabela|Loja|Assinaturas|Configurações|Notas?|Dados|camadas?|chave|tipo|campo|pacote)\b/;
+    const text = specHelpSections('en-US').flatMap((s) => [
+      s.title,
+      ...s.blocks.flatMap((b) => {
+        if (b.kind === 'p') return [b.text];
+        if (b.kind === 'list') return b.items;
+        if (b.kind === 'terms') return b.items.flatMap((i) => [i.term, i.text]);
+        return [b.code];
+      }),
+    ]);
+    expect(text.filter((t) => portuguese.test(t))).toEqual([]);
   });
 });
