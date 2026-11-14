@@ -551,7 +551,18 @@ describe('GC2 — docs/FLOW.md: a regra do gancho na sessão da fase (decisões 
 
   it('as conferências (a) e (b) rodam o script com --teto igual ao gatilho', () => {
     expect(teto).toContain(`node scripts/ci/contextUsage.mjs --teto ${TRIGGER}`);
-    expect(teto).toMatch(/\(a\)[^]*\(b\)/);
+    const conferencias = between(
+      teto,
+      'Confira em dois pontos',
+      'Depois que o PR da fase',
+    );
+    expect(conferencias).toContain(`--teto ${TRIGGER}`);
+    expect(conferencias.indexOf('(a)')).toBeGreaterThan(conferencias.indexOf('--teto'));
+    expect(conferencias.indexOf('(b)')).toBeGreaterThan(conferencias.indexOf('(a)'));
+    // Sem o `--teto`, o `acima=true` vale só para os 300 mil: o texto diz isso, e a etapa é citada pelo número.
+    expect(teto).toContain('Sem `--teto`');
+    expect(teto).toContain('#1856');
+    expect(teto).not.toContain('desta etapa');
   });
 
   it('passa a vez acima do gatilho, e o teto de 300 mil continua', () => {
