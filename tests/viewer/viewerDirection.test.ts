@@ -39,7 +39,7 @@ const direct = (direction?: 'ltr' | 'rtl') =>
   }).screen!;
 
 describe('createViewer: direction', () => {
-  it('a direção do visualizador é a do screenFromSource; o padrão é ltr', () => {
+  it('the viewer direction is the one of screenFromSource; the default is ltr', () => {
     const rtl = make({ library: m3, source: settings, direction: 'rtl' }).screen();
     expect(rtl).toEqual(direct('rtl'));
     expect(rtl).not.toEqual(direct('ltr'));
@@ -63,14 +63,14 @@ describe('createViewer: direction', () => {
   });
 });
 
-describe('createViewer: direction no interior dos componentes', () => {
-  /** A direção que o visualizador entregou ao motor dos componentes na última atualização. */
+describe('createViewer: direction inside the components', () => {
+  /** The direction the viewer handed to the components engine in the last update. */
   function lastDirection(spy: { mock: { calls: unknown[][] } }): unknown {
     const options = spy.mock.calls.at(-1)?.[2] as { direction?: string } | undefined;
     return options?.direction;
   }
 
-  it('a direção chega ao ScreenRenderer (interior espelhado), no início e por update', () => {
+  it('the direction reaches the ScreenRenderer (mirrored interior), at the start and by update', () => {
     const spy = vi.spyOn(ScreenRenderer.prototype, 'update');
     const viewer = make({ library: m3, source: settings, direction: 'rtl' });
     expect(lastDirection(spy)).toBe('rtl');
@@ -81,7 +81,7 @@ describe('createViewer: direction no interior dos componentes', () => {
     spy.mockRestore();
   });
 
-  it('sem a opção o padrão é ltr (nada é passado ao motor)', () => {
+  it('without the option the default is ltr (nothing is passed to the engine)', () => {
     const spy = vi.spyOn(ScreenRenderer.prototype, 'update');
     make({ library: m3, source: settings });
     expect(lastDirection(spy)).toBeUndefined();
@@ -149,7 +149,7 @@ describe('createViewer: direction da tela e interior espelhado (R2, #1107)', () 
     ]);
   const DOC = { w: 300, h: 100, content: { type: 'Pair' } };
 
-  /** x, na tela, dos retângulos vermelho (largura 20) e azul (30) desenhados dentro da instância. */
+  /** x, on screen, of the red (width 20) and blue (30) rectangles drawn inside the instance. */
   function rectXs(): { red: number; blue: number } {
     const rects = Konva.stages.at(-1)!.find<Konva.Rect>('Rect');
     const xOf = (fill: string) =>
@@ -162,8 +162,8 @@ describe('createViewer: direction da tela e interior espelhado (R2, #1107)', () 
     return { red: toScreen(xOf('#ff0000')), blue: toScreen(xOf('#0000ff')) };
   }
 
-  it("a screen.direction da origem espelha o interior (x' = largura - x - w), sem a opção", () => {
-    // a raiz ancorada em top-start vai para a direita (x 200); dentro dela, 100 de largura
+  it("the origin's screen.direction mirrors the interior (x' = width - x - w), without the option", () => {
+    // the root anchored at top-start goes to the right (x 200); inside it, 100 wide
     make({ library: library('rtl'), source: DOC });
     expect(rectXs()).toEqual({ red: 280, blue: 250 });
   });
@@ -173,7 +173,7 @@ describe('createViewer: direction da tela e interior espelhado (R2, #1107)', () 
     expect(rectXs()).toEqual({ red: 0, blue: 20 });
   });
 
-  it('a opção direction vence a da origem, nos dois sentidos', () => {
+  it('the direction option beats the origin one, in both directions', () => {
     make({ library: library('rtl'), source: DOC, direction: 'ltr' });
     expect(rectXs()).toEqual({ red: 0, blue: 20 });
     document.body.replaceChildren();
@@ -182,7 +182,7 @@ describe('createViewer: direction da tela e interior espelhado (R2, #1107)', () 
     expect(rectXs()).toEqual({ red: 280, blue: 250 });
   });
 
-  it('uma screen pronta traz a direção: o interior segue a screen, sem a opção', () => {
+  it('a ready screen carries the direction: the interior follows the screen, without the option', () => {
     const ready = screenFromSource(library('rtl'), DOC, {
       measure: approximateMeasurer,
     }).screen!;

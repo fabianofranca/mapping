@@ -8,12 +8,12 @@
 
 ## Alterado
 
-- `implementar-fila`, "Fechamento": the "safety net" item runs `riskTriggers.mjs` and decides by the `gatilho:` line, with no list of paths of its own. `detalhar-backlog` gains the sentence that the script and the "Esforço do detalhamento" list change together.
-- `implementar-fila`, "Conferências de reserva": the `review_ready` or `idle` child with a `send_later` still to fire (or fired less than 5 min ago) only gets `childAt=now`, without a message; the worst case of detection (~60 min, ~90 min right after being created or nudged) is written down. "Por etapa" › 2 says when the `wait` is written and cleared.
+- `implementar-fila`, "Fechamento": the "safety net" item runs `riskTriggers.mjs` and decides by the `gatilho:` line, with no list of paths of its own. `detalhar-backlog` gains the sentence that the script and the "Detailing effort" list change together.
+- `implementar-fila`, "Reserve checks": the `review_ready` or `idle` child with a `send_later` still to fire (or fired less than 5 min ago) only gets `childAt=now`, without a message; the worst case of detection (~60 min, ~90 min right after being created or nudged) is written down. "Per stage" › 2 says when the `wait` is written and cleared.
 - `implementar-fila`, "Troca de sessão": rereading the small skill is done with `Read` without `offset` or `limit`, with the proof "skill <commit>: relido inteiro, <n> linhas", and it is neither delegated nor summarized (new item in "Economia de contexto").
 - `dist/index.html` ceiling: the automatic raise (of 16 KiB) only applies with an excess of up to 14 KiB (14,336 bytes), so that at least 2 KiB of margin is left; above that `distBudget.mjs` calls the owner.
 - `tests/tooling/queuePanel.test.ts` and `queueNoWait.test.ts`: no slicing by `indexOf`, no fragile counts and no `const process` shadowing the global.
 
 ## Corrigido
 
-- `docs/FLOW.md`: the paragraph "Para implementar em sequência" still said "more than 30 lines or rule sections" for the large new skill; it becomes "more than 60 changed lines or a change in "Regras desta fila"", with the reread by `Read` and the proof in the `log`.
+- `docs/FLOW.md`: the paragraph "To implement in sequence" still said "more than 30 lines or rule sections" for the large new skill; it becomes "more than 60 changed lines or a change in "Rules of this queue"", with the reread by `Read` and the proof in the `log`.

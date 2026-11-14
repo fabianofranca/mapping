@@ -19,9 +19,8 @@ import { walk } from '../../../src/model/components/scene';
 import { parseSpec } from '../../../src/model';
 import { SAMPLE_SPEC } from '../../../viewer/samples/samples';
 
-// pt-BR kept: boolean enum value and slot name of the pt-BR Material 3 sample (viewer/samples/samplesMaterial3.ts)
-const NO = 'não';
-const ACTIONS_SLOT = 'ações';
+const NO = 'no';
+const ACTIONS_SLOT = 'actions';
 
 describe('Material 3 in the component format', () => {
   it('the library loads the fifteen types, all with a valid component and no problems', () => {

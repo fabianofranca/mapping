@@ -59,7 +59,7 @@ describe('decideRelease (job decide, push to main)', () => {
     const r = decideRelease({ version: '0.28.2', tags: TAGS });
     expect(r.publish).toBe(false);
     expect(r.level).toBe('notice');
-    expect(r.message).toBe('mcp-v0.28.2 já publicada; nada a fazer');
+    expect(r.message).toBe('mcp-v0.28.2 already published; nothing to do');
   });
 
   it('an rc of the same version does not count as stable', () => {
@@ -105,7 +105,7 @@ describe('checkEpicVersion (job epic of ci.yml)', () => {
     expect(r.ok).toBe(false);
     expect(r.level).toBe('error');
     expect(r.message).toBe(
-      'O épico muda o que vai na release do MCP (mcp/a.ts, mcp/b.ts, src/model/c.ts, src/model/d.ts, docs/AGENT-GUIDE.md e mais 1) e mantém a versão 0.28.2, que já tem a estável mcp-v0.28.2. Suba SERVER_VERSION em mcp/version.ts (e os docs que a citam).',
+      'The epic changes what goes in the MCP release (mcp/a.ts, mcp/b.ts, src/model/c.ts, src/model/d.ts, docs/AGENT-GUIDE.md and 1 more) and keeps version 0.28.2, which already has the stable mcp-v0.28.2. Raise SERVER_VERSION in mcp/version.ts (and the docs that cite it).',
     );
   });
 
@@ -117,7 +117,7 @@ describe('checkEpicVersion (job epic of ci.yml)', () => {
     });
     expect(r.ok).toBe(true);
     expect(r.level).toBe('notice');
-    expect(r.message).toContain('não publica');
+    expect(r.message).toContain('does not publish');
   });
 });
 
@@ -165,7 +165,7 @@ describe('CLI', () => {
     const r = run(dir, 'epic', '--version-file', 'mcp/version.ts');
     expect(r.status).toBe(1);
     expect(r.stdout).toContain(
-      '::error::O épico muda o que vai na release do MCP (mcp/novo.ts)',
+      '::error::The epic changes what goes in the MCP release (mcp/novo.ts)',
     );
   });
 
@@ -240,7 +240,7 @@ describe('CLI', () => {
       out,
     );
     expect(r.status, r.stderr).toBe(0);
-    expect(r.stdout).toContain('::notice::mcp-v0.28.2 já publicada; nada a fazer');
+    expect(r.stdout).toContain('::notice::mcp-v0.28.2 already published; nothing to do');
     expect(readFileSync(out, 'utf8')).toContain('publish=false');
   });
 });

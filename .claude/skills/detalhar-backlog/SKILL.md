@@ -75,6 +75,8 @@ Create **one** grouping subagent with the `Agent` tool:
 
 Message:
 
+<!-- portuguese-guard:begin frozen report format that the coordinator parses -->
+
 ```text
 You are a subagent of the coordinator: do not ask the owner anything, and your final report is the message to the coordinator. You are the backlog grouping agent of `fabianofranca/mapping`. Do not edit any issue, do not create a branch or a PR.
 
@@ -104,6 +106,8 @@ ESFORÇO HIGH: G1 — <reason>; #e — <reason>   (or "ESFORÇO HIGH: nenhuma")
 ORDEM: <suggested implementation order of the groups and standalone ones, with the why in one line each>
 ```
 
+<!-- portuguese-guard:end -->
+
 With the `AGRUPAMENTO`:
 
 - one question per group, with the options the subagent gave, and at the end a question for the blocked ones, with the options "Pular (Recomendado)" and "Detalhar mesmo assim";
@@ -123,6 +127,8 @@ Each **unit** is an approved group or a standalone issue. All of them run in sub
 Follow the `ORDEM`. Dependency does not hold back the detailing: the `Depende de` orders the implementation, and two units that depend on each other may be detailed at the same time. Only wait for the other one to be ready when the plan of one needs the plan of the other (for example, to use a helper that the other creates). Create up to `paralelo` subagents with the `Agent` tool (`subagent_type: general-purpose`, `model: opus`, `run_in_background: true`, `effort: high` or `medium` of the unit, `description` "Detalhamento — #<main> <short title>"). When one finishes, the next one starts. Keep the id of each subagent: the `RESPOSTAS` go back through it.
 
 Message:
+
+<!-- portuguese-guard:begin frozen report format that the coordinator parses -->
 
 ```text
 You are a subagent of the coordinator: do not ask the owner anything, and your final report is the message to the coordinator. You are the detailing agent <of issue #n | of group #a (main), #b, #c> of `fabianofranca/mapping` (docs/PROCESS.md, "Detailing a stage" and "Automated flow", item 2). Do not use the questions tool. Do not create a branch, a commit or a PR: the detailing only touches issues ("No PR exists just to touch a plan").
@@ -166,6 +172,8 @@ FALHOU #<main> — <what got stuck and what was done>
 
 <In parallel with you: #x, #y. If your plan touches the same things as theirs, say so in "Sobreposição"; do not coordinate with them on your own.>
 ```
+
+<!-- portuguese-guard:end -->
 
 ## 4. During
 

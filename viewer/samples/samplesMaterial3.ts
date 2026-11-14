@@ -95,7 +95,7 @@ function icon(
 ): PathTemplate {
   return {
     type: 'path',
-    name: 'ícone',
+    name: 'icon',
     width: size,
     height: size,
     viewBox: [24, 24],
@@ -136,7 +136,7 @@ export const M3_BUTTON: ComponentFile = {
   size: { width: 120, height: 40 },
   minSize: { width: 48, height: 40 },
   sizing: { width: 'hug', height: 40 },
-  preview: { label: 'Label', variant: 'filled', icon: '', disabled: 'não' },
+  preview: { label: 'Label', variant: 'filled', icon: '', disabled: 'no' },
   template: {
     type: 'frame',
     name: 'button',
@@ -248,7 +248,7 @@ export const M3_TOP_APP_BAR: ComponentFile = {
     children: [
       {
         type: 'frame',
-        name: 'navegação',
+        name: 'navigation',
         width: 48,
         height: 48,
         visible: { $has: 'navigation' },
@@ -257,13 +257,13 @@ export const M3_TOP_APP_BAR: ComponentFile = {
       },
       {
         type: 'frame',
-        name: 'título',
+        name: 'title',
         width: 'fill',
         height: 'fill',
         layout: { type: 'row', padding: [0, 12], align: 'center' },
         children: [
           text(
-            'título',
+            'title',
             { $field: 'title', default: 'Title' },
             T.titleLarge,
             C.onSurface,
@@ -283,7 +283,7 @@ export const M3_TOP_APP_BAR: ComponentFile = {
       },
       {
         type: 'frame',
-        name: 'ação',
+        name: 'action',
         width: 48,
         height: 48,
         visible: { $has: 'action' },
@@ -330,7 +330,7 @@ export const M3_TEXT_FIELD: ComponentFile = {
     children: [
       {
         type: 'frame',
-        name: 'contêiner',
+        name: 'container',
         width: 'fill',
         height: 56,
         clip: false,
@@ -350,18 +350,18 @@ export const M3_TEXT_FIELD: ComponentFile = {
           },
           {
             type: 'frame',
-            name: 'rótulo',
+            name: 'label',
             anchors: { left: 12, top: 0 },
             width: 'hug',
             height: 'hug',
             layout: { type: 'row', padding: [0, 4] },
             fill: C.surface,
             visible: { $has: 'label' },
-            children: [text('rótulo', { $field: 'label' }, T.bodySmall, fieldLabelColor)],
+            children: [text('label', { $field: 'label' }, T.bodySmall, fieldLabelColor)],
           },
           {
             type: 'frame',
-            name: 'conteúdo',
+            name: 'content',
             anchors: { left: 16, right: 12, top: 8, bottom: 0 },
             layout: { type: 'row', gap: 12, align: 'center' },
             children: [
@@ -408,13 +408,13 @@ export const M3_SWITCH: ComponentFile = {
   size: { width: 200, height: 32 },
   minSize: { width: 52, height: 32 },
   sizing: { width: 'fill', height: 32 },
-  preview: { label: 'Label', selected: 'sim', icon: 'não' },
+  preview: { label: 'Label', selected: 'yes', icon: 'no' },
   template: {
     type: 'frame',
     name: 'switch',
     layout: { type: 'row', gap: 16, align: 'center' },
     children: [
-      text('rótulo', { $field: 'label' }, T.bodyLarge, C.onSurface, {
+      text('label', { $field: 'label' }, T.bodyLarge, C.onSurface, {
         visible: { $has: 'label' },
         width: 'fill',
       }),
@@ -438,7 +438,7 @@ export const M3_SWITCH: ComponentFile = {
         children: [
           {
             type: 'ellipse',
-            name: 'alça ligada',
+            name: 'handle on',
             visible: { $field: 'selected' },
             width: 24,
             height: 24,
@@ -447,7 +447,7 @@ export const M3_SWITCH: ComponentFile = {
           },
           {
             type: 'ellipse',
-            name: 'alça desligada',
+            name: 'handle off',
             visible: { $not: { $field: 'selected' } },
             width: 16,
             height: 16,
@@ -456,7 +456,7 @@ export const M3_SWITCH: ComponentFile = {
           },
           {
             type: 'frame',
-            name: 'ícone',
+            name: 'icon',
             visible: { $and: [{ $field: 'selected' }, { $field: 'icon' }] },
             width: 24,
             height: 24,
@@ -488,7 +488,7 @@ export const M3_CHECKBOX: ComponentFile = {
   size: { width: 200, height: 40 },
   minSize: { width: 40, height: 24 },
   sizing: { width: 'fill', height: 40 },
-  preview: { label: 'Label', checked: 'sim', error: 'não' },
+  preview: { label: 'Label', checked: 'yes', error: 'no' },
   template: {
     type: 'frame',
     name: 'checkbox',
@@ -528,7 +528,7 @@ export const M3_CHECKBOX: ComponentFile = {
           },
         ],
       },
-      text('rótulo', { $field: 'label' }, T.bodyLarge, C.onSurface, {
+      text('label', { $field: 'label' }, T.bodyLarge, C.onSurface, {
         visible: { $has: 'label' },
         width: 'fill',
       }),
@@ -545,7 +545,7 @@ export const M3_CHIP: ComponentFile = {
   size: { width: 96, height: 32 },
   minSize: { width: 40, height: 32 },
   sizing: { width: 'hug', height: 32 },
-  preview: { label: 'Label', selected: 'não', icon: '' },
+  preview: { label: 'Label', selected: 'no', icon: '' },
   template: {
     type: 'frame',
     name: 'chip',
@@ -575,7 +575,7 @@ export const M3_CHIP: ComponentFile = {
       icon('icon', 18, C.primary, {
         visible: { $and: [{ $has: 'icon' }, { $not: { $field: 'selected' } }] },
       }),
-      text('rótulo', { $field: 'label', default: 'Label' }, T.labelLarge, {
+      text('label', { $field: 'label', default: 'Label' }, T.labelLarge, {
         $if: { $field: 'selected' },
         then: C.onSecondaryContainer,
         else: C.onSurfaceVariant,
@@ -645,7 +645,7 @@ export const M3_CARD: ComponentFile = {
       }),
       {
         type: 'slot',
-        name: 'ações',
+        name: 'actions',
         width: 'fill',
         height: 'fill',
         label: 'actions',
@@ -755,7 +755,7 @@ function destination(n: 1 | 2 | 3) {
           }),
         ],
       },
-      text('rótulo', { $field: `label${n}`, default: `Label ${n}` }, T.labelMedium, {
+      text('label', { $field: `label${n}`, default: `Label ${n}` }, T.labelMedium, {
         $if: { $eq: ['active', n] },
         then: C.onSurface,
         else: C.onSurfaceVariant,
@@ -806,7 +806,7 @@ function sheetItem(n: 1 | 2 | 3) {
     },
     children: [
       icon(`icon${n}`, 24, C.onSurfaceVariant, { visible: { $has: `icon${n}` } }),
-      text(`rótulo ${n}`, { $field: `item${n}` }, T.bodyLarge, C.onSurface, {
+      text(`label ${n}`, { $field: `item${n}` }, T.bodyLarge, C.onSurface, {
         width: 'fill',
       }),
     ],
@@ -824,7 +824,7 @@ export const M3_BOTTOM_SHEET: ComponentFile = {
   sizing: { width: 'fill', height: 'hug' },
   preview: {
     title: 'Title',
-    handle: 'sim',
+    handle: 'yes',
     item1: 'Item one',
     icon1: 'favorite',
     item2: 'Item two',
@@ -842,14 +842,14 @@ export const M3_BOTTOM_SHEET: ComponentFile = {
     children: [
       {
         type: 'frame',
-        name: 'área da alça',
+        name: 'handle area',
         width: 'fill',
         height: 48,
         layout: { type: 'row', align: 'center', justify: 'center' },
         children: [
           {
             type: 'rect',
-            name: 'alça',
+            name: 'handle',
             visible: { $field: 'handle' },
             width: 32,
             height: 4,
@@ -860,13 +860,13 @@ export const M3_BOTTOM_SHEET: ComponentFile = {
       },
       {
         type: 'frame',
-        name: 'cabeçalho',
+        name: 'header',
         width: 'fill',
         height: 'hug',
         visible: { $has: 'title' },
         layout: { type: 'row', padding: [8, 24, 16, 24] },
         children: [
-          text('título', { $field: 'title' }, T.titleLarge, C.onSurface, {
+          text('title', { $field: 'title' }, T.titleLarge, C.onSurface, {
             width: 'fill',
           }),
         ],
@@ -1018,11 +1018,11 @@ const fromProp = (path: string, values?: Record<string, string>) => ({
   sources: [{ system: SDUI, path, ...(values ? { values } : {}) }],
 });
 
-const yesNo = (key: string, label: string, def: 'sim' | 'não', prop?: string) => ({
+const yesNo = (key: string, label: string, def: 'yes' | 'no', prop?: string) => ({
   key,
   label,
   type: 'enum',
-  options: ['sim', 'não'],
+  options: ['yes', 'no'],
   default: def,
   ...(prop ? fromProp(prop) : {}),
 });
@@ -1140,13 +1140,13 @@ export const M3_SPEC = {
           { path: 'modal', anchor: 'bottom', scrim: 'm3-scrim' },
         ],
       },
-      booleans: { true: 'sim', false: 'não' },
+      booleans: { true: 'yes', false: 'no' },
     },
   ],
   layers: [
     {
-      id: 'componentes',
-      name: 'Componentes',
+      id: 'components',
+      name: 'Components',
       color: '#6750A4',
       annotationTypes: [
         type(
@@ -1175,7 +1175,7 @@ export const M3_SPEC = {
               'style',
             ),
             iconField('icon', 'Icon', '', 'icon'),
-            yesNo('disabled', 'Disabled', 'não', 'disabled'),
+            yesNo('disabled', 'Disabled', 'no', 'disabled'),
           ],
           { name: 'Button', ignore: ['contentDescription'] },
         ),
@@ -1222,8 +1222,8 @@ export const M3_SPEC = {
           'label',
           [
             str('label', 'Label', false, 'label'),
-            yesNo('selected', 'Selected', 'não', 'checked'),
-            yesNo('icon', 'Icon', 'não', 'showIcon'),
+            yesNo('selected', 'Selected', 'no', 'checked'),
+            yesNo('icon', 'Icon', 'no', 'showIcon'),
           ],
           { name: 'Switch' },
         ),
@@ -1233,8 +1233,8 @@ export const M3_SPEC = {
           'label',
           [
             str('label', 'Label', false, 'label'),
-            yesNo('checked', 'Checked', 'não', 'checked'),
-            yesNo('error', 'Error', 'não', 'error'),
+            yesNo('checked', 'Checked', 'no', 'checked'),
+            yesNo('error', 'Error', 'no', 'error'),
           ],
           { name: 'Checkbox' },
         ),
@@ -1244,7 +1244,7 @@ export const M3_SPEC = {
           'label',
           [
             str('label', 'Label', true, 'text'),
-            yesNo('selected', 'Selected', 'não', 'selected'),
+            yesNo('selected', 'Selected', 'no', 'selected'),
             iconField('icon', 'Icon', '', 'icon'),
           ],
           { name: 'Chip' },
@@ -1265,7 +1265,7 @@ export const M3_SPEC = {
               'style',
             ),
           ],
-          { name: 'Card', slot: 'ações' },
+          { name: 'Card', slot: 'actions' },
         ),
         type(
           'm3-list-item',
@@ -1309,7 +1309,7 @@ export const M3_SPEC = {
           'title',
           [
             str('title', 'Title', false, 'title'),
-            yesNo('handle', 'Drag handle', 'sim', 'dragHandle'),
+            yesNo('handle', 'Drag handle', 'yes', 'dragHandle'),
             str('item1', 'Item 1', false, 'items[0].label'),
             iconField('icon1', 'Icon 1', '', 'items[0].icon'),
             str('item2', 'Item 2', false, 'items[1].label'),
@@ -1409,17 +1409,17 @@ export const M3_SCREEN: Screen = {
     }),
     ic('m-row-chips', 'm-chip1', 'm3-chip', 16, 168, 96, 32, {
       label: 'All',
-      selected: 'sim',
+      selected: 'yes',
       icon: '',
     }),
     ic('m-row-chips', 'm-chip2', 'm3-chip', 120, 168, 120, 32, {
       label: 'Network',
-      selected: 'não',
+      selected: 'no',
       icon: 'settings',
     }),
     ic('m-row-chips', 'm-chip3', 'm3-chip', 248, 168, 132, 32, {
       label: 'Privacy',
-      selected: 'não',
+      selected: 'no',
       icon: 'notifications',
     }),
     i('m-card', 'm3-card', 16, 216, 380, 148, {
@@ -1432,7 +1432,7 @@ export const M3_SCREEN: Screen = {
       label: 'Clean up',
       variant: 'text',
       icon: '',
-      disabled: 'não',
+      disabled: 'no',
     }),
     i('m-item1', 'm3-list-item', 0, 380, 412, 72, {
       headline: 'Network & internet',
@@ -1457,18 +1457,18 @@ export const M3_SCREEN: Screen = {
     }),
     i('m-switch1', 'm3-switch', 16, 612, 380, 32, {
       label: 'Dark theme',
-      selected: 'sim',
-      icon: 'sim',
+      selected: 'yes',
+      icon: 'yes',
     }),
     i('m-switch2', 'm3-switch', 16, 660, 380, 32, {
       label: 'Battery saver',
-      selected: 'não',
-      icon: 'não',
+      selected: 'no',
+      icon: 'no',
     }),
     i('m-check', 'm3-checkbox', 16, 708, 380, 40, {
       label: 'Send usage & diagnostics',
-      checked: 'sim',
-      error: 'não',
+      checked: 'yes',
+      error: 'no',
     }),
     i('m-row-actions', 'm3-row', 16, 764, 380, 40, {
       spacing: 12,
@@ -1480,13 +1480,13 @@ export const M3_SCREEN: Screen = {
       label: 'Reset options',
       variant: 'outlined',
       icon: '',
-      disabled: 'não',
+      disabled: 'no',
     }),
     ic('m-row-actions', 'm-btn2', 'm3-button', 212, 764, 184, 40, {
       label: 'Save',
       variant: 'filled',
       icon: 'check',
-      disabled: 'não',
+      disabled: 'no',
     }),
     i('m-fab', 'm3-fab', 340, 684, 56, 56, { icon: 'edit', label: '', color: 'primary' }),
     i('m-nav', 'm3-navigation-bar', 0, 837, 412, 80, {
@@ -1501,7 +1501,7 @@ export const M3_SCREEN: Screen = {
     i('m-scrim', 'm3-scrim', 0, 0, 412, 917, {}),
     i('m-sheet', 'm3-bottom-sheet', 0, 597, 412, 320, {
       title: 'Sort by',
-      handle: 'sim',
+      handle: 'yes',
       item1: 'Name',
       icon1: 'person',
       item2: 'Date modified',

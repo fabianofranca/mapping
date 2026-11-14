@@ -81,10 +81,14 @@ const near = (actual: number, expected: number, tolerance: number): void => {
 
 describe('R17.32: 1-, 2- and 3-line snackbar in the MCP raster', () => {
   const MESSAGES: [string, number, number][] = [
-    ['Arquivo salvo.', 48, 12],
-    ['O arquivo foi salvo e a cópia ficou guardada na pasta Documentos.', 68, 33],
+    ['File saved.', 48, 12],
     [
-      'O arquivo foi salvo e a cópia ficou guardada na pasta Documentos; você pode abrir de novo pelo menu Recentes.',
+      'The file was saved and a copy was kept in the Documents folder, ready to copy.',
+      68,
+      33,
+    ],
+    [
+      'The file was saved and the copy was kept in the Documents folder; you can open it again from the Recent menu anytime.',
       81,
       53,
     ],
@@ -109,15 +113,15 @@ describe('R17.32: 1-, 2- and 3-line snackbar in the MCP raster', () => {
 describe('R17.33: the alert-dialog buttons on two lines in the MCP raster', () => {
   const values = {
     style: 'standard',
-    title: 'Descartar rascunho?',
-    text: 'O rascunho será apagado.',
-    confirmButton: 'Descartar o rascunho agora',
-    dismissButton: 'Cancelar',
+    title: 'Discard draft?',
+    text: 'The draft will be deleted.',
+    confirmButton: 'Discard the draft right now',
+    dismissButton: 'Cancel',
   };
 
   it.each([
-    ['light', '#6750A4', 174],
-    ['dark', '#D0BCFF', 171],
+    ['light', '#6750A4', 164],
+    ['dark', '#D0BCFF', 164],
   ] as const)(
     'the confirm button sits above the dismiss one, both on the right (%s)',
     (mode, primary, confirmWidth) => {
@@ -127,10 +131,10 @@ describe('R17.33: the alert-dialog buttons on two lines in the MCP raster', () =
       const confirm = inkBox(raster, primary, { y: 116, height: 60 });
       const dismiss = inkBox(raster, primary, { y: 176, height: 60 });
       near(confirm.width, confirmWidth, 3);
-      near(confirm.x, 101, 3);
+      near(confirm.x, 111, 3);
       near(confirm.y, 19, 3);
-      near(dismiss.width, 50, 3);
-      near(dismiss.x, 220, 3);
+      near(dismiss.width, 42, 3);
+      near(dismiss.x, 233, 3);
       near(dismiss.y, 19, 3);
       for (const box of [confirm, dismiss])
         expect(box.x + box.width).toBeGreaterThanOrEqual(268);

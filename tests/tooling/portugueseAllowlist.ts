@@ -2,8 +2,15 @@
 // because a script, a skill or a scheduled prompt reads or writes them. Changing one of them
 // means changing its producer and every reader in the same PR, so the list is closed: a term
 // is added only after checking that something really matches on it. `source` is the
-// repo-relative file that produces or reads the term. A later guard test accepts these terms
-// inside backticks or quotes only; no test uses the list yet.
+// repo-relative file that produces or reads the term. The guard
+// (`tests/tooling/portugueseGuard.test.ts`, decision 10 of #741) accepts these terms inside
+// backticks or quotes only; the `record-titles` terms are also accepted without quotes on the
+// heading lines and at the start of a line of the records in `changelog/` and
+// `docs/design-system/`, where they are the fixed titles (decision 3).
+//
+// The rest of this file is the guard's exception list (decision 2 of #741): whole files and
+// folders (`PORTUGUESE_PATHS`), a managed block of a file (`PORTUGUESE_BLOCK_ONLY`) and single
+// lines (`PORTUGUESE_LINES`). Every entry has a reason; an entry without one is a test failure.
 
 export type ProtocolGroup =
   // Values the queue panel (`painel.py`) writes or reads: statuses, stages, session kinds,
@@ -768,7 +775,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   { term: 'execucoes=', source: 'scripts/ci/ciRerun.mjs', group: 'script-output' },
   { term: 'falha legítima', source: 'scripts/ci/ciRerun.mjs', group: 'script-output' },
   { term: 'minutos=', source: 'scripts/ci/ciRerun.mjs', group: 'script-output' },
-  { term: 'na fila sem jobs', source: 'scripts/ci/ciRerun.mjs', group: 'script-output' },
   {
     term: 'nenhum job abandonado',
     source: 'scripts/ci/ciRerun.mjs',
@@ -779,11 +785,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   {
     term: 'sem execução do CI no commit',
     source: 'scripts/ci/ciRerun.mjs',
-    group: 'script-output',
-  },
-  {
-    term: 'Gancho de contexto:',
-    source: 'scripts/ci/contextGuard.mjs',
     group: 'script-output',
   },
   { term: '--arquivo', source: 'scripts/ci/contextUsage.mjs', group: 'script-output' },
@@ -801,11 +802,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   {
     term: 'transcript ilegível',
     source: 'scripts/ci/contextUsage.mjs',
-    group: 'script-output',
-  },
-  {
-    term: 'Acima dos limites:',
-    source: 'scripts/ci/distBudget.mjs',
     group: 'script-output',
   },
   { term: 'bug:', source: 'scripts/ci/distBudget.mjs', group: 'script-output' },
@@ -885,11 +881,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   { term: 'Bloco k de 5', source: 'docs/TESTING-NUVEM.md', group: 'session-notices' },
   {
     term: 'Modo: completo, bloco',
-    source: 'docs/TESTING-NUVEM.md',
-    group: 'session-notices',
-  },
-  {
-    term: 'Modo: dirigido, grupo',
     source: 'docs/TESTING-NUVEM.md',
     group: 'session-notices',
   },
@@ -1036,31 +1027,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   },
   {
     term: 'AGRUPAMENTO',
-    source: '.claude/skills/detalhar-backlog/SKILL.md',
-    group: 'session-notices',
-  },
-  {
-    term: 'PERGUNTAS #<n>',
-    source: '.claude/skills/detalhar-backlog/SKILL.md',
-    group: 'session-notices',
-  },
-  {
-    term: 'RESPOSTAS #<n>',
-    source: '.claude/skills/detalhar-backlog/SKILL.md',
-    group: 'session-notices',
-  },
-  {
-    term: 'PRONTA #<n>',
-    source: '.claude/skills/detalhar-backlog/SKILL.md',
-    group: 'session-notices',
-  },
-  {
-    term: 'BLOQUEADA #<n>',
-    source: '.claude/skills/detalhar-backlog/SKILL.md',
-    group: 'session-notices',
-  },
-  {
-    term: 'FALHOU #<n>',
     source: '.claude/skills/detalhar-backlog/SKILL.md',
     group: 'session-notices',
   },
@@ -1269,36 +1235,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'panel-values',
   },
   {
-    term: 'Duplicadas: nenhuma (busca:',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'issue-markers',
-  },
-  {
-    term: 'Relacionada: #',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'issue-markers',
-  },
-  {
-    term: 'Via rápida:',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'issue-markers',
-  },
-  {
-    term: 'Via rápida recusada:',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'issue-markers',
-  },
-  {
-    term: 'Via rápida: espera #',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'issue-markers',
-  },
-  {
-    term: 'Origem: via rápida #',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'issue-markers',
-  },
-  {
     term: 'Teto na última revisão do dono',
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'issue-markers',
@@ -1310,21 +1246,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   },
   {
     term: 'Teto de contexto do testador',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'issue-markers',
-  },
-  {
-    term: 'Nada.',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'issue-markers',
-  },
-  {
-    term: 'nenhuma (só processo)',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'issue-markers',
-  },
-  {
-    term: 'Exceção ao Button:',
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'issue-markers',
   },
@@ -1345,12 +1266,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'script-output',
   },
   { term: 'abaixo de 2 KiB', source: '.github/workflows/ci.yml', group: 'script-output' },
-  {
-    term: 'reexecuta: abandonados',
-    source: '.github/workflows/ci.yml',
-    group: 'script-output',
-  },
-  { term: 'não reexecuta:', source: '.github/workflows/ci.yml', group: 'script-output' },
   { term: 'não tem a CSP', source: 'pwa/csp.ts', group: 'script-output' },
   { term: 'atributo style', source: 'pwa/csp.ts', group: 'script-output' },
   { term: 'handler inline', source: 'pwa/csp.ts', group: 'script-output' },
@@ -1390,37 +1305,7 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'names',
   },
   {
-    term: 'Mapping - Backlog',
-    source: '.claude/skills/supervisionar-fila/SKILL.md',
-    group: 'names',
-  },
-  {
-    term: 'Mapping - testes',
-    source: '.claude/skills/supervisionar-fila/SKILL.md',
-    group: 'names',
-  },
-  {
-    term: 'main protegida',
-    source: '.claude/skills/supervisionar-fila/SKILL.md',
-    group: 'names',
-  },
-  {
-    term: 'evidencias',
-    source: '.claude/skills/supervisionar-fila/SKILL.md',
-    group: 'names',
-  },
-  {
-    term: 'Uso real',
-    source: '.claude/skills/supervisionar-fila/SKILL.md',
-    group: 'names',
-  },
-  {
     term: 'observador-da-fila',
-    source: '.claude/skills/supervisionar-fila/SKILL.md',
-    group: 'names',
-  },
-  {
-    term: 'Madrugadão',
     source: '.claude/skills/supervisionar-fila/SKILL.md',
     group: 'names',
   },
@@ -1497,11 +1382,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   },
   {
     term: "{k} inválido '{v}'; válidos: ",
-    source: '.claude/skills/implementar-fila/painel/painel.py',
-    group: 'error-messages',
-  },
-  {
-    term: 'já existem: ',
     source: '.claude/skills/implementar-fila/painel/painel.py',
     group: 'error-messages',
   },
@@ -1711,11 +1591,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'error-messages',
   },
   {
-    term: '--com \'{item}\' inválido (use "#N=<toca>")',
-    source: '.claude/skills/implementar-fila/painel/painel.py',
-    group: 'error-messages',
-  },
-  {
     term: 'ci.yml sem a chave jobs:.',
     source: 'scripts/ci/ciRerun.mjs',
     group: 'error-messages',
@@ -1741,38 +1616,8 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'error-messages',
   },
   {
-    term: 'O arquivo de jobs não tem total_count nem a lista jobs.',
-    source: 'scripts/ci/ciRerun.mjs',
-    group: 'error-messages',
-  },
-  {
     term: '${flag} repetida: use uma vez só. ${USAGE}',
     source: 'scripts/ci/contextUsage.mjs',
-    group: 'error-messages',
-  },
-  {
-    term: '${file}: history precisa ser uma lista de frases (strings).',
-    source: 'scripts/ci/distBudget.mjs',
-    group: 'error-messages',
-  },
-  {
-    term: 'O arquivo tem teto ${data.indexHtmlMaxBytes}, não ${d.ceiling}.',
-    source: 'scripts/ci/distBudget.mjs',
-    group: 'error-messages',
-  },
-  {
-    term: '${a} precisa de um valor.',
-    source: 'scripts/ci/distBudget.mjs',
-    group: 'error-messages',
-  },
-  {
-    term: '--${name} precisa de um número inteiro de bytes.',
-    source: 'scripts/ci/distBudget.mjs',
-    group: 'error-messages',
-  },
-  {
-    term: '--write precisa de --epic <nome>.',
-    source: 'scripts/ci/distBudget.mjs',
     group: 'error-messages',
   },
   {
@@ -1789,5 +1634,1697 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     term: 'Versão inválida: "${version}" (esperado x.y.z).',
     source: 'scripts/release/stableRelease.mjs',
     group: 'error-messages',
+  },
+  // ID10 sweep: terms added by area A1 (skills, docs/FLOW.md)
+  {
+    term: 'Teto do dist/index.html acima dos limites',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'issue-markers',
+  },
+  {
+    term: 'acima dos limites',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'issue-markers',
+  },
+  {
+    term: 'para o dono revisar',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'issue-markers',
+  },
+  {
+    term: 'subiu <K> KiB, de X para Y, pela regra do orçamento',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'issue-markers',
+  },
+  {
+    term: 'ESFORÇO HIGH',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Sobreposição',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'item 8 da "Para a sessão da fase"): pergunte no seu chat',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: '#<número>: <N> achados (<código>:<severidade>, …); reteste: sim|não',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: '<rótulo>: ainda trabalhando',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: '<rótulo>: custo lido com a sessão ainda trabalhando',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: '<rótulo>: medida de contexto divergente (aviso <n> mil, get_session <ctx> mil)',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: '(é ciclo|não é ciclo)',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'Pedido de permissão',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'pedido de permissão',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'registre o que pedia a autorização em Defeitos pendentes, não contorne a guarda e termine o que não depende dela',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'a sessão anterior (<id>) parou esperando o dono em: <motivo do wait>; pergunte de novo',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'a sessão anterior (<id>) parou em: <o que os eventos mostram>',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'CI do PR #<n> preso na fila sem jobs há <m> min: <link>. Fecho e reabro o PR?',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: '#<etapa> — Fecho e reabro o PR #<n> para criar uma execução nova do CI?',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'cria uma execução nova no mesmo commit; a presa fica como está',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'nada muda; a conferência de hora em hora segue lendo o CI',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: ' #<n> para criar uma execução nova do CI (execução presa na fila). Não é recusa: o PR volta aberto; recomece a Espera do CI como depois de um push.',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'tem uma ready nova',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'entraram mais ready',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'Nova ready #n incluída depois da #m (porquê)',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'faça a #X primeiro',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'a #Y por último',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'tira a #Z',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'a #741 sempre por último',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'ordem do dono (<restrição>)',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'só com a fila vazia',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'entra no próximo detalhamento',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'essa ainda não está pronta',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'não comece mais nada',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'drene a fila',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'termine o que está rodando e pare',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'Etapa #<n> pronta: <resumo>. PR do épico: <link>',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: '#<n> — mesclar o épico na main?',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'mande seus avisos para',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: '<id desta sessão>',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Fila passou para uma sessão nova',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'esperando você',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'este chat é o coordenador; abra uma sessão nova para a supervisão',
+    source: '.claude/skills/supervisionar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'Supervisão acima de 50% e sem vaga na linhagem: abra uma sessão nova e mande',
+    source: '.claude/skills/supervisionar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'Supervisão',
+    source: '.claude/skills/supervisionar-fila/SKILL.md',
+    group: 'names',
+  },
+  {
+    term: 'Via rápida #<n>',
+    source: '.claude/skills/via-rapida/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'Via rápida #<n> pronta: <resumo>. PR do épico: <link>',
+    source: '.claude/skills/via-rapida/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: '#<n> — mesclar o épico na main?',
+    source: '.claude/skills/via-rapida/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'Margem de $margin bytes até o orçamento de $INDEX_HTML_MAX_BYTES bytes',
+    source: '.github/workflows/ci.yml',
+    group: 'script-output',
+  },
+  {
+    term: 'em AAAA-MM-DD: versão <n>',
+    source: 'docs/DESIGN-SYSTEM.md',
+    group: 'record-titles',
+  },
+  {
+    term: 'Versões <n> e <m>',
+    source: 'docs/DESIGN-SYSTEM.md',
+    group: 'record-titles',
+  },
+  {
+    term: 'A versão atual do formato é a N',
+    source: 'docs/PROCESS.md',
+    group: 'script-output',
+  },
+  {
+    term: '13. Versão',
+    source: 'docs/PROCESS.md',
+    group: 'script-output',
+  },
+  // ID10 sweep: terms added by area A2 (queue tests)
+  { term: '<link do comentário>', source: 'docs/FLOW.md', group: 'session-notices' },
+  {
+    term: '<link da execução>',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'passagem em <link do comentário>',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'passou a vez com <n> mil; a passagem está em <link>',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Sobreposição',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'script-output',
+  },
+  {
+    term: 'troque de sessão',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'reteste: não',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'script-output',
+  },
+  {
+    term: 'Fecho e reabro o PR #<n> para criar uma execução nova do CI?',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'para o dono revisar',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'sessão <k> de 5',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'começa',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'liberada pelo dono',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'drenando para a exclusiva',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'horário inválido',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: 'já é o registrado',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'sem medida',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: 'medida velha (há',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'meça com',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'esperando o coordenador',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'sessões',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'não entra no lote',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: 'não achado',
+    source: 'scripts/ci/contextUsage.mjs',
+    group: 'script-output',
+  },
+  {
+    term: 'pedido de permissão',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'aguardando o dono abrir a sessão nova da fila',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'arquivada',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Conferência da fila',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'a fase não avisou',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'CI preso na fila',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Fecho e reabro o PR',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'Fase <código> da',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'passou de 300 mil',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'aviso ao dono',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'direção enviada',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: '<regra> → <o que faço agora>',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: '<código>',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'bloqueia',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'script-output',
+  },
+  {
+    term: 'média',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'script-output',
+  },
+  {
+    term: 'Teto do dist/index.html acima dos limites',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'acima dos limites',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'tentativas 1 a 3',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  // ID10 sweep: terms added by area A3 (other tooling tests, scripts/ci, scripts/release, pwa)
+  {
+    term: 'épico `epic/',
+    source: 'tests/tooling/changelog.test.ts',
+    group: 'record-titles',
+  },
+  {
+    term: '<rótulo>: medida de contexto divergente (aviso <n> mil, get_session <ctx> mil)',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'custo lido com a sessão ainda trabalhando',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Troca de sessão da fase <código>: contexto <n> mil; passagem em',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Fase <código> —',
+    source: 'scripts/ci/contextGuard.mjs',
+    group: 'session-notices',
+  },
+  {
+    term: 'Conferência do orquestrador: a fase não avisou. Retome do ponto em que parou (CI do PR, merge, aviso) e avise o coordenador.',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'a sessão anterior (<id>) parou em: <o que os eventos mostram>',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Supervisão acima de 50% e sem vaga na linhagem',
+    source: '.claude/skills/supervisionar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'este chat é o coordenador; abra uma sessão nova para a supervisão',
+    source: '.claude/skills/supervisionar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'sem custo (fora das contas)',
+    source: '.claude/skills/supervisionar-fila/custo.py',
+    group: 'script-output',
+  },
+  {
+    term: 'Crie uma issue roadmap (ou bug, se for defeito):',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Coordenador: `<id da sessão do orquestrador>`',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'parâmetro fora da ficha',
+    source: 'src/i18n/modelMessagesTemplatesPtBR.ts',
+    group: 'script-output',
+  },
+  // ID10 sweep: terms added by area B (docs, changelog, libraries, examples, scripts/testing)
+  {
+    term: 'Selecione onde este site pode salvar mudanças',
+    source: 'scripts/testing/cloud.mjs',
+    group: 'names',
+  },
+  {
+    term: 'Selecione uma pasta que este site pode ver',
+    source: 'scripts/testing/cloud.mjs',
+    group: 'names',
+  },
+  { term: 'título', source: 'scripts/testing/round-guide.mjs', group: 'script-output' },
+  {
+    term: 'já é o registrado; nada mudou',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'Versões',
+    source: 'tests/tooling/designSystemLog.test.ts',
+    group: 'record-titles',
+  },
+  {
+    term: 'Versão',
+    source: 'tests/tooling/designSystemLog.test.ts',
+    group: 'record-titles',
+  },
+  {
+    term: 'Versão N não foi gravada',
+    source: 'tests/tooling/designSystemLog.test.ts',
+    group: 'record-titles',
+  },
+  {
+    term: 'Nada gravado ainda:',
+    source: 'tests/tooling/designSystemLog.test.ts',
+    group: 'record-titles',
+  },
+  { term: 'CR por épico', source: 'docs/FLOW.md', group: 'names' },
+  // ID10 sweep: terms added by area C (src, viewer, other tests)
+  {
+    term: 'Acima dos limites:',
+    source: 'changelog/2026-11-13-teto-sempre-sobe.md',
+    group: 'script-output',
+  },
+  {
+    term: 'Via rápida:',
+    source: '.claude/skills/via-rapida/SKILL.md',
+    group: 'issue-markers',
+  },
+  {
+    term: 'Via rápida recusada:',
+    source: '.claude/skills/via-rapida/SKILL.md',
+    group: 'issue-markers',
+  },
+  {
+    term: 'Origem: via rápida #',
+    source: '.claude/skills/via-rapida/SKILL.md',
+    group: 'issue-markers',
+  },
+  {
+    term: 'nenhuma (só processo)',
+    source: '.claude/skills/via-rapida/SKILL.md',
+    group: 'issue-markers',
+  },
+  { term: 'Exceção ao Button:', source: 'docs/DESIGN-SYSTEM.md', group: 'issue-markers' },
+  {
+    term: 'não reexecuta:',
+    source: '.github/workflows/ci-rerun.yml',
+    group: 'script-output',
+  },
+  {
+    term: 'Madrugadão',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'names',
+  },
+  {
+    term: 'novo método',
+    source: 'tests/tooling/queueSlots.test.ts',
+    group: 'script-output',
+  },
+  {
+    term: 'group="Comentários"',
+    source: 'docs/design-system/2026-11-10-sincronia-ds-2.md',
+    group: 'names',
+  },
+  {
+    term: 'group="Diálogos"',
+    source: 'docs/design-system/2026-11-10-sincronia-ds-2.md',
+    group: 'names',
+  },
+];
+
+// ---------------------------------------------------------------------------------------------
+// Exception list of the Portuguese guard (decision 2 of #741). Nothing outside it may carry
+// Portuguese; a new entry needs a reason and fits one of the cases that decision 2 allows.
+// ---------------------------------------------------------------------------------------------
+
+/** A file (`path`) or a folder (`path` ending in `/`) that may carry Portuguese as a whole. */
+export interface PathException {
+  readonly path: string;
+  /** Files inside a folder entry that are NOT exempt (they are scanned as any other file). */
+  readonly except?: readonly string[];
+  /** The file carries a `pt-BR kept:` comment with the reason (the test checks it is still there). */
+  readonly annotated?: boolean;
+  readonly reason: string;
+}
+
+/**
+ * Test files that keep Portuguese on purpose and say why in a `pt-BR kept:` comment (phase ID6):
+ * shared fixture data (names of `sampleProject` and the like), the object of a test that is the
+ * Portuguese text itself, or a value the engine matches. The reason below is the one in the file.
+ */
+export const ANNOTATED_FILES: readonly PathException[] = [
+  {
+    path: 'tests/app/shortcuts.test.ts',
+    annotated: true,
+    reason:
+      'ç is the character macOS Option+C produces (a key value, not Portuguese text)',
+  },
+  {
+    path: 'tests/canvas/harness.ts',
+    annotated: true,
+    reason:
+      "shared fixture data asserted by tests/canvas/renderers, tests/canvas/input and tests/app (layer 'Lataria', markings 'Porta' and 'Maçaneta', annotation 'Amassado' and its pairs)",
+  },
+  {
+    path: 'tests/canvas/renderPerformance.test.ts',
+    annotated: true,
+    reason:
+      'shared fixture data asserted by tests/model (tests/fixtures/material3 node names and values)',
+  },
+  {
+    path: 'tests/canvas/renderers/markings.test.ts',
+    annotated: true,
+    reason:
+      'shared fixture data (sampleProject) asserted by tests/model, tests/components',
+  },
+  {
+    path: 'tests/canvas/renderers/overlay.test.ts',
+    annotated: true,
+    reason:
+      'shared fixture data (sampleProject) asserted by tests/model, tests/components',
+  },
+  {
+    path: 'tests/components/CitationEditor.test.tsx',
+    annotated: true,
+    reason: 'shared fixture data asserted by tests/model (sampleProject)',
+  },
+  {
+    path: 'tests/components/CommentsWindow.test.tsx',
+    annotated: true,
+    reason: 'shared fixture data asserted by tests/model (threadFixtures HUMAN email)',
+  },
+  {
+    path: 'tests/components/Composer.test.tsx',
+    annotated: true,
+    reason: 'shared fixture data asserted by tests/model (sampleProject)',
+  },
+  {
+    path: 'tests/components/Details.test.tsx',
+    annotated: true,
+    reason: 'shared fixture data asserted by tests/model (specFixtures)',
+  },
+  {
+    path: 'tests/components/DiagnosticsComponents.test.tsx',
+    annotated: true,
+    reason: 'asserts that the Portuguese strings are absent in en-US',
+  },
+  {
+    path: 'tests/components/DiagnosticsView.test.tsx',
+    annotated: true,
+    reason: 'raw pt-BR fallback message of the model issue, only input data',
+  },
+  {
+    path: 'tests/components/Home.test.tsx',
+    annotated: true,
+    reason:
+      'the object of the test is accent- and case-insensitive search of Portuguese text',
+  },
+  {
+    path: 'tests/components/LinkDialog.test.tsx',
+    annotated: true,
+    reason:
+      'shared fixture data asserted by tests/model, tests/mcp (group names of specV11Fixtures)',
+  },
+  {
+    path: 'tests/components/ReadingDirection.test.tsx',
+    annotated: true,
+    reason: 'the object of this half of the test is the Portuguese dictionary',
+  },
+  {
+    path: 'tests/components/SameLayerLink.test.tsx',
+    annotated: true,
+    reason:
+      'shared fixture data asserted by tests/model (role name "Falha" of sameLayerFixtures)',
+  },
+  {
+    path: 'tests/components/SpecsDialog.test.tsx',
+    annotated: true,
+    reason: 'the pt-BR rendering of the model message is the object of the test',
+  },
+  {
+    path: 'tests/components/TableRefCell.test.tsx',
+    annotated: true,
+    reason:
+      'shared fixture data (names such as Alvo, alvos, Cliente.cpf, Glossário.termo) asserted by tests/model and tests/store',
+  },
+  {
+    path: 'tests/components/arrowLinks.test.tsx',
+    annotated: true,
+    reason:
+      'shared fixture data (Porta, Maçaneta, Lataria, Vidros) asserted by tests/model',
+  },
+  {
+    path: 'tests/components/arrows.test.tsx',
+    annotated: true,
+    reason: 'shared fixture data (Porta, Maçaneta) asserted by tests/model',
+  },
+  {
+    path: 'tests/components/bottomWindows.test.tsx',
+    annotated: true,
+    reason:
+      'shared fixture data (Porta, Maçaneta, Vidros, amassado, trinca, Título, Clique) asserted by tests/model',
+  },
+  {
+    path: 'tests/components/canvasMarkings.test.tsx',
+    annotated: true,
+    reason:
+      'shared fixture data (Porta, Maçaneta, images/frente) asserted by tests/model',
+  },
+  {
+    path: 'tests/components/catalog/CatalogView.test.tsx',
+    annotated: true,
+    reason: 'asserts that no Portuguese text leaks into en-US',
+  },
+  {
+    path: 'tests/components/citeMenus.test.tsx',
+    annotated: true,
+    reason:
+      "shared fixture data asserted by tests/model (cadastroProject field key 'texto'; sampleProject names 'Maçaneta', 'Amassado', 'images/frente.jpg'; harness folder 'projeto')",
+  },
+  {
+    path: 'tests/components/copyActions.test.tsx',
+    annotated: true,
+    reason:
+      "shared fixture data asserted by tests/model (sampleProject names 'Maçaneta', 'images/frente.jpg' and the harness folder 'projeto')",
+  },
+  {
+    path: 'tests/components/crumbsPath.test.tsx',
+    annotated: true,
+    reason:
+      "shared fixture data asserted by tests/model (sampleProject names 'Porta', 'Maçaneta' and the review fixture 'Formulário')",
+  },
+  {
+    path: 'tests/components/editorWindows.test.tsx',
+    annotated: true,
+    reason:
+      "shared fixture data asserted by tests/model (sampleProject names 'Porta', 'Maçaneta')",
+  },
+  {
+    path: 'tests/components/locks.test.tsx',
+    annotated: true,
+    reason:
+      "shared fixture data asserted by tests/model (sampleProject names 'Porta', 'Maçaneta', 'Fechadura', 'images/lateral.jpg')",
+  },
+  {
+    path: 'tests/components/noticeFixtures.ts',
+    annotated: true,
+    reason:
+      'shared fixture data asserted by tests/components and tests/model (spec id, names and notice messages)',
+  },
+  {
+    path: 'tests/components/review/details.test.tsx',
+    annotated: true,
+    reason:
+      'shared fixture data asserted by tests/model and tests/store (names from sampleProject, richScenario and firstImport: Porta, Fechadura, Lataria, Vidros, Amassado, gravidade, Formulário, Importação, Eventos)',
+  },
+  {
+    path: 'tests/components/review/itemHeader.test.tsx',
+    annotated: true,
+    reason:
+      'shared fixture data asserted by tests/store and tests/model (names Porta, Maçaneta, Vidros, Formulário from richScenario, sampleProject and firstImport)',
+  },
+  {
+    path: 'tests/components/review/navigation.test.tsx',
+    annotated: true,
+    reason:
+      'shared fixture data asserted by tests/model (names from sampleProject, e.g. Vidros, tipo)',
+  },
+  {
+    path: 'tests/components/review/programmaticFocusPaths.test.tsx',
+    annotated: true,
+    reason:
+      'shared fixture data asserted by tests/model (annotation name Título from cadastroProject)',
+  },
+  {
+    path: 'tests/components/review/reviewHarness.tsx',
+    annotated: true,
+    reason: 'shared fixture data asserted by tests/components and tests/canvas',
+  },
+  {
+    path: 'tests/components/review/reviewMode.test.tsx',
+    annotated: true,
+    reason:
+      "shared fixture data (item 'Botão') asserted by tests/store and tests/components",
+  },
+  {
+    path: 'tests/components/review/revisedFixture.ts',
+    annotated: true,
+    reason: 'shared fixture data asserted by tests/store (revisedGuard)',
+  },
+  {
+    path: 'tests/components/review/shownProject.test.tsx',
+    annotated: true,
+    reason:
+      "shared fixture data (marking 'Formulário' from firstImport) asserted by tests/components Read at each use: the language is only set in `beforeEach`.",
+  },
+  {
+    path: 'tests/components/treeWindow.test.tsx',
+    annotated: true,
+    reason:
+      'shared fixture data (names Porta, Maçaneta, Fechadura, Lataria, Vidros, image files lateral/frente of sampleProject) asserted by tests/',
+  },
+  {
+    path: 'tests/components/viewModePanel.test.tsx',
+    annotated: true,
+    reason:
+      "shared fixture data (layers 'Camada A', 'Camada B', 'Só dados' of viewModeFixtures) asserted by tests/canvas and tests/store",
+  },
+  {
+    path: 'tests/components/wrapMenus.test.tsx',
+    annotated: true,
+    reason:
+      "shared fixture data (names Porta, Maçaneta, Fechadura, image 'frente.jpg' of sampleProject) asserted by tests/",
+  },
+  {
+    path: 'tests/e2e/helpShortcutsLine.spec.ts',
+    annotated: true,
+    reason: 'the object of the test is the width of the pt-BR text of the shortcuts row',
+  },
+  {
+    path: 'tests/model/annotations.test.ts',
+    annotated: true,
+    reason:
+      "the keys and values 'tipo', 'gravidade' and 'média' come from the sampleProject fixture",
+  },
+  {
+    path: 'tests/model/citations.test.ts',
+    annotated: true,
+    reason:
+      'the names titulo, campos, alvos, cpf, nome, termo, Cliente, Lista, Alvos and Glossário come from refColumnFixtures (data of the fixture) Project: I1 (a.png) with M1, M2, M3 (unnamed); AM (model "Cliente", table campos with the row',
+  },
+  {
+    path: 'tests/model/citeTargets.test.ts',
+    annotated: true,
+    reason:
+      'the names titulo, campos, alvos, cpf, nome, termo, solto, principal, Modelo, Cliente, Alvos and Glossário come from refColumnFixtures (data of the fixture)',
+  },
+  {
+    path: 'tests/model/codeBlueprint.test.ts',
+    annotated: true,
+    reason:
+      'the names, keys, values and notes asserted here (Formulário, Cadastrar, Componentes, Eventos, texto, estilo, ...) come from specFixtures / variantsFixtures (data of the fixtures)',
+  },
+  {
+    path: 'tests/model/codeLocations.test.ts',
+    annotated: true,
+    reason: 'platform name of the sdui example, which is Portuguese data.',
+  },
+  {
+    path: 'tests/model/components/expressions.test.ts',
+    annotated: true,
+    reason:
+      "'não' is in the engine's falsy set (FALSY_TEXT in src/model/components/expressions.ts)",
+  },
+  {
+    path: 'tests/model/components/instantiate.test.ts',
+    annotated: true,
+    reason:
+      'boolean enum values "sim"/"não" of the engine (FALSY_TEXT in expressions.ts)',
+  },
+  {
+    path: 'tests/model/components/origin.test.ts',
+    annotated: true,
+    reason: 'default screen id of the engine (src/model/components/origin.ts)',
+  },
+  {
+    path: 'tests/model/invalidFixtures.ts',
+    annotated: true,
+    reason:
+      'the generated JSON in tests/fixtures/invalid/ must stay byte-identical (outside this batch)',
+  },
+  {
+    path: 'tests/model/invariants.test.ts',
+    annotated: true,
+    reason: 'name comes from sampleProject in fixtures.ts (outside this batch)',
+  },
+  {
+    path: 'tests/model/itemRef.test.ts',
+    annotated: true,
+    reason: 'the non-ASCII character is the object of the encoding test',
+  },
+  {
+    path: 'tests/model/markdown.test.ts',
+    annotated: true,
+    reason: 'the accents stripped from the slug are the object of the test',
+  },
+  {
+    path: 'tests/model/material3ComposeM2.test.ts',
+    annotated: true,
+    reason: "'não cabe' is the pt-BR text of the warning emitted by src/model",
+  },
+  {
+    path: 'tests/model/material3ComposeM3.test.ts',
+    annotated: true,
+    reason: "'não cabe' is the pt-BR text of the warning emitted by src/model",
+  },
+  {
+    path: 'tests/model/material3ComposeM4.test.ts',
+    annotated: true,
+    reason: "'não cabe' is the pt-BR text of the warning emitted by src/model",
+  },
+  {
+    path: 'tests/model/material3ComposeM4GrupoA.test.ts',
+    annotated: true,
+    reason: "'não cabe' is the pt-BR text of the warning emitted by src/model",
+  },
+  {
+    path: 'tests/model/material3ComposeM4GrupoC.test.ts',
+    annotated: true,
+    reason: "'não cabe' is the pt-BR text of the warning emitted by src/model",
+  },
+  {
+    path: 'tests/model/material3ComposeM5.test.ts',
+    annotated: true,
+    reason: "'não cabe' is the pt-BR text of the warning emitted by src/model",
+  },
+  {
+    path: 'tests/model/material3ComposeM5DatePicker.test.ts',
+    annotated: true,
+    reason: "'não cabe' is the pt-BR text of the warning emitted by src/model",
+  },
+  {
+    path: 'tests/model/material3ComposeM5GrupoA.test.ts',
+    annotated: true,
+    reason: "'não cabe' is the pt-BR text of the warning emitted by src/model",
+  },
+  {
+    path: 'tests/model/material3ExpressoesEx4.test.ts',
+    annotated: true,
+    reason:
+      'node names of libraries/material3-compose and of tests/fixtures/material3-ex4-v1.json are Portuguese data',
+  },
+  {
+    path: 'tests/model/material3ExpressoesEx6Carousel.test.ts',
+    annotated: true,
+    reason:
+      'node names of libraries/material3-compose and of tests/fixtures/material3-ex6-v1.json are Portuguese data',
+  },
+  {
+    path: 'tests/model/material3ExpressoesEx6Slider.test.ts',
+    annotated: true,
+    reason:
+      'node names of libraries/material3-compose and of tests/fixtures/material3-ex6-v1.json are Portuguese data',
+  },
+  {
+    path: 'tests/model/material3Mc5GrupoA.test.ts',
+    annotated: true,
+    reason:
+      'the warning texts may come in pt-BR (`não cabe`, `$lines instável`) as well as in English',
+  },
+  {
+    path: 'tests/model/material3Mf4Regression.test.ts',
+    annotated: true,
+    reason:
+      'the frozen fixture tests/fixtures/material3-mf4-before.json holds the Portuguese node and example names (EXCEPTIONS, L2_EXAMPLES): they are mapped to the English ones the library draws now (tests/support/material3OldNames.ts)',
+  },
+  {
+    path: 'tests/model/proposalChanges.test.ts',
+    annotated: true,
+    reason: 'shared fixture data (sampleProject entries) asserted by other tests',
+  },
+  {
+    path: 'tests/model/refAnnotation.test.ts',
+    annotated: true,
+    reason:
+      'shared fixture data (refAnnotationFixtures) asserted by tests/components and tests/ui',
+  },
+  {
+    path: 'tests/model/refAnnotationFixtures.ts',
+    annotated: true,
+    reason:
+      'shared fixture data (ids, names and keys of the spec) asserted by tests/components, tests/ui and tests/model',
+  },
+  {
+    path: 'tests/model/refColumn.test.ts',
+    annotated: true,
+    reason:
+      'shared fixture data (refColumnFixtures) asserted by tests/components and tests/store',
+  },
+  {
+    path: 'tests/model/refColumnFixtures.ts',
+    annotated: true,
+    reason:
+      'shared fixture data (spec ids, names and keys; project names and values) asserted by tests/components, tests/store and tests/model',
+  },
+  {
+    path: 'tests/model/refGrammar.test.ts',
+    annotated: true,
+    reason: 'accented characters are the object of the round-trip test',
+  },
+  {
+    path: 'tests/model/repair.test.ts',
+    annotated: true,
+    reason: 'shared fixture data (sampleProject names) asserted by other tests',
+  },
+  {
+    path: 'tests/model/scaleProject.ts',
+    annotated: true,
+    reason:
+      "shared fixture data asserted by tests/scale/mcp (mcpGrowth expects 'Dúvida')",
+  },
+  {
+    path: 'tests/model/schemaV4.test.ts',
+    annotated: true,
+    reason:
+      'shared fixture data (cadastroProject, specProject, sampleProject: Portuguese field keys, names and values) asserted by tests/mcp, tests/components and others',
+  },
+  {
+    path: 'tests/model/serialization.test.ts',
+    annotated: true,
+    reason:
+      'unicode (accents) is the object of the test, in the shared sampleProject entries',
+  },
+  {
+    path: 'tests/model/specFixtures.ts',
+    annotated: true,
+    reason:
+      'shared fixture data asserted by tests/mcp, tests/components, tests/store, tests/storage, tests/app and tests/model (Portuguese marking names, field keys and values, layer ids)',
+  },
+  {
+    path: 'tests/model/specV11.test.ts',
+    annotated: true,
+    reason:
+      'shared fixture data (specV11Fixtures: layers `componentes`/`eventos`, groups `navegacao`/`dados`, names `Navegação`/`Dados`), asserted by tests/mcp',
+  },
+  {
+    path: 'tests/model/specV11Fixtures.ts',
+    annotated: true,
+    reason:
+      'shared fixture data (ids and names asserted by tests/mcp, tests/components and tests/model) /',
+  },
+  {
+    path: 'tests/model/specV4.test.ts',
+    annotated: true,
+    reason:
+      'shared fixture data asserted by tests/model/spec.test.ts (tests/fixtures/specs/biblioteca.json)',
+  },
+  {
+    path: 'tests/model/threadFilters.test.ts',
+    annotated: true,
+    reason: 'accent-insensitive search is the object of the text filter tests below',
+  },
+  {
+    path: 'tests/model/threadUsers.test.ts',
+    annotated: true,
+    reason: 'the object is the sorting of accented Portuguese names',
+  },
+  {
+    path: 'tests/model/typeChoice.test.ts',
+    annotated: true,
+    reason: 'accent-insensitive search is the object (Botão, ação, Cartão below)',
+  },
+  {
+    path: 'tests/model/typedDisplay.test.ts',
+    annotated: true,
+    reason:
+      'shared fixture data asserted by tests/mcp, tests/components, tests/examples (cadastroProject/codeProject)',
+  },
+  {
+    path: 'tests/scale/mcp/mcpGrowth.scale.ts',
+    annotated: true,
+    reason:
+      'shared fixture data (thread text `Dúvida` of buildScaleThreads in tests/model/scaleProject.ts)',
+  },
+  {
+    path: 'tests/store/proposalHarness.ts',
+    annotated: true,
+    reason:
+      "shared fixture data (names 'Porta dianteira', 'Botão' and the path 'nova.webp') asserted by tests/components and tests/store",
+  },
+  {
+    path: 'tests/store/viewModeFixtures.ts',
+    annotated: true,
+    reason:
+      'shared fixture data asserted by tests/components, tests/canvas (spec id, layer and type names)',
+  },
+  {
+    path: 'tests/support/material3Library.ts',
+    annotated: true,
+    reason:
+      'the names of the examples of the FROZEN v1 fixture (tests/fixtures/material3-*-v1.json), which stay in Portuguese',
+  },
+  {
+    path: 'tests/support/material3OldNames.ts',
+    annotated: true,
+    reason: 'the keys are Portuguese data of the frozen fixtures.',
+  },
+  {
+    path: 'tests/ui/changeText.test.ts',
+    annotated: true,
+    reason:
+      'shared fixture data asserted by tests/model, tests/components (marking names of sampleProject)',
+  },
+  {
+    path: 'tests/ui/labels.test.ts',
+    annotated: true,
+    reason: 'the test checks the default name in both locales',
+  },
+  {
+    path: 'tests/ui/relativeTime.test.ts',
+    annotated: true,
+    reason:
+      'the object of most tests is the pt-BR relative-time text (and the en-US one in one test)',
+  },
+  {
+    path: 'tests/ui/specHelp.test.ts',
+    annotated: true,
+    reason: 'matches the pt-BR help text',
+  },
+  {
+    path: 'tests/ui/specPackageImport.test.ts',
+    annotated: true,
+    reason: 'a multi-byte accented character is the test data (UTF-8 byte count)',
+  },
+  {
+    path: 'tests/ui/suggestions.test.ts',
+    annotated: true,
+    reason: 'accented Portuguese letters are the object (Unicode word characters)',
+  },
+  {
+    path: 'tests/utils/search.test.ts',
+    annotated: true,
+    reason: 'accent normalization of Portuguese text is the object',
+  },
+];
+
+export const PORTUGUESE_PATHS: readonly PathException[] = [
+  ...ANNOTATED_FILES,
+  // ID10 sweep: file entries added by area A1
+  // ID10 sweep: file entries added by area A2
+  // ID10 sweep: file entries added by area A3
+  // ID10 sweep: file entries added by area B
+  // ID10 sweep: file entries added by area C
+  {
+    path: 'tests/e2e/fixtures/avisos-demo.spec.json',
+    reason:
+      'fixture data that tests/tooling/testingGuide.test.ts requires equal to the Portuguese JSON block of script R18 in docs/TESTING.md (the notices messages)',
+  },
+  {
+    path: 'tests/tooling/portugueseAllowlist.ts',
+    reason:
+      'this list: it holds the Portuguese protocol terms of decision 16 and quotes the exempted text in the reasons',
+  },
+  {
+    path: 'tests/tooling/portugueseGuard.test.ts',
+    reason: 'the tests of the guard itself feed it Portuguese sample lines and terms',
+  },
+  {
+    path: 'tests/fixtures/material3-mf4-before.json',
+    reason:
+      'frozen render snapshot taken before the Material 3 names were translated, input of the MF4 regression test',
+  },
+  {
+    path: 'tests/fixtures/material3/',
+    reason:
+      'fixture copy of a Material 3 package whose node names, keys and values are Portuguese data asserted by tests/model (annotated there)',
+  },
+  {
+    path: 'tests/fixtures/specs/biblioteca.json',
+    reason:
+      'shared fixture specification whose names are asserted by tests/model/spec.test.ts and specV4.test.ts',
+  },
+  {
+    path: 'tests/fixtures/sdui-v2.json',
+    reason:
+      'frozen old SDUI example specification (Portuguese platform and field names), input of the migration tests',
+  },
+  {
+    path: 'tests/fixtures/sdui-v3.json',
+    reason:
+      'frozen old SDUI example specification (Portuguese platform and field names), input of the migration tests',
+  },
+  {
+    path: 'tests/fixtures/invalid/',
+    reason:
+      'invalid-project fixtures: stored project data (field keys and option values such as "obrigatorio": "não") in Portuguese, like projects saved before the translation',
+  },
+  {
+    path: 'tests/fixtures/workspace/AGENTS.old.md',
+    reason:
+      'frozen copy of the old Portuguese AGENTS.md, input of the test that updates the managed block of an existing file',
+  },
+  {
+    path: 'src/i18n/pt-BR.ts',
+    reason:
+      'the pt-BR dictionary of the app (decision 2 of #741): the app stays bilingual',
+  },
+  {
+    path: 'src/i18n/modelMessagesTemplatesPtBR.ts',
+    reason:
+      'the pt-BR templates of the model messages, part of the bilingual app (decision 2 of #741)',
+  },
+  {
+    path: 'tests/i18n/',
+    reason:
+      'locale tests: they check the pt-BR text of the dictionaries and messages, and feed the model with the Portuguese strings it must translate (decision 2 of #741)',
+  },
+  {
+    path: 'tests/fixtures/material3-ex4-v1.json',
+    reason:
+      'frozen snapshot (v1) of the Material 3 package with the old Portuguese text: input of the migration tests; tests/support/material3V1Text.ts adopts the current text',
+  },
+  {
+    path: 'tests/fixtures/material3-ex6-v1.json',
+    reason:
+      'frozen snapshot (v1) of the Material 3 package with the old Portuguese text, input of the migration tests',
+  },
+  {
+    path: 'tests/fixtures/material3-m2-v1.json',
+    reason:
+      'frozen snapshot (v1) of the Material 3 package with the old Portuguese text, input of the migration tests',
+  },
+  {
+    path: 'tests/fixtures/material3-m3-v1.json',
+    reason:
+      'frozen snapshot (v1) of the Material 3 package with the old Portuguese text, input of the migration tests',
+  },
+  {
+    path: 'tests/fixtures/material3-m4-v1.json',
+    reason:
+      'frozen snapshot (v1) of the Material 3 package with the old Portuguese text, input of the migration tests',
+  },
+  {
+    path: 'tests/fixtures/material3-m5-v1.json',
+    reason:
+      'frozen snapshot (v1) of the Material 3 package with the old Portuguese text, input of the migration tests',
+  },
+  {
+    path: 'mappings-workspace/',
+    // setup.sh and watch-comments.mjs are copies of examples/workspace/ that
+    // mappingsWorkspaceSync.test.ts requires equal; AGENTS.md is scanned in its managed block.
+    except: [
+      'mappings-workspace/setup.sh',
+      'mappings-workspace/watch-comments.mjs',
+      'mappings-workspace/AGENTS.md',
+    ],
+    reason:
+      "the owner's mapping data, isolated from the code (CLAUDE.md, decision 18 of #741): projects, specializations, design-system tools and notes in Portuguese",
+  },
+];
+
+/**
+ * Files whose Portuguese lives in a block marked in the file itself, between a line with
+ * the begin marker (`PORTUGUESE_BLOCK_MARKERS.begin`, followed by the reason) and a line with the
+ * end marker (`PORTUGUESE_BLOCK_MARKERS.end`), in any comment syntax.
+ * Everything outside the blocks is scanned. The marker needs a reason.
+ */
+export const PORTUGUESE_BLOCK_MARKERS = {
+  begin: 'portuguese-guard:' + 'begin',
+  end: 'portuguese-guard:' + 'end',
+} as const;
+
+/**
+ * Files scanned only inside the block between two marker lines (the rest of the file is
+ * exempt): `mappings-workspace/AGENTS.md` keeps the managed block in English (the sync test
+ * requires it equal to `examples/workspace/AGENTS.md`) and the rest is the owner's data.
+ */
+export interface BlockOnlyException {
+  readonly path: string;
+  readonly begin: string;
+  readonly end: string;
+  readonly reason: string;
+}
+
+export const PORTUGUESE_BLOCK_ONLY: readonly BlockOnlyException[] = [
+  {
+    path: 'mappings-workspace/AGENTS.md',
+    begin: 'mapping:begin',
+    end: 'mapping:end',
+    reason:
+      "only the managed block is scanned (it is English and equal to examples/workspace/AGENTS.md); the rest of the file is the owner's data (decision 18 of #741)",
+  },
+];
+
+/** One line (or the lines that match `pattern`) of a file (or folder) that may keep Portuguese. */
+export interface LineException {
+  readonly path: string;
+  readonly pattern: RegExp;
+  readonly reason: string;
+}
+
+export const PORTUGUESE_LINES: readonly LineException[] = [
+  {
+    path: 'src/i18n/en-US.ts',
+    pattern: /'language\.pt-BR': 'Português \(Brasil\)'/,
+    reason:
+      'the name of the pt-BR language in its own language, as the language selector shows it',
+  },
+  {
+    path: 'examples/workspace/AGENTS.md',
+    pattern:
+      /^<!-- mapping:begin \(gerenciado pelo setup\.sh; não edite entre estas linhas\) -->$/,
+    reason:
+      'the begin marker of the managed block: setup.sh finds it in workspaces already installed, so its text cannot change',
+  },
+  {
+    path: 'mappings-workspace/AGENTS.md',
+    pattern:
+      /^<!-- mapping:begin \(gerenciado pelo setup\.sh; não edite entre estas linhas\) -->$/,
+    reason:
+      'copy of the begin marker of the managed block (see examples/workspace/AGENTS.md)',
+  },
+  {
+    path: 'examples/workspace/setup.sh',
+    pattern: /^## Fluxo típico'$/,
+    reason:
+      'the last heading of OLD_HEADINGS, which recognizes the Portuguese AGENTS.md of older installs',
+  },
+  {
+    path: 'mappings-workspace/setup.sh',
+    pattern: /^## Fluxo típico'$/,
+    reason: 'copy of examples/workspace/setup.sh (the sync test requires it equal)',
+  },
+  {
+    path: 'tests/tooling/queueBatch.test.ts',
+    pattern: /\/\^?não publicado/,
+    reason:
+      'expected panel output, frozen vocabulary of decision 16 (the `não publicado` line of `show`, in a regex literal)',
+  },
+  {
+    path: 'tests/tooling/queuePlanPhases.test.ts',
+    pattern: /\/não publicado desde/,
+    reason:
+      'expected panel output, frozen vocabulary of decision 16 (the `não publicado` line of `show`, in a regex literal)',
+  },
+  {
+    path: 'tests/tooling/queueCiWait.test.ts',
+    pattern: /\/horário inválido\//,
+    reason:
+      'expected panel output, frozen vocabulary of decision 16 (error text of painel.py, in a regex literal)',
+  },
+  {
+    path: 'tests/tooling/queueCost.test.ts',
+    pattern: /kind inválido|em \d sessões|\d sessões,|\/correção:\//,
+    reason:
+      'expected panel output, frozen vocabulary of decision 16 (cost lines and error text of painel.py, in regex literals)',
+  },
+  {
+    path: 'tests/tooling/queueExclusive.test.ts',
+    pattern: /Mudanças na fila|Quê\? \(já\)/,
+    reason: 'fixtures of the accent-insensitive slug test',
+  },
+  {
+    path: 'tests/tooling/queueOwnerAuthorization.test.ts',
+    pattern: /Ninguém está olhando/,
+    reason:
+      'negative assertion: the Portuguese phrase that the phase prompt no longer carries',
+  },
+  {
+    path: 'tests/tooling/queuePanel.test.ts',
+    pattern: /\/aguardando o dono abrir|\/<código> arquivada\//,
+    reason:
+      'expected panel output, frozen vocabulary of decision 16 (phrases of the skill, in regex literals)',
+  },
+  {
+    path: 'tests/tooling/queuePhaseContext.test.ts',
+    pattern:
+      /^ {2}'Retomada por contexto \(<k> de 5\)|\/Troca de sessão da fase <código>/,
+    reason: 'frozen resume notice (session-notices, decision 16), a whole sentence',
+  },
+  {
+    path: 'tests/tooling/queueConflict.test.ts',
+    pattern: /dep=nenhuma|mcp=não|schema=não|schema = 'não'|ficha\('nenhuma'/,
+    reason:
+      'fixture ficha of the panel: `nenhuma` and the `não` value that the engine matches (decision 2 of #741)',
+  },
+  {
+    path: 'tests/tooling/queueExclusive.test.ts',
+    pattern: /dep=nenhuma|mcp=não|schema=não|schema = 'não'|ficha\('nenhuma'/,
+    reason:
+      'fixture ficha of the panel: `nenhuma` and the `não` value that the engine matches (decision 2 of #741)',
+  },
+  {
+    path: 'tests/tooling/queueGraph.test.ts',
+    pattern: /dep=nenhuma|mcp=não|schema=não|schema = 'não'|ficha\('nenhuma'/,
+    reason:
+      'fixture ficha of the panel: `nenhuma` and the `não` value that the engine matches (decision 2 of #741)',
+  },
+  {
+    path: 'tests/tooling/queueImport.test.ts',
+    pattern: /dep=nenhuma|mcp=não|schema=não|schema = 'não'|ficha\('nenhuma'/,
+    reason:
+      'fixture ficha of the panel: `nenhuma` and the `não` value that the engine matches (decision 2 of #741)',
+  },
+  {
+    path: 'tests/tooling/queueSlots.test.ts',
+    pattern: /dep=nenhuma|mcp=não|schema=não|schema = 'não'|ficha\('nenhuma'/,
+    reason:
+      'fixture ficha of the panel: `nenhuma` and the `não` value that the engine matches (decision 2 of #741)',
+  },
+  {
+    path: 'tests/tooling/queueToca.test.ts',
+    pattern: /dep=nenhuma|mcp=não|schema=não|schema = 'não'|ficha\('nenhuma'/,
+    reason:
+      'fixture ficha of the panel: `nenhuma` and the `não` value that the engine matches (decision 2 of #741)',
+  },
+  {
+    path: 'tests/tooling/queueGraph.test.ts',
+    pattern: /\bde: '[^']*'(, para: |\s*\})|\bpara: |para: string/,
+    reason:
+      '`para` is a key of the graph arrows that painel.py emits (`de`, `para`, `tipo`), frozen vocabulary of decision 16',
+  },
+  {
+    path: 'tests/tooling/queuePanelPage.test.ts',
+    pattern: /\bde: '[^']*'(, para: |\s*\})|\bpara: |para: string/,
+    reason:
+      '`para` is a key of the graph arrows that painel.py emits (`de`, `para`, `tipo`), frozen vocabulary of decision 16',
+  },
+  {
+    path: '.claude/skills/implementar-fila/painel/painel.py',
+    pattern: /\{de, para, tipo\}|"para": k/,
+    reason:
+      'the keys de/para/tipo of the arrows of meta.grafoSetas, written by painel.py and read by the panel page and the graph tests',
+  },
+  {
+    path: '.claude/skills/implementar-fila/painel/painel.py',
+    pattern: /v\.strip\(\) != "não"/,
+    reason:
+      'the ficha value "não" of mcp= and schema= (no MCP or schema change), the frozen panel value the queue tests write',
+  },
+  {
+    path: '.claude/skills/implementar-fila/painel/painel.py',
+    pattern: /troque de sessão agora \(\\"Troca de sessão\\"\)/,
+    reason:
+      'the context note of the show output, matched verbatim by tests/tooling/queueContext.test.ts and queueSlots.test.ts',
+  },
+  {
+    path: '.claude/skills/implementar-fila/painel/index.html',
+    pattern: /\.para\b|'para'|\bpara: /,
+    reason:
+      'the key para of the arrows of meta.grafoSetas ({de, para, tipo}), which painel.py writes and the page reads',
+  },
+  {
+    path: '.claude/skills/supervisionar-fila/passagem/index.html',
+    pattern: /<title>Supervisão da fila<\/title>/,
+    reason:
+      'the artifact name "Supervisão da fila", which the skill looks up by name and tests/tooling/supervisorSkill.test.ts matches',
+  },
+  {
+    path: '.claude/skills/implementar-fila/SKILL.md',
+    pattern: /kind: fase, correção, testador, reteste/,
+    reason:
+      'the session kinds painel.py accepts in kind= (frozen panel values), listed in the usage reference',
+  },
+  // ID10 sweep: line entries added by area A3
+  {
+    path: 'tests/tooling/cloudHelpers.test.ts',
+    pattern: /'ãé✅'|'ç'/,
+    reason:
+      'accented characters are the object of the test: the body and the output cross a socket chunk whole',
+  },
+  {
+    path: 'tests/tooling/scriptsCli.test.ts',
+    pattern: /cópia-|répository|accént|ação ✓|Buffer\.from\('ç'\)/,
+    reason:
+      'accented paths and output are the object of the tests (the CLIs must handle non-ASCII text)',
+  },
+  {
+    path: 'tests/tooling/roundGuide.test.ts',
+    pattern: /\bquando\b/,
+    reason:
+      '`quando` is the field name of the exported SECOES_SOB_DEMANDA records of scripts/testing/round-guide.mjs',
+  },
+  // ID10 sweep: line entries added by area B
+  {
+    path: 'docs/TESTING.md',
+    pattern: /Português \(Brasil\)/,
+    reason:
+      'the name of the pt-BR language in its own language, as the language selector shows it, in the pt-BR steps R8.x and R11.15 and their quoted pt-BR checks',
+  },
+  {
+    path: 'docs/TESTING.md',
+    pattern: /conteúdo maior que a caixa: switch|Ir para Árvore de marcações/,
+    reason:
+      'the pt-BR texts of the app that the pt-BR checks of R8.5c and R11.10 assert (quoted UI text)',
+  },
+  {
+    path: 'docs/TESTING.md',
+    pattern: /Fluxo típico/,
+    reason:
+      'the headings of the Portuguese AGENTS.md of older installs, which the awk of the step matches',
+  },
+  {
+    path: 'docs/TESTING.md',
+    pattern: /Quando o cartão abraça|O contrato aceita avatar; o SDK ainda não/,
+    reason:
+      'sample text whose wrapping R25.9 measures (scripts/testing/fiel.mjs) and the copy of the avisos-demo e2e fixture that testingGuide.test.ts compares',
+  },
+  {
+    path: 'docs/TESTING.md',
+    pattern:
+      /Sair da página\?|Sair do site\?|Selecione onde|Selecione uma pasta|Não permitir|contém\s.*arquivos do sistema|Permitir que este site|Aviso: este site pode conferir/,
+    reason:
+      "titles and buttons of Chrome's own dialogs in pt-BR, which the cloud recipes look for (runtime data of the browser)",
+  },
+  {
+    path: 'docs/COMPONENT-FORMAT.md',
+    pattern: /"não", "nao"|\["sim", "não"\]/,
+    reason:
+      'the false values the engine recognizes and the stored options of a boolean enum field (decision 7 of #741)',
+  },
+  {
+    path: 'libraries/kotlin/',
+    pattern: /"não"/,
+    reason:
+      'the Kotlin options `sim`/`não` stay as stored data (decision 7 of #741): option, default and example values',
+  },
+  {
+    path: 'examples/specs/sdui.json',
+    pattern: /"não": "no"/,
+    reason: 'option value `não` of the boolean mapping, stored data (decision 7 of #741)',
+  },
+  {
+    path: 'examples/libraries/sdui-backend/sdui-backend.spec.json',
+    pattern: /"não": "no"/,
+    reason: 'option value `não` of the boolean mapping, stored data (decision 7 of #741)',
+  },
+  {
+    path: 'scripts/testing/fiel.mjs',
+    pattern: /Quando o cartão abraça/,
+    reason:
+      'sample text whose wrapping the R25.9 measurements of docs/TESTING.md depend on (W 150 to 202, H 56)',
+  },
+  {
+    path: 'scripts/testing/round-guide.mjs',
+    pattern: /\bquando\b/,
+    reason:
+      'field `quando` of SECOES_SOB_DEMANDA (Portuguese-named API: chave, titulo, fonte), read by tests/tooling/roundGuide.test.ts',
+  },
+  {
+    path: 'scripts/testing/round-guide.d.mts',
+    pattern: /\bquando\b/,
+    reason: 'type of the `quando` field of SECOES_SOB_DEMANDA (see round-guide.mjs)',
+  },
+  {
+    path: 'changelog/english.md',
+    pattern: /Português \(Brasil\)|`sim`\/`não`/,
+    reason:
+      'the pt-BR language name in its own language, and the Kotlin option values that stay as stored data (decision 7 of #741)',
+  },
+  // ID10 sweep: line entries added by area C
+  {
+    path: 'src/model/components/componentFormat.ts',
+    pattern: /"não"/,
+    reason:
+      'the boolean text `"não"` that the components engine treats as false (FALSY_TEXT in expressions.ts; stored data, decision 7 of #741)',
+  },
+  {
+    path: 'src/model/components/expressions.ts',
+    pattern: /não/,
+    reason:
+      'FALSY_TEXT: the engine treats the Portuguese boolean words `não`/`nao` as false because stored projects use them (decision 7 of #741)',
+  },
+  {
+    path: 'tests/e2e/guide.spec.ts',
+    pattern: /'Próximo'|'Containers e marcações'|'Trancada e posição a revisar'/,
+    reason:
+      'the pt-BR half of the bilingual interactive guide: the test checks the pt-BR strings of the guide',
+  },
+  {
+    path: 'tests/examples/guide.test.ts',
+    pattern:
+      /Container com marcações|Containers e marcações|você\|clique\|camada\|marcação/,
+    reason:
+      'the pt-BR half of the bilingual interactive guide, and the Portuguese words the test forbids in the English texts',
+  },
+  {
+    path: 'tests/mcp/code.test.ts',
+    pattern: /Formulário|Título/,
+    reason:
+      'shared fixture data: the marking `Formulário` and the annotation `Título` of the `cadastro` workspace project (tests/mcp/workspace.ts, specFixtures), asserted across tests/mcp',
+  },
+  {
+    path: 'tests/mcp/imageFixtures.ts',
+    pattern: /Formulário|Título/,
+    reason:
+      'shared fixture data: the marking `Formulário` and the annotation `Título` of the `cadastro` workspace project (tests/mcp/workspace.ts, specFixtures), asserted across tests/mcp',
+  },
+  {
+    path: 'tests/mcp/images.test.ts',
+    pattern: /Formulário|Título/,
+    reason:
+      'shared fixture data: the marking `Formulário` and the annotation `Título` of the `cadastro` workspace project (tests/mcp/workspace.ts, specFixtures), asserted across tests/mcp',
+  },
+  {
+    path: 'tests/mcp/read.test.ts',
+    pattern: /Formulário|Título/,
+    reason:
+      'shared fixture data: the marking `Formulário` and the annotation `Título` of the `cadastro` workspace project (tests/mcp/workspace.ts, specFixtures), asserted across tests/mcp',
+  },
+  {
+    path: 'tests/mcp/threads.test.ts',
+    pattern: /Formulário|Título/,
+    reason:
+      'shared fixture data: the marking `Formulário` and the annotation `Título` of the `cadastro` workspace project (tests/mcp/workspace.ts, specFixtures), asserted across tests/mcp',
+  },
+  {
+    path: 'tests/mcp/threadsRefs.test.ts',
+    pattern: /Formulário|Título/,
+    reason:
+      'shared fixture data: the marking `Formulário` and the annotation `Título` of the `cadastro` workspace project (tests/mcp/workspace.ts, specFixtures), asserted across tests/mcp',
+  },
+  {
+    path: 'tests/mcp/workspace.ts',
+    pattern: /Formulário|Título/,
+    reason:
+      'shared fixture data: the marking `Formulário` and the annotation `Título` of the `cadastro` workspace project (tests/mcp/workspace.ts, specFixtures), asserted across tests/mcp',
+  },
+  {
+    path: 'tests/mcp/write.test.ts',
+    pattern: /Formulário|Título/,
+    reason:
+      'shared fixture data: the marking `Formulário` and the annotation `Título` of the `cadastro` workspace project (tests/mcp/workspace.ts, specFixtures), asserted across tests/mcp',
+  },
+  {
+    path: 'tests/mcp/previewInBatch.test.ts',
+    pattern: /disabled: 'não'/,
+    reason:
+      'the default value of the boolean field `disabled` of the frozen fixture material3-m3-v1.json (stored data)',
+  },
+  {
+    path: 'tests/model/fixtures.ts',
+    pattern: /Maçaneta|média/,
+    reason:
+      'shared fixture data (sampleProject: marking Maçaneta, pair value média) asserted by tests/model, tests/store and tests/components',
+  },
+];
+
+/** Files of the repository that are not text or are generated and checked by another test. */
+export const GUARD_SKIPPED_PATHS: readonly {
+  readonly path: string;
+  readonly reason: string;
+}[] = [
+  {
+    path: 'public/guide/',
+    reason:
+      "the interactive guide generated by `npm run build:guide` from scripts/guide/ (bilingual: its pt-BR strings are the guide's own); a test checks that it is up to date, and its source is scanned",
+  },
+  {
+    path: 'package-lock.json',
+    reason: 'generated by npm; the names it lists are not text we write',
   },
 ];

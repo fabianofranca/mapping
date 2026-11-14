@@ -283,13 +283,13 @@ describe('CM1 — contextUsage.mjs: the CLI (decisions 1 and 3)', () => {
   it('CL1.3: a value that starts with -- gives code 2 and says the flag needs a value', () => {
     const r = cli(['--arquivo', '--x.jsonl'], {});
     expect(r.status).toBe(2);
-    expect(r.stderr).toMatch(/--arquivo pede um valor/);
+    expect(r.stderr).toMatch(/--arquivo needs a value/);
     const r2 = cli(['--max', '--teto', '5'], {});
     expect(r2.status).toBe(2);
-    expect(r2.stderr).toMatch(/--max pede um valor/);
+    expect(r2.stderr).toMatch(/--max needs a value/);
     const r3 = cli(['--arquivo'], {});
     expect(r3.status).toBe(2);
-    expect(r3.stderr).toMatch(/--arquivo pede um valor/);
+    expect(r3.stderr).toMatch(/--arquivo needs a value/);
   });
 
   it('CL1.3: a stray token gives code 2 and is called stray, in any position', () => {

@@ -25,10 +25,10 @@ const TRIGGER = GATILHO as number;
 const MARK = MARCADOR as string;
 const TAIL = 2 * 1024 * 1024;
 
-const phasePrompt = `${MARK}GC1 — o gancho da etapa #1856 do repositório \`fabianofranca/mapping\`.`;
+const phasePrompt = `${MARK}GC1 — the hook of stage #1856 of the repository \`fabianofranca/mapping\`.`;
 // What the coordinator actually sends (skill `implementar-fila`, "Per stage"): it opens with `Fase <código> —`.
 const queuePrompt =
-  'Fase GC1 — Gancho de contexto da fase da etapa #1856 (sub-issue #1882), do repositório `fabianofranca/mapping`, no fluxo automatizado.';
+  'Fase GC1 — Context hook of the phase da etapa #1856 (sub-issue #1882), of the repository `fabianofranca/mapping`, in the automated flow.';
 
 /** `user` line with the prompt as a string. */
 const userLine = (content: unknown): string =>
@@ -194,7 +194,7 @@ describe('GC1 — contextGuard.mjs: the silent outputs (decision 4)', () => {
   it('the coordinator, the tester and the supervision stay out', () => {
     for (const prompt of [
       '/implementar-fila #1856',
-      'Você é o testador da etapa #1856.',
+      'You are the tester of stage #1856.',
       '/supervisionar-fila',
     ]) {
       const box = sandbox([userLine(prompt), measure(300_000)]);
@@ -287,11 +287,11 @@ describe('GC1 — contextGuard.mjs: the state and the trigger (decisions 5, 6 an
     expect(Object.keys(out)).toEqual(['hookSpecificOutput']);
     expect(out.hookSpecificOutput.hookEventName).toBe('PostToolUse');
     const text = out.hookSpecificOutput.additionalContext;
-    expect(text).toContain('271 mil');
-    expect(text).toContain('270 mil');
-    expect(text).toContain('passe a vez');
-    expect(text).toContain('5 de 5');
-    expect(text).toContain('Subagente: ignore este aviso');
+    expect(text).toContain('271 thousand');
+    expect(text).toContain('270 thousand');
+    expect(text).toContain('hand over');
+    expect(text).toContain('5 of 5');
+    expect(text).toContain('Subagent: ignore this notice');
     expect(text).not.toContain('\n');
     expect(stateOf(b).ultimoAviso).toBe(TRIGGER + 1);
   });
@@ -306,7 +306,7 @@ describe('GC1 — contextGuard.mjs: the state and the trigger (decisions 5, 6 an
 
     appendFileSync(box.transcript, measure(280_001) + '\n');
     const out = warningOf(hook(box));
-    expect(out.hookSpecificOutput.additionalContext).toContain('281 mil');
+    expect(out.hookSpecificOutput.additionalContext).toContain('281 thousand');
     expect(stateOf(box).ultimoAviso).toBe(280_001);
   });
 });
@@ -323,7 +323,7 @@ describe('GC1 — contextGuard.mjs: the measure drops after a compaction (review
 
     appendFileSync(box.transcript, measure(275_000) + '\n');
     const out = warningOf(hook(box));
-    expect(out.hookSpecificOutput.additionalContext).toContain('275 mil');
+    expect(out.hookSpecificOutput.additionalContext).toContain('275 thousand');
     expect(stateOf(box).ultimoAviso).toBe(275_000);
   });
 
@@ -356,10 +356,10 @@ describe('GC1 — contextGuard.mjs: the jumps (decision 7)', () => {
 
     const bash = `Bash: ${command.slice(0, 40)}`;
     expect(bash).toBe('Bash: npm run lint && npm run typecheck && npm');
-    expect(text).toContain('290 mil');
-    const agent = text.indexOf('Agent: Write the test +90 mil');
-    const read = text.indexOf('Read: docs/FLOW.md +70 mil');
-    const first = text.indexOf(`${bash} +31 mil`);
+    expect(text).toContain('290 thousand');
+    const agent = text.indexOf('Agent: Write the test +90 thousand');
+    const read = text.indexOf('Read: docs/FLOW.md +70 thousand');
+    const first = text.indexOf(`${bash} +31 thousand`);
     expect(agent).toBeGreaterThan(-1);
     expect(read).toBeGreaterThan(agent);
     expect(first).toBeGreaterThan(read);

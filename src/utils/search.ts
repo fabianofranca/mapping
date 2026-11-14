@@ -1,4 +1,4 @@
-/** Lowercase and without accents: "cafe" finds "café". */
+/** Lowercase and without accents, so a plain "e" also matches an accented one. */
 export function normalizeSearch(text: string): string {
   return text.normalize('NFD').replaceAll(/[̀-ͯ]/g, '').toLowerCase();
 }

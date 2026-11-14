@@ -61,6 +61,24 @@ export function material3Catalog(): ComponentCatalog {
   return new Map([['material3', loaded]]);
 }
 
+/**
+ * The frozen Material 3 library (`tests/fixtures/material3/`) keeps its yes/no options in the language it was frozen in,
+ * while the viewer sample says `yes`/`no`: a `yes`/`no` the type does not list becomes its first/second option.
+ */
+export function libraryOption(
+  typeId: string,
+  key: string,
+  value: string | number,
+): string | number {
+  if (value !== 'yes' && value !== 'no') return value;
+  const spec = material3Spec();
+  const types = spec.layers.flatMap((layer) => layer.annotationTypes);
+  const field = types.find((t) => t.id === typeId)?.fields.find((f) => f.key === key);
+  const options = field !== undefined && 'options' in field ? field.options : undefined;
+  if (options === undefined || options.includes(value)) return value;
+  return options[value === 'yes' ? 0 : 1] ?? value;
+}
+
 /** The files of the Material 3 library, with the path in the project folder (`specs/material3/...`). */
 export function material3Files(): { path: string; bytes: Uint8Array }[] {
   const list = (dir: string): string[] =>
@@ -109,7 +127,9 @@ function withComponents(base: Project): Project {
     for (const instance of M3_SCREEN.instances) {
       const values = Object.fromEntries(
         Object.entries(instance.values).flatMap(([key, value]) =>
-          typeof value === 'string' || typeof value === 'number' ? [[key, value]] : [],
+          typeof value === 'string' || typeof value === 'number'
+            ? [[key, libraryOption(instance.typeId, key, value)]]
+            : [],
         ),
       );
       project = addComponentMarking(

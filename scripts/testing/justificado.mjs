@@ -8,9 +8,9 @@
 //     ink, 12 short of the width), so there are three lines (3, 3 and 1 word); the ink of the first
 //     two goes up to x 140 (justified) and that of the last, a single word, stays on the left;
 //   - the black stripe `#000000` (node `faixa`) at (180, 20), 100 × 80;
-//   - the `véu` (veil) at (200, 30), 60 × 20, with fill `{ $token: primary, alpha: 0.5, over: '#FFFFFF' }`:
+//   - the `veil` at (200, 30), 60 × 20, with fill `{ $token: primary, alpha: 0.5, over: '#FFFFFF' }`:
 //     the primary (`#6750A4`) at 50% composited over white, opaque (`#B3A7D1`), not letting the stripe through;
-//   - the `translúcido` (translucent) at (200, 60), 60 × 20, with the same `$token` and `alpha`, but without `over`: the
+//   - the `translucent` at (200, 60), 60 × 20, with the same `$token` and `alpha`, but without `over`: the
 //     primary at 50% over the black stripe (`#33284F`).
 // It also removes the `interaction` field from `card` (the minimal component does not draw it), like
 // `tokens.mjs` of R25.22; no effect if the copy no longer has it.
@@ -63,7 +63,7 @@ const card = {
       },
       {
         type: 'rect',
-        name: 'véu',
+        name: 'veil',
         anchors: { left: 200, top: 30 },
         width: 60,
         height: 20,
@@ -71,7 +71,7 @@ const card = {
       },
       {
         type: 'rect',
-        name: 'translúcido',
+        name: 'translucent',
         anchors: { left: 200, top: 60 },
         width: 60,
         height: 20,

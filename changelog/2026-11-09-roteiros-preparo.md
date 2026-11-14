@@ -4,7 +4,7 @@
 
 - R0.1 of `docs/TESTING.md` also lists **Open library** on the home screen, in the app's order.
 - R1.8a reads the tooltip text from `span.tooltip` (the `data-tooltip` attribute is empty).
-- R1.20b prepares its own project in `principal` (the **Show components over photos** option, a Note and **Link to…**), with the values expected from that setup (`data-arrows` 1, `data-components` 1); R1.20c undoes the setup at the end, and the "Não gravam nada" list and the `revision` of each write match that.
+- R1.20b prepares its own project in `principal` (the **Show components over photos** option, a Note and **Link to…**), with the values expected from that setup (`data-arrows` 1, `data-components` 1); R1.20c undoes the setup at the end, and the "Write nothing" list and the `revision` of each write match that.
 - R1.21a (2) and (3) expect `aria-pressed` `false` after closing with the **X**; R1.21b says where focus goes when closing Incomplete (the strip button if opened by it, the canvas if opened by `Ctrl+Shift+5`).
 - R9.12a does not expect a marking name in `telas`; R9.13 gives the `rect` of the Top app bar and of the Button, and the expected result checks the Top app bar as the parent.
 - R15.3 and R15.4 say that focus stays on **Image URL** when the strip appears, and count the requests by the difference of `grep -c foto.png` in the server log.

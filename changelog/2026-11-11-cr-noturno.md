@@ -2,7 +2,7 @@
 
 ## Alterado
 
-- The flow docs (`docs/PROCESS.md` and `docs/FLOW.md`, "Revisão de código") now say what the "CR por épico" schedule already does: the nightly review is only for the epic without a `/code-review high` of the whole epic at closing, decided by `riskTriggers.mjs` (`gatilho:` skips, `nenhum gatilho` enters). The "Como roda" brings the schedule and coordinator ids and how to recreate the coordinator, the "Limitações conhecidas" record the epic closed outside the queue, and the reviewer's message becomes the literal copy of the one stored in the schedule (markers `{nome}`, `{pr}` and `{sha}`). A test in `tests/tooling/` checks the repository side.
+- The flow docs (`docs/PROCESS.md` and `docs/FLOW.md`, "Code review") now say what the "CR por épico" schedule already does: the nightly review is only for the epic without a `/code-review high` of the whole epic at closing, decided by `riskTriggers.mjs` (`gatilho:` skips, `nenhum gatilho` enters). The "How it runs" brings the schedule and coordinator ids and how to recreate the coordinator, the "Known limitations" record the epic closed outside the queue, and the reviewer's message becomes the literal copy of the one stored in the schedule (markers `{name}`, `{pr}` and `{sha}`). A test in `tests/tooling/` checks the repository side.
 
 ## Corrigido
 

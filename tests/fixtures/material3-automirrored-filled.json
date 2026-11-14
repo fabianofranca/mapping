@@ -1,5 +1,5 @@
 {
-  "_comment": "Os ícones de Icons.AutoMirrored.Filled do androidx (nomes do Compose), lidos em androidx.compose.material:material-icons-core 1.7.8 e material-icons-extended 1.7.8 (os -sources.jar, pasta androidx/compose/material/icons/automirrored/filled). O commit 5113b82a… do androidx não traz os arquivos dos ícones (são gerados e publicados à parte), então a lista vem dos artefatos publicados (1.7.8, a última estável). Usada por tests/model/material3ComposeLibrary.test.ts.",
+  "_comment": "The icons of androidx Icons.AutoMirrored.Filled (Compose names), read from androidx.compose.material:material-icons-core 1.7.8 and material-icons-extended 1.7.8 (the -sources.jars, folder androidx/compose/material/icons/automirrored/filled). Commit 5113b82a… of androidx does not carry the icon files (they are generated and published separately), so the list comes from the published artifacts (1.7.8, the last stable one). Used by tests/model/material3ComposeLibrary.test.ts.",
   "names": [
     "Accessible",
     "AccessibleForward",

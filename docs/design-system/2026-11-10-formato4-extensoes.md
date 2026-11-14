@@ -2,7 +2,7 @@
 
 ## Pendências
 
-Applied at closing (see Sincronização). The epic touches the component format, the drawing engine (`src/canvas/components/`), the `material3-compose` library and the MCP raster; no token, icon or control of the app changes.
+Applied at closing (see `## Sincronização`). The epic touches the component format, the drawing engine (`src/canvas/components/`), the `material3-compose` library and the MCP raster; no token, icon or control of the app changes.
 
 ## Sincronização
 

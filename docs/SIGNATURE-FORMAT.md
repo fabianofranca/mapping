@@ -9,7 +9,7 @@ The schema is in [`signature.schema.json`](signature.schema.json). Mapping's val
 The specialization (`formatVersion` 16, see [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Signatures and field templates") cites the sheet in the type's `code` (`signature`). With it:
 
 - MCP returns, in the `code`, the `unmapped`: the parameters that no field binds and that `ignore` does not dismiss, in source order (including the required ones, such as `onClick`);
-- `validate_library` checks that the `code`'s `params` point to parameters that exist (warning `parâmetro fora da ficha: "<nome>"`) and that the sheet is the one for the same symbol and file.
+- `validate_library` checks that the `code`'s `params` point to parameters that exist (warning `parameter outside the signature: "<name>"`) and that the sheet is the one for the same symbol and file.
 
 The sheet stores nothing about the solution or the project; it only records what the source declares.
 
@@ -17,13 +17,13 @@ The sheet stores nothing about the solution or the project; it only records what
 
 **Strict** object: an unknown key is an error (`propriedade desconhecida: "x"`).
 
-| Key             | Required | Description                                                                                                    |
-| --------------- | -------- | -------------------------------------------------------------------------------------------------------------- |
-| `format`        | yes      | Always `"mapping-signature"`.                                                                                  |
-| `formatVersion` | yes      | `1`. It is the version **of the sheet**, independent of the specialization, library and project versions.      |
-| `source`        | yes      | Where the signature came from (below).                                                                         |
-| `params`        | yes      | List of parameters, **in source order**. A repeated name is an error (`parâmetro "x" repetido`). May be empty. |
-| `doc`           | no       | Documentation per parameter: parameter name → text (KDoc's `@param`, Swift's `///`, Figma's `description`).    |
+| Key             | Required | Description                                                                                                       |
+| --------------- | -------- | ----------------------------------------------------------------------------------------------------------------- |
+| `format`        | yes      | Always `"mapping-signature"`.                                                                                     |
+| `formatVersion` | yes      | `1`. It is the version **of the sheet**, independent of the specialization, library and project versions.         |
+| `source`        | yes      | Where the signature came from (below).                                                                            |
+| `params`        | yes      | List of parameters, **in source order**. A repeated name is an error (`parameter "x" is repeated`). May be empty. |
+| `doc`           | no       | Documentation per parameter: parameter name → text (KDoc's `@param`, Swift's `///`, Figma's `description`).       |
 
 A platform, language or system name appears **only in `source`**; the rest of the sheet describes parameters.
 
@@ -33,17 +33,17 @@ It has two formats, depending on `kind`.
 
 **`kind: "code"`** (a function, a view, a class):
 
-| Key         | Required | Description                                                                                                                                                |
-| ----------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `kind`      | yes      | `"code"`.                                                                                                                                                  |
-| `platform`  | yes      | The specialization's platform id (`compose`, `swiftui`).                                                                                                   |
-| `language`  | yes      | The language read (`kotlin`, `swift`).                                                                                                                     |
-| `symbol`    | yes      | What gets called, with the full name (`androidx.compose.material3.Button`). Must equal the `symbol` of the `code` that cites the sheet.                    |
-| `path`      | yes      | The file that defines it, relative to the repository root. Must equal the `code`'s `path`, when it declares one.                                           |
-| `ref`       | no       | The commit, tag or branch read.                                                                                                                            |
-| `extractor` | yes      | Who wrote the sheet: `mapping-signature/<leitor>@<versão>` (an extractor, such as `mapping-signature/kotlin@1`) or `agent` (the agent that read the code). |
-| `overload`  | no       | Integer from 0 up: the overload chosen (Kotlin).                                                                                                           |
-| `init`      | no       | Integer from 0 up: the `init` chosen (Swift).                                                                                                              |
+| Key         | Required | Description                                                                                                                                                 |
+| ----------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kind`      | yes      | `"code"`.                                                                                                                                                   |
+| `platform`  | yes      | The specialization's platform id (`compose`, `swiftui`).                                                                                                    |
+| `language`  | yes      | The language read (`kotlin`, `swift`).                                                                                                                      |
+| `symbol`    | yes      | What gets called, with the full name (`androidx.compose.material3.Button`). Must equal the `symbol` of the `code` that cites the sheet.                     |
+| `path`      | yes      | The file that defines it, relative to the repository root. Must equal the `code`'s `path`, when it declares one.                                            |
+| `ref`       | no       | The commit, tag or branch read.                                                                                                                             |
+| `extractor` | yes      | Who wrote the sheet: `mapping-signature/<reader>@<version>` (an extractor, such as `mapping-signature/kotlin@1`) or `agent` (the agent that read the code). |
+| `overload`  | no       | Integer from 0 up: the overload chosen (Kotlin).                                                                                                            |
+| `init`      | no       | Integer from 0 up: the `init` chosen (Swift).                                                                                                               |
 
 **`kind: "design"`** (a component of a design system):
 
@@ -101,7 +101,7 @@ Strict object: `kind`, `default?` and `options?`.
 
 ### `factory`
 
-A parameter whose value is built by a function (`colors: ButtonColors = ButtonDefaults.buttonColors()`) carries `factory`: `{ call, params }`, where `call` is the factory's symbol and `params` are its parameters, in the same format as `params`. It is **one level only**: `factory` inside `factory` is an error (`a fábrica não pode ter fábrica: só um nível`). The specialization binds a field to the factory's argument by path (`colors.containerColor`).
+A parameter whose value is built by a function (`colors: ButtonColors = ButtonDefaults.buttonColors()`) carries `factory`: `{ call, params }`, where `call` is the factory's symbol and `params` are its parameters, in the same format as `params`. It is **one level only**: `factory` inside `factory` is an error (`a factory cannot have a factory: one level only`). The specialization binds a field to the factory's argument by path (`colors.containerColor`).
 
 ## Complete example: Compose's `Button`
 
@@ -267,25 +267,25 @@ In the type's `code.<platform>` (and in each case of `variants`), `signature` is
 
 Each error carries the path inside the sheet (the root is empty). The main ones:
 
-| Path                                  | Message                                                                       |
-| ------------------------------------- | ----------------------------------------------------------------------------- |
-|                                       | `propriedade desconhecida: "x"`; `deve ser um objeto`                         |
-| `format`                              | `deve ser "mapping-signature"`                                                |
-| `formatVersion`                       | `deve ser 1`                                                                  |
-| `source`, `params`                    | `obrigatório`                                                                 |
-| `source.kind`                         | `"x" inválido; use "code" ou "design"`                                        |
-| `source.extractor`                    | `inválido; use "mapping-signature/<leitor>@<versão>" ou "agent"`              |
-| `source.overload`                     | `deve ser um inteiro de 0 em diante` (igual para `init`)                      |
-| `params[2].name`                      | `parâmetro "x" repetido`                                                      |
-| `params[2].role`                      | `"x" inválido; use "value", "slot", "callback", "modifier", "state", "other"` |
-| `params[2].value`                     | `só é permitido em role "value"`                                              |
-| `params[2].value.kind`                | `"x" inválido; use "text", "boolean", "number", …`                            |
-| `params[2].value.options`             | `obrigatório em enum`; `só é permitido em enum`                               |
-| `params[4].factory.params[0].factory` | `a fábrica não pode ter fábrica: só um nível`                                 |
-| `doc.<nome>`                          | `deve ser texto`                                                              |
+| Path                                  | Message                                                                         |
+| ------------------------------------- | ------------------------------------------------------------------------------- |
+|                                       | `unknown property: "x"`; `must be an object`                                    |
+| `format`                              | `must be "mapping-signature"`                                                   |
+| `formatVersion`                       | `must be 1`                                                                     |
+| `source`, `params`                    | `required`                                                                      |
+| `source.kind`                         | `"x" is invalid; use "code" or "design"`                                        |
+| `source.extractor`                    | `invalid; use "mapping-signature/<reader>@<version>" or "agent"`                |
+| `source.overload`                     | `must be an integer from 0 up` (the same for `init`)                            |
+| `params[2].name`                      | `parameter "x" is repeated`                                                     |
+| `params[2].role`                      | `"x" is invalid; use "value", "slot", "callback", "modifier", "state", "other"` |
+| `params[2].value`                     | `only allowed with role "value"`                                                |
+| `params[2].value.kind`                | `"x" is invalid; use "text", "boolean", "number", …`                            |
+| `params[2].value.options`             | `required for enum`; `only allowed for enum`                                    |
+| `params[4].factory.params[0].factory` | `a factory cannot have a factory: one level only`                               |
+| `doc.<name>`                          | `must be text`                                                                  |
 
-In `validate_library`, the sheet file that the specialization cites and that does not exist (`arquivo não encontrado`), invalid JSON and a `source.symbol` or `source.path` different from the `code`'s are also errors; a `params` that points to a parameter absent from the sheet is a warning.
+In `validate_library`, the sheet file that the specialization cites and that does not exist (`file not found`), invalid JSON and a `source.symbol` or `source.path` different from the `code`'s are also errors; a `params` that points to a parameter absent from the sheet is a warning.
 
 ## Format version
 
-The sheet's `formatVersion` is **1**. It is independent of the `formatVersion` of the specialization (16 is the first that cites sheets), of the component and of the project. A sheet of a different version is refused with `formatVersion: deve ser 1`.
+The sheet's `formatVersion` is **1**. It is independent of the `formatVersion` of the specialization (16 is the first that cites sheets), of the component and of the project. A sheet of a different version is refused with `formatVersion: must be 1`.

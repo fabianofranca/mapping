@@ -65,7 +65,7 @@ describe('expected jobs, read from ci.yml', () => {
   it('a matrix of another format makes the script fail', () => {
     const yaml =
       'jobs:\n  test:\n    strategy:\n      matrix:\n        os: [a, b]\n        node: [1, 2]\n    runs-on: x\n';
-    expect(() => expectedOf(yaml)).toThrow(/matriz/);
+    expect(() => expectedOf(yaml)).toThrow(/matrix/);
   });
 });
 
@@ -269,7 +269,7 @@ describe('decideQueued: run stuck in the queue (#1669)', () => {
       minutos: 18,
       execucoes: 1,
       reaberto: false,
-      reason: 'na fila sem jobs há 18 min',
+      reason: 'queued with no jobs for 18 min',
     });
   });
 
@@ -281,7 +281,7 @@ describe('decideQueued: run stuck in the queue (#1669)', () => {
       now: '2026-11-11T20:53:06Z',
     });
     expect(at15.preso).toBe(false);
-    expect(at15.reason).toBe('há 15 min (limite 15)');
+    expect(at15.reason).toBe('15 min (limit 15)');
     const over = decideQ({
       runs: [r2677],
       jobsTotal: 0,
@@ -290,7 +290,7 @@ describe('decideQueued: run stuck in the queue (#1669)', () => {
     });
     expect(over.preso).toBe(true);
     expect(over.minutos).toBe(15);
-    expect(over.reason).toBe('na fila sem jobs há 15 min');
+    expect(over.reason).toBe('queued with no jobs for 15 min');
   });
 
   it('the latest one with jobs is not stuck', () => {
@@ -417,7 +417,7 @@ describe('queued command (#1669)', () => {
         'minutos=18\n' +
         'execucoes=1\n' +
         'reaberto=false\n' +
-        'reason=na fila sem jobs há 18 min\n',
+        'reason=queued with no jobs for 18 min\n',
     );
   });
 

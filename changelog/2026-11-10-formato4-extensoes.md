@@ -3,7 +3,7 @@
 ## Adicionado
 
 - Component format 4: `font.verticalAlign: "cap-middle"` centers the text by the capital letter's height (from the first line to the base of the last), in the app and the viewer, in simple text, with `maxLines` and with `runs`. `middle` does not change. In versions 1 to 3 the literal is an error.
-- Component format 4: number `$token` in `shadow.x`, `shadow.y` and `shadow.blur` and in each item of the `cornerRadius` list, and `stroke.dash` by expression (`$switch`/`$if`/`$field`) with number `$token` in the items; an invalid resolved value gives the warning `valor inválido em shadow.blur` or `valor inválido em stroke.dash` and counts as 0 or no dash.
+- Component format 4: number `$token` in `shadow.x`, `shadow.y` and `shadow.blur` and in each item of the `cornerRadius` list, and `stroke.dash` by expression (`$switch`/`$if`/`$field`) with number `$token` in the items; an invalid resolved value gives the warning `invalid value in shadow.blur` or `invalid value in stroke.dash` and counts as 0 or no dash.
 - Component format 4: `layout.justify` gains `space-around` and `space-evenly`, and `layout.reverse` inverts the order of the children on the main axis (the `start` becomes the end), in frame, slot and screen arrangement.
 - Component format 4: `alpha` in the color `$token` (`{ "$token": "scrim", "alpha": 0.32 }`) multiplies the color's alpha; `alpha: 0` is the transparent stop of a gradient.
 - Component format 4: `stroke.offset` (px ≥ 0, literal or `$token`) moves the stroke away from the shape, in `frame`, `rect` and `ellipse`; the app, the viewer and the MCP PNG draw the ring offset from the shape (radius + `offset`), and the root's enlarged clip accounts for it.

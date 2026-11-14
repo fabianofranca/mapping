@@ -8,8 +8,10 @@ const entries = existsSync(DIR) ? readdirSync(DIR).filter((f) => f !== 'README.m
 const read = (f: string): string => readFileSync(`${DIR}/${f}`, 'utf8');
 
 const NAME = /^(?:(\d{4}-\d{2}-\d{2})-)?([a-z0-9]+(?:-[a-z0-9]+)*)\.md$/;
+// portuguese-guard:begin frozen record title of docs/design-system/ (decision 16 of #741): the unreleased marker and the epic fragment
 const TITLE =
   /^# .+ — (\d{4}-\d{2}-\d{2}|\[Não lançado\]) \(épico `epic\/([a-z0-9-]+)`\)$/;
+// portuguese-guard:end
 const SECTIONS = new Set(['## Pendências', '## Sincronização', '## Ficou sem gravar']);
 
 describe('docs/design-system/', () => {
@@ -37,7 +39,7 @@ describe('docs/design-system/', () => {
   );
 
   it.each(entries)(
-    '%s: sections only Pendências, Sincronização and Ficou sem gravar',
+    '%s: sections only ## Pendências, ## Sincronização and ## Ficou sem gravar',
     (f) => {
       const sections = read(f)
         .split('\n')
@@ -47,9 +49,11 @@ describe('docs/design-system/', () => {
   );
 
   it.each(entries.filter((f) => /^\d{4}-/.test(f)))(
-    '%s: the dated record has Sincronização',
+    '%s: the dated record has "## Sincronização"',
     (f) => {
+      // portuguese-guard:begin frozen section title of the records
       expect(read(f)).toMatch(/^## Sincronização$/m);
+      // portuguese-guard:end
     },
   );
 
@@ -81,6 +85,7 @@ const listItems = (lines: string[]): string[] => {
   return items;
 };
 
+// portuguese-guard:begin frozen vocabulary of the record sections (docs/DESIGN-SYSTEM.md, decision 16 of #741)
 // "- AB1: nenhuma (…)" or "- Nada." are not a real pending item.
 // "nenhuma"/"nada" alone (period, parenthesis or end): "- Nada gravado ainda: …" is a real pending item.
 const NO_ITEM =
@@ -89,6 +94,7 @@ const NO_ITEM =
 const WROTE =
   /^(?:Gravado no artefato|Vers(?:ão|ões) \d(?!.*não foi gravada)|Sem impacto)/;
 const MOVED = /Passou para o registro do épico `epic\/([a-z0-9-]+)`/;
+// portuguese-guard:end
 
 /** The rule of decision 12; returns the reason for the failure, or null if the record passes. */
 function ruleViolation(
@@ -108,7 +114,7 @@ function ruleViolation(
   if (WROTE.test(firstSync)) return null;
   const left = listItems(sectionOf(text, '## Ficou sem gravar') ?? []);
   if (left.length === 0) {
-    return `${name}: has real Pendências and does not say it wrote, but "Ficou sem gravar" has no item`;
+    return `${name}: has real pending items and does not say it wrote, but "## Ficou sem gravar" has no item`;
   }
   for (const item of left) {
     const moved = MOVED.exec(item);
@@ -146,6 +152,7 @@ describe('log rule: the closing writes to the artifact (#1390, DS2)', () => {
   const NAME_ = '2026-11-10-x.md';
   it('fails the text of 2026-11-10-barra-canvas-estreita.md from before DS1 (commit cf50aaec)', () => {
     // Text of the deciding sections, as it was in `cf50aaec` (before DS1), without depending on git.
+    // portuguese-guard:begin frozen text of an old record (sections and wording of the record format, decision 16 of #741)
     const old = [
       '# Barra do canvas estreita — 2026-11-10 (épico `epic/barra-canvas-estreita`)',
       '',
@@ -163,17 +170,20 @@ describe('log rule: the closing writes to the artifact (#1390, DS2)', () => {
       '- As pendências acima (guias `Breadcrumbs`, `ActionMenu`, `Popover` e a barra do canvas), para aplicar à mão no artefato.',
       '',
     ].join('\n');
+    // portuguese-guard:end
     const why = ruleViolation('2026-11-10-barra-canvas-estreita.md', old, []);
     expect(why).toContain('2026-11-10-barra-canvas-estreita.md');
     expect(why).toContain('Motivo:');
   });
 
+  // portuguese-guard:begin the three frozen openings of the record's Sincronização section
   it.each([
     ['Gravado no artefato', 'Gravado no artefato **Mapping** em 2026-11-10: versão 70.'],
     ['Versões', 'Versões 53 (conteúdo) e 54 (índice) do artefato.'],
     ['Versão', 'Versão 34 (conteúdo e índice) do artefato.'],
     ['Sem impacto', 'Sem impacto no DS: só documentação.'],
-  ])('passes with the Sincronização opened by "%s"', (_n, sync) => {
+    // portuguese-guard:end
+  ])('passes with the "## Sincronização" opened by "%s"', (_n, sync) => {
     expect(ruleViolation(NAME_, base(sync, '- Nothing.'), [])).toBeNull();
   });
 
@@ -203,14 +213,16 @@ describe('log rule: the closing writes to the artifact (#1390, DS2)', () => {
     );
   });
 
-  it('passes with Pendências only "- XX1: nenhuma (…)"', () => {
+  it('passes with "## Pendências" only "- XX1: nenhuma (…)"', () => {
     const t = base('No recording.', '', '- XX1: nenhuma (nothing changed in the DS).');
     expect(ruleViolation(NAME_, t, [])).toBeNull();
   });
 
   // DS7 (#1472, achados 5 a 7)
-  it('"Versão N não foi gravada" does not count as a recording', () => {
+  it('"Version N was not written" does not count as a recording', () => {
+    // portuguese-guard:begin fixture of the "not written" opening of the record's Sincronização section
     const b = base('Versão 3 não foi gravada.', '');
+    // portuguese-guard:end
     expect(ruleViolation(NAME_, b, [])).toContain('has no item');
   });
 
@@ -223,7 +235,7 @@ describe('log rule: the closing writes to the artifact (#1390, DS2)', () => {
     expect(ruleViolation(NAME_, t, [])).toContain('has no item');
   });
 
-  it('"Passou para" does not point to its own record nor to an already closed epic', () => {
+  it('the moved-record marker does not point to its own record nor to an already closed epic', () => {
     const own = base(
       'No recording.',
       '- Passou para o registro do épico `epic/x`: guia.',
@@ -308,11 +320,13 @@ describe('rule texts: the closing writes to the artifact (#1390, DS2)', () => {
     expect(item).toContain('/design-sync');
   });
 
-  it('"When writing" cites the Artifact tool and the three openings of Sincronização', () => {
+  it('"When writing" cites the Artifact tool and the three openings of "## Sincronização"', () => {
     const rec = part(ds, /^When writing:/m, /^## Map$/m);
     expect(rec).toContain('`Artifact`');
     expect(rec).toContain('Gravado no artefato');
+    // portuguese-guard:begin frozen opening of the Sincronização section
     expect(rec).toMatch(/Versões? <n>/);
+    // portuguese-guard:end
     expect(rec).toContain('Sem impacto');
   });
 

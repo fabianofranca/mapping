@@ -18,7 +18,7 @@ import { checkSimpleValue, isEmptyValue } from './typed';
 import { typeAppliesTo, type SpecRefAccepts } from './spec';
 import type { Annotation, JsonValue, Project } from './types';
 
-// Issues ("incomplete", docs/ARCHITECTURE.md, "Especializações no projeto e anotações tipadas"):
+// Issues ("incomplete", docs/ARCHITECTURE.md, "Specializations in the project and typed annotations"):
 // computed from the project and the specializations, never stored. Saving incomplete is always
 // allowed.
 

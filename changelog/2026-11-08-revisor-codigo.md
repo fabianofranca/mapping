@@ -2,7 +2,7 @@
 
 ## Adicionado
 
-- Automatic code review, for the delivery flow: every epic merged into `main` is reviewed overnight, and the findings become a round issue and one `bug` issue per confirmed high- or medium-severity defect, all with the new `code-review` label. The starting point is the base CR of 2026-11-08, which reviewed the whole `main`. Rules in `CLAUDE.md` ("Revisão de código") and messages in `docs/FLOW.md`.
+- Automatic code review, for the delivery flow: every epic merged into `main` is reviewed overnight, and the findings become a round issue and one `bug` issue per confirmed high- or medium-severity defect, all with the new `code-review` label. The starting point is the base CR of 2026-11-08, which reviewed the whole `main`. Rules in `CLAUDE.md` ("Code review") and messages in `docs/FLOW.md`.
 
 ## Alterado
 

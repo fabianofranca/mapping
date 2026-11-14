@@ -107,7 +107,7 @@ write(
     fill: '#FFFFFF',
     layout: { type: 'column', gap: 8, padding: 20 },
     children: [
-      { type: 'rect', name: 'régua', width: 'fill', height: 6, fill: '#6D4C41' },
+      { type: 'rect', name: 'ruler', width: 'fill', height: 6, fill: '#6D4C41' },
       {
         type: 'frame',
         name: 'cartao',
@@ -158,7 +158,7 @@ write(
             default: '#9E9E9E',
           },
           children: [
-            { type: 'text', name: 'rótulo', text: { $field: 'label' }, color: '#000000' },
+            { type: 'text', name: 'label', text: { $field: 'label' }, color: '#000000' },
           ],
         },
       },
@@ -195,7 +195,7 @@ write(
     fill: '#FFFFFF',
     layout: { type: 'column', gap: 4, padding: 5 },
     children: [
-      { type: 'rect', name: 'régua', width: 'fill', height: 4, fill: '#E65100' },
+      { type: 'rect', name: 'ruler', width: 'fill', height: 4, fill: '#E65100' },
       {
         type: 'text',
         name: 'linha',
@@ -244,7 +244,7 @@ write(
     fill: '#FFFFFF',
     layout: { type: 'column', gap: 8, padding: 10 },
     children: [
-      { type: 'rect', name: 'régua', width: 'fill', height: 4, fill: '#827717' },
+      { type: 'rect', name: 'ruler', width: 'fill', height: 4, fill: '#827717' },
       {
         type: 'text',
         name: 'linha',

@@ -67,7 +67,7 @@ describe('ScreenRenderer', () => {
       y: email?.box.y,
     });
     expect(renderer.warnings().size).toBe(0);
-    expect(renderer.labelOf('i-enter')).toBe('Entrar');
+    expect(renderer.labelOf('i-enter')).toBe('Sign in');
   });
 
   it('respects zBase (the caller may have other children before)', () => {

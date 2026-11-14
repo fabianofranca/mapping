@@ -254,7 +254,7 @@ describe('threadSubject', () => {
 
 describe('isUnread', () => {
   const me = { email: 'marina@exemplo.com' };
-  const other = { ...HUMAN, name: 'João', email: 'joao@exemplo.com' };
+  const other = { ...HUMAN, name: 'John', email: 'joao@exemplo.com' };
 
   it('null lastReadAt: everything is later', () => {
     const t = sampleThread({ messages: [message('m1', T0, other)] });

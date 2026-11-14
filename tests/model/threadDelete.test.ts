@@ -4,7 +4,7 @@ import { AGENT, HUMAN, T0, T1, T2, T3, message, sampleThread } from './threadFix
 
 const me = { email: 'marina@exemplo.com' };
 const BY = { name: 'Marina Alves', email: 'marina@exemplo.com' };
-const JOAO = { ...HUMAN, name: 'João', email: 'joao@exemplo.com' };
+const JOAO = { ...HUMAN, name: 'John', email: 'joao@exemplo.com' };
 
 describe('deleteImpact', () => {
   it('direct when all messages are from the same email (ignoring spaces and case)', () => {
@@ -70,7 +70,7 @@ describe('deleteImpact', () => {
       threads: 2,
       messages: 5,
       authors: [
-        { key: userKey(JOAO), label: 'João', kind: 'human', count: 3 },
+        { key: userKey(JOAO), label: 'John', kind: 'human', count: 3 },
         { key: userKey(AGENT), label: 'Claude Code', kind: 'agent', count: 1 },
         { key: userKey(HUMAN), label: 'Marina Alves', kind: 'human', count: 1 },
       ],

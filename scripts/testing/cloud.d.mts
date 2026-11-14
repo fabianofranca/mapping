@@ -219,7 +219,7 @@ export function nearHandle(
 export function paletteDrag(
   page: unknown,
   tipo: string,
-  para: { x: number; y: number },
+  to: { x: number; y: number },
   options?: {
     capture?: string;
     steps?: number;
@@ -231,7 +231,7 @@ export function paletteDrag(
 export function drag(
   page: unknown,
   de: { x: number; y: number },
-  para: { x: number; y: number },
+  to: { x: number; y: number },
   options?: {
     select?: boolean;
     steps?: number;

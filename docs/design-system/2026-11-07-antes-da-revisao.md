@@ -7,7 +7,7 @@
 
 ## Sincronização
 
-Nothing to write to the **Mapping** artifact in this close: the "Before the revision" block (rows per field) and the positioning behavior of the `Popover` with a limit are recorded in Pendências and wait for the next sync, with no new token or icon. The artifact was not opened.
+Nothing to write to the **Mapping** artifact in this close: the "Before the revision" block (rows per field) and the positioning behavior of the `Popover` with a limit are recorded in `## Pendências` and wait for the next sync, with no new token or icon. The artifact was not opened.
 
 ## Ficou sem gravar
 

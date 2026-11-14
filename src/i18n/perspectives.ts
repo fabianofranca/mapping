@@ -120,6 +120,7 @@ export const perspectivesEnUS = {
   'perspective.status.arrivalsMany': '{count} items came from other perspectives',
 } as const;
 
+// portuguese-guard:begin pt-BR part of the bilingual module (decision 2 of #741)
 export const perspectivesPtBR: Record<keyof typeof perspectivesEnUS, string> = {
   'perspective.principal': 'Principal',
   'perspective.principalNote': 'tudo · onde as propostas são aceitas',
@@ -225,3 +226,4 @@ export const perspectivesPtBR: Record<keyof typeof perspectivesEnUS, string> = {
   'perspective.status.arrivalsOne': '1 item veio de outra perspectiva',
   'perspective.status.arrivalsMany': '{count} itens vieram de outras perspectivas',
 };
+// portuguese-guard:end

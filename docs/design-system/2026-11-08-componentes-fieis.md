@@ -12,7 +12,7 @@
 
 ## Sincronização
 
-Gravado no artefato **Mapping** (version 60, `lastChange` "Claude Code (fechamento do épico componentes-fieis)"), in a single publish, index last:
+Gravado no artefato **Mapping** (version 60, `lastChange` "Claude Code (closing of the epic componentes-fieis)"), in a single publish, index last:
 
 - `tokens.json`: `size-indicator-min-marking` = `24px` (`size` family).
 - `Canvas.md` and `components/CanvasMarking/README.md`: the token and the indicator rule at low zoom (CF8).

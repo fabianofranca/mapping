@@ -38,7 +38,7 @@ export interface MarkingFilters {
 export const DEFAULT_LIMIT = 100;
 export const MAX_LIMIT = 500;
 
-/** Lowercase and without accents: "titulo" finds "Título". */
+/** Lowercase and without diacritics (accent-insensitive search). */
 function fold(text: string): string {
   return text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 }

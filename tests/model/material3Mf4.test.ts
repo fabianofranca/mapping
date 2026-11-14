@@ -60,7 +60,7 @@ function findAll(node: SceneNode, name: string, out: SceneNode[] = []): SceneNod
 }
 /**
  * The position of `target` inside `root` (the sum of the frame offsets between the two, without that of `root`); `undefined`
- * if `target` is not under `root`. In L2 (#1078) the copy of the numbers under the handle sits under shifted `posição` frames.
+ * if `target` is not under `root`. In L2 (#1078) the copy of the numbers under the handle sits under shifted `position` frames.
  */
 function offsetIn(
   root: SceneNode,
@@ -459,7 +459,7 @@ describe('MF4: number under the time-picker handle (decision 21)', () => {
     expect(texts).toContain('35');
     expect(texts).toContain('40');
     const partly = (c: TextNode): boolean => {
-      // The position in the handle: that of the `posição` frames plus that of the text.
+      // The position in the handle: that of the `position` frames plus that of the text.
       const { x, y } = offsetIn(handle, c)!;
       const inside = (px: number, py: number) =>
         px >= 0 && px <= 48 && py >= 0 && py <= 48;

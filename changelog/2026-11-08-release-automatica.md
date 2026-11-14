@@ -2,4 +2,4 @@
 
 ## Alterado
 
-- The stable version of the MCP server is published on its own when the epic enters `main` with a new version; before, the owner created the `mcp-v<versão>` tag by hand.
+- The stable version of the MCP server is published on its own when the epic enters `main` with a new version; before, the owner created the `mcp-v<version>` tag by hand.

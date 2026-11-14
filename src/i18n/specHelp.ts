@@ -668,6 +668,7 @@ const ISSUE_EXCERPT = `{
  * messages and tree comments). Entries match whole JSON strings (or a key with its value),
  * so ids, keys and option values never change.
  */
+// portuguese-guard:begin pt-BR part of the bilingual module (decision 2 of #741): sample prose of the pt-BR page
 const PT_BR_SAMPLE_TEXT: readonly (readonly [string, string])[] = [
   ['"Components"', '"Componentes"'],
   ['"Events"', '"Eventos"'],
@@ -724,6 +725,7 @@ function inPtBR(code: string): string {
   return PT_BR_SAMPLE_TEXT.reduce((text, [en, pt]) => text.replaceAll(en, pt), code);
 }
 
+// portuguese-guard:end
 const enUS: readonly HelpSection[] = [
   {
     id: 'concept',
@@ -1580,6 +1582,7 @@ const enUS: readonly HelpSection[] = [
   },
 ];
 
+// portuguese-guard:begin pt-BR part of the bilingual module (decision 2 of #741): the pt-BR help page
 const ptBR: readonly HelpSection[] = [
   {
     id: 'concept',
@@ -2432,6 +2435,8 @@ const ptBR: readonly HelpSection[] = [
     ],
   },
 ];
+
+// portuguese-guard:end
 
 const content: Record<Locale, readonly HelpSection[]> = { 'pt-BR': ptBR, 'en-US': enUS };
 

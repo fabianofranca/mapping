@@ -70,7 +70,7 @@ function acceptanceQueue() {
   stage('#6', ficha('nenhuma', 'e.ts'), 'exclusive=sim');
   stage('#7', ficha('nenhuma', 'f.ts'), 'exclusive=sim');
   stage('#8', ficha('#6:aberta', 'g.ts'));
-  stage('#9', ficha('nenhuma', 'h.ts'), 'hold=esperando dono (decisão)');
+  stage('#9', ficha('nenhuma', 'h.ts'), 'hold=owner decision pending');
 }
 
 describe('painel.py — queue graph (GF1, #1761)', () => {
@@ -146,7 +146,7 @@ describe('painel.py — queue graph (GF1, #1761)', () => {
         total: 2,
         motivo: 'fase X2',
       });
-      expect(node('#9').motivo).toBe('esperando dono (decisão)');
+      expect(node('#9').motivo).toBe('owner decision pending');
       expect(node('#4').motivo).toBe('dep #1');
       expect(node('#3').motivo).toBe('arquivo a.ts com #1');
       expect(node('#2')).toMatchObject({ fase: '', feitas: 0, total: 2 });
@@ -155,7 +155,7 @@ describe('painel.py — queue graph (GF1, #1761)', () => {
   );
 
   it(
-    'd. the arrows, only the transitive reduction (no #1→#5), ordered by para and then by de',
+    'd. the arrows, only the transitive reduction (no #1→#5), ordered by target and then by source',
     () => {
       acceptanceQueue();
       expect(arrows()).toEqual([
@@ -293,7 +293,7 @@ describe('painel.py — queue graph (GF1, #1761)', () => {
       stage('#10', ficha('nenhuma', 'z.ts'), 'status=concluída');
       expect(nodes().some((n) => n.issue === '#10')).toBe(false);
       expect(meta().vagas).toBe(
-        'Vagas 2/2 · #3 arquivo a.ts com #1 · #4 dep #1 · #5 dep #4, #1 · #6 exclusiva (espera a fila esvaziar) · #7 exclusiva (espera a fila esvaziar) · #8 dep #6 · #9 esperando dono (decisão)',
+        'Vagas 2/2 · #3 arquivo a.ts com #1 · #4 dep #1 · #5 dep #4, #1 · #6 exclusiva (espera a fila esvaziar) · #7 exclusiva (espera a fila esvaziar) · #8 dep #6 · #9 owner decision pending',
       );
       expect(meta().vagasItens).toEqual([
         'Vagas 2/2',
@@ -303,7 +303,7 @@ describe('painel.py — queue graph (GF1, #1761)', () => {
         '#6 exclusiva (espera a fila esvaziar)',
         '#7 exclusiva (espera a fila esvaziar)',
         '#8 dep #6',
-        '#9 esperando dono (decisão)',
+        '#9 owner decision pending',
       ]);
       run('row', dir, '#2', 'status=concluída');
       expect(node('#3').onda).toBe(1);

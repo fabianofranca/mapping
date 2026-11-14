@@ -267,11 +267,11 @@ describe('M3 group A — switch', () => {
       // on: on-surface track at 0.12 over surface (opaque color, no opacity layer); surface thumb; on-surface icon at 0.38
       expectComposite(fillOf(on[mode], 'track'), over('on-surface', container));
       expect(named(on[mode], 'track')?.opacity).toBe(1);
-      expect(named(on[mode], 'trilho desabilitado')).toBeUndefined();
+      expect(named(on[mode], 'disabled track')).toBeUndefined();
       expect(named(on[mode], 'outline')).toBeUndefined();
       expect(fillOf(on[mode], 'handle')).toBe(tok('surface', mode));
       expect(named(on[mode], 'handle')?.opacity).toBe(1);
-      expect(named(on[mode], 'alça desabilitada')).toBeUndefined();
+      expect(named(on[mode], 'disabled handle')).toBeUndefined();
       expect(iconOf(on[mode], 'check').color).toBe(tok('on-surface', mode));
       expect(iconOf(on[mode], 'check').node?.opacity).toBe(0.38);
       // off: surface-container-highest track at 0.12, on-surface outline at 0.12 and on-surface thumb at 0.38, all over surface
@@ -280,13 +280,13 @@ describe('M3 group A — switch', () => {
         over('surface-container-highest', container),
       );
       expect(named(off[mode], 'track')?.opacity).toBe(1);
-      expect(named(off[mode], 'trilho desabilitado')).toBeUndefined();
+      expect(named(off[mode], 'disabled track')).toBeUndefined();
       expectComposite(strokeOf(off[mode], 'outline'), over('on-surface', container));
       expect(named(off[mode], 'outline')?.opacity).toBe(1);
-      expect(named(off[mode], 'contorno desabilitado')).toBeUndefined();
+      expect(named(off[mode], 'disabled outline')).toBeUndefined();
       expectComposite(fillOf(off[mode], 'handle'), over('on-surface', content));
       expect(named(off[mode], 'handle')?.opacity).toBe(1);
-      expect(named(off[mode], 'alça desabilitada')).toBeUndefined();
+      expect(named(off[mode], 'disabled handle')).toBeUndefined();
       // off icon: opaque surface base + surface-container-highest at 0.38 on top
       const closes = [...walk(off[mode].root)].filter((n) => n.name === 'close');
       expect(closes).toHaveLength(2);

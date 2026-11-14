@@ -678,7 +678,7 @@
           <div class="val" id="mp-custo-hora">—</div>
         </div>
       </div>
-      <h3>Per day (Brasília time)</h3>
+      <h3>Per day (Brasilia time)</h3>
       <div class="scroll">
         <div class="dias" id="mp-custo-dias" data-source="custoDia">—</div>
       </div>
@@ -861,12 +861,12 @@
           ];
         },
       });
-      // Cost per Brasília day and session kind: the day is that of `created` (without it, `cost.at`, like
+      // Cost per Brasilia day and session kind: the day is that of `created` (without it, `cost.at`, like
       // `costed` of painel.py); a session with neither comes out with a null `dia`, outside the chart.
       dash.calc('custoDia', {
         inputs: ['meta'],
         title: 'Cost per day and session kind',
-        description: 'Cost of the sessions per day (Brasília time) and per session kind.',
+        description: 'Cost of the sessions per day (Brasilia time) and per session kind.',
         fn: (meta) => {
           const es = (asList((meta[0] || {}).sessions) || []).filter((e) => e && e.cost);
           const m = new Map();
@@ -1262,7 +1262,7 @@
         const back = card ? card.querySelector('button') : null;
         if (back) back.focus();
       }
-      // Completed (stage #1840): the `concluída` rows of the queue, per day of `ended` in Brasília.
+      // Completed (stage #1840): the `concluída` rows of the queue, per day of `ended` in Brasilia.
       const diaKey = (ms) => new Date(ms).toLocaleDateString('en-CA', { timeZone: TZ });
       // Only the weekday label is English; the other locale-formatted values (US$ with a decimal
       // comma, times, the log date) keep the pt-BR format, which the owner reads and tests compare.

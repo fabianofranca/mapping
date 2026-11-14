@@ -18,8 +18,7 @@ exist yet, cited whole. A folder (ends in `/` or `/**`, or exists at the reposit
 an existing document with sections but no anchor, and an anchor outside the form (in `docs/TESTING.md`, `R<n>`, `RP`, `RF`, `RA`, `RB`, a
 slug or `inicio`; in the others, a slug or `inicio`) give `ficha incompleta (toca: <first invalid citation>)` and go into
 `fichas a refazer:`, including on the already started stage, whose old citations stay in the comparison as today until the ficha is
-redone; the `exclusive=sim` line does not go through this validation (only the `?` makes it incomplete). `toca "<citations separated
-by commas>"` checks a list: `ok` (code 0) or one `inválida: <citation> — <reason>` line per citation (code 1).
+redone; the `exclusive=sim` line does not go through this validation (only the `?` makes it incomplete). `toca "<citations separated by commas>"` checks a list: `ok` (code 0) or one `inválida: <citation> — <reason>` line per citation (code 1).
 `conflito "<toca>" [--pasta <dir>] [--com "#N=<toca>"]…` (decision 9 of #1864, read-only, outside `apply`) checks a `toca` against
 the started and not merged stages of the folder, the ones `show` lists in `começar agora:` and each `--com`, with the same calculation as the queue:
 `livre` (code 0, also without `--pasta` and without `--com`), one `conflito: <citation> com #N (<status>|começa agora|fora do painel)` line
@@ -63,8 +62,7 @@ served=] [issue= kind=]` writes the session's cost (`kind` required with a new i
 and prints the total, one line per kind (sessions, US$, median) and one per stage (with `--desde`, only those with `created` from
 the date on); `show` brings the `custo:` line.
 Tester ceiling (decision 9 of #1639): a `cost` of a `testador` or `reteste` session with `ctx` above TESTER_CONTEXT_LIMIT
-is written as always, exits with 0 and prints `acima do teto do testador (300 mil): <id> <ctx>`; `show` brings `testador acima do
-teto: <stage> <label> <ctx in thousands>k; …` (or `nenhum`), only for the stages not `concluída` and outside `meta.merged`.
+is written as always, exits with 0 and prints `acima do teto do testador (300 mil): <id> <ctx>`; `show` brings `testador acima do teto: <stage> <label> <ctx in thousands>k; …` (or `nenhum`), only for the stages not `concluída` and outside `meta.merged`.
 Current session of each role (decision 7 of #1532): `role DIR <coordenador|supervisor> <id> [link=<url>]` writes
 `meta.roles.<role> = {id, n, at, link, previous}` (`previous` = the id registered before) with `n` = the previous one + 1 (or 1); `roles DIR` reads only the `meta` and prints
 `coordenador <n>: <id>` and `supervisor <n>: <id> (<link>)`, or `—`. A session that is not the registered one does not act.
@@ -105,7 +103,7 @@ exclusive stage at the front (the first by `order`, without `hold` and with a co
 it and before those it holds (`estado` `exclusiva`, reason `segurada para a exclusiva #N`); in a cycle, what is left enters
 together in the last one.
 `rank` (1, 2, 3…): the `aguardando` without `started`, except `segurada` and `ficha`, by wave and `order`; the others stay `null`. Arrow
-`{de, para, tipo}` (`de` holds `para`): `dep` by the ficha's `dep=` between nodes (without `:main` or `meta.merged`), only the
+`{de, para, tipo}` (the arrow runs from the holder to the held one): `dep` by the ficha's `dep=` between nodes (without `:main` or `meta.merged`), only the
 transitive reduction, and `arquivo` from `#N` when the reason is `arquivo <x> com #N` or `schema com #N`.
 Standard library only. Usage: painel.py [--now ISO] <subcommand> DIR ...
 (the subcommand comes BEFORE the folder: `painel.py row <folder> '#n' status=...`).
@@ -371,7 +369,7 @@ def cmd_init(a):
     if not a.force:
         ex = [n + ".json" for n in FILES if os.path.exists(path(a.dir, n))]
         if ex:
-            raise Erro("já existem: " + " ".join(ex) + " (use --force para recriar)")
+            raise Erro("already exist: " + " ".join(ex) + " (use --force to recreate)")
     t = now()
     save(a.dir, "queue", [])
     save(a.dir, "meta", [{"runStart": "", "waitingSince": t, "updatedAt": t, "current": ""}])
@@ -961,7 +959,7 @@ def print_rules(meta):
         return
     print("regras em vigor:")
     for r in rs:
-        exit_ = f" [saída: {r['saida']}]" if r.get("saida") else ""
+        exit_ = f" [exit: {r['saida']}]" if r.get("saida") else ""
         print(f"  {r.get('id', '?')} ({r.get('origem', '?')}): {r.get('texto', '')}{exit_}")
 
 
@@ -1063,7 +1061,7 @@ def cmd_published(a):
             m[0].pop("publishing", None)
             save(d, "meta", m)
         else:
-            print("nada em voo (gravou depois do published, ou não houve published): mantido como não publicado")
+            print("nada em voo (written after published, or there was no published): kept as unpublished")
         return
     at = now()
     files = list((m[0].get("unpublished") or {}).get("files", []))
@@ -1161,7 +1159,7 @@ def norm_toca(raw):
     """Citations of a `toca=` already normalized, without the ones that do not count; `?` if it says nothing."""
     if raw is None or raw.strip() in ("", "?"):
         return ["?"]
-    # A parenthesized note after the path ("x.ts (novo método)") is not part of it.
+    # A parenthesized note after the path ("x.ts (new method)") is not part of it.
     raw = re.sub(r"\s+\([^)]*\)", "", raw)
     out = []
     for x in raw.split(","):
@@ -1758,7 +1756,7 @@ def parse_com(items):
     for item in items or []:
         num, sep, cites = item.partition("=")
         if not sep:
-            raise Erro(f"--com '{item}' inválido (use \"#N=<toca>\")")
+            raise Erro(f"--com '{item}' invalid (use \"#N=<toca>\")")
         out.append((norm_issue(num), norm_toca(cites)))
     return out
 
@@ -1918,10 +1916,10 @@ def build_parser():
     sp.add_argument("--done", action="store_true", help="the batch succeeded: clears what is left to publish")
     add("touch", cmd_touch, "the publication failed: marks the 3 files as not published again")
     sp = sub.add_parser("slug", help="prints the slug of a `##` title (section anchor)")
-    sp.add_argument("title", metavar="título")
+    sp.add_argument("title", metavar="title")
     sp.set_defaults(fn=cmd_slug)
     sp = sub.add_parser("toca", help="checks citations of the toca= (files and sections): ok, or `inválida: … — <reason>` and code 1")
-    sp.add_argument("cites", metavar="citações", help="separated by commas, as in the ficha's toca=")
+    sp.add_argument("cites", metavar="citations", help="separated by commas, as in the ficha's toca=")
     sp.set_defaults(fn=cmd_toca)
     sp = sub.add_parser("conflito", help="checks a toca against the queue (read-only): livre (0), `conflito: … com #N (…)` (1) or `inválida: …` (2)")
     sp.add_argument("toca", metavar="toca", help="citations separated by commas, as in the ficha's toca=")

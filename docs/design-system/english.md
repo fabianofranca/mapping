@@ -2,7 +2,7 @@
 
 ## Pendências
 
-Pendências: none (process only). The epic translates the repository's text to English; the app keeps its two dictionaries (en-US and pt-BR) with the same keys, and no component, token or icon of the design system changes. Guide page (ID7, part 2): impact none found in the `docs/DESIGN-SYSTEM.md` triggers; the guide uses the app's tokens through `renderTokensCss`, and only its texts and the choice of language changed.
+Pending: none (process only). The epic translates the repository's text to English; the app keeps its two dictionaries (en-US and pt-BR) with the same keys, and no component, token or icon of the design system changes. Guide page (ID7, part 2): impact none found in the `docs/DESIGN-SYSTEM.md` triggers; the guide uses the app's tokens through `renderTokensCss`, and only its texts and the choice of language changed.
 
 ## Sincronização
 
