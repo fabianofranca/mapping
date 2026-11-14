@@ -3,26 +3,26 @@ import type { SpecChildRole } from './spec';
 import { ownerRolesOf } from './specLookup';
 import type { Annotation, Project } from './types';
 
-// "Vinculadas" de um dono com papéis (v14, decisão 19): uma linha por papel.
+// "Linked" items of an owner with roles (v14, decision 19): one row per role.
 
 export interface RoleLinks {
   readonly role: SpecChildRole;
-  /** Os filhos diretos com este papel, na ordem do projeto. */
+  /** The direct children with this role, in project order. */
   readonly items: readonly Annotation[];
 }
 
 export interface LinkedByRole {
-  /** `childRolesLabel` do tipo do dono ("Trigger", "Slot"…); `null` = sem rótulo declarado. */
+  /** `childRolesLabel` of the owner's type ("Trigger", "Slot"…); `null` = no declared label. */
   readonly label: string | null;
-  /** Uma linha por papel, na ordem de `childRoles` (inclusive os sem filhos). */
+  /** One row per role, in `childRoles` order (including those without children). */
   readonly rows: readonly RoleLinks[];
-  /** Filhos sem papel, ou com um papel que o dono não oferece (pendências). */
+  /** Children without a role, or with a role the owner does not offer (pending items). */
   readonly unassigned: readonly Annotation[];
 }
 
 /**
- * Os filhos diretos de `owner` agrupados pelo papel que ele oferece. `null` quando o tipo do dono
- * não declara `childRoles`: ali os filhos continuam agrupados por camada.
+ * The direct children of `owner` grouped by the role it offers. `null` when the owner's type
+ * does not declare `childRoles`: there the children stay grouped by layer.
  */
 export function linkedByRole(p: Project, owner: Annotation): LinkedByRole | null {
   const offered = ownerRolesOf(p, owner);

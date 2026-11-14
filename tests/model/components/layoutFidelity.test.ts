@@ -108,7 +108,7 @@ describe('B1: regressões e aviso', () => {
       ]),
     );
     expect(kid(scene, 0).width).toBe(0);
-    expect(warnings).toContain('fill dentro de hug vira 0');
+    expect(warnings).toContain('fill inside hug becomes 0');
   });
 
   it('texto hug continua medido sem quebra', () => {
@@ -132,7 +132,7 @@ describe('B1: regressões e aviso', () => {
         ]),
       ]),
     );
-    expect(warnings).toContain('texto medido com largura 0: rótulo');
+    expect(warnings).toContain('text measured with width 0: rótulo');
   });
 });
 
@@ -178,7 +178,7 @@ describe('B2: repeat.distribute', () => {
   it('sem distribute, height fill no template vale 0 com o aviso de hoje', () => {
     const { root: scene, warnings } = root(tree({}, { height: 'fill' }), rows);
     expect((kid(scene, 0) as FrameNode).children.map((c) => c.height)).toEqual([0, 0, 0]);
-    expect(warnings).toContain('fill dentro de hug vira 0');
+    expect(warnings).toContain('fill inside hug becomes 0');
   });
 });
 
@@ -195,7 +195,7 @@ describe('B3: expressão em layout e tamanho', () => {
     expect(ok.warnings).toEqual([]);
     const bad = root(tree, { dir: 'diagonal' });
     expect(bad.root.children.map(xOf)).toEqual([0, 0]);
-    expect(bad.warnings).toContain('valor inválido em layout.type: diagonal');
+    expect(bad.warnings).toContain('invalid value in layout.type: diagonal');
   });
 
   it('width por $switch: fill, hug, % e px', () => {
@@ -219,16 +219,16 @@ describe('B3: expressão em layout e tamanho', () => {
     expect(kid(root(tree, { w: '120' }).root, 0).width).toBe(120);
     const bad = root(tree, { w: 'zzz' });
     expect(kid(bad.root, 0).width).toBe(200);
-    expect(bad.warnings).toContain('valor inválido em width: zzz');
+    expect(bad.warnings).toContain('invalid value in width: zzz');
     const negative = root(tree, { w: -5 });
-    expect(negative.warnings).toContain('valor inválido em width: -5');
+    expect(negative.warnings).toContain('invalid value in width: -5');
   });
 
   it('height inválido avisa com height', () => {
     const tree = frame({ layout: { type: 'column' } }, [
       rect({ width: 20, height: { $field: 'h' } }),
     ]);
-    expect(root(tree, { h: 'x' }).warnings).toContain('valor inválido em height: x');
+    expect(root(tree, { h: 'x' }).warnings).toContain('invalid value in height: x');
   });
 
   it('justify e align por expressão', () => {
@@ -244,8 +244,8 @@ describe('B3: expressão em layout e tamanho', () => {
     expect(at({ j: 'center', a: 'center' })).toEqual([75, 140]);
     const bad = root(tree, { j: 'bogus', a: 'nada' });
     expect(xOf(kid(bad.root, 0))).toBe(0);
-    expect(bad.warnings).toContain('valor inválido em layout.justify: bogus');
-    expect(bad.warnings).toContain('valor inválido em layout.align: nada');
+    expect(bad.warnings).toContain('invalid value in layout.justify: bogus');
+    expect(bad.warnings).toContain('invalid value in layout.align: nada');
   });
 });
 

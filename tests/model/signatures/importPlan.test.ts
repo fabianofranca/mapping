@@ -135,8 +135,8 @@ describe('regra por role e value.kind (decisão 5)', () => {
     expect(keys(plan)).not.toContain('tint');
     expect(keys(plan)).not.toContain('shape');
     expect(noticesOf(plan.type.notices)).toEqual([
-      `pending|${REF}|compose: o parâmetro \`tint\` (Brush) ainda não é campo`,
-      `pending|${REF}|compose: o parâmetro \`shape\` (Shape) ainda não é campo`,
+      `pending|${REF}|compose: the parameter \`tint\` (Brush) is not a field yet`,
+      `pending|${REF}|compose: the parameter \`shape\` (Shape) is not a field yet`,
     ]);
   });
 
@@ -341,7 +341,7 @@ describe('default e obrigatório', () => {
     const plan = run(existing, { signature: required });
     expect(field(plan, 'label')).not.toHaveProperty('required');
     expect(noticesOf(field(plan, 'label')?.notices)).toEqual([
-      `diverges|${REF}|compose: obrigatório no código (\`label\`), mas o campo é opcional`,
+      `diverges|${REF}|compose: required in the code (\`label\`), but the field is optional`,
     ]);
   });
 });
@@ -420,7 +420,7 @@ describe('ligação (decisão 7)', () => {
       ],
     });
     expect(noticesOf(style?.notices)).toEqual([
-      'diverges|signatures/button.figma.json|figma: a opção `Tonal` da fonte não existe no campo',
+      'diverges|signatures/button.figma.json|figma: the option `Tonal` of the source does not exist in the field',
     ]);
   });
 });
@@ -496,7 +496,7 @@ describe('sincronização (decisão 12)', () => {
     const plan = run(imported().spec, { signature: next, previous });
     expect(keys(plan)).toContain('legacy');
     expect(noticesOf(field(plan, 'legacy')?.notices)).toEqual([
-      `removed|${REF}|compose: o parâmetro \`legacy\` saiu da assinatura; o campo fica`,
+      `removed|${REF}|compose: the parameter \`legacy\` left the signature; the field stays`,
     ]);
     expect(plan.changes).toEqual([{ kind: 'removed', param: 'legacy' }]);
     expect(plan.suggestedMigrations).toEqual([
@@ -515,7 +515,7 @@ describe('sincronização (decisão 12)', () => {
     expect(again.changes).toEqual([]);
     expect(again.suggestedMigrations).toEqual([]);
     expect(noticesOf(field(again, 'legacy')?.notices)).toEqual([
-      `removed|${REF}|compose: o parâmetro \`legacy\` saiu da assinatura; o campo fica`,
+      `removed|${REF}|compose: the parameter \`legacy\` left the signature; the field stays`,
     ]);
     expect(again.spec).toEqual(first.spec);
   });
@@ -570,7 +570,7 @@ describe('sincronização (decisão 12)', () => {
     const plan = run(imported().spec, { signature: next, previous });
     expect(field(plan, 'size')).toMatchObject({ options: ['Small', 'Large', 'Medium'] });
     expect(noticesOf(field(plan, 'size')?.notices)).toEqual([
-      `diverges|${REF}|compose: a opção \`Large\` não existe mais na fonte`,
+      `diverges|${REF}|compose: the option \`Large\` no longer exists in the source`,
     ]);
     expect(plan.versionBump).toBe(true);
   });
@@ -583,7 +583,7 @@ describe('sincronização (decisão 12)', () => {
     );
     const plan = run(imported().spec, { signature: next, previous });
     expect(noticesOf(field(plan, 'label')?.notices)).toEqual([
-      `diverges|${REF}|compose: o tipo do parâmetro \`label\` mudou de text para integer`,
+      `diverges|${REF}|compose: the type of parameter \`label\` changed from text to integer`,
     ]);
   });
 
@@ -596,7 +596,7 @@ describe('sincronização (decisão 12)', () => {
     const plan = run(imported().spec, { signature: next, previous });
     expect(plan.changes).toEqual([{ kind: 'renamed', param: 'legacy', to: 'modern' }]);
     expect(noticesOf(field(plan, 'legacy')?.notices)).toEqual([
-      `diverges|${REF}|compose: renome provável de \`legacy\` para \`modern\``,
+      `diverges|${REF}|compose: probable rename of \`legacy\` to \`modern\``,
     ]);
     expect(plan.suggestedMigrations).toEqual([
       { op: 'rename-field', type: 'button', from: 'legacy', to: 'modern' },
@@ -690,8 +690,8 @@ describe('variantes (decisão 9)', () => {
       'signatures/button.outlined.compose.json',
     ]);
     expect(new Set(pending.map((n) => n.message)).size).toBe(2);
-    expect(pending[0]?.message).toMatch(/^compose: o parâmetro/);
-    expect(pending[1]?.message).toMatch(/^compose: caso `outlined`: o parâmetro/);
+    expect(pending[0]?.message).toMatch(/^compose: the parameter/);
+    expect(pending[1]?.message).toMatch(/^compose: case `outlined`: the parameter/);
   });
 
   it('reimportar a ficha base depois da do caso não reordena os avisos (os da ficha ficam onde estavam)', () => {
@@ -932,7 +932,7 @@ describe('correção CL1: plataforma da ficha e campo removed (S5-b, S5-a)', () 
     expect(paramsOf(first.spec)).toMatchObject({ legacy: 'legacy' });
     const plan = run(first.spec, { signature: next, previous });
     expect(noticesOf(field(plan, 'legacy')?.notices)).toEqual([
-      `removed|${REF}|compose: o parâmetro \`legacy\` saiu da assinatura; o campo fica`,
+      `removed|${REF}|compose: the parameter \`legacy\` left the signature; the field stays`,
     ]);
     expect(paramsOf(plan.spec)).toEqual({ label: 'label' });
     // e o validador não acha parâmetro fora da ficha
@@ -948,7 +948,7 @@ describe('correção CL1: plataforma da ficha e campo removed (S5-b, S5-a)', () 
     expect(again.changes).toEqual([]);
     expect(again.suggestedMigrations).toEqual([]);
     expect(noticesOf(field(again, 'legacy')?.notices)).toEqual([
-      `removed|${REF}|compose: o parâmetro \`legacy\` saiu da assinatura; o campo fica`,
+      `removed|${REF}|compose: the parameter \`legacy\` left the signature; the field stays`,
     ]);
     expect(paramsOf(again.spec)).toEqual({ label: 'label' });
     expect(again.spec).toEqual(first.spec);

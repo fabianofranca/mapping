@@ -4,6 +4,7 @@ import { MODEL_MESSAGE_TEMPLATES } from '../../src/model/messages';
 import { parseSpec, type SpecIssue } from '../../src/model/spec';
 import { locale } from '../../src/store/settings';
 import { messageText } from '../../src/ui/modelMessage';
+import { ptBRText } from '../support/modelText';
 
 // CL2 R-4 (#1785): every `formatVersion` 16 message of `specSignature.ts` comes out with a code from the
 // `spec` catalog and, in en-US, with no Portuguese word outside the parameters.
@@ -118,15 +119,18 @@ describe('formatVersion 16 messages (specSignature) in the catalog', () => {
     },
   );
 
-  it('pt-BR: the text shown is the `message`', () => {
+  it('pt-BR: the text shown is the pt-BR template filled in; en-US shows the `message`', () => {
     for (const [, mutate] of CASES) {
       for (const issue of issuesOf(mutate)) {
-        expect(shown(issue)).toBe(
-          Object.values(issue.params ?? {}).reduce<string>(
-            (acc, v) => acc.replace(`${v}`, ''),
-            issue.message,
-          ),
+        const message = modelMessage(
+          issue.code ?? 'raw',
+          issue.params ?? {},
+          issue.message,
         );
+        locale.value = 'pt-BR';
+        expect(messageText(message), issue.message).toBe(ptBRText(message));
+        locale.value = 'en-US';
+        expect(messageText(message), issue.message).toBe(issue.message);
       }
     }
   });

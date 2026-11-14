@@ -176,7 +176,7 @@ const semantic: [string, (s: Json) => void, string][] = [
   [
     'tipo de campo inválido',
     (s) => (s.layers[0].annotationTypes[1].fields[2].type = 'numero'),
-    'layers[0].annotationTypes[1].fields[2].type: "numero" inválido',
+    'layers[0].annotationTypes[1].fields[2].type: "numero" is invalid',
   ],
   [
     'default incompatível (number)',
@@ -220,7 +220,7 @@ const semantic: [string, (s: Json) => void, string][] = [
         type: 'ref',
         accepts: { free: true },
       }),
-    'layers[1].annotationTypes[0].fields[2].columns[0].type: só é permitido com formatVersion 7',
+    'layers[1].annotationTypes[0].fields[2].columns[0].type: only allowed with formatVersion 7',
   ],
   [
     'table dentro de table',
@@ -296,14 +296,14 @@ describe('validação do formato (13.2)', () => {
     const spec = base();
     spec.layers[0].annotationTypes[1].fields[2].type = 'numero';
     const error = errorsOf(parseSpec(spec))[0];
-    expect(error).toContain('"numero" inválido; use');
-    expect(error).toContain('"table" ou "ref"');
+    expect(error).toContain('"numero" is invalid; use');
+    expect(error).toContain('"table" or "ref"');
     // O tipo removido na etapa 9 não é sugerido.
     expect(error).not.toContain('codeRef');
   });
 
   it('JSON malformado vira um erro legível', () => {
-    expect(errorsOf(parseSpecText('{'))[0]).toMatch(/^JSON inválido/);
+    expect(errorsOf(parseSpecText('{'))[0]).toMatch(/^invalid JSON/);
   });
 
   it('aceita ref com free sem etiquetas e date default válida', () => {
@@ -317,7 +317,7 @@ describe('validação do formato (13.2)', () => {
     expect(parseSpec(spec).ok).toBe(true);
   });
 
-  it('rejeita data inexistente no default', () => {
+  it('rejeita nonexistent date no default', () => {
     const spec = base();
     spec.layers[0].annotationTypes[0].fields.push({
       key: 'quando',
@@ -435,7 +435,7 @@ describe('formatVersion 1 e 2', () => {
       expect(
         errors.some((e) =>
           e.startsWith(
-            'formatVersion: deve ser 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 ou 16',
+            'formatVersion: must be 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 or 16',
           ),
         ),
       ).toBe(true);
@@ -457,7 +457,7 @@ const platformCases: [string, (s: Json) => void, string][] = [
   [
     'platforms[].id repetido',
     (s) => (s.platforms[1].id = 'android'),
-    'platforms[1].id: id "android" repetido',
+    'platforms[1].id: id "android" repeated',
   ],
   ['platforms[].name ausente', (s) => delete s.platforms[0].name, 'platforms[0].name:'],
   ['platforms[].name vazio', (s) => (s.platforms[0].name = ''), 'platforms[0].name:'],
@@ -476,17 +476,17 @@ const platformCases: [string, (s: Json) => void, string][] = [
   [
     'code sem platforms na especialização',
     (s) => delete s.platforms,
-    `${BUTTON}.code: só é permitido em especializações que declaram platforms`,
+    `${BUTTON}.code: only allowed in specializations that declare platforms`,
   ],
   [
     'code com platforms vazio',
     (s) => (s.platforms = []),
-    `${BUTTON}.code: só é permitido em especializações que declaram platforms`,
+    `${BUTTON}.code: only allowed in specializations that declare platforms`,
   ],
   [
     'code com plataforma não declarada',
     (s) => (s.layers[0].annotationTypes[0].code.web = { symbol: 'X' }),
-    `${BUTTON}.code.web: plataforma "web" não declarada em platforms`,
+    `${BUTTON}.code.web: platform "web" is not declared in platforms`,
   ],
   [
     'code com id de plataforma fora do formato (em tipo da camada Eventos)',
@@ -496,7 +496,7 @@ const platformCases: [string, (s: Json) => void, string][] = [
   [
     'code sem symbol',
     (s) => delete s.layers[0].annotationTypes[0].code.android.symbol,
-    `${BUTTON}.code.android.symbol: obrigatório`,
+    `${BUTTON}.code.android.symbol: required`,
   ],
   [
     'code com symbol vazio',
@@ -506,37 +506,37 @@ const platformCases: [string, (s: Json) => void, string][] = [
   [
     'code com symbol que não é texto',
     (s) => (s.layers[0].annotationTypes[0].code.bff.symbol = 3),
-    `${BUTTON}.code.bff.symbol: deve ser texto`,
+    `${BUTTON}.code.bff.symbol: must be text`,
   ],
   [
     'code com path vazio',
     (s) => (s.layers[0].annotationTypes[0].code.android.path = ''),
-    `${BUTTON}.code.android.path: não pode ser vazio`,
+    `${BUTTON}.code.android.path: cannot be empty`,
   ],
   [
     'code com path que não é texto',
     (s) => (s.layers[0].annotationTypes[0].code.android.path = 3),
-    `${BUTTON}.code.android.path: deve ser texto`,
+    `${BUTTON}.code.android.path: must be text`,
   ],
   [
     'code com path absoluto',
     (s) => (s.layers[0].annotationTypes[0].code.android.path = '/app/DSButton.kt'),
-    `${BUTTON}.code.android.path: caminho inválido`,
+    `${BUTTON}.code.android.path: invalid path`,
   ],
   [
     'code com path com ..',
     (s) => (s.layers[0].annotationTypes[0].code.ios.path = '../DSButton.swift'),
-    `${BUTTON}.code.ios.path: caminho inválido`,
+    `${BUTTON}.code.ios.path: invalid path`,
   ],
   [
     'code com path com barra invertida e unidade',
     (s) => (s.layers[0].annotationTypes[0].code.bff.path = 'C:\\app\\DSButton.kt'),
-    `${BUTTON}.code.bff.path: caminho inválido`,
+    `${BUTTON}.code.bff.path: invalid path`,
   ],
   [
     'code com path com ./ no começo',
     (s) => (s.layers[0].annotationTypes[0].code.android.path = './app/DSButton.kt'),
-    `${BUTTON}.code.android.path: caminho inválido`,
+    `${BUTTON}.code.android.path: invalid path`,
   ],
   [
     'code que não é objeto',
@@ -556,7 +556,7 @@ const platformCases: [string, (s: Json) => void, string][] = [
   [
     'params com chave que não é campo do tipo',
     (s) => (s.layers[0].annotationTypes[0].code.android.params.naoExiste = 'x'),
-    `${BUTTON}.code.android.params.naoExiste: "naoExiste" não é um campo do tipo`,
+    `${BUTTON}.code.android.params.naoExiste: "naoExiste" is not a field of the type`,
   ],
   [
     'params com nome de parâmetro vazio',
@@ -571,12 +571,12 @@ const platformCases: [string, (s: Json) => void, string][] = [
   [
     'values com chave que não é campo do tipo',
     (s) => (s.layers[0].annotationTypes[0].code.android.values.naoExiste = { a: 'b' }),
-    `${BUTTON}.code.android.values.naoExiste: "naoExiste" não é um campo do tipo`,
+    `${BUTTON}.code.android.values.naoExiste: "naoExiste" is not a field of the type`,
   ],
   [
     'values para campo que não é enum',
     (s) => (s.layers[0].annotationTypes[0].code.android.values.texto = { a: 'b' }),
-    `${BUTTON}.code.android.values.texto: "texto" deve ser um campo enum do tipo`,
+    `${BUTTON}.code.android.values.texto: "texto" must be an enum field of the type`,
   ],
   [
     'values para campo table (não enum)',
@@ -587,7 +587,7 @@ const platformCases: [string, (s: Json) => void, string][] = [
   [
     'values com valor que não está nas options',
     (s) => (s.layers[0].annotationTypes[0].code.android.values.estilo.rosa = 'X'),
-    `${BUTTON}.code.android.values.estilo.rosa: "rosa" não está nas options de "estilo"`,
+    `${BUTTON}.code.android.values.estilo.rosa: "rosa" is not in the options of "estilo"`,
   ],
   [
     'values com tradução vazia',
@@ -598,7 +598,7 @@ const platformCases: [string, (s: Json) => void, string][] = [
   [
     'platforms num campo (só existia no tipo de campo removido)',
     (s) => (s.layers[2].annotationTypes[0].fields[0].platforms = ['android']),
-    `${SCREEN}.fields[0].platforms: não é permitido neste tipo de campo`,
+    `${SCREEN}.fields[0].platforms: not allowed in this field type`,
   ],
   [
     'codeRef como coluna de table',
@@ -607,7 +607,7 @@ const platformCases: [string, (s: Json) => void, string][] = [
         key: 'impl',
         type: 'codeRef',
       }),
-    'layers[1].annotationTypes[0].fields[2].columns[0].type: "codeRef" não é permitido dentro de table',
+    'layers[1].annotationTypes[0].fields[2].columns[0].type: "codeRef" is not allowed inside a table',
   ],
   // formatVersion 1
   [
@@ -615,7 +615,7 @@ const platformCases: [string, (s: Json) => void, string][] = [
     (s) => {
       s.formatVersion = 1;
     },
-    'platforms: só é permitido com formatVersion 2',
+    'platforms: only allowed with formatVersion 2',
   ],
   [
     'code numa especialização formatVersion 1 (sem platforms)',
@@ -623,7 +623,7 @@ const platformCases: [string, (s: Json) => void, string][] = [
       s.formatVersion = 1;
       delete s.platforms;
     },
-    `${BUTTON}.code: só é permitido em especializações que declaram platforms`,
+    `${BUTTON}.code: only allowed in specializations that declare platforms`,
   ],
 ];
 
@@ -674,7 +674,7 @@ describe('validação do formatVersion 2 (plataformas e code)', () => {
     if (result.ok) throw new Error('era para falhar');
     expect(result.issues).toContainEqual({
       path: `${BUTTON}.code.android.params.naoExiste`,
-      message: '"naoExiste" não é um campo do tipo',
+      message: '"naoExiste" is not a field of the type',
       code: 'spec.notTypeField',
       params: { key: 'naoExiste' },
     });
@@ -831,7 +831,7 @@ describe('campo do tipo removido (codeRef, etapa 9): lido e ignorado', () => {
   it('continua recusando chave repetida com outro campo do tipo', () => {
     const duplicated = legacy({ key: 'nome' });
     expect(errorsOf(parseSpec(duplicated))).toContain(
-      `${SCREEN}.fields[2].key: chave "nome" repetida`,
+      `${SCREEN}.fields[2].key: key "nome" repeated`,
     );
   });
 

@@ -22,17 +22,17 @@ import { annotationTitle } from './typedDisplay';
 import type { Annotation, Project } from './types';
 import { fold } from './fold';
 
-// Alvos de citação para a interface (etapa Comentários, decisões 30 e 31): a URL de um alvo, o
-// rótulo que o chip grava e a busca do `@` no compositor. Puro: tudo chega por argumento.
+// Citation targets for the interface (Comments stage, decisions 30 and 31): the URL of a target,
+// the label the chip stores and the `@` search in the composer. Pure: everything comes by argument.
 
 // ------------------------------------------------------------------ URL
 
-/** Código das propostas na URL: o id inteiro (a gramática aceita letras, dígitos, `.`, `_`, `-`). */
+/** Proposal code in the URL: the whole id (the grammar accepts letters, digits, `.`, `_`, `-`). */
 const PROPOSAL_CODE = /^[0-9a-zA-Z._-]+$/;
 
 const threadCodeCache = new WeakMap<readonly Thread[], ReadonlyMap<string, string>>();
 
-/** Código curto de cada conversa, único entre TODAS (abertas e resolvidas); memoizado por lista. */
+/** Short code of each thread, unique among ALL (open and resolved); memoized per list. */
 function threadCodes(threads: readonly Thread[]): ReadonlyMap<string, string> {
   const cached = threadCodeCache.get(threads);
   if (cached) return cached;
@@ -67,7 +67,7 @@ const ID_REFS: Readonly<Record<IdKind, IdRef>> = {
 
 type PartTarget = Extract<CitationTarget, { kind: 'field' | 'entry' | 'row' }>;
 
-/** Código do par ou da linha entre os irmãos da anotação. */
+/** Code of the pair or row among the annotation's siblings. */
 function siblingCode(ids: readonly string[], id: string): string | undefined {
   return shortCodesFor(ids).get(id);
 }
@@ -106,11 +106,11 @@ function refOfTarget(
 }
 
 /**
- * `mapping://<projeto>/…` do alvo, com o código curto de cada parte (marcação, container,
- * anotação, seta, camada e conversa pelos códigos únicos entre todos do tipo; proposta pelo id;
- * campo `…/a/<cód>/f/<key>`; par `…/e/<cód>` e linha `…/r/<cód>` entre os irmãos). `null` se
- * o alvo não existe no projeto (ou o código não cabe na gramática). A resolução da URL devolve
- * o mesmo alvo.
+ * `mapping://<project>/…` of the target, with the short code of each part (marking, container,
+ * annotation, arrow, layer and thread by the codes unique among all of the kind; proposal by id;
+ * field `…/a/<code>/f/<key>`; pair `…/e/<code>` and row `…/r/<code>` among the siblings). `null`
+ * if the target does not exist in the project (or the code does not fit the grammar). Resolving
+ * the URL returns the same target.
  */
 export function citationUrl(
   projectName: string,
@@ -124,11 +124,11 @@ export function citationUrl(
   return parseAnyRef(url) ? url : null;
 }
 
-// ------------------------------------------------------------------ rótulo
+// ------------------------------------------------------------------ label
 
 /**
- * O rótulo que o chip grava: o nome de agora do alvo; sem nome (ou alvo que não existe), o
- * texto neutro `unnamed`, que a interface traduz.
+ * The label the chip stores: the target's current name; without a name (or a target that does not
+ * exist), the neutral text `unnamed`, which the interface translates.
  */
 export function citationLabel(
   ctx: CitationContext,
@@ -139,28 +139,28 @@ export function citationLabel(
   return label === null || label === '' ? unnamed : label;
 }
 
-// ------------------------------------------------------------------ busca do @
+// ------------------------------------------------------------------ @ search
 
 export type CiteGroup =
   'here' | 'marking' | 'container' | 'arrow' | 'annotation' | 'layer' | 'thread';
 
 export interface CiteCandidate {
   readonly target: CitationTarget;
-  /** O que o chip grava (`citationLabel`). */
+  /** What the chip stores (`citationLabel`). */
   readonly label: string;
   readonly group: CiteGroup;
-  /** O caminho curto, ex.: "Button · Comprar › variante". */
+  /** The short path, e.g.: "Button · Buy › variant". */
   readonly detail: string;
 }
 
 export interface CiteOptions {
-  /** Texto neutro para o que não tem nome (traduzido pela interface). */
+  /** Neutral text for what has no name (translated by the interface). */
   readonly unnamed: string;
-  /** Máximo de candidatas (padrão 30). */
+  /** Maximum number of candidates (default 30). */
   readonly limit?: number;
-  /** Separador do caminho (padrão " › "). */
+  /** Path separator (default " › "). */
   readonly separator?: string;
-  /** A própria conversa não se oferece para citar. */
+  /** The thread itself is not offered for citing. */
   readonly excludeThreadId?: string;
 }
 
@@ -186,7 +186,7 @@ function namedOrEmpty(name: string | null | undefined): string {
   return name ?? '';
 }
 
-/** Container (se tiver nome ou arquivo), marcações pais com nome e, por fim, a própria. */
+/** Container (if it has a name or file), named parent markings and, finally, the marking itself. */
 function markingPath(env: Env, id: string): string {
   const idx = projectIndex(env.ctx.project);
   const own = idx.markings.get(id);
@@ -239,7 +239,7 @@ function arrowEnds(env: Env, id: string): string {
     : '';
 }
 
-/** O caminho curto do alvo (onde ele mora); vazio quando o nome basta. */
+/** The target's short path (where it lives); empty when the name is enough. */
 function detailOf(env: Env, target: CitationTarget): string {
   switch (target.kind) {
     case 'marking':
@@ -263,7 +263,7 @@ function candidate(env: Env, target: CitationTarget, group: CiteGroup): CiteCand
   return { target, label: labelOf(env, target), group, detail: detailOf(env, target) };
 }
 
-// ---- grupo "aqui": campos, pares e linhas das anotações do item da conversa
+// ---- "here" group: fields, pairs and rows of the annotations of the thread's item
 
 function annotationById(env: Env, id: string): readonly Annotation[] {
   const a = projectIndex(env.ctx.project).annotations.get(id);
@@ -322,7 +322,7 @@ function* hereCandidates(env: Env, here: ThreadAnchor | null): Iterable<CiteCand
   for (const a of hostAnnotations(env, here)) yield* annotationParts(env, a);
 }
 
-// ---- demais grupos
+// ---- other groups
 
 function* threadCandidates(env: Env): Iterable<CiteCandidate> {
   for (const t of env.ctx.threads) {
@@ -347,10 +347,10 @@ function* simpleGroup(
   for (const item of ids) yield candidate(env, { kind, id: item.id }, group);
 }
 
-/** Candidatos sob demanda: quem consome para quando já tem o bastante, sem montar o resto. */
+/** Candidates on demand: whoever consumes stops when it has enough, without building the rest. */
 type GroupBuilder = (env: Env, here: ThreadAnchor | null) => Iterable<CiteCandidate>;
 
-/** Na ordem do `@`: o do item da conversa, marcações, containers, setas, anotações, camadas, conversas. */
+/** In `@` order: the thread item's, markings, containers, arrows, annotations, layers, threads. */
 const GROUPS: readonly GroupBuilder[] = [
   hereCandidates,
   (env) => simpleGroup(env, 'marking', 'marking', env.ctx.project.markings),
@@ -361,9 +361,9 @@ const GROUPS: readonly GroupBuilder[] = [
   threadCandidates,
 ];
 
-// ---- casamento
+// ---- matching
 
-/** 0: todas as palavras no nome; 1: no nome ou no caminho; `null`: não casa. */
+/** 0: all words in the name; 1: in the name or the path; `null`: no match. */
 function score(words: readonly string[], c: CiteCandidate): 0 | 1 | null {
   if (words.length === 0) return 0;
   const name = fold(c.label);
@@ -373,8 +373,8 @@ function score(words: readonly string[], c: CiteCandidate): 0 | 1 | null {
 }
 
 /**
- * Até `room` dos que casam, o casamento pelo nome antes do pelo caminho (estável dentro de cada
- * um). Para de montar candidatos assim que os que casam pelo nome enchem a vaga.
+ * Up to `room` of those that match, matching by name before by path (stable within each one).
+ * Stops building candidates as soon as those that match by name fill the room.
  */
 function matching(
   words: readonly string[],
@@ -393,10 +393,10 @@ function matching(
 }
 
 /**
- * A busca do `@` (decisão 31): primeiro os campos, pares e linhas das anotações do item da
- * conversa (`here`, a âncora dela), depois marcações, containers, setas, anotações, camadas e
- * conversas abertas. Casa por nome (e, em segundo, pelo caminho) sem diferença de caixa nem de
- * acento; consulta vazia devolve tudo na mesma ordem, até o limite.
+ * The `@` search (decision 31): first the fields, pairs and rows of the annotations of the
+ * thread's item (`here`, its anchor), then markings, containers, arrows, annotations, layers and
+ * open threads. Matches by name (and, second, by path) regardless of case and accents; an empty
+ * query returns everything in the same order, up to the limit.
  */
 export function citeCandidates(
   ctx: CitationContext,

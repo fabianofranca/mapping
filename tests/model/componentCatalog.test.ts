@@ -73,7 +73,7 @@ describe('loadSpecComponents', () => {
     expect([...loaded.byType.keys()]).toEqual(Object.keys(COMPONENTS));
   });
 
-  it('arquivo ausente, JSON inválido e componente inválido viram "tipo: motivo"', () => {
+  it('arquivo ausente, invalid JSON e componente inválido viram "tipo: motivo"', () => {
     const loaded = loadSpecComponents(
       testSpec(),
       SPEC_FILE,
@@ -90,9 +90,9 @@ describe('loadSpecComponents', () => {
     expect(loaded.byType.has('box')).toBe(true);
     expect(loaded.problems).toHaveLength(3);
     expect(loaded.problems[0]).toBe(
-      'text: arquivo ausente (specs/test/components/text.json)',
+      'text: missing file (specs/test/components/text.json)',
     );
-    expect(loaded.problems[1]).toMatch(/^wide: JSON inválido/);
+    expect(loaded.problems[1]).toMatch(/^wide: invalid JSON/);
     expect(loaded.problems[2]).toMatch(/^row: .+/);
     // Os mesmos problemas com código e parâmetros (#945): mesmo tamanho e ordem.
     expect(loaded.problemMessages.map((m) => m.text)).toEqual(loaded.problems);
@@ -100,7 +100,7 @@ describe('loadSpecComponents', () => {
       modelMessage(
         'components.fileMissing',
         { typeId: 'text', path: 'specs/test/components/text.json' },
-        'text: arquivo ausente (specs/test/components/text.json)',
+        'text: missing file (specs/test/components/text.json)',
       ),
     );
     expect(loaded.problemMessages[1]).toMatchObject({

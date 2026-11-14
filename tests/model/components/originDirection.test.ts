@@ -38,7 +38,7 @@ describe('origem: screen.direction', () => {
       const { origins, problems } = parseOrigins([originOf({ direction: bad })]);
       expect(origins).toEqual([]);
       expect(problems.map(originProblemText)).toEqual([
-        'origins[0].screen.direction: esperava um de: ltr, rtl',
+        'origins[0].screen.direction: expected one of: ltr, rtl',
       ]);
     }
   });

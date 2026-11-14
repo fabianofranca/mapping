@@ -19,7 +19,7 @@ const MODES: Mode[] = ['light', 'dark'];
 /** A primeira linha de base do Roboto 14/20 no medidor aproximado (ascent 0,93 e descent 0,24 de 14). */
 const BASELINE = 14.83;
 const BAD_WARNING =
-  /ícone desconhecido|não cabe|texto maior que a caixa|ícone esticado|conteúdo maior que a caixa|\$lines instável/;
+  /unknown icon|não cabe|text larger than the box|stretched icon|content larger than the box|\$lines instável/;
 
 type Drawing = ReturnType<typeof drawFitted>['drawing'];
 

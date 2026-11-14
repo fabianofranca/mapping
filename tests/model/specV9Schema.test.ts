@@ -134,7 +134,7 @@ describe('formatVersion 9: variants no code', () => {
         result.errors.some(
           (e) =>
             e.startsWith('layers[0].annotationTypes[0].code.compose.variants') &&
-            e.includes('só é permitido com formatVersion 9'),
+            e.includes('only allowed with formatVersion 9'),
         ),
       ).toBe(true);
     }

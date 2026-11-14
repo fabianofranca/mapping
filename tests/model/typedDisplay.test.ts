@@ -52,7 +52,7 @@ describe('exibição tipada', () => {
     expect(texts(p, 'AOH')).toEqual(['ação: track', 'duração (ms): 500']);
   });
 
-  it('obrigatório vazio como "—" em alerta', () => {
+  it('required vazio como "—" em alerta', () => {
     const p = cadastroProject();
     expect(texts(p, 'AT')).toEqual([
       'id: — !',
@@ -68,12 +68,12 @@ describe('exibição tipada', () => {
     expect(texts(p, 'AIN')).toContain('dado: → User.nome');
     expect(texts(p, 'AIE')).toContain('dado: → Contato.email');
     p = removeTableRow(p, 'AC', 'atributos', 'R1');
-    expect(texts(p, 'AIE')).toContain('dado: → (referência quebrada) !');
+    expect(texts(p, 'AIE')).toContain('dado: → (broken reference) !');
   });
 
   it('tabela: resumo no zoom semântico e completa no painel/lista', () => {
     const p = cadastroProject();
-    expect(texts(p, 'AOC')).toContain('parâmetros: 1 linha');
+    expect(texts(p, 'AOC')).toContain('parâmetros: 1 row');
     const full = typedDisplayLines(p, annotation(p, 'AOC'), { tables: 'full' });
     const table = full.find((l) => l.kind === 'table');
     expect(table).toMatchObject({

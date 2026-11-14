@@ -119,7 +119,7 @@ export const COMPONENTS: Record<string, Json> = {
       preview: { label: 'Preview', count: 3, kind: 'b' },
     },
   ),
-  // Duas caixas de 80 numa linha de 100: o motor avisa "conteúdo maior que a caixa".
+  // Duas caixas de 80 numa linha de 100: o motor avisa "content larger than the box".
   wide: leaf(
     'wide',
     { width: 100, height: 40 },

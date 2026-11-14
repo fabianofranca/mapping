@@ -69,25 +69,25 @@ describe('prova de desenho nos dois sentidos', () => {
   it('o aviso que vale nos dois sentidos sai uma vez só', () => {
     const report = validate(frame([rect('a', 80), rect('b', 80)]));
     const texts = [...report.errors, ...report.warnings].map((i) => i.message);
-    expect(texts.filter((m) => m.includes('conteúdo maior que a caixa'))).toHaveLength(
+    expect(texts.filter((m) => m.includes('content larger than the box'))).toHaveLength(
       texts.length,
     );
     expect(texts.some((m) => m.includes('rtl'))).toBe(false);
     expect(new Set(texts).size).toBe(texts.length);
   });
 
-  it('o componente que estoura só em rtl é relatado, com "em rtl"', () => {
+  it('o componente que estoura só em rtl é relatado, com "in rtl"', () => {
     const report = validate(
       frame([rect('a', 30), rect('largo', 300, { visible: { $direction: 'rtl' } })]),
     );
     const texts = [...report.errors, ...report.warnings].map((i) => i.message);
     expect(texts.length).toBeGreaterThan(0);
-    expect(texts.every((m) => m.includes('em rtl'))).toBe(true);
-    // o mesmo componente sem a condição estoura nos dois: aviso comum, sem "em rtl"
+    expect(texts.every((m) => m.includes('in rtl'))).toBe(true);
+    // o mesmo componente sem a condição estoura nos dois: aviso comum, sem "in rtl"
     const both = validate(frame([rect('a', 30), rect('largo', 300)]));
     const bothTexts = [...both.errors, ...both.warnings].map((i) => i.message);
     expect(bothTexts.length).toBeGreaterThan(0);
-    expect(bothTexts.some((m) => m.includes('em rtl'))).toBe(false);
+    expect(bothTexts.some((m) => m.includes('in rtl'))).toBe(false);
   });
 
   it('o aviso que só aparece em ltr não é novidade do rtl (nada de "em rtl")', () => {
@@ -96,7 +96,7 @@ describe('prova de desenho nos dois sentidos', () => {
     );
     const texts = [...report.errors, ...report.warnings].map((i) => i.message);
     expect(texts.length).toBeGreaterThan(0);
-    expect(texts.some((m) => m.includes('em rtl'))).toBe(false);
+    expect(texts.some((m) => m.includes('in rtl'))).toBe(false);
   });
 });
 
@@ -155,7 +155,7 @@ describe('a prova em rtl só roda no componente sensível à direção', () => {
     });
     const texts = [...report.errors, ...report.warnings].map((i) => i.message);
     expect(texts.length).toBeGreaterThan(0);
-    expect(texts.every((m) => m.includes('em rtl'))).toBe(true);
+    expect(texts.every((m) => m.includes('in rtl'))).toBe(true);
   });
 
   it('o componente sensível continua sendo provado nos dois sentidos', () => {
@@ -163,6 +163,6 @@ describe('a prova em rtl só roda no componente sensível à direção', () => {
       frame([rect('a', 30), rect('largo', 300, { visible: { $direction: 'rtl' } })]),
     );
     const texts = [...report.errors, ...report.warnings].map((i) => i.message);
-    expect(texts.every((m) => m.includes('em rtl'))).toBe(true);
+    expect(texts.every((m) => m.includes('in rtl'))).toBe(true);
   });
 });

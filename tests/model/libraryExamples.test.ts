@@ -86,7 +86,7 @@ describe('pacote material3 é válido', () => {
 // O pacote do repositório é o fixture das três portas (B2), do canvas (B3) e do Catálogo (B5):
 // ele precisa passar pelos três níveis do validador sem nenhum erro. Os avisos que sobram são
 // fixados aqui, para o número não andar sozinho: duas fontes ausentes (o `.ttf` da Roboto não é
-// versionado) e o resto da prova de desenho, que avisa conteúdo maior que a caixa no tamanho
+// versionado) e o resto da prova de desenho, que avisa content larger than the box no tamanho
 // inicial (o tamanho mínimo não é desenhado). A medida do Node é **aproximada** (no
 // navegador é a do Konva, a real), e a decisão da etapa é avisar, sem recortar nem recusar.
 describe('o pacote do repositório passa pelo validador da biblioteca', () => {
@@ -114,16 +114,18 @@ describe('o pacote do repositório passa pelo validador da biblioteca', () => {
   it('os avisos são só as fontes ausentes e a prova de desenho aproximada', () => {
     const fonts = report.warnings.filter((w) => w.path.startsWith('fonts['));
     expect(fonts).toHaveLength(2);
-    const approximate = report.warnings.filter((w) => w.message.endsWith('(aproximado)'));
+    const approximate = report.warnings.filter((w) =>
+      w.message.endsWith('(approximate)'),
+    );
     expect(
-      approximate.every((w) => w.message.includes('conteúdo maior que a caixa')),
+      approximate.every((w) => w.message.includes('content larger than the box')),
     ).toBe(true);
     // O chip "Selecionado" passava da caixa por menos de 1 px de texto: com a tolerância de
     // 1 px por nó de texto (decisão 10 da etapa #747) já não avisa.
     expect(approximate.map((w) => w.path)).toEqual([]);
-    expect(approximate.every((w) => w.message.includes('tamanho inicial'))).toBe(true);
+    expect(approximate.every((w) => w.message.includes('initial size'))).toBe(true);
     const others = report.warnings.filter(
-      (w) => !w.path.startsWith('fonts[') && !w.message.endsWith('(aproximado)'),
+      (w) => !w.path.startsWith('fonts[') && !w.message.endsWith('(approximate)'),
     );
     expect(others.map((w) => `${w.file}:${w.path}: ${w.message}`)).toEqual([]);
   });

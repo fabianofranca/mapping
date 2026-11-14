@@ -204,7 +204,7 @@ export const LIMIT_EXAMPLES: Record<string, string> = {
 
 /**
  * Exemplos da v1 que a L2 (#1078) tirou: o `size` do tooltip (240 × 24) é o do `plain` e não comporta o `rich`, então o
- * exemplo dele passaria da caixa (aviso `conteúdo maior que a caixa`).
+ * exemplo dele passaria da caixa (aviso `content larger than the box`).
  */
 const L2_REMOVED_EXAMPLES: Record<string, string[]> = {
   tooltip: ['Rich com título', 'Rich com ação'],
@@ -755,7 +755,7 @@ export const KNOWN_PARAM_WARNINGS: readonly string[] = [
   'carousel.centered-hero preferredItemWidth=preferredItemWidth',
 ];
 
-/** Compara os avisos da validação da biblioteca com o conjunto conhecido: só `parâmetro fora da ficha`, e exatamente esses. */
+/** Compara os avisos da validação da biblioteca com o conjunto conhecido: só `parameter outside the signature`, e exatamente esses. */
 export function unknownWarnings(warnings: readonly { path: string; message: string }[]): {
   unexpected: string[];
   missing: string[];
@@ -766,7 +766,7 @@ export function unknownWarnings(warnings: readonly { path: string; message: stri
     /^layers\[(\d+)\]\.annotationTypes\[(\d+)\]\.code\.compose\.(?:variants\.cases\.([^.]+)\.)?params\.(.+)$/;
   for (const w of warnings) {
     const m = re.exec(w.path);
-    const param = /^parâmetro fora da ficha: "(.+)"$/.exec(w.message)?.[1];
+    const param = /^parameter outside the signature: "(.+)"$/.exec(w.message)?.[1];
     const id =
       m === null
         ? undefined

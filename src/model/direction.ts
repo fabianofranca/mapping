@@ -3,12 +3,12 @@ import { updateById } from './project';
 import { projectIndex } from './projectIndex';
 import type { Project, ReadingDirection } from './types';
 
-// Direção de leitura do projeto e do container (schema v20, etapa "direção e âncora"): `ltr` ou
-// `rtl`. É do projeto (ausente = `ltr`); o container pode fixar a sua. O motor dos componentes
-// (`components/direction.ts`) recebe a efetiva e espelha fileiras, grades, `start`/`end` e `mirror`.
-// Funções puras, sem DOM.
+// Reading direction of the project and of the container (schema v20, stage "direction and anchor"):
+// `ltr` or `rtl`. It belongs to the project (absent = `ltr`); the container may pin its own. The
+// components engine (`components/direction.ts`) receives the effective one and mirrors rows, grids,
+// `start`/`end` and `mirror`. Pure functions, no DOM.
 
-/** Troca a direção do projeto; `null` a remove (volta a `ltr`). */
+/** Changes the project direction; `null` removes it (back to `ltr`). */
 export function setProjectDirection(
   p: Project,
   direction: ReadingDirection | null,
@@ -22,7 +22,7 @@ export function setProjectDirection(
   return p.direction === direction ? p : { ...p, direction };
 }
 
-/** Fixa a direção do container; `null` volta a seguir a do projeto. */
+/** Pins the container direction; `null` goes back to following the project's. */
 export function setContainerDirection(
   p: Project,
   containerId: string,
@@ -38,8 +38,8 @@ export function setContainerDirection(
 }
 
 /**
- * Direção efetiva de um espaço: a que o container fixa, senão a do projeto, senão `ltr`.
- * `containerId` nulo (o canvas e as flutuantes) e um id desconhecido seguem o projeto.
+ * Effective direction of a space: the one the container pins, else the project's, else `ltr`.
+ * A null `containerId` (the canvas and the floating ones) and an unknown id follow the project.
  */
 export function effectiveDirection(
   p: Project,

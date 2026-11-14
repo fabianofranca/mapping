@@ -232,17 +232,13 @@ describe('validate_library com let e $var (servidor real)', () => {
   });
 
   it.each([
-    [
-      'indefinida',
-      'template.children[0].children[0].gap',
-      'variável não definida: space',
-    ],
-    ['ciclo', 'template.let.a', 'ciclo de variáveis: a → b → a'],
-    ['nome', 'template.let.Gap', 'esperava nome de variável ([a-z][a-zA-Z0-9]*)'],
+    ['indefinida', 'template.children[0].children[0].gap', 'undefined variable: space'],
+    ['ciclo', 'template.let.a', 'variable cycle: a → b → a'],
+    ['nome', 'template.let.Gap', 'expected a variable name ([a-z][a-zA-Z0-9]*)'],
     [
       'tipo',
       'template.children[0].children[0].gap.$var(gap).$mul[0]',
-      'precisa ser número',
+      'must be a number',
     ],
   ])('%s: o erro e o caminho do uso', async (name, path, message) => {
     const result = ok(

@@ -8,9 +8,9 @@ import type {
 import type { ImportErrorCode, PlanSignatureImportOptions } from './importTypes';
 import type { Signature } from './types';
 
-// O preparo da importação (etapa #1079, decisões 7 e 9): acha ou cria o `code` da plataforma (ou
-// o caso de `variants`) e a `sources` do sistema, confere que a ficha é a do mesmo código e diz
-// onde ela fica no pacote. Trabalha numa cópia da especialização. Puro.
+// Import preparation (stage #1079, decisions 7 and 9): finds or creates the platform's `code` (or
+// the `variants` case) and the system's `sources`, checks that the signature is the one for the
+// same code and says where it goes in the package. Works on a copy of the specialization. Pure.
 
 export interface Failure {
   readonly ok: false;
@@ -26,17 +26,17 @@ const failure = (code: ImportErrorCode, detail: string, hint: string): Failure =
   hint,
 });
 
-/** O que a importação grava: o `code` (com o caso, se for o caso) ou a `sources` do sistema. */
+/** What the import writes: the `code` (with the case, if any) or the system's `sources`. */
 export interface Prepared {
   readonly ok: true;
-  /** O caminho da ficha no pacote. */
+  /** The path of the signature in the package. */
   readonly path: string;
-  /** Quem guarda `signature`, `params`, `calls`, `formats` e `values`: o `code`, o caso ou a source. */
+  /** Whoever holds `signature`, `params`, `calls`, `formats` and `values`: the `code`, the case or the source. */
   readonly scope: SpecCode | SpecCodeCase | SpecTypeSource;
   readonly code?: SpecCode;
   readonly caseEntry?: SpecCodeCase;
   readonly source?: SpecTypeSource;
-  /** O id da plataforma ou do sistema (o prefixo dos avisos e a chave de `fieldModels`). */
+  /** The id of the platform or system (the prefix of the warnings and the key of `fieldModels`). */
   readonly id: string;
 }
 
@@ -51,8 +51,8 @@ function pickCase(
   if (variants === undefined) {
     return failure(
       'variant-not-found',
-      `o code do tipo "${type.id}" não tem variants`,
-      'declare variants (o campo enum e o caso) no code da plataforma antes de importar a ficha do caso',
+      `the code of type "${type.id}" has no variants`,
+      'declare variants (the enum field and the case) in the platform code before importing the case signature',
     );
   }
   const field = type.fields.find((f) => f.key === variants.field);
@@ -60,8 +60,8 @@ function pickCase(
   if (!options.includes(variant)) {
     return failure(
       'variant-not-found',
-      `"${variant}" não é uma opção do campo "${variants.field}" das variants`,
-      `use uma das opções: ${options.join(', ')}`,
+      `"${variant}" is not an option of the variants field "${variants.field}"`,
+      `use one of the options: ${options.join(', ')}`,
     );
   }
   variants.cases[variant] ??= {};
@@ -78,15 +78,15 @@ function mismatch(
   if (source.symbol !== symbol) {
     return failure(
       'signature-mismatch',
-      `o símbolo da ficha ("${source.symbol}") difere do symbol do code ("${symbol}")`,
-      'extraia a ficha do símbolo certo, ou corrija o symbol do code se ele é que está errado',
+      `the signature symbol ("${source.symbol}") differs from the code symbol ("${symbol}")`,
+      'extract the signature of the right symbol, or fix the code symbol if it is the wrong one',
     );
   }
   if (path !== undefined && source.path !== path) {
     return failure(
       'signature-mismatch',
-      `o arquivo da ficha ("${source.path}") difere do path do code ("${path}")`,
-      'extraia a ficha do arquivo certo, ou corrija o path do code se ele é que está errado',
+      `the signature file ("${source.path}") differs from the code path ("${path}")`,
+      'extract the signature of the right file, or fix the code path if it is the wrong one',
     );
   }
   return null;
@@ -100,27 +100,27 @@ function checkCodeTarget(
   if (!(spec.platforms ?? []).some((p) => p.id === platform)) {
     return failure(
       'platform-not-declared',
-      `a plataforma "${platform}" não está em platforms da especialização`,
-      'declare a plataforma em platforms (id, name, language) antes de importar',
+      `the platform "${platform}" is not in the specialization's platforms`,
+      'declare the platform in platforms (id, name, language) before importing',
     );
   }
   const source = options.signature.source;
   if (source.kind !== 'code') {
     return failure(
       'signature-mismatch',
-      'a ficha é de design, mas o alvo é uma plataforma de código',
-      'passe system em vez de platform, ou use uma ficha de código',
+      'the signature is a design one, but the target is a code platform',
+      'pass system instead of platform, or use a code signature',
     );
   }
   if (source.platform === platform) return null;
   return failure(
     'signature-mismatch',
-    `a ficha é da plataforma "${source.platform}", mas o alvo é "${platform}"`,
-    'importe a ficha na plataforma dela, ou extraia a ficha da plataforma do alvo',
+    `the signature is of platform "${source.platform}", but the target is "${platform}"`,
+    'import the signature into its own platform, or extract the signature of the target platform',
   );
 }
 
-/** O `code` da plataforma (criado da ficha, se o tipo não tem) e se foi criado agora. */
+/** The platform's `code` (created from the signature, if the type has none) and whether it was just created. */
 function ensureCode(
   type: SpecAnnotationType,
   signature: Signature,
@@ -134,7 +134,7 @@ function ensureCode(
   return { code, created: true };
 }
 
-/** O caso de `variants` pedido (ou nenhum) e a conferência do símbolo e do arquivo. */
+/** The requested `variants` case (or none) and the check of the symbol and the file. */
 function pickScope(
   type: SpecAnnotationType,
   options: PlanSignatureImportOptions,
@@ -187,17 +187,17 @@ function checkDesignTarget(
   if (options.variant !== undefined) {
     return failure(
       'variant-not-found',
-      'variant só vale para um alvo de código (platform)',
-      'tire o variant',
+      'variant only applies to a code target (platform)',
+      'remove the variant',
     );
   }
   if (origin.kind === 'design' && origin.system === system) return null;
   return failure(
     'signature-mismatch',
     origin.kind === 'design'
-      ? `o sistema da ficha ("${origin.system}") difere do alvo ("${system}")`
-      : 'a ficha é de código, mas o alvo é um sistema de design',
-    'passe platform em vez de system, ou use a ficha de design do sistema',
+      ? `the signature system ("${origin.system}") differs from the target ("${system}")`
+      : 'the signature is a code one, but the target is a design system',
+    'pass platform instead of system, or use the system design signature',
   );
 }
 
@@ -219,8 +219,8 @@ function prepareDesign(
   } else if (source.id !== undefined && source.id !== origin.id) {
     return failure(
       'signature-mismatch',
-      `o id da ficha ("${origin.id}") difere do id da source do tipo ("${source.id}")`,
-      'extraia a ficha do nó certo, ou corrija o id da source do tipo',
+      `the signature id ("${origin.id}") differs from the type's source id ("${source.id}")`,
+      'extract the signature of the right node, or fix the type source id',
     );
   }
   const path =
@@ -229,7 +229,7 @@ function prepareDesign(
   return { ok: true, path, scope: source, source, id: system };
 }
 
-/** Prepara o tipo (já numa cópia) para receber a importação, ou diz por que não dá. */
+/** Prepares the type (already on a copy) to receive the import, or says why it cannot. */
 export function prepareImport(
   spec: Spec,
   type: SpecAnnotationType,

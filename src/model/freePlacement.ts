@@ -10,21 +10,33 @@ import { enclosingAmong } from './hierarchySettle';
 import { projectIndex } from './projectIndex';
 import type { Marking, Project, Rect } from './types';
 
-// Colocação de uma peça nova em espaço livre (etapa #1087, decisões 3 a 5): o nível onde ela fica
-// (o pai da colocação), a área em que cabe e os obstáculos que não pode cobrir nem coincidir.
-// Funções puras, sem DOM; quem escolhe o pai gravado continua sendo o assentar, pela geometria.
+// Placement of a new piece in free space (stage #1087, decisions 3 to 5): the level where it
+// goes (the placement parent), the area it fits in and the obstacles it cannot cover or
+// coincide with. Pure functions, no DOM; the parent that gets written is still chosen by the
+// settle, through geometry.
 
-/** Onde uma peça nova pode nascer: o pai da colocação, a área em que cabe e o que a barra. */
+/** Where a new piece can be born: the placement parent, the area it fits in and what blocks it. */
 export interface PlacementLevel {
-  /** A menor marcação do espaço que contém o retângulo pedido (e é diferente dele); `null` = a raiz. */
+  /**
+   * The smallest marking in the space that contains the requested rectangle (and differs from it);
+   * `null` = the root.
+   */
   readonly parent: Marking | null;
-  /** O retângulo de `parent`, a imagem ou, no canvas sem `parent`, nenhuma (`null`: sem limite). */
+  /**
+   * The rectangle of `parent`, the image or, on the canvas without `parent`, none (`null`: no
+   * limit).
+   */
   readonly area: Rect | null;
-  /** Toda marcação não flutuante que cruza `area`, menos o pai e os ancestrais; no canvas, também os containers. */
+  /**
+   * Every non-floating marking that crosses `area`, except the parent and the ancestors; on the
+   * canvas, also the containers.
+   */
   readonly obstacles: readonly Rect[];
 }
 
-/** Ids das marcações não flutuantes de `containerId` que contêm `rect` e não são iguais a ele. */
+/**
+ * Ids of the non-floating markings of `containerId` that contain `rect` and are not equal to it.
+ */
 function containingIds(p: Project, containerId: string | null, rect: Rect): Set<string> {
   const ids = new Set<string>();
   for (const m of p.markings) {
@@ -35,13 +47,14 @@ function containingIds(p: Project, containerId: string | null, rect: Rect): Set<
 }
 
 /**
- * O pai da colocação: a menor marcação não flutuante de `containerId` que contém `rect` e **não é
- * igual a ele** (retângulo igual é irmã, não pai). Na cadeia de retângulos iguais, a de dentro
- * (a que o assentar escolhe, `enclosingAmong`).
+ * The placement parent: the smallest non-floating marking of `containerId` that contains
+ * `rect` and **is not equal to it** (an equal rectangle is a sibling, not a parent). In a chain
+ * of equal rectangles, the innermost (the one the settle picks, `enclosingAmong`).
  */
 function levelParent(p: Project, containerId: string | null, rect: Rect): Marking | null {
   const candidates = containingIds(p, containerId, rect);
-  // Uma candidata só é o pai sem ordenar o espaço (o posto só desempata entre várias).
+  // A single candidate is the parent without ordering the space (rank only breaks ties among
+  // several).
   const [only] = candidates;
   const id =
     candidates.size === 1 && only !== undefined
@@ -50,7 +63,7 @@ function levelParent(p: Project, containerId: string | null, rect: Rect): Markin
   return id === null ? null : (projectIndex(p).markings.get(id) ?? null);
 }
 
-/** A marcação e os ancestrais dela (pela cadeia de `parentId`, com guarda contra ciclo). */
+/** The marking and its ancestors (through the `parentId` chain, with a guard against cycles). */
 function lineage(p: Project, marking: Marking): Set<string> {
   const byId = projectIndex(p).markings;
   const ids = new Set<string>();
@@ -91,8 +104,8 @@ function levelObstacles(
 }
 
 /**
- * O nível da colocação de `rect` (o R0) no espaço `containerId` (`null` = canvas). Com `target`
- * (componente com slot), o nível é o do alvo e a área é a caixa do slot.
+ * The placement level of `rect` (R0) in space `containerId` (`null` = canvas). With `target`
+ * (component with a slot), the level is the target's and the area is the slot's box.
  */
 export function placementLevel(
   p: Project,
@@ -106,14 +119,14 @@ export function placementLevel(
   return { parent, area, obstacles: levelObstacles(p, containerId, area, excluded) };
 }
 
-/** O retângulo ficou livre no nível (cabe na área e não se sobrepõe a obstáculo)? */
+/** Is the rectangle free at the level (fits in the area and does not overlap an obstacle)? */
 export function isFreeInLevel(level: PlacementLevel, rect: Rect): boolean {
   return isFreeRect(rect, level.obstacles, level.area);
 }
 
 /**
- * `rect` (R0) se já está livre; senão o lugar livre mais perto dele no mesmo tamanho; `null` se
- * não há nenhum na área (quem chama volta à posição de antes, sem erro).
+ * `rect` (R0) if it is already free; otherwise the free spot nearest to it with the same size;
+ * `null` if there is none in the area (the caller goes back to the previous position, no error).
  */
 export function freeRectIn(level: PlacementLevel, rect: Rect): Rect | null {
   if (isFreeInLevel(level, rect)) return rect;
@@ -133,7 +146,10 @@ function overlapArea(a: Rect, b: Rect): number {
   return w > 0 && h > 0 ? w * h : 0;
 }
 
-/** Posições candidatas de `rect` na área, de meio em meio tamanho (mais a de `rect` preso à área). */
+/**
+ * Candidate positions of `rect` in the area, every half size (plus that of `rect` clamped to the
+ * area).
+ */
 function crowdedCandidates(area: Rect, rect: Rect): Rect[] {
   const maxX = area.x + area.width - rect.width;
   const maxY = area.y + area.height - rect.height;
@@ -148,7 +164,10 @@ function crowdedCandidates(area: Rect, rect: Rect): Rect[] {
   return out;
 }
 
-/** Todas as candidatas coincidem com alguma peça: desloca `rect` um pixel por vez na diagonal até nenhuma o conter. */
+/**
+ * Every candidate coincides with some piece: shifts `rect` one pixel at a time diagonally until
+ * none contains it.
+ */
 function nudgedOut(obstacles: readonly Rect[], area: Rect, rect: Rect): Rect {
   const maxX = area.x + area.width - rect.width;
   const maxY = area.y + area.height - rect.height;
@@ -177,9 +196,10 @@ function bestCrowded(level: PlacementLevel, area: Rect, rect: Rect): Rect | null
 }
 
 /**
- * Sem lugar livre na área (a peça vai ficar sobre outras): a posição que cobre menos as outras e,
- * principalmente, que nenhuma delas contém nem iguala (senão o assentar a faria filha da irmã e
- * não do nível). Empate: a mais perto de `rect`. Se nenhuma a contém, ou sem área, `rect`.
+ * No free spot in the area (the piece will end up over others): the position that covers the
+ * others least and, mainly, that none of them contains or equals (otherwise the settle would
+ * make it a child of the sibling and not of the level). Tie: the nearest to `rect`. If none
+ * contains it, or without an area, `rect`.
  */
 export function crowdedRectIn(level: PlacementLevel, rect: Rect): Rect {
   const { area } = level;

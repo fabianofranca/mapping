@@ -55,7 +55,7 @@ describe('parseSignature', () => {
 
   it('chave desconhecida é erro, com o caminho', () => {
     expect(issuesOf(buttonSignature((s) => (s.extra = 1)))).toEqual([
-      { path: '', message: 'propriedade desconhecida: "extra"' },
+      { path: '', message: 'unknown property: "extra"' },
     ]);
     expect(
       issuesOf(buttonSignature((s) => (s.params[0].colour = 'x'))).map((i) => i.path),

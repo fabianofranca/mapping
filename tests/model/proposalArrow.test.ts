@@ -197,7 +197,7 @@ describe('create-arrow e delete-arrow: a leitura', () => {
     // A nota presa à mudança ignorada passa para a proposta.
     expect(parsed.proposal.notes[0]?.target).toEqual({ level: 'proposal', id: null });
     expect(parsed.warnings).toHaveLength(1);
-    expect(parsed.warnings[0]).toContain('seta');
+    expect(parsed.warnings[0]).toContain('arrow');
     expect(first.entity).toBe('arrow');
   });
 

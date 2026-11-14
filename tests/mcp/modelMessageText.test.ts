@@ -10,7 +10,7 @@ describe('texto das mensagens do modelo lido pelo MCP', () => {
     const loaded = loadSpecComponents(testSpec(), SPEC_FILE, 1, () => undefined);
     expect(loaded.problems.length).toBeGreaterThan(0);
     expect(loaded.problems.every((p) => typeof p === 'string')).toBe(true);
-    expect(loaded.problems[0]).toMatch(/: arquivo ausente \(specs\/test\/components\//);
+    expect(loaded.problems[0]).toMatch(/: missing file \(specs\/test\/components\//);
     expect(loaded.problemMessages.map((m) => m.text)).toEqual(loaded.problems);
   });
 

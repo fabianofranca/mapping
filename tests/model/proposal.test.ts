@@ -83,18 +83,18 @@ describe('formato da proposta', () => {
     [
       'format errado',
       (p) => (p.format = 'mapping-spec'),
-      'format: deve ser "mapping-proposal"',
+      'format: must be "mapping-proposal"',
     ],
     [
       'formatVersion errado',
       (p) => (p.formatVersion = 10),
-      'formatVersion: deve ser 1, 2, 3, 4, 5, 6, 7, 8 ou 9',
+      'formatVersion: must be 1, 2, 3, 4, 5, 6, 7, 8 or 9',
     ],
-    ['id com barra', (p) => (p.id = '../fora'), 'id: id inválido'],
-    ['título vazio', (p) => (p.title = '  '), 'title: não pode ser vazio'],
-    ['data inválida', (p) => (p.createdAt = 'ontem'), 'createdAt: data inválida'],
-    ['status desconhecido', (p) => (p.status = 'draft'), 'status: deve ser "open"'],
-    ['substitui a si mesma', (p) => (p.supersedes = p.id), 'supersedes: uma proposta'],
+    ['id com barra', (p) => (p.id = '../fora'), 'id: invalid id'],
+    ['título vazio', (p) => (p.title = '  '), 'title: cannot be empty'],
+    ['data inválida', (p) => (p.createdAt = 'ontem'), 'createdAt: invalid date'],
+    ['status desconhecido', (p) => (p.status = 'draft'), 'status: must be "open"'],
+    ['substitui a si mesma', (p) => (p.supersedes = p.id), 'supersedes: a proposal'],
     ['tipo de mudança inválido', (p) => (p.changes[0].kind = 'move'), 'changes[0].kind:'],
     ['entidade inválida', (p) => (p.changes[0].entity = 'tela'), 'changes[0].entity:'],
     [
@@ -105,21 +105,21 @@ describe('formato da proposta', () => {
     [
       'criação com from',
       (p) => (p.changes[0].from = {}),
-      'changes[0].from: deve ser null',
+      'changes[0].from: must be null',
     ],
     ['id da entidade diferente', (p) => (p.changes[0].to.id = 'M8'), 'changes[0].to.id:'],
     [
       'campo desconhecido',
       (p) => (p.changes[1].field = 'cor'),
-      'changes[1].field: "cor" não é um campo de marking',
+      'changes[1].field: "cor" is not a field of marking',
     ],
     [
       'alteração sem campo',
       (p) => (p.changes[1].field = null),
-      'changes[1].field: obrigatório',
+      'changes[1].field: required',
     ],
     ['valor do campo com tipo errado', (p) => (p.changes[1].to = 3), 'changes[1].to:'],
-    ['remoção com to', (p) => (p.changes[2].to = {}), 'changes[2].to: deve ser null'],
+    ['remoção com to', (p) => (p.changes[2].to = {}), 'changes[2].to: must be null'],
     [
       'marcação sem markingId',
       (p) => (p.changes[2].markingId = null),
@@ -128,33 +128,33 @@ describe('formato da proposta', () => {
     [
       'id de mudança repetido',
       (p) => (p.changes[1].id = 'c2'),
-      'changes[1].id: id "c2" repetido',
+      'changes[1].id: duplicate id "c2"',
     ],
     [
       'decisão de mudança inexistente',
       (p) => (p.decisions.c9 = { state: 'accepted', at: AT }),
-      'decisions.c9: mudança inexistente',
+      'decisions.c9: nonexistent change',
     ],
     ['decisão inválida', (p) => (p.decisions.c1.state = 'maybe'), 'decisions.c1.state:'],
     [
       'aplicada sem aceitar',
       (p) => (p.applied.c1 = { at: AT }),
-      'applied.c1: só uma mudança aceita',
+      'applied.c1: only an accepted change',
     ],
     [
       'nota com id em proposta',
       (p) => (p.notes[0].target = { level: 'proposal', id: 'x' }),
-      'notes[0].target.id: deve ser null',
+      'notes[0].target.id: must be null',
     ],
     [
       'nota de mudança inexistente',
       (p) => (p.notes[0].target.id = 'c9'),
-      'notes[0].target.id: mudança inexistente',
+      'notes[0].target.id: nonexistent change',
     ],
     [
       'nota de item sem id',
       (p) => (p.notes[0].target = { level: 'item', id: null }),
-      'notes[0].target.id: obrigatório',
+      'notes[0].target.id: required',
     ],
   ])('%s', (_name, mutate, expected) => {
     const json = sample();
@@ -200,7 +200,7 @@ describe('formato da proposta', () => {
       true,
     );
     expect(
-      errors.some((e) => e.startsWith('changes[4].entityId: id de plataforma inválido')),
+      errors.some((e) => e.startsWith('changes[4].entityId: invalid platform id')),
     ).toBe(true);
     expect(errors.some((e) => e.startsWith('changes[4].to.localPath:'))).toBe(true);
   });
@@ -247,7 +247,7 @@ describe('formato da proposta', () => {
   it('JSON malformado vira um erro legível', () => {
     const result = parseProposalText('{ "format": ');
     expect(result.ok).toBe(false);
-    expect(!result.ok && result.errors[0]?.startsWith('JSON inválido')).toBe(true);
+    expect(!result.ok && result.errors[0]?.startsWith('invalid JSON')).toBe(true);
   });
 });
 

@@ -41,6 +41,6 @@ describe('fontes', () => {
       path: 'fonts/Roboto-Italic.ttf',
     });
     expect(lib.fonts[1]?.bytes).toBeUndefined();
-    expect(lib.problems).toEqual(['fonts[2]: precisa de family e file']);
+    expect(lib.problems).toEqual(['fonts[2]: needs family and file']);
   });
 });

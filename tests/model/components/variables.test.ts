@@ -103,7 +103,7 @@ describe('let e $var: a leitura troca e devolve o componente sem eles', () => {
     );
     // `rows` não existe: o erro é só dele (o $index continua a salvo de uma conferência fora do repeat)
     expect(validateComponent(withLet)).toEqual([
-      'template.children[0].count: variável não definida: rows',
+      'template.children[0].count: undefined variable: rows',
     ]);
     const fixed = file(
       frame({
@@ -132,7 +132,7 @@ describe('let e $var: a leitura troca e devolve o componente sem eles', () => {
       }),
     );
     expect(validateComponent(raw)).toEqual([
-      'template.children[0].text.$var(n).$field: $index só vale dentro de um repeat',
+      'template.children[0].text.$var(n).$field: $index is only valid inside a repeat',
     ]);
   });
 
@@ -257,7 +257,7 @@ describe('let e $var: a leitura troca e devolve o componente sem eles', () => {
       }),
     );
     expect(validateComponent(raw)).toEqual([
-      'template.children[0].__proto__: chave desconhecida: __proto__',
+      'template.children[0].__proto__: unknown key: __proto__',
     ]);
   });
 
@@ -293,7 +293,7 @@ describe('let e $var: erros', () => {
   it('nome fora de [a-z][a-zA-Z0-9]*', () => {
     for (const bad of ['Gap', '1gap', 'gap-1', 'a_b', '$x'])
       expect(validateComponent(file(frame({ let: { [bad]: 1 } })))).toEqual([
-        `template.let.${bad}: esperava nome de variável ([a-z][a-zA-Z0-9]*)`,
+        `template.let.${bad}: expected a variable name ([a-z][a-zA-Z0-9]*)`,
       ]);
     expect(validateComponent(file(frame({ let: { gap1A: 1, g: 2 } })))).toEqual([]);
   });
@@ -302,16 +302,16 @@ describe('let e $var: erros', () => {
     const at = (name: unknown) =>
       validateComponent(file(frame({ children: [rect({ width: { $var: name } })] })));
     expect(at('Gap')).toEqual([
-      'template.children[0].width.$var: esperava nome de variável ([a-z][a-zA-Z0-9]*)',
+      'template.children[0].width.$var: expected a variable name ([a-z][a-zA-Z0-9]*)',
     ]);
     expect(at(3)).toEqual([
-      'template.children[0].width.$var: esperava nome de variável ([a-z][a-zA-Z0-9]*)',
+      'template.children[0].width.$var: expected a variable name ([a-z][a-zA-Z0-9]*)',
     ]);
   });
 
   it('let precisa ser objeto', () => {
     expect(validateComponent(file(frame({ let: [1] })))).toEqual([
-      'template.let: esperava objeto',
+      'template.let: expected an object',
     ]);
   });
 
@@ -320,7 +320,7 @@ describe('let e $var: erros', () => {
       frame({ let: { a: 1 }, children: [rect({ width: { $var: 'gap' } })] }),
     );
     expect(validateComponent(raw)).toEqual([
-      'template.children[0].width: variável não definida: gap',
+      'template.children[0].width: undefined variable: gap',
     ]);
   });
 
@@ -334,7 +334,7 @@ describe('let e $var: erros', () => {
       }),
     );
     expect(validateComponent(raw)).toEqual([
-      'template.children[1].children[0].width: variável não definida: w',
+      'template.children[1].children[0].width: undefined variable: w',
     ]);
   });
 
@@ -345,9 +345,7 @@ describe('let e $var: erros', () => {
         children: [rect({ width: { $var: 'a' } })],
       }),
     );
-    expect(validateComponent(raw)).toEqual([
-      'template.let.a: ciclo de variáveis: a → b → a',
-    ]);
+    expect(validateComponent(raw)).toEqual(['template.let.a: variable cycle: a → b → a']);
   });
 
   it('a variável que usa a si mesma é um ciclo, mesmo escondendo a de fora', () => {
@@ -363,7 +361,7 @@ describe('let e $var: erros', () => {
       }),
     );
     expect(validateComponent(raw)).toEqual([
-      'template.children[0].let.a: ciclo de variáveis: a → a',
+      'template.children[0].let.a: variable cycle: a → a',
     ]);
   });
 
@@ -372,25 +370,25 @@ describe('let e $var: erros', () => {
       frame({ let: { a: 1 }, children: [rect({ width: { $var: 'a', default: 2 } })] }),
     );
     expect(validateComponent(raw)).toEqual([
-      'template.children[0].width.default: chave desconhecida: default',
+      'template.children[0].width.default: unknown key: default',
     ]);
   });
 
   it('let num rect é uma chave desconhecida', () => {
     const raw = file(frame({ children: [rect({ let: { a: 1 } })] }));
     expect(validateComponent(raw)).toEqual([
-      'template.children[0].let: chave desconhecida: let',
+      'template.children[0].let: unknown key: let',
     ]);
   });
 
-  it('let e $var na formatVersion 3: só é permitido com formatVersion 4', () => {
+  it('let e $var na formatVersion 3: only allowed with formatVersion 4', () => {
     const raw = file(
       frame({ let: { a: 1 }, children: [rect({ width: { $var: 'a' } })] }),
       3,
     );
     expect(validateComponent(raw)).toEqual([
-      'template.let: só é permitido com formatVersion 4',
-      'template.children[0].width: só é permitido com formatVersion 4',
+      'template.let: only allowed with formatVersion 4',
+      'template.children[0].width: only allowed with formatVersion 4',
     ]);
   });
 
@@ -402,7 +400,7 @@ describe('let e $var: erros', () => {
     const errors = validateComponent(raw);
     expect(errors).toEqual([...new Set(errors)]);
     expect(errors).toContain(
-      'template.children[0].width: só é permitido com formatVersion 4',
+      'template.children[0].width: only allowed with formatVersion 4',
     );
   });
 
@@ -414,7 +412,7 @@ describe('let e $var: erros', () => {
       }),
     );
     expect(validateComponent(inner)).toEqual([
-      'template.children[0].width.$var(gap).$add[0]: precisa ser número',
+      'template.children[0].width.$var(gap).$add[0]: must be a number',
     ]);
     const direct = file(
       frame({
@@ -423,7 +421,7 @@ describe('let e $var: erros', () => {
       }),
     );
     expect(validateComponent(direct)).toEqual([
-      'template.children[0].width.$add[0].$var(gap): precisa ser número',
+      'template.children[0].width.$add[0].$var(gap): must be a number',
     ]);
   });
 
@@ -435,7 +433,7 @@ describe('let e $var: erros', () => {
       }),
     );
     expect(validateComponent(raw)).toEqual([
-      'template.children[0].width.$var(outer).$add[0].$var(inner): precisa ser número',
+      'template.children[0].width.$var(outer).$add[0].$var(inner): must be a number',
     ]);
   });
 
@@ -458,7 +456,7 @@ describe('let e $var: erros', () => {
       lets[`v${i}`] = { $add: [{ $var: `v${i - 1}` }, { $var: `v${i - 1}` }] };
     const raw = file(frame({ let: lets, children: [rect({ width: { $var: 'v20' } })] }));
     expect(validateComponent(raw)).toEqual([
-      `expansão das variáveis grande demais (mais de ${MAX_EXPANDED_NODES} nós)`,
+      `variable expansion too large (more than ${MAX_EXPANDED_NODES} nodes)`,
     ]);
   });
 
@@ -476,7 +474,7 @@ describe('let e $var: erros', () => {
     lets.a20000 = 1;
     const raw = file(frame({ let: lets, children: [rect({ width: { $var: 'a0' } })] }));
     expect(validateComponent(raw)).toEqual([
-      `expansão das variáveis grande demais (mais de ${MAX_EXPANDED_NODES} nós)`,
+      `variable expansion too large (more than ${MAX_EXPANDED_NODES} nodes)`,
     ]);
   });
 
@@ -505,8 +503,8 @@ describe('let e $var: erros', () => {
       id: '',
     };
     expect(validateComponent(raw)).toEqual([
-      'id: esperava texto no padrão ^[a-z0-9][a-z0-9-_]*$',
-      'template.children[0].width: variável não definida: x',
+      'id: expected text matching ^[a-z0-9][a-z0-9-_]*$',
+      'template.children[0].width: undefined variable: x',
     ]);
   });
 });

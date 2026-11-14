@@ -15,14 +15,15 @@ import { dependentChanges, proposalIndex } from './proposalReview';
 import { jsonEqual } from './proposalValues';
 import type { JsonValue, Project } from './types';
 
-// Revisão da proposta pelo agente (etapa #644, CP1). O agente corrige uma proposta aberta e sem
-// nada aplicado: retira mudanças (`drop`) e aplica um lote de operações sobre o **proposto
-// inteiro** (o projeto atual com todas as mudanças que ficaram, qualquer que seja a decisão).
-// O servidor MCP aplica o lote; o modelo só recebe o projeto depois dele:
-//   `prepareRevision` (valida, fecha o `drop`, monta o proposto) → lote → `reviseProposal`.
-// Cada mudança termina de um tipo: intocada (idêntica), trocada (mesmo id e `from`, `to` novo,
-// sem decisão), nova (id novo) ou retirada (sai de `changes` e vai para `revisions[].dropped`).
-// Uma mudança aceita nunca é trocada nem retirada (congelada). Docs: docs/PROPOSAL-FORMAT.md.
+// Proposal revision by the agent (stage #644, CP1). The agent corrects an open proposal with
+// nothing applied: it drops changes (`drop`) and applies a batch of operations over the **whole
+// proposed state** (the current project with all the changes that remained, whatever the
+// decision). The MCP server applies the batch; the model only receives the project after it:
+//   `prepareRevision` (validates, closes the `drop`, builds the proposed state) → batch →
+//   `reviseProposal`.
+// Each change ends up as one of: untouched (identical), swapped (same id and `from`, new `to`,
+// no decision), new (new id) or dropped (leaves `changes` and goes to `revisions[].dropped`).
+// An accepted change is never swapped or dropped (frozen). Docs: docs/PROPOSAL-FORMAT.md.
 
 export type ReviseErrorCode =
   | 'not-open'
@@ -36,7 +37,7 @@ export interface ReviseError {
   readonly code: ReviseErrorCode;
   readonly message: string;
   readonly changeIds: readonly string[];
-  /** Em `proposal-not-applicable`: o que impede de aplicar a proposta (de `validateAccepted`). */
+  /** In `proposal-not-applicable`: what prevents the proposal from being applied (from `validateAccepted`). */
   readonly problems?: readonly ProposalIssue[];
 }
 
@@ -59,45 +60,45 @@ const isAccepted = (p: Proposal, id: string) => p.decisions[id]?.state === 'acce
 function frozenFailure(ids: readonly string[]): Failure {
   return fail(
     'change-frozen',
-    `Mudanças aceitas não podem ser trocadas nem retiradas: ${ids.join(', ')}.`,
+    `Accepted changes cannot be swapped or dropped: ${ids.join(', ')}.`,
     ids,
   );
 }
 
-/** Confere o estado da proposta e os ids do `drop`; devolve o fechamento (ids, sem repetir). */
+/** Checks the proposal's state and the `drop` ids; returns the closure (ids, without repeats). */
 function closeDrop(
   p: Proposal,
   drop: readonly string[],
 ): { readonly ok: true; readonly closure: ReadonlySet<string> } | Failure {
   if (p.status !== 'open') {
-    return fail('not-open', `A proposta não está aberta (${p.status}).`);
+    return fail('not-open', `The proposal is not open (${p.status}).`);
   }
   const applied = Object.keys(p.applied);
   if (applied.length > 0) {
-    return fail('proposal-applied', 'A proposta já tem mudanças aplicadas.', applied);
+    return fail('proposal-applied', 'The proposal already has applied changes.', applied);
   }
   const known = proposalIndex(p).changes;
   const unknown = drop.filter((id) => !known.has(id));
   if (unknown.length > 0) {
     return fail(
       'change-not-found',
-      `Mudança inexistente: ${unknown.join(', ')}.`,
+      `Change does not exist: ${unknown.join(', ')}.`,
       unknown,
     );
   }
-  // Retirar a criação retira o que depende dela; retirar uma remoção da cascata retira a de
-  // quem a causa: o índice da revisão já modela as duas.
+  // Dropping a creation drops what depends on it; dropping a cascade removal drops the one
+  // that causes it: the review index already models both.
   return { ok: true, closure: new Set([...drop, ...dependentChanges(p, drop)]) };
 }
 
 /**
- * Passo 1 da revisão: valida o estado da proposta, fecha o `drop` pelas dependências, confere
- * que o fechamento não toca em mudança aceita e monta o **proposto inteiro** (o projeto atual
- * com todas as mudanças que ficaram, aceitas, rejeitadas e sem decisão). `dropped` é o
- * fechamento, na ordem de `changes`. Se o que ficou não cabe no projeto, recusa com os
- * problemas: `validateAccepted` é reaproveitado com uma cópia em que tudo o que ficou está
- * aceito, o que dá `entity-missing`, `entity-exists`, `field-mismatch`, as invariantes e os
- * `changeIds` envolvidos.
+ * Step 1 of the revision: validates the proposal's state, closes the `drop` over the
+ * dependencies, checks that the closure does not touch an accepted change and builds the **whole
+ * proposed state** (the current project with all the changes that remained: accepted, rejected
+ * and undecided). `dropped` is the closure, in `changes` order. If what remains does not fit
+ * the project, it refuses with the problems: `validateAccepted` is reused with a copy in which
+ * everything that remained is accepted, which gives `entity-missing`, `entity-exists`,
+ * `field-mismatch`, the invariants and the `changeIds` involved.
  */
 export function prepareRevision(
   project: Project,
@@ -129,7 +130,7 @@ export function prepareRevision(
     const involved = new Set(check.issues.flatMap((i) => i.changeIds));
     return fail(
       'proposal-not-applicable',
-      'A proposta não se aplica mais ao projeto atual.',
+      'The proposal no longer applies to the current project.',
       kept.map((c) => c.id).filter((id) => involved.has(id)),
       check.issues,
     );
@@ -142,9 +143,9 @@ export function prepareRevision(
 }
 
 // ---------------------------------------------------------------------------
-// Classificação pela chave da mudança
+// Classification by the change key
 
-/** Chave de uma mudança: o campo na alteração; só a entidade (e o tipo) na criação e na remoção. */
+/** Key of a change: the field for an update; only the entity (and the kind) for a creation and a removal. */
 function changeKey(c: Change): string {
   const head = `${c.entity}|${c.entityId}`;
   return c.kind === 'update' ? `${head}|${c.field ?? ''}` : `${head}|${c.kind}`;
@@ -153,8 +154,8 @@ function changeKey(c: Change): string {
 const MARKING_GEOMETRY = new Set(['rect', 'space', 'containerId']);
 
 /**
- * Família do campo: o lote mexer num campo da família conta como mexer nos outros dela
- * (a marcação troca de espaço por `space` ou por `rect`; a anotação, de tipo ou de conteúdo).
+ * Field family: the batch touching one field of the family counts as touching the others in it
+ * (the marking changes space via `space` or via `rect`; the annotation, via type or content).
  */
 function family(c: Change): string {
   const field = c.field ?? '';
@@ -164,7 +165,7 @@ function family(c: Change): string {
   return c.entity === 'annotation' && typed ? 'content' : field;
 }
 
-/** O que o lote mexeu, por entidade: as famílias de campo, ou `*` (criou ou removeu). */
+/** What the batch touched, per entity: the field families, or `*` (created or removed). */
 function touchedBy(batch: readonly Change[]): Map<string, Set<string>> {
   const touched = new Map<string, Set<string>>();
   for (const b of batch) {
@@ -180,15 +181,15 @@ function wasTouched(
   touched: ReadonlyMap<string, ReadonlySet<string>>,
   c: Change,
 ): boolean {
-  // `position` (marcação e camada) é derivada da ordem final do grupo de irmãs: quando o
-  // efeito líquido não a pede mais, ela não vale mais, mesmo que o lote não a tenha tocado.
+  // `position` (marking and layer) is derived from the final order of the sibling group: when
+  // the net effect no longer asks for it, it no longer holds, even if the batch did not touch it.
   if (c.kind === 'update' && c.field === 'position') return true;
   const set = touched.get(`${c.entity}|${c.entityId}`);
   if (!set) return false;
   return c.kind !== 'update' || set.has('*') || set.has(family(c));
 }
 
-/** O `parentId` é derivado da geometria e só informativo: fora da comparação das criações. */
+/** The `parentId` is derived from geometry and informational only: left out of the creation comparison. */
 function withoutParent(value: JsonValue): JsonValue {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) return value;
   return Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'parentId'));
@@ -209,13 +210,13 @@ type Verdict =
 
 interface Classification {
   readonly verdicts: readonly Verdict[];
-  /** As mudanças do efeito líquido sem par: as novas, na ordem do proposto. */
+  /** The net-effect changes without a pair: the new ones, in proposed order. */
   readonly fresh: readonly Change[];
 }
 
 /**
- * Classifica as mudanças que ficaram pelo efeito líquido `net` (do projeto atual para o
- * resultado) e pelo que o lote mexeu `batch` (do proposto para o resultado).
+ * Classifies the changes that remained by the net effect `net` (from the current project to the
+ * result) and by what the batch touched, `batch` (from the proposed state to the result).
  */
 function classify(
   kept: readonly Change[],
@@ -239,9 +240,9 @@ function classify(
 }
 
 // ---------------------------------------------------------------------------
-// Montagem da proposta revisada
+// Assembling the revised proposal
 
-/** Pais (marcações e containers) e as irmãs em ordem: o que a âncora e o `position` garantem. */
+/** Parents (markings and containers) and siblings in order: what the anchor and `position` guarantee. */
 function structure(p: Project): string {
   const groups = new Map<string, string[]>();
   for (const m of p.markings) {
@@ -264,10 +265,11 @@ function structure(p: Project): string {
 const isMarkingCreate = (c: Change) => c.kind === 'create' && c.entity === 'marking';
 
 /**
- * As intocadas mantêm a âncora (`insertBefore`). Se, com elas, aplicar as mudanças não dá os
- * pais e a ordem entre irmãs do resultado do lote (a âncora antiga sumiu, ou o `position` novo
- * supõe outra), a criação de marcação cuja âncora do efeito líquido é outra passa a **trocada**:
- * o lugar no array faz parte do efeito dela (perde a decisão; aceita, congela a revisão).
+ * The untouched ones keep the anchor (`insertBefore`). If, with them, applying the changes does
+ * not give the parents and sibling order of the batch result (the old anchor vanished, or the
+ * new `position` assumes another), a marking creation whose net-effect anchor is different
+ * becomes **swapped**: its place in the array is part of its effect (it loses the decision; if
+ * accepted, it freezes the revision).
  */
 function settleAnchors(
   project: Project,
@@ -288,7 +290,7 @@ function settleAnchors(
   });
 }
 
-/** O próximo `c<n>` maior que qualquer id já usado: em `changes`, em `added` e em `dropped`. */
+/** The next `c<n>` greater than any id already used: in `changes`, in `added` and in `dropped`. */
 function idCounter(p: Proposal): () => string {
   let max = 0;
   const see = (id: string) => {
@@ -304,7 +306,7 @@ function idCounter(p: Proposal): () => string {
   return () => `c${++max}`;
 }
 
-/** A mesma mudança com outra âncora (`undefined` tira o campo). */
+/** The same change with another anchor (`undefined` removes the field). */
 function withAnchor(c: Change, insertBefore: string | null | undefined): Change {
   const copy: { -readonly [K in keyof Change]: Change[K] } = { ...c };
   if (insertBefore === undefined) delete copy.insertBefore;
@@ -312,7 +314,7 @@ function withAnchor(c: Change, insertBefore: string | null | undefined): Change 
   return copy;
 }
 
-/** A mudança trocada: id, `from` e o resto da antiga, com o `to` (e a âncora) da nova. */
+/** The swapped change: id, `from` and the rest of the old one, with the new one's `to` (and anchor). */
 function swappedChange(old: Change, next: Change): Change {
   const anchored = old.kind === 'create' && old.entity === 'marking';
   return withAnchor(
@@ -321,7 +323,7 @@ function swappedChange(old: Change, next: Change): Change {
   );
 }
 
-/** Ordem do proposto: cada mudança no lugar do seu par; as sem par vão no fim, na ordem antiga. */
+/** Proposed order: each change in its pair's place; those without a pair go at the end, in the old order. */
 function assemble(
   net: readonly Change[],
   verdicts: readonly Verdict[],
@@ -346,7 +348,7 @@ function stateBefore(p: Proposal, id: string): RevisedPriorState {
   return p.decisions[id]?.state === 'rejected' ? 'rejected' : null;
 }
 
-/** As notas presas às mudanças retiradas passam ao nível da proposta, com texto e data iguais. */
+/** Notes attached to dropped changes move up to the proposal level, with the same text and date. */
 function liftNotes(notes: readonly ProposalNote[], retired: ReadonlySet<string>) {
   return notes.map((n) =>
     n.target.level === 'change' && n.target.id !== null && retired.has(n.target.id)
@@ -384,37 +386,38 @@ function buildRevision(
 }
 
 export interface ReviseArgs {
-  /** Mudanças a retirar (o fechamento pelas dependências também sai). */
+  /** Changes to drop (the closure over the dependencies also goes). */
   readonly drop?: readonly string[];
-  /** O proposto depois do lote; ausente = sem lote. */
+  /** The proposed state after the batch; absent = no batch. */
   readonly after?: Project;
-  /** Data ISO 8601 da revisão. */
+  /** ISO 8601 date of the revision. */
   readonly at: string;
-  /** As operações do lote, só para referência (o base64 já trocado pelo marcador). */
+  /** The batch operations, for reference only (the base64 already replaced by the placeholder). */
   readonly operations?: readonly JsonValue[];
 }
 
 export interface ReviseSummary {
-  /** Trocadas (mesmo id, `to` novo). */
+  /** Swapped (same id, new `to`). */
   readonly changed: readonly string[];
-  /** Novas (id novo). */
+  /** New (new id). */
   readonly added: readonly string[];
-  /** Retiradas: o fechamento do `drop` e as que o lote desfez, na ordem de `changes`. */
+  /** Dropped: the `drop` closure and those the batch undid, in `changes` order. */
   readonly dropped: readonly string[];
 }
 
 /**
- * Passo 2 da revisão: classifica as mudanças e devolve a proposta nova (`formatVersion` 5, com
- * a revisão acrescida em `revisions`); `revision`, título e o resto não mudam (quem grava cuida
- * de `revision`). Refaz o `prepareRevision` por dentro (puro). Classificação, sem heurística:
- * - `N = computeChanges(project, after)` é o efeito líquido do resultado sobre o projeto atual;
- *   `B = computeChanges(proposed, after)`, o que o lote mexeu;
- * - a mudança que ficou e tem a chave em `N` é intocada (mesmo `to`; nas criações de marcação e
- *   de container o `parentId` fica fora da comparação) ou trocada (outro `to`);
- * - sem a chave em `N`: retirada se `B` mexeu na entidade (no campo ou na família dele), intocada
- *   se não mexeu (o projeto mudou por fora);
- * - cada mudança de `N` sem par é nova, com `from` do projeto atual.
- * Trocar ou retirar uma mudança aceita recusa a chamada inteira (`change-frozen`).
+ * Step 2 of the revision: classifies the changes and returns the new proposal (`formatVersion`
+ * 5, with the revision added to `revisions`); `revision`, title and the rest do not change (the
+ * one who saves takes care of `revision`). Redoes `prepareRevision` internally (pure).
+ * Classification, no heuristics:
+ * - `N = computeChanges(project, after)` is the net effect of the result over the current
+ *   project; `B = computeChanges(proposed, after)`, what the batch touched;
+ * - a change that remained and has its key in `N` is untouched (same `to`; in marking and
+ *   container creations the `parentId` is left out of the comparison) or swapped (another `to`);
+ * - without its key in `N`: dropped if `B` touched the entity (the field or its family),
+ *   untouched if it did not (the project changed from outside);
+ * - each change in `N` without a pair is new, with `from` taken from the current project.
+ * Swapping or dropping an accepted change refuses the whole call (`change-frozen`).
  */
 export function reviseProposal(
   project: Project,
@@ -444,7 +447,7 @@ export function reviseProposal(
     .map((c) => c.id);
   if (frozen.length > 0) return frozenFailure(frozen);
   if (swapped.length === 0 && fresh.length === 0 && retired.length === 0) {
-    return fail('no-changes', 'A revisão não muda nenhuma mudança da proposta.');
+    return fail('no-changes', 'The revision does not change any change of the proposal.');
   }
   return finish(project, proposal, args, {
     net,

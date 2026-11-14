@@ -237,7 +237,7 @@ describe('M5 grupo B — tooltip', () => {
     expect(entryOf('tooltip').component!.minSize).toEqual({ width: 40, height: 24 });
     for (const mode of MODES) {
       const d = both('tooltip', {})[mode];
-      expect(d.warnings.filter((w) => /não cabe|maior que a caixa/.test(w))).toEqual([]);
+      expect(d.warnings.filter((w) => /larger than the box/.test(w))).toEqual([]);
     }
   });
 });
@@ -441,7 +441,7 @@ describe('M5 grupo B — swipe-to-dismiss', () => {
       item({ direction: 'EndToStart', icon: '' }),
     ).light;
     expect(backdropIcon(empty)!.path.d).toBe(del);
-    expect(empty.warnings.filter((w) => /ícone desconhecido/.test(w))).toEqual([]);
+    expect(empty.warnings.filter((w) => /unknown icon/.test(w))).toEqual([]);
     const star = both(
       'swipe-to-dismiss',
       item({ direction: 'EndToStart', icon: 'Star' }),
@@ -451,7 +451,7 @@ describe('M5 grupo B — swipe-to-dismiss', () => {
       'swipe-to-dismiss',
       item({ direction: 'EndToStart', icon: 'Nao-existe' }),
     ).light;
-    expect(bad.warnings.some((w) => /ícone desconhecido/.test(w))).toBe(true);
+    expect(bad.warnings.some((w) => /unknown icon/.test(w))).toBe(true);
   });
 
   it('o recorte da caixa esconde o que sai dela', () => {

@@ -1,22 +1,23 @@
 import type { Marking, Project, ProjectContainer } from './types';
 
-// O que uma operação mexeu entre `before` e `next`, para o assentar recortado (#882, decisão 5).
-// Compara objetos (`!==`), nunca valores: o projeto é imutável, e o que a operação não tocou continua
-// sendo o mesmo objeto. Puro e sem API de navegador.
+// What an operation touched between `before` and `next`, for the clipped settle (#882, decision 5).
+// It compares objects (`!==`), never values: the project is immutable, and what the operation
+// did not touch remains the same object. Pure and with no browser API.
 
 export interface SettleDelta {
-  /** Índices em `next.markings` das marcações novas ou com outro objeto. */
+  /** Indices in `next.markings` of the markings that are new or have a different object. */
   readonly changed: readonly number[];
-  /** Marcações de `before` que foram apagadas ou trocadas por outro objeto. */
+  /** Markings of `before` that were deleted or replaced by another object. */
   readonly old: readonly Marking[];
   /**
-   * Espaços (`null` = o canvas) a assentar inteiros: o de todo container novo, apagado ou trocado e o
-   * canvas; o espaço cuja ordem relativa das marcações mudou; o canvas se uma marcação dele mudou.
+   * Spaces (`null` = the canvas) to settle in full: that of every container that is new, deleted
+   * or replaced, and the canvas; the space whose relative order of markings changed; the canvas
+   * if one of its markings changed.
    */
   readonly full: ReadonlySet<string | null>;
   /**
-   * As marcações que não mudaram estão nas mesmas posições de antes (a operação só trocou objetos ou
-   * acrescentou no fim): as posições do índice de `before` valem para `next`.
+   * The markings that did not change are in the same positions as before (the operation only
+   * swapped objects or appended at the end): the index positions of `before` hold for `next`.
    */
   readonly stable: boolean;
 }
@@ -29,8 +30,8 @@ interface MarkingDelta {
 }
 
 /**
- * Compara `before` e `next`. `null` quando recortar não compensa (mais da metade das marcações mudou,
- * ou o projeto tem ids repetidos): assenta-se o projeto inteiro.
+ * Compares `before` and `next`. `null` when clipping does not pay off (more than half of the
+ * markings changed, or the project has repeated ids): the whole project is settled.
  */
 export function settleDelta(before: Project, next: Project): SettleDelta | null {
   const markings = markingDelta(before.markings, next.markings);
@@ -53,7 +54,8 @@ function markingDelta(
     stable: true,
   };
   if (was === now) return delta;
-  // Mesmas marcações na mesma ordem (a operação só trocou objetos): compara posição a posição.
+  // Same markings in the same order (the operation only swapped objects): compare position by
+  // position.
   if (was.length === now.length && sameOrder(was, now)) {
     for (let i = 0; i < now.length; i++) {
       if (was[i] === now[i]) continue;
@@ -74,8 +76,9 @@ function sameOrder(was: readonly Marking[], now: readonly Marking[]): boolean {
 }
 
 /**
- * Criou, apagou ou reordenou: tira o prefixo e o sufixo de mesmos objetos e compara só o meio.
- * `false` se o meio passa da metade ou há id repetido (na dúvida, o projeto inteiro).
+ * Created, deleted or reordered: drops the prefix and suffix of identical objects and compares
+ * only the middle. `false` if the middle exceeds half or there is a repeated id (when in doubt,
+ * the whole project).
  */
 function diffMiddle(
   was: readonly Marking[],
@@ -91,7 +94,7 @@ function diffMiddle(
     endWas--;
     endNow--;
   }
-  // Só acrescentou no fim: o que já existia continua na mesma posição.
+  // Only appended at the end: what already existed stays in the same position.
   delta.stable = start === was.length;
   const middleWas = was.slice(start, endWas);
   const middleNow = now.slice(start, endNow);
@@ -106,8 +109,9 @@ function diffMiddle(
 }
 
 /**
- * Registra as marcações novas ou trocadas do meio (e tira de `byId` as que continuam, sobrando só as
- * apagadas e as trocadas). Devolve os ids que continuam com o mesmo objeto, ou `null` com id repetido.
+ * Records the new or replaced markings of the middle (and removes from `byId` those that remain,
+ * leaving only the deleted and the replaced). Returns the ids that keep the same object, or
+ * `null` on a repeated id.
  */
 function collectChanges(
   byId: Map<string, Marking>,
@@ -128,12 +132,12 @@ function collectChanges(
       continue;
     }
     delta.changed.push(offset + j);
-    // A trocada fica em `byId` até o fim: entra em `old` com as apagadas.
+    // The replaced one stays in `byId` until the end: it goes into `old` with the deleted ones.
   }
   return unchanged;
 }
 
-/** Soma os espaços onde a sequência dos ids que não mudaram, no meio, não é a mesma de antes. */
+/** Adds the spaces where the sequence of unchanged ids, in the middle, differs from before. */
 function addReordered(
   was: readonly Marking[],
   now: readonly Marking[],
@@ -156,7 +160,7 @@ function addReordered(
   }
 }
 
-/** Soma o espaço de cada container novo, apagado ou trocado, e o canvas (onde moram os pais deles). */
+/** Adds the space of each new, deleted or replaced container, and the canvas (where their parents live). */
 function addContainerSpaces(
   was: readonly ProjectContainer[],
   now: readonly ProjectContainer[],
@@ -173,7 +177,7 @@ function addContainerSpaces(
     byId.delete(c.id);
   }
   for (const c of byId.values()) touch(c);
-  // Mesmos containers em outra ordem: o container de um retângulo do canvas pode mudar.
+  // Same containers in another order: the container of a canvas rectangle may change.
   if (
     was.length === now.length &&
     now.some((c, i) => (was[i] as ProjectContainer).id !== c.id)

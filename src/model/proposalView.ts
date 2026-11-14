@@ -11,15 +11,15 @@ import { projectIndex } from './projectIndex';
 import { isRecord } from './refs';
 import type { Project } from './types';
 
-// Leitura de uma proposta para a interface de revisão (etapa 4): tipo de cada mudança,
-// tipo de cada nível, filtros, pendências, o que ficou para trás numa proposta
-// substituída, o status de uma linha da janela Propostas e o lembrete ao sair. Funções
-// puras; as contagens e os níveis ficam em `proposalReview.ts`.
+// Reading of a proposal for the review interface (stage 4): the type of each change, the
+// type of each level, filters, pending items, what was left behind in a superseded proposal,
+// the status of a row in the Proposals window and the reminder on exit. Pure functions;
+// the counts and the levels live in `proposalReview.ts`.
 
 /**
- * Tipo da mudança, para o selo e o filtro (a forma diz o tipo; a cor diz a decisão).
- * `moved`: geometria (`rect` ou troca de espaço da marcação, `placement` da imagem). `replaced`: troca do
- * arquivo da imagem. `changed`: qualquer outro campo.
+ * Type of the change, for the badge and the filter (the shape tells the type; the color tells
+ * the decision). `moved`: geometry (`rect` or a space change of the marking, `placement` of the
+ * image). `replaced`: swap of the image's file. `changed`: any other field.
  */
 export type ChangeType = 'created' | 'removed' | 'moved' | 'changed' | 'replaced';
 
@@ -45,9 +45,9 @@ export function changeType(c: Change): ChangeType {
 }
 
 /**
- * Tipo dominante de um conjunto de mudanças (um item ou uma imagem): criada, removida,
- * imagem trocada, alterada; "movida" só quando a posição é a única coisa que muda.
- * `null` sem mudanças.
+ * Dominant type of a set of changes (an item or an image): created, removed, image
+ * replaced, changed; "moved" only when the position is the only thing that changes.
+ * `null` with no changes.
  */
 export function dominantChangeType(types: Iterable<ChangeType>): ChangeType | null {
   const found = new Set(types);
@@ -58,13 +58,13 @@ export function dominantChangeType(types: Iterable<ChangeType>): ChangeType | nu
 }
 
 /**
- * Tipo de um nível da revisão (o selo da Árvore e da lista), a partir das mudanças que
- * ele agrupa (`ReviewTree.changeIdsOf`). Item e imagem: o tipo da própria entidade (a
- * marcação, a imagem), na ordem criada > removida > trocada > alterada; "movida" só se a
- * posição é a única coisa que muda. Sem mudança na própria entidade, o que muda dentro
- * (uma anotação criada, uma marcação da imagem) faz o nível "alterado". O item pode ser uma
- * seta (ME4): a criação e a remoção dela são a própria entidade. Proposta, Projeto e Canvas: o
- * dominante de tudo. `null` sem mudanças.
+ * Type of a review level (the badge of the Tree and the list), from the changes it
+ * groups (`ReviewTree.changeIdsOf`). Item and image: the type of the entity itself (the
+ * marking, the image), in the order created > removed > replaced > changed; "moved" only if
+ * the position is the only thing that changes. With no change to the entity itself, what
+ * changes inside it (a created annotation, a marking of the image) makes the level
+ * "changed". The item may be an arrow (ME4): its creation and removal are the entity itself.
+ * Proposal, Project and Canvas: the dominant one of everything. `null` with no changes.
  */
 export function levelType(
   level: ReviewLevel,
@@ -85,22 +85,22 @@ export function levelType(
     : type;
 }
 
-/** Chave de um alvo da revisão (`level:id`), a mesma de `ReviewTree.nodes`. */
+/** Key of a review target (`level:id`), the same as `ReviewTree.nodes`. */
 export function reviewKey(target: ReviewTarget): string {
   return `${target.level}:${target.id ?? ''}`;
 }
 
 /**
- * A mudança é de uma marcação do canvas (ou de uma anotação dela)? `imageId` nulo com
- * `markingId`; sem os dois é o grupo Projeto.
+ * Is the change about a canvas marking (or one of its annotations)? `imageId` null with
+ * `markingId`; without both it is the Project group.
  */
 export function isCanvasChange(c: Change): boolean {
   return c.imageId === null && c.markingId !== null;
 }
 
 /**
- * Onde a mudança aparece na revisão: o item (marcação, também a do canvas, que fica no grupo
- * Canvas), a imagem ou o grupo Projeto.
+ * Where the change appears in the review: the item (marking, also the canvas one, which sits
+ * in the Canvas group), the image or the Project group.
  */
 export function changeTarget(c: Change): ReviewTarget {
   if (c.markingId !== null) return { level: 'item', id: c.markingId };
@@ -109,8 +109,8 @@ export function changeTarget(c: Change): ReviewTarget {
 }
 
 /**
- * Camada a que a mudança pertence: a da anotação (a proposta, ou a atual, ou a removida)
- * ou a própria camada. `null` nas demais.
+ * Layer the change belongs to: the annotation's (the proposed one, or the current one, or the
+ * removed one) or the layer itself. `null` for the rest.
  */
 export function changeLayerId(c: Change, project: Project): string | null {
   if (c.entity === 'layer') return c.entityId;
@@ -130,25 +130,25 @@ export function changeLayerId(c: Change, project: Project): string | null {
 }
 
 // ---------------------------------------------------------------------------
-// Filtros
+// Filters
 
 export type DecisionFilter = 'all' | 'undecided' | 'accepted' | 'rejected';
 
-/** Filtros da revisão. Vazio/`null`/`'all'`/`false` = sem filtro naquele critério. */
+/** Review filters. Empty/`null`/`'all'`/`false` = no filter on that criterion. */
 export interface ReviewFilters {
   readonly types: readonly ChangeType[];
-  /** Id de um container, `CANVAS_FILTER` (o grupo Canvas) ou `null` (todos). */
+  /** Id of a container, `CANVAS_FILTER` (the Canvas group) or `null` (all). */
   readonly imageId: string | null;
   readonly layerId: string | null;
   readonly decision: DecisionFilter;
   readonly onlyConflicts: boolean;
-  /** Só as mudanças com a marca "Revisada" e sem decisão (etapa #644). */
+  /** Only the changes with the "Revised" mark and no decision (stage #644). */
   readonly onlyRevised: boolean;
 }
 
 /**
- * Valor de `ReviewFilters.imageId` que filtra o grupo Canvas (as marcações do canvas) em vez
- * de um container. Não é um id de imagem.
+ * Value of `ReviewFilters.imageId` that filters the Canvas group (the canvas markings) instead
+ * of a container. It is not an image id.
  */
 export const CANVAS_FILTER = '@canvas';
 
@@ -175,8 +175,8 @@ export function hasActiveFilters(f: ReviewFilters): boolean {
 }
 
 /**
- * Mudanças que passam pelos filtros, na ordem da proposta. `conflicts`: as mudanças em
- * conflito com o projeto atual (`changeStatuses`). Sem filtros, todas.
+ * Changes that pass the filters, in the proposal's order. `conflicts`: the changes in
+ * conflict with the current project (`changeStatuses`). With no filters, all of them.
  */
 export function filterChanges(
   p: Proposal,
@@ -206,22 +206,22 @@ export function filterChanges(
 }
 
 // ---------------------------------------------------------------------------
-// Pendências e proposta substituída
+// Pending items and superseded proposal
 
-/** Mudanças sem decisão, na ordem da proposta. */
+/** Changes without a decision, in the proposal's order. */
 export function undecidedChanges(p: Proposal): string[] {
   return p.changes.filter((c) => p.decisions[c.id] === undefined).map((c) => c.id);
 }
 
-/** Aceitas que ainda não foram aplicadas. */
+/** Accepted ones that have not been applied yet. */
 export function acceptedPendingIds(p: Proposal): string[] {
   return p.changes.filter(isAcceptedPending(p)).map((c) => c.id);
 }
 
 /**
- * O que uma proposta fechada (substituída) deixou para trás: o que estava sem decisão
- * (as pendentes não podem mais ser aplicadas), as aceitas sem aplicar (ainda podem) e as
- * rejeitadas.
+ * What a closed (superseded) proposal left behind: what was undecided (the pending ones can
+ * no longer be applied), the accepted ones not yet applied (they still can) and the
+ * rejected ones.
  */
 export interface LeftBehind {
   readonly undecided: readonly string[];
@@ -240,9 +240,9 @@ export function leftBehind(p: Proposal): LeftBehind {
 }
 
 /**
- * A mudança pendente seguinte (ou anterior) a `fromId` dentre `ids` (ordem da proposta),
- * dando a volta. Sem `fromId` (ou se ele não está em `ids`), a primeira (ou a última).
- * `ids` costuma ser as pendentes ou os conflitos já filtrados.
+ * The pending change after (or before) `fromId` among `ids` (proposal order), wrapping
+ * around. Without `fromId` (or if it is not in `ids`), the first (or the last).
+ * `ids` is usually the pending ones or the already filtered conflicts.
  */
 export function stepChange(
   ids: readonly string[],
@@ -265,33 +265,33 @@ export function stepChange(
 }
 
 // ---------------------------------------------------------------------------
-// Janela Propostas e saída da revisão
+// Proposals window and leaving the review
 
-/** O selo da linha na janela Propostas (`null` sem selo); a interface traduz. */
+/** The row's badge in the Proposals window (`null` without a badge); the interface translates it. */
 export type ProposalListFlag =
   'new' | 'inReview' | 'superseded' | 'applied' | 'withdrawn';
 
 export interface ProposalListStatus {
   readonly flag: ProposalListFlag | null;
-  /** Revisar (ainda não começou), Continuar (em andamento) ou Ver (fechada). */
+  /** Review (not started yet), Continue (in progress) or View (closed). */
   readonly action: 'review' | 'continue' | 'view';
-  /** A ação é a principal da janela: só na proposta que chegou e ninguém abriu (`fresh`). */
+  /** The action is the window's primary one: only on a proposal that arrived and nobody opened (`fresh`). */
   readonly primary: boolean;
 }
 
 /**
- * Pode apagar a proposta (fase 9.2)? Só as que não estão abertas (retirada, substituída,
- * aplicada): uma aberta ainda espera decisão do dono, e o arquivo dela é o que o agente e
- * a revisão leem.
+ * Can the proposal be deleted (phase 9.2)? Only those that are not open (withdrawn,
+ * superseded, applied): an open one still awaits the owner's decision, and its file is what
+ * the agent and the review read.
  */
 export function canRemoveProposal(p: Pick<Proposal, 'status'>): boolean {
   return p.status !== 'open';
 }
 
 /**
- * Status mostrado e ação de uma linha da janela Propostas. `fresh`: aberta, sem decisão
- * nem nota e ainda não aberta neste dispositivo ("Nova"); é a mesma verdade da contagem
- * da barra de status, então toda linha `fresh` leva o selo e a ação principal.
+ * Status shown and action of a row in the Proposals window. `fresh`: open, with no decision
+ * or note and not yet opened on this device ("New"); it is the same truth as the status
+ * bar's count, so every `fresh` row carries the badge and the primary action.
  */
 export function proposalListStatus(
   p: Proposal,
@@ -316,8 +316,9 @@ export function proposalListStatus(
 }
 
 /**
- * Sair da revisão pede o lembrete? Só com aceitas aguardando aplicação numa proposta que
- * ainda pode ser aplicada (aberta ou substituída). Nada se perde em nenhum caso.
+ * Does leaving the review call for the reminder? Only with accepted changes awaiting
+ * application in a proposal that can still be applied (open or superseded). Nothing is lost
+ * in any case.
  */
 export function needsExitReminder(
   status: ProposalStatus | undefined,
@@ -327,8 +328,8 @@ export function needsExitReminder(
 }
 
 /**
- * Arquivo de imagem (`images/tela.webp`) que a mudança traz: a criação ou a troca do
- * arquivo de uma imagem. Até ser aceita, ele espera em `proposals/<id>/` mais este caminho.
+ * Image file (`images/screen.webp`) that the change brings: the creation or the file swap
+ * of an image. Until it is accepted, it waits in `proposals/<id>/` plus this path.
  */
 export function changeImageFile(c: Change): string | null {
   if (c.entity !== 'image') return null;

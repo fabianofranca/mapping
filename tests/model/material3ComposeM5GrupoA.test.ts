@@ -146,7 +146,7 @@ const scale = (name: string): number[] => [
 const absOf = (d: Drawing, node: SceneNode) => absoluteBoxes(d.root).get(node.id)!;
 const radiusOf = (node: SceneNode) =>
   'cornerRadius' in node ? node.cornerRadius : undefined;
-const BAD_WARNING = /ícone desconhecido|não cabe|texto maior que a caixa|ícone esticado/;
+const BAD_WARNING = /unknown icon|não cabe|text larger than the box|stretched icon/;
 
 describe('M5 grupo A — alert-dialog', () => {
   const WIDTH = 312;
@@ -265,7 +265,7 @@ describe('M5 grupo A — alert-dialog', () => {
 
   it('o ícone fora do conjunto cai no reservado e avisa; os exemplos desenham limpos', () => {
     const bad = dialog({ icon: 'Nao-existe' });
-    expect(bad.warnings.some((w) => /ícone desconhecido/.test(w))).toBe(true);
+    expect(bad.warnings.some((w) => /unknown icon/.test(w))).toBe(true);
     const home = dialog({ icon: 'Home' });
     expect(home.warnings.filter((w) => BAD_WARNING.test(w))).toEqual([]);
     expect(iconIn(home, 'ícone')!.path.d).not.toBe(
@@ -413,7 +413,7 @@ describe('M5 grupo A — bottom-sheet', () => {
 
   it('ícone do item fora do conjunto avisa; item sem ícone começa a 16', () => {
     const bad = sheet({ items: [{ label: 'X', icon: 'Nao-existe' }] });
-    expect(bad.warnings.some((w) => /ícone desconhecido/.test(w))).toBe(true);
+    expect(bad.warnings.some((w) => /unknown icon/.test(w))).toBe(true);
     const none = sheet({ items: [{ label: 'X', icon: '' }] });
     expect(iconIn(none, 'item')).toBeUndefined();
     expect(absOf(none, textIn(none, 'item')!).x).toBe(16);

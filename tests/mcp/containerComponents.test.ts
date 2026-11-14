@@ -212,7 +212,7 @@ describe('create_marking com annotation', () => {
     expect(result.errors[0]?.message).toMatch(/48×40/);
   });
 
-  it('sem componente (ou sem annotation) o rect continua obrigatório', async () => {
+  it('sem componente (ou sem annotation) o rect continua required', async () => {
     const noRect = await run([
       SCREEN,
       { op: 'create_marking', container: '$tela' },

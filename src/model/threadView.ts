@@ -9,16 +9,16 @@ import {
 import { normalizeEmail } from './threadUsers';
 import type { Annotation, Project } from './types';
 
-// Vista das conversas (etapa Comentários): onde a âncora mora, de quem é a vez, assunto e "não
-// lida". Funções puras sobre `Thread` e `Project`; a resolução por id usa o `projectIndex`.
-// Texto de interface (i18n) fica fora: aqui só saem dados (o tipo do alvo apagado, por exemplo).
+// Thread view (Comments stage): where the anchor lives, whose turn it is, subject and "not
+// read". Pure functions over `Thread` and `Project`; resolution by id uses `projectIndex`.
+// Interface text (i18n) stays outside: only data comes out here (the type of the deleted target, for example).
 
 // ---------------------------------------------------------------------------
-// Âncora: hospedeiro e órfã
+// Anchor: host and orphan
 
 /**
- * O item que hospeda o pino de uma conversa (decisão 24): a marcação, o container, a seta ou o
- * próprio ponto solto. A conversa de campo, par, linha e anotação mora no pino da dona.
+ * The item that hosts a thread's pin (decision 24): the marking, the container, the arrow or the
+ * loose point itself. The thread of a field, pair, row and annotation lives on the owner's pin.
  */
 export type ThreadHost =
   | { readonly kind: 'marking' | 'container' | 'arrow'; readonly id: string }
@@ -29,7 +29,7 @@ export type ThreadHost =
       readonly y: number;
     };
 
-/** O que a âncora órfã procurava e não existe mais (a interface monta o texto). */
+/** What the orphan anchor was looking for and no longer exists (the interface builds the text). */
 export type ThreadMissingKind =
   'marking' | 'container' | 'arrow' | 'layer' | 'annotation' | 'entry' | 'row';
 
@@ -37,7 +37,7 @@ export type AnchorResolution =
   | {
       readonly orphan: false;
       readonly anchor: ThreadAnchor;
-      /** `null`: a camada (e a anotação sem dona) não tem pino. */
+      /** `null`: the layer (and an annotation without an owner) has no pin. */
       readonly host: ThreadHost | null;
     }
   | {
@@ -63,7 +63,7 @@ const orphan = (anchor: ThreadAnchor, missing: ThreadMissingKind): AnchorResolut
   missing,
 });
 
-/** A marcação ou a seta dona de uma anotação (os dois dividem o espaço de ids). */
+/** The marking or the arrow that owns an annotation (the two share the id space). */
 function ownerHost(idx: ProjectIndex, ownerId: string): ThreadHost | null {
   if (idx.markings.has(ownerId)) return { kind: 'marking', id: ownerId };
   if (idx.arrows.has(ownerId)) return { kind: 'arrow', id: ownerId };
@@ -111,8 +111,8 @@ function resolvePart(idx: ProjectIndex, a: PartAnchor): AnchorResolution {
 }
 
 /**
- * Onde a âncora está no projeto: o hospedeiro do pino (`host`) ou a órfã, com o tipo do que
- * sumiu. Campo: basta a anotação existir; par e linha também precisam existir (órfã se não).
+ * Where the anchor is in the project: the pin's host (`host`) or the orphan, with the type of what
+ * disappeared. Field: the annotation only has to exist; pair and row must also exist (orphan if not).
  */
 export function resolveAnchor(project: Project, anchor: ThreadAnchor): AnchorResolution {
   const idx = projectIndex(project);
@@ -128,18 +128,18 @@ export function resolveAnchor(project: Project, anchor: ThreadAnchor): AnchorRes
   }
 }
 
-/** A âncora não existe mais no projeto (item apagado, ou container do ponto apagado). */
+/** The anchor no longer exists in the project (deleted item, or deleted container of the point). */
 export function isOrphan(project: Project, anchor: ThreadAnchor): boolean {
   return resolveAnchor(project, anchor).orphan;
 }
 
-/** O hospedeiro do pino; `null` para a camada, a órfã e a anotação sem dona. */
+/** The pin's host; `null` for the layer, the orphan and an annotation without an owner. */
 export function hostOf(project: Project, anchor: ThreadAnchor): ThreadHost | null {
   const r = resolveAnchor(project, anchor);
   return r.orphan ? null : r.host;
 }
 
-/** Chave estável do hospedeiro (agrupa os pinos): `marking:<id>`, `point:<container>:<x>:<y>`… */
+/** Stable key of the host (groups the pins): `marking:<id>`, `point:<container>:<x>:<y>`… */
 export function hostKey(host: ThreadHost): string {
   return host.kind === 'point'
     ? `point:${host.containerId ?? ''}:${host.x}:${host.y}`
@@ -147,9 +147,9 @@ export function hostKey(host: ThreadHost): string {
 }
 
 // ---------------------------------------------------------------------------
-// Estado: de quem é a vez
+// State: whose turn it is
 
-/** A última mensagem na ordem canônica (`at`, `id`); `null` numa conversa sem mensagens. */
+/** The last message in canonical order (`at`, `id`); `null` in a thread with no messages. */
 export function lastMessage(thread: Thread): ThreadMessage | null {
   let last: ThreadMessage | null = null;
   for (const m of thread.messages) {
@@ -158,7 +158,7 @@ export function lastMessage(thread: Thread): ThreadMessage | null {
   return last;
 }
 
-/** Quem a conversa aguarda: `agent` ou `human`; `null` na resolvida (decisão 14). */
+/** Who the thread is waiting for: `agent` or `human`; `null` when resolved (decision 14). */
 export type ThreadAwaiting = 'agent' | 'human';
 
 export function awaiting(thread: Thread): ThreadAwaiting | null {
@@ -169,12 +169,12 @@ export function awaiting(thread: Thread): ThreadAwaiting | null {
 }
 
 // ---------------------------------------------------------------------------
-// Assunto (decisão 17)
+// Subject (decision 17)
 
-/** Tamanho máximo do assunto, reticências incluídas. */
+/** Maximum length of the subject, ellipsis included. */
 export const SUBJECT_MAX = 80;
 
-/** Troca o rótulo de um link markdown (o chip vivo é da fase das citações). */
+/** Replaces the label of a markdown link (the live chip belongs to the citations phase). */
 export type SubjectLabelResolver = (label: string, url: string) => string;
 
 const LINK_RE = /(!?)\[((?:\\.|[^\]\\])*)\]\(([^)\s]*)\)/g;
@@ -186,17 +186,17 @@ const EM_UNDERSCORE_RE = /(^|[^\p{L}\p{N}_])(__?)(?=\S)(.+?)(?<=\S)\2(?![\p{L}\p
 const CODE_RE = /(`+)([^`]+)\1/g;
 const FENCE_RE = /^\s*(?:`{3,}|~{3,})/;
 
-/** Marcadores (área de uso privado) que seguram o rótulo vivo de um link até o fim da limpeza. */
+/** Markers (private-use area) that hold a link's live label until the end of the cleanup. */
 const LIVE_OPEN = '\uE000';
 const LIVE_CLOSE = '\uE001';
 const LIVE_RE = /\uE000(\d+)\uE001/g;
-/** Caractere escapado (`\*`) vira um da área privada (`ESCAPED_BASE` + código): a ênfase não o lê. */
+/** An escaped character (`\*`) becomes one from the private-use area (`ESCAPED_BASE` + code): emphasis does not read it. */
 const ESCAPED_BASE = 0xe100;
 const ESCAPED_RE = /[\uE100-\uE1FF]/g;
 
 /**
- * Link → rótulo. O rótulo vivo (de `resolveLabel`) já é texto final: entra como marcador e só
- * volta no fim, para a ênfase e os escapes não o lerem de novo (`__init__` continua `__init__`).
+ * Link → label. The live label (from `resolveLabel`) is already final text: it goes in as a marker and only
+ * comes back at the end, so emphasis and escapes do not read it again (`__init__` stays `__init__`).
  */
 function stripLinks(
   line: string,
@@ -233,9 +233,9 @@ function plainLine(line: string, resolveLabel?: SubjectLabelResolver): string {
 }
 
 /**
- * O assunto da conversa: a primeira linha com texto da primeira mensagem, sem a marcação do
- * markdown (título, lista, citação, ênfase, código, link → rótulo), com até `SUBJECT_MAX`
- * caracteres (a reticência `…` conta no total). `resolveLabel` troca o rótulo dos links.
+ * The thread's subject: the first line with text of the first message, without the markdown
+ * markup (heading, list, quote, emphasis, code, link → label), with up to `SUBJECT_MAX`
+ * characters (the ellipsis `…` counts toward the total). `resolveLabel` replaces the links' label.
  */
 export function threadSubject(
   thread: Thread,
@@ -259,12 +259,12 @@ function clip(text: string, max: number = SUBJECT_MAX): string {
     .trimEnd()}…`;
 }
 
-/** Tamanho máximo do texto simples da coluna "Última mensagem". */
+/** Maximum length of the plain text of the "Last message" column. */
 export const MESSAGE_PLAIN_MAX = 200;
 
 /**
- * O texto da mensagem numa linha, sem a marcação do markdown (como o assunto, decisão 17):
- * as linhas com texto são juntas por espaço, e o link vira o rótulo.
+ * The message text on one line, without the markdown markup (like the subject, decision 17):
+ * lines with text are joined by a space, and the link becomes the label.
  */
 export function messagePlainText(text: string): string {
   const lines = text
@@ -275,9 +275,9 @@ export function messagePlainText(text: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Não lida (decisão 16)
+// Unread (decision 16)
 
-/** A pessoa deste dispositivo (a identidade das Configurações). */
+/** The person on this device (the identity from Settings). */
 export interface ThreadViewer {
   readonly email: string;
 }
@@ -291,8 +291,8 @@ function isOwn(message: ThreadMessage, myEmail: string): boolean {
 }
 
 /**
- * A conversa tem mensagem de outra pessoa (outro e-mail) ou de agente depois do `lastReadAt`
- * (estritamente depois; `null` = tudo é posterior). A própria mensagem nunca conta.
+ * The thread has a message from another person (another email) or from an agent after `lastReadAt`
+ * (strictly after; `null` = everything is later). The message's own author never counts.
  */
 export function isUnread(
   thread: Thread,

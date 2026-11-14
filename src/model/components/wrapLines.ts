@@ -1,29 +1,35 @@
 /**
- * Motor dos componentes: a quebra de fileira (`layout.wrap`, v4). Funções puras sobre números: o
- * motor (`instantiate.ts`, o quadro e o `repeat`) e a arrumação do slot (`arrange.ts`, `layout.ts`)
- * decidem com elas quais filhos ficam em cada linha e onde cada linha fica no eixo cruzado.
+ * Component engine: row wrapping (`layout.wrap`, v4). Pure functions over numbers: the
+ * engine (`instantiate.ts`, the frame and the `repeat`) and the slot arrangement (`arrange.ts`,
+ * `layout.ts`) use them to decide which children go on each line and where each line sits on
+ * the cross axis.
  */
 
-/** Tolerância (px) de "cabe na linha": a mesma da arrumação e da posição da filha nova. */
+/**
+ * Tolerance (px) for "fits on the line": the same as the arrangement and the new child's position.
+ */
 export const WRAP_EPS = 0.001;
 
 export interface LineBreakOptions {
-  /** Espaço entre filhos da mesma linha. */
+  /** Gap between children of the same line. */
   readonly gap: number;
-  /** Filhos por linha, no máximo (`layout.maxPerLine`). */
+  /** Children per line, at most (`layout.maxPerLine`). */
   readonly maxPerLine?: number | undefined;
-  /** Linhas, no máximo (`layout.maxLines`): o resto é cortado. */
+  /** Lines, at most (`layout.maxLines`): the rest is cut. */
   readonly maxLines?: number | undefined;
 }
 
 export interface BrokenLines {
-  /** Os índices dos filhos de cada linha, na ordem; só as linhas que ficam. */
+  /** The indices of each line's children, in order; only the lines that stay. */
   readonly lines: readonly (readonly number[])[];
-  /** Quantos filhos ficaram fora por causa do `maxLines`. */
+  /** How many children were left out because of `maxLines`. */
   readonly dropped: number;
 }
 
-/** O filho cabe na linha atual (ou a linha está vazia: um filho maior que a linha fica sozinho)? */
+/**
+ * Does the child fit on the current line (or is the line empty: a child larger than the line stays
+ * alone)?
+ */
 function fitsLine(
   count: number,
   used: number,
@@ -37,9 +43,9 @@ function fitsLine(
 }
 
 /**
- * Reparte os filhos (pelos tamanhos no eixo principal) em linhas, como o `flex-wrap`: o filho que
- * não cabe no que resta de `available` vai para a linha seguinte; `available` nulo = sem limite
- * (só o `maxPerLine` quebra). Os filhos além de `maxLines` linhas saem (`dropped`).
+ * Splits the children (by their sizes on the main axis) into lines, like `flex-wrap`: a child
+ * that does not fit in what remains of `available` goes to the next line; a null `available` =
+ * no limit (only `maxPerLine` wraps). Children beyond `maxLines` lines are dropped (`dropped`).
  */
 export function breakLines(
   sizes: readonly number[],
@@ -65,16 +71,17 @@ export function breakLines(
 }
 
 export interface StackedLines {
-  /** Onde cada linha começa no eixo cruzado, a partir do início da área de conteúdo. */
+  /** Where each line starts on the cross axis, from the start of the content area. */
   readonly tops: readonly number[];
-  /** A extensão ocupada pelas linhas, com os `lineGap`. */
+  /** The extent occupied by the lines, including the `lineGap`s. */
   readonly total: number;
 }
 
 /**
- * Empilha as linhas no eixo cruzado (cada uma com a sua extensão), separadas por `lineGap`; com
- * `reverse` (`wrap-reverse`) a ordem das linhas é a inversa: a primeira fica no fim do bloco, e a
- * linha nova, no início. O bloco começa no início da área de conteúdo nos dois casos.
+ * Stacks the lines on the cross axis (each with its own extent), separated by `lineGap`; with
+ * `reverse` (`wrap-reverse`) the line order is inverted: the first ends up at the end of the
+ * block, and the new line at the start. The block starts at the start of the content area in
+ * both cases.
  */
 export function stackLines(
   extents: readonly number[],

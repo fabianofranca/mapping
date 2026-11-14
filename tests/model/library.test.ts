@@ -319,7 +319,7 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
         'error',
         '',
         '',
-        'nenhuma especialização encontrada: o pacote precisa de um arquivo .json com "format": "mapping-spec"',
+        'no specialization found: the package needs a .json file with "format": "mapping-spec"',
       ],
     ]);
     expect(report.spec).toBeUndefined();
@@ -340,11 +340,11 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
         'error',
         '',
         '',
-        'há 2 especializações no pacote (mini.spec.json, outra.spec.json): indique qual validar',
+        'there are 2 specializations in the package (mini.spec.json, outra.spec.json): say which one to validate',
       ],
     ]);
     expect(validate(miniPackage(), { specPath: 'nada.json' }).issues.map(brief)).toEqual([
-      ['error', 'nada.json', '', 'arquivo da especialização não encontrado: nada.json'],
+      ['error', 'nada.json', '', 'specialization file not found: nada.json'],
     ]);
   });
 
@@ -359,7 +359,7 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
       path: 'layers[0].annotationTypes[0].fields[0].type',
       severity: 'error',
     });
-    expect(report.errors[0]?.message).toContain('"texto" inválido');
+    expect(report.errors[0]?.message).toContain('"texto" is invalid');
     expect(report.spec).toBeUndefined();
     expect(report.summary.level).toBe(1);
   });
@@ -368,11 +368,11 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
     const report = validate(withText(miniPackage(), SPEC, '{"format": "mapping-spec",'));
     // Não é candidata a especialização: o pacote fica sem nenhuma.
     expect(report.errors).toHaveLength(1);
-    expect(report.errors[0]?.message).toContain('nenhuma especialização');
+    expect(report.errors[0]?.message).toContain('no specialization found');
     const named = validate(withText(miniPackage(), SPEC, '{oops'), { specPath: SPEC });
     expect(named.errors).toHaveLength(1);
     expect(named.errors[0]).toMatchObject({ file: SPEC, path: '' });
-    expect(named.errors[0]?.message).toContain('JSON inválido');
+    expect(named.errors[0]?.message).toContain('invalid JSON');
   });
 
   it('componente inválido: erros no arquivo dele, com o caminho dentro dele; o outro segue', () => {
@@ -385,7 +385,7 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
     const report = validate(files);
     expect(report.ok).toBe(false);
     expect(report.errors.map(brief)).toEqual([
-      ['error', 'components/mini-button.json', 'formatVersion', 'esperava 1, 2, 3 ou 4'],
+      ['error', 'components/mini-button.json', 'formatVersion', 'expected 1, 2, 3 or 4'],
     ]);
     // O botão não passa pelo nível 3, mas a tela de exemplo da origem ainda o usa e avisa.
     expect(report.warnings.map(brief)).toEqual([
@@ -393,7 +393,7 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
         'warning',
         SPEC,
         'origins[0].examples[0].file',
-        'tela de exemplo "Home" do sistema "sdui": content.children[0]: tipo sem componente: mini-button',
+        'example screen "Home" of the system "sdui": content.children[0]: type without a component: mini-button',
       ],
     ]);
   });
@@ -407,7 +407,7 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
       file: 'components/mini-card.json',
       path: '',
     });
-    expect(report.errors[0]?.message).toContain('JSON inválido');
+    expect(report.errors[0]?.message).toContain('invalid JSON');
   });
 
   it('component apontando para arquivo que não existe', () => {
@@ -417,7 +417,7 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
         'error',
         SPEC,
         'layers[0].annotationTypes[1].component',
-        'arquivo não encontrado: components/mini-card.json',
+        'file not found: components/mini-card.json',
       ],
     ]);
   });
@@ -446,13 +446,13 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
     expect(report.errors[0]).toMatchObject({
       file: SPEC,
       path: 'layers[0].annotationTypes[0].examples[0].values.rows[0].nada',
-      message: '"nada" não é coluna de "rows"',
+      message: '"nada" is not a column of "rows"',
       code: 'spec.exampleNotColumn',
       params: { key: 'nada', field: 'rows' },
     });
     expect(report.errors[1]).toMatchObject({
       path: 'layers[0].annotationTypes[0].examples[0].values.rows[1]',
-      message: 'deve ser um objeto (coluna → valor)',
+      message: 'must be an object (column → value)',
       code: 'spec.exampleRowNotObject',
     });
     expect(report.errors[1]).not.toHaveProperty('params');
@@ -465,7 +465,7 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
         'error',
         SPEC,
         'layers[0].annotationTypes[0].doc',
-        'arquivo não encontrado: docs/mini-button.md',
+        'file not found: docs/mini-button.md',
       ],
     ]);
   });
@@ -474,7 +474,7 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
     const report = validate(withText(miniPackage(), 'docs/mini-button.md', '  \n'));
     expect(report.ok).toBe(true);
     expect(report.warnings.map(brief)).toEqual([
-      ['warning', 'docs/mini-button.md', '', 'documento vazio'],
+      ['warning', 'docs/mini-button.md', '', 'empty document'],
     ]);
   });
 
@@ -492,9 +492,9 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
         'warning',
         'components/velho.json',
         '',
-        'arquivo não referenciado pela especialização',
+        'file not referenced by the specialization',
       ],
-      ['warning', 'docs/solto.md', '', 'arquivo não referenciado pela especialização'],
+      ['warning', 'docs/solto.md', '', 'file not referenced by the specialization'],
     ]);
   });
 
@@ -524,7 +524,7 @@ describe('validateLibrary: nível 2 (coerência entre arquivos)', () => {
         'error',
         'components/mini-button.json',
         'template.children[0].text.$field',
-        'o desenho usa o campo "rotulo", que o tipo "mini-button" não declara',
+        'the drawing uses the field "rotulo", which the type "mini-button" does not declare',
       ],
     ]);
     // E o campo que o desenho deixou de usar vira aviso no tipo.
@@ -532,7 +532,7 @@ describe('validateLibrary: nível 2 (coerência entre arquivos)', () => {
       'warning',
       SPEC,
       'layers[0].annotationTypes[0].fields[0]',
-      'o campo "label" do tipo "mini-button" não é usado pelo desenho do componente components/mini-button.json',
+      'the field "label" of the type "mini-button" is not used by the drawing of the component components/mini-button.json',
     ]);
   });
 
@@ -563,8 +563,8 @@ describe('validateLibrary: nível 2 (coerência entre arquivos)', () => {
       },
     });
     const unused = validate(files)
-      .warnings.filter((w) => w.message.includes('não é usado pelo desenho'))
-      .map((w) => w.message.match(/o campo "(\w+)"/)?.[1]);
+      .warnings.filter((w) => w.message.includes('is not used by the drawing'))
+      .map((w) => w.message.match(/the field "(\w+)"/)?.[1]);
     expect(unused).toContain('esquecido');
     for (const key of ['porParams', 'porValues', 'porNotes']) {
       expect(unused, key).not.toContain(key);
@@ -583,7 +583,7 @@ describe('validateLibrary: nível 2 (coerência entre arquivos)', () => {
         'error',
         SPEC,
         'layers[0].annotationTypes[1].sources[0].slot',
-        'o slot do componente components/mini-card.json é "content", não "itens"',
+        'the slot of the component components/mini-card.json is "content", not "itens"',
       ],
     ]);
     const noSlot = patch(
@@ -597,7 +597,7 @@ describe('validateLibrary: nível 2 (coerência entre arquivos)', () => {
         'error',
         SPEC,
         'layers[0].annotationTypes[0].sources[0].slot',
-        'o componente components/mini-button.json não tem slot',
+        'the component components/mini-button.json has no slot',
       ],
     ]);
   });
@@ -609,7 +609,7 @@ describe('validateLibrary: nível 2 (coerência entre arquivos)', () => {
         'error',
         SPEC,
         'layers[0].annotationTypes[0].examples[2].file',
-        'arquivo não encontrado: examples/button.sdui.json',
+        'file not found: examples/button.sdui.json',
       ],
     ]);
   });
@@ -625,7 +625,7 @@ describe('validateLibrary: nível 2 (coerência entre arquivos)', () => {
       ['examples/button.sdui.json', ''],
       ['examples/home.sdui.json', ''],
     ]);
-    expect(report.errors.every((e) => e.message.startsWith('JSON inválido'))).toBe(true);
+    expect(report.errors.every((e) => e.message.startsWith('invalid JSON'))).toBe(true);
   });
 
   it('tela de exemplo da origem com arquivo ausente', () => {
@@ -635,7 +635,7 @@ describe('validateLibrary: nível 2 (coerência entre arquivos)', () => {
         'error',
         SPEC,
         'origins[0].examples[0].file',
-        'arquivo não encontrado: examples/home.sdui.json',
+        'file not found: examples/home.sdui.json',
       ],
     ]);
   });
@@ -648,7 +648,7 @@ describe('validateLibrary: nível 2 (coerência entre arquivos)', () => {
         'warning',
         SPEC,
         'fonts[0].file',
-        'arquivo da fonte "Roboto" não encontrado: fonts/Roboto-Medium.ttf; o desenho usa a fonte do sistema',
+        'file of the font "Roboto" not found: fonts/Roboto-Medium.ttf; the drawing uses the system font',
       ],
     ]);
   });
@@ -664,7 +664,7 @@ describe('validateLibrary: nível 2 (coerência entre arquivos)', () => {
         'error',
         SPEC,
         'origins[0].screen.roots[1].scrim',
-        'o tipo "nao-existe" não existe na especialização',
+        'the type "nao-existe" does not exist in the specialization',
       ],
     ]);
   });
@@ -681,7 +681,7 @@ describe('validateLibrary: nível 2 (coerência entre arquivos)', () => {
       'warning',
       SPEC,
       'layers[0].annotationTypes[1].component',
-      'o arquivo components/mini-button.json já é o componente do tipo "mini-button"',
+      'the file components/mini-button.json is already the component of the type "mini-button"',
     ]);
     // O cartão não declara `label` nem `variant`, que o desenho do botão usa (e o botão não
     // tem o slot que o cartão declara).
@@ -689,17 +689,17 @@ describe('validateLibrary: nível 2 (coerência entre arquivos)', () => {
       [
         SPEC,
         'layers[0].annotationTypes[1].sources[0].slot',
-        'o componente components/mini-button.json não tem slot',
+        'the component components/mini-button.json has no slot',
       ],
       [
         'components/mini-button.json',
         'template.children[0].text.$field',
-        'o desenho usa o campo "label", que o tipo "mini-card" não declara',
+        'the drawing uses the field "label", which the type "mini-card" does not declare',
       ],
       [
         'components/mini-button.json',
         'template.fill.$switch',
-        'o desenho usa o campo "variant", que o tipo "mini-card" não declara',
+        'the drawing uses the field "variant", which the type "mini-card" does not declare',
       ],
     ]);
   });
@@ -716,7 +716,7 @@ describe('validateLibrary: nível 2 (coerência entre arquivos)', () => {
         'warning',
         'components/mini-card.json',
         'preview.subtitulo',
-        'o tipo "mini-card" não tem o campo "subtitulo"',
+        'the type "mini-card" has no field "subtitulo"',
       ],
     ]);
   });
@@ -803,7 +803,12 @@ describe('validateLibrary: contrato de versão (previous)', () => {
   it('version que não cresceu é erro', () => {
     const report = validate(miniPackage(), { previous: previousSpec(2, false) });
     expect(report.errors.map(brief)).toEqual([
-      ['error', SPEC, 'version', 'a versão não cresceu: a anterior é 2 e esta é 2'],
+      [
+        'error',
+        SPEC,
+        'version',
+        'the version did not grow: the previous one is 2 and this one is 2',
+      ],
     ]);
   });
 
@@ -815,7 +820,12 @@ describe('validateLibrary: contrato de versão (previous)', () => {
     if (!parsed.ok) throw new Error(parsed.errors.join('; '));
     const report = validate(nextPackage(), { previous: parsed.spec });
     expect(report.errors.map(brief)).toEqual([
-      ['error', SPEC, 'id', 'a versão anterior é da especialização "outra", não "mini"'],
+      [
+        'error',
+        SPEC,
+        'id',
+        'the previous version is of the specialization "outra", not "mini"',
+      ],
     ]);
   });
 
@@ -844,13 +854,13 @@ describe('validateLibrary: contrato de versão (previous)', () => {
         'warning',
         SPEC,
         'migrations[0].steps[2].type',
-        'o tipo "fantasma" não existia na versão 1',
+        'the type "fantasma" did not exist in version 1',
       ],
       [
         'warning',
         SPEC,
         'migrations[0].steps[3].from',
-        'o campo "sumiu" do tipo "mini-note" não existia na versão 1',
+        'the field "sumiu" of the type "mini-note" did not exist in version 1',
       ],
     ]);
   });
@@ -868,7 +878,7 @@ function tinyButton(files: readonly LibraryFile[]): LibraryFile[] {
 }
 
 describe('validateLibrary: nível 3 (prova de desenho)', () => {
-  it('conteúdo que não cabe vira aviso (aproximado), com o caso e o tamanho', () => {
+  it('conteúdo que não cabe vira aviso (approximate), com o caso e o tamanho', () => {
     const report = validate(tinyButton(miniPackage()));
     expect(report.ok).toBe(true);
     // O preview e os dois exemplos de valores, no tamanho inicial.
@@ -877,19 +887,19 @@ describe('validateLibrary: nível 3 (prova de desenho)', () => {
         'warning',
         'components/mini-button.json',
         'preview',
-        'tipo "mini-button", o preview, tamanho inicial 20×40: conteúdo maior que a caixa: button (aproximado)',
+        'type "mini-button", the preview, initial size 20×40: content larger than the box: button (approximate)',
       ],
       [
         'warning',
         SPEC,
         'layers[0].annotationTypes[0].examples[0]',
-        'tipo "mini-button", o exemplo "Primário", tamanho inicial 20×40: conteúdo maior que a caixa: button (aproximado)',
+        'type "mini-button", the example "Primário", initial size 20×40: content larger than the box: button (approximate)',
       ],
       [
         'warning',
         SPEC,
         'layers[0].annotationTypes[0].examples[1]',
-        'tipo "mini-button", o exemplo "Texto", tamanho inicial 20×40: conteúdo maior que a caixa: button (aproximado)',
+        'type "mini-button", the example "Texto", initial size 20×40: content larger than the box: button (approximate)',
       ],
     ]);
   });
@@ -921,10 +931,10 @@ describe('validateLibrary: nível 3 (prova de desenho)', () => {
       [SPEC, 'layers[0].annotationTypes[0].examples[2].file'],
     ]);
     expect(report.warnings[0]?.message).toBe(
-      'exemplo "Nó SDUI" do sistema "sdui": props.cor: propriedade desconhecida em Button',
+      'example "Nó SDUI" of the system "sdui": props.cor: unknown property in Button',
     );
     expect(report.warnings[1]?.message).toContain(
-      'tipo externo sem tipo de anotação: Desconhecido',
+      'external type without an annotation type: Desconhecido',
     );
   });
 
@@ -941,7 +951,7 @@ describe('validateLibrary: nível 3 (prova de desenho)', () => {
         'warning',
         SPEC,
         'layers[0].annotationTypes[0].examples[2].file',
-        'exemplo "Nó SDUI" do sistema "sdui": o nó corresponde ao tipo "mini-card", não a "mini-button"',
+        'example "Nó SDUI" of the system "sdui": the node matches the type "mini-card", not "mini-button"',
       ],
     ]);
   });
@@ -955,7 +965,7 @@ describe('validateLibrary: nível 3 (prova de desenho)', () => {
         'error',
         SPEC,
         'origins[0].examples[0].file',
-        'tela de exemplo "Home" do sistema "sdui": largura da tela ausente ou inválida (screen.width)',
+        'example screen "Home" of the system "sdui": screen width missing or invalid (screen.width)',
       ],
     ]);
   });
@@ -972,7 +982,7 @@ describe('validateLibrary: nível 3 (prova de desenho)', () => {
         'warning',
         SPEC,
         'origins[0].examples[0].file',
-        'tela de exemplo "Home" do sistema "sdui": content.children[0].props.extra: propriedade desconhecida em Button',
+        'example screen "Home" of the system "sdui": content.children[0].props.extra: unknown property in Button',
       ],
     ]);
   });
@@ -1058,12 +1068,12 @@ describe('validateLibrary: Material 3', () => {
       .filter((w) => w.path.startsWith('preview.'))
       .map((w) => `${w.file}:${w.path}`);
     expect(previews).toEqual([]);
-    // O tamanho mínimo não é desenhado: sem aviso de conteúdo maior que a caixa nele.
-    const drawing = report.warnings.filter((w) => w.message.endsWith('(aproximado)'));
-    expect(drawing.every((w) => w.message.includes('tamanho inicial'))).toBe(true);
+    // O tamanho mínimo não é desenhado: sem aviso de content larger than the box nele.
+    const drawing = report.warnings.filter((w) => w.message.endsWith('(approximate)'));
+    expect(drawing.every((w) => w.message.includes('initial size'))).toBe(true);
     // A tela de exemplo do SDUI está no pacote de teste, mas o M3_SPEC não a declara.
     const others = report.warnings.filter(
-      (w) => !w.path.startsWith('preview.') && !w.message.endsWith('(aproximado)'),
+      (w) => !w.path.startsWith('preview.') && !w.message.endsWith('(approximate)'),
     );
     expect(others.map(brief)).toEqual([]);
   });
@@ -1105,7 +1115,7 @@ describe('validateLibrary: Material 3', () => {
         'warning',
         'examples/settings.sdui.json',
         '',
-        'arquivo não referenciado pela especialização',
+        'file not referenced by the specialization',
       ],
     ]);
   });

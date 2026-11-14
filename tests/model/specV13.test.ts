@@ -36,13 +36,13 @@ describe('formatVersion 13: camada do próprio dono', () => {
     expect(issuesOf(sameLayerSpec(13, clause({ layer: 'nada' })))).toContainEqual(
       expect.objectContaining({
         path: `${at}.layer`,
-        message: 'camada "nada" não existe na especialização',
+        message: 'layer "nada" does not exist in the specialization',
       }),
     );
     expect(issuesOf(sameLayerSpec(13, clause('nada')))).toContainEqual(
       expect.objectContaining({
         path: at,
-        message: 'tipo "nada" não existe na especialização',
+        message: 'type "nada" does not exist in the specialization',
       }),
     );
   });
@@ -51,8 +51,7 @@ describe('formatVersion 13: camada do próprio dono', () => {
     expect(issuesOf(sameLayerSpec(12, clause({ layer: 'eventos' })))).toContainEqual(
       expect.objectContaining({
         path: `${at}.layer`,
-        message:
-          'camada "eventos" é a do próprio tipo; filhos devem estar em outra camada',
+        message: `layer "eventos" is the type's own layer; children must be in another layer`,
       }),
     );
   });
@@ -61,8 +60,7 @@ describe('formatVersion 13: camada do próprio dono', () => {
     expect(issuesOf(sameLayerSpec(12, clause('request')))).toContainEqual(
       expect.objectContaining({
         path: at,
-        message:
-          'tipo "request" está na mesma camada; filhos devem estar em outra camada',
+        message: 'type "request" is in the same layer; children must be in another layer',
       }),
     );
   });

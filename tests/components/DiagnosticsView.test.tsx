@@ -188,7 +188,7 @@ describe('Diagnóstico: biblioteca', () => {
         {
           file: 'components/button.json',
           path: 'root.children[0]',
-          message: 'conteúdo maior que a caixa',
+          message: 'content larger than the box',
           severity: 'warning' as const,
         },
         {
@@ -211,7 +211,7 @@ describe('Diagnóstico: biblioteca', () => {
     expect(screen.getByRole('heading', { name: t('diagnostics.library') })).toBeTruthy();
     expect(screen.getByText('components/button.json')).toBeTruthy();
     expect(screen.getByText('layers[0].annotationTypes[1].component')).toBeTruthy();
-    expect(screen.getByText('conteúdo maior que a caixa')).toBeTruthy();
+    expect(screen.getByText('content larger than the box')).toBeTruthy();
     expect(screen.getByText(t('library.error'))).toBeTruthy();
     expect(screen.getByText(t('library.warning'))).toBeTruthy();
     // O registro de erros continua no estado vazio.
@@ -244,7 +244,7 @@ describe('Diagnóstico: biblioteca', () => {
     await user.click(screen.getByRole('button', { name: t('diagnostics.copy') }));
     const text = writeText.mock.calls[0]?.[0] ?? '';
     expect(text).toContain('pendingSave: no');
-    expect(text).not.toContain('conteúdo maior que a caixa');
+    expect(text).not.toContain('content larger than the box');
   });
 });
 

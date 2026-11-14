@@ -13,16 +13,17 @@ import { findById, updateById } from './project';
 import { projectIndex } from './projectIndex';
 import type { Perspective, PerspectiveItem, Project } from './types';
 
-// Operações das perspectivas (v16, decisões 6, 10 e 11). As "Para todos" ficam no projeto
-// (`p.perspectives`) e as operações recebem o `id`; as "Só eu" ficam no navegador, no mesmo
-// formato, e usam a versão sobre o valor (`Perspective`). Ids vêm do chamador.
+// Perspective operations (v16, decisions 6, 10 and 11). The "For everyone" ones live in the
+// project (`p.perspectives`) and the operations receive the `id`; the "Only me" ones live in the
+// browser, in the same format, and use the by-value version (`Perspective`). Ids come from the
+// caller.
 
 export type NameIssue = 'empty' | 'taken';
 
 /**
- * O que há de errado num nome de perspectiva: vazio, ou igual (sem diferença de caixa nem de
- * espaços nas pontas) a um de `names`. `exceptName` é o nome atual de quem está sendo renomeada:
- * ele não conta como repetido.
+ * What is wrong with a perspective name: empty, or equal (ignoring case and surrounding spaces)
+ * to one of `names`. `exceptName` is the current name of the one being renamed: it does not
+ * count as a duplicate.
  */
 export function perspectiveNameIssue(
   names: readonly string[],
@@ -39,7 +40,7 @@ export function perspectiveNameIssue(
   return taken ? 'taken' : null;
 }
 
-/** `perspectiveNameIssue` contra as "Para todos" do projeto e os nomes extras (as "Só eu"). */
+/** `perspectiveNameIssue` against the project's "For everyone" ones and the extra names (the "Only me" ones). */
 export function projectPerspectiveNameIssue(
   p: Project,
   name: string,
@@ -50,7 +51,7 @@ export function projectPerspectiveNameIssue(
   return perspectiveNameIssue(names, name, exceptName);
 }
 
-/** O nome sem espaços nas pontas; falha com o código do problema. */
+/** The name without surrounding spaces; fails with the problem's code. */
 function checkedName(
   p: Project,
   name: string,
@@ -63,13 +64,13 @@ function checkedName(
   return name.trim();
 }
 
-/** Só camadas que existem, sem repetir, na ordem das camadas do projeto. */
+/** Only layers that exist, without repeats, in the project's layer order. */
 function normalizedLayers(p: Project, layerIds: readonly string[]): string[] {
   const wanted = new Set(layerIds);
   return p.layers.filter((l) => wanted.has(l.id)).map((l) => l.id);
 }
 
-/** De onde começa uma perspectiva nova: a Principal (`null`), vazia ou a cópia de uma. */
+/** Where a new perspective starts from: the Main one (`null`), empty or a copy of one. */
 export type PerspectiveStart = null | 'empty' | Perspective;
 
 function startItems(p: Project, startFrom: PerspectiveStart): readonly PerspectiveItem[] {
@@ -82,10 +83,10 @@ function startItems(p: Project, startFrom: PerspectiveStart): readonly Perspecti
 }
 
 /**
- * Monta uma perspectiva nova (valor; quem a guarda é o projeto ou o navegador). "Começar de":
- * a Principal leva todas as raízes nas posições delas; Vazia, nenhuma; uma perspectiva, a cópia
- * das raízes, das posições e das camadas escondidas (já limpa do que o projeto não tem mais).
- * `hiddenLayers`, se vier, substitui as da origem (a Principal e a Vazia começam sem nenhuma).
+ * Builds a new perspective (a value; the project or the browser stores it). "Start from":
+ * the Main one takes all roots at their positions; Empty, none; a perspective, a copy of the
+ * roots, positions and hidden layers (already cleaned of what the project no longer has).
+ * `hiddenLayers`, if given, replaces the source's (Main and Empty start with none).
  */
 export function buildPerspective(
   p: Project,
@@ -110,8 +111,9 @@ export function buildPerspective(
 }
 
 /**
- * Acrescenta a perspectiva no fim das "Para todos". Falha com `perspective-name-empty`,
- * `perspective-name-taken` (contra as do projeto e `extraNames`, as "Só eu") ou `duplicate-id`.
+ * Appends the perspective at the end of the "For everyone" ones. Fails with
+ * `perspective-name-empty`, `perspective-name-taken` (against the project's and `extraNames`,
+ * the "Only me" ones) or `duplicate-id`.
  */
 export function addPerspective(
   p: Project,
@@ -139,7 +141,7 @@ export function renamePerspective(
   };
 }
 
-/** Duplica a perspectiva (raízes, posições e camadas escondidas) com id e nome novos, no fim. */
+/** Duplicates the perspective (roots, positions and hidden layers) with a new id and name, at the end. */
 export function duplicatePerspective(
   p: Project,
   id: string,
@@ -152,13 +154,13 @@ export function duplicatePerspective(
   return addPerspective(p, copy, extraNames);
 }
 
-/** Apaga a perspectiva. Só `perspectives` muda: as marcas de chegada guardam o nome (`fromName`). */
+/** Deletes the perspective. Only `perspectives` changes: arrival marks keep the name (`fromName`). */
 export function removePerspective(p: Project, id: string): Project {
   findById(p.perspectives, id);
   return { ...p, perspectives: p.perspectives.filter((x) => x.id !== id) };
 }
 
-/** Troca a perspectiva `id` do projeto por `next` (o mesmo objeto: nada a trocar). */
+/** Replaces the project's perspective `id` with `next` (the same object: nothing to replace). */
 function replaced(
   p: Project,
   id: string,
@@ -170,13 +172,13 @@ function replaced(
 }
 
 // ---------------------------------------------------------------------------
-// Enviar e tirar
+// Send and remove
 
 /**
- * Envia raízes para a perspectiva `target` (decisão 6): cada raiz que ainda não está entra pela
- * regra da chegada (`placeRootIn`: perto da referência, no livre mais próximo ou na área de
- * chegada), uma de cada vez (a segunda já vê a primeira), sem marca. `source` é onde as raízes
- * estão agora (`null` = a Principal). Id que não é raiz falha com `not-root`.
+ * Sends roots to perspective `target` (decision 6): each root not yet there enters by the
+ * arrival rule (`placeRootIn`: near the reference, at the nearest free spot or in the arrival
+ * area), one at a time (the second already sees the first), without a mark. `source` is where
+ * the roots are now (`null` = the Main one). An id that is not a root fails with `not-root`.
  */
 export function sendRoots(
   p: Project,
@@ -191,7 +193,7 @@ export function sendRoots(
   for (const id of rootIds) {
     if (roots.get(id) !== id) fail('not-root', id);
     if (have.has(id)) continue;
-    // A raiz que a origem não tem é medida na Principal.
+    // A root that the source does not have is measured in the Main perspective.
     const from = source && sourceRoots?.has(id) ? perspectiveView(p, source) : p;
     const place = placeRootIn(perspectiveView(p, current), from, id);
     current = {
@@ -213,7 +215,7 @@ export function sendRootsToPerspective(
   return replaced(p, targetId, target, sendRoots(p, target, rootIds, source));
 }
 
-/** Tira as raízes da perspectiva; nada do projeto é apagado. Ids que ela não tem são ignorados. */
+/** Removes the roots from the perspective; nothing of the project is deleted. Ids it does not have are ignored. */
 export function removeRoots(
   target: Perspective,
   rootIds: readonly string[],
@@ -233,7 +235,7 @@ export function removeRootsFromPerspective(
 }
 
 // ---------------------------------------------------------------------------
-// Mover e camadas
+// Move and layers
 
 export interface RootMove {
   readonly root: string;
@@ -241,7 +243,7 @@ export interface RootMove {
   readonly dy: number;
 }
 
-/** O item depois do movimento; marcação só anda em inteiros. */
+/** The item after the move; a marking only moves in whole numbers. */
 function movedItem(p: Project, item: PerspectiveItem, move: RootMove): PerspectiveItem {
   if (!Number.isFinite(move.dx) || !Number.isFinite(move.dy)) fail('invalid-placement');
   const whole = Number.isInteger(move.dx) && Number.isInteger(move.dy);
@@ -254,9 +256,9 @@ function movedItem(p: Project, item: PerspectiveItem, move: RootMove): Perspecti
 }
 
 /**
- * Muda só a posição das raízes na perspectiva (decisão 10): o projeto não muda. Raiz que a
- * perspectiva não tem falha com `not-found`; o deslocamento de uma marcação é inteiro, senão
- * `rect-not-integer`. Deslocamento zero devolve a mesma perspectiva.
+ * Changes only the position of the roots in the perspective (decision 10): the project does not
+ * change. A root the perspective does not have fails with `not-found`; a marking's offset is a
+ * whole number, otherwise `rect-not-integer`. A zero offset returns the same perspective.
  */
 export function moveRoots(
   p: Project,
@@ -285,7 +287,7 @@ export function moveRootsInPerspective(
   return replaced(p, id, target, moveRoots(p, target, moves));
 }
 
-/** Camadas escondidas (decisão 11): só as que existem, sem repetir, na ordem do projeto. */
+/** Hidden layers (decision 11): only those that exist, without repeats, in the project's order. */
 export function setHiddenLayers(
   p: Project,
   target: Perspective,

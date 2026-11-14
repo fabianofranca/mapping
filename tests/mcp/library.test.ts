@@ -232,7 +232,7 @@ describe('validate_library com o nó image', () => {
     );
     expect(result.valid).toBe(false);
     expect(result.errors.map((e) => e.message).join('\n')).toMatch(
-      /o src da imagem lê "foto"/,
+      /the image src reads "foto"/,
     );
   });
 });
@@ -275,14 +275,14 @@ describe('validate_specialization com suggestions (v8)', () => {
     const old = await call(7, { key: 'type', type: 'string', suggestions: ['A'] });
     expect(old.valid).toBe(false);
     expect(old.errors).toContain(
-      'layers[0].annotationTypes[0].fields[0].suggestions: só é permitido com formatVersion 8',
+      'layers[0].annotationTypes[0].fields[0].suggestions: only allowed with formatVersion 8',
     );
     const wrong = await call(8, { key: 'n', type: 'number', suggestions: ['A'] });
     expect(wrong.errors).toContain(
-      'layers[0].annotationTypes[0].fields[0].suggestions: só é permitido em campo ou coluna string',
+      'layers[0].annotationTypes[0].fields[0].suggestions: only allowed in a string field or column',
     );
     const dup = await call(8, { key: 'type', type: 'string', suggestions: ['A', 'A'] });
-    expect(dup.errors.some((e) => e.includes('suggestions: sugestões repetidas'))).toBe(
+    expect(dup.errors.some((e) => e.includes('suggestions: repeated suggestions'))).toBe(
       true,
     );
   });
@@ -327,19 +327,19 @@ describe('validate_specialization com linkedRef (v8)', () => {
   it('recusa linkedRef em versão anterior, em outro tipo e com chave errada, com o caminho', async () => {
     const old = await call(7, { key: 'type', type: 'string', linkedRef: 'typeRef' });
     expect(old.errors).toContain(
-      'layers[0].annotationTypes[0].fields[1].linkedRef: só é permitido com formatVersion 8',
+      'layers[0].annotationTypes[0].fields[1].linkedRef: only allowed with formatVersion 8',
     );
     const wrong = await call(8, { key: 'n', type: 'number', linkedRef: 'typeRef' });
     expect(wrong.errors).toContain(
-      'layers[0].annotationTypes[0].fields[1].linkedRef: só é permitido em campo ou coluna string',
+      'layers[0].annotationTypes[0].fields[1].linkedRef: only allowed in a string field or column',
     );
     const missing = await call(8, { key: 'type', type: 'string', linkedRef: 'nada' });
     expect(missing.errors).toContain(
-      'layers[0].annotationTypes[0].fields[1].linkedRef: "nada" não é um campo do tipo',
+      'layers[0].annotationTypes[0].fields[1].linkedRef: "nada" is not a field of the type',
     );
     const notRef = await call(8, { key: 'type', type: 'string', linkedRef: 'type' });
     expect(notRef.errors).toContain(
-      'layers[0].annotationTypes[0].fields[1].linkedRef: "type" deve ser um campo ref',
+      'layers[0].annotationTypes[0].fields[1].linkedRef: "type" must be a ref field',
     );
   });
 });
@@ -352,8 +352,8 @@ describe('validate_library', () => {
       }),
     );
     expect(result.valid).toBe(false);
-    const issue = result.errors.find((e) => e.message.includes('aceita só a lista'));
-    expect(issue?.message).toBe('campo "table" aceita só a lista de linhas');
+    const issue = result.errors.find((e) => e.message.includes('takes only the list'));
+    expect(issue?.message).toBe('a "table" field takes only the list of rows');
     expect(issue?.path).toMatch(/examples\[0\]\.values\.items$/);
     expect(Object.keys(issue ?? {}).sort()).toEqual([
       'file',
@@ -399,7 +399,7 @@ describe('validate_library', () => {
       file: 'material3.spec.json',
       path: 'origins[0].examples[0].file',
     });
-    expect(bad.errors[0]?.message).toMatch(/largura da tela/);
+    expect(bad.errors[0]?.message).toMatch(/screen width missing or invalid/);
     // Com level 2 a prova de desenho não roda.
     const level2 = ok(
       await mcp.call<Validated>('validate_library', {
@@ -456,7 +456,7 @@ describe('validate_library', () => {
   it('pasta sem especialização: valid false com a mensagem do validador', async () => {
     const result = ok(await mcp.call<Validated>('validate_library', { path: 'vazia' }));
     expect(result.valid).toBe(false);
-    expect(result.errors[0]?.message).toMatch(/nenhuma especialização/);
+    expect(result.errors[0]?.message).toMatch(/no specialization found/);
     expect(result.spec).toBeUndefined();
   });
 });

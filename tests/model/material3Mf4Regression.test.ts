@@ -86,7 +86,7 @@ const EXCEPTIONS = {
   // (`none`), no lugar do quadro `texto (caixa)` com o `padding`: sai o quadro e o texto fica no mesmo lugar (a caixa
   // do menu é a mesma, a 200 de largura). A largura do menu pelo item mais largo confere `material3Mc6.test.ts`.
   'dropdown-menu': { rename: {}, drop: ['texto (caixa)'] },
-  // L2 (#1078): nenhum nó passa da caixa do pai (aviso `conteúdo maior que a caixa`). A camada de estado do switch passou de
+  // L2 (#1078): nenhum nó passa da caixa do pai (aviso `content larger than the box`). A camada de estado do switch passou de
   // 40 a 32 (a altura do trilho, no quadro `chave`) e, no pressionado, a área da alça cresce de 24 a 28 para caber a alça de 28;
   // o resto da cena (trilho, curso, alça, ícones) fica igual.
   switch: { rename: {}, drop: ['estado', 'área da alça'] },

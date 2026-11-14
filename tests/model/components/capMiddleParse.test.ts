@@ -14,7 +14,7 @@ const schema: Record<string, unknown> = JSON.parse(
   readFileSync(new URL('../../../docs/component.schema.json', import.meta.url), 'utf8'),
 );
 
-const V4 = 'só é permitido com formatVersion 4';
+const V4 = 'only allowed with formatVersion 4';
 
 function component(verticalAlign: unknown, version = 4): Record<string, unknown> {
   return {
@@ -70,7 +70,7 @@ describe('font.verticalAlign: "cap-middle"', () => {
 
   it('um valor desconhecido segue sendo erro de conjunto', () => {
     expect(validateComponent(component('center'))).toEqual([
-      'template.children[0].font.verticalAlign: esperava um de: top, middle, bottom, cap-middle',
+      'template.children[0].font.verticalAlign: expected one of: top, middle, bottom, cap-middle',
     ]);
   });
 

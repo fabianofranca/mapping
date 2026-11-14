@@ -42,10 +42,10 @@ import {
 } from './importUnits';
 import type { Signature } from './types';
 
-// `planSignatureImport` (etapa #1079, decisões 5, 7, 8, 9 e 12): da ficha de assinatura e da
-// especialização, os campos, o `code` (ou as `sources`), os avisos, as diferenças com a ficha
-// gravada e as migrações sugeridas. Determinístico e idempotente: a mesma ficha duas vezes dá a
-// mesma especialização. Puro: trabalha numa cópia e não grava nada.
+// `planSignatureImport` (stage #1079, decisions 5, 7, 8, 9 and 12): from the signature sheet and
+// the specialization, the fields, the `code` (or the `sources`), the warnings, the differences
+// from the saved sheet and the suggested migrations. Deterministic and idempotent: the same sheet
+// twice gives the same specialization. Pure: works on a copy and saves nothing.
 
 type Scope = SpecCode | SpecCodeCase;
 
@@ -57,7 +57,7 @@ interface LinkRecord {
 class Importer {
   private readonly existing = new Map<string, string>();
   private readonly linked = new Set<string>();
-  /** Os alvos que vêm só do `params` da base: a ficha do caso não os julga. */
+  /** The targets that come only from the base's `params`: the case's sheet does not judge them. */
   private readonly inherited = new Set<string>();
   private readonly links: ImportLink[] = [];
   private readonly created: SpecField[] = [];
@@ -68,7 +68,7 @@ class Importer {
   private readonly before: ReadonlyMap<string, FlatLike>;
   private readonly newType: boolean;
   private readonly models: Models;
-  /** Os nomes que o `ignore` do `code` (ou do caso) deixa de fora de propósito (decisão 6). */
+  /** The names that the `code`'s (or the case's) `ignore` leaves out on purpose (decision 6). */
   private readonly configured: ReadonlySet<string>;
 
   constructor(
@@ -102,7 +102,7 @@ class Importer {
     return this.prepared.id;
   }
 
-  // --- o que já está ligado ---
+  // --- what is already linked ---
 
   private collectExisting(): void {
     if (this.design) this.collectDesign();
@@ -134,7 +134,7 @@ class Importer {
     return key === undefined ? undefined : this.type.fields.find((f) => f.key === key);
   }
 
-  // --- o resolvedor de `like` ---
+  // --- the `like` resolver ---
 
   private likePlan(ref: string): FieldPlan | undefined {
     const dot = ref.indexOf('.');
@@ -146,7 +146,7 @@ class Importer {
     return { ...base, ...this.likeValues(likeType, field) };
   }
 
-  /** O que o campo copiado traz no alvo: `code.values` (código) ou `sources[].values` (design). */
+  /** What the copied field carries in the target: `code.values` (code) or `sources[].values` (design). */
   private likeValues(
     likeType: SpecAnnotationType,
     field: SpecField,
@@ -159,7 +159,7 @@ class Importer {
     return values === undefined ? {} : { values };
   }
 
-  // --- uma unidade ---
+  // --- one unit ---
 
   private apply(unit: Unit): void {
     if (this.isConfiguredIgnore(unit)) return;
@@ -173,7 +173,7 @@ class Importer {
     else if (resolution.kind === 'field') this.bindField(unit, resolution.plan);
   }
 
-  /** O `ignore` do `code` (ou do caso) cita a unidade pelo nome interno, pelo de chamada ou pelo dono. */
+  /** The `ignore` of the `code` (or of the case) cites the unit by internal name, by call name or by owner. */
   private isConfiguredIgnore(unit: Unit): boolean {
     return (
       this.configured.has(unit.owner ?? unit.param.name) ||
@@ -181,7 +181,7 @@ class Importer {
     );
   }
 
-  /** O campo que o `params` já liga à unidade: pelo nome de chamada ou, sem dono, pelo nome interno. */
+  /** The field that `params` already links to the unit: by call name or, without an owner, by internal name. */
   private linkedKey(unit: Unit): string | undefined {
     const byCall = this.existing.get(unit.target);
     if (byCall !== undefined || unit.owner !== undefined || this.design) return byCall;
@@ -189,8 +189,8 @@ class Importer {
   }
 
   /**
-   * Pelo nome só vale um campo do mesmo tipo quando o argumento é de uma fábrica ou de um composto
-   * (o `width` do `border` não é o `width` de tamanho): sem o mesmo tipo, nasce um campo novo.
+   * By name, only a field of the same type counts when the argument is a factory's or a composite's
+   * (the `width` of `border` is not the size `width`): without the same type, a new field is born.
    */
   private findLinked(
     unit: Unit,
@@ -248,12 +248,12 @@ class Importer {
     return field as unknown as SpecField;
   }
 
-  /** O nome da source: o do parâmetro; o argumento de uma fábrica leva o dono (`dono.membro`). */
+  /** The source name: the parameter's; a factory's argument carries the owner (`owner.member`). */
   private sourceName(unit: Unit): string {
     return unit.owner === undefined ? unit.param.name : unit.target;
   }
 
-  /** Escreve a ligação: `code.params` (ou a `sources` do campo, no design). */
+  /** Writes the link: `code.params` (or the field's `sources`, in design). */
   private writeLink(unit: Unit, field: SpecField): void {
     if (this.design) {
       field.sources = [
@@ -275,8 +275,8 @@ class Importer {
   }
 
   /**
-   * O padrão de um campo existente só muda quando o da ficha mudou (decisão 12): a primeira importação
-   * não grava `default` onde o campo não tinha (a curadoria "vazio = X" fica).
+   * An existing field's default only changes when the sheet's changed (decision 12): the first import
+   * does not write `default` where the field had none (the "empty = X" curation stays).
    */
   private updateDefault(unit: Unit, field: SpecField, plan: FieldPlan): void {
     const changed = this.diff().changed.some(
@@ -289,7 +289,7 @@ class Importer {
     (field as { default?: string | number }).default = value;
   }
 
-  // --- o `code`: calls, formats e values ---
+  // --- the `code`: calls, formats and values ---
 
   private writeCode(unit: Unit, field: SpecField, plan: FieldPlan, isNew: boolean): void {
     if (this.design) {
@@ -305,7 +305,7 @@ class Importer {
     if (isNew) this.writeValues(scope, field, plan);
   }
 
-  /** O `format` do campo, sem sobrescrever o que a base ou o escopo (o caso) já têm. */
+  /** The field's `format`, without overwriting what the base or the scope (the case) already has. */
   private writeFormat(
     scope: Scope,
     base: SpecCode,
@@ -339,7 +339,7 @@ class Importer {
     source.values = { ...values, ...source.values };
   }
 
-  // --- avisos `diverges` do campo ---
+  // --- `diverges` warnings of the field ---
 
   private note(field: SpecField, message: string): void {
     this.notes.set(field.key, [...(this.notes.get(field.key) ?? []), message]);
@@ -351,7 +351,7 @@ class Importer {
     if (old === undefined || now === undefined || old === now) return;
     this.note(
       field,
-      `o tipo do parâmetro \`${unit.target}\` mudou de ${old} para ${now}`,
+      `the type of parameter \`${unit.target}\` changed from ${old} to ${now}`,
     );
   }
 
@@ -359,11 +359,11 @@ class Importer {
     if (unit.param.required !== true || field.required === true) return;
     this.note(
       field,
-      `obrigatório no código (\`${unit.target}\`), mas o campo é opcional`,
+      `required in the code (\`${unit.target}\`), but the field is optional`,
     );
   }
 
-  /** As opções da fonte contra as do campo (decisão 7); o código acrescenta, o design avisa. */
+  /** The source's options against the field's (decision 7); code adds, design warns. */
   private syncOptions(
     unit: Unit,
     field: SpecField,
@@ -379,7 +379,7 @@ class Importer {
     if (isNew && plan.options === undefined) return;
     for (const option of own) {
       if (!matched.has(option))
-        this.note(field, `a opção \`${option}\` não existe mais na fonte`);
+        this.note(field, `the option \`${option}\` no longer exists in the source`);
     }
   }
 
@@ -394,7 +394,10 @@ class Importer {
       matched.add(option);
       if (option !== text) this.mapOption(field, option, text);
     } else if (this.design) {
-      this.note(field, `a opção \`${text}\` da fonte não existe no campo`);
+      this.note(
+        field,
+        `the option \`${text}\` of the source does not exist in the field`,
+      );
     } else {
       field.options.push(text);
     }
@@ -412,7 +415,7 @@ class Importer {
     scope.values = { ...scope.values, [field.key]: { ...current, [option]: text } };
   }
 
-  // --- o que saiu, avisos e o resto ---
+  // --- what left, warnings and the rest ---
 
   private paramsView(): Record<string, string> {
     const view: Record<string, string> = {};
@@ -421,7 +424,7 @@ class Importer {
     return view;
   }
 
-  /** Os parâmetros ligados que a ficha não tem mais: alvo e campo. */
+  /** The linked parameters that the sheet no longer has: target and field. */
   private outside(): { target: string; field: string }[] {
     const present = new Set<string>();
     for (const unit of unitsOf(this.signature, this.models)) present.add(unit.target);
@@ -434,7 +437,7 @@ class Importer {
       .map(([target, field]) => ({ target, field }));
   }
 
-  /** Os campos que esta ficha já sinalizou como `removed`: reimportar não os reporta de novo. */
+  /** The fields this sheet already flagged as `removed`: re-importing does not report them again. */
   private reportedRemoved(): ReadonlySet<string> {
     return new Set(
       this.type.fields
@@ -462,14 +465,15 @@ class Importer {
   }
 
   /**
-   * `<plataforma>: <texto>`; na ficha de um caso de `variants`, `<plataforma>: caso \`<caso>\`: <texto>`
-   * (o mesmo parâmetro sem campo na base e no caso daria dois avisos iguais, o erro `aviso repetido`).
+   * `<platform>: <text>`; in the sheet of a `variants` case, `<platform>: case \`<case>\`: <text>`
+   * (the same parameter without a field in the base and in the case would give two equal
+   * warnings, the `repeated notice` error).
    */
   private message(text: string): string {
     const variant = this.options.variant;
     return variant === undefined
       ? `${this.prefix}: ${text}`
-      : `${this.prefix}: caso \`${variant}\`: ${text}`;
+      : `${this.prefix}: case \`${variant}\`: ${text}`;
   }
 
   private writeNotices(
@@ -495,7 +499,7 @@ class Importer {
       add(
         'type',
         'pending',
-        `o parâmetro \`${this.nameOf(unit)}\` (${unit.param.type}) ainda não é campo`,
+        `the parameter \`${this.nameOf(unit)}\` (${unit.param.type}) is not a field yet`,
       );
     }
     for (const field of this.type.fields) {
@@ -512,7 +516,7 @@ class Importer {
     return ours;
   }
 
-  /** Os avisos `removed` que esta ficha já gravou, por campo (o campo fica sem `params`). */
+  /** The `removed` warnings that this sheet already saved, by field (the field is left without `params`). */
   private removedNotices(): Map<SpecField, SpecNotice[]> {
     const found = new Map<SpecField, SpecNotice[]>();
     for (const field of this.type.fields) {
@@ -525,9 +529,10 @@ class Importer {
   }
 
   /**
-   * O campo `removed` não cita mais o parâmetro que saiu em `params` (o validador avisaria
-   * "parâmetro fora da ficha"), e por isso o próximo `outside()` não o acha: o aviso que a
-   * importação anterior gravou segue como está, até o parâmetro voltar a ser ligado ao campo.
+   * The `removed` field no longer cites the parameter that left in `params` (the validator would
+   * warn "parameter outside the signature"), and that is why the next `outside()` does not find
+   * it: the warning that the previous import saved stays as it is, until the parameter is linked
+   * to the field again.
    */
   private keepRemoved(
     previous: ReadonlyMap<SpecField, SpecNotice[]>,
@@ -549,7 +554,7 @@ class Importer {
     }
   }
 
-  /** Tira de `params` os campos cujo parâmetro saiu da ficha sem renome (ficam com o aviso `removed`). */
+  /** Removes from `params` the fields whose parameter left the sheet without a rename (they keep the `removed` warning). */
   private dropRemovedParams(
     outside: readonly { target: string; field: string }[],
     diff: SignatureDiff,
@@ -565,9 +570,9 @@ class Importer {
   }
 
   /**
-   * Tira os avisos antigos desta ficha (pelo `ref`) do tipo e dos campos e devolve a posição em
-   * que estavam: os novos ocupam o lugar deles (reimportar a base depois de um caso não reordena
-   * a lista); sem avisos antigos, vão para o fim.
+   * Removes this sheet's old warnings (by `ref`) from the type and the fields and returns the position
+   * they were in: the new ones take their place (re-importing the base after a case does not reorder
+   * the list); without old warnings, they go to the end.
    */
   private detachOwnNotices(): Map<{ notices?: SpecNotice[] }, number> {
     const slot = new Map<{ notices?: SpecNotice[] }, number>();
@@ -596,9 +601,9 @@ class Importer {
         add(
           { field },
           'removed',
-          `o parâmetro \`${target}\` saiu da assinatura; o campo fica`,
+          `the parameter \`${target}\` left the signature; the field stays`,
         );
-      else add({ field }, 'diverges', `renome provável de \`${target}\` para \`${to}\``);
+      else add({ field }, 'diverges', `probable rename of \`${target}\` to \`${to}\``);
     }
   }
 
@@ -671,7 +676,7 @@ class Importer {
   }
 }
 
-/** O tipo, as opções e as sugestões de um campo copiado por `like`. */
+/** The type, the options and the suggestions of a field copied by `like`. */
 function likeBase(field: SpecField): FieldPlan | undefined {
   if (field.type === 'enum') return { type: 'enum', options: field.options };
   if (field.type === 'number') return { type: 'number' };
@@ -694,19 +699,19 @@ function flatLikeOf(previous: Signature | undefined): ReadonlyMap<string, FlatLi
   return map;
 }
 
-/** A importação da ficha no tipo, sem gravar nada; ver o cabeçalho. */
+/** Importing the sheet into the type, without saving anything; see the header. */
 export function planSignatureImport(
   spec: Spec,
   options: PlanSignatureImportOptions,
 ): PlanSignatureImportResult {
-  // `signature`, `calls` e `formats` só valem na 16, e subir a versão mudaria o que os `params`
-  // da especialização antiga querem dizer (caminho e `#n` passam a ser interpretados): recusa.
+  // `signature`, `calls` and `formats` only apply in 16, and bumping the version would change what the `params`
+  // of the old specialization mean (path and `#n` become interpreted): refuse.
   if (!interpretsParamTargets(spec.formatVersion)) {
     return {
       ok: false,
       code: 'spec-version',
-      detail: `a especialização "${spec.id}" é formatVersion ${spec.formatVersion}; a ficha de assinatura (signature, calls, formats) só vale a partir da ${PARAM_TARGETS_FORMAT_VERSION}`,
-      hint: `suba a especialização para a formatVersion ${PARAM_TARGETS_FORMAT_VERSION} (confira que os valores de params continuam certos: caminho e #n passam a ser interpretados) e chame de novo`,
+      detail: `the specialization "${spec.id}" is formatVersion ${spec.formatVersion}; the signature sheet (signature, calls, formats) is only valid from ${PARAM_TARGETS_FORMAT_VERSION}`,
+      hint: `bump the specialization to formatVersion ${PARAM_TARGETS_FORMAT_VERSION} (check that the params values are still right: path and #n become interpreted) and call again`,
     };
   }
   const clone = structuredClone(spec);
@@ -715,8 +720,8 @@ export function planSignatureImport(
     return {
       ok: false,
       code: 'type-not-found',
-      detail: `o tipo "${options.type}" não existe na especialização "${spec.id}"`,
-      hint: 'use o id de um tipo de annotationTypes (list_components mostra os da biblioteca)',
+      detail: `the type "${options.type}" does not exist in the specialization "${spec.id}"`,
+      hint: 'use the id of a type from annotationTypes (list_components shows those of the library)',
     };
   }
   const prepared = prepareImport(clone, found.type, options);

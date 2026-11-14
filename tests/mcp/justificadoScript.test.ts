@@ -47,10 +47,10 @@ describe('justificado.mjs (R25.87 a R25.90)', () => {
     expect(result.valid).toBe(true);
     expect(result.errors).toEqual([]);
     // Provisório (decisão do dono pendente no bug #1774; curadoria na #1134): só os avisos
-    // `parâmetro fora da ficha` do conjunto conhecido da Material 3; qualquer outro aviso falha.
+    // `parameter outside the signature` do conjunto conhecido da Material 3; qualquer outro aviso falha.
     expect(
       result.warnings.filter(
-        (w) => !JSON.stringify(w).includes('parâmetro fora da ficha'),
+        (w) => !JSON.stringify(w).includes('parameter outside the signature'),
       ),
     ).toEqual([]);
   });
@@ -61,7 +61,7 @@ describe('justificado.mjs (R25.87 a R25.90)', () => {
     const errors = validateComponent({ ...(card as object), formatVersion: 3 });
     expect(errors.some((e) => e.includes('template.children[0].font.align'))).toBe(true);
     expect(errors.some((e) => e.includes('template.children[2].fill'))).toBe(true);
-    expect(errors.every((e) => e.includes('só é permitido com formatVersion 4'))).toBe(
+    expect(errors.every((e) => e.includes('only allowed with formatVersion 4'))).toBe(
       true,
     );
   });

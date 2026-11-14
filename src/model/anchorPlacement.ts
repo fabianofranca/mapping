@@ -7,13 +7,13 @@ import type {
   Rect,
 } from './types';
 
-// Geometria do encosto da âncora (R3, decisão 12). Pura: recebe os retângulos e devolve o
-// retângulo; quem grava (`snapToAnchor`, a criação da instância) fica nos outros módulos.
+// Geometry of the anchor snap (R3, decision 12). Pure: it receives the rectangles and returns the
+// rectangle; whoever writes (`snapToAnchor`, the instance creation) lives in the other modules.
 
 /**
- * Padrões da âncora vindos do componente, como o arquivo os declara: o `offset` está em UNIDADES
- * (× densidade ao usar) e tudo é opcional. O par em pixels, já completo, é `AnchorDefaultsPx`
- * (`components/anchor.ts`).
+ * Anchor defaults coming from the component, as the file declares them: the `offset` is in UNITS
+ * (× density when used) and everything is optional. The complete pixel counterpart is
+ * `AnchorDefaultsPx` (`components/anchor.ts`).
  */
 export interface AnchorDefaultsUnits {
   readonly side?: AnchorSide;
@@ -21,18 +21,18 @@ export interface AnchorDefaultsUnits {
   readonly offset?: { readonly main: number; readonly cross: number };
 }
 
-/** Os padrões do componente de uma marcação: um objeto ou uma função de quem os sabe ler. */
+/** The component defaults of a marking: an object or a function from whoever can read them. */
 export type AnchorDefaultsSource<M> =
   AnchorDefaultsUnits | ((marking: M) => AnchorDefaultsUnits | undefined);
 
-/** A âncora completa: lado, alinhamento e deslocamento em pixels do espaço. */
+/** The complete anchor: side, alignment and offset in pixels of the space. */
 export interface ResolvedMarkingAnchor {
   readonly side: AnchorSide;
   readonly align: AnchorAlign;
   readonly offset: { readonly main: number; readonly cross: number };
 }
 
-/** O que a âncora não informa vem dos padrões (offset em unidades × `density`), e então de `top`/`center`/0. */
+/** What the anchor does not state comes from the defaults (offset in units × `density`), then from `top`/`center`/0. */
 export function resolveMarkingAnchor(
   anchor: MarkingAnchor,
   defaults: AnchorDefaultsUnits | undefined,
@@ -50,7 +50,7 @@ export function resolveMarkingAnchor(
   };
 }
 
-/** A posição ao longo do lado (`start`/`center`/`end` da âncora) com a marcação de `size` nesse eixo. */
+/** The position along the side (the anchor's `start`/`center`/`end`) with the marking of `size` on that axis. */
 function along(
   align: AnchorAlign,
   from: number,
@@ -66,12 +66,12 @@ function along(
 }
 
 /**
- * O retângulo da marcação de tamanho `width`×`height` encostada em `target` (mesmo espaço), sem
- * limite. A marcação fica FORA da âncora, do lado `side` (`start`/`end` seguem `direction`: em
- * `rtl`, `start` é o lado direito); `align` posiciona ao longo desse lado (em `top`/`bottom` o
- * `start` é o da leitura; nos lados, `start` é o topo); `offset.main` é a distância da borda (negativo
- * sobrepõe) e `offset.cross` anda ao longo do lado: no sentido da leitura em `top`/`bottom` e para
- * baixo nos lados. Inteiro (arredonda).
+ * The rectangle of the marking of size `width`×`height` snapped to `target` (same space), with no
+ * bounds. The marking sits OUTSIDE the anchor, on side `side` (`start`/`end` follow `direction`: in
+ * `rtl`, `start` is the right side); `align` positions along that side (on `top`/`bottom` the
+ * `start` is the reading one; on the sides, `start` is the top); `offset.main` is the distance from
+ * the edge (negative overlaps) and `offset.cross` moves along the side: in the reading direction on
+ * `top`/`bottom` and downward on the sides. Integer (rounded).
  */
 export function anchoredRect(
   target: Rect,
@@ -97,7 +97,8 @@ export function anchoredRect(
   return { x: Math.round(x), y: Math.round(y), width, height };
 }
 
-/** O retângulo preso dentro de `bounds` (o tamanho não muda); `clamped` diz se foi preciso. */
+/** The rectangle clamped inside `bounds` (the size does not change); `clamped` says whether it was needed. */
+
 export function clampedInto(rect: Rect, bounds: Rect): { rect: Rect; clamped: boolean } {
   const x = clamp(rect.x, bounds.x, Math.max(bounds.x, right(bounds) - rect.width));
   const y = clamp(rect.y, bounds.y, Math.max(bounds.y, bottom(bounds) - rect.height));

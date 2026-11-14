@@ -9,46 +9,46 @@ import type {
 } from './spec';
 import { templateMessage, type ModelMessageTemplateCode } from './messages';
 
-// Contrato de versão de um pacote de biblioteca (formatVersion 4): classifica a diferença entre
-// duas versões da mesma especialização em aditiva ou quebra, e diz quais quebras as `migrations`
-// declaradas cobrem. Ver docs/SPEC-FORMAT.md. Puro e sem APIs de navegador (reutilizado pelo MCP).
+// Version contract of a library package (formatVersion 4): classifies the difference between
+// two versions of the same specialization as additive or breaking, and says which breaks the
+// declared `migrations` cover. See docs/SPEC-FORMAT.md. Pure and with no browser APIs (reused by the MCP).
 //
-// O que é quebra (e só isto): remover ou renomear tipo, campo ou opção de `enum`; tornar um campo
-// obrigatório (inclusive um campo novo que já nasce obrigatório); mudar o `type` de um campo;
-// tirar um papel (`id`) de `childRoles` de um tipo, inclusive o tipo que perde todos eles
-// (`removed-role`); e um tipo sem `childRoles` que passa a ter (`roles-required`, só ele: os papéis
-// do vínculo já existente precisam ser atribuídos). Papel novo em tipo que já tinha papéis é
-// aditivo (`added-role`). Todo o resto é aditivo. Ficam FORA do contrato, de propósito: camadas,
-// `labelField`, `allowedChildren` (ids e cláusulas), `groups`, `name`/`description` e a ordem dos
-// papéis, `childRolesLabel`, `docRepos` e o `doc` objeto (v11), `requiresOwner`, `description`,
-// `tags`, `code`, `platforms`, `sources`, `notices` (e a troca de camada de um tipo; `appliesTo`
-// gera só o aviso aditivo `changed-applies-to`), além de remover `component`/`doc`/exemplo/fonte:
-// nada disso gera `SpecChange`. Papéis de um tipo renomeado não são comparados: o tipo é o `id`, e
-// o dono antigo e o tipo novo são tipos diferentes (`removed-type` e `added-type`). Renome é
-// indistinguível de remover + acrescentar; quem renomeia o declara num passo `rename-*`, e é isso
-// que o diferencia de uma remoção.
+// What is a break (and only this): removing or renaming a type, field or `enum` option; making a
+// field required (including a new field that is born required); changing a field's `type`;
+// removing a role (`id`) from a type's `childRoles`, including the type that loses all of them
+// (`removed-role`); and a type with no `childRoles` that gets some (`roles-required`, only that:
+// the roles of the already existing link must be assigned). A new role on a type that already had
+// roles is additive (`added-role`). Everything else is additive. Left OUT of the contract, on
+// purpose: layers, `labelField`, `allowedChildren` (ids and clauses), `groups`, `name`/`description`
+// and the order of the roles, `childRolesLabel`, `docRepos` and the `doc` object (v11),
+// `requiresOwner`, `description`, `tags`, `code`, `platforms`, `sources`, `notices` (and a type's
+// layer change; `appliesTo` only yields the additive notice `changed-applies-to`), plus removing a
+// `component`/`doc`/example/font: none of that generates a `SpecChange`. The roles of a renamed
+// type are not compared: the type is the `id`, and the old owner and the new type are different
+// types (`removed-type` and `added-type`). A rename is indistinguishable from remove + add; whoever
+// renames declares it in a `rename-*` step, and that is what sets it apart from a removal.
 //
-// Identidade, nunca posição: o tipo é o `id` (único na especialização inteira, em qualquer
-// camada), o campo é a `key` dentro do tipo, a opção é o texto dentro do campo `enum`, o exemplo
-// é o `name` dentro do tipo e a fonte é o par `family` + `weight` + `style`.
+// Identity, never position: the type is the `id` (unique across the whole specialization, in any
+// layer), the field is the `key` within the type, the option is the text within the `enum` field,
+// the example is the `name` within the type and the font is the `family` + `weight` + `style` pair.
 //
-// Colunas de `table` contam como campos do tipo: coluna removida, com `type` trocado, que passa a
-// obrigatória ou nova já obrigatória é quebra, com o mesmo código dos campos. O `path` aponta a
-// coluna (`layers[0].annotationTypes[1].fields[2].columns[0]`) e o `fieldKey` tem o formato
-// `tabela.coluna`; um passo de migração cobre a coluna citando o mesmo `tabela.coluna` em
-// `field`/`from`.
+// `table` columns count as fields of the type: a removed column, one with a changed `type`, one
+// that became required or a new one already required is a break, with the same code as fields. The
+// `path` points to the column (`layers[0].annotationTypes[1].fields[2].columns[0]`) and the
+// `fieldKey` has the format `table.column`; a migration step covers the column by citing the same
+// `table.column` in `field`/`from`.
 //
-// Ordem da lista de `diffSpecs` (fixa, os testes dependem dela):
-//   1. o que existe na versão NOVA, na ordem do arquivo novo (camadas e tipos em ordem): em cada
-//      tipo já existente, primeiro os campos (por campo: tipo trocado, passou a obrigatório e
-//      depois as opções novas ou as colunas, recursivamente), depois `component`
-//      (`added-component` ou `changed-component`), `changed-applies-to`, `doc` e os exemplos
-//      novos e, por último, os papéis (`roles-required` ou os `added-role`, na ordem do
-//      arquivo novo); um tipo novo gera só `added-type`; por fim as fontes novas;
-//   2. o que DESAPARECEU, na ordem do arquivo ANTERIOR: tipos removidos e, nos tipos que
-//      continuam, campos (e colunas) e opções removidos, na ordem em que apareciam, e depois os
-//      papéis removidos (`removed-role`).
-// O `path` vale para a versão nova e, nos `removed-*`, para a anterior.
+// Order of the `diffSpecs` list (fixed, the tests depend on it):
+//   1. what exists in the NEW version, in the order of the new file (layers and types in order):
+//      in each already existing type, first the fields (per field: type changed, became required
+//      and then the new options or the columns, recursively), then `component`
+//      (`added-component` or `changed-component`), `changed-applies-to`, `doc` and the new
+//      examples and, last, the roles (`roles-required` or the `added-role`s, in the order of the
+//      new file); a new type yields only `added-type`; finally the new fonts;
+//   2. what DISAPPEARED, in the order of the PREVIOUS file: removed types and, in the types that
+//      remain, removed fields (and columns) and options, in the order they appeared, and then the
+//      removed roles (`removed-role`).
+// The `path` is for the new version and, in the `removed-*`, for the previous one.
 
 export type SpecChangeKind = 'additive' | 'breaking';
 
@@ -74,25 +74,25 @@ export type SpecChangeCode =
 export interface SpecChange {
   readonly kind: SpecChangeKind;
   readonly code: SpecChangeCode;
-  /** Caminho na versão nova; na versão anterior quando a coisa deixou de existir. */
+  /** Path in the new version; in the previous version when the thing ceased to exist. */
   readonly path: string;
   readonly typeId?: string;
-  /** Chave do campo; `tabela.coluna` quando a mudança é numa coluna de `table`. */
+  /** The field's key; `table.column` when the change is in a `table` column. */
   readonly fieldKey?: string;
-  /** A opção de `enum` (em `added-option` e `removed-option`). */
+  /** The `enum` option (in `added-option` and `removed-option`). */
   readonly option?: string;
-  /** O `id` do papel (em `added-role` e `removed-role`). */
+  /** The role's `id` (in `added-role` and `removed-role`). */
   readonly role?: string;
   readonly message: string;
-  /** Código da mensagem no catálogo `versions` (a interface a traduz); `message` segue em pt-BR. */
+  /** Message code in the `versions` catalog (the interface translates it); `message` is the catalog `en` text. */
   readonly messageCode?: ModelMessageTemplateCode;
-  /** Os `{parâmetros}` do `messageCode`. */
+  /** The `{parameters}` of the `messageCode`. */
   readonly messageParams?: Readonly<Record<string, string | number>>;
 }
 
 type Params = Readonly<Record<string, string | number>>;
 
-/** `message`, `messageCode` e `messageParams` de uma mensagem do catálogo. */
+/** `message`, `messageCode` and `messageParams` of a catalog message. */
 function said(
   code: ModelMessageTemplateCode,
   params: Params,
@@ -101,26 +101,26 @@ function said(
   return { message: m.text, messageCode: code, messageParams: params };
 }
 
-/** Onde estamos: o tipo e, dentro de uma `table`, o campo da tabela. */
+/** Where we are: the type and, inside a `table`, the table's field. */
 interface Where {
   readonly typeId: string;
-  /** Caminho da lista de campos (`...annotationTypes[1].fields`) ou de colunas (`...columns`). */
+  /** Path of the field list (`...annotationTypes[1].fields`) or of the columns (`...columns`). */
   readonly listPath: string;
-  /** Chave da `table` quando a lista é a de colunas. */
+  /** Key of the `table` when the list is the columns one. */
   readonly tableKey?: string;
 }
 
 const fieldKeyOf = (w: Where, key: string): string =>
   w.tableKey === undefined ? key : `${w.tableKey}.${key}`;
 
-/** Parâmetros da frase de um campo ou coluna; `ref` é o `tabela.coluna` que o passo cita. */
+/** Parameters of the phrase for a field or column; `ref` is the `table.column` that the step cites. */
 function subjectParams(w: Where, key: string): Params {
   return w.tableKey === undefined
     ? { key, typeId: w.typeId }
     : { key, typeId: w.typeId, table: w.tableKey, ref: fieldKeyOf(w, key) };
 }
 
-/** O código do campo ou o da coluna, conforme onde estamos (um código por variante). */
+/** The field's code or the column's, depending on where we are (one code per variant). */
 const variant = (
   w: Where,
   field: ModelMessageTemplateCode,
@@ -269,7 +269,7 @@ function goneFields(
   });
 }
 
-/** Papéis novos (`added-role`) ou, num tipo que não tinha nenhum, `roles-required`. */
+/** New roles (`added-role`) or, in a type that had none, `roles-required`. */
 function forwardRoles(
   previous: readonly SpecChildRole[] | undefined,
   next: readonly SpecChildRole[] | undefined,
@@ -302,7 +302,7 @@ function forwardRoles(
   });
 }
 
-/** Papéis que existiam e não existem mais (`removed-role`), no caminho da versão anterior. */
+/** Roles that existed and no longer do (`removed-role`), on the previous version's path. */
 function goneRoles(
   previous: readonly SpecChildRole[] | undefined,
   next: readonly SpecChildRole[] | undefined,
@@ -329,7 +329,7 @@ interface TypeEntry {
   readonly path: string;
 }
 
-/** Os tipos por `id`, na ordem do arquivo (camadas e tipos); o `id` é único na especialização. */
+/** The types by `id`, in file order (layers and types); the `id` is unique in the specialization. */
 function typesOf(spec: Spec): Map<string, TypeEntry> {
   const types = new Map<string, TypeEntry>();
   spec.layers.forEach((layer, li) => {
@@ -345,13 +345,13 @@ function typesOf(spec: Spec): Map<string, TypeEntry> {
 const fontId = (f: SpecFont): string =>
   JSON.stringify([f.family, f.weight ?? null, f.style ?? 'normal']);
 
-/** Todas as diferenças de conteúdo entre duas versões do mesmo pacote (ordem no cabeçalho). */
+/** All the content differences between two versions of the same package (order in the header). */
 export function diffSpecs(previous: Spec, next: Spec): SpecChange[] {
   const before = typesOf(previous);
   const after = typesOf(next);
   const out: SpecChange[] = [];
 
-  // 1. O que existe na versão nova.
+  // 1. What exists in the new version.
   for (const [id, { type, path }] of after) {
     const old = before.get(id);
     if (old === undefined) {
@@ -408,7 +408,7 @@ export function diffSpecs(previous: Spec, next: Spec): SpecChange[] {
         }),
       });
     }
-    // O `doc` objeto (repositório externo, v11) fica fora do contrato, como a troca entre as formas.
+    // The `doc` object (external repository, v11) is outside the contract, as is switching between the forms.
     if (typeof type.doc === 'string' && old.type.doc === undefined) {
       out.push({
         kind: 'additive',
@@ -442,7 +442,7 @@ export function diffSpecs(previous: Spec, next: Spec): SpecChange[] {
     });
   });
 
-  // 2. O que desapareceu, na ordem do arquivo anterior.
+  // 2. What disappeared, in the order of the previous file.
   for (const [id, { type, path }] of before) {
     const now = after.get(id);
     if (now === undefined) {
@@ -467,10 +467,10 @@ export function diffSpecs(previous: Spec, next: Spec): SpecChange[] {
 }
 
 /**
- * A cadeia de migrações de `from` até `next.version`: as entradas ligadas por `from → to`, em
- * ordem. `[]` quando `from` já é a versão nova; `undefined` se a cadeia estiver rompida (falta
- * a entrada de uma versão, ou a última passa de `next.version`) ou não houver `migrations`.
- * Não confia que `to > from`: uma entrada que não avança rompe a cadeia, em vez de laçar.
+ * The migration chain from `from` to `next.version`: the entries linked by `from → to`, in
+ * order. `[]` when `from` is already the new version; `undefined` if the chain is broken (an
+ * entry for a version is missing, or the last goes past `next.version`) or there are no `migrations`.
+ * It does not trust that `to > from`: an entry that does not advance breaks the chain, instead of looping.
  */
 export function migrationChain(next: Spec, from: number): SpecMigration[] | undefined {
   if (from === next.version) return [];
@@ -492,7 +492,7 @@ export function migrationChain(next: Spec, from: number): SpecMigration[] | unde
   return chain;
 }
 
-/** `true` se `step` cobre a quebra `change` (a tabela de `migrationFor`). */
+/** `true` if `step` covers the break `change` (the table in `migrationFor`). */
 function covers(step: SpecMigrationStep, change: SpecChange): boolean {
   const { typeId, fieldKey, option } = change;
   switch (change.code) {
@@ -522,7 +522,7 @@ function covers(step: SpecMigrationStep, change: SpecChange): boolean {
   }
 }
 
-/** `removed-role` e `roles-required` (os outros códigos não têm passo de papel). */
+/** `removed-role` and `roles-required` (the other codes have no role step). */
 function coversRole(step: SpecMigrationStep, change: SpecChange): boolean {
   const { typeId, role } = change;
   if (change.code === 'removed-role') {
@@ -537,18 +537,18 @@ function coversRole(step: SpecMigrationStep, change: SpecChange): boolean {
 }
 
 /**
- * O passo declarado (na cadeia de `from` até `next.version`) que cobre a quebra, se houver.
+ * The declared step (in the chain from `from` to `next.version`) that covers the break, if any.
  *
- * | quebra                       | passo que cobre                                                |
+ * | break                        | step that covers it                                            |
  * | ---------------------------- | -------------------------------------------------------------- |
  * | `removed-type`               | `remove-type{type}` ou `rename-type{from: type}`               |
  * | `removed-field`              | `remove-field{type, field}` ou `rename-field{type, from: field}` |
- * | `removed-option`             | `map-values{type, field}` com a opção entre as chaves de `values` |
+ * | `removed-option`             | `map-values{type, field}` with the option among the `values` keys |
  * | `field-required`, `field-type` | `fill-field{type, field}`                                    |
  * | `removed-role`               | `rename-role{type, from: role}` ou `remove-role{type, role}`   |
- * | `roles-required`             | qualquer `set-role{type}`                                      |
+ * | `roles-required`             | any `set-role{type}`                                           |
  *
- * Mudança aditiva ou cadeia rompida: `undefined`.
+ * Additive change or broken chain: `undefined`.
  */
 export function migrationFor(
   next: Spec,
@@ -559,7 +559,7 @@ export function migrationFor(
   return stepIn(migrationChain(next, from) ?? [], change);
 }
 
-/** O primeiro passo da cadeia que cobre a quebra `change`. */
+/** The first step in the chain that covers the break `change`. */
 function stepIn(
   chain: readonly SpecMigration[],
   change: SpecChange,
@@ -572,9 +572,10 @@ function stepIn(
 }
 
 /**
- * As quebras de `diffSpecs(previous, next)` sem passo que as cubra na cadeia de
- * `previous.version` até `next.version` (lista vazia = o contrato está cumprido). Cadeia rompida:
- * todas as quebras ficam faltando.
+ * The breaks of `diffSpecs(previous, next)` with no step covering them in the chain from
+ * `previous.version` to `next.version` (empty list = the contract is fulfilled). Broken chain:
+ * all the breaks are missing.
+
  */
 export function missingMigrations(previous: Spec, next: Spec): SpecChange[] {
   const chain = migrationChain(next, previous.version) ?? [];

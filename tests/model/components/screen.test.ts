@@ -74,7 +74,7 @@ describe('screen', () => {
   });
 
   it('recusa telas malformadas com mensagem em português', () => {
-    expect(() => parseScreen(null)).toThrow(/Tela inválida/);
+    expect(() => parseScreen(null)).toThrow(/Invalid screen/);
     expect(() => parseScreen({ format: 'x' })).toThrow(/format/);
     expect(() =>
       parseScreen({
@@ -135,16 +135,16 @@ describe('parseScreen: parentId (#952)', () => {
 
   it('recusa auto-referência, ciclo, pai inexistente e id repetido', () => {
     expect(() => roundTrip(screenWith(inst('a', 'a')))).toThrow(
-      /Tela inválida: instances\[0\]\.parentId/,
+      /Invalid screen: instances\[0\]\.parentId/,
     );
     expect(() => roundTrip(screenWith(inst('a', 'b'), inst('b', 'a')))).toThrow(
-      /Tela inválida: instances\[\d\]\.parentId/,
+      /Invalid screen: instances\[\d\]\.parentId/,
     );
     expect(() => roundTrip(screenWith(inst('a'), inst('b', 'nada')))).toThrow(
-      /Tela inválida: instances\[1\]\.parentId/,
+      /Invalid screen: instances\[1\]\.parentId/,
     );
     expect(() => roundTrip(screenWith(inst('a'), inst('a')))).toThrow(
-      /Tela inválida: instances\[1\]\.id/,
+      /Invalid screen: instances\[1\]\.id/,
     );
   });
 

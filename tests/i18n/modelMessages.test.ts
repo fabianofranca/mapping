@@ -6,8 +6,8 @@ import { modelMessage, rawMessage, type ModelMessage } from '../../src/model';
 import { parseComponent } from '../../src/model/components/parseComponent';
 import { messageText } from '../../src/ui/modelMessage';
 
-// Model messages translated by the interface (#945, items 1 and 41): the pt-BR of each code
-// equals the `text` the model returns (and that the MCP keeps emitting), and the en-US translates it.
+// Model messages translated by the interface (#945, items 1 and 41): the `text` the model returns
+// (and that the MCP keeps emitting) is English and equals the en-US rendering; pt-BR is the template.
 
 afterEach(() => {
   locale.value = 'pt-BR';
@@ -47,27 +47,67 @@ describe('model messages', () => {
     expect(messageText(modelMessage('does.not.exist', {}, 'text'))).toBe('text');
   });
 
-  it("the code's pt-BR is the model's `text` (each message built by the model)", () => {
-    const samples: ModelMessage[] = [
-      modelMessage('catalog.fileMissing', { path: 'a.json' }, 'arquivo ausente (a.json)'),
-      modelMessage(
-        'arrange.overflow',
-        { label: 'X' },
+  it("the code's en-US is the model's English `text` and pt-BR the hand-written Portuguese (each message built by the model)", () => {
+    const samples: readonly (readonly [ModelMessage, string])[] = [
+      [
+        modelMessage('catalog.fileMissing', { path: 'a.json' }, 'missing file (a.json)'),
+        'arquivo ausente (a.json)',
+      ],
+      [
+        modelMessage(
+          'arrange.overflow',
+          { label: 'X' },
+          'X: content is larger than the container',
+        ),
         'X: conteúdo maior que o container',
-      ),
-      modelMessage('arrange.outside', { label: 'X', where: 'Y' }, 'X: não cabe em Y'),
-      modelMessage('value.refBroken', { key: 'k' }, 'referência quebrada: k'),
-      modelMessage('value.refCycle', { key: 'k' }, 'referência em ciclo: k'),
-      modelMessage('value.refDeep', { key: 'k' }, 'referência em mais de um nível: k'),
-      modelMessage(
-        'catalog.typeOutside',
-        { typeId: 't' },
+      ],
+      [
+        modelMessage(
+          'arrange.outside',
+          { label: 'X', where: 'Y' },
+          'X: does not fit in Y',
+        ),
+        'X: não cabe em Y',
+      ],
+      [
+        modelMessage('value.refBroken', { key: 'k' }, 'broken reference: k'),
+        'referência quebrada: k',
+      ],
+      [
+        modelMessage('value.refCycle', { key: 'k' }, 'reference cycle: k'),
+        'referência em ciclo: k',
+      ],
+      [
+        modelMessage(
+          'value.refDeep',
+          { key: 'k' },
+          'reference through more than one level: k',
+        ),
+        'referência em mais de um nível: k',
+      ],
+      [
+        modelMessage(
+          'catalog.typeOutside',
+          { typeId: 't' },
+          'type "t" is outside the specialization',
+        ),
         'tipo "t" fora da especialização',
-      ),
-      modelMessage('catalog.typeNoComponent', { typeId: 't' }, 'tipo "t" sem componente'),
+      ],
+      [
+        modelMessage(
+          'catalog.typeNoComponent',
+          { typeId: 't' },
+          'type "t" has no component',
+        ),
+        'tipo "t" sem componente',
+      ],
     ];
-    locale.value = 'pt-BR';
-    for (const m of samples) expect(messageText(m)).toBe(m.text);
+    for (const [m, pt] of samples) {
+      locale.value = 'pt-BR';
+      expect(messageText(m)).toBe(pt);
+      locale.value = 'en-US';
+      expect(messageText(m)).toBe(m.text);
+    }
   });
 });
 
@@ -88,42 +128,43 @@ describe('component variable messages', () => {
   for (let i = 1; i <= 20; i++)
     big[`v${i}`] = { $add: [{ $var: `v${i - 1}` }, { $var: `v${i - 1}` }] };
 
+  // [code, input, the model text (English, equal to en-US), the pt-BR rendering]
   const cases: [string, unknown, string, string][] = [
     [
       'component.variableUndefined',
       lets({}, { $var: 'gap' }),
-      'variável não definida: gap',
       'undefined variable: gap',
+      'variável não definida: gap',
     ],
     [
       'component.variableCycle',
       lets({ a: { $var: 'b' }, b: { $var: 'a' } }, { $var: 'a' }),
-      'ciclo de variáveis: a → b → a',
       'variable cycle: a → b → a',
+      'ciclo de variáveis: a → b → a',
     ],
     [
       'component.expectedVariableName',
       lets({ Gap: 1 }, 1),
-      'esperava nome de variável ([a-z][a-zA-Z0-9]*)',
       'expected a variable name ([a-z][a-zA-Z0-9]*)',
+      'esperava nome de variável ([a-z][a-zA-Z0-9]*)',
     ],
     [
       'component.variablesTooBig',
       lets(big, { $var: 'v20' }),
-      'expansão das variáveis grande demais (mais de 100000 nós)',
       'variable expansion too large (more than 100000 nodes)',
+      'expansão das variáveis grande demais (mais de 100000 nós)',
     ],
   ];
 
-  it.each(cases)('%s: code, params and en-US', (code, input, pt, en) => {
+  it.each(cases)('%s: code, params and en-US', (code, input, en, pt) => {
     const result = parseComponent(input);
     expect(result.ok).toBe(false);
-    const issue = !result.ok ? result.issues.find((i) => i.message === pt) : undefined;
+    const issue = !result.ok ? result.issues.find((i) => i.message === en) : undefined;
     expect(issue?.code).toBe(code);
     const message = modelMessage(
       issue?.code as string,
       (issue?.params ?? {}) as Record<string, string>,
-      pt,
+      en,
     );
     locale.value = 'pt-BR';
     expect(messageText(message)).toBe(pt);

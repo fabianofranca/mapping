@@ -1,10 +1,10 @@
-// O que o valor de `code.<plataforma>.params` pode dizer (formatVersion 16; etapa #1079): um nome
-// de parâmetro (`text`), um caminho (`colors.containerColor`: o argumento `containerColor` da
-// fábrica de `calls.colors`) ou um posicional (`#0`: o primeiro argumento sem nome). Numa
-// especialização anterior à 16 o valor é um texto opaco (nome de parâmetro, de campo JSON…): quem
-// interpreta confere a versão antes (`interpretsParamTargets`). Função pura, sem navegador.
+// What the value of `code.<platform>.params` can say (formatVersion 16; stage #1079): a parameter
+// name (`text`), a path (`colors.containerColor`: the `containerColor` argument of the factory of
+// `calls.colors`) or a positional one (`#0`: the first unnamed argument). In a specialization
+// older than 16 the value is opaque text (parameter name, JSON field name...): whoever interprets
+// it checks the version first (`interpretsParamTargets`). Pure function, no browser.
 
-/** A versão da especialização a partir da qual o valor de `params` é interpretado. */
+/** The specialization version from which the value of `params` is interpreted. */
 export const PARAM_TARGETS_FORMAT_VERSION = 16;
 
 export type ParamTarget =
@@ -14,7 +14,7 @@ export type ParamTarget =
 
 const POSITION_RE = /^#(\d+)$/;
 
-/** Interpreta o valor de um `params` (só vale em `formatVersion` 16 ou mais). */
+/** Interprets the value of a `params` (only valid in `formatVersion` 16 or later). */
 export function paramTarget(value: string): ParamTarget {
   const position = POSITION_RE.exec(value);
   if (position?.[1] !== undefined)
@@ -26,12 +26,12 @@ export function paramTarget(value: string): ParamTarget {
   return { kind: 'name', name: value };
 }
 
-/** A especialização desta versão interpreta caminho e posicional nos `params`? */
+/** Does the specialization of this version interpret path and positional in `params`? */
 export function interpretsParamTargets(formatVersion: number): boolean {
   return formatVersion >= PARAM_TARGETS_FORMAT_VERSION;
 }
 
-/** O molde (`{value}.dp`) com o valor posto; o valor entra como texto. */
+/** The template (`{value}.dp`) with the value filled in; the value goes in as text. */
 export const FORMAT_PLACEHOLDER = '{value}';
 
 export function applyFormat(template: string, value: string | number | boolean): string {

@@ -9,6 +9,7 @@ import { SPEC_PATTERN_CODES, specCodeForText } from '../../src/model/messages/te
 import { specMessages } from '../../src/model/messages/spec';
 import { specMsg } from '../../src/model/specIssueCode';
 import { issueText } from '../../src/ui/LibraryIssueList';
+import { ptBRText } from '../support/modelText';
 
 // MB2 (#1357): the specialization problems up to `layerShape` (fields, suggestions, `code`,
 // examples, `appliesTo`, children, documents, roles, groups, types and layers) and the default
@@ -694,10 +695,12 @@ function issuesOf(mutate: (s: Raw) => void): SpecIssue[] {
   return parsed.issues;
 }
 
+function asModelMessage(issue: SpecIssue) {
+  return modelMessage(issue.code ?? 'raw', issue.params ?? {}, issue.message);
+}
+
 function shown(issue: SpecIssue): string {
-  return messageText(
-    modelMessage(issue.code ?? 'raw', issue.params ?? {}, issue.message),
-  );
+  return messageText(asModelMessage(issue));
 }
 
 const PORTUGUESE = /[ãõçáéíóúâêô]/i;
@@ -744,16 +747,26 @@ describe('specialization messages (up to layerShape)', () => {
     }
   });
 
-  it('pt-BR: the text shown equals the `message`, except for the default zod texts', () => {
+  it('pt-BR: the text shown is the pt-BR template filled in (never the English `message`, even for the default zod texts)', () => {
     locale.value = 'pt-BR';
     for (const [, mutate] of CASES) {
       for (const issue of issuesOf(mutate)) {
         if (issue.code === undefined) continue;
-        if (ZOD_CODES.includes(issue.code)) {
-          // Declared exception (decision 6): the `message` is zod's, in English; the pt-BR is translated.
+        expect(shown(issue), issue.message).toBe(ptBRText(asModelMessage(issue)));
+        // The `message` of the zod codes is zod's own English text; the pt-BR is translated (decision 6).
+        if (ZOD_CODES.includes(issue.code))
           expect(shown(issue), issue.message).not.toBe(issue.message);
-          continue;
-        }
+      }
+    }
+  });
+
+  it('en-US: the text shown is the English `message` itself', () => {
+    locale.value = 'en-US';
+    for (const [, mutate] of CASES) {
+      for (const issue of issuesOf(mutate)) {
+        if (issue.code === undefined) continue;
+        // The zod codes may differ in the plural ("Unrecognized keys"): the template is the base text.
+        if (ZOD_CODES.includes(issue.code)) continue;
         expect(shown(issue), issue.message).toBe(issue.message);
       }
     }
@@ -807,30 +820,30 @@ describe('specialization messages (up to layerShape)', () => {
 // of the pt-BR text, except for the three texts that zod builds with the received value.
 describe('specialization message code without false matches', () => {
   it('text that merely resembles a template with a parameter gets no code', () => {
-    expect(specCodeForText('deve ser "a" ou "b"')).toBeUndefined();
-    expect(specCodeForText('nome "a" e "b" repetido')).toBeUndefined();
-    expect(specCodeForText('só é permitido com formatVersion 4')).toBeUndefined();
+    expect(specCodeForText('must be "a" ou "b"')).toBeUndefined();
+    expect(specCodeForText('nome "a" e "b" repeated')).toBeUndefined();
+    expect(specCodeForText('only allowed with formatVersion 4')).toBeUndefined();
   });
 
   it('the pattern applies only to the three enum codes', () => {
-    expect(specCodeForText('"x" inválido; use "marking" ou "arrow"')).toEqual({
+    expect(specCodeForText('"x" is invalid; use "marking" or "arrow"')).toEqual({
       code: 'spec.appliesToInvalid',
       params: { value: 'x' },
     });
     expect(
       specCodeForText(
-        '"x" inválido; use "removed", "deprecated", "diverges" ou "pending"',
+        '"x" is invalid; use "removed", "deprecated", "diverges" or "pending"',
       ),
     ).toEqual({ code: 'spec.noticeKindInvalid', params: { value: 'x' } });
     expect(
       specCodeForText(
-        '"x" inválido; use "string", "number", "date", "enum", "table" ou "ref"',
+        '"x" is invalid; use "string", "number", "date", "enum", "table" or "ref"',
       ),
     ).toEqual({ code: 'spec.fieldTypeInvalid', params: { value: 'x' } });
   });
 
   it('the exact text of a template without a parameter still finds the code', () => {
-    expect(specCodeForText('obrigatório')).toEqual({ code: 'spec.required' });
+    expect(specCodeForText('required')).toEqual({ code: 'spec.required' });
   });
 
   // The same `code` and the same `params` as before, one case per group of decision 2.
@@ -951,17 +964,17 @@ describe('specialization message code without false matches', () => {
       (i) => i.code === 'spec.formatVersionInvalid',
     );
     expect(version?.message).toBe(
-      `deve ser ${version?.params?.versions} ou ${version?.params?.last}`,
+      `must be ${version?.params?.versions} or ${version?.params?.last}`,
     );
     const side = issuesOf((s) => (s.containers = [container({ width: 999999 })])).find(
       (i) => i.code === 'spec.containerSideMax',
     );
-    expect(side?.message).toBe(`deve ser <= ${side?.params?.max}`);
+    expect(side?.message).toBe(`must be <= ${side?.params?.max}`);
     const only = issuesOf(
       (s) => ((s.formatVersion = 1), (s.platforms = [{ id: 'a', name: 'A' }])),
     ).find((i) => i.code === 'spec.onlyFormat');
     expect(only?.message).toBe(
-      `só é permitido com formatVersion ${only?.params?.version}`,
+      `only allowed with formatVersion ${only?.params?.version}`,
     );
   });
 });

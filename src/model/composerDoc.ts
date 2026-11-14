@@ -1,9 +1,9 @@
 import { formatCitation } from './citations';
 import { parseAnyRef, type ParsedAnyRef } from './refGrammar';
 
-// Documento do compositor de conversas (etapa Comentários, decisão 30): texto e chips. O chip é
-// a citação `[rótulo](mapping://…)` desenhada como pílula; o texto gravado é o markdown comum.
-// Aqui, as conversões puras entre o documento e o markdown, e a colagem. Tudo sem DOM.
+// Conversation composer document (Comments stage, decision 30): text and chips. A chip is
+// the citation `[label](mapping://…)` drawn as a pill; the saved text is plain markdown.
+// Here, the pure conversions between the document and the markdown, and pasting. All without DOM.
 
 export type ComposerPart =
   | { readonly type: 'text'; readonly text: string }
@@ -11,10 +11,10 @@ export type ComposerPart =
 
 export type ComposerDoc = readonly ComposerPart[];
 
-/** Rótulo gravado para um chip sem nome (`[](url)` não é link em markdown). */
+/** Label saved for a chip without a name (`[](url)` is not a link in markdown). */
 const DEFAULT_EMPTY_LABEL = '·';
 
-/** Junta textos vizinhos e descarta os textos vazios; os chips ficam como estão. */
+/** Joins neighboring texts and discards empty texts; chips stay as they are. */
 export function normalizeDoc(doc: ComposerDoc): ComposerPart[] {
   const out: ComposerPart[] = [];
   for (const part of doc) {
@@ -32,8 +32,8 @@ export function normalizeDoc(doc: ComposerDoc): ComposerPart[] {
 }
 
 /**
- * O markdown do documento: o texto cru e, para cada chip, `formatCitation(rótulo, url)`, sem
- * espaço extra. Chip de rótulo vazio grava `emptyLabel`.
+ * The document's markdown: the raw text and, for each chip, `formatCitation(label, url)`, with no
+ * extra space. A chip with an empty label saves `emptyLabel`.
  */
 export function composerToMarkdown(
   doc: ComposerDoc,
@@ -48,21 +48,21 @@ export function composerToMarkdown(
     .join('');
 }
 
-// ------------------------------------------------------------------ leitura do link
+// ------------------------------------------------------------------ reading the link
 
 /**
- * `[rótulo](mapping://…)` na posição exata (regex pegajosa). O rótulo só tem `\[`, `\]` e `\\`
- * como escapes (o que `escapeCitationLabel` grava), nenhum colchete solto e nenhuma quebra de
- * linha; o destino não tem espaço nem parênteses. Tudo o mais não casa e fica texto.
+ * `[label](mapping://…)` at the exact position (sticky regex). The label only has `\[`, `\]` and `\\`
+ * as escapes (what `escapeCitationLabel` saves), no loose bracket and no line break; the
+ * destination has no spaces or parentheses. Everything else does not match and stays text.
  */
 const LINK_SOURCE = String.raw`\[((?:[^\[\]\\\n]|\\[\[\]\\*_\`])+)\]\((mapping:\/\/[^\s()]*)\)`;
 const LINK_AT = new RegExp(LINK_SOURCE, 'y');
 
-/** URL `mapping://` crua: vai até espaço, parêntese, colchete, aspas ou sinal de maior/menor. */
+/** Raw `mapping://` URL: runs up to a space, parenthesis, bracket, quote or greater/less-than sign. */
 const RAW_SOURCE = String.raw`mapping:\/\/[^\s()<>\[\]"]+`;
 const PASTE_SCAN = new RegExp(`${LINK_SOURCE}|${RAW_SOURCE}`, 'g');
 
-/** Pontuação da frase e marcadores de ênfase/código que a colagem pode ter deixado colados no fim. */
+/** Sentence punctuation and emphasis/code markers that pasting may have left stuck at the end. */
 const TRAILING_PUNCTUATION = /[.,;:!?*_`~]+$/;
 
 function unescapeLabel(raw: string): string {
@@ -82,7 +82,7 @@ function linkAt(text: string, index: number): LinkMatch | null {
   return { end: index + m[0].length, label: unescapeLabel(m[1]!), url: m[2]! };
 }
 
-/** Fim do trecho literal que começa em `index` (escape de uma barra ou código), ou `index`. */
+/** End of the literal span that starts at `index` (a backslash escape or code), or `index`. */
 function literalEnd(text: string, index: number): number {
   const char = text[index];
   if (char === '\\') return Math.min(index + 2, text.length);
@@ -97,10 +97,10 @@ function literalEnd(text: string, index: number): number {
 }
 
 /**
- * O caminho inverso, para reabrir um rascunho com chips: cada `[rótulo](mapping://…)` cuja URL
- * fecha a gramática estrita vira chip; o resto fica texto, como estava (markdown comum, links
- * externos e de biblioteca, link quebrado, código em linha e em bloco). Vale
- * `composerToMarkdown(markdownToComposer(s)) === s` para qualquer `s`.
+ * The reverse path, to reopen a draft with chips: each `[label](mapping://…)` whose URL
+ * satisfies the strict grammar becomes a chip; the rest stays text, as it was (plain markdown,
+ * external and library links, broken link, inline and block code). It holds
+ * `composerToMarkdown(markdownToComposer(s)) === s` for any `s`.
  */
 export function markdownToComposer(text: string): ComposerPart[] {
   const parts: ComposerPart[] = [];
@@ -126,9 +126,9 @@ export function markdownToComposer(text: string): ComposerPart[] {
   return normalizeDoc(parts);
 }
 
-// ------------------------------------------------------------------ colar
+// ------------------------------------------------------------------ pasting
 
-/** O que a colagem sabe de um alvo: o rótulo vivo e a URL a gravar (do projeto de agora). */
+/** What pasting knows about a target: the live label and the URL to save (of the current project). */
 export interface PastedChip {
   readonly label: string;
   readonly url: string;
@@ -141,7 +141,7 @@ function resolveUrl(url: string, resolves: PasteResolver): PastedChip | null {
   return parsed && resolves(parsed);
 }
 
-/** A URL crua, com uma segunda tentativa sem a pontuação final da frase. */
+/** The raw URL, with a second attempt without the sentence's final punctuation. */
 function resolveRaw(
   raw: string,
   resolves: PasteResolver,
@@ -159,9 +159,9 @@ function chipPart(chip: PastedChip): ComposerPart {
 }
 
 /**
- * Colar entra como texto puro (decisão 30). Cada URL `mapping://…` crua, ou link markdown
- * `[x](mapping://…)` colado inteiro, que a gramática lê E que `resolves` reconhece vira chip com
- * o rótulo vivo de `resolves`; a que não resolve fica texto, como veio.
+ * Pasting enters as plain text (decision 30). Each raw `mapping://…` URL, or markdown link
+ * `[x](mapping://…)` pasted whole, that the grammar reads AND that `resolves` recognizes becomes a
+ * chip with the live label from `resolves`; one that does not resolve stays text, as it came.
  */
 export function pasteToParts(pasted: string, resolves: PasteResolver): ComposerPart[] {
   const parts: ComposerPart[] = [];

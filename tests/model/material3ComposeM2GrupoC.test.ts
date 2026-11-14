@@ -34,7 +34,7 @@ describe('M2 grupo C — valores do Compose', () => {
   it('button: 40 de altura, forma full, rótulo em label-large, ícone de 18 desenhado pelo nó icon', () => {
     for (const mode of MODES) {
       const d = draw('button', { label: 'Salvar', style: 'filled', icon: 'Add' }, mode);
-      expect(d.warnings.filter((w) => /ícone desconhecido/.test(w))).toEqual([]);
+      expect(d.warnings.filter((w) => /unknown icon/.test(w))).toEqual([]);
       expect(d.root.height).toBe(40);
       const container = named(d.root, 'container');
       expect(container?.type === 'rect' && container.cornerRadius).toBe(
@@ -126,7 +126,7 @@ describe('M2 grupo C — valores do Compose', () => {
   it('icon-button: container de 40, forma full, ícone de 24 centrado, cores por estilo', () => {
     for (const mode of MODES) {
       const d = draw('icon-button', { icon: 'Add', style: 'filled' }, mode);
-      expect(d.warnings.filter((w) => /ícone desconhecido/.test(w))).toEqual([]);
+      expect(d.warnings.filter((w) => /unknown icon/.test(w))).toEqual([]);
       expect(d.root.width).toBe(40);
       expect(d.root.height).toBe(40);
       const box = named(d.root, 'container')!;
@@ -166,7 +166,7 @@ describe('M2 grupo C — valores do Compose', () => {
         enabled,
       });
       const d = draw('icon-toggle-button', v('filled', 'true'), mode);
-      expect(d.warnings.filter((w) => /ícone desconhecido/.test(w))).toEqual([]);
+      expect(d.warnings.filter((w) => /unknown icon/.test(w))).toEqual([]);
       expect([d.root.width, d.root.height]).toEqual([40, 40]);
       const box = (style: string, checked: string, enabled?: string) =>
         named(

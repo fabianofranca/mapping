@@ -106,7 +106,7 @@ describe('validateLibrary com image', () => {
         'error',
         'components/avatar.json',
         'template.children[0].src.$field',
-        `o src da imagem lê "${key}", que é um campo ${kind} do tipo "avatar", não string`,
+        `the image src reads "${key}", which is a ${kind} field of the type "avatar", not string`,
       ]);
     },
   );
@@ -118,7 +118,7 @@ describe('validateLibrary com image', () => {
         'error',
         'components/avatar.json',
         'template.children[0].src.$field',
-        'o desenho usa o campo "inexistente", que o tipo "avatar" não declara',
+        'the drawing uses the field "inexistente", which the type "avatar" does not declare',
       ],
     ]);
   });
@@ -135,7 +135,7 @@ describe('validateLibrary com image', () => {
         'error',
         'components/avatar.json',
         'template.children[0].template.children[0].src.$field',
-        'o src da imagem lê a coluna "tamanho" da table "fotos" do tipo "avatar", que é number, não string',
+        'the image src reads the column "tamanho" of the table "fotos" of the type "avatar", which is number, not string',
       ],
     ]);
   });
@@ -148,7 +148,7 @@ describe('validateLibrary com image', () => {
         'error',
         'components/avatar.json',
         'template.children[0].template.children[0].src.$field',
-        'o src da imagem lê a coluna "foto" da table "fotos" do tipo "avatar", que é number, não string',
+        'the image src reads the column "foto" of the table "fotos" of the type "avatar", which is number, not string',
       ],
     ]);
   });
@@ -160,7 +160,7 @@ describe('validateLibrary com image', () => {
       'error',
       'components/avatar.json',
       'template.children[0].template.children[0].src.$field',
-      'o src da imagem lê "idade", que é um campo number do tipo "avatar", não string',
+      'the image src reads "idade", which is a number field of the type "avatar", not string',
     ]);
   });
 
@@ -174,6 +174,6 @@ describe('validateLibrary com image', () => {
     expect(report.errors.map((e) => [e.file, e.path])).toEqual([
       ['components/avatar.json', 'template.children[0].src'],
     ]);
-    expect(report.errors[0]?.message).toContain('esperava URL https:// absoluta');
+    expect(report.errors[0]?.message).toContain('expected an absolute https:// URL');
   });
 });

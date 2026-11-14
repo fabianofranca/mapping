@@ -148,7 +148,7 @@ describe('prova de desenho: o exemplo com linhas', () => {
   const NARROW = { ...COMPONENT, size: { width: 30, height: 48 } };
   const drawingWarnings = (examples: unknown[]) =>
     validateLibrary({ files: pack(examples, NARROW) }).warnings.filter((w) =>
-      w.message.includes('o exemplo'),
+      w.message.includes('the example'),
     );
 
   it('desenha as linhas: elas não cabem na caixa estreita e o aviso cita o exemplo', () => {
@@ -158,7 +158,7 @@ describe('prova de desenho: o exemplo com linhas', () => {
       file: 'lite.spec.json',
       path: 'layers[0].annotationTypes[0].examples[0]',
     });
-    expect(warnings[0]?.message).toContain('o exemplo "Com destinos"');
+    expect(warnings[0]?.message).toContain('the example "Com destinos"');
   });
 
   it('o exemplo sem o campo table não desenha linhas e não avisa', () => {

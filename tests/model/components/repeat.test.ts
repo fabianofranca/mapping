@@ -148,49 +148,49 @@ describe('parseComponent: repeat', () => {
 
   it('repeat numa formatVersion 1 é erro, no caminho do nó', () => {
     expect(errorsOf(raw({}, {}, 1))).toEqual([
-      'template.children[1].type: o nó repeat só existe na formatVersion 2',
+      'template.children[1].type: the repeat node only exists in formatVersion 2',
     ]);
   });
 
   it('a formatVersion 5 é recusada e as aceitas são citadas', () => {
     const v4 = raw({ formatVersion: 5 });
     v4.template.children.pop();
-    expect(errorsOf(v4)).toEqual(['formatVersion: esperava 1, 2, 3 ou 4']);
+    expect(errorsOf(v4)).toEqual(['formatVersion: expected 1, 2, 3 or 4']);
   });
 
   it('o repeat também vale na formatVersion 3', () => {
     expect(parseComponent(raw({ formatVersion: 3 })).ok).toBe(true);
   });
 
-  it('field e template são obrigatórios; field não pode ser vazio', () => {
+  it('field e template são requireds; field cannot be empty', () => {
     const noField = raw();
     delete noField.template.children[1].field;
-    expect(errorsOf(noField)).toContain('template.children[1].field: campo obrigatório');
+    expect(errorsOf(noField)).toContain('template.children[1].field: required field');
     const noTemplate = raw();
     delete noTemplate.template.children[1].template;
     expect(errorsOf(noTemplate)).toContain(
-      'template.children[1].template: campo obrigatório',
+      'template.children[1].template: required field',
     );
     expect(errorsOf(raw({}, { field: '' }))[0]).toContain('template.children[1].field:');
   });
 
   it('direction só aceita column e row; gap não é negativo', () => {
     expect(errorsOf(raw({}, { direction: 'grid' }))[0]).toContain(
-      'template.children[1].direction: esperava um de: column, row',
+      'template.children[1].direction: expected one of: column, row',
     );
     expect(errorsOf(raw({}, { gap: -1 }))[0]).toContain('template.children[1].gap:');
   });
 
   it('o template de uma linha é um quadro', () => {
     expect(errorsOf(raw({}, { template: text('chave') }))).toContain(
-      'template.children[1].template.type: o template de uma linha deve ser do tipo "frame"',
+      'template.children[1].template.type: the template of a row must be of type "frame"',
     );
   });
 
   it('não vale fill, stroke, shadow nem cornerRadius no repeat (o desenho é do template)', () => {
     for (const key of ['fill', 'stroke', 'shadow', 'cornerRadius']) {
       expect(errorsOf(raw({}, { [key]: key === 'fill' ? '#fff' : {} }))[0]).toContain(
-        `template.children[1].${key}: não vale em repeat`,
+        `template.children[1].${key}: not valid in a repeat`,
       );
     }
   });
@@ -208,10 +208,10 @@ describe('parseComponent: repeat', () => {
       ),
     );
     expect(nested).toContain(
-      'template.children[1].template.children[0].type: repeat não é permitido dentro de um repeat',
+      'template.children[1].template.children[0].type: repeat is not allowed inside a repeat',
     );
     expect(nested).toContain(
-      'template.children[1].template.children[1].type: slot não é permitido dentro de um repeat',
+      'template.children[1].template.children[1].type: slot is not allowed inside a repeat',
     );
   });
 
@@ -229,7 +229,7 @@ describe('parseComponent: repeat', () => {
     const slotPath =
       'template.children[1].template.children[0].template.children[0].type';
     const slotErrors = errors.filter((e) => e.startsWith(`${slotPath}:`));
-    expect(slotErrors).toEqual([`${slotPath}: slot não é permitido dentro de um repeat`]);
+    expect(slotErrors).toEqual([`${slotPath}: slot is not allowed inside a repeat`]);
   });
 
   it('o template do repeat é conferido como qualquer nó', () => {
@@ -237,7 +237,7 @@ describe('parseComponent: repeat', () => {
       raw({}, { template: row([{ type: 'text', text: 3, bogus: 1 }]) }),
     );
     expect(errors).toContain(
-      'template.children[1].template.children[0].bogus: chave desconhecida: bogus',
+      'template.children[1].template.children[0].bogus: unknown key: bogus',
     );
   });
 
@@ -247,10 +247,10 @@ describe('parseComponent: repeat', () => {
       [],
     );
     expect(errorsOf(raw({ preview: { linhas: ['x'] } }))).toContain(
-      'preview.linhas[0]: esperava objeto (uma linha)',
+      'preview.linhas[0]: expected an object (a row)',
     );
     expect(errorsOf(raw({ preview: { linhas: [{ chave: true }] } }))).toContain(
-      'preview.linhas[0].chave: esperava texto, número ou null',
+      'preview.linhas[0].chave: expected text, a number or null',
     );
     expect(errorsOf(raw({ preview: { x: true } }))[0]).toContain('preview.x:');
   });
@@ -422,7 +422,7 @@ describe('expandRepeats', () => {
     expect(out.values['$r0_1:chave']).toBe('c');
   });
 
-  it('coluna que nenhuma linha traz (projeto antigo) fica vazia, sem aviso de campo não informado', () => {
+  it('coluna que nenhuma linha traz (projeto antigo) fica vazia, sem aviso de field not provided', () => {
     const c = component(
       {},
       {
@@ -441,12 +441,12 @@ describe('expandRepeats', () => {
     const drawn = instantiate(c, { titulo: 'T', linhas: [{ chave: 'a' }] }, BOX, {
       measure: approximateMeasurer,
     });
-    expect(drawn.warnings.filter((w) => w.startsWith('campo não informado'))).toEqual([]);
+    expect(drawn.warnings.filter((w) => w.startsWith('field not provided'))).toEqual([]);
   });
 
   it('o campo table não informado vira aviso; informado vazio ou nulo, não', () => {
     expect(expandRepeats(component(), {}).warnings).toEqual([
-      'campo não informado: linhas',
+      'field not provided: linhas',
     ]);
     expect(expandRepeats(component(), { linhas: null }).warnings).toEqual([]);
     expect(expandRepeats(component(), { linhas: [] }).warnings).toEqual([]);
@@ -595,13 +595,13 @@ describe('instantiate com repeat', () => {
     expect(texts(root).map((t) => t.text)).toEqual(['T', 'n', '42', 'vazio', '']);
   });
 
-  it('o aviso de conteúdo maior que a caixa vale para as linhas que passam', () => {
+  it('o aviso de content larger than the box vale para as linhas que passam', () => {
     const { warnings } = draw(
       component(),
       { titulo: 'T', linhas: [...ROWS, ...ROWS, ...ROWS] },
       { ...BOX, height: 40 },
     );
-    expect(warnings.some((w) => w.startsWith('conteúdo maior que a caixa'))).toBe(true);
+    expect(warnings.some((w) => w.startsWith('content larger than the box'))).toBe(true);
   });
 
   it('um componente da formatVersion 1 (sem repeat) desenha como antes', () => {
@@ -700,10 +700,10 @@ describe('repeat por count (formato 4)', () => {
   it('acima de 1000 desenha 1000 linhas com o aviso nomeando o nó', () => {
     const c = countComponent({ count: 1500, template: row([]) });
     const expanded = expandRepeats(c, {});
-    expect(expanded.warnings).toEqual(['repeat limitado a 1000 linhas: lista']);
+    expect(expanded.warnings).toEqual(['repeat limited to 1000 rows: lista']);
     const wrapper = (expanded.component.template as FrameTemplate).children?.[0];
     expect((wrapper as FrameTemplate).children).toHaveLength(1000);
-    expect(drawn(c).warnings).toContain('repeat limitado a 1000 linhas: lista');
+    expect(drawn(c).warnings).toContain('repeat limited to 1000 rows: lista');
   });
 
   it('sem nome, o aviso usa "repeat"', () => {
@@ -713,7 +713,7 @@ describe('repeat por count (formato 4)', () => {
     if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
     const c = parsed.component;
     expect(expandRepeats(c, {}).warnings).toEqual([
-      'repeat limitado a 1000 linhas: repeat',
+      'repeat limited to 1000 rows: repeat',
     ]);
   });
 
@@ -926,22 +926,22 @@ describe('validação do repeat por count e das chaves da EX2', () => {
   it('exatamente um de count e field', () => {
     expect(problems({})).toEqual([]);
     expect(problems({ field: 'linhas' }).join('\n')).toContain(
-      'template.children[0]: use count ou field, não os dois',
+      'template.children[0]: use count or field, not both',
     );
     const neither = countRaw();
     delete neither.template.children[0].count;
     const parsed = parseComponent(neither);
     expect(parsed.ok ? [] : parsed.errors).toContain(
-      'template.children[0].field: campo obrigatório',
+      'template.children[0].field: required field',
     );
   });
 
   it('count literal negativo ou não inteiro', () => {
     expect(problems({ count: -1 }).join('\n')).toContain(
-      'template.children[0].count: esperava inteiro maior ou igual a 0',
+      'template.children[0].count: expected an integer greater than or equal to 0',
     );
     expect(problems({ count: 2.5 }).join('\n')).toContain(
-      'template.children[0].count: esperava inteiro maior ou igual a 0',
+      'template.children[0].count: expected an integer greater than or equal to 0',
     );
     expect(problems({ count: { $field: 'n' } })).toEqual([]);
   });
@@ -949,36 +949,36 @@ describe('validação do repeat por count e das chaves da EX2', () => {
   it('$size só aceita width ou height', () => {
     expect(sizeProblems({ $size: 'width' })).toEqual([]);
     expect(sizeProblems({ $size: 'depth' }).join('\n')).toContain(
-      'template.children[0].text.$size: esperava "width" ou "height"',
+      'template.children[0].text.$size: expected "width" or "height"',
     );
   });
 
   it('$rows pede o nome de um campo', () => {
     expect(sizeProblems({ $rows: 'linhas' })).toEqual([]);
     expect(sizeProblems({ $rows: 3 }).join('\n')).toContain(
-      'template.children[0].text.$rows: esperava chave de campo',
+      'template.children[0].text.$rows: expected a field key',
     );
   });
 
   it('$index fora de um repeat é recusado', () => {
     expect(sizeProblems({ $field: '$index' }).join('\n')).toContain(
-      'template.children[0].text.$field: $index só vale dentro de um repeat',
+      'template.children[0].text.$field: $index is only valid inside a repeat',
     );
     expect(problems({ gap: { $field: '$index' } }).join('\n')).toContain(
-      '$index só vale dentro de um repeat',
+      '$index is only valid inside a repeat',
     );
   });
 
-  it('nas versões 1 a 3 tudo isso dá só é permitido com formatVersion 4', () => {
+  it('nas versões 1 a 3 tudo isso dá only allowed with formatVersion 4', () => {
     for (const version of [2, 3]) {
       expect(problems({}, version)).toContain(
-        'template.children[0].count: só é permitido com formatVersion 4',
+        'template.children[0].count: only allowed with formatVersion 4',
       );
       expect(sizeProblems({ $size: 'width' }, version)).toContain(
-        'template.children[0].text.$size: só é permitido com formatVersion 4',
+        'template.children[0].text.$size: only allowed with formatVersion 4',
       );
       expect(sizeProblems({ $rows: 'a' }, version)).toContain(
-        'template.children[0].text.$rows: só é permitido com formatVersion 4',
+        'template.children[0].text.$rows: only allowed with formatVersion 4',
       );
     }
     const c = countRaw({ field: 'linhas' });
@@ -987,7 +987,7 @@ describe('validação do repeat por count e das chaves da EX2', () => {
     c.template.children[0].template = row([num({ $field: '$index' })]);
     const parsed = parseComponent(c);
     expect(parsed.ok ? [] : parsed.errors).toContain(
-      'template.children[0].template.children[0].text.$field: só é permitido com formatVersion 4',
+      'template.children[0].template.children[0].text.$field: only allowed with formatVersion 4',
     );
   });
 
@@ -1006,8 +1006,8 @@ describe('validação do repeat por count e das chaves da EX2', () => {
     c.formatVersion = 3;
     const parsed = parseComponent(c);
     expect(parsed.ok ? [] : parsed.errors).toEqual([
-      'template.children[0].anchors.left: só é permitido com formatVersion 4',
-      'template.children[0].anchors.centerX: só é permitido com formatVersion 4',
+      'template.children[0].anchors.left: only allowed with formatVersion 4',
+      'template.children[0].anchors.centerX: only allowed with formatVersion 4',
     ]);
   });
 
@@ -1017,8 +1017,8 @@ describe('validação do repeat por count e das chaves da EX2', () => {
     c.template.children = [{ type: 'rect', anchors: { left: 'x', centerX: 3 } }];
     const parsed = parseComponent(c);
     const errors = parsed.ok ? [] : parsed.errors;
-    expect(errors).toContain('template.children[0].anchors.left: esperava número');
-    expect(errors).toContain('template.children[0].anchors.centerX: esperava booleano');
+    expect(errors).toContain('template.children[0].anchors.left: expected a number');
+    expect(errors).toContain('template.children[0].anchors.centerX: expected a boolean');
   });
 });
 

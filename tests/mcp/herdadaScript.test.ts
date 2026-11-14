@@ -154,10 +154,10 @@ describe('herdada.mjs (R25.83 a R25.86)', () => {
     );
     expect(result.errors).toEqual([]);
     // Provisório (decisão do dono pendente no bug #1774; curadoria na #1134): só os avisos
-    // `parâmetro fora da ficha` do conjunto conhecido da Material 3; qualquer outro aviso falha.
+    // `parameter outside the signature` do conjunto conhecido da Material 3; qualquer outro aviso falha.
     expect(
       result.warnings.filter(
-        (w) => !JSON.stringify(w).includes('parâmetro fora da ficha'),
+        (w) => !JSON.stringify(w).includes('parameter outside the signature'),
       ),
     ).toEqual([]);
     expect(result.valid).toBe(true);
@@ -176,7 +176,7 @@ describe('herdada.mjs (R25.83 a R25.86)', () => {
     const old = validateComponent({ ...card, formatVersion: 3 });
     expect(old.some((e) => e.includes('provide'))).toBe(true);
     const oldText = validateComponent({ ...text, formatVersion: 3 });
-    expect(oldText.some((e) => e.includes('só é permitido com formatVersion 4'))).toBe(
+    expect(oldText.some((e) => e.includes('only allowed with formatVersion 4'))).toBe(
       true,
     );
   });

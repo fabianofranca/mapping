@@ -68,7 +68,7 @@ describe('sombras.mjs (R25.79 a R25.82)', () => {
     const errors = validateComponent({ ...(buildCard() as object), formatVersion: 3 });
     expect(errors.some((e) => e.includes('template.children[0].shadow'))).toBe(true);
     expect(errors.some((e) => e.includes('template.children[1].stroke.gap'))).toBe(true);
-    expect(errors.every((e) => e.includes('só é permitido com formatVersion 4'))).toBe(
+    expect(errors.every((e) => e.includes('only allowed with formatVersion 4'))).toBe(
       true,
     );
   });

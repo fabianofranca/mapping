@@ -57,7 +57,7 @@ describe('formatVersion 15: structural', () => {
     expect(found).toContainEqual(
       expect.objectContaining({
         path: 'layers[0].annotationTypes[0].structural',
-        message: 'só é permitido com formatVersion 15',
+        message: 'only allowed with formatVersion 15',
       }),
     );
   });

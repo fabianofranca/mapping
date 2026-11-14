@@ -38,7 +38,7 @@ describe('specWarnings: formatVersion 11', () => {
         code: 'many-children-ids',
         path: 'layers[0].annotationTypes[0].allowedChildren',
         message:
-          '20 tipos listados um a um; uma cláusula { layer, groups } cobre a camada ou os grupos',
+          '20 types listed one by one; a { layer, groups } clause covers the layer or the groups',
       },
     ]);
     const nineteen = parsedV11((s) => {
@@ -63,7 +63,7 @@ describe('specWarnings: formatVersion 11', () => {
         code: 'unused-group',
         path: 'layers[1].groups[2]',
         message:
-          'o grupo "vazio" da camada "eventos" é declarado, mas nenhum tipo está nele',
+          'the group "vazio" of the layer "eventos" is declared, but no type is in it',
       },
     ]);
     expect(codes(specWarnings(parsedV11()), 'unused-group')).toEqual([]);
@@ -82,7 +82,7 @@ describe('specWarnings: formatVersion 11', () => {
       {
         code: 'unused-doc-repo',
         path: 'docRepos[1]',
-        message: 'o repositório "solto" de docRepos é declarado, mas nenhum `doc` o usa',
+        message: 'the repository "solto" in docRepos is declared, but no `doc` uses it',
       },
     ]);
   });

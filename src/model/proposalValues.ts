@@ -20,15 +20,15 @@ import type {
   ProjectSpecialization,
 } from './types';
 
-// Valores das mudanças (etapa 4): a forma JSON de cada entidade e de cada campo, usada
-// para calcular as mudanças, conferir conflitos e aplicar. Uso interno do modelo.
+// Values of the changes (stage 4): the JSON form of each entity and of each field, used to
+// compute the changes, check conflicts and apply. Internal use of the model.
 
-/** Cópia JSON (sem `undefined`), com as chaves na ordem em que estão. */
+/** JSON copy (without `undefined`), with the keys in the order they are in. */
 export function toJson(value: unknown): JsonValue {
   return JSON.parse(JSON.stringify(value ?? null)) as JsonValue;
 }
 
-/** Igualdade de valores JSON, sem depender da ordem das chaves. */
+/** Equality of JSON values, without depending on key order. */
 export function jsonEqual(a: JsonValue | undefined, b: JsonValue | undefined): boolean {
   if (a === b) return true;
   if (a === undefined || b === undefined || a === null || b === null) return false;
@@ -54,11 +54,11 @@ export function imageValue(i: ProjectContainer): JsonValue {
     markingColor: i.markingColor,
     locked: i.locked,
     source: i.source,
-    // Só quando fixa (formatVersion 6): sem ele o valor é o de antes do modo do desenho.
+    // Only when pinned (formatVersion 6): without it the value is that of before the drawing mode.
     ...(i.drawingMode == null ? {} : { drawingMode: i.drawingMode }),
-    // Só quando declarada (formatVersion 7).
+    // Only when declared (formatVersion 7).
     ...(i.density == null ? {} : { density: i.density }),
-    // Só quando fixa (formatVersion 8).
+    // Only when pinned (formatVersion 8).
     ...(i.direction == null ? {} : { direction: i.direction }),
   });
 }
@@ -74,14 +74,15 @@ export function markingValue(m: Marking): JsonValue {
     needsReview: m.needsReview,
     locked: m.locked,
     source: m.source,
-    // Só quando ancorada (formatVersion 9): sem ele o valor é o de antes da âncora.
+    // Only when anchored (formatVersion 9): without it the value is that of before the anchor.
     ...(m.anchor == null ? {} : { anchor: m.anchor }),
   });
 }
 
 /**
- * A seta numa proposta: sem a rota (`points`), que é só da pessoa. Por isso a rota que a pessoa
- * traçar depois não faz a remoção da seta entrar em conflito, e criar uma seta nunca a traz.
+ * The arrow in a proposal: without the route (`points`), which belongs only to the person. So a
+ * route the person draws later does not make the arrow's removal conflict, and creating an
+ * arrow never carries it.
  */
 export function arrowValue(a: Arrow): JsonValue {
   return toJson({
@@ -123,8 +124,8 @@ export function docRepoValue(r: DocRepo): JsonValue {
 }
 
 /**
- * O que do projeto a proposta carrega (entidade `project`, formatVersion 6): o modo do desenho e,
- * só quando fixada (formatVersion 8), a direção de leitura.
+ * What of the project the proposal carries (`project` entity, formatVersion 6): the drawing mode
+ * and, only when pinned (formatVersion 8), the reading direction.
  */
 export function projectValue(p: Pick<Project, 'drawingMode' | 'direction'>): JsonValue {
   return {
@@ -138,9 +139,9 @@ export function platformRepoValue(r: PlatformRepo): JsonValue {
 }
 
 /**
- * Campos que a revisão compara em cada entidade (os de `annotation` são os fixos). Na marcação,
- * `space` (`{ containerId, rect }`) substitui o `rect` quando ela troca de espaço
- * (`markingFieldsFor`); `parentId` é derivado do assentar e não entra.
+ * Fields the review compares in each entity (those of `annotation` are the fixed ones). On the
+ * marking, `space` (`{ containerId, rect }`) replaces `rect` when it changes space
+ * (`markingFieldsFor`); `parentId` is derived from settling and is not included.
  */
 export const COMPARED_FIELDS = {
   image: [
@@ -157,15 +158,15 @@ export const COMPARED_FIELDS = {
     'direction',
   ],
   marking: ['name', 'space', 'rect', 'floating', 'locked', 'source', 'anchor'],
-  // A seta só se cria e se remove: nenhum campo dela é comparado (ver `ARROW_FIELDS`).
+  // The arrow is only created and removed: none of its fields is compared (see `ARROW_FIELDS`).
   arrow: [],
   annotation: ['name', 'parentAnnotationId', 'parentRole', 'markingId', 'layerId'],
   layer: ['name', 'color', 'spec'],
 } as const;
 
 /**
- * Campos comparados de uma marcação que existe antes e depois: a troca de espaço é a mudança
- * composta `space` (o `rect` vai dentro dela); sem troca, o `rect` é um campo à parte.
+ * Compared fields of a marking that exists before and after: a change of space is the composite
+ * change `space` (the `rect` goes inside it); without a change, `rect` is a separate field.
  */
 export function markingFieldsFor(
   before: Pick<Marking, 'containerId'>,
@@ -180,7 +181,7 @@ export function imageField(i: ProjectContainer, field: string): JsonValue | unde
     case 'name':
       return i.name;
     case 'file':
-      // Container sem arquivo não tem arquivo: o tamanho dela é o campo `size`.
+      // A container without a file has no file: its size is the `size` field.
       return i.file === null
         ? undefined
         : { file: i.file, width: i.width, height: i.height };
@@ -207,7 +208,7 @@ export function imageField(i: ProjectContainer, field: string): JsonValue | unde
   }
 }
 
-/** Os campos de uma marcação que só dependem dela (sem o projeto): cada um lê o seu valor. */
+/** The fields of a marking that depend only on it (not on the project): each reads its value. */
 const MARKING_FIELD_READERS: Readonly<Record<string, (m: Marking) => JsonValue>> = {
   name: (m) => m.name,
   rect: (m) => toJson(m.rect),
@@ -230,7 +231,7 @@ export function markingField(
     : undefined;
 }
 
-/** Valor do campo `type` de uma anotação: o tipo com os valores e pares. */
+/** Value of the `type` field of an annotation: the type with the values and pairs. */
 export function annotationTypeField(a: Annotation): JsonValue {
   return toJson({ type: a.type, values: a.values, entries: a.entries });
 }
@@ -238,7 +239,7 @@ export function annotationTypeField(a: Annotation): JsonValue {
 export function annotationField(a: Annotation, field: string): JsonValue | undefined {
   if (field.startsWith(VALUES_FIELD_PREFIX)) {
     const key = field.slice(VALUES_FIELD_PREFIX.length);
-    // Campo ausente vale como vazio (`null`), como na leitura das tipadas.
+    // A missing field counts as empty (`null`), as when reading the typed ones.
     return a.values
       ? toJson(Object.hasOwn(a.values, key) ? (a.values[key] ?? null) : null)
       : undefined;
@@ -283,9 +284,9 @@ export function layerField(p: Project, l: Layer, field: string): JsonValue | und
 }
 
 /**
- * O valor atual que corresponde a `from`/`to` da mudança: a entidade inteira (criação,
- * remoção, especialização e repositório) ou o campo. `undefined` se a entidade (ou o
- * campo, ex: `values.*` numa anotação livre) não existe no projeto.
+ * The current value that corresponds to the change's `from`/`to`: the whole entity (creation,
+ * removal, specialization and repository) or the field. `undefined` if the entity (or the
+ * field, e.g. `values.*` on a free annotation) does not exist in the project.
  */
 export function currentValue(p: Project, c: Change): JsonValue | undefined {
   const index = projectIndex(p);
@@ -325,7 +326,7 @@ export function currentValue(p: Project, c: Change): JsonValue | undefined {
       return whole ? markingValue(m) : markingField(p, m, c.field ?? '');
     }
     case 'arrow': {
-      // Só criação e remoção (entidade inteira): não há campo de seta.
+      // Only creation and removal (whole entity): there is no arrow field.
       const a = index.arrows.get(c.entityId);
       return a && whole ? arrowValue(a) : undefined;
     }
@@ -338,15 +339,15 @@ export function currentValue(p: Project, c: Change): JsonValue | undefined {
 }
 
 /**
- * Chave de uma entidade (`marking:3f2a…`) nos mapas das propostas. A seta usa a chave da
- * marcação: os ids dividem o espaço e a anotação cita a dona (marcação ou seta) pelo mesmo
- * `markingId`, então criar a seta e anotá-la, ou apagá-la, se ligam como numa marcação.
+ * Key of an entity (`marking:3f2a…`) in the proposals' maps. The arrow uses the marking's key:
+ * the ids share the space and the annotation cites its owner (marking or arrow) by the same
+ * `markingId`, so creating the arrow and annotating it, or deleting it, link up as on a marking.
  */
 export function entityKey(entity: ChangeEntity, entityId: string): string {
   return `${entity === 'arrow' ? 'marking' : entity}:${entityId}`;
 }
 
-/** Referência de uma mudança a outra entidade. `strong`: as invariantes exigem o alvo. */
+/** Reference from one change to another entity. `strong`: the invariants require the target. */
 export interface ValueRef {
   readonly key: string;
   readonly strong: boolean;
@@ -360,12 +361,12 @@ function field(value: JsonValue, key: string): JsonValue | undefined {
   return isRecord(value) ? value[key] : undefined;
 }
 
-/** Referências fracas (campos `ref`) dentro dos valores de uma anotação tipada. */
+/** Weak references (`ref` fields) inside the values of a typed annotation. */
 function valueRefs(values: JsonValue | undefined, out: ValueRef[]): void {
   if (!isRecord(values)) return;
   for (const value of Object.values(values)) {
     refOfValue(value, out);
-    // Coluna `ref` de `table` (decisão (e)): cada célula da linha pode ser uma referência.
+    // `ref` column of `table` (decision (e)): each cell of the row can be a reference.
     if (Array.isArray(value)) {
       for (const row of value as readonly JsonValue[]) {
         if (isRecord(row)) for (const cell of Object.values(row)) refOfValue(cell, out);
@@ -383,16 +384,16 @@ function push(out: ValueRef[], entity: ChangeEntity, id: string | null): void {
   if (id !== null) out.push({ key: entityKey(entity, id), strong: true });
 }
 
-/** Referências de uma entidade inteira (valor de criação ou remoção). */
+/** References of a whole entity (creation or removal value). */
 function entityRefs(entity: ChangeEntity, value: JsonValue): ValueRef[] {
   const out: ValueRef[] = [];
   if (entity === 'marking') {
     push(out, 'image', str(field(value, 'containerId')));
     push(out, 'marking', str(field(value, 'parentId')));
-    // A âncora (v20) é uma referência forte: `anchor-missing` se o alvo não existe.
+    // The anchor (v20) is a strong reference: `anchor-missing` if the target does not exist.
     push(out, 'marking', str(field(field(value, 'anchor') ?? null, 'to')));
   } else if (entity === 'arrow') {
-    // As duas pontas são marcações que precisam existir (invariante `arrow-endpoint-missing`).
+    // Both endpoints are markings that must exist (invariant `arrow-endpoint-missing`).
     push(out, 'marking', str(field(value, 'from')));
     push(out, 'marking', str(field(value, 'to')));
   } else if (entity === 'annotation') {
@@ -407,11 +408,11 @@ function entityRefs(entity: ChangeEntity, value: JsonValue): ValueRef[] {
   return out;
 }
 
-/** Referências do valor de um campo. */
+/** References of a field's value. */
 function fieldRefs(entity: ChangeEntity, name: string, value: JsonValue): ValueRef[] {
   const out: ValueRef[] = [];
   if (entity === 'marking') {
-    // `parentId` é derivado (não é campo): só o espaço cita um container.
+    // `parentId` is derived (not a field): only the space cites a container.
     if (name === 'containerId') push(out, 'image', str(value));
     if (name === 'space') push(out, 'image', str(field(value, 'containerId')));
     if (name === 'anchor') push(out, 'marking', str(field(value, 'to')));
@@ -430,14 +431,14 @@ function fieldRefs(entity: ChangeEntity, name: string, value: JsonValue): ValueR
   return out;
 }
 
-/** O que o estado proposto (`to`) da mudança cita. */
+/** What the change's proposed state (`to`) cites. */
 export function toSideRefs(c: Change): ValueRef[] {
   if (c.kind === 'remove') return [];
   if (c.kind === 'create' || c.field === null) return entityRefs(c.entity, c.to);
   return fieldRefs(c.entity, c.field, c.to);
 }
 
-/** O que o estado anterior (`from`) da mudança cita. */
+/** What the change's previous state (`from`) cites. */
 export function fromSideRefs(c: Change): ValueRef[] {
   if (c.kind === 'create') return [];
   if (c.kind === 'remove' || c.field === null) return entityRefs(c.entity, c.from);

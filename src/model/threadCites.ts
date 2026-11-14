@@ -1,14 +1,14 @@
 import type { CitationTarget } from './citations';
 import type { Thread } from './thread';
 
-// Ligações das conversas que a interface mostra (etapa Comentários, CM5): quais itens do canvas
-// uma conversa cita (o filtro "só as que citam a seleção", decisão 34) e a conversa que ligou
-// cada proposta (a linha "da conversa" da janela Propostas, decisão 36). Puro.
+// Thread links that the interface shows (Comments stage, CM5): which canvas items a thread
+// cites (the "only those that cite the selection" filter, decision 34) and the thread that
+// linked each proposal (the "from the thread" line of the Proposals window, decision 36). Pure.
 
 /**
- * Os ids que o filtro da seleção compara: o do item (marcação, container ou seta) ou o da
- * anotação que contém a parte citada (campo, par e linha). Camada, conversa e proposta não são
- * itens do canvas e ficam de fora. Mantém a ordem e não repete.
+ * The ids that the selection filter compares: the item's (marking, container or arrow) or that of
+ * the annotation holding the cited part (field, pair and row). Layer, thread and proposal are not
+ * canvas items and are left out. Keeps the order and does not repeat.
  */
 export function citedItemIds(targets: readonly CitationTarget[]): string[] {
   const ids = new Set<string>();
@@ -33,8 +33,8 @@ export function citedItemIds(targets: readonly CitationTarget[]): string[] {
 }
 
 /**
- * Para cada proposta ligada a alguma mensagem (`message.proposal`), a conversa que a ligou
- * primeiro: a da mensagem mais antiga.
+ * For each proposal linked to some message (`message.proposal`), the thread that linked it
+ * first: the one with the oldest message.
  */
 export function proposalThreads(threads: readonly Thread[]): ReadonlyMap<string, string> {
   const firstAt = new Map<string, string>();

@@ -165,14 +165,14 @@ describe('Diagnóstico: Componentes', () => {
     renderView(
       withInjected(harness, {
         warnings: [
-          { markingId: id, warnings: [rawMessage('conteúdo maior que a caixa')] },
+          { markingId: id, warnings: [rawMessage('content larger than the box')] },
         ],
         overflowing: [id],
       }),
     );
     const view = within(section() as HTMLElement);
     expect(view.getByText(t('diagnostics.overflowCount', { count: 1 }))).toBeTruthy();
-    expect(view.getByText(/conteúdo maior que a caixa/)).toBeTruthy();
+    expect(view.getByText(/content larger than the box/)).toBeTruthy();
 
     await userEvent.click(
       view.getByRole('button', {

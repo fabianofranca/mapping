@@ -15,36 +15,36 @@ import { findSpecType, getSpec, ownerTypeIds, typeOfAnnotation } from './specLoo
 import { checkSimpleValue, isEmptyValue, valueText } from './typed';
 import type { Annotation, AnnotationTypeRef, JsonValue, Project } from './types';
 
-// Como uma anotação tipada aparece no painel, na lista e no zoom semântico
-// (docs/ARCHITECTURE.md, "Especializações no projeto e anotações tipadas"). Funções puras: a interface passa os textos traduzidos.
+// How a typed annotation appears in the panel, in the list and in the semantic zoom
+// (docs/ARCHITECTURE.md, "Specializations in the project and typed annotations"). Pure functions: the interface passes the translated texts.
 
 export interface DisplayTexts extends LabelTexts {
-  /** Obrigatório vazio, ex.: `id: —`. */
+  /** Empty required field, e.g. `id: —`. */
   readonly empty: string;
-  /** Resumo de uma tabela no zoom semântico, ex.: "3 linhas". */
+  /** Summary of a table in the semantic zoom, e.g. "3 rows". */
   readonly rows: (count: number) => string;
 }
 
 export const DEFAULT_DISPLAY_TEXTS: DisplayTexts = {
   ...DEFAULT_LABEL_TEXTS,
   empty: '—',
-  rows: (count) => (count === 1 ? '1 linha' : `${count} linhas`),
+  rows: (count) => (count === 1 ? '1 row' : `${count} rows`),
 };
 
-/** Rótulo de um campo ou coluna: `label`, senão `key`. */
+/** Label of a field or column: `label`, otherwise `key`. */
 export function fieldLabel(field: Pick<SpecField, 'key' | 'label'>): string {
   return field.label ?? field.key;
 }
 
-/** Nome do tipo da anotação tipada (o `typeId` se o tipo não existe mais); `null` na livre. */
+/** Name of the typed annotation's type (the `typeId` if the type no longer exists); `null` on a free one. */
 export function typeName(p: Project, a: Annotation): string | null {
   if (!a.type) return null;
   return typeOfAnnotation(p, a)?.type.name ?? a.type.typeId;
 }
 
 /**
- * Título da anotação tipada: nome do tipo + rótulo da instância, ex.:
- * "Button · Comprar", "Classe · Contato"; sem rótulo, só "Button". Na livre, o `name`.
+ * Title of the typed annotation: type name + instance label, e.g.:
+ * "Button · Buy", "Class · Contact"; without a label, just "Button". On a free one, the `name`.
  */
 export function annotationTitle(p: Project, a: Annotation): string | null {
   const type = typeName(p, a);
@@ -54,9 +54,9 @@ export function annotationTitle(p: Project, a: Annotation): string | null {
 }
 
 /**
- * Rótulo curto de quem faz uma referência (backlinks e listas de origem), ex.:
- * "Input input_nome": nome do tipo + rótulo da instância; sem rótulo, o primeiro
- * campo de texto preenchido (em geral o `id`). Na livre, o `name` ou `texts.untitled`.
+ * Short label of whoever makes a reference (backlinks and source lists), e.g.:
+ * "Input input_name": type name + instance label; without a label, the first
+ * filled-in text field (usually the `id`). On a free one, the `name` or `texts.untitled`.
  */
 export function annotationShortLabel(
   p: Project,
@@ -86,7 +86,7 @@ export interface DisplayValueLine {
   readonly key: string;
   readonly label: string;
   readonly text: string;
-  /** Na cor de alerta: obrigatório vazio, valor inválido ou referência quebrada. */
+  /** In the alert color: empty required field, invalid value or broken reference. */
   readonly alert: boolean;
 }
 
@@ -102,7 +102,7 @@ export interface DisplayTableLine {
 export type DisplayLine = DisplayValueLine | DisplayTableLine;
 
 export interface DisplayOptions {
-  /** `summary` (zoom semântico): `atributos: 3 linhas`; `full` (painel e lista): a tabela. */
+  /** `summary` (semantic zoom): `attributes: 3 rows`; `full` (panel and list): the table. */
   readonly tables: 'summary' | 'full';
   readonly texts?: DisplayTexts;
 }
@@ -111,7 +111,7 @@ function simpleAlert(field: SpecSimpleColumn, value: JsonValue): boolean {
   return checkSimpleValue(field, value) !== null;
 }
 
-/** Texto de uma célula: `→ User.name` na coluna `ref` (quebrada: `→ (referência quebrada)`). */
+/** Text of a cell: `→ User.name` in the `ref` column (broken: `→ (broken reference)`). */
 function cellDisplay(
   p: Project,
   column: SpecColumn,
@@ -125,13 +125,13 @@ function cellDisplay(
   return `→ ${ref && resolveRef(p, ref) ? refLabel(p, ref, texts) : texts.broken}`;
 }
 
-/** Alerta de uma célula `ref` preenchida: formato inválido ou alvo que não existe mais. */
+/** Alert of a filled-in `ref` cell: invalid format or a target that no longer exists. */
 function refCellAlert(p: Project, value: JsonValue): boolean {
   const ref = parseRefValue(value);
   return !ref || !resolveRef(p, ref);
 }
 
-/** `true` se alguma linha tem coluna obrigatória vazia ou valor inválido. */
+/** `true` if some row has an empty required column or an invalid value. */
 function tableAlert(
   p: Project,
   columns: readonly SpecColumn[],
@@ -149,10 +149,10 @@ function tableAlert(
 }
 
 /**
- * Valores da anotação tipada na ordem dos campos, com o `label`: opcionais
- * vazios omitidos; obrigatórios vazios como `id: —` (alerta); `ref` como
- * `dado: → User.name` (quebrada: `→ (referência quebrada)`, alerta). Vazio na
- * anotação livre ou de tipo inexistente.
+ * Values of the typed annotation in the order of the fields, with the `label`: empty
+ * optional ones omitted; empty required ones as `id: —` (alert); `ref` as
+ * `data: → User.name` (broken: `→ (broken reference)`, alert). Empty on a
+ * free annotation or one of a nonexistent type.
  */
 export function typedDisplayLines(
   p: Project,
@@ -226,32 +226,32 @@ export function typedDisplayLines(
   return lines;
 }
 
-/** Nome do arquivo: o último segmento do caminho. */
+/** File name: the last segment of the path. */
 function fileNameOf(path: string): string {
   return path.slice(path.lastIndexOf('/') + 1);
 }
 
-/** "Definição" de um tipo numa plataforma: o arquivo que define o símbolo do `code`. */
+/** "Definition" of a type on a platform: the file that defines the `code` symbol. */
 export interface CodeDefinition {
-  /** Especialização dona do tipo: o `repo` dela dá o link do arquivo (`codeLink`). */
+  /** Specialization that owns the type: its `repo` gives the file link (`codeLink`). */
   readonly specId: string;
-  /** Id da plataforma. */
+  /** Platform id. */
   readonly platform: string;
-  /** Nome da plataforma declarado pela especialização (o id se ninguém a declara). */
+  /** Platform name declared by the specialization (the id if nobody declares it). */
   readonly platformName: string;
-  /** `code.<plataforma>.path`, relativo à raiz do repositório. */
+  /** `code.<platform>.path`, relative to the repository root. */
   readonly path: string;
-  /** Último segmento do caminho (o nome do arquivo). */
+  /** Last segment of the path (the file name). */
   readonly fileName: string;
-  /** `code.<plataforma>.symbol`. */
+  /** `code.<platform>.symbol`. */
   readonly symbol: string;
 }
 
 /**
- * "Definição" de um tipo: uma entrada por plataforma cujo `code` tem `path` (o arquivo que
- * define o símbolo), na ordem do `code`. `specId` é a especialização dona do tipo. Com
- * `values` (os da anotação), o `path` e o `symbol` são os do caso de `variants` que eles
- * escolhem (`resolveCode`); sem `values`, valem o `default` do campo ou a base.
+ * "Definition" of a type: one entry per platform whose `code` has `path` (the file that
+ * defines the symbol), in `code` order. `specId` is the specialization that owns the type. With
+ * `values` (the annotation's), the `path` and `symbol` are those of the `variants` case that they
+ * choose (`resolveCode`); without `values`, the field's `default` or the base apply.
  */
 export function typeCodeDefinitions(
   p: Project,
@@ -276,7 +276,7 @@ export function typeCodeDefinitions(
   });
 }
 
-/** Valores crus de uma anotação de tipo inexistente (somente leitura). */
+/** Raw values of an annotation of a nonexistent type (read-only). */
 export function rawValueLines(a: Annotation): { key: string; text: string }[] {
   if (!a.values) return [];
   return Object.entries(a.values)
@@ -289,8 +289,8 @@ export function rawValueLines(a: Annotation): { key: string; text: string }[] {
 }
 
 /**
- * Tipos da mesma especialização que aceitam `child` em `allowedChildren` (por id ou por
- * cláusula; para explicar o que criar antes de um tipo com `requiresOwner`, ex.: Button ou Image).
+ * Types of the same specialization that accept `child` in `allowedChildren` (by id or by
+ * clause; to explain what to create before a type with `requiresOwner`, e.g. Button or Image).
  */
 export function ownerTypesOf(p: Project, child: AnnotationTypeRef): SpecAnnotationType[] {
   const spec = getSpec(p, child.specId);

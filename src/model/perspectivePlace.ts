@@ -20,30 +20,30 @@ import {
 import { projectIndex } from './projectIndex';
 import type { Arrival, Arrow, Marking, Perspective, Project, Rect } from './types';
 
-// Busca de lugar de uma raiz numa vista e chegada à Principal (v16, decisão 8). Uma "vista" é um
-// projeto: a Principal (o próprio projeto) ou o projeto à vista de uma perspectiva
-// (`perspectiveView`). As posições são do canvas.
+// Spot search for a root in a view and arrival in Main (v16, decision 8). A "view" is a project:
+// Main (the project itself) or the project as seen through a perspective (`perspectiveView`).
+// The positions are canvas ones.
 
-/** Onde a raiz fica na vista de destino e por quê. */
+/** Where the root ends up in the target view and why. */
 export interface RootPlacement {
   readonly x: number;
   readonly y: number;
   /**
-   * `near`: na mesma distância que tinha da referência; `occupied`: o lugar estava ocupado, foi
-   * ao livre mais próximo; `arrival-area`: sem referência, foi à área de chegada.
+   * `near`: at the same distance it had from the reference; `occupied`: the spot was taken, it
+   * went to the nearest free one; `arrival-area`: with no reference, it went to the arrival area.
    */
   readonly kind: 'near' | 'occupied' | 'arrival-area';
-  /** Raiz de referência (a outra ponta da seta), ou `null` na área de chegada. */
+  /** Reference root (the other end of the arrow), or `null` in the arrival area. */
   readonly referenceId: string | null;
 }
 
-/** A raiz de referência de uma busca e a marcação dela em que a seta termina. */
+/** The reference root of a search and its marking where the arrow ends. */
 interface Reference {
   readonly rootId: string;
   readonly endId: string;
 }
 
-/** Ids da raiz e de tudo o que é dela na vista (containers e marcações). */
+/** Ids of the root and of everything that belongs to it in the view (containers and markings). */
 function memberIds(view: Project, rootId: string): string[] {
   const group = projectIndex(view).rootMembers.get(rootId);
   if (!group) return [];
@@ -51,8 +51,9 @@ function memberIds(view: Project, rootId: string): string[] {
 }
 
 /**
- * Obstáculos de uma busca de lugar: as pegadas dos containers, das flutuantes e das marcações do
- * canvas não flutuantes (nunca se cai dentro de uma delas), menos os membros da própria raiz.
+ * Obstacles of a spot search: the footprints of the containers, of the floating markings and of
+ * the non-floating canvas markings (a root never lands inside one of them), minus the root's own
+ * members.
  */
 function obstaclesOf(view: Project, exclude: ReadonlySet<string>): Rect[] {
   const obstacles: Rect[] = [];
@@ -65,7 +66,7 @@ function obstaclesOf(view: Project, exclude: ReadonlySet<string>): Rect[] {
   return obstacles;
 }
 
-/** A outra ponta de `arrow` quando ela liga a raiz `rootId` a outra raiz; senão `null`. */
+/** The other end of `arrow` when it links root `rootId` to another root; otherwise `null`. */
 function otherEnd(
   arrow: Arrow,
   roots: ReadonlyMap<string, string>,
@@ -83,8 +84,8 @@ function otherEnd(
 }
 
 /**
- * A primeira seta da origem (na ordem do array) que liga a raiz a outra raiz presente também no
- * destino: a outra raiz e a marcação dela em que a seta termina.
+ * The first arrow of the source (in array order) that links the root to another root also present
+ * in the target: the other root and its marking where the arrow ends.
  */
 function findReference(
   target: Project,
@@ -101,10 +102,11 @@ function findReference(
 }
 
 /**
- * A raiz `rootId` da Principal `p` tem referência: uma seta liga um membro dela a um membro de
- * outra raiz (a mesma regra da busca de lugar; seta entre membros da própria raiz não conta).
- * Lê as setas de agora, sem gravar nada: é como a interface deduz, até depois de recarregar, se a
- * raiz com marca de chegada foi para perto de uma referência ou para a área de chegada.
+ * The root `rootId` of Main `p` has a reference: an arrow links one of its members to a member of
+ * another root (the same rule as the spot search; an arrow between members of the root itself
+ * does not count). It reads the current arrows, writing nothing: it is how the interface deduces,
+ * even after a reload, whether the root with an arrival mark went next to a reference or to the
+ * arrival area.
  */
 export function arrivalHasReference(p: Project, rootId: string): boolean {
   return findReference(p, p, rootId) !== null;
@@ -118,12 +120,12 @@ interface Seek {
   readonly obstacles: readonly Rect[];
   readonly width: number;
   readonly height: number;
-  /** Marcação: posição inteira (`ceil`/`round`). */
+  /** Marking: whole position (`ceil`/`round`). */
   readonly whole: boolean;
   readonly floating: boolean;
 }
 
-/** O ponto da outra ponta da seta, no destino, para ancorar uma flutuante. */
+/** The point of the arrow's other end, in the target, to anchor a floating marking. */
 function anchorOf(target: Project, endId: string): { anchor: Rect; start: Rect } {
   const index = projectIndex(target);
   const end = index.markings.get(endId) as Marking;
@@ -156,7 +158,7 @@ function placeNear(
   return { x: clean(free.x), y: clean(free.y), kind: 'occupied', referenceId };
 }
 
-/** Pegadas das raízes do destino que passam por `keep`. */
+/** Footprints of the target's roots that pass `keep`. */
 function rootRects(target: Project, keep: (id: string) => boolean): Rect[] {
   const rects: Rect[] = [];
   for (const id of projectIndex(target).roots) {
@@ -167,9 +169,9 @@ function rootRects(target: Project, keep: (id: string) => boolean): Rect[] {
 }
 
 /**
- * A coluna da área de chegada: à direita do conteúdo (as raízes com marca não contam) a partir do
- * topo dele. Na Principal (`from` informado), agrupada pela origem: a mesma origem empilha
- * embaixo da mais baixa das suas, outra origem abre uma coluna nova à direita de todas as raízes.
+ * The arrival area column: to the right of the content (the roots with a mark do not count),
+ * starting from its top. In Main (`from` given), grouped by origin: the same origin stacks
+ * below the lowest of its own, another origin opens a new column to the right of all the roots.
  */
 function arrivalColumn(
   target: Project,
@@ -219,15 +221,15 @@ function placeInArrivalArea(
 }
 
 /**
- * Onde a raiz `rootId` (que está na vista `source`) fica na vista `target`, onde ela ainda não
- * está (ou está longe: seus membros não contam como obstáculo).
+ * Where the root `rootId` (which is in view `source`) ends up in view `target`, where it is not
+ * yet (or is far away: its members do not count as an obstacle).
  *
- * Com referência (a primeira seta, na ordem do array, que liga a raiz a outra raiz presente nas
- * duas vistas), vai para a mesma distância que tinha dela: `near`; se aí sobrepõe algo, vai para
- * o lugar livre mais próximo (`occupied`; a flutuante, para a margem da ponta da seta). Sem
- * referência vai para a área de chegada: uma coluna à direita de tudo, a partir do topo
- * (`arrival-area`); com `options.arrivalsFrom` (a Principal), agrupada por origem. Nunca cai
- * dentro de uma marcação do canvas. Posição de marcação é inteira.
+ * With a reference (the first arrow, in array order, that links the root to another root present
+ * in both views), it goes to the same distance it had from it: `near`; if that overlaps
+ * something, it goes to the nearest free spot (`occupied`; a floating marking, to the margin of
+ * the arrow's end). With no reference it goes to the arrival area: a column to the right of
+ * everything, from the top (`arrival-area`); with `options.arrivalsFrom` (Main), grouped by
+ * origin. It never lands inside a canvas marking. A marking position is whole.
  */
 export function placeRootIn(
   target: Project,
@@ -243,7 +245,7 @@ export function placeRootIn(
   return placeNear(target, seek, desired, ref);
 }
 
-/** Tamanho, tipo e obstáculos da busca de lugar da raiz. */
+/** Size, kind and obstacles of the root's spot search. */
 function seekFor(target: Project, source: Project, rootId: string): Seek {
   const size = rootFootprint(source, rootId) ?? rootFootprint(target, rootId);
   if (!size) fail('not-found', rootId);
@@ -261,8 +263,8 @@ function seekFor(target: Project, source: Project, rootId: string): Seek {
 }
 
 /**
- * Onde a raiz fica no destino para manter a distância que tem da raiz de referência na origem;
- * `null` se alguma das posições não existe. Posição de marcação é inteira.
+ * Where the root ends up in the target to keep the distance it has from the reference root in
+ * the source; `null` if any of the positions does not exist. A marking position is whole.
  */
 function desiredNear(
   target: Project,
@@ -281,10 +283,10 @@ function desiredNear(
 }
 
 /**
- * Onde a raiz recém-criada `rootId` (que está em `p` em alguma posição) fica na perspectiva
- * `perspective`: a posição que tem em `p`, ou, se aí sobrepõe algo do que a perspectiva mostra, o
- * lugar livre mais próximo dela. Containers e marcações do canvas de uma vista não se sobrepõem.
- * A posição sai sem ruído de ponto flutuante; a de marcação é inteira.
+ * Where the newly created root `rootId` (which is in `p` at some position) ends up in the
+ * perspective `perspective`: the position it has in `p`, or, if that overlaps something the
+ * perspective shows, the nearest free spot to it. Containers and canvas markings of a view do not
+ * overlap. The position comes out without floating-point noise; a marking's is whole.
  */
 export function placeCreatedRoot(
   p: Project,
@@ -307,7 +309,7 @@ export function placeCreatedRoot(
   return { x: clean(free.x), y: clean(free.y) };
 }
 
-/** Move só a raiz para `at` (container: `placement`; marcação: `rect`). */
+/** Moves only the root to `at` (container: `placement`; marking: `rect`). */
 function moveRootTo(p: Project, rootId: string, at: CanvasPosition): Project {
   if (projectIndex(p).containers.has(rootId)) {
     return {
@@ -326,11 +328,12 @@ function moveRootTo(p: Project, rootId: string, at: CanvasPosition): Project {
 }
 
 /**
- * Uma raiz criada fora da Principal chega a ela (decisão 8). A raiz já existe em `p` (a store a
- * criou) e está em `from.items`. Calcula o lugar com `placeRootIn(p, perspectiveView(p, from))`,
- * move a raiz (só ela), assenta e SÓ DEPOIS acrescenta a marca `Veio de…` (substitui a anterior
- * da mesma raiz): o assentar tira a marca de quem mudou de lugar. `kind` e `referenceId` são para
- * a interface avisar onde a raiz foi parar; não são gravados.
+ * A root created outside Main arrives in it (decision 8). The root already exists in `p` (the
+ * store created it) and is in `from.items`. It computes the spot with
+ * `placeRootIn(p, perspectiveView(p, from))`, moves the root (only it), settles and ONLY THEN adds
+ * the `Came from…` mark (replacing the previous one of the same root): the settle removes the
+ * mark from whoever changed place. `kind` and `referenceId` are for the interface to tell where
+ * the root ended up; they are not stored.
  */
 export function arriveInPrincipal(
   p: Project,
@@ -355,13 +358,13 @@ export function arriveInPrincipal(
   };
 }
 
-/** Dispensa a marca `Veio de…` da raiz. Sem marca devolve `p`. */
+/** Dismisses the root's `Came from…` mark. With no mark it returns `p`. */
 export function dismissArrival(p: Project, rootId: string): Project {
   if (!p.arrivals.some((a) => a.root === rootId)) return p;
   return { ...p, arrivals: p.arrivals.filter((a) => a.root !== rootId) };
 }
 
-/** A caixa que envolve as raízes com marca de chegada (a faixa do canvas); `null` sem marcas. */
+/** The box that wraps the roots with an arrival mark (the canvas band); `null` with no marks. */
 export function arrivalArea(p: Project): Rect | null {
   const rects: Rect[] = [];
   for (const a of p.arrivals) {

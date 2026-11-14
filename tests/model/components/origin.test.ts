@@ -88,39 +88,36 @@ describe('parseOrigins', () => {
 
   it('aponta cada problema com o caminho', () => {
     const cases: [unknown, string][] = [
-      ['x', 'origins: esperava uma lista'],
-      [[3], 'origins[0]: esperava um objeto'],
+      ['x', 'origins: expected a list'],
+      [[3], 'origins[0]: expected an object'],
       [[{ ...ORIGIN, system: '' }], 'origins[0].system'],
-      [[{ ...ORIGIN, extra: 1 }], 'origins[0].extra: chave desconhecida'],
+      [[{ ...ORIGIN, extra: 1 }], 'origins[0].extra: unknown key'],
       [
         [{ ...ORIGIN, node: { type: 'type', props: 'props' } }],
         'origins[0].node.children',
       ],
-      [
-        [{ ...ORIGIN, node: { ...NODE, key: 'k' } }],
-        'origins[0].node.key: chave desconhecida',
-      ],
-      [[{ system: 'a', node: NODE }], 'origins[0].screen: obrigatório'],
+      [[{ ...ORIGIN, node: { ...NODE, key: 'k' } }], 'origins[0].node.key: unknown key'],
+      [[{ system: 'a', node: NODE }], 'origins[0].screen: required'],
       [
         [{ ...ORIGIN, screen: { ...SCREEN, width: undefined } }],
-        'origins[0].screen.width: obrigatório',
+        'origins[0].screen.width: required',
       ],
       [[{ ...ORIGIN, screen: { ...SCREEN, roots: [] } }], 'origins[0].screen.roots'],
       [
         [{ ...ORIGIN, screen: { ...SCREEN, roots: [{ path: 'a[*]x' }] } }],
-        'origins[0].screen.roots[0].path: caminho inválido',
+        'origins[0].screen.roots[0].path: invalid path',
       ],
       [
         [{ ...ORIGIN, screen: { ...SCREEN, width: { path: 'a[*]' } } }],
-        'origins[0].screen.width.path: "[*]" só vale em roots[].path',
+        'origins[0].screen.width.path: "[*]" is only valid in roots[].path',
       ],
       [
         [{ ...ORIGIN, screen: { ...SCREEN, roots: [{ path: 'a', anchor: 'meio' }] } }],
-        'origins[0].screen.roots[0].anchor: âncora inválida: meio',
+        'origins[0].screen.roots[0].anchor: invalid anchor: meio',
       ],
       [
         [{ ...ORIGIN, screen: { ...SCREEN, roots: [{ path: 'a', margin: 8 }] } }],
-        'origins[0].screen.roots[0].margin: margin só vale com anchor',
+        'origins[0].screen.roots[0].margin: margin is only valid with anchor',
       ],
       [
         [{ ...ORIGIN, screen: { ...SCREEN, roots: [{ path: 'a', scrim: '' }] } }],
@@ -128,7 +125,7 @@ describe('parseOrigins', () => {
       ],
       [
         [{ ...ORIGIN, screen: { ...SCREEN, roots: [{ path: 'a', color: 1 }] } }],
-        'origins[0].screen.roots[0].color: chave desconhecida',
+        'origins[0].screen.roots[0].color: unknown key',
       ],
       [
         [
@@ -137,10 +134,10 @@ describe('parseOrigins', () => {
             screen: { ...SCREEN, background: { path: 'b', values: { a: 1 } } },
           },
         ],
-        'origins[0].screen.background.values.a: esperava texto',
+        'origins[0].screen.background.values.a: expected text',
       ],
       [[{ ...ORIGIN, booleans: { true: 'sim' } }], 'origins[0].booleans.false'],
-      [[ORIGIN, ORIGIN], 'origins[1].system: origem repetida: sdui'],
+      [[ORIGIN, ORIGIN], 'origins[1].system: repeated origin: sdui'],
     ];
     for (const [raw, expected] of cases) {
       const problems = parseOrigins(raw).problems.map(originProblemText);
@@ -383,8 +380,8 @@ describe('translateSource', () => {
     props.bar = { a: 1 };
     const { warnings } = translate(doc);
     expect(warnings).toEqual([
-      'content.children[0].props.foo: propriedade desconhecida em Button',
-      'content.children[0].props.bar: propriedade desconhecida em Button',
+      'content.children[0].props.foo: unknown property in Button',
+      'content.children[0].props.bar: unknown property in Button',
     ]);
   });
 
@@ -401,7 +398,7 @@ describe('translateSource', () => {
     };
     const { layout, warnings } = translate(doc);
     expect(warnings).toEqual([
-      'content.children[0].type: tipo externo sem tipo de anotação: Foo',
+      'content.children[0].type: external type without an annotation type: Foo',
     ]);
     const box = layout!.roots[0]!.node;
     expect(box.children.map((c) => c.id)).toEqual(['content.children[1]']);
@@ -417,9 +414,9 @@ describe('translateSource', () => {
     };
     const { layout, warnings } = translate(doc);
     expect(warnings).toEqual([
-      'content.props.text: esperava valor simples',
-      'content.props.kind: valor fora das opções de style: Danger',
-      'content.props.step: valor fora das opções de step: 7',
+      'content.props.text: expected a simple value',
+      'content.props.kind: value outside the options of style: Danger',
+      'content.props.step: value outside the options of step: 7',
     ]);
     const values = layout!.roots[0]!.node.values;
     expect(values.label).toBeNull();
@@ -453,15 +450,15 @@ describe('translateSource', () => {
     expect(layout!.roots[3]).toMatchObject({ anchor: 'top-start' });
   });
 
-  it('âncora inválida avisa e usa top-start', () => {
+  it('invalid anchor avisa e usa top-start', () => {
     const doc = {
       screen: { w: 10, h: 20 },
       floating: [{ type: 'Button', anchor: 'meio', margin: 'muito' }],
     };
     const { layout, warnings } = translate(doc);
     expect(warnings).toEqual([
-      'floating[0].anchor: âncora inválida: meio; usando top-start',
-      'floating[0].margin: esperava número maior ou igual a 0',
+      'floating[0].anchor: invalid anchor: meio; using top-start',
+      'floating[0].margin: expected a number greater than or equal to 0',
     ]);
     expect(layout!.roots[0]).toMatchObject({ anchor: 'top-start' });
   });
@@ -474,10 +471,10 @@ describe('translateSource', () => {
   it('sem largura ou altura numéricas é erro, sem tela', () => {
     const noWidth = translate({ screen: { h: 20 }, content: { type: 'Box' } });
     expect(noWidth.layout).toBeUndefined();
-    expect(noWidth.error).toMatch(/largura da tela.*screen\.w/);
+    expect(noWidth.error).toMatch(/screen width missing or invalid.*screen\.w/);
     const badHeight = translate({ screen: { w: 10, h: 'alto' } });
-    expect(badHeight.error).toMatch(/altura da tela.*screen\.h/);
-    expect(translate({ screen: { w: 0, h: 5 } }).error).toMatch(/largura/);
+    expect(badHeight.error).toMatch(/screen height missing or invalid.*screen\.h/);
+    expect(translate({ screen: { w: 0, h: 5 } }).error).toMatch(/screen width/);
   });
 
   it('documento que não é objeto não lança', () => {
@@ -489,7 +486,7 @@ describe('translateSource', () => {
 
   it('biblioteca sem origens ou com sistema desconhecido: error', () => {
     const none = translate(DOC, miniSpec({ origins: undefined }));
-    expect(none.error).toMatch(/não declara origens/);
+    expect(none.error).toMatch(/declares no origins/);
     expect(none.layout).toBeUndefined();
     const other = translate(DOC, miniSpec(), 'figma');
     expect(other.error).toMatch(/figma/);
@@ -517,7 +514,7 @@ describe('translateSource', () => {
       { measure: approximateMeasurer },
     );
     expect(bad.screen).toBeUndefined();
-    expect(bad.error).toMatch(/largura/);
+    expect(bad.error).toMatch(/screen width/);
     expect(bad.warnings).toEqual([]);
   });
 });
@@ -553,10 +550,10 @@ describe('parseFieldSources: path', () => {
     ]);
     expect(sources).toEqual([{ system: 'sdui', path: 'ok' }]);
     expect(problems).toEqual([
-      'f.sources[0].path: caminho inválido "a..b" (segmento vazio)',
-      'f.sources[1].path: "[*]" só vale em roots[].path',
-      'f.sources[2].path: esperava um caminho (texto não vazio)',
-      'f.sources[3]: precisa de name ou path',
+      'f.sources[0].path: invalid path "a..b" (empty segment)',
+      'f.sources[1].path: "[*]" is only valid in roots[].path',
+      'f.sources[2].path: expected a path (non-empty text)',
+      'f.sources[3]: needs name or path',
     ]);
   });
 });
@@ -617,12 +614,12 @@ describe('translateSource: o caminho do campo vem de path, nunca de name', () =>
       specWithField({ system: 'sdui', name: 'text' }),
     );
     expect(library.problems).toEqual([
-      'btn.fields[0].sources[0].path: obrigatório em sistema declarado em origins',
+      'btn.fields[0].sources[0].path: required in a system declared in origins',
     ]);
     expect(label).toBeNull();
     // `text` não é lido como campo: vira propriedade desconhecida.
     expect(result.warnings).toContain(
-      'content.children[0].props.text: propriedade desconhecida em Button',
+      'content.children[0].props.text: unknown property in Button',
     );
   });
 });

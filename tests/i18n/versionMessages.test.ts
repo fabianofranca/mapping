@@ -8,6 +8,7 @@ import { validateLibrary } from '../../src/model/library';
 import { locale } from '../../src/store/settings';
 import { messageText } from '../../src/ui/modelMessage';
 import { issueText } from '../../src/ui/LibraryIssueList';
+import { ptBRText } from '../support/modelText';
 
 // MB3 (#1358): the specialization warnings (`specWarnings`) and the breaks without migration
 // (`specVersions`) have a code and come out in the app's language. In pt-BR the text equals the `message`; in
@@ -102,10 +103,10 @@ interface Said {
   readonly messageParams?: Record<string, string | number> | undefined;
 }
 
-const shown = (item: Said): string =>
-  messageText(
-    modelMessage(item.messageCode ?? 'raw', item.messageParams ?? {}, item.message),
-  );
+const asModelMessage = (item: Said) =>
+  modelMessage(item.messageCode ?? 'raw', item.messageParams ?? {}, item.message);
+
+const shown = (item: Said): string => messageText(asModelMessage(item));
 
 const warnings = () => warningSpecs().flatMap((s) => specWarnings(s.spec, s.ignored));
 
@@ -218,15 +219,29 @@ describe('specialization version messages (MB3)', () => {
   it('the phrases by agreement are different codes (field ≠ column)', () => {
     const byPath = (code: string) => changes().filter((c) => c.messageCode === code);
     expect(byPath('versions.fieldRemoved')[0]?.message).toBe(
-      'o campo "rm" do tipo "t" foi removido; declare um passo "remove-field" ou "rename-field" em migrations',
+      'the field "rm" of the type "t" was removed; declare a "remove-field" or "rename-field" step in migrations',
     );
     expect(byPath('versions.columnRemoved')[0]?.message).toBe(
-      'a coluna "c" do campo "tb" do tipo "t" foi removida; declare um passo "remove-field" ou "rename-field" em migrations com field "tb.c"',
+      'the column "c" of the field "tb" of the type "t" was removed; declare a "remove-field" or "rename-field" step in migrations with field "tb.c"',
     );
     expect(byPath('versions.columnNewRequired')[0]?.message).toBe(
-      'a coluna "nr" do campo "tb" do tipo "t" é nova e já obrigatória; declare um passo "fill-field" em migrations com field "tb.nr"',
+      'the column "nr" of the field "tb" of the type "t" is new and already required; declare a "fill-field" step in migrations with field "tb.nr"',
     );
     expect(byPath('versions.fieldBecameRequired')[0]?.message).toBe(
+      'the field "req" of the type "t" became required; declare a "fill-field" step in migrations',
+    );
+    // The Portuguese keeps the gender agreement (the reason for one code per variant).
+    locale.value = 'pt-BR';
+    expect(shown(byPath('versions.fieldRemoved')[0] as never)).toBe(
+      'o campo "rm" do tipo "t" foi removido; declare um passo "remove-field" ou "rename-field" em migrations',
+    );
+    expect(shown(byPath('versions.columnRemoved')[0] as never)).toBe(
+      'a coluna "c" do campo "tb" do tipo "t" foi removida; declare um passo "remove-field" ou "rename-field" em migrations com field "tb.c"',
+    );
+    expect(shown(byPath('versions.columnNewRequired')[0] as never)).toBe(
+      'a coluna "nr" do campo "tb" do tipo "t" é nova e já obrigatória; declare um passo "fill-field" em migrations com field "tb.nr"',
+    );
+    expect(shown(byPath('versions.fieldBecameRequired')[0] as never)).toBe(
       'o campo "req" do tipo "t" passou a ser obrigatório; declare um passo "fill-field" em migrations',
     );
   });
@@ -240,9 +255,11 @@ describe('specialization version messages (MB3)', () => {
     }
   });
 
-  it('pt-BR: the text shown equals the `message`', () => {
-    locale.value = 'pt-BR';
+  it('pt-BR: the text shown is the pt-BR template filled in; en-US shows the `message`', () => {
     for (const item of [...warnings(), ...changes()]) {
+      locale.value = 'pt-BR';
+      expect(shown(item), item.message).toBe(ptBRText(asModelMessage(item)));
+      locale.value = 'en-US';
       expect(shown(item), item.message).toBe(item.message);
     }
   });
@@ -251,7 +268,6 @@ describe('specialization version messages (MB3)', () => {
     locale.value = 'en-US';
     for (const item of [...warnings(), ...changes()]) {
       const text = shown(item);
-      expect(text, item.message).not.toBe(item.message);
       expect(withoutParams(text, item.messageParams ?? {}), item.message).not.toMatch(
         PORTUGUESE,
       );

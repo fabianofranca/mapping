@@ -43,20 +43,20 @@ import type {
   TypedValues,
 } from './types';
 
-// Aplicação de uma proposta (etapa 4): o projeto atual mais as mudanças aceitas viram o
-// projeto novo, sem as operações do modelo: a revisão é a decisão (a trava não impede, e
-// continua ligada), e o resultado passa pelas invariantes de `validateProject`. As
-// mudanças chegam validadas por `parseProposal` (ou montadas por `buildProposal`).
+// Applying a proposal (stage 4): the current project plus the accepted changes become the
+// new project, without the model operations: the review is the decision (the lock does not
+// prevent it, and stays on), and the result goes through the invariants of `validateProject`.
+// The changes arrive validated by `parseProposal` (or assembled by `buildProposal`).
 
 export type PatchProblemCode = 'entity-missing' | 'entity-exists' | 'field-mismatch';
 
 /**
- * Mudança que não pôde ser aplicada: alteração de entidade que não existe mais
- * (`entity-missing`), criação de um id que já existe (`entity-exists`) ou campo que não
- * cabe na entidade atual (`field-mismatch`, ex: `values.*` numa anotação que virou livre,
- * ou `values.<key>` com valor novo numa chave que não é campo do tipo, como o campo de
- * código removido na etapa 9 numa proposta antiga). Limpar (`to: null`) uma chave fora do
- * tipo não é conflito: a chave sai de `values`.
+ * A change that could not be applied: a change to an entity that no longer exists
+ * (`entity-missing`), creation of an id that already exists (`entity-exists`) or a field that
+ * does not fit the current entity (`field-mismatch`, e.g. `values.*` on an annotation that became
+ * free, or `values.<key>` with a new value on a key that is not a field of the type, like the
+ * code field removed in stage 9 in an old proposal). Clearing (`to: null`) a key outside the
+ * type is not a conflict: the key leaves `values`.
  */
 export interface PatchProblem {
   readonly code: PatchProblemCode;
@@ -64,8 +64,8 @@ export interface PatchProblem {
 }
 
 /**
- * A entidade `project` (formatVersion 6): o modo do desenho (`null` = sem modo fixado) e, na
- * formatVersion 8, a direção de leitura (ausente ou `null` = sem direção fixada).
+ * The `project` entity (formatVersion 6): the drawing mode (`null` = no mode pinned) and, in
+ * formatVersion 8, the reading direction (absent or `null` = no direction pinned).
  */
 interface ProjectModeEntity {
   readonly drawingMode: string | null;
@@ -83,7 +83,7 @@ type Entity =
   | Arrow
   | Annotation;
 
-/** Ordem de aplicação: criações e alterações de cima para baixo, remoções de baixo para cima. */
+/** Order of application: creations and changes from top to bottom, removals from bottom to top. */
 const UPSERT_PHASE: Record<ChangeEntity, number> = {
   specialization: 0,
   platformRepo: 1,
@@ -108,8 +108,9 @@ const REMOVE_PHASE: Record<ChangeEntity, number> = {
 };
 
 /**
- * A seta de uma criação: o que a proposta traz, com os padrões do formato e `points` sempre
- * vazio (a rota é só da pessoa e nunca vem de proposta; um `points` no valor é descartado).
+ * The arrow of a creation: what the proposal carries, with the format's defaults and `points`
+ * always empty (the route belongs to the person only and never comes from a proposal; a `points`
+ * in the value is discarded).
  */
 function decodeArrow(value: JsonValue): Arrow {
   const v = isRecord(value) ? value : {};
@@ -130,7 +131,7 @@ function decodeArrow(value: JsonValue): Arrow {
 
 function decode(entity: ChangeEntity, value: JsonValue): Entity {
   if (entity === 'arrow') return decodeArrow(value);
-  // Proposta escrita antes da v14: a anotação sem `parentRole` vale como sem papel.
+  // Proposal written before v14: an annotation without `parentRole` counts as having no role.
   if (entity === 'annotation' && isRecord(value) && !('parentRole' in value)) {
     return { ...value, parentRole: null } as unknown as Entity;
   }
@@ -146,9 +147,9 @@ function decode(entity: ChangeEntity, value: JsonValue): Entity {
 }
 
 /**
- * `false` se a chave não é campo do tipo da anotação, na especialização como está no
- * projeto sendo montado. Tipo que não dá para resolver (especialização ausente ou sem
- * cópia) não decide: vale `true`, e o valor vira pendência como qualquer outro.
+ * `false` if the key is not a field of the annotation's type, in the specialization as it is in
+ * the project being assembled. A type that cannot be resolved (specialization missing or without
+ * a copy) does not decide: `true`, and the value becomes pending like any other.
  */
 function typeHasField(
   specializations: ReadonlyMap<string, Entity>,
@@ -163,9 +164,9 @@ function typeHasField(
 }
 
 /**
- * Troca de arquivo na mesma proposta: `needsReview` não vira mudança, então a marcação cuja
- * `rect` não é a reescala pura (cresceu até o mínimo) ou cuja proporção mudou o recebe aqui,
- * como `replaceContainer` faz pela app.
+ * File swap in the same proposal: `needsReview` does not become a change, so the marking whose
+ * `rect` is not the pure rescale (it grew up to the minimum) or whose aspect changed gets it here,
+ * as `replaceContainer` does in the app.
  */
 function flagResized(
   p: Project,
@@ -186,7 +187,7 @@ function sameRect(a: Rect, b: Rect): boolean {
   return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 }
 
-/** A entidade com o campo da mudança aplicado; `null` se o campo não cabe nela. */
+/** The entity with the change's field applied; `null` if the field does not fit it. */
 function withField(
   entity: ChangeEntity,
   current: Entity,
@@ -198,7 +199,7 @@ function withField(
   switch (entity) {
     case 'image': {
       const i = current as ProjectContainer;
-      // Container sem arquivo não troca de arquivo; cor e tamanho só existem nela.
+      // A container without a file does not swap files; color and size only exist on it.
       const noFile = i.file === null;
       if (noFile && field === 'file') return null;
       if (!noFile && (field === 'background' || field === 'size')) return null;
@@ -214,7 +215,7 @@ function withField(
         };
       }
       if (field === 'density') {
-        // `null` volta a 1: a chave sai (o arquivo só guarda a densidade declarada).
+        // `null` goes back to 1: the key leaves (the file only keeps the declared density).
         if (to === null || to === 1) return withoutDensity(i);
         return { ...i, density: to as number };
       }
@@ -227,7 +228,7 @@ function withField(
     case 'marking': {
       const m = current as Marking;
       if (field === 'rect') return { ...m, rect: to as unknown as Rect };
-      // Troca de espaço: o container (ou o canvas) e o `rect` nele, juntos.
+      // Space swap: the container (or the canvas) and the `rect` in it, together.
       if (field === 'space' && isRecord(to)) {
         return {
           ...m,
@@ -245,7 +246,7 @@ function withField(
       return { ...l, [field]: to };
     }
     case 'arrow':
-      // A seta só se cria e se remove (nenhum campo dela é proposto): não cabe.
+      // The arrow is only created and removed (none of its fields is proposed): it does not fit.
       return null;
     case 'annotation': {
       const a = current as Annotation;
@@ -261,9 +262,9 @@ function withField(
         if (a.values === null) return null;
         const key = field.slice(VALUES_FIELD_PREFIX.length);
         if (!typeHasField(specializations, a.type, key)) {
-          // Limpar (`to: null`) uma chave que o tipo já não tem só tira o valor órfão (ex: o
-          // campo saiu numa migração `remove-field`/`rename-field` da mesma proposta): a chave
-          // sai de `values`. Com valor novo, a chave fora do tipo não cabe.
+          // Clearing (`to: null`) a key the type no longer has only drops the orphan value (e.g.
+          // the field left in a `remove-field`/`rename-field` migration of the same proposal): the
+          // key leaves `values`. With a new value, a key outside the type does not fit.
           if (to !== null) return null;
           const rest = Object.fromEntries(
             Object.entries(a.values).filter(([k]) => k !== key),
@@ -301,16 +302,16 @@ function withField(
 }
 
 /**
- * Aplica os `position` de marcação por grupo de irmãs (mesmo espaço e mesmo pai, já
- * assentados), todos juntos (etapa #549, decisão 4): tira do grupo as reposicionadas e as põe de
- * volta em ordem crescente de `to`, cada uma no índice `to` entre as irmãs, preso ao intervalo
- * válido. As irmãs ocupam as mesmas casas do array (como `reorderMarking`). Uma mudança sozinha
- * dá o mesmo que `reorderMarking`; duas para a mesma marcação, a última vale.
+ * Applies the marking `position`s by group of siblings (same space and same parent, already
+ * settled), all together (stage #549, decision 4): takes the repositioned ones out of the group and
+ * puts them back in ascending order of `to`, each at index `to` among the siblings, clamped to the
+ * valid range. The siblings take the same slots of the array (like `reorderMarking`). A single
+ * change gives the same as `reorderMarking`; two for the same marking, the last one wins.
  */
 function placeAmongSiblings(markings: Marking[], changes: readonly Change[]): void {
   const byGroup = new Map<string, Change[]>();
   const byId = new Map(markings.map((m) => [m.id, m]));
-  // As irmãs de cada grupo e as casas que elas ocupam, numa passada só.
+  // The siblings of each group and the slots they occupy, in a single pass.
   const slotsOf = new Map<string, number[]>();
   markings.forEach((m, slot) => {
     const key = siblingKey(m);
@@ -339,8 +340,8 @@ function placeGroup(
   byId: ReadonlyMap<string, Marking>,
   slots: readonly number[],
 ): void {
-  // Duas mudanças para a mesma marcação: vale a última, como na aplicação uma a uma; sem isso
-  // ela entraria duas vezes e outra irmã sairia do array.
+  // Two changes for the same marking: the last one wins, as when applying one by one; without it
+  // it would enter twice and another sibling would drop out of the array.
   const latest = new Map(group.map((c) => [c.entityId, c]));
   const siblings = slots.map((slot) => markings[slot] as Marking);
   const order = siblings.filter((m) => !latest.has(m.id));
@@ -362,9 +363,9 @@ const hasDirection = (v: unknown): boolean =>
   typeof v === 'object' && v !== null && 'direction' in v;
 
 /**
- * A mudança do projeto de uma proposta anterior à direção (sem `direction` no `from` nem no
- * `to`) não fala dela: a direção atual fica. Com `direction` no `from`, a ausência no `to` é a
- * remoção (`projectValue` não grava o campo sem direção).
+ * The project change of a proposal that predates direction (no `direction` in `from` or in
+ * `to`) does not mention it: the current direction stays. With `direction` in `from`, its absence
+ * in `to` is the removal (`projectValue` does not write the field without a direction).
  */
 function keepProjectDirection(c: Change, current: Entity, next: Entity): Entity {
   if (hasDirection(c.from) || hasDirection(c.to)) return next;
@@ -377,14 +378,15 @@ export interface PatchResult {
 }
 
 /**
- * Aplica `changes` ao projeto, sem validar o resultado: criações entram no fim das
- * listas (a marcação, antes da âncora `insertBefore`, se ela tiver uma e estiver na lista), remoções de entidade ausente não fazem nada, as camadas reposicionadas vão
- * para o índice proposto (em ordem crescente), e as marcações reposicionadas de um mesmo grupo de
- * irmãs, todas juntas (`placeAmongSiblings`). O que não pôde ser aplicado volta em
- * `problems` e fica de fora. Mexer em marcação ou container assenta o pertencimento
- * (`settleHierarchy`) antes das posições: o pai sempre sai da geometria, nunca da proposta, e
- * as irmãs são as do espaço e do pai já assentados. A seta criada entra com `points: []`, e a
- * seta que já existia perde os pontos de passagem se uma ponta troca de espaço.
+ * Applies `changes` to the project, without validating the result: creations go to the end of
+ * the lists (a marking before the `insertBefore` anchor, if it has one and it is in the list),
+ * removals of an absent entity do nothing, the repositioned layers go to the proposed index (in
+ * ascending order), and the repositioned markings of the same group of siblings, all together
+ * (`placeAmongSiblings`). What could not be applied comes back in `problems` and stays out.
+ * Touching a marking or container settles ownership (`settleHierarchy`) before the positions: the
+ * parent always comes from the geometry, never from the proposal, and the siblings are those of
+ * the space and parent already settled. The created arrow enters with `points: []`, and the
+ * arrow that already existed loses its waypoints if an end changes space.
  */
 export function patchProject(p: Project, changes: readonly Change[]): PatchResult {
   const maps: Record<ChangeEntity, Map<string, Entity>> = {
@@ -443,7 +445,8 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
   const layers = [...maps.layer.values()] as Layer[];
   for (const c of [...positions].sort((a, b) => (a.to as number) - (b.to as number))) {
     const from = layers.findIndex((l) => l.id === c.entityId);
-    // A camada que a mesma proposta remove não se reposiciona (`splice(-1, 1)` tiraria outra).
+    // A layer that the same proposal removes is not repositioned (`splice(-1, 1)` would
+    // drop another).
     if (from < 0) continue;
     const [layer] = layers.splice(from, 1);
     if (layer) layers.splice(Math.min(c.to as number, layers.length), 0, layer);
@@ -456,7 +459,7 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
   let containers = [...maps.image.values()] as ProjectContainer[];
   let arrows = [...maps.arrow.values()] as Arrow[];
   if (changes.some((c) => c.entity === 'marking' || c.entity === 'image')) {
-    // As perspectivas se reconciliam uma vez só, no fim, com o projeto final (abaixo).
+    // The perspectives are reconciled only once, at the end, with the final project (below).
     const settled = settleHierarchy({
       ...p,
       perspectives: [],
@@ -468,8 +471,8 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
     markings = [...settled.markings];
     containers = [...settled.containers];
     arrows = [...settled.arrows];
-    // Uma ponta que trocou de espaço (por `space` da proposta ou pelo assentar) leva a seta
-    // de volta à rota padrão: os `points` ficam no espaço das duas pontas.
+    // An end that changed space (by the proposal's `space` or by the settle) takes the arrow
+    // back to the default route: the `points` stay in the space of both ends.
     const before = projectIndex(p).markings;
     const moved = new Set<string>();
     for (const m of markings) {
@@ -500,42 +503,42 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
 }
 
 // ---------------------------------------------------------------------------
-// Validação do conjunto aceito
+// Validation of the accepted set
 
 export type ProposalIssueCode =
   | InvariantCode
   | PatchProblemCode
-  /** Camada ou anotação tipada de uma especialização que não ficaria aplicada. */
+  /** Layer or typed annotation of a specialization that would not stay applied. */
   | 'missing-specialization'
-  /** A proposta não está aberta nem substituída: nada mais pode ser aplicado. */
+  /** The proposal is neither open nor superseded: nothing else can be applied. */
   | 'proposal-closed';
 
 /**
- * Problema que bloqueia "Aplicar aceitas". `changeIds`: as mudanças aceitas envolvidas
- * (rejeitar uma delas resolve); `related`: as mudanças sem decisão nas mesmas entidades
- * (aceitar uma delas pode resolver, ex: a posição do pai que falta).
+ * A problem that blocks "Apply accepted". `changeIds`: the accepted changes involved
+ * (rejecting one of them resolves it); `related`: the changes without a decision on the same
+ * entities (accepting one of them may resolve it, e.g. the missing parent's position).
  */
 export interface ProposalIssue {
   readonly code: ProposalIssueCode;
-  /** Entidade com problema (na de invariante, o `id` do `InvariantIssue`). */
+  /** Entity with the problem (in an invariant's, the `id` of the `InvariantIssue`). */
   readonly id: string;
   readonly otherId?: string;
   readonly changeIds: readonly string[];
   readonly related: readonly string[];
 }
 
-/** Mudanças que "Aplicar aceitas" efetiva: aceitas e ainda não aplicadas. */
+/** Changes that "Apply accepted" carries out: accepted and not yet applied. */
 export function acceptedPending(p: Proposal): Change[] {
   return p.changes.filter(isAcceptedPending(p));
 }
 
-/** O filtro das aceitas ainda não aplicadas (usado também por `acceptedPendingIds`). */
+/** The filter of the accepted changes not yet applied (also used by `acceptedPendingIds`). */
 export function isAcceptedPending(p: Proposal): (c: Change) => boolean {
   return (c) =>
     p.decisions[c.id]?.state === 'accepted' && !Object.hasOwn(p.applied, c.id);
 }
 
-/** Camadas e anotações tipadas que citam uma especialização que não está no projeto. */
+/** Layers and typed annotations that cite a specialization that is not in the project. */
 function specializationIssues(p: Project): { id: string; otherId: string }[] {
   const applied = new Set(p.specializations.map((s) => s.id));
   const out: { id: string; otherId: string }[] = [];
@@ -552,19 +555,19 @@ function specializationIssues(p: Project): { id: string; otherId: string }[] {
 
 export interface AcceptedValidation {
   readonly ok: boolean;
-  /** As mudanças que seriam aplicadas. */
+  /** The changes that would be applied. */
   readonly changeIds: readonly string[];
   readonly issues: readonly ProposalIssue[];
-  /** O projeto com elas aplicadas (mesmo inválido, para a revisão mostrar). */
+  /** The project with them applied (even if invalid, for the review to show). */
   readonly project: Project;
 }
 
 interface Outcome {
   readonly project: Project;
   readonly problems: readonly PatchProblem[];
-  /** Problemas de invariante do resultado que o projeto atual ainda não tinha. */
+  /** Invariant problems of the result that the current project did not have yet. */
   readonly fresh: ReturnType<typeof validateProject>;
-  /** Especializações citadas e ausentes no resultado que o projeto atual ainda não tinha. */
+  /** Specializations cited and missing in the result that the current project did not have yet. */
   readonly freshSpecs: ReturnType<typeof specializationIssues>;
 }
 
@@ -575,10 +578,11 @@ let lastOutcome: {
 } | null = null;
 
 /**
- * Aplica as pendentes e valida o resultado contra o projeto atual. Cada decisão da revisão
- * revalida, mas o projeto atual e as mudanças aceitas quase sempre são os mesmos (aceitar
- * ou rejeitar outra mudança, desfazer uma nota): a última conta fica guardada por identidade do
- * projeto e das mudanças (o projeto é imutável), e `validateProject` não roda de novo.
+ * Applies the pending ones and validates the result against the current project. Each review
+ * decision revalidates, but the current project and the accepted changes are almost always the
+ * same (accepting or rejecting another change, undoing a note): the last computation is kept by
+ * identity of the project and of the changes (the project is immutable), and `validateProject`
+ * does not run again.
  */
 function validateOutcome(project: Project, pending: readonly Change[]): Outcome {
   const last = lastOutcome;
@@ -590,7 +594,7 @@ function validateOutcome(project: Project, pending: readonly Change[]): Outcome 
   ) {
     return last.outcome;
   }
-  // Nada a aplicar: o mesmo projeto (o store não cria entrada de desfazer).
+  // Nothing to apply: the same project (the store does not create an undo entry).
   const { project: result, problems } =
     pending.length === 0 ? { project, problems: [] } : patchProject(project, pending);
   const key = (code: string, id: string, otherId?: string) =>
@@ -687,18 +691,18 @@ export function validateAccepted(project: Project, p: Proposal): AcceptedValidat
 }
 
 // ---------------------------------------------------------------------------
-// Aplicar aceitas
+// Apply accepted
 
-/** Arquivo de imagem a mover de `proposals/<id>/…` para o lugar definitivo. */
+/** Image file to move from `proposals/<id>/…` to its final place. */
 export interface ProposalFileMove {
   readonly from: string;
   readonly to: string;
 }
 
 /**
- * Pacote de biblioteca de uma especialização aplicada agora: a pasta de `specs/` que a
- * mudança traz (`dir`), onde os arquivos esperam na proposta (`from`, copiados e não
- * movidos) e a especialização (`to.spec`, a fonte da verdade do arquivo dela).
+ * Library package of a specialization applied now: the `specs/` folder that the change
+ * brings (`dir`), where the files wait in the proposal (`from`, copied and not
+ * moved) and the specialization (`to.spec`, the source of truth of its file).
  */
 export interface ProposalPackage {
   readonly specId: string;
@@ -708,7 +712,7 @@ export interface ProposalPackage {
   /** `proposals/<id>/specs/<pasta>`. */
   readonly from: string;
   readonly spec: Spec | null;
-  /** Caminho do arquivo da especialização (`to.file`). */
+  /** Path of the specialization's file (`to.file`). */
   readonly file: string;
 }
 
@@ -716,23 +720,23 @@ export type ApplyAcceptedResult =
   | {
       readonly ok: true;
       readonly project: Project;
-      /** A proposta com `applied` (e o `status`, se tudo foi decidido) atualizados. */
+      /** The proposal with `applied` (and the `status`, if everything was decided) updated. */
       readonly proposal: Proposal;
-      /** As mudanças efetivadas, na ordem da proposta. */
+      /** The changes carried out, in the proposal's order. */
       readonly applied: readonly Change[];
-      /** Imagens novas ou trocadas a mover para `images/`. */
+      /** New or swapped images to move to `images/`. */
       readonly files: readonly ProposalFileMove[];
-      /** Pacotes de biblioteca das especializações criadas ou atualizadas, a copiar para `specs/`. */
+      /** Library packages of the specializations created or updated, to copy to `specs/`. */
       readonly packages: readonly ProposalPackage[];
     }
   | { readonly ok: false; readonly issues: readonly ProposalIssue[] };
 
 /**
- * "Aplicar aceitas": efetiva só as aceitas ainda não aplicadas (uma entrada de desfazer
- * para quem chama). O que está sem decisão continua pendente; uma nova aplicação depois
- * efetiva o que for aceito em seguida. Quando nada fica sem decisão nem aceito sem
- * aplicar, a proposta aberta passa a `applied`. Bloqueado (`ok: false`) se o conjunto
- * aceito deixaria o projeto inválido.
+ * "Apply accepted": carries out only the accepted changes not yet applied (one undo entry
+ * for the caller). What has no decision stays pending; a new application later
+ * carries out what is accepted in the meantime. When nothing is left without a decision or
+ * accepted without being applied, the open proposal becomes `applied`. Blocked (`ok: false`) if
+ * the accepted set would leave the project invalid.
  */
 export function applyAccepted(
   project: Project,
@@ -790,8 +794,8 @@ export function applyAccepted(
 }
 
 /**
- * O projeto "como ficaria" (visão Proposto): o atual mais as mudanças não rejeitadas e
- * ainda não aplicadas, sem validar. O que não cabe fica de fora (`problems`).
+ * The "as it would be" project (the Proposed view): the current one plus the changes not
+ * rejected and not yet applied, without validating. What does not fit stays out (`problems`).
  */
 export function previewProject(project: Project, p: Proposal): PatchResult {
   return patchProject(

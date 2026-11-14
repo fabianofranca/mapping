@@ -247,16 +247,16 @@ describe('arrangeMarking: hug', () => {
     const { project, warnings } = arrange(p, 'C');
     expect(rectOf(project, 'C')).toEqual(box(100, 100, 300, 100));
     expect(warnings.map((w) => w.text)).toContain(
-      'Linha: conteúdo maior que o container',
+      'Linha: content is larger than the container',
     );
     // A terceira passaria de 400: é empurrada para dentro do container, com aviso.
     expect(rectOf(project, 'T3')).toEqual(box(300, 100, 100, 40));
-    expect(warnings.map((w) => w.text)).toContain('T3: não cabe em Linha');
+    expect(warnings.map((w) => w.text)).toContain('T3: does not fit in Linha');
     expect(warnings).toContainEqual(
       modelMessage(
         'arrange.outside',
         { label: 'T3', where: 'Linha' },
-        'T3: não cabe em Linha',
+        'T3: does not fit in Linha',
       ),
     );
     expectValid(project);
@@ -272,8 +272,8 @@ describe('arrangeMarking: hug', () => {
     expect(rectOf(project, 'C')).toEqual(box(900, 100, 100, 40));
     expect(rectOf(project, 'T1')).toEqual(box(900, 100, 100, 40));
     expect(rectOf(project, 'T2')).toEqual(box(900, 100, 100, 40));
-    expect(warnings.map((w) => w.text)).toContain('Linha: não cabe em I1');
-    expect(warnings.map((w) => w.text)).toContain('T2: não cabe em Linha');
+    expect(warnings.map((w) => w.text)).toContain('Linha: does not fit in I1');
+    expect(warnings.map((w) => w.text)).toContain('T2: does not fit in Linha');
     expectValid(project);
   });
 
@@ -288,7 +288,7 @@ describe('arrangeMarking: hug', () => {
     expect(marking(p, 'T2').parentId).toBe('C');
     const { project, warnings } = arrange(p, 'C');
     expect(rectOf(project, 'C')).toEqual(box(100, 100, 150, 40));
-    expect(warnings.map((w) => w.text)).toContain('Linha: não cabe em Pai');
+    expect(warnings.map((w) => w.text)).toContain('Linha: does not fit in Pai');
     expectValid(project);
   });
 });
@@ -312,7 +312,7 @@ describe('arrangeMarking: no canvas e assentar', () => {
     const { project, warnings } = arrange(p, 'C');
     // 2 × 100 + gap 8, a partir de x = 3000; a mesma largura que o teste dentro da imagem pediria.
     expect(rectOf(project, 'C')).toEqual(box(3000, 100, 208, 40));
-    expect(warnings.some((w) => w.text.includes('não cabe'))).toBe(false);
+    expect(warnings.some((w) => w.text.includes('larger than'))).toBe(false);
     expectValid(project);
   });
 
@@ -1054,11 +1054,11 @@ describe('arrangeMarking: wrap no slot (MC4, decisão 12)', () => {
     expect(rectOf(project, 'T5').y).toBe(152);
   });
 
-  it('as linhas que não cabem na altura do container avisam "conteúdo maior que o container"', () => {
+  it('as linhas que não cabem na altura do container avisam "content is larger than the container"', () => {
     const cat = wrapCatalog({ lineGap: 300 });
     const { warnings } = arrange(crowd(cat), 'C', cat);
     expect(warnings.map((w) => w.text)).toContain(
-      'Tipo row: conteúdo maior que o container',
+      'Tipo row: content is larger than the container',
     );
   });
 });

@@ -74,7 +74,7 @@ describe('renderScene: nó icon', () => {
       { x: 0, y: 0, width: 48, height: 48 },
       { measure: approximateMeasurer, icons },
     );
-    expect(warnings).toEqual(['ícone desconhecido: nuvem']);
+    expect(warnings).toEqual(['unknown icon: nuvem']);
     const rendered = renderScene({ root, warnings });
     expect(pathsOf(rendered.root)).toEqual([]);
     const boxes = rendered.root.find('Rect') as Konva.Rect[];

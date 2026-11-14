@@ -54,7 +54,7 @@ describe('validateLibrary: conjunto de ícones', () => {
   it('arquivo de ícones ausente é erro de arquivo na especialização', () => {
     const report = validateLibrary({ files: pack({ 'icons/set.json': null }) });
     expect(brief(report.errors)).toEqual([
-      `error ${SPEC} icons: arquivo não encontrado: icons/set.json`,
+      `error ${SPEC} icons: file not found: icons/set.json`,
     ]);
   });
 
@@ -62,7 +62,7 @@ describe('validateLibrary: conjunto de ícones', () => {
     const bad = read('icons/set.json').replace('"check"', '"Check"');
     const report = validateLibrary({ files: pack({ 'icons/set.json': bad }) });
     expect(brief(report.errors)).toContain(
-      'error icons/set.json icons.Check: nome inválido; use [a-z0-9][a-z0-9-_]*',
+      'error icons/set.json icons.Check: invalid name; use [a-z0-9][a-z0-9-_]*',
     );
   });
 
@@ -77,7 +77,7 @@ describe('validateLibrary: conjunto de ícones', () => {
       files: pack({ 'components/badge.json': badComponent }),
     });
     expect(brief(report.errors)).toEqual([
-      'error components/badge.json template.children[0].name: o ícone "nuvem" não existe no conjunto de ícones (icons/set.json)',
+      'error components/badge.json template.children[0].name: the icon "nuvem" does not exist in the icon set (icons/set.json)',
     ]);
   });
 
@@ -97,7 +97,7 @@ describe('validateLibrary: conjunto de ícones', () => {
       files: pack({ [SPEC]: noIcons, 'components/badge.json': literal }),
     });
     expect(brief(report.errors)).toContain(
-      'error components/badge.json template.children[0].name: o ícone "check" não pode ser conferido: a especialização não declara icons',
+      'error components/badge.json template.children[0].name: the icon "check" cannot be checked: the specialization does not declare icons',
     );
   });
 
@@ -106,7 +106,7 @@ describe('validateLibrary: conjunto de ícones', () => {
     const report = validateLibrary({ files: pack({ [SPEC]: spec }) });
     expect(report.ok).toBe(true);
     expect(brief(report.warnings)).toContain(
-      `warning ${SPEC} layers[0].annotationTypes[0].fields[0].options[1]: a opção "nuvem" do campo "icon" não está no conjunto de ícones; o desenho cai no reservado`,
+      `warning ${SPEC} layers[0].annotationTypes[0].fields[0].options[1]: the option "nuvem" of the field "icon" is not in the icon set; the drawing falls back to the placeholder`,
     );
   });
 
@@ -116,10 +116,10 @@ describe('validateLibrary: conjunto de ícones', () => {
     expect(report.warnings).toEqual([]);
   });
 
-  it('a prova de desenho avisa o ícone desconhecido do preview', () => {
+  it('a prova de desenho avisa o unknown icon do preview', () => {
     const comp = edit('components/badge.json', ['preview', 'icon'], 'nuvem');
     const report = validateLibrary({ files: pack({ 'components/badge.json': comp }) });
-    expect(brief(report.warnings).join('\n')).toContain('ícone desconhecido: nuvem');
+    expect(brief(report.warnings).join('\n')).toContain('unknown icon: nuvem');
   });
 });
 
@@ -158,7 +158,7 @@ describe('catálogo e biblioteca carregam o conjunto de ícones', () => {
     const loaded = loadSpecComponents(spec, SPEC, 1, (p) =>
       p === 'icons/set.json' ? undefined : readText(p),
     );
-    expect(loaded.problems).toEqual(['icons: arquivo ausente (icons/set.json)']);
+    expect(loaded.problems).toEqual(['icons: missing file (icons/set.json)']);
   });
 
   it('loadLibrary (laboratório) lê icons e leva o conjunto aos componentes', () => {

@@ -1210,7 +1210,7 @@ describe('projeto com propostas ilegíveis', () => {
     const listed = ok(await mcp.call<Listed>('list_proposals', { project: 'loja' }));
     expect(listed.total).toBeGreaterThan(3);
     expect(listed.broken?.map((b) => b.id)).toEqual(['quebrada', 'vazia']);
-    expect(listed.broken![0]!.error).toContain('JSON inválido');
+    expect(listed.broken![0]!.error).toContain('invalid JSON');
     expect(listed.broken![1]!.error).toBe('sem proposal.json');
   });
 });

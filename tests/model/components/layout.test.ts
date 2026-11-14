@@ -285,7 +285,7 @@ describe('layoutScreen: column', () => {
     // filler-min em hug: o vazio vira o minSize (30)
     expect(boxOf(result, 'f')).toMatchObject({ y: 12, height: 30 });
     expect(boxOf(result, 'c').height).toBe(42);
-    expect(result.warnings).toEqual(['f: fill dentro de hug: usando hug']);
+    expect(result.warnings).toEqual(['f: fill inside hug: using hug']);
   });
 
   it('o fill no eixo cruzado ocupa a largura do conteúdo; hug com stretch também', () => {
@@ -521,7 +521,9 @@ describe('layoutScreen: scrim', () => {
   it('tipo de película desconhecido: aviso e a raiz continua', () => {
     const result = run([root(node('modal', 'fixed'), { scrimTypeId: 'nao-existe' })]);
     expect(ids(result)).toEqual(['modal']);
-    expect(result.warnings).toEqual(['modal#scrim: tipo sem componente: nao-existe']);
+    expect(result.warnings).toEqual([
+      'modal#scrim: type without a component: nao-existe',
+    ]);
   });
 });
 
@@ -569,8 +571,8 @@ describe('layoutScreen: limites e avisos', () => {
     ]);
     expect(ids(result)).toEqual(['c', 'ok']);
     expect(result.warnings).toEqual([
-      'x: tipo sem componente: nao-existe',
-      'y: tipo sem componente: outro-que-nao-existe',
+      'x: type without a component: nao-existe',
+      'y: type without a component: outro-que-nao-existe',
     ]);
   });
 
@@ -578,12 +580,12 @@ describe('layoutScreen: limites e avisos', () => {
     const result = run([root(node('p', 'plain', {}, [node('k', 'fixed')]))]);
     expect(ids(result)).toEqual(['p']);
     expect(boxOf(result, 'p')).toEqual({ x: 0, y: 0, width: 80, height: 30 });
-    expect(result.warnings).toEqual(['p: filhos ignorados (componente sem slot)']);
+    expect(result.warnings).toEqual(['p: children ignored (component without a slot)']);
   });
 
   it('conteúdo maior que a altura da tela avisa, sem recortar', () => {
     const result = run([root(node('a', 'tall')), root(node('b', 'tall'))], 300, 600);
-    expect(result.warnings).toEqual(['tela: conteúdo maior que a altura da tela']);
+    expect(result.warnings).toEqual(['screen: content taller than the screen height']);
     expect(boxOf(result, 'b')).toMatchObject({ y: 500, height: 500 });
     expect(run([root(node('a', 'tall'))], 300, 600).warnings).toEqual([]);
   });
@@ -593,7 +595,7 @@ describe('layoutScreen: limites e avisos', () => {
       root(node('c', 'col', {}, [node('f', 'filler-min')])),
       root(node('c2', 'col', {}, [node('f', 'filler-min')])),
     ]);
-    expect(result.warnings).toEqual(['f: fill dentro de hug: usando hug']);
+    expect(result.warnings).toEqual(['f: fill inside hug: using hug']);
   });
 });
 
@@ -875,8 +877,8 @@ describe('layoutScreen: sizing por expressão', () => {
     const result = stack(['nope', -4], ['outro', 'banana']);
     expect(boxOf(result, 'b0').height).toBe(80);
     expect(boxOf(result, 'b1').height).toBe(80);
-    expect(result.warnings).toContain('valor inválido em sizing.height: -4');
-    expect(result.warnings).toContain('valor inválido em sizing.height: banana');
+    expect(result.warnings).toContain('invalid value in sizing.height: -4');
+    expect(result.warnings).toContain('invalid value in sizing.height: banana');
   });
 });
 
@@ -991,7 +993,7 @@ describe('layoutScreen: wrap', () => {
   it('maxLines 1: os filhos além da primeira linha somem e o motor avisa', () => {
     const result = flowRun('flow-max1', 5);
     expect(ids(result)).toEqual(['c', 'k0', 'k1', 'k2']);
-    expect(result.warnings).toContain('2 filhos fora de maxLines: c');
+    expect(result.warnings).toContain('2 children outside maxLines: c');
     expect(result.messages.map((m) => m.code)).toContain(
       'engine.childrenOutsideMaxLines',
     );

@@ -1,6 +1,6 @@
 /**
- * Erro de regra de negócio lançado pelas operações puras.
- * O `code` é estável e serve de chave para a mensagem traduzida na UI.
+ * Business-rule error thrown by the pure operations.
+ * The `code` is stable and serves as the key for the message translated in the UI.
  */
 export type ModelErrorCode =
   | 'not-found'
@@ -22,29 +22,29 @@ export type ModelErrorCode =
   | 'rect-out-of-image'
   | 'rect-outside-parent'
   | 'invalid-parent'
-  // Espaço da marcação (etapa Marcações espaciais): a flutuante vive só no canvas
+  // Marking space (Spatial markings stage): the floating one lives only on the canvas
   | 'invalid-space'
   | 'invalid-annotation-parent'
-  // Setas (v13, ME4): ligam marcações, nunca outra seta nem container
+  // Arrows (v13, ME4): they link markings, never another arrow or container
   | 'arrow-endpoint'
   | 'arrow-self'
   | 'invalid-arrow-route'
   | 'empty-key'
   | 'duplicate-key'
   | 'duplicate-id'
-  // Trava (etapa 2.5)
+  // Lock (stage 2.5)
   | 'locked'
-  // Especializações (docs/SPEC-FORMAT.md)
+  // Specializations (docs/SPEC-FORMAT.md)
   | 'spec-layer'
   | 'typed-layer'
   | 'typed-annotation'
   | 'not-typed'
   | 'unknown-type'
   | 'type-not-in-layer'
-  // O tipo não se aplica à dona (appliesTo: marcação ou seta, ME4)
+  // The type does not apply to the owner (appliesTo: marking or arrow, ME4)
   | 'type-not-applicable'
   | 'owner-required'
-  // Papel no vínculo (v14)
+  // Role in the link (v14)
   | 'unknown-role'
   | 'role-without-owner'
   | 'unknown-field'
@@ -55,42 +55,42 @@ export type ModelErrorCode =
   | 'spec-already-applied'
   | 'spec-not-newer'
   | 'spec-missing-migrations'
-  // Repositórios por plataforma (etapa 3b)
+  // Repositories per platform (stage 3b)
   | 'unknown-platform'
   | 'invalid-local-path'
   | 'unknown-doc-repo'
-  // Propostas de alteração (etapa 4)
+  // Change proposals (stage 4)
   | 'invalid-source'
-  // Componentes (etapa Biblioteca)
+  // Components (Library stage)
   | 'not-arrangeable'
   | 'not-fittable'
-  // Âncora da marcação (v20): `setMarkingAnchor` e `snapToAnchor`
+  // Marking anchor (v20): `setMarkingAnchor` and `snapToAnchor`
   | 'anchor-missing'
   | 'anchor-self'
   | 'anchor-cycle'
   | 'anchor-other-space'
   | 'not-anchored'
-  // Perspectivas (v16): o nome é vazio ou repetido; o id não é de uma raiz
+  // Perspectives (v16): the name is empty or repeated; the id is not a root's
   | 'perspective-name-empty'
   | 'perspective-name-taken'
   | 'not-root';
 
 /**
- * Fatos estruturados que alguns erros carregam (objeto simples e serializável). O modelo guarda
- * fatos (tamanho recebido, mínimo, id de outro container); quem apresenta o erro (UI, MCP) escolhe
- * o texto e troca ids por referências.
+ * Structured facts that some errors carry (a plain, serializable object). The model keeps
+ * facts (received size, minimum, id of another container); whoever presents the error (UI, MCP)
+ * chooses the text and swaps ids for references.
  */
 export type ModelErrorData = Readonly<Record<string, unknown>>;
 
-/** `data` de `rect-too-small`: o tamanho recebido, o mínimo que valeu e de onde ele veio. */
+/** `data` of `rect-too-small`: the received size, the minimum that applied and where it came from. */
 export type RectTooSmallData = {
   readonly received: { readonly width: number; readonly height: number };
   readonly min: { readonly width: number; readonly height: number };
-  /** `marking`: o mínimo de qualquer marcação; `component`: o `minSize` do componente. */
+  /** `marking`: the minimum of any marking; `component`: the component's `minSize`. */
   readonly source: 'marking' | 'component';
 };
 
-/** `data` de `image-overlap`: o container com que há sobreposição (o outro, não o que se move). */
+/** `data` of `image-overlap`: the container it overlaps with (the other one, not the one being moved). */
 export type ImageOverlapData = {
   readonly containerId: string;
 };

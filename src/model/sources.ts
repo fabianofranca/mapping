@@ -3,13 +3,13 @@ import { updateById } from './project';
 import type { Spec, SpecAnnotationType, SpecLayer, SpecTypeSource } from './spec';
 import type { ExternalSource, Marking, Project, ProjectContainer } from './types';
 
-// Identidade externa (etapa 4): `source` em imagens e marcações (schema v8) e `sources`
-// nos tipos e campos das especializações (formatVersion 3). O núcleo não interpreta
-// `system` nem os nomes: só valida a estrutura e devolve os dados a quem pedir.
+// External identity (stage 4): `source` on containers and markings (schema v8) and `sources`
+// on the types and fields of specializations (formatVersion 3). The core does not interpret
+// `system` or the names: it only validates the structure and hands the data back to whoever asks.
 
 /**
- * Normaliza e valida uma origem: `system` e `id` sem espaços nas pontas e não vazios;
- * `url` vazia vira `null`. Lança `invalid-source` se faltar `system` ou `id`.
+ * Normalizes and validates a source: `system` and `id` trimmed and non-empty;
+ * an empty `url` becomes `null`. Throws `invalid-source` if `system` or `id` is missing.
  */
 export function normalizeSource(source: ExternalSource | null): ExternalSource | null {
   if (source === null) return null;
@@ -20,7 +20,7 @@ export function normalizeSource(source: ExternalSource | null): ExternalSource |
   return { system, id, url: url === '' ? null : url };
 }
 
-/** Define (ou limpa, com `null`) a origem da imagem. Não é geometria: a trava não impede. */
+/** Sets (or clears, with `null`) the container's source. Not geometry: the lock does not block it. */
 export function setImageSource(
   p: Project,
   containerId: string,
@@ -36,7 +36,7 @@ export function setImageSource(
   };
 }
 
-/** Define (ou limpa, com `null`) a origem da marcação. Não é geometria: a trava não impede. */
+/** Sets (or clears, with `null`) the marking's source. Not geometry: the lock does not block it. */
 export function setMarkingSource(
   p: Project,
   markingId: string,
@@ -54,9 +54,9 @@ export type SourceMatch =
   | { readonly kind: 'marking'; readonly marking: Marking };
 
 /**
- * Imagens e marcações cuja origem é `system` + `id` (comparação exata), imagens
- * primeiro, na ordem do projeto. Normalmente há no máximo um item, mas o formato não
- * proíbe repetições (ex: a mesma tela importada duas vezes), então a lista é devolvida.
+ * Containers and markings whose source is `system` + `id` (exact comparison), containers
+ * first, in project order. Normally there is at most one item, but the format does not
+ * forbid repetitions (e.g. the same screen imported twice), so the list is returned.
  */
 export function findBySource(p: Project, system: string, id: string): SourceMatch[] {
   const same = (s: ExternalSource | null) =>
@@ -71,40 +71,40 @@ export function findBySource(p: Project, system: string, id: string): SourceMatc
   ];
 }
 
-/** O que identifica o elemento de origem na busca de tipos: `id`, `name` ou os dois. */
+/** What identifies the source element in the type search: `id`, `name` or both. */
 export interface SourceQuery {
   readonly id?: string;
   readonly name?: string;
 }
 
 export interface TypeSourceMatch {
-  /** Id da especialização (`spec.id`). */
+  /** Id of the specialization (`spec.id`). */
   readonly specId: string;
   readonly layer: SpecLayer;
   readonly type: SpecAnnotationType;
-  /** A declaração de `sources` que casou. */
+  /** The `sources` declaration that matched. */
   readonly source: SpecTypeSource;
-  /** Casou pelo `id` (mais forte) ou só pelo `name`. */
+  /** Matched by `id` (stronger) or only by `name`. */
   readonly by: 'id' | 'name';
   /**
-   * O `system` está declarado em `origins` da especialização: as `sources` dos campos dela
-   * trazem `path` (o caminho do valor nas props do nó externo) em vez de só `name`.
+   * The `system` is declared in the specialization's `origins`: the `sources` of its fields
+   * carry `path` (the path of the value in the external node's props) instead of just `name`.
    */
   readonly executable: boolean;
 }
 
-/** `true` se `system` é uma origem executável da especialização (está em `origins`). */
+/** `true` if `system` is an executable source of the specialization (it is in `origins`). */
 export function isExecutableSystem(spec: Spec | null, system: string): boolean {
   return spec?.origins?.some((o) => o.system === system) ?? false;
 }
 
 /**
- * Tipos de anotação que correspondem a um elemento de origem: mesma `system` e o
- * mesmo `id` ou o mesmo `name` (comparações exatas). Os que casam pelo `id` vêm antes
- * dos que casam só pelo `name`; dentro de cada grupo, a ordem das especializações,
- * camadas e tipos. Um tipo aparece uma vez (com a melhor declaração). Sem `id` nem
- * `name` na busca, a lista é vazia. Nunca casa por `path` (o caminho de um campo): só
- * `executable` diz se os campos do tipo o trazem.
+ * Annotation types that match a source element: same `system` and the same `id` or the same
+ * `name` (exact comparisons). Those that match by `id` come before those that match only by
+ * `name`; within each group, the order of the specializations, layers and types. A type
+ * appears once (with the best declaration). Without `id` or `name` in the query, the list is
+ * empty. It never matches by `path` (a field's path): only `executable` says whether the
+ * type's fields carry it.
  */
 export function findTypesBySource(
   specs: readonly (Spec | null)[],

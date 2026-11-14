@@ -519,7 +519,7 @@ describe('referências', () => {
     });
     expect(issueCodes(after, 'AIE')).toEqual(['broken-ref:dado']);
     expect(refLabel(after, { annotationId: 'AC', key: 'atributos', rowId: 'R1' })).toBe(
-      '(referência quebrada)',
+      '(broken reference)',
     );
     // Excluir a anotação dona das tuplas quebra as duas referências para ela.
     expect(annotationDeletionImpact(p, 'AU')).toEqual({ annotations: 1, brokenRefs: 2 });

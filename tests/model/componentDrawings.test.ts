@@ -103,7 +103,7 @@ describe('createDrawingCache: o que desenha e em que ordem', () => {
       })),
     };
     const drawing = createDrawingCache()(p, catalog, approximateMeasurer, 0).get('T1')!;
-    expect(drawing.warnings.map((w) => w.text)).toEqual(['referência quebrada: target']);
+    expect(drawing.warnings.map((w) => w.text)).toEqual(['broken reference: target']);
     expect(drawing.warnings[0]?.code).toBe('value.refBroken');
     expect(drawing.overflow).toBe(false);
   });
@@ -233,7 +233,7 @@ describe('createDrawingCache: memoização', () => {
 });
 
 describe('overflow', () => {
-  it('o aviso "texto maior que a caixa" também marca overflow (a pendência "não cabe")', () => {
+  it('o aviso "text larger than the box" também marca overflow (a pendência "não cabe")', () => {
     const tall = testCatalog({
       ...COMPONENTS,
       text: {
@@ -273,10 +273,10 @@ describe('overflow', () => {
     );
     const drawing = createDrawingCache()(p, tall, approximateMeasurer, 0).get('T1')!;
     expect(drawing.warnings.map((w) => w.text)).toContain(
-      'texto maior que a caixa: rotulo',
+      'text larger than the box: rotulo',
     );
     // Aviso do motor: com código (MB5), a interface o traduz.
-    expect(drawing.warnings.find((w) => w.text.startsWith('texto maior'))).toMatchObject({
+    expect(drawing.warnings.find((w) => w.text.startsWith('text larger'))).toMatchObject({
       code: 'engine.textTooBig',
       params: { name: 'rotulo' },
     });
@@ -336,7 +336,7 @@ describe('overflow', () => {
     const wide = drawings.get('W')!;
     expect(wide.overflow).toBe(true);
     expect(
-      wide.warnings.some((w) => w.text.startsWith('conteúdo maior que a caixa')),
+      wide.warnings.some((w) => w.text.startsWith('content larger than the box')),
     ).toBe(true);
   });
 
@@ -590,7 +590,7 @@ describe('aviso do none: a app e a prova de desenho dão o mesmo (#1093)', () =>
       ],
     },
   });
-  const TOO_BIG = 'conteúdo maior que a caixa: chip';
+  const TOO_BIG = 'content larger than the box: chip';
 
   it('a mesma instância pela app (componentDrawings) e pela prova (libraryDrawing) avisa igual', () => {
     const cat = testCatalog({ ...COMPONENTS, text: chip('text') } as never);
@@ -638,7 +638,7 @@ describe('aviso do none: a app e a prova de desenho dão o mesmo (#1093)', () =>
       ],
     });
     expect(report.warnings.map((w) => w.message)).toEqual([
-      `tipo "t", os valores padrão, tamanho inicial 58×40: ${TOO_BIG} (aproximado)`,
+      `type "t", the default values, initial size 58×40: ${TOO_BIG} (approximate)`,
     ]);
   });
 });

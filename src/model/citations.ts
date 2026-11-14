@@ -16,28 +16,28 @@ import type { Thread, ThreadMessage } from './thread';
 import { threadSubject } from './threadView';
 import type { Annotation, JsonValue, Project } from './types';
 
-// Citações das conversas (etapa Comentários, decisões 28, 29 e 33). A citação é um link
-// markdown comum, `[<rótulo>](mapping://<projeto>/<letra>/<código>…)`, sem sintaxe nova. Aqui:
-// extrair os links de um texto, escapar o rótulo, resolver o código NO PROJETO DA CONVERSA (o
-// `<projeto>` da URL é ignorado), o rótulo vivo (o nome de agora do alvo) e os backlinks
-// ("Citada em"). Puro: tudo chega por argumento (projeto, conversas, propostas), nada é global.
+// Thread citations (Comments stage, decisions 28, 29 and 33). A citation is a plain markdown
+// link, `[<label>](mapping://<project>/<letter>/<code>…)`, with no new syntax. Here:
+// extract the links from a text, escape the label, resolve the code IN THE THREAD'S PROJECT (the
+// `<project>` in the URL is ignored), the live label (the target's current name) and the backlinks
+// ("Cited in"). Pure: everything arrives by argument (project, threads, proposals), nothing is global.
 
-// ------------------------------------------------------------------ extrair
+// ------------------------------------------------------------------ extract
 
-/** Um link `mapping://` do texto de uma mensagem. */
+/** A `mapping://` link in the text of a message. */
 export interface Citation {
-  /** O rótulo entre colchetes, desescapado (a reserva do chip). */
+  /** The label between brackets, unescaped (the chip's fallback). */
   readonly label: string;
-  /** O destino do link, como escrito. */
+  /** The link's destination, as written. */
   readonly url: string;
-  /** A referência lida pela gramática estrita; `null` = o link não fecha a gramática (quebrado). */
+  /** The reference read by the strict grammar; `null` = the link does not close the grammar (broken). */
   readonly ref: ParsedAnyRef | null;
 }
 
 /**
- * Link da biblioteca (`mapping://<typeId>` e `mapping://<specId>/<typeId>`): no máximo dois
- * segmentos depois do esquema. Não é citação (a gramática das referências exige ao menos
- * `<projeto>/<letra>/<código>`).
+ * Library link (`mapping://<typeId>` and `mapping://<specId>/<typeId>`): at most two
+ * segments after the scheme. Not a citation (the reference grammar requires at least
+ * `<project>/<letter>/<code>`).
  */
 export function isLibraryLink(href: string): boolean {
   return href.slice(REF_SCHEME.length).split('/').length <= 2;
@@ -102,10 +102,10 @@ function collectBlocks(blocks: readonly MarkdownBlock[], out: Citation[]): void 
 }
 
 /**
- * Os links `mapping://` do texto, na ordem em que aparecem. Usa o mesmo leitor de markdown
- * que desenha a mensagem, então vale o que a tela mostra como link (link em código não conta).
- * Ignora links comuns (`https://`, `#âncora`) e os da biblioteca. Um link `mapping://` que não
- * fecha a gramática estrita volta com `ref: null` (citação quebrada).
+ * The `mapping://` links in the text, in the order they appear. Uses the same markdown reader
+ * that draws the message, so whatever the screen shows as a link counts (a link in code does not).
+ * Ignores plain links (`https://`, `#anchor`) and the library ones. A `mapping://` link that does not
+ * close the strict grammar comes back with `ref: null` (broken citation).
  */
 export function extractCitations(text: string): Citation[] {
   const out: Citation[] = [];
@@ -113,29 +113,29 @@ export function extractCitations(text: string): Citation[] {
   return out;
 }
 
-// ------------------------------------------------------------------ escrever
+// ------------------------------------------------------------------ write
 
-/** Escapa `[`, `]`, `\`, `*`, `_` e crase do rótulo: cabe entre os colchetes e relido sai igual. */
+/** Escapes `[`, `]`, `\`, `*`, `_` and backtick of the label: it fits between the brackets and rereads the same. */
 export function escapeCitationLabel(label: string): string {
   return label.replace(/[\\[\]*_`]/g, (c) => `\\${c}`);
 }
 
 /**
- * `[<rótulo escapado>](<url>)`: a citação como a app a grava no texto. O rótulo não pode ser
- * vazio (`[](url)` não é link em markdown): quem não tem nome usa um texto neutro.
+ * `[<escaped label>](<url>)`: the citation as the app writes it in the text. The label cannot be
+ * empty (`[](url)` is not a link in markdown): whoever has no name uses a neutral text.
  */
 export function formatCitation(label: string, url: string): string {
   return `[${escapeCitationLabel(label)}](${url})`;
 }
 
-// ------------------------------------------------------------------ resolver
+// ------------------------------------------------------------------ resolve
 
 type IdTarget<K extends string> = { readonly kind: K; readonly id: string };
 
 /**
- * O que uma citação aponta: as formas de âncora (menos o ponto solto, que ninguém cita), mais a
- * conversa e a proposta. O `id` é sempre o id completo, nunca o código curto. Compatível com
- * `ThreadAnchor` nas formas que as duas têm.
+ * What a citation points to: the anchor forms (except the loose point, which nobody cites), plus the
+ * thread and the proposal. The `id` is always the full id, never the short code. Compatible with
+ * `ThreadAnchor` in the forms that both have.
  */
 export type CitationTarget =
   | IdTarget<'marking'>
@@ -161,28 +161,28 @@ export type CitationResolution =
   | {
       readonly found: false;
       /**
-       * `missing`: o código não existe (ou o campo, par ou linha não existe na anotação);
-       * `ambiguous`: o código curto serve a mais de um alvo; `invalid`: o link nem fecha a
-       * gramática (`ref` nulo).
+       * `missing`: the code does not exist (or the field, pair or row does not exist in the annotation);
+       * `ambiguous`: the short code serves more than one target; `invalid`: the link does not even close the
+       * grammar (`ref` null).
        */
       readonly reason: 'missing' | 'ambiguous' | 'invalid';
     };
 
-/** Proposta como a citação precisa dela: o id (para o código) e o título (para o rótulo). */
+/** Proposal as the citation needs it: the id (for the code) and the title (for the label). */
 export interface CitationProposal {
   readonly id: string;
   readonly title: string;
 }
 
-/** Tudo de que a resolução precisa. As listas incluem as conversas abertas e as resolvidas. */
+/** Everything the resolution needs. The lists include open and resolved threads. */
 export interface CitationContext {
-  /** O projeto da conversa: o `<projeto>` da URL é ignorado. */
+  /** The thread's project: the `<project>` in the URL is ignored. */
   readonly project: Project;
   readonly threads: readonly Thread[];
   readonly proposals: readonly CitationProposal[];
   /**
-   * Assunto da conversa (`threadSubject`, decisão 17). Sem ele, vale a primeira linha da
-   * primeira mensagem, cortada em 80 caracteres.
+   * Subject of the thread (`threadSubject`, decision 17). Without it, the first line of the
+   * first message counts, cut at 80 characters.
    */
   readonly subjectOf?: (thread: Thread) => string;
 }
@@ -201,9 +201,9 @@ function lowerBound(sorted: readonly string[], wanted: string): number {
 }
 
 /**
- * Casa um código com uma lista de ids, como `matchShortCode`: o id cujo normalizado é
- * exatamente o código vence; na falta dele, todos os que começam com o código. Monta a
- * ordenação uma vez e consulta por busca binária.
+ * Matches a code against a list of ids, like `matchShortCode`: the id whose normalized form is
+ * exactly the code wins; failing that, all those that start with the code. It builds the
+ * sort once and queries by binary search.
  */
 function buildMatcher(ids: readonly string[]): CodeMatcher {
   const entries = [...new Set(ids)]
@@ -239,7 +239,7 @@ const projectMatchers = memoByProject((p): ProjectMatchers => ({
   l: buildMatcher(p.layers.map((x) => x.id)),
 }));
 
-/** Memoiza por lista (as conversas e as propostas chegam como a mesma lista a cada consulta). */
+/** Memoizes per list (threads and proposals arrive as the same list on each query). */
 function memoByList<T extends { readonly id: string }, V>(
   build: (list: readonly T[]) => V,
 ): (list: readonly T[]) => V {
@@ -297,7 +297,7 @@ function foundOf(target: CitationTarget): Found {
   return { found: true, target };
 }
 
-/** Um só id casou: monta o alvo (que pode ainda não existir: `null`); senão, o motivo. */
+/** Only one id matched: builds the target (which may not exist yet: `null`); otherwise, the reason. */
 function single(
   ids: readonly string[],
   build: (id: string) => CitationTarget | null,
@@ -329,22 +329,22 @@ const ITEM_RESOLVERS: {
   c: (ctx, code) =>
     single(listMatcher(ctx.threads)(code), (id) => ({ kind: 'thread', id })),
   p: (ctx, code) =>
-    // Id exato ou o código curto que o MCP emite (`shortCodesFor`, 8 hex): nunca prefixo livre
-    // (decisão 11), senão `p/botoes` apagada cairia em `botoes-2`.
+    // Exact id or the short code the MCP emits (`shortCodesFor`, 8 hex): never a free prefix
+    // (decision 11), otherwise a deleted `p/botoes` would fall into `botoes-2`.
     single(proposalIdsFor(ctx.proposals, code), (id) => ({
       kind: 'proposal',
       id,
     })),
 };
 
-/** O campo existe na anotação: o tipo o declara ou, sem tipo, há valor com essa key. */
+/** The field exists in the annotation: the type declares it or, without a type, there is a value with that key. */
 function hasField(p: Project, a: Annotation, key: string): boolean {
   if (a.values === null) return false;
   const type = typeOfAnnotation(p, a)?.type;
   return type ? fieldOf(type, key) !== null : Object.hasOwn(a.values, key);
 }
 
-/** O campo `key` é uma `table` (pelo tipo ou, sem tipo, pelo valor). */
+/** The field `key` is a `table` (by the type or, without a type, by the value). */
 function isTableField(p: Project, a: Annotation, key: string): boolean {
   if (a.values === null) return false;
   const type = typeOfAnnotation(p, a)?.type;
@@ -382,15 +382,15 @@ function resolveSub(ctx: CitationContext, ref: SubRef): CitationResolution {
 }
 
 /**
- * Resolve a referência no projeto da conversa (o `<projeto>` da URL já foi descartado por quem
- * leu). Código curto sem alvo, ambíguo, ou campo/par/linha que a anotação não tem: alvo ausente.
+ * Resolves the reference in the thread's project (the `<project>` in the URL has already been dropped by whoever
+ * read it). Short code without a target, ambiguous, or a field/pair/row the annotation does not have: missing target.
  */
 export function resolveCitation(ctx: CitationContext, ref: AnyRef): CitationResolution {
   if (ref.type === 'item') return ITEM_RESOLVERS[ref.kind](ctx, ref.code);
   return resolveSub(ctx, ref);
 }
 
-/** Chave estável de um alvo, para comparar e deduplicar. */
+/** Stable key of a target, to compare and deduplicate. */
 export function citationTargetKey(target: CitationTarget): string {
   switch (target.kind) {
     case 'field':
@@ -404,14 +404,14 @@ export function citationTargetKey(target: CitationTarget): string {
   }
 }
 
-// ------------------------------------------------------------------ rótulo vivo
+// ------------------------------------------------------------------ live label
 
-/** O assunto padrão é o de `threadSubject` (sem markdown, cortado por ponto de código). */
+/** The default subject is that of `threadSubject` (without markdown, cut at a code point). */
 function defaultSubject(thread: Thread): string {
   return threadSubject(thread);
 }
 
-/** `undefined`: o alvo não existe mais (a resolução ficou velha). `null`: existe, sem nome. */
+/** `undefined`: the target no longer exists (the resolution went stale). `null`: it exists, without a name. */
 type Labeler<T extends CitationTarget> = (
   ctx: CitationContext,
   target: T,
@@ -435,7 +435,7 @@ const labelField: Labeler<TargetOf<'field'>> = (ctx, t) => {
   return field ? fieldLabel(field) : t.key;
 };
 
-/** Texto da coluna do `rowLabel`; sem ele, a posição da linha (1, 2…), como em `refLabel`. */
+/** Text of the `rowLabel` column; without it, the row's position (1, 2…), as in `refLabel`. */
 function rowText(value: JsonValue | undefined, index: number): string {
   if (typeof value === 'string' && value !== '') return value;
   if (typeof value === 'number') return String(value);
@@ -487,21 +487,21 @@ const LABELERS: { readonly [K in CitationTargetKind]: Labeler<TargetOf<K>> } = {
   proposal: (ctx, t) => proposalById(ctx, t.id)?.title,
 };
 
-/** O texto que o chip mostra. */
+/** The text the chip shows. */
 export interface LiveLabel {
   /**
-   * O nome de agora do alvo. `null`: o alvo existe mas não tem nome (marcação, seta ou
-   * container sem nome…); a interface mostra o texto traduzido. Quebrada: o rótulo de reserva.
+   * The target's current name. `null`: the target exists but has no name (marking, arrow or
+   * container without a name…); the interface shows the translated text. Broken: the fallback label.
    */
   readonly label: string | null;
-  /** O alvo não existe mais (ou o link nunca fechou): o chip fica riscado. */
+  /** The target no longer exists (or the link never closed): the chip is struck through. */
   readonly broken: boolean;
 }
 
 /**
- * Rótulo vivo do alvo resolvido (decisão 29): marcação, container, seta e anotação mostram o
- * nome; campo, o `label`; par, a `key`; linha, a coluna do `rowLabel`; camada, o nome; conversa,
- * o assunto; proposta, o título. Citação quebrada: `fallback` (o rótulo do link), `broken`.
+ * Live label of the resolved target (decision 29): marking, container, arrow and annotation show the
+ * name; field, the `label`; pair, the `key`; row, the `rowLabel` column; layer, the name; thread,
+ * the subject; proposal, the title. Broken citation: `fallback` (the link's label), `broken`.
  */
 export function liveLabel(
   ctx: CitationContext,
@@ -517,13 +517,13 @@ export function liveLabel(
     : { label, broken: false };
 }
 
-/** Uma citação extraída, já resolvida e com o rótulo vivo. */
+/** An extracted citation, already resolved and with the live label. */
 export interface LiveCitation extends LiveLabel {
   readonly citation: Citation;
   readonly resolution: CitationResolution;
 }
 
-/** Resolve a citação (`ref` nulo: `invalid`) e calcula o rótulo vivo. */
+/** Resolves the citation (`ref` null: `invalid`) and computes the live label. */
 export function liveCitation(ctx: CitationContext, citation: Citation): LiveCitation {
   const resolution: CitationResolution = citation.ref
     ? resolveCitation(ctx, citation.ref.ref)
@@ -531,11 +531,11 @@ export function liveCitation(ctx: CitationContext, citation: Citation): LiveCita
   return { citation, resolution, ...liveLabel(ctx, resolution, citation.label) };
 }
 
-// ------------------------------------------------------------------ alvos e backlinks
+// ------------------------------------------------------------------ targets and backlinks
 
 const CITATIONS_OF_MESSAGE = new WeakMap<ThreadMessage, readonly Citation[]>();
 
-/** As citações da mensagem, lidas uma vez (a mensagem é imutável e passa de revisão a revisão). */
+/** The message's citations, read once (the message is immutable and passes from revision to revision). */
 function messageCitations(message: ThreadMessage): readonly Citation[] {
   let found = CITATIONS_OF_MESSAGE.get(message);
   if (!found) {
@@ -546,8 +546,8 @@ function messageCitations(message: ThreadMessage): readonly Citation[] {
 }
 
 /**
- * Alvos que a conversa cita (as citações que resolvem), sem repetir, na ordem do texto, das
- * mensagens mais antigas às mais novas. Serve ao filtro "cita a seleção".
+ * Targets that the thread cites (the citations that resolve), without repeats, in text order, from the
+ * oldest messages to the newest. Serves the "cites the selection" filter.
  */
 export function citedTargets(thread: Thread, ctx: CitationContext): CitationTarget[] {
   const seen = new Set<string>();
@@ -566,7 +566,7 @@ export function citedTargets(thread: Thread, ctx: CitationContext): CitationTarg
   return targets;
 }
 
-/** Ids das conversas que a mensagem cita (`c/<código>` que resolve para uma só conversa). */
+/** Ids of the threads that the message cites (`c/<code>` that resolves to a single thread). */
 function citedThreadIds(thread: Thread, match: CodeMatcher): Set<string> {
   const ids = new Set<string>();
   for (const message of thread.messages) {
@@ -581,9 +581,9 @@ function citedThreadIds(thread: Thread, match: CodeMatcher): Set<string> {
 }
 
 /**
- * "Citada em" (decisão 33): para cada conversa citada por outra, os ids das conversas que a
- * citam, na ordem da lista. Considera as abertas e as resolvidas, ignora a auto-citação e não
- * repete. Só as conversas citadas têm entrada no mapa.
+ * "Cited in" (decision 33): for each thread cited by another, the ids of the threads that
+ * cite it, in list order. Considers open and resolved ones, ignores self-citation and does not
+ * repeat. Only the cited threads have an entry in the map.
  */
 export function backlinks(
   threads: readonly Thread[],

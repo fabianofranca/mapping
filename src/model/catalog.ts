@@ -29,47 +29,47 @@ import {
   type SpecTypeSource,
 } from './spec';
 
-// Catálogo da biblioteca (etapa Biblioteca, B5): a especialização de um pacote lido para a
-// memória, reorganizada para a interface mostrar (camadas, tipos, tabela de propriedades,
-// código por plataforma, fontes, exemplos) e para desenhar um tipo ou um exemplo. Puro: recebe
-// os arquivos já lidos (o mesmo formato do validador) e nunca lê disco nem rede. Nunca lança:
-// um pacote quebrado devolve o `report` e o que deu para montar.
+// Library catalog (Library stage, B5): the specialization of a package read into memory,
+// reorganized for the interface to show (layers, types, property table, code per platform,
+// sources, examples) and to draw a type or an example. Pure: it receives the files already read
+// (the same format as the validator) and never reads disk or network. Never throws: a broken
+// package returns the `report` and whatever could be built.
 
-/** Campo pronto para a tabela de propriedades. */
+/** A field ready for the property table. */
 export interface CatalogField {
   readonly key: string;
-  /** `label` do campo ou, sem ele, a `key`. */
+  /** The field's `label` or, without it, the `key`. */
   readonly label: string;
   readonly type: FieldType;
   readonly required: boolean;
-  /** Opções do `enum`. */
+  /** The `enum`'s options. */
   readonly options?: readonly string[];
   readonly default?: string | number;
   readonly description?: string;
-  /** Colunas de um campo `table`. */
+  /** Columns of a `table` field. */
   readonly columns?: readonly CatalogField[];
   readonly rowLabel?: string;
-  /** O que um campo `ref` aceita. */
+  /** What a `ref` field accepts. */
   readonly accepts?: SpecRefAccepts;
 }
 
-/** Um caso de `variants` já resolvido sobre a base: o símbolo (e o arquivo) do valor. */
+/** A `variants` case already resolved over the base: the value's symbol (and file). */
 export interface CatalogCodeVariantCase {
-  /** Valor do campo da variante (uma das `options`). */
+  /** Value of the variant's field (one of the `options`). */
   readonly value: string;
   readonly symbol: string;
   readonly path?: string;
 }
 
-/** `variants` do `code` para a interface: o campo e a tabela valor → símbolo, na ordem das `options`. */
+/** The `code`'s `variants` for the interface: the field and the value → symbol table, in `options` order. */
 export interface CatalogCodeVariants {
   readonly field: string;
-  /** `label` do campo ou, sem ele, a `key`. */
+  /** The field's `label` or, without it, the `key`. */
   readonly fieldLabel: string;
   readonly cases: readonly CatalogCodeVariantCase[];
 }
 
-/** `code` do tipo em uma plataforma. A UI monta os links com o `repo` da especialização (`codeLink`). */
+/** The type's `code` on one platform. The UI builds the links with the specialization's `repo` (`codeLink`). */
 export interface CatalogCode {
   readonly platform: {
     readonly id: string;
@@ -81,39 +81,39 @@ export interface CatalogCode {
   readonly params?: Readonly<Record<string, string>>;
   readonly values?: Readonly<Record<string, Readonly<Record<string, string>>>>;
   readonly notes?: string;
-  /** Presente com `variants` na especialização: o resto é a base. */
+  /** Present with `variants` in the specialization: the rest is the base. */
   readonly variants?: CatalogCodeVariants;
 }
 
-/** Elementos de um sistema externo a que o tipo corresponde. */
+/** Elements of an external system that the type corresponds to. */
 export interface CatalogSourceGroup {
   readonly system: string;
   readonly items: readonly SpecTypeSource[];
 }
 
 /**
- * Exemplo de um tipo. Modo `values`: `values` direto. Modo `system`: o JSON do nó (`json`,
- * `undefined` se o arquivo faltou ou não é JSON) passa pela declaração de `origins`.
+ * An example of a type. `values` mode: `values` directly. `system` mode: the node's JSON (`json`,
+ * `undefined` if the file was missing or is not JSON) goes through the `origins` declaration.
  */
 export interface CatalogExample {
   readonly name: string;
   readonly description?: string;
   readonly mode: 'values' | 'system';
-  /** Os valores do exemplo; num campo `table`, as linhas, com `_id` como as do `preview`. */
+  /** The example's values; for a `table` field, the rows, with `_id` like those of the `preview`. */
   readonly values?: FieldValues;
   readonly system?: string;
   readonly file?: string;
   readonly json?: unknown;
 }
 
-/** Documento de um tipo que vive num repositório declarado em `docRepos` (nada é lido aqui). */
+/** Document of a type that lives in a repository declared in `docRepos` (nothing is read here). */
 export interface CatalogDocExternal {
-  /** Id do `docRepos` citado por `doc.repo`. */
+  /** Id of the `docRepos` entry cited by `doc.repo`. */
   readonly repo: string;
   readonly path: string;
-  /** `url` do repositório declarado; `null` se o id não existe na especialização. */
+  /** `url` of the declared repository; `null` if the id does not exist in the specialization. */
   readonly repoUrl: string | null;
-  /** Link do arquivo pelo `urlTemplate` do repositório; `null` sem repositório ou sem template válido. */
+  /** Link to the file via the repository's `urlTemplate`; `null` without a repository or a valid template. */
   readonly url: string | null;
 }
 
@@ -121,18 +121,18 @@ export interface CatalogEntry {
   readonly type: SpecAnnotationType;
   readonly layerId: string;
   readonly component: ComponentFile | null;
-  /** Por que não há componente (arquivo ausente ou inválido); ausente se o tipo não declara `component`. */
+  /** Why there is no component (missing or invalid file); absent if the type does not declare `component`. */
   readonly componentProblem?: ModelMessage;
   readonly container: boolean;
-  /** Texto do `.md` do tipo; `null` sem `doc` ou com o arquivo ausente. */
+  /** Text of the type's `.md`; `null` without `doc` or with the file missing. */
   readonly docText: string | null;
-  /** `doc` objeto (v11): o `.md` vive num repositório de `docRepos`; `null` nos demais casos. */
+  /** Object `doc` (v11): the `.md` lives in a `docRepos` repository; `null` in the other cases. */
   readonly docExternal: CatalogDocExternal | null;
   readonly fields: readonly CatalogField[];
   readonly code: readonly CatalogCode[];
   readonly sources: readonly CatalogSourceGroup[];
   readonly examples: readonly CatalogExample[];
-  /** Valores do `preview` do componente sobre os padrões dos campos; `null` sem componente. */
+  /** The component's `preview` values over the fields' defaults; `null` without a component. */
   readonly previewValues: FieldValues | null;
 }
 
@@ -147,13 +147,13 @@ export interface Catalog {
   readonly spec: Spec | null;
   readonly report: LibraryReport;
   readonly layers: readonly CatalogLayer[];
-  /** Biblioteca do motor (origens para os exemplos de sistema externo); `null` se não montou. */
+  /** The engine's library (origins for external-system examples); `null` if it was not built. */
   readonly library: Library | null;
 }
 
 /**
- * As linhas do `preview` de uma tabela ganham `_id` (o formulário do playground edita linhas
- * por `_id`); o desenho ignora o `_id`.
+ * The rows of a table's `preview` get an `_id` (the playground form edits rows by `_id`); the
+ * drawing ignores the `_id`.
  */
 function withRowIds(values: FieldValues): FieldValues {
   const out: Record<string, FieldValues[string]> = {};
@@ -196,7 +196,7 @@ function fieldOf(field: SpecField | SpecColumn): CatalogField {
   }
 }
 
-/** `variants` do `code` para a tabela do Catálogo; `undefined` sem `variants` ou sem campo `enum`. */
+/** The `code`'s `variants` for the Catalog table; `undefined` without `variants` or without an `enum` field. */
 function variantsOf(
   type: SpecAnnotationType,
   code: NonNullable<SpecAnnotationType['code']>[string],
@@ -273,7 +273,7 @@ function parseJsonOrUndefined(text: string | undefined): unknown {
   }
 }
 
-/** Caminho do arquivo da especialização dentro do pacote. */
+/** Path of the specialization file inside the package. */
 function locateSpecPath(texts: ReadonlyMap<string, unknown>, spec: Spec): string {
   const root = packageSpecNameOf(texts, spec.id);
   if (texts.has(root)) return root;
@@ -291,7 +291,7 @@ function locateSpecPath(texts: ReadonlyMap<string, unknown>, spec: Spec): string
   return root;
 }
 
-/** Monta o catálogo do pacote (validação nos três níveis incluída). Nunca lança. */
+/** Builds the package catalog (validation at all three levels included). Never throws. */
 export function buildCatalog(files: readonly LibraryFile[]): Catalog {
   const report = validateLibrary({ files });
   const spec = report.spec ?? null;
@@ -314,8 +314,8 @@ export function buildCatalog(files: readonly LibraryFile[]): Catalog {
     }
   })();
 
-  // Galeria e Experimentar desenham com os tokens (modo padrão) e os ícones da especialização,
-  // como o canvas; sem isso o texto sai preto sobre cinza e todo ícone é desconhecido.
+  // Gallery and Playground draw with the tokens (default mode) and the specialization's icons,
+  // like the canvas; without this the text comes out black on gray and every icon is unknown.
   const resolvedTokens = resolveTokens(library?.tokens, {});
   const resolvedIcons = library?.icons;
   const themed = (parsed: ComponentFile): ComponentFile => ({
@@ -338,7 +338,7 @@ export function buildCatalog(files: readonly LibraryFile[]): Catalog {
           componentProblem = modelMessage(
             'catalog.fileMissing',
             { path },
-            `arquivo ausente (${path})`,
+            `missing file (${path})`,
           );
         } else {
           const parsed = parseComponentText(text);
@@ -391,7 +391,7 @@ export function buildCatalog(files: readonly LibraryFile[]): Catalog {
   return { spec, report, layers, library };
 }
 
-/** A entrada do tipo `typeId` (em qualquer camada), ou `undefined`. */
+/** The entry of type `typeId` (in any layer), or `undefined`. */
 export function findEntry(catalog: Catalog, typeId: string): CatalogEntry | undefined {
   let byId = entryIndexes.get(catalog);
   if (byId === undefined) {
@@ -406,10 +406,10 @@ export function findEntry(catalog: Catalog, typeId: string): CatalogEntry | unde
   return byId.get(typeId);
 }
 
-/** O problema de um componente que não passou no parse: o primeiro erro do parser, com o motivo traduzível. */
+/** The problem of a component that failed to parse: the parser's first error, with a translatable reason. */
 function parseProblem(issue: ComponentIssue | undefined): ModelMessage {
   if (issue === undefined) {
-    return modelMessage('catalog.invalidComponent', {}, 'componente inválido');
+    return modelMessage('catalog.invalidComponent', {}, 'invalid component');
   }
   const { at, reason, reasonParam, detail } = issueParts(issue);
   return modelMessage(
@@ -420,11 +420,11 @@ function parseProblem(issue: ComponentIssue | undefined): ModelMessage {
   );
 }
 
-/** Entradas por id de tipo, uma vez por catálogo (o catálogo é imutável). */
+/** Entries by type id, once per catalog (the catalog is immutable). */
 const entryIndexes = new WeakMap<Catalog, Map<string, CatalogEntry>>();
 
 // ---------------------------------------------------------------------------------------
-// Desenho
+// Drawing
 // ---------------------------------------------------------------------------------------
 
 export interface CatalogDrawing {
@@ -432,7 +432,7 @@ export interface CatalogDrawing {
   readonly warnings: readonly ModelMessage[];
 }
 
-/** Intervalo do playground: do `minSize` (ou 1×1) ao dobro do `size`. */
+/** Playground range: from `minSize` (or 1×1) to twice the `size`. */
 export function playgroundSizeRange(component: ComponentFile): {
   min: Size;
   max: Size;
@@ -450,7 +450,7 @@ export function playgroundSizeRange(component: ComponentFile): {
   };
 }
 
-/** Limita `size` (arredondado) ao intervalo do playground. */
+/** Clamps `size` (rounded) to the playground range. */
 export function clampPlaygroundSize(component: ComponentFile, size: Size): Size {
   const { min, max } = playgroundSizeRange(component);
   const clamp = (v: number, lo: number, hi: number): number =>
@@ -467,25 +467,26 @@ export interface Axes {
 }
 
 /**
- * Eixos em que o `sizing` do componente acompanha o conteúdo: `hug` (literal, ou o que a expressão
- * avaliada com `values` manda) ou px dado por expressão. Sem `values`, vale só o literal.
+ * Axes on which the component's `sizing` follows the content: `hug` (literal, or what the
+ * expression evaluated with `values` says) or px given by an expression. Without `values`, only
+ * the literal counts.
  */
 export function hugAxes(component: ComponentFile, values: FieldValues = {}): Axes {
   const followed = followedAxes(resolveSizing(component, values));
   return { width: followed.width, height: followed.height };
 }
 
-/** Como `hugAxes`, para a entrada do catálogo: os valores padrão do tipo sob os `values`. */
+/** Like `hugAxes`, for the catalog entry: the type's default values under the `values`. */
 export function entryHugAxes(entry: CatalogEntry, values: FieldValues): Axes {
   if (entry.component === null) return { width: false, height: false };
   return hugAxes(entry.component, { ...defaultValues(entry.type), ...values });
 }
 
 /**
- * Tamanho do desenho que respeita o `sizing`: nos eixos `auto` (padrão: os que o `sizing`
- * avaliado com `values` manda `hug` ou px por expressão) o tamanho é o do conteúdo, medido com
- * `values`, ou o px da expressão; nos demais fica o `base` (padrão: o `size`). Tudo limitado ao
- * intervalo do playground. Sem componente: 1×1.
+ * Drawing size that respects the `sizing`: on the `auto` axes (default: those where the
+ * `sizing` evaluated with `values` says `hug` or px by expression) the size is the content's,
+ * measured with `values`, or the expression's px; on the others the `base` stays (default: the
+ * `size`). All clamped to the playground range. Without a component: 1×1.
  */
 export function fittedSize(
   entry: CatalogEntry,
@@ -510,7 +511,7 @@ export function fittedSize(
   }
 }
 
-/** Desenha o componente da entrada com `values` no tamanho dado (padrão: o `size` do componente). `null` sem componente. */
+/** Draws the entry's component with `values` at the given size (default: the component's `size`). `null` without a component. */
 export function drawEntry(
   entry: CatalogEntry,
   values: FieldValues,
@@ -529,10 +530,10 @@ export function drawEntry(
 }
 
 /**
- * Desenha um exemplo da entrada (`example` ausente = o `preview` do componente). Modo
- * `values`: instancia o componente; modo `system`: passa o JSON do nó pela declaração de
- * `origins` e desenha a árvore resultante (o `size` não vale: o tamanho vem do nó). `null`
- * quando não há o que desenhar (sem componente, arquivo ou origem ausentes); nunca lança.
+ * Draws an example of the entry (`example` absent = the component's `preview`). `values` mode:
+ * instantiates the component; `system` mode: passes the node's JSON through the `origins`
+ * declaration and draws the resulting tree (the `size` does not apply: the size comes from the
+ * node). `null` when there is nothing to draw (component, file or origin missing); never throws.
  */
 export function exampleDrawing(
   catalog: Catalog,
@@ -595,7 +596,7 @@ function systemDrawing(
         modelMessage(
           'catalog.typeOutside',
           { typeId: instance.typeId },
-          `tipo "${instance.typeId}" fora da especialização`,
+          `type "${instance.typeId}" is outside the specialization`,
         ),
       );
       continue;
@@ -609,7 +610,7 @@ function systemDrawing(
         modelMessage(
           'catalog.typeNoComponent',
           { typeId: instance.typeId },
-          `tipo "${instance.typeId}" sem componente`,
+          `type "${instance.typeId}" has no component`,
         ),
       );
       continue;

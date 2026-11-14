@@ -1,19 +1,19 @@
 import type { Spec } from './spec';
 
-// Tipos do `mapping.json` (schema v20). Ver docs/FORMAT.md. Tudo é `readonly`: o modelo é imutável e as operações sempre
-// devolvem um novo projeto.
+// Types of the `mapping.json` (schema v20). See docs/FORMAT.md. Everything is `readonly`: the model is immutable and
+// the operations always return a new project.
 
 export const SCHEMA_VERSION = 20;
-/** As direções de leitura que o arquivo aceita (v20): fonte única do tipo e dos schemas (zod, MCP). */
+/** The reading directions the file accepts (v20): single source of the type and the schemas (zod, MCP). */
 export const READING_DIRECTIONS = ['ltr', 'rtl'] as const;
-/** Direção de leitura (v20): da esquerda para a direita ou da direita para a esquerda. */
+/** Reading direction (v20): left to right or right to left. */
 export type ReadingDirection = (typeof READING_DIRECTIONS)[number];
 export const APP_ID = 'mapping';
-/** Valor gravado antes do renome do produto: ainda é aceito na leitura e vira `APP_ID`. */
+/** Value written before the product was renamed: still accepted on read and becomes `APP_ID`. */
 export const LEGACY_APP_ID = 'mapeador-imagens';
 export const COORDINATE_SYSTEM = 'image-pixels-exif-oriented';
 
-/** Retângulo em pixels inteiros da imagem original. */
+/** Rectangle in whole pixels of the original image. */
 export interface Rect {
   readonly x: number;
   readonly y: number;
@@ -21,7 +21,7 @@ export interface Rect {
   readonly height: number;
 }
 
-/** Posição da imagem no canvas. `scale` = unidades do canvas por pixel da imagem. */
+/** Position of the image on the canvas. `scale` = canvas units per image pixel. */
 export interface Placement {
   readonly x: number;
   readonly y: number;
@@ -29,19 +29,19 @@ export interface Placement {
 }
 
 /**
- * Identidade do item num sistema externo (v8), para uma reexportação reconhecer os mesmos
- * elementos. O núcleo não interpreta `system` (ex: `"figma"`): é só um texto.
+ * Identity of the item in an external system (v8), so that a re-export recognizes the same
+ * elements. The core does not interpret `system` (e.g. `"figma"`): it is just text.
  */
 export interface ExternalSource {
-  /** Sistema de origem (texto livre, não vazio). */
+  /** Source system (free text, non-empty). */
   readonly system: string;
-  /** Id do elemento no sistema de origem (não vazio). */
+  /** Id of the element in the source system (non-empty). */
   readonly id: string;
-  /** Endereço do elemento na origem; `null` quando não há. */
+  /** Address of the element at the source; `null` when there is none. */
   readonly url: string | null;
 }
 
-/** Valor JSON nativo (valores das anotações tipadas). */
+/** Native JSON value (values of typed annotations). */
 export type JsonValue =
   | string
   | number
@@ -50,7 +50,7 @@ export type JsonValue =
   | readonly JsonValue[]
   | { readonly [key: string]: JsonValue };
 
-/** Camada de origem numa especialização aplicada. */
+/** Source layer in an applied specialization. */
 export interface LayerSpecRef {
   readonly specId: string;
   readonly layerId: string;
@@ -60,48 +60,48 @@ export interface Layer {
   readonly id: string;
   readonly name: string;
   readonly color: string;
-  /** `null` = camada livre; senão, a camada da especialização de onde ela veio. */
+  /** `null` = free layer; otherwise, the specialization layer it came from. */
   readonly spec: LayerSpecRef | null;
 }
 
 export interface ProjectContainer {
   readonly id: string;
-  /** Rótulo editável; `null` = a app mostra o nome do arquivo. Não renomeia o arquivo. */
+  /** Editable label; `null` = the app shows the file name. It does not rename the file. */
   readonly name: string | null;
   /**
-   * Arquivo em `images/`; `null` = container sem arquivo (v10): sem arquivo, só `width`, `height` e
-   * `background`.
+   * File in `images/`; `null` = container with no file (v10): without a file, only `width`,
+   * `height` and `background`.
    */
   readonly file: string | null;
   readonly width: number;
   readonly height: number;
   readonly placement: Placement;
   /**
-   * Marcação do canvas que contém o container (v13), derivada da geometria pelo assentar
-   * (`settleHierarchy`); `null` = nenhuma. Nunca é escolhida à mão.
+   * Canvas marking that contains the container (v13), derived from the geometry by the settle
+   * (`settleHierarchy`); `null` = none. Never chosen by hand.
    */
   readonly parentId: string | null;
-  /** Cor da borda das marcações desta imagem (`#RRGGBB`); `null` = cor neutra do tema. */
+  /** Border color of this image's markings (`#RRGGBB`); `null` = the theme's neutral color. */
   readonly markingColor: string | null;
-  /** Trancada (v5): não pode ser movida, redimensionada nem excluída. A seleção segue livre. */
+  /** Locked (v5): cannot be moved, resized or deleted. Selection stays free. */
   readonly locked: boolean;
-  /** Identidade no sistema de origem (v8); `null` = sem origem. */
+  /** Identity in the source system (v8); `null` = no source. */
   readonly source: ExternalSource | null;
-  /** Cor de fundo (`#RRGGBB`) do container sem arquivo (v10); `null` na imagem com arquivo. */
+  /** Background color (`#RRGGBB`) of the container with no file (v10); `null` on an image with a file. */
   readonly background: string | null;
   /**
-   * Modo do desenho que o container fixa (v18); ausente ou `null` = segue o do projeto. O modo
-   * escolhe os valores dos `tokens` das especializações, não depende do tema da interface.
+   * Drawing mode the container pins (v18); absent or `null` = follows the project's. The mode
+   * chooses the values of the specializations' `tokens`, it does not depend on the interface theme.
    */
   readonly drawingMode?: string | null;
   /**
-   * Densidade (v19): quantos pixels da imagem vale uma unidade do componente (dp, pt, px lógico a
-   * 1x), de 0,5 a 8; ausente ou `null` = 1. As marcações continuam em pixels da imagem.
+   * Density (v19): how many image pixels one component unit is worth (dp, pt, logical px at 1x),
+   * from 0.5 to 8; absent or `null` = 1. The markings stay in image pixels.
    */
   readonly density?: number | null;
   /**
-   * Direção de leitura que o container fixa (v20); ausente ou `null` = segue a do projeto. Vale
-   * para o desenho dos componentes (fileiras, grades, `start`/`end`, `mirror`).
+   * Reading direction the container pins (v20); absent or `null` = follows the project's. It applies
+   * to the drawing of components (rows, grids, `start`/`end`, `mirror`).
    */
   readonly direction?: ReadingDirection | null;
 }
@@ -115,10 +115,10 @@ import {
 export { ANCHOR_ALIGNS, ANCHOR_SIDES, type AnchorAlign, type AnchorSide };
 
 /**
- * Âncora de uma marcação (v20): a marcação fica encostada em outra do mesmo espaço (`to`), do lado
- * `side`, alinhada por `align`, com o `offset` em pixels do espaço (`main` = distância da borda
- * da âncora, negativo sobrepõe; `cross` = deslocamento ao longo do lado). Os campos ausentes
- * valem os padrões do componente. Não entra no pertencimento: quem contém quem é só geometria.
+ * Anchor of a marking (v20): the marking sits against another in the same space (`to`), on side
+ * `side`, aligned by `align`, with the `offset` in pixels of the space (`main` = distance from the
+ * anchor's edge, negative overlaps; `cross` = offset along the side). Absent fields take the
+ * component's defaults. It does not take part in containment: who contains whom is only geometry.
  */
 export interface MarkingAnchor {
   readonly to: string;
@@ -130,43 +130,43 @@ export interface MarkingAnchor {
 export interface Marking {
   readonly id: string;
   /**
-   * Espaço da marcação (v13): o container (`rect` em pixels inteiros dele) ou `null`, a
-   * marcação do canvas (`rect` em unidades inteiras do canvas, coordenadas podem ser negativas).
-   * Decidido pela geometria ao assentar (`settleHierarchy`).
+   * Space of the marking (v13): the container (`rect` in whole pixels of it) or `null`, a canvas
+   * marking (`rect` in whole canvas units, coordinates may be negative). Decided by the geometry
+   * when settling (`settleHierarchy`).
    */
   readonly containerId: string | null;
   /**
-   * A menor marcação do mesmo espaço que a contém inteira (v13: derivada pelo assentar, nunca
-   * escolhida à mão); `null` = nenhuma.
+   * The smallest marking in the same space that fully contains it (v13: derived by the settle,
+   * never chosen by hand); `null` = none.
    */
   readonly parentId: string | null;
   readonly name: string | null;
   readonly rect: Rect;
   readonly needsReview: boolean;
   /**
-   * Trancada (v5): não pode ser movida, redimensionada nem excluída, e trancar o pai
-   * trava a geometria dos descendentes. A seleção e as anotações seguem livres.
+   * Locked (v5): cannot be moved, resized or deleted, and locking the parent
+   * locks the geometry of the descendants. Selection and annotations stay free.
    */
   readonly locked: boolean;
   /**
-   * Flutuante (v13): comentário sobre o canvas (uma nota), fora da árvore de pertencimento nos
-   * dois sentidos. Vive sempre no canvas (`containerId` e `parentId` nulos) e é desenhada acima
-   * de tudo.
+   * Floating (v13): a comment over the canvas (a note), outside the containment tree in both
+   * directions. It always lives on the canvas (null `containerId` and `parentId`) and is drawn
+   * above everything.
    */
   readonly floating: boolean;
   /** Identidade no sistema de origem (v8); `null` = sem origem. */
   readonly source: ExternalSource | null;
   /**
-   * Âncora (v20): encosta a marcação em outra do mesmo espaço; ausente ou `null` = sem âncora.
-   * Mover a âncora leva as ancoradas; redimensioná-la não.
+   * Anchor (v20): snaps the marking to another in the same space; absent or `null` = no anchor.
+   * Moving the anchor takes the anchored ones along; resizing it does not.
    */
   readonly anchor?: MarkingAnchor | null;
 }
 
-/** Lado de uma marcação onde a seta se prende (v13). */
+/** Side of a marking where the arrow attaches (v13). */
 export type ArrowSide = 'top' | 'right' | 'bottom' | 'left';
 
-/** Estilo do traço da seta (v13): `curve` é o padrão. */
+/** Stroke style of the arrow (v13): `curve` is the default. */
 export type ArrowStyle = 'straight' | 'curve' | 'elbow';
 
 export const ARROW_SIDES: readonly ArrowSide[] = ['top', 'right', 'bottom', 'left'];
@@ -174,147 +174,147 @@ export const ARROW_STYLES: readonly ArrowStyle[] = ['straight', 'curve', 'elbow'
 export const DEFAULT_ARROW_STYLE: ArrowStyle = 'curve';
 
 /**
- * Seta (v13, decisão 14): uma marcação que aponta. Liga duas marcações (`from`, `to`), tem
- * rota e estilo próprios e pode ter anotações por camada (`annotations[].markingId` = id da
- * seta; ids no mesmo espaço das marcações). Fica fora da árvore de pertencimento: não tem
- * `rect`, container nem pai.
+ * Arrow (v13, decision 14): a marking that points. It links two markings (`from`, `to`), has
+ * its own route and style and can have annotations per layer (`annotations[].markingId` = the
+ * arrow's id; ids share the same space as the markings'). It is outside the containment tree: it has
+ * no `rect`, container or parent.
  */
 export interface Arrow {
   readonly id: string;
-  /** Marcação de origem. */
+  /** Origin marking. */
   readonly from: string;
-  /** Marcação de destino (diferente de `from`). */
+  /** Destination marking (different from `from`). */
   readonly to: string;
-  /** Lado da origem; `null` = o padrão borda a borda. */
+  /** Side of the origin; `null` = the default edge to edge. */
   readonly fromSide: ArrowSide | null;
-  /** Lado do destino; `null` = o padrão borda a borda. */
+  /** Side of the destination; `null` = the default edge to edge. */
   readonly toSide: ArrowSide | null;
   /**
-   * Pontos de passagem, só da pessoa. Espaço derivado das duas pontas, nunca gravado
-   * (decisão (d)): pixels do container quando as duas estão no mesmo container; senão,
-   * unidades do canvas. `[]` = rota padrão.
+   * Waypoints, set only by the person. Space derived from the two ends, never stored
+   * (decision (d)): container pixels when both are in the same container; otherwise,
+   * canvas units. `[]` = default route.
    */
   readonly points: readonly ArrowPoint[];
   readonly style: ArrowStyle;
-  /** Rótulo sobre a seta; `null` = sem rótulo. */
+  /** Label over the arrow; `null` = no label. */
   readonly name: string | null;
-  /** Trancada: a rota e as pontas não mudam; a seleção e as anotações seguem livres. */
+  /** Locked: the route and the ends do not change; selection and annotations stay free. */
   readonly locked: boolean;
 }
 
-/** Ponto (pixels do container ou unidades do canvas, conforme quem o usa). */
+/** Point (container pixels or canvas units, depending on who uses it). */
 export interface ArrowPoint {
   readonly x: number;
   readonly y: number;
 }
 
 export interface Entry {
-  /** Id estável da tupla: as referências (`ref`) sobrevivem a renomear a chave. */
+  /** Stable id of the tuple: references (`ref`) survive renaming the key. */
   readonly id: string;
   readonly key: string;
   readonly value: string;
 }
 
-/** Tipo de uma anotação tipada. */
+/** Type of a typed annotation. */
 export interface AnnotationTypeRef {
   readonly specId: string;
   readonly typeId: string;
 }
 
-/** Valores de uma anotação tipada, por `key` do campo (ver docs/FORMAT.md, "Referências (`ref`)"). */
+/** Values of a typed annotation, by field `key` (see docs/FORMAT.md, "References (`ref`)"). */
 export type TypedValues = { readonly [key: string]: JsonValue };
 
-/** Linha de um campo `table`: as chaves das colunas mais o id interno `_id`. */
+/** Row of a `table` field: the column keys plus the internal id `_id`. */
 export type TableRow = { readonly _id: string; readonly [key: string]: JsonValue };
 
-/** Referência a uma tupla de anotação livre. */
+/** Reference to a tuple of a free annotation. */
 export interface EntryRef {
   readonly annotationId: string;
   readonly entryId: string;
 }
 
-/** Referência a uma linha de `table` com etiqueta. */
+/** Reference to a labeled `table` row. */
 export interface RowRef {
   readonly annotationId: string;
   readonly key: string;
   readonly rowId: string;
 }
 
-/** Referência a um campo simples com etiqueta. */
+/** Reference to a labeled simple field. */
 export interface FieldRef {
   readonly annotationId: string;
   readonly key: string;
 }
 
 /**
- * Referência à anotação inteira (v17): só o `annotationId`, sem `key`, `entryId` nem `rowId`.
- * (`AnnotationRef` já é a referência de saída de `refs.ts`.)
+ * Reference to the whole annotation (v17): only the `annotationId`, with no `key`, `entryId` or
+ * `rowId`. (`AnnotationRef` is already the output reference of `refs.ts`.)
  */
 export interface WholeRef {
   readonly annotationId: string;
 }
 
-/** Valor de um campo `ref`: um dos quatro formatos (docs/FORMAT.md, "Referências (`ref`)"). */
+/** Value of a `ref` field: one of the four formats (docs/FORMAT.md, "References (`ref`)"). */
 export type RefValue = EntryRef | RowRef | FieldRef | WholeRef;
 
 /**
- * Sobreposição local do repositório de uma plataforma (v11), no nível do projeto: onde está
- * o clone. O endereço do repositório é da especialização (`platforms[].repo`).
+ * Local override of a platform's repository (v11), at the project level: where the clone is.
+ * The repository's address belongs to the specialization (`platforms[].repo`).
  */
 export interface PlatformRepo {
-  /** Raiz do clone, relativa à pasta do projeto (ex: `../..`); `null` = não informada. */
+  /** Root of the clone, relative to the project folder (e.g. `../..`); `null` = not given. */
   readonly localPath: string | null;
 }
 
-/** `platformRepos` do `mapping.json`: sobreposição local por id de plataforma. */
+/** `platformRepos` of the `mapping.json`: local override by platform id. */
 export type PlatformRepos = { readonly [platformId: string]: PlatformRepo };
 
 /**
- * Sobreposição local do repositório de documentos de uma especialização (v14), no nível do
- * projeto: onde está o clone. O endereço do repositório é da especialização (`docRepos`).
+ * Local override of a specialization's document repository (v14), at the project level: where
+ * the clone is. The repository's address belongs to the specialization (`docRepos`).
  */
 export interface DocRepo {
-  /** Raiz do clone, relativa à pasta do projeto (ex: `../docs`). */
+  /** Root of the clone, relative to the project folder (e.g. `../docs`). */
   readonly localPath: string;
 }
 
-/** `docRepos` do `mapping.json`: sobreposição local por id de repositório de documentos. */
+/** `docRepos` of the `mapping.json`: local override by document repository id. */
 export type DocRepos = { readonly [docRepoId: string]: DocRepo };
 
 export interface Annotation {
   readonly id: string;
-  /** Marcação (ou seta, v13) dona da anotação. */
+  /** Marking (or arrow, v13) that owns the annotation. */
   readonly markingId: string;
   readonly layerId: string;
   readonly name: string | null;
-  /** Anotação "dona" (mesma marcação, outra camada, sem ciclos) ou `null`. */
+  /** "Owner" annotation (same marking, another layer, no cycles) or `null`. */
   readonly parentAnnotationId: string | null;
   /**
-   * Papel que esta anotação ocupa na dona (v14): id de um `childRoles` do tipo da dona, ou `null`
-   * = sem papel. Só existe com dona (`parentAnnotationId` não nulo). Falta e papel que a dona não
-   * oferece viram pendência (`missing-role`, `unknown-role`), não erro.
+   * Role this annotation fills in the owner (v14): id of a `childRoles` of the owner's type, or
+   * `null` = no role. It only exists with an owner (non-null `parentAnnotationId`). A missing role
+   * and a role the owner does not offer become pending items (`missing-role`, `unknown-role`), not errors.
    */
   readonly parentRole: string | null;
-  /** `null` = anotação livre (pares em `entries`). */
+  /** `null` = free annotation (pairs in `entries`). */
   readonly type: AnnotationTypeRef | null;
-  /** Valores da anotação tipada; `null` na anotação livre. */
+  /** Values of the typed annotation; `null` on a free annotation. */
   readonly values: TypedValues | null;
-  /** Pares da anotação livre; sempre `[]` na tipada. */
+  /** Pairs of the free annotation; always `[]` on a typed one. */
   readonly entries: readonly Entry[];
 }
 
-/** Especialização aplicada, como gravada no `mapping.json`. */
+/** Applied specialization, as written in the `mapping.json`. */
 export interface SpecializationRef {
   readonly id: string;
   readonly version: number;
-  /** Cópia da especialização, relativa à raiz (`specs/sdui.json`). */
+  /** Copy of the specialization, relative to the root (`specs/sdui.json`). */
   readonly file: string;
 }
 
 /**
- * Especialização aplicada, em memória: a referência do `mapping.json` mais o
- * conteúdo de `file`. `spec` não vai para o `mapping.json` (fica em `specs/`);
- * `null` quando o arquivo está ausente ou inválido.
+ * Applied specialization, in memory: the reference from the `mapping.json` plus the
+ * content of `file`. `spec` does not go into the `mapping.json` (it lives in `specs/`);
+ * `null` when the file is missing or invalid.
  */
 export interface ProjectSpecialization extends SpecializationRef {
   readonly spec: Spec | null;
@@ -322,8 +322,8 @@ export interface ProjectSpecialization extends SpecializationRef {
 
 export interface ProjectInfo {
   /**
-   * Identidade do projeto (v16): um UUID criado na migração e na criação do projeto, que nunca
-   * muda. Chaveia o que fica no navegador (a perspectiva aberta, as perspectivas "Só eu").
+   * Identity of the project (v16): a UUID created on migration and on project creation, which
+   * never changes. It keys what stays in the browser (the open perspective, the "Only me" perspectives).
    */
   readonly id: string;
   readonly name: string;
@@ -331,44 +331,45 @@ export interface ProjectInfo {
   readonly updatedAt: string;
 }
 
-/** Posição de uma raiz numa perspectiva (v16): o canto de cima à esquerda, em unidades do canvas. */
+/** Position of a root in a perspective (v16): the top-left corner, in canvas units. */
 export interface PerspectiveItem {
-  /** Id de uma raiz: container sem pai, marcação do canvas sem pai ou flutuante. */
+  /** Id of a root: container with no parent, canvas marking with no parent, or floating. */
   readonly root: string;
   readonly x: number;
   readonly y: number;
 }
 
 /**
- * Perspectiva (v16): um recorte do projeto. Quais raízes aparecem (`items`), onde ficam no canvas
- * e quais camadas ficam escondidas. O conteúdo é o do projeto; só a posição das raízes muda. O
- * `mapping.json` guarda só as "Para todos"; as "Só eu" ficam no navegador, no mesmo formato.
+ * Perspective (v16): a cut of the project. Which roots appear (`items`), where they sit on the
+ * canvas and which layers are hidden. The content is the project's; only the roots' position
+ * changes. The `mapping.json` stores only the "For everyone" ones; the "Only me" ones stay in the
+ * browser, in the same format.
  */
 export interface Perspective {
   readonly id: string;
-  /** Único entre as perspectivas, sem diferença de caixa. */
+  /** Unique among the perspectives, case-insensitive. */
   readonly name: string;
-  /** Camadas escondidas nesta perspectiva (camada nova nasce visível). */
+  /** Layers hidden in this perspective (a new layer is born visible). */
   readonly hiddenLayers: readonly string[];
-  /** Uma entrada por raiz, sem repetir. */
+  /** One entry per root, no repeats. */
   readonly items: readonly PerspectiveItem[];
 }
 
-/** Marca "Veio de…" (v16): uma raiz criada fora da Principal que chegou a ela. */
+/** "Came from…" mark (v16): a root created outside the Main one that arrived in it. */
 export interface Arrival {
   readonly root: string;
-  /** Id da perspectiva de origem (pode não existir mais). */
+  /** Id of the source perspective (may no longer exist). */
   readonly from: string;
-  /** Nome da perspectiva de origem, guardado para a marca sobreviver a ela. */
+  /** Name of the source perspective, stored so the mark survives it. */
   readonly fromName: string;
 }
 
 export interface Project {
   readonly schemaVersion: typeof SCHEMA_VERSION;
   /**
-   * Contador de gravações do arquivo (v6). Quem grava (app ou MCP) confere se o
-   * valor no disco ainda é o que carregou e grava `revision + 1`; assim percebe
-   * uma alteração feita por outro processo. As operações do modelo não o alteram.
+   * Counter of the file's writes (v6). Whoever writes (app or MCP) checks that the
+   * value on disk is still the one it loaded and writes `revision + 1`; this way it notices
+   * a change made by another process. The model's operations do not change it.
    */
   readonly revision: number;
   readonly app: typeof APP_ID;
@@ -376,36 +377,37 @@ export interface Project {
   readonly project: ProjectInfo;
   readonly specializations: readonly ProjectSpecialization[];
   /**
-   * Repositório de cada plataforma (v7). Fica no projeto, não na especialização: a mesma
-   * especialização serve a produtos diferentes. Plataformas de mesmo id em especializações
-   * diferentes são a mesma e usam a mesma configuração.
+   * Repository of each platform (v7). It lives in the project, not in the specialization: the same
+   * specialization serves different products. Platforms with the same id in different
+   * specializations are the same one and use the same configuration.
    */
   readonly platformRepos: PlatformRepos;
   /**
-   * Clone local de cada repositório de documentos (v14), por id do `docRepos` da especialização.
-   * Mesmas regras do `platformRepos`: o mesmo id em especializações diferentes é a mesma entrada.
+   * Local clone of each document repository (v14), by `docRepos` id of the specialization.
+   * Same rules as `platformRepos`: the same id in different specializations is the same entry.
    */
   readonly docRepos: DocRepos;
   /**
-   * Modo do desenho do projeto (v18): escolhe o modo dos `tokens` das especializações. Ausente =
-   * o primeiro modo de cada especialização. Um modo que nenhuma declara fica gravado (Diagnóstico).
+   * Drawing mode of the project (v18): chooses the mode of the specializations' `tokens`. Absent =
+   * the first mode of each specialization. A mode that none declares stays stored (Diagnostics).
    */
   readonly drawingMode?: string;
-  /** Direção de leitura do projeto (v20): `ltr` ou `rtl`; ausente = `ltr`. */
+  /** Reading direction of the project (v20): `ltr` or `rtl`; absent = `ltr`. */
   readonly direction?: ReadingDirection;
   readonly layers: readonly Layer[];
   readonly containers: readonly ProjectContainer[];
   readonly markings: readonly Marking[];
-  /** Setas (v13, ME4): marcações que apontam. */
+  /** Arrows (v13, ME4): markings that point. */
   readonly arrows: readonly Arrow[];
-  /** Perspectivas "Para todos" (v16). A Principal é implícita e não está aqui. */
+  /** "For everyone" perspectives (v16). The Main one is implicit and is not here. */
   readonly perspectives: readonly Perspective[];
-  /** Marcas "Veio de…" da Principal (v16). */
+  /** "Came from…" marks of the Main one (v16). */
   readonly arrivals: readonly Arrival[];
   readonly annotations: readonly Annotation[];
 }
 
-/** O `mapping.json` como gravado: as especializações sem o conteúdo. */
+/** The `mapping.json` as written: the specializations without the content. */
+
 export type ProjectFile = Omit<Project, 'specializations'> & {
   readonly specializations: readonly SpecializationRef[];
 };

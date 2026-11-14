@@ -92,7 +92,7 @@ describe('formatVersion 9: variants', () => {
   it('variants numa 8 (e na 5 a 7) é erro no caminho exato', () => {
     for (const v of [5, 6, 7, 8]) {
       expect(issuesOf(spec(undefined, v)), `v${v}`).toEqual([
-        { path: VARIANTS, message: 'só é permitido com formatVersion 9' },
+        { path: VARIANTS, message: 'only allowed with formatVersion 9' },
       ]);
     }
     expect(issuesOf(spec((code) => delete code.variants, 8))).toEqual([]);
@@ -100,13 +100,13 @@ describe('formatVersion 9: variants', () => {
 
   it('field ausente, inexistente, não enum e coluna de table', () => {
     expect(issuesOf(spec((c) => delete c.variants.field))).toEqual([
-      { path: `${VARIANTS}.field`, message: 'obrigatório' },
+      { path: `${VARIANTS}.field`, message: 'required' },
     ]);
     expect(issuesOf(spec((c) => (c.variants.field = 'nada')))).toEqual([
-      { path: `${VARIANTS}.field`, message: '"nada" não é um campo do tipo' },
+      { path: `${VARIANTS}.field`, message: '"nada" is not a field of the type' },
     ]);
     expect(issuesOf(spec((c) => (c.variants.field = 'label')))).toEqual([
-      { path: `${VARIANTS}.field`, message: '"label" deve ser um campo enum do tipo' },
+      { path: `${VARIANTS}.field`, message: '"label" must be an enum field of the type' },
     ]);
     const asColumn = withType((type) => {
       type.fields.push({
@@ -120,23 +120,23 @@ describe('formatVersion 9: variants', () => {
       };
     });
     expect(issuesOf(asColumn)).toEqual([
-      { path: `${VARIANTS}.field`, message: '"estilo" não é um campo do tipo' },
+      { path: `${VARIANTS}.field`, message: '"estilo" is not a field of the type' },
     ]);
   });
 
   it('cases ausente, vazio e com chave fora das options', () => {
     expect(issuesOf(spec((c) => delete c.variants.cases))).toEqual([
-      { path: `${VARIANTS}.cases`, message: 'obrigatório' },
+      { path: `${VARIANTS}.cases`, message: 'required' },
     ]);
     expect(issuesOf(spec((c) => (c.variants.cases = {})))).toEqual([
-      { path: `${VARIANTS}.cases`, message: 'declare ao menos um caso' },
+      { path: `${VARIANTS}.cases`, message: 'declare at least one case' },
     ]);
     expect(
       issuesOf(spec((c) => (c.variants.cases.elevated = { symbol: 'ElevatedButton' }))),
     ).toEqual([
       {
         path: `${VARIANTS}.cases.elevated`,
-        message: '"elevated" não está nas options de "style"',
+        message: '"elevated" is not in the options of "style"',
       },
     ]);
   });
@@ -145,7 +145,7 @@ describe('formatVersion 9: variants', () => {
     expect(issuesOf(spec((c) => (c.variants.cases.outlined = {})))).toEqual([
       {
         path: `${VARIANTS}.cases.outlined`,
-        message: 'caso vazio: declare symbol, path, params, values ou notes',
+        message: 'empty case: declare symbol, path, params, values or notes',
       },
     ]);
   });
@@ -165,7 +165,7 @@ describe('formatVersion 9: variants', () => {
     ).toEqual([
       {
         path: `${VARIANTS}.cases.outlined.params.nada`,
-        message: '"nada" não é um campo do tipo',
+        message: '"nada" is not a field of the type',
       },
     ]);
     expect(
@@ -173,7 +173,7 @@ describe('formatVersion 9: variants', () => {
     ).toEqual([
       {
         path: `${VARIANTS}.cases.outlined.values.nada`,
-        message: '"nada" não é um campo do tipo',
+        message: '"nada" is not a field of the type',
       },
     ]);
     expect(
@@ -181,7 +181,7 @@ describe('formatVersion 9: variants', () => {
     ).toEqual([
       {
         path: `${VARIANTS}.cases.outlined.values.label`,
-        message: '"label" deve ser um campo enum do tipo',
+        message: '"label" must be an enum field of the type',
       },
     ]);
     expect(
@@ -189,7 +189,7 @@ describe('formatVersion 9: variants', () => {
     ).toEqual([
       {
         path: `${VARIANTS}.cases.outlined.values.size.huge`,
-        message: '"huge" não está nas options de "size"',
+        message: '"huge" is not in the options of "size"',
       },
     ]);
   });
@@ -200,9 +200,9 @@ describe('formatVersion 9: variants', () => {
     );
     expect(others).toEqual([]);
     expect(issue?.path).toBe(`${VARIANTS}.cases.outlined.path`);
-    expect(issue?.message).toContain('caminho inválido');
+    expect(issue?.message).toContain('invalid path');
     expect(issuesOf(spec((c) => (c.variants.cases.outlined.symbol = '')))).toEqual([
-      { path: `${VARIANTS}.cases.outlined.symbol`, message: 'não pode ser vazio' },
+      { path: `${VARIANTS}.cases.outlined.symbol`, message: 'cannot be empty' },
     ]);
   });
 

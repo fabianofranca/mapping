@@ -31,95 +31,95 @@ import { checkSignatures } from './librarySignature';
 import type { ModelMessageTemplateCode } from './messages';
 import type { ModelMessage } from './modelMessage';
 
-// Validador da biblioteca em três níveis (etapa Biblioteca, fase B1). Puro: recebe os arquivos
-// do pacote JÁ LIDOS (texto dos `.json` e `.md`, presença dos binários) e devolve a lista de
-// problemas; nunca lê disco nem rede. As três portas (app, servidor MCP e skill) chamam esta
-// mesma função.
+// Library validator in three levels (Library stage, phase B1). Pure: it receives the package
+// files ALREADY READ (text of the `.json` and `.md`, presence of the binaries) and returns the
+// list of problems; it never reads disk or network. The three gateways (app, MCP server and
+// skill) call this same function.
 //
-// Erro impede usar, aviso deixa usar. `ok` é "nenhum `error`".
+// An error prevents use, a warning allows it. `ok` means "no `error`".
 //
-// Níveis (cada um só roda se `level` o inclui e se o anterior deixou o que ele precisa):
-//   1. cada arquivo isolado, estrito: a especialização (`parseSpec` + `specWarnings`), cada
-//      componente (`parseComponent`), os documentos `.md`, e quais arquivos o pacote cita ou
-//      deixa sem uso;
-//   2. coerência entre os arquivos: slot, campos do template, arquivos dos exemplos externos,
-//      fontes, `scrim` das origens e o contrato de versão (`previous`);
-//   3. prova de desenho (`libraryDrawing.ts`): instancia cada componente e passa os exemplos
-//      externos pela declaração.
-// Sem especialização legível não há nível 2 nem 3; um componente inválido ou ausente não
-// impede os outros de passarem pelos níveis 2 e 3.
+// Levels (each one only runs if `level` includes it and if the previous one left what it needs):
+//   1. each file in isolation, strict: the specialization (`parseSpec` + `specWarnings`), each
+//      component (`parseComponent`), the `.md` documents, and which files the package cites or
+//      leaves unused;
+//   2. coherence between the files: slot, template fields, files of the external examples,
+//      fonts, the origins' `scrim` and the version contract (`previous`);
+//   3. drawing proof (`libraryDrawing.ts`): instantiates each component and runs the external
+//      examples through the declaration.
+// Without a readable specialization there is no level 2 or 3; an invalid or missing component
+// does not stop the others from going through levels 2 and 3.
 //
-// Ordem de `issues` (fixa, os testes dependem dela): todas as do nível 1, depois as do 2,
-// depois as do 3. Dentro de cada nível, a ordem da especialização:
-//   nível 1: erros da especialização (na ordem do `parseSpec`), avisos dela (`specWarnings`);
-//            depois, tipo a tipo (camadas e tipos em ordem): o arquivo do `component` (ausente
-//            ou os erros dele; um arquivo citado por dois tipos é lido uma vez) e o do `doc`;
-//            por fim os arquivos sem referência, na ordem da lista `files`;
-//   nível 2: tipo a tipo: componente repetido, `slot`, campos do template (erro), campos do
-//            `preview` e do tipo que o template não usa (aviso), arquivos dos exemplos
-//            externos do tipo; depois as fontes, as origens (`scrim`, telas de exemplo) e,
-//            por último, o contrato de versão (id, `version`, quebras sem migração, passos que
-//            citam o que não existia);
-//   nível 3: ver `libraryDrawing.ts`.
+// Order of `issues` (fixed, the tests depend on it): all of level 1, then those of 2, then those
+// of 3. Within each level, the order of the specialization:
+//   level 1: specialization errors (in `parseSpec` order), its warnings (`specWarnings`); then,
+//            type by type (layers and types in order): the `component` file (missing or its
+//            errors; a file cited by two types is read once) and the `doc` one; finally the
+//            unreferenced files, in the order of the `files` list;
+//   level 2: type by type: repeated component, `slot`, template fields (error), `preview` fields
+//            and type fields the template does not use (warning), files of the type's external
+//            examples; then the fonts, the origins (`scrim`, example screens) and, last, the
+//            version contract (id, `version`, breaks without a migration, steps that cite what
+//            did not exist);
+//   level 3: see `libraryDrawing.ts`.
 
 export interface LibraryFile {
-  /** Caminho relativo à raiz do pacote, com `/`. */
+  /** Path relative to the package root, with `/`. */
   readonly path: string;
-  /** Conteúdo dos `.json` e dos `.md`. */
+  /** Content of the `.json` and `.md` files. */
   readonly text?: string;
-  /** `true` para binário presente (fonte); o conteúdo não é lido. */
+  /** `true` for a present binary (font); the content is not read. */
   readonly binary?: boolean;
 }
 
 export interface LibraryIssue {
-  /** Arquivo onde está o problema (`""` quando é do pacote). */
+  /** File where the problem is (`""` when it belongs to the package). */
   readonly file: string;
-  /** Caminho dentro do arquivo (`layers[0].annotationTypes[2].component`), `""` se não houver. */
+  /** Path inside the file (`layers[0].annotationTypes[2].component`), `""` if there is none. */
   readonly path: string;
   readonly message: string;
   readonly severity: 'error' | 'warning';
   /**
-   * Código estável de problemas que a interface exibe traduzidos (`src/model/messages/`);
-   * `message` continua com o texto em português (MCP e testes).
+   * Stable code of problems that the interface shows translated (`src/model/messages/`);
+   * `message` keeps the text in Portuguese (MCP and tests).
    */
   readonly code?: ModelMessageTemplateCode;
-  /** Dados da tradução (`{key}`, `{path}`…). */
+  /** Translation data (`{key}`, `{path}`…). */
   readonly params?: Readonly<Record<string, string | number>>;
-  /** Mensagem de outro módulo que a interface traduz e põe no `{reason}` do texto de fora. */
+  /** Message from another module that the interface translates and puts in the `{reason}` of the outer text. */
   readonly detail?: ModelMessage;
 }
 
 export interface LibraryInput {
   readonly files: readonly LibraryFile[];
-  /** Caminho do arquivo da especialização; sem ele, procura o único `"format": "mapping-spec"`. */
+  /** Path of the specialization file; without it, looks for the only `"format": "mapping-spec"`. */
   readonly specPath?: string;
-  /** Versão anterior do pacote: liga o contrato de versão no nível 2. */
+  /** Previous version of the package: turns on the version contract at level 2. */
   readonly previous?: Spec;
-  /** Até que nível ir (padrão 3). */
+  /** How far to go (default 3). */
   readonly level?: 1 | 2 | 3;
 }
 
 export interface LibraryReport {
-  /** Sem nenhum `error`. */
+  /** With no `error`. */
   readonly ok: boolean;
-  /** Na ordem: nível 1, depois 2, depois 3 (ver o cabeçalho do arquivo). */
+  /** In order: level 1, then 2, then 3 (see the file header). */
   readonly issues: readonly LibraryIssue[];
   readonly errors: readonly LibraryIssue[];
   readonly warnings: readonly LibraryIssue[];
-  /** A especialização lida (ausente quando o nível 1 não conseguiu lê-la). */
+  /** The specialization read (absent when level 1 could not read it). */
   readonly spec?: Spec;
   readonly summary: {
-    /** O maior nível que chegou a rodar (menor que o pedido quando não havia especialização legível). */
+    /** The highest level that ran (lower than requested when there was no readable specialization). */
     readonly level: 1 | 2 | 3;
-    /** Tipos de anotação da especialização. */
+    /** Annotation types of the specialization. */
     readonly types: number;
-    /** Arquivos de componente distintos citados pelos tipos. */
+    /** Distinct component files cited by the types. */
     readonly components: number;
-    /** Arquivos de documento distintos citados pelos tipos. */
+    /** Distinct document files cited by the types. */
     readonly docs: number;
-    /** Exemplos dos tipos mais as telas de exemplo das origens. */
+    /** The types' examples plus the origins' example screens. */
     readonly examples: number;
-    /** Fontes declaradas. */
+    /** Declared fonts. */
     readonly fonts: number;
   };
 }
@@ -133,7 +133,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 const messageOf = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
-/** Percorre os tipos na ordem da especialização, com o caminho de cada um. */
+/** Walks the types in the specialization's order, with each one's path. */
 function eachType(
   spec: Spec,
   visit: (type: SpecAnnotationType, path: string) => void,
@@ -145,7 +145,7 @@ function eachType(
   });
 }
 
-/** Campos do tipo pela chave; as colunas de `table` entram como `tabela.coluna`. */
+/** The type's fields by key; `table` columns come in as `table.column`. */
 function fieldKeys(type: SpecAnnotationType): Map<string, SpecField> {
   const keys = new Map<string, SpecField>();
   for (const field of type.fields) {
@@ -158,9 +158,9 @@ function fieldKeys(type: SpecAnnotationType): Map<string, SpecField> {
 }
 
 /**
- * Onde cada chave de campo é citada no JSON do template (primeiro lugar de cada uma), com o
- * caminho dentro do arquivo. Espelha `referencedFields` (`$field`, `$has`, `$switch` e o
- * primeiro item de `$eq`), que só devolve as chaves.
+ * Where each field key is cited in the template's JSON (first place of each), with the path
+ * inside the file. Mirrors `referencedFields` (`$field`, `$has`, `$switch` and the first item of
+ * `$eq`), which only returns the keys.
  */
 function fieldReferences(
   node: unknown,
@@ -175,7 +175,7 @@ function fieldReferences(
   const isRepeat = node.type === 'repeat';
   for (const [key, value] of Object.entries(node)) {
     const at = `${path}.${key}`;
-    // `repeat`: o `template` lê colunas da linha (ver `repeatChecks`), não campos do tipo.
+    // `repeat`: the `template` reads columns of the row (see `repeatChecks`), not fields of the type.
     if (isRepeat && key === 'template') continue;
     if (isRepeat && key === 'field' && typeof value === 'string') {
       if (!out.has(value)) out.set(value, at);
@@ -183,7 +183,7 @@ function fieldReferences(
       (key === '$field' || key === '$has' || key === '$switch' || key === '$rows') &&
       typeof value === 'string'
     ) {
-      // `$index` é o índice da linha de um `repeat` e `$anchor.*` vêm da âncora: não são campos do tipo.
+      // `$index` is the row index of a `repeat` and `$anchor.*` come from the anchor: they are not fields of the type.
       if (
         !out.has(value) &&
         (key === '$rows' || (value !== INDEX_FIELD && !isAnchorFieldName(value)))
@@ -199,7 +199,7 @@ function fieldReferences(
   return out;
 }
 
-/** Onde o JSON do template usa `$rows` (a chave do campo e o caminho dela). */
+/** Where the template's JSON uses `$rows` (the field's key and its path). */
 function rowsReferences(
   node: unknown,
   path: string,
@@ -218,7 +218,7 @@ function rowsReferences(
   return out;
 }
 
-/** Os nós `repeat` do JSON do template, com o caminho de cada um (os aninhados não existem). */
+/** The `repeat` nodes of the template's JSON, with each one's path (nested ones do not exist). */
 function repeatNodes(
   node: unknown,
   path: string,
@@ -239,9 +239,9 @@ function repeatNodes(
 }
 
 /**
- * Os nós `image` com `src: { "$field": … }` do JSON do template, com o caminho do `src` e o
- * `repeat` que os envolve (`undefined` fora de `repeat`). O `src` literal de forma inválida
- * é erro do nível 1 (o parser).
+ * The `image` nodes with `src: { "$field": … }` of the template's JSON, with the `src` path and
+ * the `repeat` that wraps them (`undefined` outside a `repeat`). A literal `src` of invalid shape
+ * is a level 1 error (the parser).
  */
 function imageFieldNodes(
   node: unknown,
@@ -266,20 +266,20 @@ function imageFieldNodes(
     return out;
   }
   for (const [key, value] of Object.entries(node)) {
-    // `repeat`: o `template` lê colunas da linha; os nós de dentro têm o `repeat` como contexto.
+    // `repeat`: the `template` reads columns of the row; the nodes inside have the `repeat` as context.
     const inner = node.type === 'repeat' && key === 'template' ? node : repeat;
     imageFieldNodes(value, `${path}.${key}`, inner, out);
   }
   return out;
 }
 
-/** O código e os parâmetros que um parser (avisos, contrato de versão) já traz. */
+/** The code and parameters that a parser (warnings, version contract) already brings. */
 interface Coding {
   readonly messageCode?: ModelMessageTemplateCode | undefined;
   readonly messageParams?: Readonly<Record<string, string | number>> | undefined;
 }
 
-/** O código e os parâmetros que o parser do componente ou dos ícones pôs no problema. */
+/** The code and parameters that the component or icons parser put in the problem. */
 function codingOf(issue: {
   readonly code?: ModelMessageTemplateCode | undefined;
   readonly params?: Readonly<Record<string, string | number>> | undefined;
@@ -297,7 +297,7 @@ function codeOf(coding: Coding | undefined): Pick<LibraryIssue, 'code' | 'params
 
 class Collector {
   readonly issues: LibraryIssue[] = [];
-  /** Erro montado pelo catálogo de mensagens. */
+  /** Error built by the message catalog. */
   error(
     file: string,
     path: string,
@@ -306,15 +306,15 @@ class Collector {
   ): void {
     this.issues.push(libraryIssue('error', file, path, code, params));
   }
-  /** Erro repassado de um parser (com o código que ele já traz, quando há). */
+  /** Error passed on from a parser (with the code it already brings, when there is one). */
   passError(file: string, path: string, message: string, coding?: Coding): void {
     this.issues.push({ file, path, message, severity: 'error', ...codeOf(coding) });
   }
-  /** Aviso repassado de um parser (com o código que ele já traz, quando há). */
+  /** Warning passed on from a parser (with the code it already brings, when there is one). */
   passWarning(file: string, path: string, message: string, coding?: Coding): void {
     this.issues.push({ file, path, message, severity: 'warning', ...codeOf(coding) });
   }
-  /** Problema do `parseSpec`, com o código e os parâmetros que a interface traduz. */
+  /** Problem from `parseSpec`, with the code and parameters that the interface translates. */
   specIssue(file: string, issue: SpecIssue): void {
     this.issues.push({
       file,
@@ -325,7 +325,7 @@ class Collector {
       ...(issue.params === undefined ? {} : { params: issue.params }),
     });
   }
-  /** Arquivo citado que não está no pacote. */
+  /** Cited file that is not in the package. */
   fileNotFound(file: string, path: string, target: string): void {
     this.error(file, path, 'library.fileNotFound', { path: target });
   }
@@ -360,7 +360,7 @@ function locateSpec(
       const json: unknown = JSON.parse(file.text);
       if (isRecord(json) && SPEC_FORMATS.includes(json.format)) found.push(file.path);
     } catch {
-      // JSON inválido não é candidato: sem `format` legível não dá para saber o que é.
+      // Invalid JSON is not a candidate: without a readable `format` there is no telling what it is.
     }
   }
   if (found.length === 1 && found[0] !== undefined) return { path: found[0] };
@@ -374,28 +374,28 @@ function locateSpec(
   return { issue };
 }
 
-/** Nível 1 e 2 compartilham o que o 1 leu dos arquivos. */
+/** Levels 1 and 2 share what 1 read from the files. */
 interface Package {
   readonly spec: Spec;
   readonly specPath: string;
   readonly resolve: (ref: string) => string;
   readonly byPath: ReadonlyMap<string, LibraryFile>;
-  /** Componentes válidos pelo caminho resolvido. */
+  /** Valid components by resolved path. */
   readonly components: Map<string, ComponentFile>;
-  /** JSON do componente pelo caminho resolvido (para localizar as citações de campos). */
+  /** Component JSON by resolved path (to locate the field citations). */
   readonly componentJson: Map<string, unknown>;
-  /** Por arquivo de componente: leva um caminho do componente lido ao do arquivo escrito (`$var(<nome>)`). */
+  /** Per component file: takes a path in the read component to that in the written file (`$var(<name>)`). */
   readonly componentRewrite: Map<string, (path: string) => string>;
-  /** Os `$token` de cada componente válido, pelo caminho resolvido. */
+  /** The `$token`s of each valid component, by resolved path. */
   readonly tokenRefs: Map<string, readonly TokenRef[]>;
-  /** O conjunto de ícones (`icons`), quando o arquivo existe e é válido. */
+  /** The icon set (`icons`), when the file exists and is valid. */
   icons?: IconSet;
-  /** Caminho resolvido do arquivo de ícones declarado (`icons`). */
+  /** Resolved path of the declared icons file (`icons`). */
   iconsPath?: string;
 }
 
 // ---------------------------------------------------------------------------------------
-// Nível 1
+// Level 1
 // ---------------------------------------------------------------------------------------
 
 function level1(
@@ -445,7 +445,7 @@ function level1(
         readComponent(file, pkg, out);
       }
     }
-    // O `doc` em repositório externo (objeto) não é arquivo do pacote: o nível 1 não o confere.
+    // A `doc` in an external repository (object) is not a package file: level 1 does not check it.
     if (typeof type.doc === 'string') {
       const path = resolve(type.doc);
       referenced.add(path);
@@ -480,7 +480,7 @@ function level1(
   return pkg;
 }
 
-/** Nível 1 (formatVersion 16): as fichas citadas existem, são válidas e são as do mesmo código. */
+/** Level 1 (formatVersion 16): the cited signature sheets exist, are valid and are those of the same code. */
 function signatureChecks(pkg: Package, referenced: Set<string>, out: Collector): void {
   const { problems, referenced: cited } = checkSignatures(pkg.spec, pkg);
   for (const file of cited) referenced.add(file);
@@ -496,7 +496,8 @@ function signatureChecks(pkg: Package, referenced: Set<string>, out: Collector):
   }
 }
 
-/** Nível 1: o arquivo `icons` existe e é um `mapping-icons` válido. */
+/** Level 1: the `icons` file exists and is a valid `mapping-icons`. */
+
 function readIcons(pkg: Package, out: Collector): void {
   const path = pkg.iconsPath;
   if (path === undefined) return;
@@ -536,18 +537,18 @@ function readComponent(file: LibraryFile, pkg: Package, out: Collector): void {
   for (const warning of parsed.warnings)
     out.passWarning(file.path, warning.path, warning.message, codingOf(warning));
   pkg.components.set(file.path, parsed.component);
-  // O componente lido (com os `$var` trocados; é o próprio `json` quando não há variáveis): as
-  // conferências por citação de campo olham o desenho que o motor usa, não o `let` escrito.
+  // The component as read (with the `$var`s replaced; it is the `json` itself when there are no
+  // variables): the field-citation checks look at the drawing the engine uses, not the written `let`.
   pkg.componentJson.set(file.path, parsed.component);
   pkg.componentRewrite.set(file.path, parsed.rewrite);
   pkg.tokenRefs.set(file.path, parsed.tokenRefs);
 }
 
 // ---------------------------------------------------------------------------------------
-// Nível 2
+// Level 2
 // ---------------------------------------------------------------------------------------
 
-/** Confere um arquivo JSON citado (existe e é JSON) e guarda o conteúdo lido em `cache`; o erro de um arquivo sai uma vez. */
+/** Checks a cited JSON file (exists and is JSON) and stores the content read in `cache`; a file's error comes out once. */
 function readJsonFile(
   pkg: Package,
   ref: string,
@@ -575,12 +576,12 @@ function readJsonFile(
   }
 }
 
-/** O código do par (tipo do token, tipo esperado na posição): um por par de `TOKEN_KIND_NAMES`. */
+/** The code of the pair (token kind, kind expected at the position): one per pair of `TOKEN_KIND_NAMES`. */
 function wrongKindCode(found: TokenKind, expected: TokenKind): ModelMessageTemplateCode {
   return `library.tokenWrongKind.${found}.${expected}` as ModelMessageTemplateCode;
 }
 
-/** Cada `$token` do componente existe nos `tokens` da especialização (ou é embutido) e tem o tipo da posição. */
+/** Each `$token` of the component exists in the specialization's `tokens` (or is built in) and has the position's kind. */
 function tokenChecks(pkg: Package, path: string, out: Collector): void {
   const known = knownTokenKinds(pkg.spec.tokens);
   for (const ref of pkg.tokenRefs.get(path) ?? []) {
@@ -643,7 +644,7 @@ function typeCoherence(
     });
   }
   remapIssues(pkg, path, out.issues, from);
-  // Os `tokenRefs` já vêm com o caminho do arquivo escrito (`parseComponent`).
+  // The `tokenRefs` already come with the written file's path (`parseComponent`).
   tokenChecks(pkg, path, out);
   from = out.issues.length;
   const innerUsed = repeatChecks(type, path, rawTemplate, out);
@@ -669,8 +670,8 @@ function typeCoherence(
   const drawn = new Set([...used2, ...innerUsed]);
   const coded = fieldsUsedByCode(type);
   type.fields.forEach((field, index) => {
-    // Um campo que o desenho não usa mas o `code` usa (modificadores, descrição de acessibilidade)
-    // não é um campo esquecido: ele existe para o código.
+    // A field the drawing does not use but the `code` does (modifiers, accessibility description)
+    // is not a forgotten field: it exists for the code.
     if (drawn.has(field.key) || coded.has(field.key)) return;
     out.warning(pkg.specPath, `${base}.fields[${index}]`, 'library.fieldUnused', {
       key: field.key,
@@ -681,9 +682,9 @@ function typeCoherence(
 }
 
 /**
- * Os caminhos que as conferências por citação (campo, `repeat`, `$rows`, imagem, ícone) dão no
- * componente lido, com as variáveis trocadas, viram os do arquivo escrito (`$var(<nome>)` no lugar
- * do uso). Vale só para os problemas de `file` posteriores a `from`.
+ * The paths that the citation checks (field, `repeat`, `$rows`, image, icon) give in the component
+ * as read, with the variables replaced, become those of the written file (`$var(<name>)` in place
+ * of the use). Applies only to the problems of `file` after `from`.
  */
 function remapIssues(
   pkg: Package,
@@ -700,9 +701,9 @@ function remapIssues(
 }
 
 /**
- * Campos do tipo que o `code` (de qualquer plataforma, com os casos de `variants`) usa: chave de
- * `params` ou de `values`, o `field` de `variants` ou uma palavra inteira das `notes`. As `notes`
- * são o lugar onde o `code` explica como um campo vira modificador ou argumento.
+ * Fields of the type that the `code` (of any platform, with the `variants` cases) uses: key of
+ * `params` or of `values`, the `field` of `variants` or a whole word of the `notes`. The `notes`
+ * are where the `code` explains how a field becomes a modifier or an argument.
  */
 function fieldsUsedByCode(type: SpecAnnotationType): Set<string> {
   const used = new Set<string>();
@@ -730,7 +731,7 @@ function fieldsUsedByCode(type: SpecAnnotationType): Set<string> {
   return used;
 }
 
-/** O `preview` de um campo `table` é uma lista de linhas, e as colunas das linhas existem. */
+/** The `preview` of a `table` field is a list of rows, and the rows' columns exist. */
 function previewRows(
   type: SpecAnnotationType,
   field: Extract<SpecField, { type: 'table' }>,
@@ -767,10 +768,10 @@ function previewRows(
 }
 
 /**
- * Os `repeat` do desenho: o campo citado é uma `table` do tipo (erro se existe e não é) e o
- * `template` da linha só lê colunas dessa tabela ou campos do tipo (erro nos demais). Devolve
- * as chaves de campo do tipo (que não são colunas) lidas dentro dos `template`, para o aviso de
- * campo sem uso.
+ * The drawing's `repeat`s: the cited field is a `table` of the type (error if it exists and is
+ * not) and the row's `template` only reads columns of that table or fields of the type (error on
+ * the others). Returns the type's field keys (that are not columns) read inside the `template`s,
+ * for the unused-field warning.
  */
 function repeatChecks(
   type: SpecAnnotationType,
@@ -783,7 +784,7 @@ function repeatChecks(
   for (const { path: at, node } of repeatNodes(rawTemplate, 'template')) {
     const key = typeof node.field === 'string' ? node.field : undefined;
     const table = key === undefined ? undefined : fields.get(key);
-    // Campo inexistente já foi apontado ("o desenho usa o campo ..., que o tipo não declara").
+    // A nonexistent field was already pointed out ("the drawing uses the field ..., which the type does not declare").
     if (table !== undefined && table.type !== 'table') {
       out.error(path, `${at}.field`, 'library.repeatNotTable', {
         key: key ?? '',
@@ -816,7 +817,7 @@ function repeatChecks(
   return innerUsed;
 }
 
-/** `$rows` conta as linhas de uma `table` do tipo (campo de outro tipo é erro; inexistente já foi apontado). */
+/** `$rows` counts the rows of a `table` of the type (a field of another kind is an error; a nonexistent one was already pointed out). */
 function rowsChecks(
   type: SpecAnnotationType,
   path: string,
@@ -836,10 +837,10 @@ function rowsChecks(
 }
 
 /**
- * O `src` de um nó `image` ligado a um campo (`{ "$field": k }`) lê um texto: fora de `repeat`,
- * `k` é campo `string` do tipo; dentro, é coluna `string` da `table` do `repeat` (que sombreia o
- * campo do tipo) ou, se não for coluna, campo `string` do tipo. Chave inexistente já é apontada
- * pelas outras conferências; nenhuma origem é declarada.
+ * The `src` of an `image` node bound to a field (`{ "$field": k }`) reads a text: outside a
+ * `repeat`, `k` is a `string` field of the type; inside, it is a `string` column of the `repeat`'s
+ * `table` (which shadows the type's field) or, if not a column, a `string` field of the type. A
+ * nonexistent key is already pointed out by the other checks; no origin is declared.
  */
 function imageChecks(
   type: SpecAnnotationType,
@@ -878,12 +879,12 @@ function imageChecks(
   }
 }
 
-/** O que a conferência dos passos de papel lê da versão anterior. */
+/** What the role-step check reads from the previous version. */
 interface RoleReferences {
   readonly version: number;
-  /** id do tipo (na versão anterior) → ids dos papéis. */
+  /** type id (in the previous version) → role ids. */
   readonly before: ReadonlyMap<string, ReadonlySet<string>>;
-  /** id novo do tipo → id antigo, dos `rename-type` da migração. */
+  /** new type id → old id, from the migration's `rename-type`s. */
   readonly renamedFrom: ReadonlyMap<string, string>;
   readonly warn: (
     path: string,
@@ -893,9 +894,9 @@ interface RoleReferences {
 }
 
 /**
- * `rename-role.from` e `remove-role.role` que não eram papéis do tipo dono na versão anterior
- * (aviso). O dono é lido pelo id que tinha antes de um `rename-type`; um dono que não existia vira
- * aviso do tipo. Os outros passos não citam papel antigo.
+ * `rename-role.from` and `remove-role.role` that were not roles of the owner type in the previous
+ * version (warning). The owner is read by the id it had before a `rename-type`; an owner that did
+ * not exist becomes a warning on the type. The other steps do not cite an old role.
  */
 function roleReference(step: SpecMigrationStep, at: string, refs: RoleReferences): void {
   if (step.op !== 'rename-role' && step.op !== 'remove-role') return;
@@ -915,7 +916,7 @@ function roleReference(step: SpecMigrationStep, at: string, refs: RoleReferences
   }
 }
 
-/** Passos da migração que sai da versão anterior e citam o que não existia nela (aviso). */
+/** Steps of the migration leaving the previous version that cite what did not exist in it (warning). */
 function migrationReferences(
   previous: Spec,
   spec: Spec,
@@ -1094,7 +1095,7 @@ function level2(
 }
 
 // ---------------------------------------------------------------------------------------
-// Nível 3: opções de enum fora do conjunto de ícones
+// Level 3: enum options outside the icon set
 // ---------------------------------------------------------------------------------------
 
 function iconOptionChecks(pkg: Package): LibraryIssue[] {
@@ -1109,7 +1110,7 @@ function iconOptionChecks(pkg: Package): LibraryIssue[] {
 }
 
 // ---------------------------------------------------------------------------------------
-// Entrada
+// Entry
 // ---------------------------------------------------------------------------------------
 
 function summarize(
@@ -1128,7 +1129,7 @@ function summarize(
     types += 1;
     if (type.component !== undefined) components.add(pkg.resolve(type.component));
     if (typeof type.doc === 'string') docs.add(pkg.resolve(type.doc));
-    // Documento em repositório externo (docRepos): conta também, por repositório e caminho.
+    // Document in an external repository (docRepos): counts too, by repository and path.
     else if (type.doc !== undefined) docs.add(`${type.doc.repo}\u0000${type.doc.path}`);
     examples += type.examples?.length ?? 0;
   });
@@ -1160,7 +1161,8 @@ function report(
   };
 }
 
-/** Valida o pacote (a pasta da especialização) já lido; ver o cabeçalho do arquivo. */
+/** Validates the package (the specialization's folder) already read; see the file header. */
+
 export function validateLibrary(input: LibraryInput): LibraryReport {
   const wanted = input.level ?? 3;
   const byPath = new Map<string, LibraryFile>();

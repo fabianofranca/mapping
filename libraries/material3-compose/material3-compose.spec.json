@@ -702,12 +702,12 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `floatingActionButtonPosition` (FabPosition) ainda não é campo",
+              "message": "compose: the parameter `floatingActionButtonPosition` (FabPosition) is not a field yet",
               "ref": "signatures/scaffold.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `contentWindowInsets` (WindowInsets) ainda não é campo",
+              "message": "compose: the parameter `contentWindowInsets` (WindowInsets) is not a field yet",
               "ref": "signatures/scaffold.compose.json"
             }
           ]
@@ -1274,7 +1274,7 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `contentAlignment` (Alignment) ainda não é campo",
+              "message": "compose: the parameter `contentAlignment` (Alignment) is not a field yet",
               "ref": "signatures/box.compose.json"
             }
           ]
@@ -1494,12 +1494,12 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `horizontalArrangement` (Arrangement.Horizontal) ainda não é campo",
+              "message": "compose: the parameter `horizontalArrangement` (Arrangement.Horizontal) is not a field yet",
               "ref": "signatures/row.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `verticalAlignment` (Alignment.Vertical) ainda não é campo",
+              "message": "compose: the parameter `verticalAlignment` (Alignment.Vertical) is not a field yet",
               "ref": "signatures/row.compose.json"
             }
           ]
@@ -1722,12 +1722,12 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `verticalArrangement` (Arrangement.Vertical) ainda não é campo",
+              "message": "compose: the parameter `verticalArrangement` (Arrangement.Vertical) is not a field yet",
               "ref": "signatures/column.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `horizontalAlignment` (Alignment.Horizontal) ainda não é campo",
+              "message": "compose: the parameter `horizontalAlignment` (Alignment.Horizontal) is not a field yet",
               "ref": "signatures/column.compose.json"
             }
           ]
@@ -1885,22 +1885,22 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `verticalArrangement` (Arrangement.Vertical) ainda não é campo",
+              "message": "compose: the parameter `verticalArrangement` (Arrangement.Vertical) is not a field yet",
               "ref": "signatures/lazy-column.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `horizontalAlignment` (Alignment.Horizontal) ainda não é campo",
+              "message": "compose: the parameter `horizontalAlignment` (Alignment.Horizontal) is not a field yet",
               "ref": "signatures/lazy-column.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `flingBehavior` (FlingBehavior) ainda não é campo",
+              "message": "compose: the parameter `flingBehavior` (FlingBehavior) is not a field yet",
               "ref": "signatures/lazy-column.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `overscrollEffect` (OverscrollEffect?) ainda não é campo",
+              "message": "compose: the parameter `overscrollEffect` (OverscrollEffect?) is not a field yet",
               "ref": "signatures/lazy-column.compose.json"
             }
           ]
@@ -2059,22 +2059,22 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `horizontalArrangement` (Arrangement.Horizontal) ainda não é campo",
+              "message": "compose: the parameter `horizontalArrangement` (Arrangement.Horizontal) is not a field yet",
               "ref": "signatures/lazy-row.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `verticalAlignment` (Alignment.Vertical) ainda não é campo",
+              "message": "compose: the parameter `verticalAlignment` (Alignment.Vertical) is not a field yet",
               "ref": "signatures/lazy-row.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `flingBehavior` (FlingBehavior) ainda não é campo",
+              "message": "compose: the parameter `flingBehavior` (FlingBehavior) is not a field yet",
               "ref": "signatures/lazy-row.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `overscrollEffect` (OverscrollEffect?) ainda não é campo",
+              "message": "compose: the parameter `overscrollEffect` (OverscrollEffect?) is not a field yet",
               "ref": "signatures/lazy-row.compose.json"
             }
           ]
@@ -2216,27 +2216,27 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `columns` (GridCells) ainda não é campo",
+              "message": "compose: the parameter `columns` (GridCells) is not a field yet",
               "ref": "signatures/lazy-vertical-grid.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `verticalArrangement` (Arrangement.Vertical) ainda não é campo",
+              "message": "compose: the parameter `verticalArrangement` (Arrangement.Vertical) is not a field yet",
               "ref": "signatures/lazy-vertical-grid.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `horizontalArrangement` (Arrangement.Horizontal) ainda não é campo",
+              "message": "compose: the parameter `horizontalArrangement` (Arrangement.Horizontal) is not a field yet",
               "ref": "signatures/lazy-vertical-grid.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `flingBehavior` (FlingBehavior) ainda não é campo",
+              "message": "compose: the parameter `flingBehavior` (FlingBehavior) is not a field yet",
               "ref": "signatures/lazy-vertical-grid.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `overscrollEffect` (OverscrollEffect?) ainda não é campo",
+              "message": "compose: the parameter `overscrollEffect` (OverscrollEffect?) is not a field yet",
               "ref": "signatures/lazy-vertical-grid.compose.json"
             }
           ]
@@ -2409,17 +2409,17 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `horizontalArrangement` (Arrangement.Horizontal) ainda não é campo",
+              "message": "compose: the parameter `horizontalArrangement` (Arrangement.Horizontal) is not a field yet",
               "ref": "signatures/flow-row.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `verticalArrangement` (Arrangement.Vertical) ainda não é campo",
+              "message": "compose: the parameter `verticalArrangement` (Arrangement.Vertical) is not a field yet",
               "ref": "signatures/flow-row.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `itemVerticalAlignment` (Alignment.Vertical) ainda não é campo",
+              "message": "compose: the parameter `itemVerticalAlignment` (Alignment.Vertical) is not a field yet",
               "ref": "signatures/flow-row.compose.json"
             }
           ]
@@ -2618,47 +2618,47 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `pageSize` (PageSize) ainda não é campo",
+              "message": "compose: the parameter `pageSize` (PageSize) is not a field yet",
               "ref": "signatures/horizontal-pager.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `verticalAlignment` (Alignment.Vertical) ainda não é campo",
+              "message": "compose: the parameter `verticalAlignment` (Alignment.Vertical) is not a field yet",
               "ref": "signatures/horizontal-pager.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `flingBehavior.pagerSnapDistance` (PagerSnapDistance) ainda não é campo",
+              "message": "compose: the parameter `flingBehavior.pagerSnapDistance` (PagerSnapDistance) is not a field yet",
               "ref": "signatures/horizontal-pager.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `flingBehavior.decayAnimationSpec` (DecayAnimationSpec<Float>) ainda não é campo",
+              "message": "compose: the parameter `flingBehavior.decayAnimationSpec` (DecayAnimationSpec<Float>) is not a field yet",
               "ref": "signatures/horizontal-pager.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `flingBehavior.snapAnimationSpec` (AnimationSpec<Float>) ainda não é campo",
+              "message": "compose: the parameter `flingBehavior.snapAnimationSpec` (AnimationSpec<Float>) is not a field yet",
               "ref": "signatures/horizontal-pager.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `flingBehavior.snapPositionalThreshold` (@FloatRange(from = 0.0, to = 1.0) Float) ainda não é campo",
+              "message": "compose: the parameter `flingBehavior.snapPositionalThreshold` (@FloatRange(from = 0.0, to = 1.0) Float) is not a field yet",
               "ref": "signatures/horizontal-pager.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `pageNestedScrollConnection.orientation` (Orientation) ainda não é campo",
+              "message": "compose: the parameter `pageNestedScrollConnection.orientation` (Orientation) is not a field yet",
               "ref": "signatures/horizontal-pager.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `snapPosition` (SnapPosition) ainda não é campo",
+              "message": "compose: the parameter `snapPosition` (SnapPosition) is not a field yet",
               "ref": "signatures/horizontal-pager.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `overscrollEffect` (OverscrollEffect?) ainda não é campo",
+              "message": "compose: the parameter `overscrollEffect` (OverscrollEffect?) is not a field yet",
               "ref": "signatures/horizontal-pager.compose.json"
             }
           ]
@@ -2949,42 +2949,42 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `autoSize` (TextAutoSize?) ainda não é campo",
+              "message": "compose: the parameter `autoSize` (TextAutoSize?) is not a field yet",
               "ref": "signatures/text.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `fontStyle` (FontStyle?) ainda não é campo",
+              "message": "compose: the parameter `fontStyle` (FontStyle?) is not a field yet",
               "ref": "signatures/text.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `fontWeight` (FontWeight?) ainda não é campo",
+              "message": "compose: the parameter `fontWeight` (FontWeight?) is not a field yet",
               "ref": "signatures/text.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `fontFamily` (FontFamily?) ainda não é campo",
+              "message": "compose: the parameter `fontFamily` (FontFamily?) is not a field yet",
               "ref": "signatures/text.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `textDecoration` (TextDecoration?) ainda não é campo",
+              "message": "compose: the parameter `textDecoration` (TextDecoration?) is not a field yet",
               "ref": "signatures/text.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `textAlign` (TextAlign?) ainda não é campo",
+              "message": "compose: the parameter `textAlign` (TextAlign?) is not a field yet",
               "ref": "signatures/text.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `overflow` (TextOverflow) ainda não é campo",
+              "message": "compose: the parameter `overflow` (TextOverflow) is not a field yet",
               "ref": "signatures/text.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `style` (TextStyle) ainda não é campo",
+              "message": "compose: the parameter `style` (TextStyle) is not a field yet",
               "ref": "signatures/text.compose.json"
             }
           ]
@@ -3179,7 +3179,7 @@
               "notices": [
                 {
                   "kind": "diverges",
-                  "message": "compose: obrigatório no código (`contentDescription`), mas o campo é opcional",
+                  "message": "compose: required in the code (`contentDescription`), but the field is optional",
                   "ref": "signatures/icon.compose.json"
                 }
               ]
@@ -3308,7 +3308,7 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `imageVector` (ImageVector) ainda não é campo",
+              "message": "compose: the parameter `imageVector` (ImageVector) is not a field yet",
               "ref": "signatures/icon.compose.json"
             }
           ]
@@ -3336,7 +3336,7 @@
               "notices": [
                 {
                   "kind": "diverges",
-                  "message": "compose: obrigatório no código (`contentDescription`), mas o campo é opcional",
+                  "message": "compose: required in the code (`contentDescription`), but the field is optional",
                   "ref": "signatures/image.compose.json"
                 }
               ]
@@ -3434,22 +3434,22 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `imageVector` (ImageVector) ainda não é campo",
+              "message": "compose: the parameter `imageVector` (ImageVector) is not a field yet",
               "ref": "signatures/image.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `alignment` (Alignment) ainda não é campo",
+              "message": "compose: the parameter `alignment` (Alignment) is not a field yet",
               "ref": "signatures/image.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `contentScale` (ContentScale) ainda não é campo",
+              "message": "compose: the parameter `contentScale` (ContentScale) is not a field yet",
               "ref": "signatures/image.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `colorFilter` (ColorFilter?) ainda não é campo",
+              "message": "compose: the parameter `colorFilter` (ColorFilter?) is not a field yet",
               "ref": "signatures/image.compose.json"
             }
           ]
@@ -4007,7 +4007,7 @@
               "notices": [
                 {
                   "kind": "diverges",
-                  "message": "compose: obrigatório no código (`subtitle`), mas o campo é opcional",
+                  "message": "compose: required in the code (`subtitle`), but the field is optional",
                   "ref": "signatures/top-app-bar.compose.json"
                 }
               ],
@@ -4611,27 +4611,27 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `titleHorizontalAlignment` (Alignment.Horizontal) ainda não é campo",
+              "message": "compose: the parameter `titleHorizontalAlignment` (Alignment.Horizontal) is not a field yet",
               "ref": "signatures/top-app-bar.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `windowInsets` (WindowInsets) ainda não é campo",
+              "message": "compose: the parameter `windowInsets` (WindowInsets) is not a field yet",
               "ref": "signatures/top-app-bar.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `center`: o parâmetro `windowInsets` (WindowInsets) ainda não é campo",
+              "message": "compose: case `center`: the parameter `windowInsets` (WindowInsets) is not a field yet",
               "ref": "signatures/top-app-bar.center.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `medium`: o parâmetro `windowInsets` (WindowInsets) ainda não é campo",
+              "message": "compose: case `medium`: the parameter `windowInsets` (WindowInsets) is not a field yet",
               "ref": "signatures/top-app-bar.medium.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `large`: o parâmetro `windowInsets` (WindowInsets) ainda não é campo",
+              "message": "compose: case `large`: the parameter `windowInsets` (WindowInsets) is not a field yet",
               "ref": "signatures/top-app-bar.large.compose.json"
             }
           ]
@@ -5485,12 +5485,12 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: caso `outlined`: o parâmetro `elevation` (ButtonElevation?) ainda não é campo",
+              "message": "compose: case `outlined`: the parameter `elevation` (ButtonElevation?) is not a field yet",
               "ref": "signatures/button.outlined.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `text`: o parâmetro `elevation` (ButtonElevation?) ainda não é campo",
+              "message": "compose: case `text`: the parameter `elevation` (ButtonElevation?) is not a field yet",
               "ref": "signatures/button.text.compose.json"
             }
           ]
@@ -6515,12 +6515,12 @@
               "notices": [
                 {
                   "kind": "diverges",
-                  "message": "compose: obrigatório no código (`value`), mas o campo é opcional",
+                  "message": "compose: required in the code (`value`), but the field is optional",
                   "ref": "signatures/text-field.compose.json"
                 },
                 {
                   "kind": "diverges",
-                  "message": "compose: caso `outlined`: obrigatório no código (`value`), mas o campo é opcional",
+                  "message": "compose: case `outlined`: required in the code (`value`), but the field is optional",
                   "ref": "signatures/text-field.outlined.compose.json"
                 }
               ]
@@ -7100,52 +7100,52 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `textStyle` (TextStyle) ainda não é campo",
+              "message": "compose: the parameter `textStyle` (TextStyle) is not a field yet",
               "ref": "signatures/text-field.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `visualTransformation` (VisualTransformation) ainda não é campo",
+              "message": "compose: the parameter `visualTransformation` (VisualTransformation) is not a field yet",
               "ref": "signatures/text-field.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `keyboardOptions` (KeyboardOptions) ainda não é campo",
+              "message": "compose: the parameter `keyboardOptions` (KeyboardOptions) is not a field yet",
               "ref": "signatures/text-field.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `keyboardActions` (KeyboardActions) ainda não é campo",
+              "message": "compose: the parameter `keyboardActions` (KeyboardActions) is not a field yet",
               "ref": "signatures/text-field.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `colors` (TextFieldColors) ainda não é campo",
+              "message": "compose: the parameter `colors` (TextFieldColors) is not a field yet",
               "ref": "signatures/text-field.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `outlined`: o parâmetro `textStyle` (TextStyle) ainda não é campo",
+              "message": "compose: case `outlined`: the parameter `textStyle` (TextStyle) is not a field yet",
               "ref": "signatures/text-field.outlined.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `outlined`: o parâmetro `visualTransformation` (VisualTransformation) ainda não é campo",
+              "message": "compose: case `outlined`: the parameter `visualTransformation` (VisualTransformation) is not a field yet",
               "ref": "signatures/text-field.outlined.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `outlined`: o parâmetro `keyboardOptions` (KeyboardOptions) ainda não é campo",
+              "message": "compose: case `outlined`: the parameter `keyboardOptions` (KeyboardOptions) is not a field yet",
               "ref": "signatures/text-field.outlined.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `outlined`: o parâmetro `keyboardActions` (KeyboardActions) ainda não é campo",
+              "message": "compose: case `outlined`: the parameter `keyboardActions` (KeyboardActions) is not a field yet",
               "ref": "signatures/text-field.outlined.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `outlined`: o parâmetro `colors` (TextFieldColors) ainda não é campo",
+              "message": "compose: case `outlined`: the parameter `colors` (TextFieldColors) is not a field yet",
               "ref": "signatures/text-field.outlined.compose.json"
             }
           ]
@@ -7174,7 +7174,7 @@
               "notices": [
                 {
                   "kind": "diverges",
-                  "message": "compose: obrigatório no código (`checked`), mas o campo é opcional",
+                  "message": "compose: required in the code (`checked`), but the field is optional",
                   "ref": "signatures/switch.compose.json"
                 }
               ]
@@ -8617,7 +8617,7 @@
               "notices": [
                 {
                   "kind": "diverges",
-                  "message": "compose: obrigatório no código (`checked`), mas o campo é opcional",
+                  "message": "compose: required in the code (`checked`), but the field is optional",
                   "ref": "signatures/checkbox.compose.json"
                 }
               ]
@@ -9267,17 +9267,17 @@
               "notices": [
                 {
                   "kind": "diverges",
-                  "message": "compose: caso `filter`: obrigatório no código (`selected`), mas o campo é opcional",
+                  "message": "compose: case `filter`: required in the code (`selected`), but the field is optional",
                   "ref": "signatures/chip.filter.compose.json"
                 },
                 {
                   "kind": "diverges",
-                  "message": "compose: caso `filter-elevated`: obrigatório no código (`selected`), mas o campo é opcional",
+                  "message": "compose: case `filter-elevated`: required in the code (`selected`), but the field is optional",
                   "ref": "signatures/chip.filter-elevated.compose.json"
                 },
                 {
                   "kind": "diverges",
-                  "message": "compose: caso `input`: obrigatório no código (`selected`), mas o campo é opcional",
+                  "message": "compose: case `input`: required in the code (`selected`), but the field is optional",
                   "ref": "signatures/chip.input.compose.json"
                 }
               ]
@@ -14146,7 +14146,7 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `windowInsets` (WindowInsets) ainda não é campo",
+              "message": "compose: the parameter `windowInsets` (WindowInsets) is not a field yet",
               "ref": "signatures/navigation-bar.compose.json"
             }
           ]
@@ -14959,7 +14959,7 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `properties` (ModalBottomSheetProperties) ainda não é campo",
+              "message": "compose: the parameter `properties` (ModalBottomSheetProperties) is not a field yet",
               "ref": "signatures/bottom-sheet.compose.json"
             }
           ]
@@ -15384,22 +15384,22 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `colors` (IconButtonColors) ainda não é campo",
+              "message": "compose: the parameter `colors` (IconButtonColors) is not a field yet",
               "ref": "signatures/icon-button.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `filled`: o parâmetro `colors` (IconButtonColors) ainda não é campo",
+              "message": "compose: case `filled`: the parameter `colors` (IconButtonColors) is not a field yet",
               "ref": "signatures/icon-button.filled.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `tonal`: o parâmetro `colors` (IconButtonColors) ainda não é campo",
+              "message": "compose: case `tonal`: the parameter `colors` (IconButtonColors) is not a field yet",
               "ref": "signatures/icon-button.tonal.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `outlined`: o parâmetro `colors` (IconButtonColors) ainda não é campo",
+              "message": "compose: case `outlined`: the parameter `colors` (IconButtonColors) is not a field yet",
               "ref": "signatures/icon-button.outlined.compose.json"
             }
           ]
@@ -15610,22 +15610,22 @@
               "notices": [
                 {
                   "kind": "diverges",
-                  "message": "compose: obrigatório no código (`checked`), mas o campo é opcional",
+                  "message": "compose: required in the code (`checked`), but the field is optional",
                   "ref": "signatures/icon-toggle-button.compose.json"
                 },
                 {
                   "kind": "diverges",
-                  "message": "compose: caso `filled`: obrigatório no código (`checked`), mas o campo é opcional",
+                  "message": "compose: case `filled`: required in the code (`checked`), but the field is optional",
                   "ref": "signatures/icon-toggle-button.filled.compose.json"
                 },
                 {
                   "kind": "diverges",
-                  "message": "compose: caso `tonal`: obrigatório no código (`checked`), mas o campo é opcional",
+                  "message": "compose: case `tonal`: required in the code (`checked`), but the field is optional",
                   "ref": "signatures/icon-toggle-button.tonal.compose.json"
                 },
                 {
                   "kind": "diverges",
-                  "message": "compose: caso `outlined`: obrigatório no código (`checked`), mas o campo é opcional",
+                  "message": "compose: case `outlined`: required in the code (`checked`), but the field is optional",
                   "ref": "signatures/icon-toggle-button.outlined.compose.json"
                 }
               ]
@@ -15860,22 +15860,22 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `colors` (IconToggleButtonColors) ainda não é campo",
+              "message": "compose: the parameter `colors` (IconToggleButtonColors) is not a field yet",
               "ref": "signatures/icon-toggle-button.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `filled`: o parâmetro `colors` (IconToggleButtonColors) ainda não é campo",
+              "message": "compose: case `filled`: the parameter `colors` (IconToggleButtonColors) is not a field yet",
               "ref": "signatures/icon-toggle-button.filled.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `tonal`: o parâmetro `colors` (IconToggleButtonColors) ainda não é campo",
+              "message": "compose: case `tonal`: the parameter `colors` (IconToggleButtonColors) is not a field yet",
               "ref": "signatures/icon-toggle-button.tonal.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `outlined`: o parâmetro `colors` (IconToggleButtonColors) ainda não é campo",
+              "message": "compose: case `outlined`: the parameter `colors` (IconToggleButtonColors) is not a field yet",
               "ref": "signatures/icon-toggle-button.outlined.compose.json"
             }
           ]
@@ -16101,7 +16101,7 @@
               "notices": [
                 {
                   "kind": "removed",
-                  "message": "compose: o parâmetro `enabled` saiu da assinatura; o campo fica",
+                  "message": "compose: the parameter `enabled` left the signature; the field stays",
                   "ref": "signatures/segmented-button.compose.json"
                 }
               ]
@@ -16316,7 +16316,7 @@
               "notices": [
                 {
                   "kind": "diverges",
-                  "message": "compose: obrigatório no código (`selected`), mas o campo é opcional",
+                  "message": "compose: required in the code (`selected`), but the field is optional",
                   "ref": "signatures/radio-button.compose.json"
                 }
               ]
@@ -16761,7 +16761,7 @@
               "notices": [
                 {
                   "kind": "diverges",
-                  "message": "compose: obrigatório no código (`value`), mas o campo é opcional",
+                  "message": "compose: required in the code (`value`), but the field is optional",
                   "ref": "signatures/slider.compose.json"
                 }
               ]
@@ -17739,27 +17739,27 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `valueRange` (ClosedFloatingPointRange<Float>) ainda não é campo",
+              "message": "compose: the parameter `valueRange` (ClosedFloatingPointRange<Float>) is not a field yet",
               "ref": "signatures/slider.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `steps` (@IntRange(from = 0) Int) ainda não é campo",
+              "message": "compose: the parameter `steps` (@IntRange(from = 0) Int) is not a field yet",
               "ref": "signatures/slider.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `range`: o parâmetro `value` (ClosedFloatingPointRange<Float>) ainda não é campo",
+              "message": "compose: case `range`: the parameter `value` (ClosedFloatingPointRange<Float>) is not a field yet",
               "ref": "signatures/slider.range.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `range`: o parâmetro `valueRange` (ClosedFloatingPointRange<Float>) ainda não é campo",
+              "message": "compose: case `range`: the parameter `valueRange` (ClosedFloatingPointRange<Float>) is not a field yet",
               "ref": "signatures/slider.range.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `range`: o parâmetro `steps` (@IntRange(from = 0) Int) ainda não é campo",
+              "message": "compose: case `range`: the parameter `steps` (@IntRange(from = 0) Int) is not a field yet",
               "ref": "signatures/slider.range.compose.json"
             }
           ]
@@ -18138,12 +18138,12 @@
               "notices": [
                 {
                   "kind": "diverges",
-                  "message": "compose: obrigatório no código (`expanded`), mas o campo é opcional",
+                  "message": "compose: required in the code (`expanded`), but the field is optional",
                   "ref": "signatures/search-bar.compose.json"
                 },
                 {
                   "kind": "diverges",
-                  "message": "compose: caso `docked`: obrigatório no código (`expanded`), mas o campo é opcional",
+                  "message": "compose: case `docked`: required in the code (`expanded`), but the field is optional",
                   "ref": "signatures/search-bar.docked.compose.json"
                 }
               ]
@@ -18474,17 +18474,17 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `colors.inputFieldColors` (TextFieldColors) ainda não é campo",
+              "message": "compose: the parameter `colors.inputFieldColors` (TextFieldColors) is not a field yet",
               "ref": "signatures/search-bar.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `windowInsets` (WindowInsets) ainda não é campo",
+              "message": "compose: the parameter `windowInsets` (WindowInsets) is not a field yet",
               "ref": "signatures/search-bar.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `docked`: o parâmetro `colors.inputFieldColors` (TextFieldColors) ainda não é campo",
+              "message": "compose: case `docked`: the parameter `colors.inputFieldColors` (TextFieldColors) is not a field yet",
               "ref": "signatures/search-bar.docked.compose.json"
             }
           ]
@@ -20729,22 +20729,22 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `dateFormatter` (DatePickerFormatter) ainda não é campo",
+              "message": "compose: the parameter `dateFormatter` (DatePickerFormatter) is not a field yet",
               "ref": "signatures/date-picker.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `colors.dateTextFieldColors` (TextFieldColors?) ainda não é campo",
+              "message": "compose: the parameter `colors.dateTextFieldColors` (TextFieldColors?) is not a field yet",
               "ref": "signatures/date-picker.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `range`: o parâmetro `dateFormatter` (DatePickerFormatter) ainda não é campo",
+              "message": "compose: case `range`: the parameter `dateFormatter` (DatePickerFormatter) is not a field yet",
               "ref": "signatures/date-picker.range.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `range`: o parâmetro `colors` (DatePickerColors) ainda não é campo",
+              "message": "compose: case `range`: the parameter `colors` (DatePickerColors) is not a field yet",
               "ref": "signatures/date-picker.range.compose.json"
             }
           ]
@@ -20779,7 +20779,7 @@
               "notices": [
                 {
                   "kind": "removed",
-                  "message": "compose: o parâmetro `initialHour` saiu da assinatura; o campo fica",
+                  "message": "compose: the parameter `initialHour` left the signature; the field stays",
                   "ref": "signatures/time-picker.compose.json"
                 }
               ]
@@ -20792,7 +20792,7 @@
               "notices": [
                 {
                   "kind": "removed",
-                  "message": "compose: o parâmetro `initialMinute` saiu da assinatura; o campo fica",
+                  "message": "compose: the parameter `initialMinute` left the signature; the field stays",
                   "ref": "signatures/time-picker.compose.json"
                 }
               ]
@@ -20807,7 +20807,7 @@
               "notices": [
                 {
                   "kind": "removed",
-                  "message": "compose: o parâmetro `is24Hour` saiu da assinatura; o campo fica",
+                  "message": "compose: the parameter `is24Hour` left the signature; the field stays",
                   "ref": "signatures/time-picker.compose.json"
                 }
               ]
@@ -22123,7 +22123,7 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `layoutType` (TimePickerLayoutType) ainda não é campo",
+              "message": "compose: the parameter `layoutType` (TimePickerLayoutType) is not a field yet",
               "ref": "signatures/time-picker.compose.json"
             }
           ]
@@ -23417,12 +23417,12 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `caretShape` ((Shape)?) ainda não é campo",
+              "message": "compose: the parameter `caretShape` ((Shape)?) is not a field yet",
               "ref": "signatures/tooltip.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `rich`: o parâmetro `caretShape` ((Shape)?) ainda não é campo",
+              "message": "compose: case `rich`: the parameter `caretShape` ((Shape)?) is not a field yet",
               "ref": "signatures/tooltip.rich.compose.json"
             }
           ]
@@ -23706,12 +23706,12 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `strokeCap` (StrokeCap) ainda não é campo",
+              "message": "compose: the parameter `strokeCap` (StrokeCap) is not a field yet",
               "ref": "signatures/progress-indicator.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `linear`: o parâmetro `strokeCap` (StrokeCap) ainda não é campo",
+              "message": "compose: case `linear`: the parameter `strokeCap` (StrokeCap) is not a field yet",
               "ref": "signatures/progress-indicator.linear.compose.json"
             }
           ]
@@ -24295,82 +24295,82 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `textStyle` (TextStyle) ainda não é campo",
+              "message": "compose: the parameter `textStyle` (TextStyle) is not a field yet",
               "ref": "signatures/secure-text-field.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `labelPosition` (TextFieldLabelPosition) ainda não é campo",
+              "message": "compose: the parameter `labelPosition` (TextFieldLabelPosition) is not a field yet",
               "ref": "signatures/secure-text-field.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `inputTransformation` (InputTransformation?) ainda não é campo",
+              "message": "compose: the parameter `inputTransformation` (InputTransformation?) is not a field yet",
               "ref": "signatures/secure-text-field.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `textObfuscationMode` (TextObfuscationMode) ainda não é campo",
+              "message": "compose: the parameter `textObfuscationMode` (TextObfuscationMode) is not a field yet",
               "ref": "signatures/secure-text-field.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `textObfuscationCharacter` (Char) ainda não é campo",
+              "message": "compose: the parameter `textObfuscationCharacter` (Char) is not a field yet",
               "ref": "signatures/secure-text-field.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `keyboardOptions` (KeyboardOptions) ainda não é campo",
+              "message": "compose: the parameter `keyboardOptions` (KeyboardOptions) is not a field yet",
               "ref": "signatures/secure-text-field.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `onKeyboardAction` (KeyboardActionHandler?) ainda não é campo",
+              "message": "compose: the parameter `onKeyboardAction` (KeyboardActionHandler?) is not a field yet",
               "ref": "signatures/secure-text-field.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `colors` (TextFieldColors) ainda não é campo",
+              "message": "compose: the parameter `colors` (TextFieldColors) is not a field yet",
               "ref": "signatures/secure-text-field.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `outlined`: o parâmetro `textStyle` (TextStyle) ainda não é campo",
+              "message": "compose: case `outlined`: the parameter `textStyle` (TextStyle) is not a field yet",
               "ref": "signatures/secure-text-field.outlined.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `outlined`: o parâmetro `labelPosition` (TextFieldLabelPosition) ainda não é campo",
+              "message": "compose: case `outlined`: the parameter `labelPosition` (TextFieldLabelPosition) is not a field yet",
               "ref": "signatures/secure-text-field.outlined.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `outlined`: o parâmetro `inputTransformation` (InputTransformation?) ainda não é campo",
+              "message": "compose: case `outlined`: the parameter `inputTransformation` (InputTransformation?) is not a field yet",
               "ref": "signatures/secure-text-field.outlined.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `outlined`: o parâmetro `textObfuscationMode` (TextObfuscationMode) ainda não é campo",
+              "message": "compose: case `outlined`: the parameter `textObfuscationMode` (TextObfuscationMode) is not a field yet",
               "ref": "signatures/secure-text-field.outlined.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `outlined`: o parâmetro `textObfuscationCharacter` (Char) ainda não é campo",
+              "message": "compose: case `outlined`: the parameter `textObfuscationCharacter` (Char) is not a field yet",
               "ref": "signatures/secure-text-field.outlined.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `outlined`: o parâmetro `keyboardOptions` (KeyboardOptions) ainda não é campo",
+              "message": "compose: case `outlined`: the parameter `keyboardOptions` (KeyboardOptions) is not a field yet",
               "ref": "signatures/secure-text-field.outlined.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `outlined`: o parâmetro `onKeyboardAction` (KeyboardActionHandler?) ainda não é campo",
+              "message": "compose: case `outlined`: the parameter `onKeyboardAction` (KeyboardActionHandler?) is not a field yet",
               "ref": "signatures/secure-text-field.outlined.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `outlined`: o parâmetro `colors` (TextFieldColors) ainda não é campo",
+              "message": "compose: case `outlined`: the parameter `colors` (TextFieldColors) is not a field yet",
               "ref": "signatures/secure-text-field.outlined.compose.json"
             }
           ]
@@ -25213,12 +25213,12 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `properties` (DialogProperties) ainda não é campo",
+              "message": "compose: the parameter `properties` (DialogProperties) is not a field yet",
               "ref": "signatures/alert-dialog.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `basic`: o parâmetro `properties` (DialogProperties) ainda não é campo",
+              "message": "compose: case `basic`: the parameter `properties` (DialogProperties) is not a field yet",
               "ref": "signatures/alert-dialog.basic.compose.json"
             }
           ]
@@ -25624,12 +25624,12 @@
               "notices": [
                 {
                   "kind": "diverges",
-                  "message": "compose: obrigatório no código (`expanded`), mas o campo é opcional",
+                  "message": "compose: required in the code (`expanded`), but the field is optional",
                   "ref": "signatures/dropdown-menu.compose.json"
                 },
                 {
                   "kind": "diverges",
-                  "message": "compose: caso `exposed`: obrigatório no código (`expanded`), mas o campo é opcional",
+                  "message": "compose: case `exposed`: required in the code (`expanded`), but the field is optional",
                   "ref": "signatures/dropdown-menu.exposed.compose.json"
                 }
               ]
@@ -26059,12 +26059,12 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `offset` (DpOffset) ainda não é campo",
+              "message": "compose: the parameter `offset` (DpOffset) is not a field yet",
               "ref": "signatures/dropdown-menu.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `properties` (PopupProperties) ainda não é campo",
+              "message": "compose: the parameter `properties` (PopupProperties) is not a field yet",
               "ref": "signatures/dropdown-menu.compose.json"
             }
           ]
@@ -26290,12 +26290,12 @@
               "notices": [
                 {
                   "kind": "removed",
-                  "message": "compose: caso `wide`: o parâmetro `initialValue` saiu da assinatura; o campo fica",
+                  "message": "compose: case `wide`: the parameter `initialValue` left the signature; the field stays",
                   "ref": "signatures/navigation-rail.wide.compose.json"
                 },
                 {
                   "kind": "removed",
-                  "message": "compose: caso `modal-wide`: o parâmetro `initialValue` saiu da assinatura; o campo fica",
+                  "message": "compose: case `modal-wide`: the parameter `initialValue` left the signature; the field stays",
                   "ref": "signatures/navigation-rail.modal-wide.compose.json"
                 }
               ]
@@ -27341,32 +27341,32 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `windowInsets` (WindowInsets) ainda não é campo",
+              "message": "compose: the parameter `windowInsets` (WindowInsets) is not a field yet",
               "ref": "signatures/navigation-rail.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `wide`: o parâmetro `windowInsets` (WindowInsets) ainda não é campo",
+              "message": "compose: case `wide`: the parameter `windowInsets` (WindowInsets) is not a field yet",
               "ref": "signatures/navigation-rail.wide.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `wide`: o parâmetro `arrangement` (Arrangement.Vertical) ainda não é campo",
+              "message": "compose: case `wide`: the parameter `arrangement` (Arrangement.Vertical) is not a field yet",
               "ref": "signatures/navigation-rail.wide.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `modal-wide`: o parâmetro `windowInsets` (WindowInsets) ainda não é campo",
+              "message": "compose: case `modal-wide`: the parameter `windowInsets` (WindowInsets) is not a field yet",
               "ref": "signatures/navigation-rail.modal-wide.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `modal-wide`: o parâmetro `arrangement` (Arrangement.Vertical) ainda não é campo",
+              "message": "compose: case `modal-wide`: the parameter `arrangement` (Arrangement.Vertical) is not a field yet",
               "ref": "signatures/navigation-rail.modal-wide.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `modal-wide`: o parâmetro `expandedProperties` (ModalWideNavigationRailProperties) ainda não é campo",
+              "message": "compose: case `modal-wide`: the parameter `expandedProperties` (ModalWideNavigationRailProperties) is not a field yet",
               "ref": "signatures/navigation-rail.modal-wide.compose.json"
             }
           ]
@@ -27939,12 +27939,12 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `windowInsets` (WindowInsets) ainda não é campo",
+              "message": "compose: the parameter `windowInsets` (WindowInsets) is not a field yet",
               "ref": "signatures/short-navigation-bar.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `arrangement` (ShortNavigationBarArrangement) ainda não é campo",
+              "message": "compose: the parameter `arrangement` (ShortNavigationBarArrangement) is not a field yet",
               "ref": "signatures/short-navigation-bar.compose.json"
             }
           ]
@@ -28699,22 +28699,22 @@
               "notices": [
                 {
                   "kind": "diverges",
-                  "message": "compose: obrigatório no código (`selectedTabIndex`), mas o campo é opcional",
+                  "message": "compose: required in the code (`selectedTabIndex`), but the field is optional",
                   "ref": "signatures/tabs.compose.json"
                 },
                 {
                   "kind": "diverges",
-                  "message": "compose: caso `secondary`: obrigatório no código (`selectedTabIndex`), mas o campo é opcional",
+                  "message": "compose: case `secondary`: required in the code (`selectedTabIndex`), but the field is optional",
                   "ref": "signatures/tabs.secondary.compose.json"
                 },
                 {
                   "kind": "diverges",
-                  "message": "compose: caso `primary-scrollable`: obrigatório no código (`selectedTabIndex`), mas o campo é opcional",
+                  "message": "compose: case `primary-scrollable`: required in the code (`selectedTabIndex`), but the field is optional",
                   "ref": "signatures/tabs.primary-scrollable.compose.json"
                 },
                 {
                   "kind": "diverges",
-                  "message": "compose: caso `secondary-scrollable`: obrigatório no código (`selectedTabIndex`), mas o campo é opcional",
+                  "message": "compose: case `secondary-scrollable`: required in the code (`selectedTabIndex`), but the field is optional",
                   "ref": "signatures/tabs.secondary-scrollable.compose.json"
                 }
               ]
@@ -30204,7 +30204,7 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `windowInsets` (WindowInsets) ainda não é campo",
+              "message": "compose: the parameter `windowInsets` (WindowInsets) is not a field yet",
               "ref": "signatures/bottom-app-bar.compose.json"
             }
           ]
@@ -30254,12 +30254,12 @@
               "notices": [
                 {
                   "kind": "diverges",
-                  "message": "compose: obrigatório no código (`preferredItemWidth`), mas o campo é opcional",
+                  "message": "compose: required in the code (`preferredItemWidth`), but the field is optional",
                   "ref": "signatures/carousel.compose.json"
                 },
                 {
                   "kind": "diverges",
-                  "message": "compose: caso `multi-browse`: obrigatório no código (`preferredItemWidth`), mas o campo é opcional",
+                  "message": "compose: case `multi-browse`: required in the code (`preferredItemWidth`), but the field is optional",
                   "ref": "signatures/carousel.multi-browse.compose.json"
                 }
               ]
@@ -30272,7 +30272,7 @@
               "notices": [
                 {
                   "kind": "diverges",
-                  "message": "compose: caso `uncontained`: obrigatório no código (`itemWidth`), mas o campo é opcional",
+                  "message": "compose: case `uncontained`: required in the code (`itemWidth`), but the field is optional",
                   "ref": "signatures/carousel.uncontained.compose.json"
                 }
               ]
@@ -30483,22 +30483,22 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `flingBehavior.snapAnimationSpec` (AnimationSpec<Float>) ainda não é campo",
+              "message": "compose: the parameter `flingBehavior.snapAnimationSpec` (AnimationSpec<Float>) is not a field yet",
               "ref": "signatures/carousel.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `multi-browse`: o parâmetro `flingBehavior.snapAnimationSpec` (AnimationSpec<Float>) ainda não é campo",
+              "message": "compose: case `multi-browse`: the parameter `flingBehavior.snapAnimationSpec` (AnimationSpec<Float>) is not a field yet",
               "ref": "signatures/carousel.multi-browse.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `uncontained`: o parâmetro `flingBehavior` (TargetedFlingBehavior) ainda não é campo",
+              "message": "compose: case `uncontained`: the parameter `flingBehavior` (TargetedFlingBehavior) is not a field yet",
               "ref": "signatures/carousel.uncontained.compose.json"
             },
             {
               "kind": "pending",
-              "message": "compose: caso `centered-hero`: o parâmetro `flingBehavior.snapAnimationSpec` (AnimationSpec<Float>) ainda não é campo",
+              "message": "compose: case `centered-hero`: the parameter `flingBehavior.snapAnimationSpec` (AnimationSpec<Float>) is not a field yet",
               "ref": "signatures/carousel.centered-hero.compose.json"
             }
           ]
@@ -30520,7 +30520,7 @@
               "notices": [
                 {
                   "kind": "diverges",
-                  "message": "compose: obrigatório no código (`isRefreshing`), mas o campo é opcional",
+                  "message": "compose: required in the code (`isRefreshing`), but the field is optional",
                   "ref": "signatures/pull-to-refresh.compose.json"
                 }
               ]
@@ -30613,7 +30613,7 @@
           "notices": [
             {
               "kind": "pending",
-              "message": "compose: o parâmetro `contentAlignment` (Alignment) ainda não é campo",
+              "message": "compose: the parameter `contentAlignment` (Alignment) is not a field yet",
               "ref": "signatures/pull-to-refresh.compose.json"
             }
           ]
@@ -30649,7 +30649,7 @@
               "notices": [
                 {
                   "kind": "removed",
-                  "message": "compose: o parâmetro `initialValue` saiu da assinatura; o campo fica",
+                  "message": "compose: the parameter `initialValue` left the signature; the field stays",
                   "ref": "signatures/swipe-to-dismiss.compose.json"
                 }
               ]

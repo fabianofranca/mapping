@@ -6,6 +6,7 @@ import { TOKEN_KIND_NAMES, type TokenKind } from '../../src/model/components/tok
 import {
   isModelMessageTemplateCode,
   MODEL_MESSAGE_TEMPLATES,
+  fillTemplate,
   templateMessage,
   type ModelMessageTemplateCode,
 } from '../../src/model/messages';
@@ -15,6 +16,8 @@ import { loadSpecComponents } from '../../src/model/componentCatalog';
 import { COMPONENTS, SPEC_FILE, testSpec } from '../model/componentFixtures';
 import type { ModelMessage } from '../../src/model/modelMessage';
 import { modelMessagesEnUS } from '../../src/i18n/modelMessages';
+import { templatePtBR } from '../../src/i18n/modelMessagesTemplatesPtBR';
+import { ptBRText } from '../support/modelText';
 import { locale } from '../../src/store/settings';
 import { issueText } from '../../src/ui/LibraryIssueList';
 import { messageText } from '../../src/ui/modelMessage';
@@ -192,13 +195,23 @@ describe('library validator messages', () => {
 
   it('the drawing warning carries the engine text in `detail`', () => {
     const drawing = allIssues().find((i) => i.code === 'library.draw.preview');
-    expect(drawing?.detail?.text).toContain('ícone desconhecido');
+    expect(drawing?.detail?.text).toContain('unknown icon');
   });
 
-  it('pt-BR: the text shown equals `message`', () => {
-    locale.value = 'pt-BR';
+  it('pt-BR: the text shown is the pt-BR template filled in; en-US shows `message`', () => {
     for (const issue of allIssues()) {
       if (issue.code === undefined) continue;
+      const template = (templatePtBR as Readonly<Record<string, string | undefined>>)[
+        `model.${issue.code}`
+      ];
+      if (template === undefined) continue;
+      locale.value = 'pt-BR';
+      const params =
+        issue.detail === undefined
+          ? (issue.params ?? {})
+          : { ...issue.params, reason: ptBRText(issue.detail) };
+      expect(issueText(issue), issue.message).toBe(fillTemplate(template, params));
+      locale.value = 'en-US';
       expect(issueText(issue), issue.message).toBe(issue.message);
     }
   });
@@ -262,7 +275,7 @@ describe('library validator messages', () => {
         expect(
           templateMessage(code as ModelMessageTemplateCode, { name: 'x' }).text,
         ).toBe(
-          `o token "x" é ${TOKEN_KIND_NAMES[found]}, mas aqui se espera ${TOKEN_KIND_NAMES[expected]}`,
+          `the token "x" is a ${TOKEN_KIND_NAMES[found]}, but a ${TOKEN_KIND_NAMES[expected]} is expected here`,
         );
       }
     }

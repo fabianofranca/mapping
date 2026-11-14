@@ -10,12 +10,12 @@ import {
   type StrokeGap,
 } from './scene';
 
-/** Segmentos por canto arredondado (o mesmo no Konva e no raster, para o desenho bater). */
+/** Segments per rounded corner (the same in Konva and in the raster, so the drawing matches). */
 const ARC_STEPS = 16;
 
 type Side = StrokeGap['side'];
 
-/** Um trecho reto do contorno, de `a` a `b` (no sentido horário), de um dos quatro lados. */
+/** A straight stretch of the outline, from `a` to `b` (clockwise), on one of the four sides. */
 interface Run {
   readonly side: Side;
   readonly a: Point;
@@ -25,11 +25,11 @@ interface Run {
 const same = (p: Point, q: Point): boolean =>
   Math.abs(p.x - q.x) < 1e-9 && Math.abs(p.y - q.y) < 1e-9;
 
-/** O eixo em que `from`/`to` de um vão correm: x em cima e embaixo, y nos lados. */
+/** The axis along which a gap's `from`/`to` run: x on top and bottom, y on the sides. */
 const axisOf = (side: Side, p: Point): number =>
   side === 'top' || side === 'bottom' ? p.x : p.y;
 
-/** Os trechos do lado `run` que ficam, como intervalos `[t0, t1]` do parâmetro 0..1 de `a` a `b`. */
+/** The parts of side `run` that remain, as `[t0, t1]` intervals of the 0..1 parameter from `a` to `b`. */
 function kept(run: Run, gaps: readonly StrokeGap[]): [number, number][] {
   const start = axisOf(run.side, run.a);
   const span = axisOf(run.side, run.b) - start;
@@ -58,7 +58,7 @@ const lerp = (a: Point, b: Point, t: number): Point => ({
   y: a.y + (b.y - a.y) * t,
 });
 
-/** O arco de um canto, do ângulo `from` a `from` + 90°; raio 0 é o próprio canto. */
+/** The arc of a corner, from angle `from` to `from` + 90°; radius 0 is the corner itself. */
 function arc(cx: number, cy: number, r: number, from: number): Point[] {
   if (r <= 0) return [{ x: cx, y: cy }];
   return Array.from({ length: ARC_STEPS + 1 }, (_, i) => {
@@ -67,7 +67,7 @@ function arc(cx: number, cy: number, r: number, from: number): Point[] {
   });
 }
 
-/** O retângulo que o traço percorre (o `align` e o `offset` movem a linha) e o raio de cada canto nele. */
+/** The rectangle the stroke runs along (`align` and `offset` move the line) and the radius of each corner in it. */
 function contourOf(stroke: Stroke, width: number, height: number, radius: CornerRadius) {
   const offset = stroke.offset ?? 0;
   const align = strokeAlignInset(stroke);
@@ -84,10 +84,10 @@ function contourOf(stroke: Stroke, width: number, height: number, radius: Corner
 }
 
 /**
- * O contorno de `stroke` numa caixa `width` × `height` interrompido nos `stroke.gaps`: o mesmo
- * contorno de sempre (o `align` e o `offset` movem a linha, e cada canto leva o raio), em linhas
- * abertas no sentido horário. Os cantos nunca se cortam: o vão vale só na parte reta do lado.
- * Devolve vazio quando o traço não tem vão (o contorno inteiro é o de sempre).
+ * The outline of `stroke` in a `width` × `height` box interrupted at `stroke.gaps`: the same
+ * outline as always (`align` and `offset` move the line, and each corner takes the radius), in
+ * open lines clockwise. Corners are never cut: a gap only applies to the straight part of the
+ * side. Returns empty when the stroke has no gap (the whole outline is the usual one).
  */
 export function gapOutlines(
   stroke: Stroke,
@@ -101,7 +101,7 @@ export function gapOutlines(
 
   const out: Point[][] = [];
   let current: Point[] = [];
-  let clean = true; // o contorno começou sem corte (o fim se junta ao começo)
+  let clean = true; // the outline started without a cut (the end joins the start)
   let started = false;
   const flush = (): void => {
     if (current.length > 1) out.push(current);
@@ -122,7 +122,7 @@ export function gapOutlines(
     flush();
   };
   const straight = (run: Run): void => {
-    if (same(run.a, run.b)) return add(run.a); // lado sem parte reta (pílula): só passa
+    if (same(run.a, run.b)) return add(run.a); // side without a straight part (pill): just passes
     const parts = kept(run, gaps);
     if (parts.length === 0) return cut();
     parts.forEach(([t0, t1], i) => {
@@ -150,14 +150,14 @@ export function gapOutlines(
   return out;
 }
 
-/** Um pedido de vão: o nó `id` abre vão onde a caixa do nó `target` (ausente: não foi montado) o cruza. */
+/** A gap request: node `id` opens a gap where the box of node `target` (absent: not built) crosses it. */
 export interface GapRequest {
   readonly id: string;
   readonly target: string | undefined;
   readonly padding: number;
 }
 
-/** O raio de cada canto (tl, tr, br, bl) da caixa, sem passar da metade do lado menor. */
+/** The radius of each corner (tl, tr, br, bl) of the box, never beyond half the shorter side. */
 function cornerRadii(node: SceneNode): [number, number, number, number] {
   const r = 'cornerRadius' in node ? node.cornerRadius : 0;
   const list = typeof r === 'number' ? [r, r, r, r] : [...r];
@@ -170,7 +170,7 @@ function cornerRadii(node: SceneNode): [number, number, number, number] {
   ];
 }
 
-/** Os vãos de `node` para a caixa `box` (no espaço local do nó): um por lado que ela atravessa. */
+/** The gaps of `node` for box `box` (in the node's local space): one per side it crosses. */
 function gapsOf(
   node: SceneNode,
   box: { x: number; y: number; width: number; height: number },
@@ -200,15 +200,15 @@ function gapsOf(
 }
 
 /**
- * Põe os `Stroke.gaps` nos nós que pediram vão (`stroke.gap`): a caixa do nó alvo, no espaço de
- * cada um, vem da arrumação já pronta. Um alvo ausente (invisível), ou que não atravessa nenhum
- * lado, não abre vão. Devolve a mesma árvore quando nada muda.
+ * Puts the `Stroke.gaps` on the nodes that asked for a gap (`stroke.gap`): the target node's
+ * box, in each one's space, comes from the layout already done. An absent target (invisible), or
+ * one that crosses no side, opens no gap. Returns the same tree when nothing changes.
  */
 export function applyGaps(root: FrameNode, requests: readonly GapRequest[]): FrameNode {
   if (requests.length === 0) return root;
   const boxes = absoluteBoxes(root);
   const byId = new Map(requests.map((r) => [r.id, r]));
-  /** Os vãos do nó, ou `undefined` quando o nó não os pediu ou a caixa alvo não o cruza. */
+  /** The node's gaps, or `undefined` when the node did not ask for them or the target box does not cross it. */
   const gapsFor = (node: SceneNode): StrokeGap[] | undefined => {
     const request = byId.get(node.id);
     const own = boxes.get(node.id);

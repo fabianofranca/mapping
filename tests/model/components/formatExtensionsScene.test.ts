@@ -79,7 +79,7 @@ describe('A1 na cena: $token em shadow', () => {
   it('blur resolvido negativo cai em 0 com o aviso valor inválido em shadow.blur', () => {
     const { root, warnings } = run(rect({ color: '#000', blur: t('elev-neg') }));
     expect((root as FrameNode).children[0]?.effects[0]?.blur).toBe(0);
-    expect(warnings).toContain('valor inválido em shadow.blur: -3');
+    expect(warnings).toContain('invalid value in shadow.blur: -3');
   });
 });
 
@@ -132,10 +132,10 @@ describe('A19 na cena: stroke.dash por expressão e $token', () => {
   it('valor resolvido inválido: sem tracejado e com o aviso', () => {
     const bad = dashOf([t('dash-bad'), 2]);
     expect(bad.dash).toBeUndefined();
-    expect(bad.warnings).toContain('valor inválido em stroke.dash: [-2,2]');
+    expect(bad.warnings).toContain('invalid value in stroke.dash: [-2,2]');
     const notList = dashOf({ $field: 'x' }, { x: 'abc' });
     expect(notList.dash).toBeUndefined();
-    expect(notList.warnings).toContain('valor inválido em stroke.dash: abc');
+    expect(notList.warnings).toContain('invalid value in stroke.dash: abc');
   });
 
   it('a lista literal de sempre continua igual', () => {

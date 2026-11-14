@@ -452,7 +452,7 @@ describe('plan_library_update', () => {
     writeFileSync(join(root, 'vazia', 'LEIA-ME.md'), 'nada');
     const result = await plan('vazia');
     expect(result.validation.valid).toBe(false);
-    expect(result.validation.errors[0]?.message).toMatch(/nenhuma especialização/);
+    expect(result.validation.errors[0]?.message).toMatch(/no specialization found/);
     expect(
       errorOf(await mcp.call('plan_library_update', { project: 'telas', path: 'x/nao' }))
         .code,

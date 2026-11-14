@@ -1,7 +1,8 @@
 import type { SceneNode } from './components/scene';
-// Política pura da URL de imagem remota (docs/ARCHITECTURE.md, "Imagens remotas: política, consentimento e carregador").
-// É a primeira das duas portas: decide se a URL é aceitável; a segunda é o consentimento
-// por origem, guardado em `src/storage/` (RI3). Só usa `URL`, disponível no navegador e no Node.
+// Pure policy for the remote image URL (docs/ARCHITECTURE.md, "Remote images: policy, consent and
+// loader"). It is the first of two gates: it decides whether the URL is acceptable; the second is
+// the per-origin consent, kept in `src/storage/` (RI3). It only uses `URL`, available in the
+// browser and in Node.
 
 export const REMOTE_IMAGE_URL_MAX_LENGTH = 2048;
 
@@ -9,9 +10,9 @@ export type RemoteImageRejection =
   'empty' | 'invalid' | 'insecure' | 'credentials' | 'too-long' | 'private-host';
 
 export interface RemoteImagePolicy {
-  /** Aceita `http:` (interruptor da decisão 15). */
+  /** Accepts `http:` (switch of decision 15). */
   readonly allowHttp: boolean;
-  /** Aceita hosts da rede local (interruptor da decisão 16). */
+  /** Accepts local-network hosts (switch of decision 16). */
   readonly allowLocalNetwork: boolean;
 }
 
@@ -35,15 +36,15 @@ const LOCAL_SUFFIXES = [
 ];
 
 /**
- * Host da rede local (decisão 16): IP literal v4/v6, `localhost`, nome sem ponto
- * e sufixos `.local`, `.localhost`, `.internal`, `.home.arpa`, `.lan`, `.intranet`. Todo IP literal conta, inclusive público.
- * Hostname vazio é tratado como local (recusa por segurança).
+ * Local-network host (decision 16): literal v4/v6 IP, `localhost`, a name with no dot, and the
+ * suffixes `.local`, `.localhost`, `.internal`, `.home.arpa`, `.lan`, `.intranet`. Every literal IP
+ * counts, public ones included. An empty hostname is treated as local (refused for safety).
  */
 export function isLocalNetworkHost(hostname: string): boolean {
   let host = hostname.toLowerCase();
   if (host.endsWith('.')) host = host.slice(0, -1);
   if (host === '') return true;
-  // O `hostname` do URL traz o IPv6 entre colchetes.
+  // The URL's `hostname` carries IPv6 inside brackets.
   if (host.startsWith('[') || host.includes(':')) return true;
   if (IPV4_LITERAL.test(host)) return true;
   if (host === 'localhost') return true;
@@ -80,8 +81,9 @@ export function checkRemoteImageUrl(
 }
 
 /**
- * URLs remotas de imagem usadas por uma cena (`paint.url` dos preenchimentos `image` de `fills`),
- * em ordem de aparição e sem repetir. Não aplica a política: quem decide é `checkRemoteImageUrl`.
+ * Remote image URLs used by a scene (`paint.url` of the `image` paints in `fills`), in order of
+ * appearance and without repeats. It does not apply the policy: `checkRemoteImageUrl` decides that.
+
  */
 export function sceneRemoteImageUrls(root: SceneNode): readonly string[] {
   const urls = new Set<string>();

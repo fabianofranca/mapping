@@ -27,7 +27,7 @@ const schema: Record<string, unknown> = JSON.parse(
   readFileSync(new URL('../../../docs/component.schema.json', import.meta.url), 'utf8'),
 );
 
-const V4 = 'só é permitido com formatVersion 4';
+const V4 = 'only allowed with formatVersion 4';
 type Json = Record<string, unknown>;
 
 /** Roboto 14/20 do Compose: a linha de base do aproximado dá ≈ 15 (14,83). */
@@ -307,7 +307,7 @@ describe('layout.align: "baseline"', () => {
       { x: 0, y: 0, width: 300, height: 100 },
       { measure: approximateMeasurer },
     );
-    expect(result.warnings).toContain('valor inválido em layout.align: baseline');
+    expect(result.warnings).toContain('invalid value in layout.align: baseline');
   });
 
   it('numa versão 3, baseline vindo de expressão também cai em start com o aviso', () => {
@@ -324,7 +324,7 @@ describe('layout.align: "baseline"', () => {
       { x: 0, y: 0, width: 300, height: 100 },
       { measure: approximateMeasurer },
     );
-    expect(result.warnings).toContain('valor inválido em layout.align: baseline');
+    expect(result.warnings).toContain('invalid value in layout.align: baseline');
   });
 });
 
@@ -391,18 +391,18 @@ describe('validação de baselinePadding e align: "baseline"', () => {
 
   it('baseline literal numa column é erro', () => {
     expect(validateComponent(rowAlign('baseline', 'column'))).toEqual([
-      'template.layout.align: baseline só vale em row',
+      'template.layout.align: baseline is only valid in row',
     ]);
   });
 
-  it('baselinePadding.top não combina com verticalAlign literal', () => {
+  it('baselinePadding.top does not combine with verticalAlign literal', () => {
     for (const verticalAlign of ['top', 'middle', 'bottom', 'cap-middle'])
       expect(
         validateComponent(
           label({ baselinePadding: { top: 30 }, font: { size: 14, verticalAlign } }),
         ),
       ).toEqual([
-        'template.children[0].baselinePadding.top: não combina com verticalAlign',
+        'template.children[0].baselinePadding.top: does not combine with verticalAlign',
       ]);
     expect(
       validateComponent(
@@ -416,16 +416,16 @@ describe('validação de baselinePadding e align: "baseline"', () => {
 
   it('rejeita números negativos, chave desconhecida e tipo errado', () => {
     expect(validateComponent(label({ baselinePadding: { top: -1 } }))).toEqual([
-      'template.children[0].baselinePadding.top: esperava número maior ou igual a 0',
+      'template.children[0].baselinePadding.top: expected a number greater than or equal to 0',
     ]);
     expect(validateComponent(label({ baselinePadding: { bottom: -2 } }))).toEqual([
-      'template.children[0].baselinePadding.bottom: esperava número maior ou igual a 0',
+      'template.children[0].baselinePadding.bottom: expected a number greater than or equal to 0',
     ]);
     expect(validateComponent(label({ baselinePadding: { left: 1 } }))).toEqual([
-      'template.children[0].baselinePadding.left: chave desconhecida: left',
+      'template.children[0].baselinePadding.left: unknown key: left',
     ]);
     expect(validateComponent(label({ baselinePadding: 4 }))).toEqual([
-      'template.children[0].baselinePadding: esperava objeto',
+      'template.children[0].baselinePadding: expected an object',
     ]);
   });
 

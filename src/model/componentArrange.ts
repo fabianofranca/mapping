@@ -57,27 +57,27 @@ import { findById } from './project';
 import { projectIndex } from './projectIndex';
 import type { Marking, Project, ReadingDirection, Rect } from './types';
 
-// Arrumar (etapa Biblioteca, B3): recalcula e grava os retângulos das filhas de um componente
-// com slot pelo `layout` do slot, e o tamanho do componente que abraça o conteúdo (`hug`). Só por ação
-// da pessoa: nunca na carga, no MCP nem ao aplicar proposta. Puro; o store faz dela uma
-// entrada de desfazer.
+// Arrange (Library stage, B3): recomputes and writes the rectangles of the children of a component
+// with a slot by the slot's `layout`, and the size of the component that hugs its content (`hug`).
+// Only by the person's action: never on load, in the MCP or when applying a proposal. Pure; the
+// store turns it into an undo entry.
 
 export interface ArrangeResult {
   readonly project: Project;
-  /** O que não coube ou foi preso, um aviso por linha, sem repetição (de texto igual). */
+  /** What did not fit or was clamped, one warning per line, without repeats (of equal text). */
   readonly warnings: readonly ModelMessage[];
 }
 
-/** Voltas no máximo até os tamanhos estabilizarem (um componente com slot esticado pelo pai rearruma as filhas). */
+/** Maximum passes until the sizes stabilize (a component with a slot stretched by its parent rearranges the children). */
 const MAX_PASSES = 4;
 
-/** Um componente com slot que arruma: slot `row`/`column` e ao menos uma filha. */
+/** A component with a slot that arranges: a `row`/`column` slot and at least one child. */
 interface Container {
   readonly id: string;
   readonly component: ComponentFile;
-  /** Tabela de tokens do modo do desenho (a mesma que o `component` já traz aplicada). */
+  /** Token table of the drawing mode (the same one the `component` already carries applied). */
   readonly tokens: ResolvedTokens | undefined;
-  /** Direção de leitura efetiva do espaço da marcação (`rtl` espelha a linha e a grade). */
+  /** Effective reading direction of the marking's space (`rtl` mirrors the row and the grid). */
   readonly direction: ReadingDirection;
   readonly values: FieldValues;
   readonly layout: ResolvedSlotLayout;
@@ -113,7 +113,7 @@ function containerOf(
   };
 }
 
-/** Dá para arrumar: a marcação é um componente com slot `row`/`column` com filhas. */
+/** Can be arranged: the marking is a component with a `row`/`column` slot that has children. */
 export function canArrange(
   p: Project,
   catalog: ComponentCatalog,
@@ -122,28 +122,28 @@ export function canArrange(
   return containerOf(p, catalog, markingId) !== null;
 }
 
-/** O espaço do slot decide as linhas (`wrap`) ou as trilhas (`minColumnWidth`/`minRowHeight`)? */
+/** Does the slot's space decide the lines (`wrap`) or the tracks (`minColumnWidth`/`minRowHeight`)? */
 function needsAvailable(layout: ResolvedSlotLayout): boolean {
   if (layout.type === 'grid') return layout.grid?.min !== undefined;
   return layout.wrap !== 'none';
 }
 
-/** O eixo principal do slot (o que `available` mede) é o horizontal: `row`, ou grade vertical. */
+/** The slot's main axis (what `available` measures) is the horizontal one: `row`, or a vertical grid. */
 function alongTracks(layout: ResolvedSlotLayout): boolean {
   if (layout.type === 'grid') return layout.grid?.orientation !== 'horizontal';
   return layout.type === 'row';
 }
 
-/** O `align: stretch` do slot do pai estica o filho neste eixo (o cruzado do layout dele). */
+/** The parent slot's `align: stretch` stretches the child on this axis (the cross axis of its layout). */
 function stretchedBy(parent: Container | null, axis: 'width' | 'height'): boolean {
   if (parent === null) return false;
   const { layout } = parent;
-  // Grade: `justify` estica no eixo das trilhas e `align` no das linhas (na célula).
+  // Grid: `justify` stretches on the tracks' axis and `align` on the lines' axis (in the cell).
   if (layout.type === 'grid') {
     const onTracks = alongTracks(layout) === (axis === 'width');
     return (onTracks ? layout.justify : layout.align) === 'stretch';
   }
-  // `none` alinhado (v4), como no `layoutOverlaid`: `justify` na largura e `align` na altura.
+  // Aligned `none` (v4), as in `layoutOverlaid`: `justify` on the width and `align` on the height.
   if (layout.type === 'none')
     return (axis === 'width' ? layout.justify : layout.align) === 'stretch';
   if (layout.align !== 'stretch') return false;
@@ -154,14 +154,14 @@ function sameRect(a: Rect, b: Rect): boolean {
   return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 }
 
-/** Inteiro para cima, sem que o ruído do ponto flutuante some um pixel. */
+/** Integer rounded up, without floating-point noise adding a pixel. */
 function ceilFit(value: number): number {
   return Math.ceil(value - 1e-6);
 }
 
 /**
- * O que o `sizing` faz num eixo: medir o conteúdo (`hug`, `min-content` ou `max-content`; `mode` diz
- * qual medida intrínseca, nenhuma = o `hug`), dar um px por expressão, ou nada.
+ * What the `sizing` does on an axis: measure the content (`hug`, `min-content` or `max-content`;
+ * `mode` says which intrinsic measure, none = the `hug`), give a px by expression, or nothing.
  */
 interface AxisPlan {
   readonly hug: boolean;
@@ -178,7 +178,7 @@ function axisPlan(axis: ResolvedAxis, stretched: boolean): AxisPlan {
   };
 }
 
-/** O valor final de um eixo: o medido (inteiro para cima), o px da expressão ou o atual, nunca abaixo do mínimo. */
+/** The final value of an axis: the measured one (rounded up), the expression's px or the current one, never below the minimum. */
 function axisValue(
   plan: AxisPlan,
   current: number,
@@ -192,9 +192,9 @@ function axisValue(
 }
 
 /**
- * Os eixos que o `measureComponent` recebe: o `hug` é medido (`null`), o `min-content`/`max-content`
- * pela medida intrínseca; o outro vale o px que a expressão dá, ou o que já tem. `undefined` quando
- * nenhum eixo é medido (nada a medir).
+ * The axes that `measureComponent` receives: the `hug` is measured (`null`), the
+ * `min-content`/`max-content` by the intrinsic measure; the other takes the px the expression
+ * gives, or what it already has. `undefined` when no axis is measured (nothing to measure).
  */
 function fixedSizes(
   rect: Rect,
@@ -210,10 +210,10 @@ function fixedSizes(
   };
 }
 
-/** O eixo muda no ajuste: mede o conteúdo ou vale um px de expressão. */
+/** The axis changes in the fit: it measures the content or takes an expression px. */
 const acts = (plan: AxisPlan): boolean => plan.hug || plan.px !== undefined;
 
-/** O que o `sizing` avaliado pede a um componente: o retângulo novo, ou `undefined` se nada muda. */
+/** What the evaluated `sizing` asks of a component: the new rectangle, or `undefined` if nothing changes. */
 function applySizing(
   rect: Rect,
   sizing: ResolvedSizing,
@@ -243,7 +243,7 @@ function applySizing(
   };
 }
 
-/** `inner` preso dentro de `outer`. `push` empurra (e encolhe só se for maior); `shrink` mantém x e y e corta o excesso. */
+/** `inner` clamped inside `outer`. `push` pushes (and shrinks only if larger); `shrink` keeps x and y and cuts the excess. */
 function clampRect(inner: Rect, outer: Rect, mode: 'push' | 'shrink'): Rect {
   if (mode === 'shrink') {
     const x = clamp(inner.x, outer.x, Math.max(outer.x, right(outer) - 1));
@@ -266,16 +266,18 @@ function clampRect(inner: Rect, outer: Rect, mode: 'push' | 'shrink'): Rect {
 }
 
 /**
- * Arruma o componente com slot escolhido e os componentes com slot dentro dele (a subárvore). Do mais fundo para
- * o raso, cada componente com slot posiciona as filhas na caixa do slot (a ordem é a do array; o
- * tamanho no eixo principal fica (menos o das filhas `hug`, remedidas), `align: stretch` estica o cruzado, `justify` distribui) e,
- * se o componente é `hug` num eixo, ajusta o componente com slot ao conteúdo (nunca abaixo do
- * `minSize`; a posição fica). Eixo fixo não muda: se o conteúdo não cabe, avisa. Mover uma
- * filha leva os descendentes dela. No fim, toda marcação fica inteira e dentro do pai e da
- * imagem: o que passaria é preso, com aviso (uma raiz do canvas não tem limite). Assenta ao fim
- * (as filhas mudaram de lugar: o pertencimento se refaz). Devolve o mesmo `Project` quando nada
- * muda; falha com `not-arrangeable` (não é componente com slot `row`/`column` com filhas) e
- * `locked` (algum retângulo que mudaria tem a geometria travada).
+ * Arranges the chosen component with a slot and the components with a slot inside it (the
+ * subtree). From the deepest to the shallowest, each component with a slot positions the children
+ * in the slot's box (the order is the array's; the size on the main axis stays (minus that of the
+ * `hug` children, remeasured), `align: stretch` stretches the cross axis, `justify` distributes)
+ * and, if the component is `hug` on an axis, fits the component with a slot to the content (never
+ * below `minSize`; the position stays). A fixed axis does not change: if the content does not
+ * fit, it warns. Moving a child takes its descendants along. At the end, every marking is whole
+ * and inside the parent and the image: whatever would go past is clamped, with a warning (a canvas
+ * root has no limit). Settles at the end (the children moved: containment is redone). Returns the
+ * same `Project` when nothing changes; fails with `not-arrangeable` (not a component with a
+ * `row`/`column` slot with children) and `locked` (some rectangle that would change has locked
+ * geometry).
  */
 export function arrangeMarking(
   p: Project,
@@ -289,7 +291,7 @@ export function arrangeMarking(
   const rects = new Map<string, Rect>();
   const childrenOf = (id: string): readonly Marking[] => index.children.get(id) ?? [];
 
-  // Subárvore: de cima para baixo (a raiz primeiro) e a pós-ordem (o mais fundo primeiro).
+  // Subtree: top-down (the root first) and post-order (the deepest first).
   const topDownIds: string[] = [];
   const queue = [markingId];
   while (queue.length > 0) {
@@ -297,8 +299,8 @@ export function arrangeMarking(
     topDownIds.push(id);
     queue.push(...childrenOf(id).map((c) => c.id));
   }
-  // O arrumar corre em unidades do componente (a densidade do container da raiz: a subárvore é
-  // toda do mesmo espaço) e volta a pixels da imagem antes de prender na imagem e no pai.
+  // Arrange runs in component units (the density of the root's container: the subtree is all in
+  // the same space) and goes back to image pixels before clamping to the image and the parent.
   const density = effectiveDensity(
     p,
     (index.markings.get(markingId) as Marking).containerId,
@@ -335,22 +337,22 @@ export function arrangeMarking(
     }
   };
 
-  /** O pai estica este componente com slot no eixo (o `stretch` do pai vale mais que o `hug`). */
+  /** The parent stretches this component with a slot on the axis (the parent's `stretch` outweighs the `hug`). */
   const stretchedByParent = (id: string, axis: 'width' | 'height'): boolean => {
     const parentId = (index.markings.get(id) as Marking).parentId;
     return stretchedBy(parentId === null ? null : containerAt(parentId), axis);
   };
 
-  // Por texto, para não repetir o mesmo aviso entre as voltas.
+  // By text, so the same warning is not repeated across passes.
   let warnings = new Map<string, ModelMessage>();
   const warn = (message: ModelMessage): void => {
     warnings.set(message.text, message);
   };
 
   /**
-   * Remede as filhas folha cujo componente é `hug` num eixo: o eixo vira o tamanho medido
-   * (inteiro para cima, nunca abaixo do `minSize`). O componente com slot filho já se ajustou na própria
-   * volta (do mais fundo para o raso). O eixo que o `stretch` do pai estica fica.
+   * Remeasures the leaf children whose component is `hug` on an axis: the axis becomes the measured
+   * size (rounded up, never below `minSize`). A child component with a slot already fit itself in
+   * its own pass (from the deepest to the shallowest). The axis the parent's `stretch` stretches stays.
    */
   const remeasureHugKids = (kids: readonly Marking[]) => {
     for (const kid of kids) {
@@ -380,7 +382,7 @@ export function arrangeMarking(
     }
   };
 
-  /** A primeira linha de base do desenho de uma filha (`align: "baseline"` do slot). */
+  /** The first baseline of a child's drawing (the slot's `align: "baseline"`). */
   const baselineOf = (kid: Marking): number | undefined => {
     const mc = markingComponent(p, catalog, kid.id);
     if (mc === null) return undefined;
@@ -407,8 +409,8 @@ export function arrangeMarking(
       width: extent.width + pad.left + pad.right,
       height: extent.height + pad.top + pad.bottom,
     });
-    // O que os filhos pedem ao slot (o `hug` do componente): uma linha só, ou, com `wrap`, as linhas
-    // pelo espaço do eixo principal que o slot tem (o desenho com o pedido de uma linha só dá o espaço).
+    // What the children ask of the slot (the component's `hug`): a single line, or, with `wrap`, the
+    // lines by the main-axis space the slot has (the drawing with the single-line request gives the space).
     let slotContent = padded(contentExtent(layout, children, null));
     if (needsAvailable(layout)) {
       const probe = slotBoxOfScene(
@@ -465,7 +467,7 @@ export function arrangeMarking(
         modelMessage(
           'arrange.overflow',
           { label: info.label },
-          `${info.label}: conteúdo maior que o container`,
+          `${info.label}: content is larger than the container`,
         ),
       );
     }
@@ -495,9 +497,9 @@ export function arrangeMarking(
     );
   }
 
-  // Invariantes: inteiros e dentro do pai (ou do container). A raiz encolhe, as demais são
-  // empurradas para dentro e só encolhem se forem maiores que o pai. Sem pai, o limite é o
-  // container (marcação de container) ou nenhum (marcação do canvas).
+  // Invariants: whole numbers and inside the parent (or the container). The root shrinks, the others
+  // are pushed inside and only shrink if they are larger than the parent. With no parent, the limit
+  // is the container (container marking) or none (canvas marking).
   for (const id of topDownIds) {
     const marking = index.markings.get(id) as Marking;
     const rect = rects.get(id) as Rect;
@@ -510,7 +512,7 @@ export function arrangeMarking(
         : (rects.get(marking.parentId) as Rect);
       where = labelOf(marking.parentId);
     } else if (marking.containerId === null) {
-      continue; // Marcação do canvas sem pai: nada a limita.
+      continue; // Canvas marking with no parent: nothing limits it.
     } else {
       const container = index.containers.get(marking.containerId);
       outer = imagePixelRect(container ?? { width: 0, height: 0 });
@@ -524,7 +526,7 @@ export function arrangeMarking(
       modelMessage(
         'arrange.outside',
         { label: labelOf(id), where },
-        `${labelOf(id)}: não cabe em ${where}`,
+        `${labelOf(id)}: does not fit in ${where}`,
       ),
     );
   }
@@ -551,22 +553,22 @@ export function arrangeMarking(
   };
 }
 
-/** O que o ajuste ao conteúdo precisa de uma marcação de componente sem filhas no slot. */
+/** What fitting to the content needs from a component marking with no children in the slot. */
 interface FitTarget {
   readonly marking: Marking;
   readonly component: ComponentFile;
   readonly tokens: ResolvedTokens | undefined;
   readonly direction: ReadingDirection;
-  /** A âncora da marcação como o desenho a lê (`$anchor.*`); `undefined` sem âncora. */
+  /** The marking's anchor as the drawing reads it (`$anchor.*`); `undefined` with no anchor. */
   readonly anchor: InstanceAnchor | undefined;
   readonly values: FieldValues;
   readonly parent: Container | null;
 }
 
 /**
- * A marcação é de um componente cujo `sizing` avaliado depende do conteúdo (`hug` ou px por expressão)
- * num dos eixos e que não é um componente com slot com filhas (esse se arruma: `arrangeMarking`
- * já ajusta o `hug` dele). `null` quando não é.
+ * The marking is of a component whose evaluated `sizing` depends on the content (`hug` or px by
+ * expression) on one of the axes and which is not a component with a slot with children (that one
+ * is arranged: `arrangeMarking` already fits its `hug`). `null` when it is not.
  */
 function fitTargetOf(
   p: Project,
@@ -576,8 +578,8 @@ function fitTargetOf(
   if (containerOf(p, catalog, marking.id) !== null) return null;
   const mc = markingComponent(p, catalog, marking.id);
   if (mc === null) return null;
-  // Filhas num slot sem layout `row`/`column` também não se ajustam: medir sem elas encolheria o
-  // componente e o assentar tiraria as filhas dele.
+  // Children in a slot without a `row`/`column` layout do not fit either: measuring without them
+  // would shrink the component and the settle would take the children out of it.
   const hasKids = (projectIndex(p).children.get(marking.id)?.length ?? 0) > 0;
   if (hasKids && findSlot(mc.component) !== undefined) return null;
   const values = drawingValues(p, mc.annotation, mc.type).values;
@@ -596,8 +598,9 @@ function fitTargetOf(
 }
 
 /**
- * Dá para ajustar ao conteúdo: a marcação é de um componente sem filhas no slot cujo `sizing`
- * (hug ou expressão) depende do conteúdo num eixo. Não mede nada (a pergunta do menu e do botão).
+ * Can be fit to the content: the marking is of a component with no children in the slot whose
+ * `sizing` (hug or expression) depends on the content on an axis. It measures nothing (the
+ * menu's and the button's question).
  */
 export function canFit(
   p: Project,
@@ -609,9 +612,9 @@ export function canFit(
 }
 
 /**
- * O Arrumar de uma marcação ajusta ao conteúdo (`fitMarking`) e não arruma filhas: ela é de um
- * componente que não se arruma (sem slot `row`/`column` com filhas). Uma marcação sem componente fica
- * com `arrangeMarking` (e o `not-arrangeable` dele).
+ * Arrange on a marking fits it to the content (`fitMarking`) and does not arrange children: it is
+ * of a component that is not arranged (no `row`/`column` slot with children). A marking with no
+ * component stays with `arrangeMarking` (and its `not-arrangeable`).
  */
 export function arrangesByFit(
   p: Project,
@@ -630,7 +633,7 @@ function optionalMaxWidth(value: number | undefined): { maxWidth?: number } {
     : { maxWidth: value };
 }
 
-/** A largura que sobra da posição `x` até a borda da imagem do container; no canvas não há limite. */
+/** The width left from position `x` to the container image's edge; on the canvas there is no limit. */
 function widthToImageEdge(p: Project, marking: Marking): number | undefined {
   if (marking.containerId === null) return undefined;
   const container = projectIndex(p).containers.get(marking.containerId);
@@ -639,7 +642,7 @@ function widthToImageEdge(p: Project, marking: Marking): number | undefined {
     : right(imagePixelRect(container)) - marking.rect.x;
 }
 
-/** O retângulo preso à imagem do container (o ajuste não passa dela); no canvas não há limite. */
+/** The rectangle clamped to the container's image (the fit does not go past it); on the canvas there is no limit. */
 function withinImage(p: Project, marking: Marking, rect: Rect): Rect {
   if (marking.containerId === null) return rect;
   const container = projectIndex(p).containers.get(marking.containerId);
@@ -653,16 +656,16 @@ function withinImage(p: Project, marking: Marking, rect: Rect): Rect {
 }
 
 /**
- * Ajusta a marcação de um componente ao conteúdo (decisão 14 da #898): cada eixo cujo `sizing` é `hug`
- * (ou expressão que dá `hug` ou px) vira o tamanho medido com os valores da anotação, inteiro para
- * cima, entre o `minSize` e os limites da raiz do componente e nunca abaixo de
- * `MIN_STORED_MARKING_SIZE`. A posição (canto de cima à esquerda) fica; o eixo `fill`, o ausente e o
- * que o `align: stretch` do pai estica não mudam; o resultado nunca passa da imagem. Só por ação da
- * pessoa ou do agente: nunca na carga nem ao editar um valor. Assenta ao fim (a marcação pode
- * passar a conter outras), numa entrada de desfazer. Devolve o mesmo `Project` quando nada muda;
- * falha com `not-found`, `not-fittable` (nenhum eixo depende do conteúdo, a marcação não é de um
- * componente ou é um componente com filhas no slot, que se arruma) e `locked` (a geometria é
- * travada e mudaria).
+ * Fits a component's marking to the content (decision 14 of #898): each axis whose `sizing` is
+ * `hug` (or an expression that gives `hug` or px) becomes the size measured with the annotation's
+ * values, rounded up, between the `minSize` and the limits of the component's root and never below
+ * `MIN_STORED_MARKING_SIZE`. The position (top-left corner) stays; the `fill` axis, the absent one
+ * and the one the parent's `align: stretch` stretches do not change; the result never goes past the
+ * image. Only by the person's or the agent's action: never on load or when editing a value. Settles
+ * at the end (the marking may come to contain others), in one undo entry. Returns the same
+ * `Project` when nothing changes; fails with `not-found`, `not-fittable` (no axis depends on the
+ * content, the marking is not of a component or is a component with children in the slot, which
+ * is arranged) and `locked` (the geometry is locked and would change).
  */
 export function fitMarking(
   p: Project,
@@ -676,7 +679,7 @@ export function fitMarking(
   const auto: { width?: boolean; height?: boolean } = {};
   if (stretchedBy(target.parent, 'width')) auto.width = false;
   if (stretchedBy(target.parent, 'height')) auto.height = false;
-  // Mede em unidades do componente e grava em pixels da imagem (× densidade, para cima).
+  // Measures in component units and writes in image pixels (× density, rounded up).
   const density = effectiveDensity(p, marking.containerId);
   const base = rectToUnits(marking.rect, density);
   const edge = widthToImageEdge(p, marking);
@@ -709,7 +712,7 @@ export function fitMarking(
   );
 }
 
-/** Opções do encosto: o assentar e os padrões da âncora do componente (offset em unidades). */
+/** Snap options: the settle and the component's anchor defaults (offset in units). */
 export interface SnapToAnchorOptions extends SettleOptions {
   readonly defaults?: AnchorDefaultsSource<Marking>;
 }
@@ -721,7 +724,7 @@ function defaultsOf(
   return typeof source === 'function' ? source(marking) : source;
 }
 
-/** O retângulo da marcação encostada na âncora, preso à imagem do container (e se foi preciso prender). */
+/** The rectangle of the marking snapped to the anchor, clamped to the container's image (and whether clamping was needed). */
 function snappedRect(
   p: Project,
   marking: Marking,
@@ -748,7 +751,7 @@ function snappedRect(
     : clampedInto(wanted, imagePixelRect(container));
 }
 
-/** O aviso de que o encosto passou do container e foi preso dentro dele. */
+/** The warning that the snap went past the container and was clamped inside it. */
 function clampedWarning(p: Project, marking: Marking): ModelMessage {
   const label = marking.name ?? marking.id;
   const container =
@@ -759,19 +762,19 @@ function clampedWarning(p: Project, marking: Marking): ModelMessage {
   return modelMessage(
     'arrange.outside',
     { label, where },
-    `${label}: não cabe em ${where}`,
+    `${label}: does not fit in ${where}`,
   );
 }
 
 /**
- * Encosta a marcação ancorada (`anchor`) na âncora (R3, decisão 12) e leva junto as filhas dela e as
- * ancoradas nela (`withAnchoredFollowers`, o mesmo de `moveMarking`). Calcula o retângulo pelo
- * `side`, `align` e `offset` (`anchoredRect`; o que falta vem de `options.defaults`, o `offset`
- * dele em unidades × a densidade do container), mantém o tamanho e, num container, prende o
- * resultado dentro da imagem com um aviso (`arrange.outside`). Assenta ao fim, numa entrada de
- * desfazer. Devolve o mesmo `Project` quando o retângulo não muda (a trava não conta);
- * falha com `not-found`, `not-anchored` (a marcação não tem âncora) e `locked` (a geometria
- * é travada e mudaria). Só por ação da pessoa ou do agente.
+ * Snaps the anchored marking (`anchor`) to the anchor (R3, decision 12) and takes its children and
+ * the markings anchored to it along (`withAnchoredFollowers`, the same as `moveMarking`). It
+ * computes the rectangle by `side`, `align` and `offset` (`anchoredRect`; what is missing comes from
+ * `options.defaults`, its `offset` in units × the container's density), keeps the size and, in a
+ * container, clamps the result inside the image with a warning (`arrange.outside`). Settles at the
+ * end, in one undo entry. Returns the same `Project` when the rectangle does not change (the lock
+ * does not count); fails with `not-found`, `not-anchored` (the marking has no anchor) and `locked`
+ * (the geometry is locked and would change). Only by the person's or the agent's action.
  */
 export function snapToAnchor(
   p: Project,
@@ -785,8 +788,8 @@ export function snapToAnchor(
   const warnings = snapped.clamped || limited ? [clampedWarning(p, marking)] : [];
   if (dx === 0 && dy === 0) return { project: p, warnings };
   if (markingLockStates(p).has(markingId)) fail('locked');
-  // As filhas e as ancoradas nela (e as ancoradas dessas) andam o mesmo deslocamento, como em
-  // `moveMarking`; o tamanho não muda, então o deslocamento é o do canto.
+  // The children and the ones anchored to it (and those anchored to those) move by the same offset,
+  // as in `moveMarking`; the size does not change, so the offset is the corner's.
   const next = {
     ...p,
     markings: p.markings.map((m) =>
@@ -797,11 +800,11 @@ export function snapToAnchor(
 }
 
 /**
- * O deslocamento do encosto, reduzido para que o conjunto que anda junto (`followers`, a
- * marcação inclusive) continue dentro da imagem do container: um seguidor que saísse dela seria
- * convertido em marcação do canvas pelo assentar, soltando a âncora sem aviso. Sem container
- * (canvas) não há limite. `limited`: o deslocamento teve de ser reduzido além do prendido na
- * própria marcação.
+ * The snap offset, reduced so that the set that moves together (`followers`, the marking
+ * included) stays inside the container's image: a follower that left it would be converted into a
+ * canvas marking by the settle, dropping the anchor without a warning. Without a container
+ * (canvas) there is no limit. `limited`: the offset had to be reduced beyond what was clamped on
+ * the marking itself.
  */
 function followersDelta(
   p: Project,
@@ -823,7 +826,8 @@ function followersDelta(
     loY = Math.max(loY, bounds.y - r.y);
     hiY = Math.min(hiY, bounds.y + bounds.height - (r.y + r.height));
   }
-  // Conjunto mais largo que a imagem não tem deslocamento que o caiba: não anda nesse eixo.
+  // A set wider than the image has no offset that fits it: it does not move on that axis.
+
   const fit = (v: number, lo: number, hi: number): number =>
     lo > hi ? 0 : Math.min(Math.max(v, lo), hi);
   const dx = fit(wanted.dx, loX, hiX);

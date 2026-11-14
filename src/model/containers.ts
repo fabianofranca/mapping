@@ -27,16 +27,16 @@ import { findById, normalizeOptionalName, updateById } from './project';
 import { countBrokenRefs } from './refs';
 import type { Marking, Placement, Project, ProjectContainer, Rect } from './types';
 
-/** Lado maior de uma imagem recém-adicionada, em unidades do canvas. */
+/** Longest side of a newly added image, in canvas units. */
 export const INITIAL_IMAGE_SIZE = 1000;
-/** Espaço entre a nova imagem e a imagem mais à direita, em unidades do canvas. */
+/** Space between the new image and the rightmost image, in canvas units. */
 export const IMAGE_GAP = 50;
-/** Vão entre uma peça nova e os obstáculos, nas unidades do espaço (pixels da imagem ou do canvas). */
+/** Gap between a new piece and the obstacles, in the space's units (image or canvas pixels). */
 export const PLACEMENT_GAP = 8;
-/** Diferença máxima de proporção considerada "a mesma" na troca de imagem. */
+/** Largest aspect-ratio difference considered "the same" when replacing an image. */
 export const ASPECT_TOLERANCE = 0.01;
 
-/** Maior lado (largura ou altura) de um container sem arquivo, em pixels. */
+/** Largest side (width or height) of a container without a file, in pixels. */
 export const MAX_CONTAINER_SIZE = 20000;
 
 export interface ImageFile {
@@ -56,13 +56,13 @@ function checkDimensions({
   if (!ok(width) || !ok(height)) fail('invalid-dimensions');
 }
 
-/** Cor de fundo válida (`#RRGGBB`), em maiúsculas. */
+/** Valid background color (`#RRGGBB`), in uppercase. */
 function checkBackground(color: string): string {
   if (!HEX_COLOR_RE.test(color)) fail('invalid-color');
   return color.toUpperCase();
 }
 
-/** Dimensões de um container sem arquivo: inteiros de 1 a `MAX_CONTAINER_SIZE`. */
+/** Dimensions of a container without a file: integers from 1 to `MAX_CONTAINER_SIZE`. */
 function checkBackgroundDimensions(size: {
   readonly width: number;
   readonly height: number;
@@ -73,7 +73,7 @@ function checkBackgroundDimensions(size: {
   }
 }
 
-/** `true` se a imagem é um container sem arquivo (sem arquivo, só com cor de fundo). */
+/** `true` if the image is a container without a file (no file, only a background color). */
 export function isBackgroundContainer(image: Pick<ProjectContainer, 'file'>): boolean {
   return image.file === null;
 }
@@ -82,7 +82,7 @@ function checkPlacement({ x, y, scale }: Placement): void {
   if (![x, y, scale].every(Number.isFinite) || scale <= 0) fail('invalid-placement');
 }
 
-/** Posição livre à direita de todas as imagens (exceto `excludeId`). */
+/** Free position to the right of all images (except `excludeId`). */
 function placementAtRight(p: Project, scale: number, excludeId?: string): Placement {
   const others = p.containers.filter((i) => i.id !== excludeId);
   const rects = others.map((i) => imageCanvasRect(i, i.placement));
@@ -91,10 +91,10 @@ function placementAtRight(p: Project, scale: number, excludeId?: string): Placem
   return snapPlacement({ x: right(rightmost) + IMAGE_GAP, y: rightmost.y, scale });
 }
 
-/** Intervalo aberto de `y` (do canto de cima) que sobrepõe um obstáculo. */
+/** Open interval of `y` (from the top edge) that overlaps an obstacle. */
 type YSpan = readonly [number, number];
 
-/** Intervalos de `y` barrados pelos obstáculos que cruzam a coluna de `x` a `x + width`, ordenados e fundidos. */
+/** Intervals of `y` blocked by the obstacles crossing the column from `x` to `x + width`, sorted and merged. */
 function forbiddenYs(
   obstacles: readonly Rect[],
   x: number,
@@ -116,7 +116,7 @@ function forbiddenYs(
   return merged;
 }
 
-/** `y` cai dentro de algum intervalo aberto (busca binária nos intervalos fundidos). */
+/** `y` falls inside some open interval (binary search over the merged intervals). */
 function isBlocked(spans: readonly YSpan[], y: number): boolean {
   let lo = 0;
   let hi = spans.length - 1;
@@ -131,11 +131,11 @@ function isBlocked(spans: readonly YSpan[], y: number): boolean {
 }
 
 /**
- * O lugar livre mais próximo de `wanted` (canto de cima à esquerda) para um retângulo de
- * `width` × `height` que não sobreponha nenhum dos `obstacles`. Testa o ponto pedido e os
- * encaixes junto às bordas dos obstáculos (com o vão `gap`); o de menor distância vence e o
- * primeiro empata. Sempre há um (à direita de todos os obstáculos). Vale para qualquer espaço do
- * canvas: serve a `placementNear` e à chegada das perspectivas.
+ * The nearest free spot to `wanted` (top-left corner) for a rectangle of
+ * `width` × `height` that does not overlap any of the `obstacles`. Tests the requested point and
+ * the fits against the obstacles' edges (with the `gap`); the smallest distance wins and the
+ * first one breaks ties. There is always one (to the right of all the obstacles). Valid for any
+ * canvas space: serves `placementNear` and the arrival of perspectives.
  */
 export function nearestFreeSpot(
   obstacles: readonly Rect[],
@@ -153,8 +153,8 @@ export function nearestFreeSpot(
   let best: { x: number; y: number } | null = null;
   let bestDistance = Infinity;
   for (const x of xs) {
-    // Só os obstáculos que cruzam a coluna [x, x + width) barram algum y; cada um barra o
-    // intervalo aberto de y em que o retângulo o sobreporia.
+    // Only the obstacles crossing the column [x, x + width) block any y; each one blocks the
+    // open interval of y where the rectangle would overlap it.
     const blocked = forbiddenYs(obstacles, x, width, height);
     for (const y of ys) {
       if (isBlocked(blocked, y)) continue;
@@ -172,8 +172,8 @@ export function nearestFreeSpot(
 }
 
 /**
- * O retângulo é livre? Cabe em `area` (quando há) e não se sobrepõe a nenhum dos `obstacles`
- * (`rectsOverlap`, área positiva: encostar não é sobrepor).
+ * Is the rectangle free? It fits in `area` (when there is one) and overlaps none of the `obstacles`
+ * (`rectsOverlap`, positive area: touching is not overlapping).
  */
 export function isFreeRect(
   rect: Rect,
@@ -184,7 +184,7 @@ export function isFreeRect(
   return !obstacles.some((o) => rectsOverlap(rect, o));
 }
 
-/** Coordenadas candidatas de um eixo, inteiras e sempre para longe do obstáculo (teto à frente, piso atrás). */
+/** Candidate coordinates of one axis, integers and always away from the obstacle (ceiling ahead, floor behind). */
 function spotAxis(
   wanted: number,
   size: number,
@@ -197,8 +197,8 @@ function spotAxis(
   for (const [low, high] of edges) {
     values.push(Math.ceil(high + gap), Math.floor(low - gap - size));
   }
-  // Sem repetidos (grades e peças repetidas dão a mesma borda várias vezes); a ordem de
-  // primeira aparição fica, e ela desempata a distância.
+  // No duplicates (grids and repeated pieces give the same edge several times); the order of
+  // first appearance stays, and it breaks distance ties.
   const unique = [...new Set(values)];
   return bounds === null
     ? unique
@@ -206,12 +206,13 @@ function spotAxis(
 }
 
 /**
- * O lugar livre mais próximo de `wanted` (canto de cima à esquerda) para um retângulo de
- * `width` × `height` que não se sobreponha a nenhum dos `obstacles`, **dentro de `area`** (quando
- * há). Os candidatos são o próprio `wanted`, os encaixes junto às bordas dos obstáculos (com o
- * vão `gap`) e as bordas da `area` (sem vão: a peça pode encostar nelas); vale só o que cabe na
- * área e é livre. O de menor distância vence e o primeiro empata. Com `area`, sem candidato válido
- * devolve `null`; sem `area` sempre há um (à direita de todos). Coordenadas inteiras.
+ * The nearest free spot to `wanted` (top-left corner) for a rectangle of
+ * `width` × `height` that does not overlap any of the `obstacles`, **inside `area`** (when
+ * there is one). The candidates are `wanted` itself, the fits against the obstacles' edges
+ * (with the `gap`) and the edges of `area` (no gap: the piece may touch them); only what fits in the
+ * area and is free counts. The smallest distance wins and the first one breaks ties. With `area`,
+ * returns `null` when there is no valid candidate; without `area` there is always one (to the
+ * right of all). Integer coordinates.
  */
 export function nearestFreeSpotIn(
   obstacles: readonly Rect[],
@@ -252,9 +253,9 @@ export function nearestFreeSpotIn(
 }
 
 /**
- * Posição livre mais próxima de `center` (ponto do canvas onde o centro da
- * imagem deveria ficar). Testa o ponto pedido e os encaixes junto às bordas
- * das outras imagens; sempre existe um (à direita de todas).
+ * Free position nearest to `center` (canvas point where the image's
+ * center should be). Tests the requested point and the fits against the edges
+ * of the other images; one always exists (to the right of all).
  */
 export function placementNear(
   p: Project,
@@ -273,8 +274,8 @@ export function placementNear(
 }
 
 /**
- * O primeiro container com que a imagem, em `placement`, passaria a se sobrepor; `null` se
- * nenhum. É o "outro" do `image-overlap`.
+ * The first container that the image, at `placement`, would start to overlap; `null` if
+ * none. It is the "other" of `image-overlap`.
  */
 export function overlappingContainer(
   p: Project,
@@ -296,7 +297,7 @@ function failOverlap(other: ProjectContainer): never {
   fail('image-overlap', undefined, { containerId: other.id });
 }
 
-/** Arquivos das imagens (o container sem arquivo não tem), na ordem das imagens. */
+/** Files of the images (a container without a file has none), in the images' order. */
 export function imageFileNames(
   images: readonly Pick<ProjectContainer, 'file'>[],
 ): string[] {
@@ -305,16 +306,16 @@ export function imageFileNames(
   return files;
 }
 
-/** Arquivo do projeto na raiz da pasta/zip (app e servidor MCP). */
+/** Project file at the root of the folder/zip (app and MCP server). */
 export const MAPPING_FILE = 'mapping.json';
-/** Pasta das imagens, relativa à raiz do projeto (app e servidor MCP). */
+/** Folder of the images, relative to the project root (app and MCP server). */
 export const IMAGES_DIR = 'images';
 
 /**
- * Chave de comparação de nomes de arquivo: NFC e minúsculas. Em NTFS/APFS `Foto.jpg` e
- * `foto.jpg` são o mesmo arquivo, e o nome decomposto (`é` = `e` + acento) vira o composto
- * ao gravar; a unicidade dos nomes que a app e o MCP criam é decidida por esta chave. O nome
- * gravado mantém a caixa que veio.
+ * Comparison key for file names: NFC and lowercase. On NTFS/APFS `Foto.jpg` and
+ * `foto.jpg` are the same file, and the decomposed name (`é` = `e` + accent) becomes the composed one
+ * when written; the uniqueness of the names the app and the MCP create is decided by this key. The
+ * stored name keeps the case it came with.
  */
 export function fileNameKey(path: string): string {
   return path.normalize('NFC').toLowerCase();
@@ -323,9 +324,9 @@ export function fileNameKey(path: string): string {
 const sameFile = (a: string, b: string): boolean => fileNameKey(a) === fileNameKey(b);
 
 /**
- * Nome livre em `images/`: `foto.jpg`, `foto-2.jpg`, `foto-3.jpg`… sem diferenciar maiúsculas
- * e minúsculas (`fileNameKey`). `taken` lista caminhos ocupados fora do projeto (arquivos já
- * existentes na pasta).
+ * Free name in `images/`: `foto.jpg`, `foto-2.jpg`, `foto-3.jpg`… without distinguishing upper
+ * and lower case (`fileNameKey`). `taken` lists paths occupied outside the project (files already
+ * existing in the folder).
  */
 export function uniqueImageFile(
   p: Project,
@@ -346,9 +347,9 @@ export function uniqueImageFile(
 }
 
 /**
- * Lugar e escala de um container novo ao lado de `besideId`: à direita dele (borda direita mais
- * `IMAGE_GAP`), com o topo alinhado e a mesma `scale`; ocupado, vai para o espaço livre mais
- * próximo, mantendo a escala. `besideId` inexistente falha com `not-found`.
+ * Place and scale of a new container beside `besideId`: to its right (right edge plus
+ * `IMAGE_GAP`), with the top aligned and the same `scale`; if occupied, it goes to the nearest free
+ * space, keeping the scale. A nonexistent `besideId` fails with `not-found`.
  */
 function placementBeside(
   p: Project,
@@ -367,7 +368,7 @@ function placementBeside(
   });
 }
 
-/** Escala e lugar de um container novo: ao lado de `beside`, perto de `center` ou à direita de todos. */
+/** Scale and place of a new container: beside `beside`, near `center` or to the right of all. */
 function newContainerPlacement(
   p: Project,
   size: { readonly width: number; readonly height: number },
@@ -384,17 +385,17 @@ function newContainerPlacement(
 }
 
 /**
- * Adiciona a imagem, com o lado maior medindo `INITIAL_IMAGE_SIZE` unidades do
- * canvas: perto de `center`, se informado; senão à direita da imagem mais à direita. Nasce
- * sem pai (`parentId: null`); o assentar decide se alguma marcação do canvas a contém.
+ * Adds the image, with the longest side measuring `INITIAL_IMAGE_SIZE` units of the
+ * canvas: near `center`, if given; otherwise to the right of the rightmost image. It is born
+ * without a parent (`parentId: null`); the settle decides whether some canvas marking contains it.
  */
 export function addContainer(
   p: Project,
   args: ImageFile & {
     readonly id: string;
-    /** Onde o centro da imagem deve ficar (vai para o espaço livre mais próximo). */
+    /** Where the image's center should be (goes to the nearest free space). */
     readonly center?: { readonly x: number; readonly y: number };
-    /** Id de um container: o novo nasce à direita dele, com a mesma escala. */
+    /** Id of a container: the new one is born to its right, with the same scale. */
     readonly beside?: string;
   },
   options?: SettleOptions,
@@ -421,8 +422,8 @@ export function addContainer(
 }
 
 /**
- * Adiciona um container sem arquivo (imagem sem arquivo, só com cor de fundo), com a mesma
- * colocação de `addContainer`: lado maior de `INITIAL_IMAGE_SIZE` unidades do canvas.
+ * Adds a container without a file (image without a file, only a background color), with the same
+ * placement as `addContainer`: longest side of `INITIAL_IMAGE_SIZE` canvas units.
  */
 export function addBackgroundContainer(
   p: Project,
@@ -431,11 +432,11 @@ export function addBackgroundContainer(
     readonly name?: string | null;
     readonly width: number;
     readonly height: number;
-    /** Cor de fundo (`#RRGGBB`). */
+    /** Background color (`#RRGGBB`). */
     readonly background: string;
-    /** Onde o centro da imagem deve ficar (vai para o espaço livre mais próximo). */
+    /** Where the image's center should be (goes to the nearest free space). */
     readonly center?: { readonly x: number; readonly y: number };
-    /** Id de um container: o novo nasce à direita dele, com a mesma escala. */
+    /** Id of a container: the new one is born to its right, with the same scale. */
     readonly beside?: string;
   },
   options?: SettleOptions,
@@ -467,10 +468,10 @@ export interface BackgroundContainerChanges {
 }
 
 /**
- * Edita o container sem arquivo: tamanho e/ou cor de fundo. Mudar o tamanho é geometria
- * (imagem trancada recusa com `locked`), mantém a escala do `placement` e recusa se alguma
- * marcação deixar de caber (`rect-out-of-image`) ou se a imagem passar a sobrepor outra
- * (`image-overlap`). Só vale para container sem arquivo (`container-has-file`).
+ * Edits the container without a file: size and/or background color. Changing the size is geometry
+ * (a locked image refuses with `locked`), keeps the `placement` scale and refuses if some
+ * marking stops fitting (`rect-out-of-image`) or if the image starts overlapping another
+ * (`image-overlap`). Only valid for a container without a file (`container-has-file`).
  */
 export function setBackgroundContainer(
   p: Project,
@@ -526,7 +527,7 @@ export function setBackgroundContainer(
   );
 }
 
-/** Nome de exibição da imagem; vazio vira `null` (a app mostra o nome do arquivo). */
+/** Display name of the image; empty becomes `null` (the app shows the file name). */
 export function renameContainer(
   p: Project,
   containerId: string,
@@ -542,7 +543,7 @@ export function renameContainer(
   };
 }
 
-/** Sugestões de cor para a borda das marcações (alto contraste sobre fotos claras e escuras). */
+/** Color suggestions for the markings' border (high contrast over light and dark photos). */
 export const MARKING_COLOR_PALETTE: readonly string[] = [
   '#FFFFFF',
   '#000000',
@@ -554,7 +555,7 @@ export const MARKING_COLOR_PALETTE: readonly string[] = [
   '#E53935',
 ];
 
-/** Cor da borda das marcações da imagem (`#RRGGBB`); `null` volta para a cor do tema. */
+/** Border color of the image's markings (`#RRGGBB`); `null` goes back to the theme color. */
 export function setContainerMarkingColor(
   p: Project,
   containerId: string,
@@ -572,10 +573,10 @@ export function setContainerMarkingColor(
 }
 
 /**
- * Define posição e escala (mover ou redimensionar). Falha se sobrepor outra imagem ou se o
- * container (ou a marcação do canvas que o contém) estiver trancado. Assenta ao fim (salvo
- * `settle: false`, das prévias de gesto): o container entra ou sai de uma marcação do canvas,
- * e as marcações do canvas que passam a caber inteiras nele viram dele.
+ * Sets position and scale (move or resize). Fails if it overlaps another image or if the
+ * container (or the canvas marking that contains it) is locked. Settles at the end (unless
+ * `settle: false`, from gesture previews): the container enters or leaves a canvas marking,
+ * and the canvas markings that now fit entirely inside it become its own.
  */
 export function setContainerPlacement(
   p: Project,
@@ -585,13 +586,13 @@ export function setContainerPlacement(
 ): Project {
   checkPlacement(placement);
   requireUnlocked(canEditImagePlacement(p, containerId));
-  // Única porta de escrita do `placement` por movimento: o ruído de ponto flutuante some aqui.
+  // Only write door of the `placement` by movement: floating-point noise vanishes here.
   const copy = snapPlacement(placement);
   const overlap = overlappingContainer(p, containerId, copy);
   if (overlap) failOverlap(overlap);
-  // Placement igual ao de agora: nada mudou (arrasto sem efeito); devolve o mesmo projeto para
-  // o gesto não gravar uma entrada de desfazer vazia.
-  // Compara com o atual já limpo: um arquivo antigo com cauda não vira escrita num arrasto sem efeito.
+  // Placement equal to the current one: nothing changed (a drag with no effect); returns the same project so
+  // the gesture does not record an empty undo entry.
+  // Compares with the already-cleaned current one: an old file with a tail does not become a write on a no-effect drag.
   const current = snapPlacement(findById(p.containers, containerId).placement);
   if (current.x === copy.x && current.y === copy.y && current.scale === copy.scale) {
     return p;
@@ -620,7 +621,7 @@ export function moveContainer(
   return setContainerPlacement(p, containerId, { ...placement, x, y }, options);
 }
 
-/** Redimensionamento proporcional: nova escala com o canto (`x`, `y`) informado. */
+/** Proportional resize: new scale with the given corner (`x`, `y`). */
 export function resizeContainer(
   p: Project,
   containerId: string,
@@ -635,11 +636,11 @@ export function containerDeletionImpact(
   containerId: string,
 ): {
   markings: number;
-  /** Quantas das marcações estão trancadas (serão excluídas junto). */
+  /** How many of the markings are locked (they will be deleted along with it). */
   lockedMarkings: number;
-  /** Anotações que saem: as das marcações do container e as das setas presas a elas. */
+  /** Annotations that go away: those of the container's markings and those of the arrows attached to them. */
   annotations: number;
-  /** Setas presas a alguma marcação do container (como origem ou destino): saem junto. */
+  /** Arrows attached to some marking of the container (as source or target): they go along. */
   arrows: number;
   brokenRefs: number;
 } {
@@ -659,9 +660,9 @@ export function containerDeletionImpact(
 }
 
 /**
- * Exclui a imagem com as marcações (trancadas ou não), as setas presas a elas e as anotações de
- * tudo isso. Falha só se a própria imagem estiver trancada. As marcações do canvas ficam e o
- * assentar refaz o pertencimento.
+ * Deletes the image with its markings (locked or not), the arrows attached to them and the annotations of
+ * all of that. Fails only if the image itself is locked. The canvas markings stay and the
+ * settle redoes membership.
  */
 export function removeContainer(
   p: Project,
@@ -673,7 +674,7 @@ export function removeContainer(
   return settleFrom(p, cascadeRemoveImage(p, containerId), options);
 }
 
-/** A exclusão em si, sem a trava: também serve para contar o impacto. */
+/** The deletion itself, without the lock: also serves to count the impact. */
 function cascadeRemoveImage(p: Project, containerId: string): Project {
   const ids = new Set(
     p.markings.filter((m) => m.containerId === containerId).map((m) => m.id),
@@ -689,7 +690,7 @@ function cascadeRemoveImage(p: Project, containerId: string): Project {
   );
 }
 
-/** `true` se a troca mantém a proporção (diferença ≤ 1%). */
+/** `true` if the replacement keeps the aspect ratio (difference ≤ 1%). */
 export function isSameAspect(
   old: Pick<ProjectContainer, 'width' | 'height'>,
   next: Pick<ImageFile, 'width' | 'height'>,
@@ -700,8 +701,8 @@ export function isSameAspect(
 }
 
 /**
- * Reescala um intervalo [start, end) arredondando as bordas. Como o arredondamento
- * é monotônico, contenção entre pai e filha e os limites da imagem se preservam.
+ * Rescales an interval [start, end) rounding the edges. Since the rounding
+ * is monotonic, containment between parent and child and the image bounds are preserved.
  */
 function scaleSpan(start: number, size: number, factor: number): [number, number] {
   const a = Math.round(start * factor);
@@ -709,7 +710,7 @@ function scaleSpan(start: number, size: number, factor: number): [number, number
   return [a, b - a];
 }
 
-/** O retângulo reescalado de `from` para `to`, sem o mínimo (a proposta compara com ele). */
+/** The rectangle rescaled from `from` to `to`, without the minimum (the proposal compares with it). */
 export function scaleRect(r: Rect, from: Size, to: Size): Rect {
   const [x, width] = scaleSpan(r.x, r.width, to.width / from.width);
   const [y, height] = scaleSpan(r.y, r.height, to.height / from.height);
@@ -717,9 +718,9 @@ export function scaleRect(r: Rect, from: Size, to: Size): Rect {
 }
 
 /**
- * Garante o tamanho mínimo aumentando o lado pequeno em volta do centro, sem sair
- * de [min, max). O resultado sempre contém o intervalo original; se o mínimo não cabe,
- * o lado ocupa o intervalo inteiro.
+ * Ensures the minimum size by growing the small side around the center, without leaving
+ * [min, max). The result always contains the original interval; if the minimum does not fit,
+ * the side takes up the whole interval.
  */
 function growSpan(
   start: number,
@@ -735,11 +736,11 @@ function growSpan(
 }
 
 /**
- * Reescala cada marcação da imagem sozinha (bordas arredondadas, presa à imagem nova), sem
- * depender do pai: o pai é derivado da geometria, e o assentar refaz o pertencimento depois.
- * Na mesma escala o retângulo fica como está. O lado só cresce se a reescala o deixou abaixo do
- * mínimo efetivo da marcação (`minSizeOf`: o `minSize` do componente, ou 8 px numa marcação
- * comum); quem cresceu por isso deixou de ser proporcional e ganha `needsReview`.
+ * Rescales each marking of the image on its own (rounded edges, attached to the new image), without
+ * depending on the parent: the parent is derived from geometry, and the settle redoes membership afterwards.
+ * At the same scale the rectangle stays as it is. The side only grows if the rescale left it below the
+ * marking's effective minimum (`minSizeOf`: the component's `minSize`, or 8 px on a marking
+ * plain one); whatever grew because of this stopped being proportional and gets `needsReview`.
  */
 function rescaleMarkings(
   markings: readonly Marking[],
@@ -773,15 +774,15 @@ function rescaleMarkings(
 }
 
 export interface ReplaceContainerOptions extends SettleOptions {
-  /** O usuário confirmou a troca por uma imagem com proporção diferente. */
+  /** The user confirmed the replacement by an image with a different aspect ratio. */
   readonly confirmAspectChange?: boolean;
 }
 
 /**
- * Troca o arquivo da imagem mantendo as marcações (reescaladas). Com proporção
- * diferente, exige confirmação e marca todas as marcações com `needsReview`.
- * Mantém `x`/`y` e a largura exibida; se passar a sobrepor outra imagem,
- * vai para um espaço livre à direita.
+ * Replaces the image's file keeping the markings (rescaled). With a different
+ * aspect ratio, requires confirmation and marks all markings with `needsReview`.
+ * Keeps `x`/`y` and the displayed width; if it starts overlapping another image,
+ * it goes to a free space to the right.
  */
 export function replaceContainer(
   p: Project,
@@ -822,14 +823,14 @@ export function replaceContainer(
     placement = placementAtRight(p, scale, containerId);
   }
 
-  // A troca pode mover a imagem no canvas (escala e lugar): trava de cima também impede.
+  // The replacement may move the image on the canvas (scale and place): a lock above also prevents it.
   requireUnlocked(canReplaceImage(p, containerId, { ...next, placement }));
 
   const ownIds = new Set(own.map((m) => m.id));
   const sx = next.width / image.width;
   const sy = next.height / image.height;
-  // Seta com as duas pontas neste container: os pontos de passagem estão em pixels dele e
-  // acompanham a imagem nova (a rota sobrevive à troca; com a mesma resolução nada muda).
+  // Arrow with both ends in this container: the waypoints are in its pixels and
+  // follow the new image (the route survives the replacement; with the same resolution nothing changes).
   const arrows =
     sx === 1 && sy === 1
       ? p.arrows

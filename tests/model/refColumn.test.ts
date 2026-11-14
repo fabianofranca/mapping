@@ -221,7 +221,7 @@ describe('refsOf, backlinks e referências quebradas', () => {
 });
 
 describe('exibição, conversão em texto e blueprint', () => {
-  it('a tabela mostra a célula como "→ alvo"; quebrada vira "→ (referência quebrada)" e alerta', () => {
+  it('a tabela mostra a célula como "→ alvo"; quebrada vira "→ (broken reference)" e alerta', () => {
     let p = build();
     p = setTableCell(p, 'AL', 'alvos', 'L1', 'alvo', R1);
     const lines = typedDisplayLines(
@@ -252,7 +252,7 @@ describe('exibição, conversão em texto e blueprint', () => {
     ).find((l) => l.kind === 'table');
     expect(after).toMatchObject({
       alert: true,
-      rows: [{ id: 'L1', cells: ['', '→ (referência quebrada)'] }],
+      rows: [{ id: 'L1', cells: ['', '→ (broken reference)'] }],
     });
   });
 
@@ -420,6 +420,6 @@ describe('valores do desenho (motor de componentes)', () => {
       { nota: null, alvo: null },
       { nota: null, alvo: 'nome' },
     ]);
-    expect(warnings.map((w) => w.text)).toEqual(['referência quebrada: alvos[1].alvo']);
+    expect(warnings.map((w) => w.text)).toEqual(['broken reference: alvos[1].alvo']);
   });
 });

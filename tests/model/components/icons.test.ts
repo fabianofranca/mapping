@@ -14,10 +14,9 @@ import type { PathNode, SceneNode } from '../../../src/model/components/scene';
 import { walk } from '../../../src/model/components/scene';
 import { parseSpecText } from '../../../src/model/spec';
 import { modelMessage } from '../../../src/model/modelMessage';
-import { locale } from '../../../src/store/settings';
-import { messageText } from '../../../src/ui/modelMessage';
+import { ptBRText } from '../../support/modelText';
 
-const V4 = 'só é permitido com formatVersion 4';
+const V4 = 'only allowed with formatVersion 4';
 
 const FILE = {
   format: 'mapping-icons',
@@ -55,26 +54,26 @@ describe('parseIconsFile', () => {
     const result = parseIconsFile({ ...FILE, icons: { Check: FILE.icons.check } });
     expect(result.ok).toBe(false);
     if (!result.ok)
-      expect(result.errors.join('\n')).toContain('icons.Check: nome inválido');
+      expect(result.errors.join('\n')).toContain('icons.Check: invalid name');
   });
 
   it('recusa paths vazio', () => {
     const result = parseIconsFile({ ...FILE, icons: { check: { paths: [] } } });
     expect(result.ok).toBe(false);
     if (!result.ok)
-      expect(result.errors.join('\n')).toContain('icons.check.paths: esperava');
+      expect(result.errors.join('\n')).toContain('icons.check.paths: expected');
   });
 
   it('recusa formatVersion 3 com mensagem de versão (1 e 2 valem)', () => {
     const result = parseIconsFile({ ...FILE, formatVersion: 3 });
     expect(result.ok).toBe(false);
     if (!result.ok)
-      expect(result.errors.join('\n')).toContain('formatVersion: deve ser 1 ou 2');
+      expect(result.errors.join('\n')).toContain('formatVersion: must be 1 or 2');
     expect(parseIconsFile({ ...FILE, formatVersion: 1 }).ok).toBe(true);
     expect(parseIconsFile({ ...FILE, formatVersion: 2 }).ok).toBe(true);
   });
 
-  it('a mensagem de formatVersion inválido sai inteira em cada idioma (sem "ou" em inglês)', () => {
+  it('a mensagem de formatVersion inválido: texto do modelo em inglês e a renderização pt-BR inteira', () => {
     const result = parseIconsFile({ ...FILE, formatVersion: 3 });
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -85,14 +84,9 @@ describe('parseIconsFile', () => {
       issue?.params ?? {},
       issue?.message ?? '',
     );
-    try {
-      locale.value = 'pt-BR';
-      expect(messageText(message)).toBe('deve ser 1 ou 2');
-      locale.value = 'en-US';
-      expect(messageText(message)).toBe('must be 1 or 2');
-    } finally {
-      locale.value = 'pt-BR';
-    }
+    expect(issue?.message).toBe('must be 1 or 2');
+    expect(message.text).toBe('must be 1 or 2');
+    expect(ptBRText(message)).toBe('deve ser 1 ou 2');
   });
 
   it('mapping-icons 2 aceita mirror por ícone (booleano); a 1 continua aceita sem ele', () => {
@@ -108,11 +102,11 @@ describe('parseIconsFile', () => {
     expect(bad.ok).toBe(false);
     if (!bad.ok)
       expect(bad.errors.join('\n')).toContain(
-        'icons.back.mirror: esperava true ou false',
+        'icons.back.mirror: expected true or false',
       );
   });
 
-  it('mirror na formatVersion 1 é só é permitido com formatVersion 2', () => {
+  it('mirror na formatVersion 1 é only allowed with formatVersion 2', () => {
     const result = parseIconsFile({
       ...FILE,
       icons: { back: { mirror: true, paths: FILE.icons.check.paths } },
@@ -120,7 +114,7 @@ describe('parseIconsFile', () => {
     expect(result.ok).toBe(false);
     if (!result.ok)
       expect(result.errors).toContain(
-        'icons.back.mirror: só é permitido com formatVersion 2',
+        'icons.back.mirror: only allowed with formatVersion 2',
       );
   });
 
@@ -133,9 +127,9 @@ describe('parseIconsFile', () => {
     expect(bad.ok).toBe(false);
     if (!bad.ok) {
       const text = bad.errors.join('\n');
-      expect(text).toContain('viewBox: campo obrigatório');
+      expect(text).toContain('viewBox: required field');
       expect(text).toContain('icons.x.paths[0].cap');
-      expect(text).toContain('icons.x.paths[0].extra: chave desconhecida');
+      expect(text).toContain('icons.x.paths[0].extra: unknown key');
     }
   });
 });
@@ -189,11 +183,11 @@ describe('nó icon: validação', () => {
     const issues = validateComponent(
       component({ type: 'frame', children: [{ type: 'icon', d: 'M0 0' }] }),
     );
-    expect(issues).toContain('template.children[0].name: campo obrigatório');
-    expect(issues).toContain('template.children[0].d: chave desconhecida: d');
+    expect(issues).toContain('template.children[0].name: required field');
+    expect(issues).toContain('template.children[0].d: unknown key: d');
   });
 
-  it('na v3 falha com só é permitido com formatVersion 4, no caminho do nó', () => {
+  it('na v3 falha com only allowed with formatVersion 4, no caminho do nó', () => {
     const issues = validateComponent(
       component({ type: 'frame', children: [{ type: 'icon', name: 'check' }] }, 3),
     );
@@ -275,7 +269,7 @@ describe('nó icon: cena', () => {
       { name: { $field: 'icone' } },
       { icone: 'nuvem' },
     );
-    expect(warnings).toContain('ícone desconhecido: nuvem');
+    expect(warnings).toContain('unknown icon: nuvem');
     expect(paths(root)).toEqual([]);
     const unknown = [...walk(root)].find((n) => n.type === 'unknown');
     expect(unknown).toMatchObject({ sourceType: 'icon' });
@@ -284,7 +278,7 @@ describe('nó icon: cena', () => {
   it('sem conjunto declarado o ícone também é desconhecido', () => {
     const c = component({ type: 'frame', children: [{ type: 'icon', name: 'check' }] });
     const { warnings } = instantiate(c, {}, box, { measure: approximateMeasurer });
-    expect(warnings).toContain('ícone desconhecido: check');
+    expect(warnings).toContain('unknown icon: check');
   });
 });
 
@@ -306,7 +300,7 @@ describe('icons na especialização', () => {
     if (!result.ok)
       expect(result.issues).toContainEqual({
         path: 'icons',
-        message: 'só é permitido com formatVersion 15',
+        message: 'only allowed with formatVersion 15',
         code: 'spec.onlyFormat',
         params: { version: '15' },
       });

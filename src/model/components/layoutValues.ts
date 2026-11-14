@@ -1,6 +1,7 @@
 /**
- * Motor dos componentes: conferência dos valores de layout que chegam por expressão
- * (`formatVersion` 4). Funções puras: o valor já avaliado entra, o valor válido (ou nenhum) sai.
+ * Component engine: checking of the layout values that arrive through expressions
+ * (`formatVersion` 4). Pure functions: the already evaluated value goes in, the valid value (or
+ * none) comes out.
  */
 import type {
   IntrinsicSize,
@@ -27,9 +28,9 @@ export const LAYOUT_JUSTIFIES: readonly LayoutJustify[] = [
   'space-around',
   'space-evenly',
 ];
-/** `align` (eixo vertical) de um quadro `none`: sem `baseline`. */
+/** `align` (vertical axis) of a `none` frame: without `baseline`. */
 export const NONE_ALIGNS: readonly LayoutAlign[] = ['start', 'center', 'end', 'stretch'];
-/** `justify` (eixo horizontal) de um quadro `none` (v4): só os quatro, `stretch` incluído. */
+/** `justify` (horizontal axis) of a `none` frame (v4): only the four, `stretch` included. */
 export const NONE_JUSTIFIES: readonly LayoutJustify[] = [
   'start',
   'center',
@@ -39,9 +40,10 @@ export const NONE_JUSTIFIES: readonly LayoutJustify[] = [
 export const LAYOUT_WRAPS: readonly LayoutWrap[] = ['none', 'wrap', 'wrap-reverse'];
 
 /**
- * Onde começa o primeiro filho (`offset`) e o vão a mais entre filhos (`extra`) no eixo principal,
- * dada a folga `free` (≥ 0) e o número de filhos, como o `justify-content` do flexbox. Um filho
- * só: `space-around` e `space-evenly` o centram, `space-between` o deixa no início.
+ * Where the first child starts (`offset`) and the extra gap between children (`extra`) on the
+ * main axis, given the slack `free` (>= 0) and the number of children, like flexbox's
+ * `justify-content`. With a single child: `space-around` and `space-evenly` center it,
+ * `space-between` leaves it at the start.
  */
 export function justifySpacing(
   justify: LayoutJustify,
@@ -66,9 +68,9 @@ export function justifySpacing(
 }
 
 /**
- * Espelha a posição de um filho no eixo principal do `reverse` (`row-reverse`/`column-reverse`):
- * dentro de `[start, start + content]`, o filho de tamanho `size` em `position` passa a ficar à
- * mesma distância do outro extremo.
+ * Mirrors a child's position on the main axis for `reverse` (`row-reverse`/`column-reverse`):
+ * within `[start, start + content]`, the child of size `size` at `position` ends up at the
+ * same distance from the other end.
  */
 export function mirrorMain(
   position: number,
@@ -82,20 +84,20 @@ export function mirrorMain(
 const PERCENT = /^\d+(\.\d+)?%$/;
 const PLAIN_NUMBER = /^\s*\d+(\.\d+)?\s*$/;
 
-/** `"min-content"` ou `"max-content"` (v4). */
+/** `"min-content"` or `"max-content"` (v4). */
 export function isIntrinsicSize(value: unknown): value is IntrinsicSize {
   return value === 'min-content' || value === 'max-content';
 }
 
-/** A medida intrínseca que um tamanho pede (`min-content`/`max-content`); outro tamanho = nenhuma. */
+/** The intrinsic measure a size asks for (`min-content`/`max-content`); any other size = none. */
 export function intrinsicModeOf(spec: unknown): IntrinsicSize | null {
   return isIntrinsicSize(spec) ? spec : null;
 }
 
 /**
- * Confere um tamanho: número finito ≥ 0, texto numérico puro (`"120"` → 120), `"fill"`,
- * `"hug"`, `"min-content"`, `"max-content"` ou `"N%"`. Qualquer outra coisa não é um tamanho
- * (`undefined`). A versão do formato quem confere é o chamador.
+ * Checks a size: finite number >= 0, plain numeric text (`"120"` -> 120), `"fill"`,
+ * `"hug"`, `"min-content"`, `"max-content"` or `"N%"`. Anything else is not a size
+ * (`undefined`). The caller checks the format version.
  */
 export function parseSizeSpec(value: unknown): SizeSpec | undefined {
   if (typeof value === 'number')
@@ -106,7 +108,7 @@ export function parseSizeSpec(value: unknown): SizeSpec | undefined {
   return PLAIN_NUMBER.test(value) ? Number(value) : undefined;
 }
 
-/** O valor se estiver no conjunto permitido; senão nenhum. */
+/** The value if it is in the allowed set; otherwise none. */
 export function allowedValue<T extends string>(
   value: unknown,
   allowed: readonly T[],
@@ -116,7 +118,7 @@ export function allowedValue<T extends string>(
     : undefined;
 }
 
-/** O valor como aparece nas mensagens de aviso (objeto vira JSON). */
+/** The value as it appears in warning messages (an object becomes JSON). */
 export function describeValue(value: unknown): string {
   return typeof value === 'object' && value !== null
     ? JSON.stringify(value)

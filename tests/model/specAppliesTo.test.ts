@@ -55,11 +55,11 @@ describe('appliesTo no tipo', () => {
     expect(result.ok && typeOf(result.spec).appliesTo).toBeUndefined();
   });
 
-  it('appliesTo numa versão anterior é o erro "só é permitido com formatVersion 7", no caminho exato', () => {
+  it('appliesTo numa versão anterior é o erro "only allowed with formatVersion 7", no caminho exato', () => {
     for (const v of [1, 4, 6]) {
       expect(errorsOf(spec(v, { appliesTo: ['arrow'] }))).toContainEqual({
         path: 'layers[0].annotationTypes[0].appliesTo',
-        message: 'só é permitido com formatVersion 7',
+        message: 'only allowed with formatVersion 7',
       });
     }
   });
@@ -68,13 +68,13 @@ describe('appliesTo no tipo', () => {
     const empty = errorsOf(spec(7, { appliesTo: [] }));
     expect(empty).toContainEqual({
       path: 'layers[0].annotationTypes[0].appliesTo',
-      message: 'não pode ser vazio; use "marking", "arrow" ou os dois',
+      message: 'cannot be empty; use "marking", "arrow" or both',
     });
     const repeated = errorsOf(spec(7, { appliesTo: ['arrow', 'arrow'] }));
-    expect(repeated.map((e) => e.message)).toContain('valores repetidos');
+    expect(repeated.map((e) => e.message)).toContain('repeated values');
     const wrong = errorsOf(spec(7, { appliesTo: ['container'] }));
     expect(wrong[0]?.path).toBe('layers[0].annotationTypes[0].appliesTo[0]');
-    expect(wrong[0]?.message).toContain('"container" inválido');
+    expect(wrong[0]?.message).toContain('"container" is invalid');
     expect(parseSpec(spec(7, { appliesTo: 'arrow' })).ok).toBe(false);
   });
 
@@ -84,17 +84,17 @@ describe('appliesTo no tipo', () => {
     }
   });
 
-  it('um tipo só de seta não pode ter component nem floating; com marking ao lado, pode', () => {
+  it('an arrow-only type cannot have a component nem floating; com marking ao lado, pode', () => {
     const only = errorsOf(
       spec(7, { appliesTo: ['arrow'], component: 'components/a.json', floating: true }),
     );
     expect(only).toContainEqual({
       path: 'layers[0].annotationTypes[0].component',
-      message: 'um tipo só de seta não pode ter component',
+      message: 'an arrow-only type cannot have a component',
     });
     expect(only).toContainEqual({
       path: 'layers[0].annotationTypes[0].floating',
-      message: 'um tipo só de seta não pode ter floating',
+      message: 'an arrow-only type cannot have floating',
     });
     expect(
       parseSpec(
@@ -178,7 +178,7 @@ describe('ref como coluna de table', () => {
     const missing = errorsOf(withColumn({ key: 'alvo', type: 'ref' }));
     expect(missing).toContainEqual({
       path: 'layers[0].annotationTypes[0].fields[0].columns[1].accepts',
-      message: 'obrigatório em ref',
+      message: 'required in a ref',
     });
     const empty = errorsOf(
       withColumn({ key: 'alvo', type: 'ref', accepts: { tags: [] } }),
@@ -200,13 +200,13 @@ describe('ref como coluna de table', () => {
     );
   });
 
-  it('numa versão anterior à 7 é o erro "só é permitido com formatVersion 7", no caminho da coluna', () => {
+  it('numa versão anterior à 7 é o erro "only allowed with formatVersion 7", no caminho da coluna', () => {
     for (const v of [1, 5, 6]) {
       expect(
         errorsOf(withColumn({ key: 'alvo', type: 'ref', accepts: { free: true } }, v)),
       ).toContainEqual({
         path: 'layers[0].annotationTypes[0].fields[0].columns[1].type',
-        message: 'só é permitido com formatVersion 7',
+        message: 'only allowed with formatVersion 7',
       });
     }
   });
@@ -216,7 +216,7 @@ describe('ref como coluna de table', () => {
     expect(errors[0]?.path).toBe(
       'layers[0].annotationTypes[0].fields[0].columns[1].type',
     );
-    expect(errors[0]?.message).toContain('"table" não é permitido dentro de table');
+    expect(errors[0]?.message).toContain('"table" is not allowed inside a table');
   });
 
   it('rowLabel não pode ser uma coluna ref', () => {
@@ -228,7 +228,7 @@ describe('ref como coluna de table', () => {
     );
     expect(errors).toContainEqual({
       path: 'layers[0].annotationTypes[0].fields[0].rowLabel',
-      message: '"alvo" deve ser uma coluna string da tabela',
+      message: '"alvo" must be a string column of the table',
     });
   });
 });

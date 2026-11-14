@@ -1,30 +1,30 @@
-// Resolvedor único dos filhos de um tipo (`formatVersion` 11, decisão 10 da etapa #559): lê o
-// `allowedChildren` de cada tipo da especialização, em que cada item é um id de tipo ou uma
-// cláusula `{ layer, groups? }`, e devolve o conjunto de tipos filhos. É a única leitura de
-// `allowedChildren`: o validador (`requiresOwner`), `isAllowedOwner`, `childTypesOf` e
-// `ownerTypesOf` passam por aqui. Puro, sem APIs de navegador e sem importar `spec.ts` (o
-// validador o usa): o formato que lê é estrutural.
+// Single resolver of a type's children (`formatVersion` 11, decision 10 of stage #559): reads the
+// `allowedChildren` of each type of the specialization, where each item is a type id or a
+// `{ layer, groups? }` clause, and returns the set of child types. It is the only reader of
+// `allowedChildren`: the validator (`requiresOwner`), `isAllowedOwner`, `childTypesOf` and
+// `ownerTypesOf` go through here. Pure, no browser APIs and without importing `spec.ts` (the
+// validator uses it): the format it reads is structural.
 //
-// Regra: a lista é a união dos itens na ordem deles; dentro de uma cláusula, os tipos saem na
-// ordem da camada (sem `groups`, a camada inteira; com `groups`, só os tipos que estão em algum
-// dos grupos); um tipo repetido fica na primeira posição. O que não se resolve (id ou camada
-// inexistente, ou um item malformado do JSON ainda não validado) é ignorado: quem aponta o
-// erro é o validador.
+// Rule: the list is the union of the items in their order; inside a clause, the types come out in
+// layer order (without `groups`, the whole layer; with `groups`, only the types that are in some
+// of the groups); a repeated type stays in the first position. What does not resolve (nonexistent id
+// or layer, or a malformed item of the not-yet-validated JSON) is ignored: the one that points
+// out the error is the validator.
 
-/** Cláusula de `allowedChildren`: a camada inteira ou os tipos dela que estão nos grupos. */
+/** `allowedChildren` clause: the whole layer or the types of it that are in the groups. */
 export interface ChildClauseLike {
   readonly layer: string;
   readonly groups?: readonly string[] | undefined;
 }
 
-/** O que o resolvedor lê de um tipo. */
+/** What the resolver reads from a type. */
 export interface ChildTypeLike {
   readonly id: string;
   readonly groups?: readonly string[] | undefined;
   readonly allowedChildren?: readonly (string | ChildClauseLike)[] | undefined;
 }
 
-/** O que o resolvedor lê de uma especialização. */
+/** What the resolver reads from a specialization. */
 export interface ChildSourceLike {
   readonly layers: readonly {
     readonly id: string;
@@ -32,19 +32,19 @@ export interface ChildSourceLike {
   }[];
 }
 
-/** Os conjuntos resolvidos de uma especialização. */
+/** The resolved sets of a specialization. */
 export interface ChildSets {
-  /** id do dono → ids dos filhos, na ordem; só donos com pelo menos um filho. */
+  /** owner id → child ids, in order; only owners with at least one child. */
   readonly children: ReadonlyMap<string, readonly string[]>;
-  /** id do dono → os mesmos ids, para a consulta por id. */
+  /** owner id → the same ids, for lookup by id. */
   readonly allowed: ReadonlyMap<string, ReadonlySet<string>>;
-  /** id do filho → ids dos donos que o aceitam, na ordem da especialização. */
+  /** child id → ids of the owners that accept it, in the specialization's order. */
   readonly owners: ReadonlyMap<string, readonly string[]>;
 }
 
 const NONE: readonly string[] = [];
 
-/** Ids dos tipos da camada `clause.layer` que a cláusula cobre, na ordem da camada. */
+/** Ids of the types of layer `clause.layer` that the clause covers, in layer order. */
 function clauseIds(
   clause: ChildClauseLike,
   layers: ReadonlyMap<string, readonly ChildTypeLike[]>,
@@ -68,9 +68,9 @@ function inAnyGroup(type: ChildTypeLike, wanted: ReadonlySet<string>): boolean {
 }
 
 /**
- * Ids de tipo cobertos por uma lista de itens `id | { layer, groups? }`, na ordem dos itens e sem
- * repetir. É o resolvedor do `allowedChildren` e do `accepts.annotations`. O que não se resolve
- * (id ou camada inexistente, item malformado) é ignorado: quem aponta o erro é o validador.
+ * Type ids covered by a list of `id | { layer, groups? }` items, in the items' order and without
+ * repeats. It is the resolver of `allowedChildren` and of `accepts.annotations`. What does not resolve
+ * (nonexistent id or layer, malformed item) is ignored: the one that points out the error is the validator.
  */
 function resolveItems(
   items: unknown,
@@ -88,7 +88,7 @@ function resolveItems(
   return ids;
 }
 
-/** Os ids de tipo conhecidos e os tipos por camada (a primeira camada de um id vale). */
+/** The known type ids and the types by layer (the first layer of an id counts). */
 interface Lookup {
   readonly known: ReadonlySet<string>;
   readonly layers: ReadonlyMap<string, readonly ChildTypeLike[]>;
@@ -96,7 +96,7 @@ interface Lookup {
 
 const lookupCache = new WeakMap<object, Lookup>();
 
-/** O prefixo comum do resolvedor, memoizado pela especialização (um objeto, uma varredura). */
+/** The resolver's common prefix, memoized per specialization (one object, one sweep). */
 function lookupOf(source: ChildSourceLike): Lookup {
   const hit = lookupCache.get(source);
   if (hit !== undefined) return hit;
@@ -135,7 +135,7 @@ function buildChildSets(source: ChildSourceLike): ChildSets {
 
 const cache = new WeakMap<object, ChildSets>();
 
-/** Os conjuntos resolvidos da especialização, memoizados por ela (um objeto, uma conta). */
+/** The resolved sets of the specialization, memoized per it (one object, one computation). */
 export function childSets(source: ChildSourceLike): ChildSets {
   const hit = cache.get(source);
   if (hit !== undefined) return hit;
@@ -144,7 +144,7 @@ export function childSets(source: ChildSourceLike): ChildSets {
   return sets;
 }
 
-/** Ids dos tipos que podem ser filhos do tipo `ownerTypeId`, na ordem (vazio sem filhos). */
+/** Ids of the types that can be children of type `ownerTypeId`, in order (empty with no children). */
 export function childTypeIds(
   source: ChildSourceLike,
   ownerTypeId: string,
@@ -152,7 +152,7 @@ export function childTypeIds(
   return childSets(source).children.get(ownerTypeId) ?? NONE;
 }
 
-/** Ids dos tipos que aceitam `childTypeId` como filho, na ordem da especialização. */
+/** Ids of the types that accept `childTypeId` as a child, in the specialization's order. */
 export function ownerTypeIds(
   source: ChildSourceLike,
   childTypeId: string,
@@ -160,7 +160,7 @@ export function ownerTypeIds(
   return childSets(source).owners.get(childTypeId) ?? NONE;
 }
 
-/** `true` se o tipo `ownerTypeId` aceita `childTypeId` como filho. */
+/** `true` if type `ownerTypeId` accepts `childTypeId` as a child. */
 export function isChildTypeAllowed(
   source: ChildSourceLike,
   ownerTypeId: string,
@@ -170,9 +170,9 @@ export function isChildTypeAllowed(
 }
 
 /**
- * Ids dos tipos da especialização `source` cobertos por `items` (cada item é um id de tipo ou uma
- * cláusula `{ layer, groups? }`), na ordem dos itens e sem repetir. É o resolvedor do
- * `accepts.annotations`, o mesmo do `allowedChildren`.
+ * Ids of the types of specialization `source` covered by `items` (each item is a type id or a
+ * `{ layer, groups? }` clause), in the items' order and without repeats. It is the resolver of
+ * `accepts.annotations`, the same as `allowedChildren`.
  */
 export function resolveTypeItems(
   source: ChildSourceLike,

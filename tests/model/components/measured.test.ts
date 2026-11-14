@@ -95,7 +95,7 @@ describe('origins[].kind', () => {
     expect(r.issues).toContainEqual(
       expect.objectContaining({
         path: 'origins[0].kind',
-        message: 'só é permitido com formatVersion 15',
+        message: 'only allowed with formatVersion 15',
       }),
     );
   });
@@ -141,7 +141,7 @@ describe('origem measured: ciclo parse → gravação → releitura', () => {
     expect(again.ok).toBe(true);
     if (!again.ok) return;
     expect(importMeasured([again.spec], { system: 'dom' } as never)).not.toMatchObject({
-      error: expect.stringContaining('não declarada'),
+      error: expect.stringContaining('not declared'),
     });
   });
 });
@@ -199,13 +199,13 @@ describe('importMeasured: casamento', () => {
     expect(r.markings[0]!.rect).toEqual({ x: 120, y: 90, width: 240, height: 80 });
   });
 
-  it('retângulo vazio vira aviso; origem desconhecida ou não measured vira erro', () => {
+  it('empty rectangle vira aviso; origem desconhecida ou não measured vira erro', () => {
     const empty = importMeasured([spec()], {
       system: 'dom',
       tree: { ...button, rect: { x: 0, y: 0, width: 0, height: 10 } },
     });
     expect(empty.markings).toEqual([]);
-    expect(empty.warnings[0]).toContain('retângulo vazio');
+    expect(empty.warnings[0]).toContain('empty rectangle');
     expect(importMeasured([spec()], { system: 'zzz', tree: button }).error).toContain(
       'zzz',
     );

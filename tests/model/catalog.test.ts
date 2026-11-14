@@ -119,7 +119,7 @@ describe('catálogo do Material 3', () => {
       if (entry === undefined) throw new Error('sem botão');
       return entry;
     };
-    const overflow = /conteúdo maior que a caixa/;
+    const overflow = /content larger than the box/;
 
     it('hugAxes lê o sizing do componente', () => {
       expect(hugAxes(button().component!)).toEqual({ width: true, height: false });
@@ -278,7 +278,7 @@ describe('pacote quebrado de propósito', () => {
     expect(broken.report.ok).toBe(false);
     const button = findEntry(broken, 'm3-button');
     expect(button?.component).toBeNull();
-    expect(button?.componentProblem?.text).toMatch(/ausente/);
+    expect(button?.componentProblem?.text).toMatch(/missing file/);
     expect(button?.componentProblem?.code).toBe('catalog.fileMissing');
     expect(button?.componentProblem?.params).toEqual({
       path: 'components/m3-button.json',

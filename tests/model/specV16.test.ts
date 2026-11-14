@@ -108,7 +108,7 @@ const issuesOf = (raw: Json) => {
   return r.ok ? [] : r.issues.map(({ path, message }) => ({ path, message }));
 };
 
-const ONLY_V16 = 'só é permitido com formatVersion 16';
+const ONLY_V16 = 'only allowed with formatVersion 16';
 
 describe('formatVersion 16: versão e contrato', () => {
   it('a versão atual é 16 e a 15 continua aceita', () => {
@@ -143,7 +143,7 @@ describe('formatVersion 16: versão e contrato', () => {
     expect(jsonValidator.safeParse(v16(undefined, 15)).success).toBe(true);
   });
 
-  it('numa v15, cada chave nova dá "só é permitido com formatVersion 16" no caminho exato', () => {
+  it('numa v15, cada chave nova dá "only allowed with formatVersion 16" no caminho exato', () => {
     const issues = issuesOf(v16(undefined, 15));
     for (const path of [
       'fieldModels',
@@ -234,7 +234,7 @@ describe('formatVersion 16: validação do que é novo', () => {
       }),
     );
     expect(issues).toEqual([
-      { path: `${CODE}.params.containerColor`, message: '"border" não está em calls' },
+      { path: `${CODE}.params.containerColor`, message: '"border" is not in calls' },
     ]);
   });
 

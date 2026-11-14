@@ -53,35 +53,35 @@ describe('accepts.annotations (formatVersion 14)', () => {
     const issues = issuesOf(withAccepts({ annotations: ['onClick'] }, 13));
     expect(issues).toContainEqual({
       path: `${field}.annotations`,
-      message: 'só é permitido com formatVersion 14',
+      message: 'only allowed with formatVersion 14',
     });
     expect(issues).toContainEqual({
       path: `${column}.annotations`,
-      message: 'só é permitido com formatVersion 14',
+      message: 'only allowed with formatVersion 14',
     });
   });
 
   it('camada inexistente, grupo inexistente e tipo inexistente', () => {
     expect(issuesOf(withAccepts({ annotations: [{ layer: 'nada' }] }))).toContainEqual({
       path: `${field}.annotations[0].layer`,
-      message: 'camada "nada" não existe na especialização',
+      message: 'layer "nada" does not exist in the specialization',
     });
     expect(
       issuesOf(withAccepts({ annotations: [{ layer: 'eventos', groups: ['zz'] }] })),
     ).toContainEqual({
       path: `${column}.annotations[0].groups[0]`,
-      message: 'grupo "zz" não existe na camada "eventos"',
+      message: 'group "zz" does not exist in the layer "eventos"',
     });
     expect(issuesOf(withAccepts({ annotations: ['nada'] }))).toContainEqual({
       path: `${field}.annotations[0]`,
-      message: 'tipo "nada" não existe na especialização',
+      message: 'type "nada" does not exist in the specialization',
     });
   });
 
   it('annotations vazio é erro', () => {
     expect(issuesOf(withAccepts({ annotations: [] }))).toContainEqual({
       path: `${field}.annotations`,
-      message: expect.stringContaining('não pode ser vazio'),
+      message: expect.stringContaining('cannot be empty'),
     });
   });
 

@@ -163,7 +163,7 @@ describe('EX6 progress-indicator — linear: o comprimento sai da fração, para
       const [tx, , tw] = rectOf(d, named(d, 'trilho')[0]!);
       expect(near(tx!, p * WIDTH) && near(tw!, WIDTH - p * WIDTH)).toBe(true);
       // L2 (#1078): a faixa só existe com mais pista que o gap de 6 (antes ela media 0 e não desenhava nada), e a
-      // parada de 4 só com pista para ela; nenhum nó passa do trilho (aviso `conteúdo maior que a caixa`).
+      // parada de 4 só com pista para ela; nenhum nó passa do trilho (aviso `content larger than the box`).
       const rest = WIDTH - p * WIDTH;
       const faixa = named(d, 'faixa')[0];
       if (rest > 6) {

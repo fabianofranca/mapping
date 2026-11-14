@@ -14,13 +14,13 @@ import { typeOfAnnotation, type ResolvedType } from './specLookup';
 import { isEmptyValue } from './typed';
 import type { Annotation, JsonValue, Marking, Project, Rect, WholeRef } from './types';
 
-// `codeBlueprint` (etapa 3b): as chamadas que um agente precisa escrever, numa plataforma,
-// para instanciar uma marcação, a partir das especializações aplicadas. O `code` de um tipo
-// diz com que código se cria uma instância dele (`symbol` é o que se chama, `path` o arquivo
-// que o define); aqui entram também os valores de cada instância. Espelha a hierarquia da
-// marcação e das descendentes; em cada marcação, as anotações tipadas com o `code` da
-// plataforma (ou `symbol: null` quando falta o mapeamento),
-// com as vinculadas sob a dona. Função pura: a app e o MCP (`get_code_hints`) usam a mesma.
+// `codeBlueprint` (stage 3b): the calls an agent needs to write, on a platform,
+// to instantiate a marking, from the applied specializations. The `code` of a type
+// says with which code an instance of it is created (`symbol` is what you call, `path` the file
+// that defines it); the values of each instance come in here too. It mirrors the hierarchy of the
+// marking and its descendants; in each marking, the typed annotations with the platform's
+// `code` (or `symbol: null` when the mapping is missing),
+// with the linked ones under the owner. Pure function: the app and the MCP (`get_code_hints`) use the same one.
 
 export type { BlueprintParam };
 
@@ -28,63 +28,63 @@ export interface BlueprintAnnotation {
   readonly annotationId: string;
   readonly specId: string;
   readonly typeId: string;
-  /** Nome do tipo (ex: `Button`). */
+  /** Name of the type (e.g. `Button`). */
   readonly type: string;
-  /** Rótulo da instância (`name` ou `labelField`); `null` sem rótulo. */
+  /** Label of the instance (`name` or `labelField`); `null` without a label. */
   readonly label: string | null;
-  /** Nome da camada no projeto, da anotação; `null` se a camada não existe. */
+  /** Name of the annotation's layer in the project; `null` if the layer does not exist. */
   readonly layer: string | null;
-  /** `code.<plataforma>.symbol`; `null` = o tipo não tem `code` para a plataforma. */
+  /** `code.<platform>.symbol`; `null` = the type has no `code` for the platform. */
   readonly symbol: string | null;
-  /** `code.<plataforma>.path`: arquivo que define o símbolo, relativo à raiz do repositório; `null` sem ele. */
+  /** `code.<platform>.path`: file that defines the symbol, relative to the repository root; `null` without it. */
   readonly path: string | null;
   /**
-   * `codeLink` do `path`, pelo `repo` da especialização dona do tipo (`null` sem `path` ou
-   * sem `urlTemplate` no `repo` da especialização).
+   * `codeLink` of the `path`, through the `repo` of the specialization that owns the type (`null` without `path` or
+   * without `urlTemplate` in the specialization's `repo`).
    */
   readonly pathUrl: string | null;
-  /** Parâmetros na ordem dos campos do tipo; vazio sem `code`. */
+  /** Parameters in the order of the type's fields; empty without `code`. */
   readonly params: readonly BlueprintParam[];
   readonly notes: string | null;
   /**
-   * Valores preenchidos, por campo e na ordem do tipo, como no mapping (sem traduzir):
-   * `ref` pelo rótulo do alvo e `table` sem `_id`. Servem às `notes` (ex: "use o valor
-   * do campo id").
+   * Filled-in values, per field and in the type's order, as in the mapping (untranslated):
+   * `ref` by the target's label and `table` without `_id`. They serve the `notes` (e.g. "use the value
+   * of the id field").
    */
   readonly values: { readonly [key: string]: JsonValue };
-  /** Anotações vinculadas a esta (ex: eventos de um botão), com a mesma forma. */
+  /** Annotations linked to this one (e.g. events of a button), with the same shape. */
   readonly linked: readonly BlueprintAnnotation[];
   /**
-   * Alvos dos `ref` para a anotação inteira (v17) nos campos e nas células, um por `ref`, na
-   * ordem dos campos e das linhas. Os `ref` de campo, de linha e de par livre não entram.
+   * Targets of the `ref`s to the whole annotation (v17) in the fields and cells, one per `ref`, in the
+   * order of the fields and rows. The field, row and free-pair `ref`s do not count.
    */
   readonly targets: readonly BlueprintTarget[];
 }
 
-/** Um `ref` para a anotação inteira, com o alvo expandido. */
+/** A `ref` to the whole annotation, with the target expanded. */
 export interface BlueprintTarget {
-  /** Campo da anotação de origem (a tabela, numa célula). */
+  /** Field of the source annotation (the table, in a cell). */
   readonly field: string;
-  /** Índice da linha (de 0), ou `null` num campo `ref` simples. */
+  /** Row index (from 0), or `null` in a simple `ref` field. */
   readonly row: number | null;
-  /** Coluna `ref` da tabela, ou `null` num campo simples. */
+  /** `ref` column of the table, or `null` in a simple field. */
   readonly column: string | null;
-  /** Rótulo do alvo (o mesmo de `values` e `args`). */
+  /** Label of the target (the same as in `values` and `args`). */
   readonly label: string | null;
-  /** O alvo já apareceu no caminho: vem só o rótulo, sem `annotation` nem `children`. */
+  /** The target already appeared in the path: only the label comes, without `annotation` or `children`. */
   readonly repeated: boolean;
-  /** O alvo na forma da árvore; `null` quando `repeated`. */
+  /** The target in the tree form; `null` when `repeated`. */
   readonly annotation: BlueprintAnnotation | null;
-  /** As marcações filhas da marcação do alvo, para o componente que contém outros. */
+  /** The child markings of the target's marking, for the component that contains others. */
   readonly children: readonly BlueprintNode[];
 }
 
 export interface BlueprintNode {
   readonly markingId: string;
   readonly name: string | null;
-  /** Em pixels da imagem original (ajuda a ordenar e posicionar os filhos). */
+  /** In pixels of the original image (helps order and position the children). */
   readonly rect: Rect;
-  /** Anotações tipadas da marcação que não são vinculadas a outra, na ordem do projeto. */
+  /** Typed annotations of the marking that are not linked to another, in project order. */
   readonly annotations: readonly BlueprintAnnotation[];
   readonly children: readonly BlueprintNode[];
 }
@@ -92,9 +92,9 @@ export interface BlueprintNode {
 export interface CodeBlueprint {
   readonly platform: ProjectPlatform;
   /**
-   * Repositório da plataforma: `url` e `ref` vêm do `repo` da primeira especialização
-   * aplicada que o declara (cada tipo traz o próprio link em `pathUrl`, pela especialização
-   * dona dele) e `localPath` da sobreposição do projeto. `null` sem `repo` nem `localPath`.
+   * Repository of the platform: `url` and `ref` come from the `repo` of the first applied
+   * specialization that declares it (each type brings its own link in `pathUrl`, through the specialization
+   * that owns it) and `localPath` from the project's override. `null` without `repo` or `localPath`.
    */
   readonly repo: {
     readonly url: string | null;
@@ -104,15 +104,15 @@ export interface CodeBlueprint {
   readonly root: BlueprintNode;
 }
 
-/** O rótulo do alvo de uma referência (campo ou célula); `null` se vazia ou quebrada. */
+/** The label of a reference's target (field or cell); `null` if empty or broken. */
 function refText(p: Project, value: JsonValue | undefined): JsonValue {
   if (value === undefined || isEmptyValue(value)) return null;
   const ref = parseRefValue(value);
-  // O rótulo usa os textos padrão (pt-BR): este módulo só é usado pelo MCP.
+  // The label uses the default texts (pt-BR): this module is only used by the MCP.
   return ref && resolveRef(p, ref) ? refLabel(p, ref) : null;
 }
 
-/** Valor do campo no blueprint: `ref` pelo rótulo, `table` sem `_id`, vazio `null`. */
+/** Value of the field in the blueprint: `ref` by the label, `table` without `_id`, empty `null`. */
 function mappingValue(
   p: Project,
   field: SpecField,
@@ -136,7 +136,7 @@ function mappingValue(
   }
 }
 
-/** Valor do parâmetro: o do mapping, com o `enum` traduzido por `values`. */
+/** Value of the parameter: the mapping's, with the `enum` translated by `values`. */
 function paramValue(
   p: Project,
   field: SpecField,
@@ -151,7 +151,7 @@ function paramValue(
     : mapped;
 }
 
-/** O `code` da plataforma já resolvido pelos valores da anotação (`variants`); `null` sem `code`. */
+/** The platform's `code` already resolved by the annotation's values (`variants`); `null` without `code`. */
 function codeFor(
   resolved: ResolvedType,
   platformId: string,
@@ -162,7 +162,7 @@ function codeFor(
   return own === undefined ? null : resolveCode(own, values, resolved.type.fields);
 }
 
-/** Um `ref` para a anotação inteira num campo ou numa célula. */
+/** A `ref` to the whole annotation in a field or in a cell. */
 interface WholeSite {
   readonly field: string;
   readonly row: number | null;
@@ -175,7 +175,7 @@ function wholeRefOf(value: JsonValue | undefined): WholeRef | null {
   return ref && Object.keys(ref).length === 1 ? (ref as WholeRef) : null;
 }
 
-/** Os `ref` de anotação inteira dos campos e das células, na ordem dos campos e das linhas. */
+/** The whole-annotation `ref`s of the fields and cells, in the order of the fields and rows. */
 function wholeSites(
   fields: readonly SpecField[],
   values: Readonly<Record<string, JsonValue>>,
@@ -198,10 +198,10 @@ function wholeSites(
 }
 
 /**
- * Planta de código da marcação `markingId` para a plataforma `platformId` (declarada por
- * alguma especialização aplicada; senão falha com `unknown-platform`). Em cada marcação
- * da árvore (ela e as descendentes, na ordem do projeto), as anotações tipadas próprias;
- * anotações livres e de tipo inexistente ficam de fora, mas os `ref` que apontam para elas aparecem pelo rótulo.
+ * Code blueprint of the marking `markingId` for the platform `platformId` (declared by
+ * some applied specialization; otherwise fails with `unknown-platform`). In each marking
+ * of the tree (it and its descendants, in project order), the own typed annotations;
+ * free annotations and ones of a nonexistent type stay out, but the `ref`s that point to them appear by label.
  */
 export function codeBlueprint(
   p: Project,
@@ -265,7 +265,7 @@ export function codeBlueprint(
     };
   };
 
-  /** O alvo de um `ref` de anotação inteira; `null` se quebrado ou sem tipo (fica o rótulo). */
+  /** The target of a whole-annotation `ref`; `null` if broken or without a type (the label stays). */
   const targetOf = (
     site: WholeSite,
     path: ReadonlySet<string>,
@@ -277,13 +277,13 @@ export function codeBlueprint(
       field: site.field,
       row: site.row,
       column: site.column,
-      // Textos padrão (pt-BR): só o MCP usa este módulo.
+      // Default texts (pt-BR): only the MCP uses this module.
       label: refLabel(p, site.ref),
     };
     if (path.has(target.id)) {
       return { ...base, repeated: true, annotation: null, children: [] };
     }
-    // O alvo entra no caminho ao descer: um `ref` que volta a ele vira nó `repeated`.
+    // The target enters the path when descending: a `ref` that comes back to it becomes a `repeated` node.
     const here = new Set(path).add(target.id);
     const annotation = annotationOf(
       target,
@@ -320,7 +320,7 @@ export function codeBlueprint(
     for (const a of index.annotationsByMarking.get(m.id) ?? []) {
       const resolved = included.get(a.id);
       if (!resolved) continue;
-      // Vinculada a outra anotação incluída: aparece sob a dona.
+      // Linked to another included annotation: appears under the owner.
       if (a.parentAnnotationId !== null && included.has(a.parentAnnotationId)) continue;
       annotations.push(annotationOf(a, resolved, included, seen, path));
     }

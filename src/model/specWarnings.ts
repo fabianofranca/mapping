@@ -7,44 +7,44 @@ import {
 } from './spec';
 import { templateMessage, type ModelMessageTemplateCode } from './messages';
 
-// Avisos de uma especialização válida (etapa 4): coisas que não impedem a importação, mas
-// costumam ser descuido de quem escreve o arquivo, ou campos lidos e ignorados (etapa 9). Puro:
-// usado por `validate_specialization` (MCP), no ciclo "gerar, validar, corrigir" de um agente
-// que cria especializações, e pela importação da app (só os campos ignorados).
+// Warnings of a valid specialization (stage 4): things that do not prevent the import, but
+// are usually an oversight of whoever writes the file, or fields read and ignored (stage 9). Pure:
+// used by `validate_specialization` (MCP), in the "generate, validate, fix" cycle of an agent
+// that creates specializations, and by the app's import (only the ignored fields).
 
 export type SpecWarningCode =
-  /** Plataforma declarada em `platforms` que nenhum tipo usa em `code`. */
+  /** Platform declared in `platforms` that no type uses in `code`. */
   | 'unused-platform'
-  /** Tipo sem `code` numa especialização que declara plataformas. */
+  /** Type without `code` in a specialization that declares platforms. */
   | 'type-without-code'
   /**
-   * Plataforma declarada sem `repo` em que algum tipo tem `code.<plataforma>.path`: o agente
-   * não sabe em que repositório estão esses arquivos (qualquer `formatVersion`; a v5 declara).
+   * Platform declared without `repo` in which some type has `code.<platform>.path`: the agent
+   * does not know in which repository those files are (any `formatVersion`; v5 declares it).
    */
   | 'path-without-repo'
-  /** O `format` antigo (`mapeador-spec`), ainda aceito na importação. */
+  /** The old `format` (`mapeador-spec`), still accepted on import. */
   | 'legacy-format'
-  /** Campo de um tipo que saiu do formato (`REMOVED_FIELD_TYPE`): lido e ignorado. */
+  /** Field of a type that left the format (`REMOVED_FIELD_TYPE`): read and ignored. */
   | 'ignored-field'
-  /** `allowedChildren` com muitos ids em texto: uma cláusula `{ layer, groups }` cobre o mesmo. */
+  /** `allowedChildren` with many text ids: a `{ layer, groups }` clause covers the same. */
   | 'many-children-ids'
-  /** Grupo de `layers[].groups` que nenhum tipo da camada usa. */
+  /** Group of `layers[].groups` that no type of the layer uses. */
   | 'unused-group'
-  /** Repositório de `docRepos` que nenhum `doc` usa. */
+  /** Repository of `docRepos` that no `doc` uses. */
   | 'unused-doc-repo';
 
 export interface SpecWarning {
   readonly code: SpecWarningCode;
-  /** Caminho no mesmo formato dos erros (ex: `layers[0].annotationTypes[2]`). */
+  /** Path in the same format as the errors (e.g. `layers[0].annotationTypes[2]`). */
   readonly path: string;
   readonly message: string;
-  /** Código da mensagem no catálogo `versions` (a interface a traduz); `message` segue em pt-BR. */
+  /** Message code in the `versions` catalog (the interface translates it); `message` is the catalog `en` text. */
   readonly messageCode: ModelMessageTemplateCode;
-  /** Os `{parâmetros}` do `messageCode`. */
+  /** The `{parameters}` of the `messageCode`. */
   readonly messageParams: Readonly<Record<string, string | number>>;
 }
 
-/** O aviso com a mensagem do catálogo (`message` é o texto pt-BR de sempre). */
+/** The warning with the catalog message (`message` is the catalog `en` text). */
 function warning(
   code: SpecWarningCode,
   path: string,
@@ -60,7 +60,7 @@ function warning(
   };
 }
 
-/** Aviso de cada campo ignorado na leitura (`parseSpec` devolve a lista em `ignored`). */
+/** Warning for each field ignored on reading (`parseSpec` returns the list in `ignored`). */
 export function ignoredFieldWarnings(
   ignored: readonly IgnoredSpecField[],
 ): SpecWarning[] {
@@ -73,10 +73,10 @@ export function ignoredFieldWarnings(
   );
 }
 
-/** Quantos ids em texto no `allowedChildren` de um tipo bastam para sugerir uma cláusula. */
+/** How many text ids in a type's `allowedChildren` are enough to suggest a clause. */
 const MANY_CHILD_IDS = 20;
 
-/** `many-children-ids`: tipos com 20 ids ou mais em texto no `allowedChildren`. */
+/** `many-children-ids`: types with 20 or more text ids in `allowedChildren`. */
 function manyChildIdsWarnings(spec: Spec): SpecWarning[] {
   const warnings: SpecWarning[] = [];
   spec.layers.forEach((layer, li) => {
@@ -96,7 +96,7 @@ function manyChildIdsWarnings(spec: Spec): SpecWarning[] {
   return warnings;
 }
 
-/** `unused-group`: grupos declarados numa camada que nenhum tipo dela usa. */
+/** `unused-group`: groups declared in a layer that no type of it uses. */
 function unusedGroupWarnings(spec: Spec): SpecWarning[] {
   const warnings: SpecWarning[] = [];
   spec.layers.forEach((layer, li) => {
@@ -114,7 +114,7 @@ function unusedGroupWarnings(spec: Spec): SpecWarning[] {
   return warnings;
 }
 
-/** `unused-doc-repo`: repositórios de `docRepos` que nenhum `doc` objeto cita. */
+/** `unused-doc-repo`: `docRepos` repositories that no object `doc` cites. */
 function unusedDocRepoWarnings(spec: Spec): SpecWarning[] {
   const used = new Set<string>();
   for (const layer of spec.layers) {
@@ -134,7 +134,7 @@ function unusedDocRepoWarnings(spec: Spec): SpecWarning[] {
   return warnings;
 }
 
-/** Quantos `path` a entrada de `code` declara: o dela e o de cada caso de `variants`. */
+/** How many `path`s the `code` entry declares: its own and that of each case of `variants`. */
 function codePathCount(entry: SpecCode): number {
   const cases = Object.values(entry.variants?.cases ?? {});
   return (
@@ -143,10 +143,10 @@ function codePathCount(entry: SpecCode): number {
 }
 
 /**
- * Avisos da especialização (já validada), na ordem do arquivo (os de tipo, depois
- * `unused-platform` e `path-without-repo`, por plataforma, e por fim os da v11:
- * `many-children-ids`, `unused-group` e `unused-doc-repo`); `ignored` são os campos
- * ignorados na leitura (`parseSpec`), que vêm logo depois do formato antigo.
+ * Warnings of the specialization (already validated), in file order (the type ones, then
+ * `unused-platform` and `path-without-repo`, per platform, and finally the v11 ones:
+ * `many-children-ids`, `unused-group` and `unused-doc-repo`); `ignored` are the fields
+ * ignored on reading (`parseSpec`), which come right after the old format.
  */
 export function specWarnings(
   spec: Spec,
@@ -165,7 +165,7 @@ export function specWarnings(
 
   const platforms = spec.platforms ?? [];
   const used = new Set<string>();
-  /** id da plataforma → quantos tipos têm `code.<plataforma>.path`. */
+  /** platform id → how many types have `code.<platform>.path`. */
   const withPath = new Map<string, number>();
   spec.layers.forEach((layer, li) => {
     layer.annotationTypes.forEach((type, ti) => {

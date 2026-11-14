@@ -21,36 +21,37 @@ import {
 import { annotationsOfSpec, freeVersionOf } from './typed';
 import type { Annotation, Layer, Project, ProjectSpecialization } from './types';
 
-// Ciclo de vida da especialização no projeto: aplicar, atualizar e remover.
-// Ver docs/ARCHITECTURE.md, "Especializações no projeto e anotações tipadas". O conteúdo fica em `specializations[].spec` (em memória) e é
-// gravado em `specs/<id>.json` pelo armazenamento; por isso o desfazer cobre tudo.
+// Lifecycle of the specialization in the project: apply, update and remove.
+// See docs/ARCHITECTURE.md, "Specializations in the project and typed annotations". The content
+// lives in `specializations[].spec` (in memory) and is written to `specs/<id>.json` by the
+// storage; that is why undo covers everything.
 
-/** Pasta das cópias das especializações, relativa à raiz do projeto. */
+/** Folder of the specialization copies, relative to the project root. */
 export const SPECS_DIR = 'specs';
 
 export interface SpecOpOptions {
-  /** Gera os ids das camadas e tuplas novas. Padrão: `crypto.randomUUID()`. */
+  /** Generates the ids of the new layers and tuples. Default: `crypto.randomUUID()`. */
   readonly newId?: () => string;
-  /** Textos usados ao converter referências em texto. */
+  /** Texts used when converting references to text. */
   readonly texts?: LabelTexts;
   /**
-   * Nome do arquivo da especialização dentro do pacote (`material3.spec.json`): a cópia é a
-   * pasta `specs/<id>/` e o `file` aponta para ele. Sem ele, a cópia é `specs/<id>.json`.
+   * Name of the specialization file inside the package (`material3.spec.json`): the copy is
+   * the `specs/<id>/` folder and `file` points to it. Without it, the copy is `specs/<id>.json`.
    */
   readonly packageSpecName?: string;
 }
 
 /**
- * `specs/<id>.json` (v1 a v3), com o id limpo para nome de arquivo e sem colidir com outro.
- * Com `packageSpecName` (pacote da biblioteca): `specs/<id>/<packageSpecName>`, a pasta também
- * sem colidir com a de outra especialização.
+ * `specs/<id>.json` (v1 to v3), with the id cleaned for a file name and not colliding with
+ * another. With `packageSpecName` (library package): `specs/<id>/<packageSpecName>`, the folder
+ * also not colliding with another specialization's.
  */
 export function specFileFor(
   p: Project,
   specId: string,
   packageSpecName?: string,
 ): string {
-  // Nomes de arquivo comparados sem diferenciar a caixa (`Material` e `material` são o mesmo).
+  // File names compared case-insensitively (`Material` and `material` are the same).
   const key = (f: string | undefined) => (f === undefined ? f : fileNameKey(f));
   const base = specId.replace(/[^A-Za-z0-9._-]/g, '-').replace(/^\.+/, '') || 'spec';
   const others = p.specializations.filter((s) => s.id !== specId).map((s) => s.file);
@@ -70,8 +71,8 @@ export function specFileFor(
 }
 
 /**
- * O que acontece ao aplicar `spec`: `apply` (nova no projeto), `update` (já existe
- * com `version` menor) ou `not-newer` (já existe com a mesma versão ou maior).
+ * What happens when applying `spec`: `apply` (new in the project), `update` (already exists
+ * with a lower `version`) or `not-newer` (already exists with the same or a higher version).
  */
 export function checkSpecApply(p: Project, spec: Spec): 'apply' | 'update' | 'not-newer' {
   const current = getSpecialization(p, spec.id);
@@ -88,7 +89,7 @@ function newLayer(specId: string, layer: SpecLayer, id: string): Layer {
   };
 }
 
-/** Aplica a especialização: guarda a cópia e cria as camadas dela no fim da lista. */
+/** Applies the specialization: stores the copy and creates its layers at the end of the list. */
 export function applySpecialization(
   p: Project,
   spec: Spec,
@@ -109,7 +110,7 @@ export function applySpecialization(
   };
 }
 
-/** Converte as anotações tipadas `ids` em livres, calculando tudo a partir de `p`. */
+/** Converts the typed annotations `ids` to free ones, computing everything from `p`. */
 function convertAnnotations(
   p: Project,
   ids: ReadonlySet<string>,
@@ -120,16 +121,16 @@ function convertAnnotations(
   );
 }
 
-/** O que a atualização faz: o projeto depois e o relatório das migrações que rodaram. */
+/** What the update does: the project after and the report of the migrations that ran. */
 interface UpdatePlan {
   readonly project: Project;
   readonly run: MigrationRun;
 }
 
 /**
- * Planeja a atualização: confere o contrato (se `enforceContract`), executa as migrações
- * (`libraryMigrations.ts`) e só então cuida das camadas. O impacto usa `enforceContract: false`
- * para poder mostrar o que uma atualização recusada faria.
+ * Plans the update: checks the contract (if `enforceContract`), runs the migrations
+ * (`libraryMigrations.ts`) and only then handles the layers. The impact uses
+ * `enforceContract: false` to be able to show what a refused update would do.
  */
 function planSpecializationUpdate(
   p: Project,
@@ -139,8 +140,8 @@ function planSpecializationUpdate(
 ): UpdatePlan {
   const current = getSpecialization(p, spec.id) ?? fail('not-found', spec.id);
   if (spec.version <= current.version) fail('spec-not-newer', spec.id);
-  // Contrato (v4 em diante): quebra sem migração declarada é recusada. As v1 a v3 não declaram
-  // `migrations` e seguem como antes: o que ficar inválido vira pendência.
+  // Contract (v4 onward): a break without a declared migration is refused. v1 to v3 do not declare
+  // `migrations` and go on as before: whatever becomes invalid becomes a pending item.
   if (
     enforceContract &&
     spec.formatVersion >= 4 &&
@@ -159,8 +160,8 @@ function planSpecializationUpdate(
       .filter((l) => l.spec?.specId === spec.id && !byId.has(l.spec.layerId))
       .map((l) => l.id),
   );
-  // Converter com a especialização nova quando o tipo resolve nela (ordem e nome dos campos
-  // já migrados); senão com a antiga, que o projeto migrado ainda tem.
+  // Convert with the new specialization when the type resolves in it (order and name of the
+  // already migrated fields); otherwise with the old one, which the migrated project still has.
   const renewed: Project = {
     ...migrated,
     specializations: migrated.specializations.map((s) =>
@@ -186,7 +187,7 @@ function planSpecializationUpdate(
     .filter((l) => !existing.has(l.id))
     .map((l) => newLayer(spec.id, l, newId()));
 
-  // O layout acompanha o que chega: pacote → pasta; sem pacote → arquivo único.
+  // The layout follows what arrives: package -> folder; no package -> single file.
   const packaged = options.packageSpecName !== undefined;
   const file =
     packaged === isPackageFile(current.file)
@@ -206,14 +207,16 @@ function planSpecializationUpdate(
 }
 
 /**
- * Atualiza para uma versão maior: executa as `migrations` da versão nova (renomear e remover
- * campo, mapear valores, renomear e remover tipo, preencher campo obrigatório, renomear, remover e dar papel de vínculo) sobre as
- * anotações; substitui a cópia; camadas novas são criadas; as existentes mantêm cor e anotações
- * e seguem o nome novo; as que sumiram viram livres (com as anotações convertidas). Anotações
- * que ficarem inválidas não são alteradas: aparecem como pendências.
+ * Updates to a higher version: runs the new version's `migrations` (rename and remove field,
+ * map values, rename and remove type, fill a required field, rename, remove and give a link
+ * role) over the annotations; replaces the copy; new layers are created; existing ones keep
+ * color and annotations and follow the new name; those that disappeared become free (with the
+ * annotations converted). Annotations that end up invalid are not changed: they appear as
+ * pending items.
  *
- * Contrato de versão (`formatVersion` 4 em diante, com a cópia aplicada disponível): uma quebra
- * sem migração declarada falha com `spec-missing-migrations`; atualização aditiva aplica direto.
+ * Version contract (`formatVersion` 4 onward, with the applied copy available): a break
+ * without a declared migration fails with `spec-missing-migrations`; an additive update applies
+ * directly.
  */
 export function updateSpecialization(
   p: Project,
@@ -226,10 +229,9 @@ export function updateSpecialization(
 export type SpecRemovalMode = 'delete' | 'convert';
 
 /**
- * Remove a especialização. `delete`: apaga as camadas dela, as anotações delas e
- * as vinculadas a elas em outras camadas. `convert`: as camadas viram livres e
- * as anotações tipadas viram livres (valores em texto). A cópia em `specs/` sai
- * nos dois casos.
+ * Removes the specialization. `delete`: deletes its layers, their annotations and those
+ * linked to them in other layers. `convert`: the layers become free and the typed annotations
+ * become free (values as text). The copy in `specs/` goes away in both cases.
  */
 export function removeSpecialization(
   p: Project,
@@ -262,15 +264,15 @@ export function removeSpecialization(
 }
 
 export interface SpecRemovalImpact {
-  /** Anotações apagadas (`delete`) ou convertidas (`convert`). */
+  /** Annotations deleted (`delete`) or converted (`convert`). */
   readonly annotations: number;
-  /** Contagem por camada (inclui as vinculadas em outras camadas, no `delete`). */
+  /** Count per layer (includes those linked in other layers, on `delete`). */
   readonly byLayer: ReadonlyMap<string, number>;
-  /** Referências de outras anotações que vão ficar quebradas. */
+  /** References from other annotations that will be left broken. */
   readonly brokenRefs: number;
 }
 
-/** Efeito de remover a especialização, para a confirmação. */
+/** Effect of removing the specialization, for the confirmation. */
 export function specializationRemovalImpact(
   p: Project,
   specId: string,
@@ -285,7 +287,7 @@ export function specializationRemovalImpact(
   for (const a of p.annotations) {
     if (affected.has(a.id)) byLayer.set(a.layerId, (byLayer.get(a.layerId) ?? 0) + 1);
   }
-  // `delete` sem outras camadas falha; a contagem de referências continua útil.
+  // `delete` without other layers fails; the reference count is still useful.
   const after =
     mode === 'delete'
       ? {
@@ -297,40 +299,46 @@ export function specializationRemovalImpact(
 }
 
 export interface SpecUpdateImpact {
-  /** Camadas que serão criadas. */
+  /** Layers that will be created. */
   readonly addedLayers: readonly SpecLayer[];
-  /** Camadas do projeto que viram livres (sumiram na nova versão). */
+  /** Project layers that become free (disappeared in the new version). */
   readonly freedLayers: readonly Layer[];
-  /** Referências que vão ficar quebradas (depois de executar as migrações). */
+  /** References that will be left broken (after running the migrations). */
   readonly brokenRefs: number;
-  /** Diferenças da versão aplicada para a nova (vazio se a cópia não está disponível). */
+  /** Differences from the applied version to the new one (empty if the copy is not available). */
   readonly changes: readonly SpecChange[];
-  /** As diferenças que são quebra (subconjunto de `changes`). */
+  /** The differences that are breaks (subset of `changes`). */
   readonly breaking: readonly SpecChange[];
-  /** Quebras sem migração declarada: a atualização v4 é recusada (`refused`). */
+  /** Breaks without a declared migration: the v4 update is refused (`refused`). */
   readonly missingMigrations: readonly SpecChange[];
-  /** Os passos da cadeia declarada, na ordem (a lista achatada de `steps[].step`). */
+  /** The steps of the declared chain, in order (the flattened list of `steps[].step`). */
   readonly migrations: readonly SpecMigrationStep[];
-  /** `false` quando a cópia aplicada não está disponível (`spec: null`): não dá para comparar. */
+  /** `false` when the applied copy is not available (`spec: null`): it cannot be compared. */
   readonly comparable: boolean;
-  /** Comparável, sem quebra e sem camada que vira livre: a atualização aplica direto, sem diálogo de impacto. */
+  /**
+   * Comparable, no break and no layer that becomes free: the update applies directly, without an
+   * impact dialog.
+   */
   readonly additive: boolean;
-  /** O contrato recusa: v4, comparável e com quebra sem migração (`spec-missing-migrations`). */
+  /**
+   * The contract refuses: v4, comparable and with a break without a migration
+   * (`spec-missing-migrations`).
+   */
   readonly refused: boolean;
-  /** O que cada passo da cadeia faz neste projeto (o relatório de `runLibraryMigrations`). */
+  /** What each step of the chain does in this project (the `runLibraryMigrations` report). */
   readonly steps: readonly MigrationStepReport[];
-  /** Os valores que as migrações apagam ou sobrescrevem, na ordem dos passos. */
+  /** The values that the migrations erase or overwrite, in step order. */
   readonly losses: readonly MigrationLoss[];
-  /** Anotações convertidas em livres pelos passos `remove-type` com `convert`. */
+  /** Annotations converted to free by the `remove-type` steps with `convert`. */
   readonly converted: number;
-  /** Anotações apagadas pelos passos `remove-type` com `delete` (com as vinculadas). */
+  /** Annotations deleted by the `remove-type` steps with `delete` (with the linked ones). */
   readonly deleted: number;
-  /** Filhos que saíram do vínculo com o dono pelos passos `remove-role` com `unlink`. */
+  /** Children that left the link with the owner through the `remove-role` steps with `unlink`. */
   readonly unlinked: number;
   /**
-   * Pendências NOVAS depois da atualização (já descontadas as que existiam antes, por anotação,
-   * código, campo, linha e coluna): das anotações tipadas desta especialização e das que as
-   * migrações converteram em livres. Calculadas sobre o depois real, com as migrações.
+   * NEW pending items after the update (already discounting those that existed before, by
+   * annotation, code, field, row and column): of this specialization's typed annotations and of
+   * those that the migrations converted to free. Computed on the real after, with the migrations.
    */
   readonly pending: readonly {
     readonly annotationId: string;
@@ -341,7 +349,10 @@ export interface SpecUpdateImpact {
 const issueKey = (i: AnnotationIssue): string =>
   [i.code, i.key ?? '', i.rowId ?? '', i.column ?? ''].join('\u0000');
 
-/** Pendências que existem em `after` e não existiam em `before`, nas anotações da especialização. */
+/**
+ * Pending items that exist in `after` and did not exist in `before`, in the specialization's
+ * annotations.
+ */
 function newIssues(
   before: Project,
   after: Project,
@@ -353,7 +364,7 @@ function newIssues(
   const prior = projectIssues(before);
   const pending: { annotationId: string; issue: AnnotationIssue }[] = [];
   for (const a of after.annotations) {
-    // Tipadas da especialização, ou convertidas em livres no caminho.
+    // Typed in the specialization, or converted to free along the way.
     if (a.type?.specId !== specId && !was.has(a.id)) continue;
     const known = new Set((prior.get(a.id) ?? []).map(issueKey));
     for (const issue of projectIssues(after).get(a.id) ?? []) {
@@ -363,7 +374,10 @@ function newIssues(
   return pending;
 }
 
-/** Aditiva: comparável, sem quebra e sem camada que vira livre (as anotações dela virariam livres). */
+/**
+ * Additive: comparable, no break and no layer that becomes free (its annotations would become
+ * free).
+ */
 const isAdditive = (
   comparable: boolean,
   breaking: readonly SpecChange[],
@@ -371,9 +385,9 @@ const isAdditive = (
 ): boolean => comparable && breaking.length === 0 && freed.length === 0;
 
 /**
- * Efeito de atualizar para `spec` (que precisa ter `version` maior). Não lança por causa do
- * contrato: quando a atualização seria recusada, `refused` é `true` e o resto descreve o que
- * aconteceria sem a recusa.
+ * Effect of updating to `spec` (which must have a higher `version`). It does not throw because
+ * of the contract: when the update would be refused, `refused` is `true` and the rest describes
+ * what would happen without the refusal.
  */
 export function specializationUpdateImpact(p: Project, spec: Spec): SpecUpdateImpact {
   const { project: after, run } = planSpecializationUpdate(p, spec, {}, false);

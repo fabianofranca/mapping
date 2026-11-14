@@ -4,21 +4,22 @@ import type { Signature, SignatureParam, SignatureRole } from './types';
 
 export type { ExpandModels };
 
-/** O nome que se escreve na chamada: o rótulo externo do Swift, ou o nome. */
+/** The name written in the call: Swift's external label, or the name. */
 export const callName = (param: SignatureParam): string =>
   param.label !== undefined && param.label !== '_' ? param.label : param.name;
 
-// A ficha cruzada com o `code` de uma plataforma (etapa #1079): o que a ficha tem e o `code` não
-// liga a campo (`unmappedParams`, o `unmapped` do `get_code_hints`) e o que o `code` liga e a ficha
-// não tem (`paramsOutsideSignature`, o aviso "parâmetro fora da ficha"). Puro, sem navegador.
+// The signature crossed with a platform's `code` (stage #1079): what the signature has and the
+// `code` does not link to a field (`unmappedParams`, the `unmapped` of `get_code_hints`) and what
+// the `code` links and the signature does not have (`paramsOutsideSignature`, the "parameter
+// outside the signature" warning). Pure, no browser.
 
-/** O que o `code` precisa ter para o cruzamento: os `params` e o `ignore`. */
+/** What the `code` needs to have for the crossing: the `params` and the `ignore`. */
 export interface CodeLinks {
   readonly params?: Readonly<Record<string, string>> | undefined;
   readonly ignore?: readonly string[] | undefined;
 }
 
-/** Um parâmetro da ficha sem campo: o que o agente precisa saber para escrever a chamada. */
+/** A signature parameter without a field: what the agent needs to know to write the call. */
 export interface UnmappedParam {
   readonly name: string;
   readonly role: SignatureRole;
@@ -27,15 +28,15 @@ export interface UnmappedParam {
   readonly default?: string;
 }
 
-/** Os parâmetros sem rótulo externo (`_`, Swift), na ordem: o `#n` do `params` é o n-ésimo. */
+/** The parameters without an external label (`_`, Swift), in order: the `#n` of `params` is the nth. */
 function positionalParams(signature: Signature): SignatureParam[] {
   return signature.params.filter(isPositional);
 }
 
 /**
- * Os parâmetros da ficha que o `code` não liga a nenhum campo e não deixa de fora (`ignore`), na
- * ordem da ficha. Um parâmetro com algum campo ligado por caminho (`colors.containerColor`) conta
- * como ligado: o que sobra da fábrica não entra.
+ * The signature parameters that the `code` does not link to any field and does not leave out
+ * (`ignore`), in signature order. A parameter with some field linked by path
+ * (`colors.containerColor`) counts as linked: what is left over from the factory does not count.
  */
 export function unmappedParams(signature: Signature, code: CodeLinks): UnmappedParam[] {
   const mapped = new Set<string>();
@@ -67,16 +68,16 @@ export function unmappedParams(signature: Signature, code: CodeLinks): UnmappedP
     }));
 }
 
-/** Um `params` do `code` que a ficha não tem: o campo e o valor escrito. */
+/** A `params` of the `code` that the signature does not have: the field and the written value. */
 export interface OutsideParam {
   readonly field: string;
   readonly name: string;
 }
 
 /**
- * Os `params` do `code` que apontam para um parâmetro que a ficha não tem (o parâmetro saiu do
- * código, ou o nome está errado): um nome, o argumento de uma fábrica ou um posicional além dos
- * parâmetros sem rótulo da ficha. Fábrica que a ficha não descreve não é conferida.
+ * The `params` of the `code` that point to a parameter the signature does not have (the parameter
+ * left the code, or the name is wrong): a name, a factory's argument or a positional beyond the
+ * signature's parameters without a label. A factory the signature does not describe is not checked.
  */
 export function paramsOutsideSignature(
   signature: Signature,
@@ -98,9 +99,9 @@ export function paramsOutsideSignature(
 }
 
 /**
- * O alvo de um `params` existe na ficha: um nome, um posicional ou o argumento de uma fábrica. O
- * argumento de uma fábrica confere com o que o parâmetro dono expande (`expansionOf`, a mesma
- * regra do importador); o dono que não expande nada e não descreve fábrica não é conferido.
+ * The target of a `params` exists in the signature: a name, a positional or a factory's argument.
+ * A factory's argument is checked against what the owning parameter expands (`expansionOf`, the
+ * same rule as the importer); an owner that expands nothing and describes no factory is not checked.
  */
 function targetExists(
   target: ReturnType<typeof paramTarget>,

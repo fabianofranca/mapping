@@ -112,14 +112,14 @@ describe('parseComponent: image', () => {
     expect(problems(raw(rep, 3))).toEqual([]);
     expect(problems(raw(rep, 2))).toEqual([]);
     expect(problems(raw(rep, 1))).toEqual([
-      'template.children[0].type: o nó repeat só existe na formatVersion 2',
+      'template.children[0].type: the repeat node only exists in formatVersion 2',
     ]);
   });
 
   it('image na formatVersion 1 ou 2 é erro, no caminho do nó', () => {
     for (const version of [1, 2]) {
       expect(problems(raw(image(), version))).toEqual([
-        'template.children[0].type: o nó image só existe na formatVersion 3',
+        'template.children[0].type: the image node only exists in formatVersion 3',
       ]);
     }
   });
@@ -130,33 +130,33 @@ describe('parseComponent: image', () => {
     expect(problems(raw(plain, 2))).toEqual([]);
   });
 
-  it('src é obrigatório', () => {
+  it('src é required', () => {
     const node = image();
     delete node.src;
-    expect(problems(raw(node))).toEqual(['template.children[0].src: campo obrigatório']);
+    expect(problems(raw(node))).toEqual(['template.children[0].src: required field']);
   });
 
   it('fit inválido', () => {
     expect(problems(raw(image({ fit: 'zoom' })))).toEqual([
-      'template.children[0].fit: esperava um de: cover, contain, fill, fill-width, fill-height, scale-down, none',
+      'template.children[0].fit: expected one of: cover, contain, fill, fill-width, fill-height, scale-down, none',
     ]);
   });
 
   it('hug na largura e na altura é erro', () => {
     expect(problems(raw(image({ width: 'hug' })))).toEqual([
-      'template.children[0].width: o nó image não aceita hug: a arrumação não depende da imagem baixada',
+      'template.children[0].width: the image node does not accept hug: the layout does not depend on the downloaded image',
     ]);
     expect(problems(raw(image({ height: 'hug' })))).toEqual([
-      'template.children[0].height: o nó image não aceita hug: a arrumação não depende da imagem baixada',
+      'template.children[0].height: the image node does not accept hug: the layout does not depend on the downloaded image',
     ]);
   });
 
   it('children e layout caem na mensagem de nó que não é quadro', () => {
     expect(problems(raw(image({ children: [] })))).toEqual([
-      'template.children[0].children: só nós do tipo frame aceitam children (este é image)',
+      'template.children[0].children: only nodes of type frame accept children (this is image)',
     ]);
     expect(problems(raw(image({ layout: { type: 'none' } })))).toEqual([
-      'template.children[0].layout: só nós do tipo frame aceitam layout (este é image)',
+      'template.children[0].layout: only nodes of type frame accept layout (this is image)',
     ]);
   });
 
@@ -168,7 +168,7 @@ describe('parseComponent: image', () => {
     ['vazio', '', 'empty'],
   ])('src literal %s é erro de formato', (_name, src, reason) => {
     expect(problems(raw(image({ src })))).toEqual([
-      `template.children[0].src: esperava URL https:// absoluta (${reason})`,
+      `template.children[0].src: expected an absolute https:// URL (${reason})`,
     ]);
   });
 
@@ -181,13 +181,13 @@ describe('parseComponent: image', () => {
     ['objeto sem operador', { url: URL_A }],
   ])('src com %s é erro', (_name, src) => {
     expect(problems(raw(image({ src })))).toEqual([
-      'template.children[0].src: src só aceita texto literal ou { "$field": "<campo>" }',
+      'template.children[0].src: src only accepts literal text or { "$field": "<field>" }',
     ]);
   });
 
   it('$field vazio no src é erro de chave', () => {
     expect(problems(raw(image({ src: { $field: '' } })))).toEqual([
-      'template.children[0].src.$field: esperava chave de campo (texto não vazio)',
+      'template.children[0].src.$field: expected a field key (non-empty text)',
     ]);
   });
 

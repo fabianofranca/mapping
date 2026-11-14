@@ -1,7 +1,7 @@
 // CL2 (1.4 do reteste): o `fit_marking` de um segmented-button perto da borda do container recebe
 // só a largura que sobra (209 de 360, a marcação em x = 151) e as trilhas iguais (70) ficam menores
 // que o "check + rótulo" do selecionado. O rótulo (`ellipsis`) encolhe dentro da trilha em vez de
-// passar do segmento vizinho, e a linha não acusa "conteúdo maior que a caixa".
+// passar do segmento vizinho, e a linha não acusa "content larger than the box".
 import { describe, expect, it } from 'vitest';
 import { absoluteBoxes, walk } from '../../src/model/components/scene';
 import { drawFitted } from '../support/material3Fitted';
@@ -38,7 +38,7 @@ describe('segmented-button em largura menor que o conteúdo (1.4 do reteste)', (
         expect(text.x).toBeGreaterThanOrEqual(cell.x - 0.5);
         expect(text.x + text.width).toBeLessThanOrEqual(cell.x + cell.width + 0.5);
       }
-      expect(messages.filter((m) => m.includes('maior que a caixa'))).toEqual([]);
+      expect(messages.filter((m) => m.includes('larger than the box'))).toEqual([]);
     });
   }
 });

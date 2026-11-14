@@ -31,10 +31,10 @@ import { siblingPosition } from './markings';
 import { proposalAnchors, simulateApplied } from './proposalAnchors';
 import type { Annotation, JsonValue, Marking, Project } from './types';
 
-// Cálculo das mudanças (etapa 4): quem envia a proposta aplica as operações a uma cópia
-// do projeto com as operações puras do modelo (o lote do MCP, `mcp/batch.ts`) e entrega
-// o antes e o depois; aqui eles são comparados entidade por entidade, campo por campo.
-// Os ids das entidades criadas são os do "depois": já são os definitivos.
+// Computing the changes (stage 4): whoever sends the proposal applies the operations to a copy
+// of the project with the model's pure operations (the MCP batch, `mcp/batch.ts`) and delivers
+// the before and the after; here they are compared entity by entity, field by field.
+// The ids of the created entities are those of the "after": they are already the final ones.
 
 type Draft = Omit<Change, 'id'>;
 
@@ -43,8 +43,8 @@ function byId<T extends { readonly id: string }>(list: readonly T[]): Map<string
 }
 
 /**
- * Índices de `seq` que formam a maior subsequência crescente (os itens que não
- * precisam se mover para chegar à ordem nova).
+ * Indices of `seq` that form the longest increasing subsequence (the items that do not
+ * need to move to reach the new order).
  */
 function longestIncreasing(seq: readonly number[]): Set<number> {
   const tails: number[] = [];
@@ -70,11 +70,11 @@ function longestIncreasing(seq: readonly number[]): Set<number> {
 }
 
 /**
- * Ordem entre irmãs (mesmo espaço e mesmo pai): quem sai da maior subsequência crescente da
- * ordem do array aplicado muda de posição. O array aplicado é o que `patchProject` monta sem os
- * `position` (`simulateApplied`): o de antes, com cada criada antes da âncora dela e o assentar.
- * `from` é o índice entre as irmãs de antes (`null` na criada); `to`, o índice entre as irmãs
- * de depois.
+ * Order among siblings (same space and same parent): whatever is outside the longest increasing
+ * subsequence of the applied array's order changes position. The applied array is what
+ * `patchProject` builds without the `position`s (`simulateApplied`): the previous one, with each
+ * created one before its anchor and the settle. `from` is the index among the siblings before
+ * (`null` for a created one); `to`, the index among the siblings after.
  */
 function markingPositions(
   diff: Diff,
@@ -113,7 +113,7 @@ function markingPositions(
 class Diff {
   readonly out: Draft[] = [];
 
-  /** Põe `insertBefore` (a âncora) nas criações de marcação que têm uma. */
+  /** Puts `insertBefore` (the anchor) on the marking creations that have one. */
   insertBefore(anchors: ReadonlyMap<string, string>): void {
     this.out.forEach((d, i) => {
       const anchor = anchors.get(d.entityId);
@@ -127,7 +127,9 @@ class Diff {
     this.out.push(draft);
   }
 
-  /** Criação, remoção ou uma alteração por campo, conforme exista antes e/ou depois. */
+  /**
+   * Creation, removal or a per-field change, depending on whether it exists before and/or after.
+   */
   entity<T>(
     entity: ChangeEntity,
     entityId: string,
@@ -153,7 +155,7 @@ class Diff {
   }
 }
 
-/** Mudanças de uma anotação: a troca de tipo leva `values` e `entries` junto. */
+/** Changes of an annotation: a type change carries `values` and `entries` along. */
 function annotationChanges(
   diff: Diff,
   where: { imageId: string | null; markingId: string },
@@ -198,7 +200,7 @@ function annotationChanges(
   );
 }
 
-/** As chaves de depois e, no fim, as que só existiam antes. */
+/** The keys of the after and, at the end, those that only existed before. */
 function recordKeys(before: object, after: object): string[] {
   return [
     ...Object.keys(after),
@@ -206,14 +208,14 @@ function recordKeys(before: object, after: object): string[] {
   ];
 }
 
-/** O valor da chave própria do registro, ou `undefined`. */
+/** The value of the record's own key, or `undefined`. */
 function ownValue<T>(record: Readonly<Record<string, T>>, key: string): T | undefined {
   return Object.hasOwn(record, key) ? record[key] : undefined;
 }
 
 /**
- * Mudanças de uma entidade inteira do projeto (sem campos): atualizada com um `update` de
- * `field` nulo, criada e removida como qualquer entidade.
+ * Changes of a whole project entity (without fields): updated with an `update` with a null
+ * `field`, created and removed like any entity.
  */
 function wholeEntityDiff<T>(
   diff: Diff,
@@ -259,21 +261,22 @@ function wholeEntityDiff<T>(
 }
 
 /**
- * Compara o projeto antes e depois das operações e devolve as mudanças, com ids
- * `c1`, `c2`… na ordem: grupo Projeto (especializações, repositórios, camadas), imagens,
- * marcações, setas e anotações; em cada coleção, a ordem de depois e, no fim, as removidas. A
- * revisão agrupa por imagem e item (`reviewTree`), então essa ordem só garante que
- * aplicar tudo acrescenta as entidades criadas na mesma ordem do projeto proposto.
- * A ordem dos pares dentro da lista não vira mudança; a das camadas e a das marcações irmãs
- * vira (`position`, só para as que mudam de ordem relativa). `needsReview` não vira mudança:
- * a revisão é a própria conferência (a criação leva o valor de depois).
+ * Compares the project before and after the operations and returns the changes, with ids
+ * `c1`, `c2`… in order: Project group (specializations, repositories, layers), images,
+ * markings, arrows and annotations; in each collection, the after order and, at the end, the
+ * removed ones. The review groups by image and item (`reviewTree`), so this order only
+ * guarantees that applying everything appends the created entities in the same order as the
+ * proposed project. The order of the pairs inside the list does not become a change; that of
+ * layers and sibling markings does (`position`, only for those whose relative order changes).
+ * `needsReview` does not become a change: the review is the check itself (the creation carries
+ * the after value).
  */
 export function computeChanges(base: Project, after: Project): Change[] {
   const diff = new Diff();
   const projectLevel = { imageId: null, markingId: null };
 
-  // Especializações, repositórios por plataforma e repositórios de documentos (schema v14):
-  // entidades inteiras, sem campos.
+  // Specializations, repositories per platform and document repositories (schema v14):
+  // whole entities, without fields.
   const baseSpecs = byId(base.specializations);
   const afterSpecs = byId(after.specializations);
   wholeEntityDiff(diff, 'specialization', {
@@ -291,7 +294,7 @@ export function computeChanges(base: Project, after: Project): Change[] {
     next: (k) => ownValue(after.platformRepos, k),
     value: platformRepoValue,
   });
-  // O clone local por id.
+  // The local clone by id.
   wholeEntityDiff(diff, 'docRepo', {
     keys: recordKeys(base.docRepos, after.docRepos),
     before: (k) => ownValue(base.docRepos, k),
@@ -299,7 +302,7 @@ export function computeChanges(base: Project, after: Project): Change[] {
     value: docRepoValue,
   });
 
-  // Modo do desenho do projeto (formatVersion 6): a entidade `project`, só alterada.
+  // Project drawing mode (formatVersion 6): the `project` entity, only changed.
   const modeFrom = projectValue(base);
   const modeTo = projectValue(after);
   if (!jsonEqual(modeFrom, modeTo)) {
@@ -314,7 +317,7 @@ export function computeChanges(base: Project, after: Project): Change[] {
     });
   }
 
-  // Camadas: criação, campos, remoção e, por último, a ordem.
+  // Layers: creation, fields, removal and, last, the order.
   const baseLayers = byId(base.layers);
   const afterLayers = byId(after.layers);
   for (const l of [
@@ -332,9 +335,9 @@ export function computeChanges(base: Project, after: Project): Change[] {
       (layer, f) => layerField(after, layer, f),
     );
   }
-  // Ordem depois de aplicar criações (no fim) e remoções: as existentes na ordem de
-  // antes e as criadas na ordem de depois. Quem sai da maior subsequência crescente muda
-  // de posição.
+  // Order after applying creations (at the end) and removals: the existing ones in the order
+  // from before and the created ones in the order from after. Whatever is outside the longest
+  // increasing subsequence changes position.
   const created = after.layers.filter((l) => !baseLayers.has(l.id));
   const rank = new Map<string, number>(base.layers.map((l, i) => [l.id, i]));
   created.forEach((l, i) => rank.set(l.id, base.layers.length + i));
@@ -354,8 +357,9 @@ export function computeChanges(base: Project, after: Project): Change[] {
     });
   });
 
-  // Imagens, marcações e anotações, cada coleção na ordem de depois e, em seguida, as
-  // removidas na ordem de antes: aplicar tudo acrescenta as criadas na mesma ordem.
+  // Images, markings and annotations, each collection in the after order and then the
+  // removed ones in the before order: applying everything appends the created ones in the same
+  // order.
   const baseImages = byId(base.containers);
   const afterImages = byId(after.containers);
   const baseMarkings = byId(base.markings);
@@ -388,7 +392,7 @@ export function computeChanges(base: Project, after: Project): Change[] {
     diff.entity(
       'marking',
       m.id,
-      // `imageId` nulo com `markingId`: a marcação do canvas (o grupo Canvas da revisão).
+      // Null `imageId` with `markingId`: the canvas marking (the review's Canvas group).
       { imageId: m.containerId, markingId: m.id },
       before,
       next,
@@ -401,9 +405,10 @@ export function computeChanges(base: Project, after: Project): Change[] {
   diff.insertBefore(anchors);
   markingPositions(diff, base, after, anchors);
 
-  // A seta aparece na revisão sob a marcação de origem: o container dela (ou o canvas). Criar e
-  // remover são as únicas mudanças (nenhum campo de uma seta que já existe é proposto, e a rota
-  // nunca vem de proposta); a anotação numa seta leva o mesmo container.
+  // The arrow appears in the review under the origin marking: its container (or the canvas).
+  // Creating and removing are the only changes (no field of an arrow that already exists is
+  // proposed, and the route never comes from a proposal); the annotation on an arrow carries
+  // the same container.
   const containerOfMarking = (markingId: string): string | null =>
     (afterMarkings.get(markingId) ?? baseMarkings.get(markingId))?.containerId ?? null;
   const containerOfOwner = (ownerId: string): string | null => {
@@ -437,23 +442,23 @@ export function computeChanges(base: Project, after: Project): Change[] {
 }
 
 export interface NewProposalArgs {
-  /** Id da proposta (nome da pasta em `proposals/`). Padrão: `crypto.randomUUID()`. */
+  /** Id of the proposal (folder name in `proposals/`). Default: `crypto.randomUUID()`. */
   readonly id?: string;
   readonly title: string;
   readonly description?: string | null;
   readonly origin?: string | null;
   readonly author?: string | null;
-  /** Data ISO 8601 da criação. */
+  /** ISO 8601 creation date. */
   readonly createdAt: string;
-  /** Proposta substituída por esta. */
+  /** Proposal superseded by this one. */
   readonly supersedes?: string | null;
-  /** As operações enviadas, guardadas só para referência. */
+  /** The operations sent, kept for reference only. */
   readonly operations?: readonly JsonValue[];
 }
 
 /**
- * Monta uma proposta aberta a partir do projeto lido (`base`, cuja `revision` vira
- * `baseRevision`) e do resultado das operações (`after`).
+ * Builds an open proposal from the project read (`base`, whose `revision` becomes
+ * `baseRevision`) and the result of the operations (`after`).
  */
 export function buildProposal(
   base: Project,

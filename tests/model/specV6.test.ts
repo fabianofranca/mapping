@@ -52,7 +52,7 @@ describe('formatVersion 6: containers', () => {
       const issues = issuesOf(withContainers([PHONE], version));
       expect(issues.map((i) => [i.path, i.message])).toContainEqual([
         'containers',
-        'só é permitido com formatVersion 6',
+        'only allowed with formatVersion 6',
       ]);
     }
   });
@@ -61,7 +61,7 @@ describe('formatVersion 6: containers', () => {
     const issues = issuesOf(withContainers([PHONE, { ...PHONE, name: 'Outro' }]));
     expect(issues.map((i) => [i.path, i.message])).toContainEqual([
       'containers[1].id',
-      'id "phone" repetido',
+      'id "phone" repeated',
     ]);
   });
 

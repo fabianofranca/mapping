@@ -97,7 +97,7 @@ describe('validateLibrary com variáveis', () => {
     expect(report.errors.map((e) => [e.path, e.message])).toEqual([
       [
         'template.children[0].template.children[0].text.$var(x).$field',
-        'o desenho da linha usa "sumiu", que não é coluna da table "linhas" nem campo do tipo "tabela"',
+        'the row drawing uses "sumiu", which is neither a column of the table "linhas" nor a field of the type "tabela"',
       ],
     ]);
   });

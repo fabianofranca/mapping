@@ -6,14 +6,14 @@ import { findById, moveItem, updateById } from './project';
 import { countBrokenRefs } from './refs';
 import type { Layer, Project } from './types';
 
-/** Cor da primeira camada de um projeto novo. */
+/** Color of the first layer of a new project. */
 export const DEFAULT_LAYER_COLOR = '#D32F2F';
 
 /**
- * Paleta de sugestões de cor para camadas (a cor também pode ser livre).
- * Espelha os tokens `layer-01`…`layer-10` do tema (`src/theme/tokens.ts`; o
- * `tests/theme/layerPalette.test.ts` confere). Em maiúsculas, como `nextLayerColor` compara.
- * Só vale para camadas novas: as existentes mantêm a cor salva no projeto.
+ * Palette of color suggestions for layers (the color can also be free).
+ * Mirrors the theme's `layer-01`…`layer-10` tokens (`src/theme/tokens.ts`;
+ * `tests/theme/layerPalette.test.ts` checks it). Uppercase, as `nextLayerColor` compares.
+ * Only applies to new layers: existing ones keep the color saved in the project.
  */
 export const LAYER_PALETTE: readonly string[] = [
   DEFAULT_LAYER_COLOR,
@@ -28,7 +28,7 @@ export const LAYER_PALETTE: readonly string[] = [
   '#607D8B',
 ];
 
-/** Primeira cor da paleta ainda não usada por uma camada (recomeça quando todas estão em uso). */
+/** First palette color not yet used by a layer (starts over when all are in use). */
 export function nextLayerColor(p: Project): string {
   const used = new Set(p.layers.map((l) => l.color.toUpperCase()));
   return (
@@ -48,7 +48,7 @@ function checkColor(color: string): string {
   return color.toUpperCase();
 }
 
-/** Cria uma camada livre. Camadas de especialização vêm de `applySpecialization`. */
+/** Creates a free layer. Specialization layers come from `applySpecialization`. */
 export function addLayer(p: Project, layer: Omit<Layer, 'spec'>): Project {
   if (p.layers.some((l) => l.id === layer.id)) fail('duplicate-id', layer.id);
   const created: Layer = {
@@ -60,7 +60,7 @@ export function addLayer(p: Project, layer: Omit<Layer, 'spec'>): Project {
   return { ...p, layers: [...p.layers, created] };
 }
 
-/** Camadas da especialização não podem ser renomeadas nem excluídas individualmente. */
+/** Specialization layers cannot be renamed or deleted individually. */
 function checkFreeLayer(p: Project, layerId: string): void {
   if (findById(p.layers, layerId).spec) fail('spec-layer', layerId);
 }
@@ -82,13 +82,13 @@ export function setLayerColor(p: Project, layerId: string, color: string): Proje
   };
 }
 
-/** Reordena a camada para a posição `toIndex`. */
+/** Moves the layer to position `toIndex`. */
 export function moveLayer(p: Project, layerId: string, toIndex: number): Project {
   const from = p.layers.indexOf(findById(p.layers, layerId));
   return { ...p, layers: moveItem(p.layers, from, toIndex) };
 }
 
-/** Anotações da camada mais as vinculadas a elas (recursivamente), mesmo em outras camadas. */
+/** Annotations of the layer plus the ones linked to them (recursively), even in other layers. */
 function doomedByLayer(p: Project, layerId: string): Set<string> {
   const doomed = new Set<string>();
   for (const a of p.annotations) {
@@ -99,8 +99,8 @@ function doomedByLayer(p: Project, layerId: string): Set<string> {
 }
 
 /**
- * Efeito de excluir a camada: `annotations` é o total e `byLayer` a contagem por
- * camada (inclui a própria camada e as outras atingidas pelo vínculo).
+ * Effect of deleting the layer: `annotations` is the total and `byLayer` the count per
+ * layer (includes the layer itself and the others reached by the link).
  */
 export function layerDeletionImpact(
   p: Project,
@@ -117,8 +117,8 @@ export function layerDeletionImpact(
 }
 
 /**
- * Exclui a camada, as anotações dela e as vinculadas a elas em outras camadas.
- * O projeto precisa manter ao menos uma camada.
+ * Deletes the layer, its annotations and the ones linked to them in other layers.
+ * The project must keep at least one layer.
  */
 export function removeLayer(p: Project, layerId: string): Project {
   checkFreeLayer(p, layerId);

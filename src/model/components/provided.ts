@@ -1,19 +1,19 @@
 /**
- * Cor herdada (formato 4): o que o `slot` de um ancestral oferece (`provide`) e o que a filha lê
- * (`$provided`). Funções puras sobre o componente e os valores já resolvidos; quem percorre a
- * árvore (o cache dos desenhos, a tela do visualizador e do laboratório) usa estas.
+ * Inherited color (format 4): what the `slot` of an ancestor offers (`provide`) and what the child
+ * reads (`$provided`). Pure functions over the component and the already resolved values; whoever
+ * walks the tree (the drawing cache, the viewer's and the lab's screen) uses these.
  */
 import type { ComponentFile, SlotTemplate } from './componentFormat';
 import type { ProvidedValues } from './expressions';
 
 export type { ProvidedValues };
 
-/** Nenhum valor oferecido (o mesmo objeto sempre, para comparar por identidade). */
+/** No offered value (always the same object, to compare by identity). */
 export const NO_PROVIDED: ProvidedValues = Object.freeze({});
 
 const NO_NAMES: readonly string[] = Object.freeze([]);
 
-/** Percorre o objeto JSON do template (`children` e `template` do repeat) atrás de `visit`. */
+/** Walks the template's JSON object (`children` and the repeat's `template`) looking for `visit`. */
 function walk(node: unknown, visit: (record: Record<string, unknown>) => void): void {
   if (Array.isArray(node)) return node.forEach((item) => walk(item, visit));
   if (typeof node !== 'object' || node === null) return;
@@ -22,14 +22,14 @@ function walk(node: unknown, visit: (record: Record<string, unknown>) => void): 
   for (const value of Object.values(record)) walk(value, visit);
 }
 
-/** Um objeto que é a expressão `$provided` (só `$provided` e `default`), não um `provide` com esse nome. */
+/** An object that is the `$provided` expression (only `$provided` and `default`), not a `provide` with that name. */
 function isReadExpr(record: Record<string, unknown>): boolean {
   return Object.keys(record).every((key) => key === '$provided' || key === 'default');
 }
 
 const readsCache = new WeakMap<ComponentFile, readonly string[]>();
 
-/** Os nomes que o template lê com `$provided`, sem repetição e em ordem; memoizado por componente. */
+/** The names the template reads with `$provided`, without repetition and in order; memoized per component. */
 export function providedReads(component: ComponentFile): readonly string[] {
   const hit = readsCache.get(component);
   if (hit !== undefined) return hit;
@@ -43,7 +43,7 @@ export function providedReads(component: ComponentFile): readonly string[] {
   return result;
 }
 
-/** O primeiro `slot` do template com `provide` (o mesmo slot que `findSlot` acha), ou nenhum. */
+/** The first `slot` of the template with `provide` (the same slot `findSlot` finds), or none. */
 export function providingSlot(component: ComponentFile): SlotTemplate | undefined {
   const search = (node: unknown): SlotTemplate | undefined => {
     if (typeof node !== 'object' || node === null) return undefined;
@@ -62,7 +62,7 @@ export function providingSlot(component: ComponentFile): SlotTemplate | undefine
     : slot;
 }
 
-/** A parte de `scope` que o componente lê; `NO_PROVIDED` se ele não lê nada (o caso comum). */
+/** The part of `scope` that the component reads; `NO_PROVIDED` if it reads nothing (the common case). */
 export function pickProvided(
   scope: ProvidedValues,
   component: ComponentFile,
@@ -77,7 +77,7 @@ export function pickProvided(
   return Object.keys(picked).length === 0 ? NO_PROVIDED : picked;
 }
 
-/** Os mesmos nomes com os mesmos valores. */
+/** The same names with the same values. */
 export function sameProvided(a: ProvidedValues, b: ProvidedValues): boolean {
   if (a === b) return true;
   const keys = Object.keys(a);
@@ -87,7 +87,7 @@ export function sameProvided(a: ProvidedValues, b: ProvidedValues): boolean {
   );
 }
 
-/** O que as filhas de um pai herdam: o que o pai herdou, com o que ele oferece por cima (o mais próximo vale). */
+/** What a parent's children inherit: what the parent inherited, with what it offers on top (the nearest wins). */
 export function extendProvided(
   inherited: ProvidedValues,
   offered: ProvidedValues | undefined,

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { COMPONENT_FORMAT } from '../../../src/model/components/componentFormat';
 import { validateComponent } from '../../../src/model/components/parseComponent';
 
-const V4 = 'só é permitido com formatVersion 4';
+const V4 = 'only allowed with formatVersion 4';
 
 function component(template: unknown, version = 4): unknown {
   return {
@@ -49,17 +49,17 @@ describe('minWidth, maxWidth, minHeight e maxHeight', () => {
 
   it('valor negativo ou que não é número falha no caminho da chave', () => {
     expect(validateComponent(withChild(rect({ minWidth: -1, maxHeight: 'x' })))).toEqual([
-      'template.children[0].minWidth: esperava número maior ou igual a 0',
-      'template.children[0].maxHeight: esperava número maior ou igual a 0',
+      'template.children[0].minWidth: expected a number greater than or equal to 0',
+      'template.children[0].maxHeight: expected a number greater than or equal to 0',
     ]);
   });
 
   it('min maior que max, com os dois literais, falha no caminho do min', () => {
     expect(validateComponent(withChild(rect({ minWidth: 200, maxWidth: 100 })))).toEqual([
-      'template.children[0].minWidth: não pode ser maior que maxWidth',
+      'template.children[0].minWidth: cannot be greater than maxWidth',
     ]);
     expect(validateComponent(withChild(rect({ minHeight: 9, maxHeight: 3 })))).toEqual([
-      'template.children[0].minHeight: não pode ser maior que maxHeight',
+      'template.children[0].minHeight: cannot be greater than maxHeight',
     ]);
   });
 
@@ -92,10 +92,10 @@ describe('repeat.distribute', () => {
     expect(validateComponent(withChild(repeat('none')))).toEqual([]);
     expect(validateComponent(withChild(repeat('fill')))).toEqual([]);
     expect(validateComponent(withChild(repeat('spread')))).toEqual([
-      'template.children[0].distribute: esperava um de: none, fill',
+      'template.children[0].distribute: expected one of: none, fill',
     ]);
     expect(validateComponent(withChild(repeat({ $field: 'd' })))).toEqual([
-      'template.children[0].distribute: esperava um de: none, fill',
+      'template.children[0].distribute: expected one of: none, fill',
     ]);
   });
 
@@ -107,7 +107,7 @@ describe('repeat.distribute', () => {
 
   it('em nó que não é repeat continua chave desconhecida', () => {
     expect(validateComponent(withChild(rect({ distribute: 'fill' })))).toContain(
-      'template.children[0].distribute: chave desconhecida: distribute',
+      'template.children[0].distribute: unknown key: distribute',
     );
   });
 });
@@ -128,14 +128,14 @@ describe('expressão em width e height', () => {
     expect(
       validateComponent(withChild(rect({ width: { $field: 'w', default: -3 } }))),
     ).toEqual([
-      'template.children[0].width.default: esperava número maior ou igual a 0, "fill", "hug", "min-content", "max-content" ou "<número>%"',
+      'template.children[0].width.default: expected a number greater than or equal to 0, "fill", "hug", "min-content", "max-content" or "<number>%"',
     ]);
     expect(
       validateComponent(
         withChild(rect({ height: { $if: { $has: 'x' }, then: 'wide', else: 10 } })),
       ),
     ).toEqual([
-      'template.children[0].height.then: esperava número maior ou igual a 0, "fill", "hug", "min-content", "max-content" ou "<número>%"',
+      'template.children[0].height.then: expected a number greater than or equal to 0, "fill", "hug", "min-content", "max-content" or "<number>%"',
     ]);
   });
 
@@ -145,7 +145,8 @@ describe('expressão em width e height', () => {
       src: { $field: 'foto' },
       ...extra,
     });
-    const hug = 'o nó image não aceita hug: a arrumação não depende da imagem baixada';
+    const hug =
+      'the image node does not accept hug: the layout does not depend on the downloaded image';
     expect(validateComponent(withChild(image({ width: 'hug' }), 3))).toEqual([
       `template.children[0].width: ${hug}`,
     ]);
@@ -191,33 +192,33 @@ describe('expressão em layout.type, align e justify', () => {
     expect(
       validateComponent(frameWith({ type: { $field: 'd', default: 'diagonal' } })),
     ).toEqual([
-      'template.layout.type.default: esperava "none", "row", "column" ou "grid"',
+      'template.layout.type.default: expected "none", "row", "column" or "grid"',
     ]);
     expect(
       validateComponent(
         frameWith({ type: 'row', align: { $field: 'a', default: 'middle' } }),
       ),
     ).toEqual([
-      'template.layout.align.default: esperava um de: start, center, end, stretch, baseline',
+      'template.layout.align.default: expected one of: start, center, end, stretch, baseline',
     ]);
     expect(
       validateComponent(
         frameWith({ type: 'row', justify: { $field: 'j', default: 'around' } }),
       ),
     ).toEqual([
-      'template.layout.justify.default: esperava um de: start, center, end, space-between, space-around, space-evenly',
+      'template.layout.justify.default: expected one of: start, center, end, space-between, space-around, space-evenly',
     ]);
   });
 
   it('literal inválido em type mantém a mensagem de sempre', () => {
     expect(validateComponent(frameWith({ type: 'diagonal' }))).toEqual([
-      'template.layout.type: esperava "none", "row", "column" ou "grid"',
+      'template.layout.type: expected "none", "row", "column" or "grid"',
     ]);
   });
 
   it('com type literal none, só type vale', () => {
     expect(validateComponent(frameWith({ type: 'none', gap: 4 }))).toEqual([
-      'template.layout.gap: chave desconhecida: gap',
+      'template.layout.gap: unknown key: gap',
     ]);
   });
 });

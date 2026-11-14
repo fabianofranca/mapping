@@ -37,21 +37,22 @@ import { projectIndex, idInUse } from './projectIndex';
 import { countBrokenRefs } from './refs';
 import type { Arrow, Marking, Placement, Project, ProjectContainer, Rect } from './types';
 
-// Seleção múltipla (regras em docs/ARCHITECTURE.md, "Espaços, pertencimento e gestos"). Operações puras sobre uma lista de itens: mover junto, selecionar com o
-// conteúdo, excluir e trancar. A interface guarda a seleção como `{ kind, id }`; o modelo só
-// conhece esta forma mínima, sem depender do estado da UI.
+// Multiple selection (rules in docs/ARCHITECTURE.md, "Spaces, containment and gestures"). Pure
+// operations over a list of items: move together, select with content, delete and lock. The
+// interface keeps the selection as `{ kind, id }`; the model only knows this minimal shape,
+// without depending on the UI state.
 
 /**
- * Um item da seleção: `image` = container (o nome da UI), `marking` = marcação, `arrow` = seta
- * (v13). A seta entra para excluir e trancar; mover não se aplica a ela (a rota é da pessoa e
- * acompanha as pontas), então `moveItems` a ignora.
+ * A selection item: `image` = container (the UI's name), `marking` = marking, `arrow` = arrow
+ * (v13). The arrow takes part in deleting and locking; moving does not apply to it (the route
+ * belongs to the person and follows the ends), so `moveItems` ignores it.
  */
 export interface ItemRef {
   readonly kind: 'image' | 'marking' | 'arrow';
   readonly id: string;
 }
 
-/** Itens existentes da seleção, sem repetidos, na ordem em que vieram. */
+/** Existing items of the selection, without repeats, in the order they came. */
 interface ResolvedItems {
   readonly list: readonly ItemRef[];
   readonly markings: ReadonlyMap<string, Marking>;
@@ -85,16 +86,16 @@ function resolveItems(p: Project, items: readonly ItemRef[]): ResolvedItems {
 }
 
 // ---------------------------------------------------------------------------
-// Mover
+// Move
 
 /**
- * Os itens que recebem deslocamento próprio no arrasto conjunto: descarta os inexistentes, os
- * repetidos e as marcações que já vão com outro item selecionado. Uma marcação de container
- * vai com o container selecionado dela (as coordenadas são relativas a ele) e com uma
- * ancestral selecionada (`moveMarking` dentro do container leva as descendentes). No canvas
- * nada se descarta: mover uma marcação do canvas (flutuante inclusive) não leva nada
- * (decisão 2), então ela sempre se move por conta própria. A seta nunca se move (a rota é da
- * pessoa e acompanha as pontas). Ordem: a dos itens.
+ * The items that receive their own offset in the joint drag: discards the nonexistent ones,
+ * the repeated ones and the markings that already go with another selected item. A container
+ * marking goes with its selected container (the coordinates are relative to it) and with a
+ * selected ancestor (`moveMarking` inside the container takes the descendants). On the canvas
+ * nothing is discarded: moving a canvas marking (floating included) takes nothing along
+ * (decision 2), so it always moves on its own. The arrow never moves (the route belongs to the
+ * person and follows the ends). Order: that of the items.
  */
 export function movingItems(p: Project, items: readonly ItemRef[]): ItemRef[] {
   const selected = resolveItems(p, items);
@@ -108,7 +109,7 @@ export function movingItems(p: Project, items: readonly ItemRef[]): ItemRef[] {
   });
 }
 
-/** A geometria do item pode mudar (trava própria ou herdada dos ancestrais). */
+/** The item's geometry can change (own lock or one inherited from the ancestors). */
 function canEditItemGeometry(p: Project, item: ItemRef): boolean {
   if (item.kind === 'arrow') return canEditArrow(p, item.id);
   return item.kind === 'image'
@@ -117,9 +118,9 @@ function canEditItemGeometry(p: Project, item: ItemRef): boolean {
 }
 
 /**
- * O arrasto conjunto pode começar: há o que mover e nenhum item que recebe deslocamento tem a
- * geometria travada (tudo ou nada). Um item descartado por `movingItems` não conta: quem o
- * leva é que decide, como no arrasto de um item só.
+ * The joint drag can start: there is something to move and no item that receives an offset has
+ * locked geometry (all or nothing). An item discarded by `movingItems` does not count: whoever
+ * takes it along decides, as in the drag of a single item.
  */
 export function canMoveItems(p: Project, items: readonly ItemRef[]): boolean {
   const moving = movingItems(p, items);
@@ -127,31 +128,32 @@ export function canMoveItems(p: Project, items: readonly ItemRef[]): boolean {
 }
 
 /**
- * Move os itens pelo deslocamento `dx`, `dy`, em **unidades do canvas** (finitos, podem ser
- * decimais). Cada item recebe o deslocamento no próprio espaço:
- * - container: `placement` + `dx`, `dy` (as marcações dele vão junto: coordenadas relativas);
- * - marcação do canvas, flutuante inclusive: o `rect` por `round(dx)`, `round(dy)`, sozinha;
- * - marcação de container: `round(dx / escala)`, `round(dy / escala)` da escala do container,
- *   para ela e as descendentes (trancadas inclusive), como `moveMarking`. Tem de ficar inteira
- *   dentro do container: no arrasto conjunto ela não troca de espaço (`rect-out-of-image`).
+ * Moves the items by the offset `dx`, `dy`, in **canvas units** (finite, may be decimals).
+ * Each item receives the offset in its own space:
+ * - container: `placement` + `dx`, `dy` (its markings go along: relative coordinates);
+ * - canvas marking, floating included: the `rect` by `round(dx)`, `round(dy)`, alone;
+ * - container marking: `round(dx / scale)`, `round(dy / scale)` of the container's scale, for
+ *   it and the descendants (locked included), like `moveMarking`. It must stay entirely
+ *   inside the container: in the joint drag it does not change space (`rect-out-of-image`).
  *
- * Quando algum item é uma marcação do canvas, o deslocamento do canvas é arredondado **uma vez**
- * e vale também para os containers: o retângulo da marcação é inteiro e o do container não,
- * então cada um com o seu deslocamento deixaria um container colado na borda da marcação
- * poucas frações para fora dela e o assentar o tiraria do pertencimento. Sem marcação do canvas
- * o container anda pelo `dx`, `dy` exatos (arrasto suave com zoom); o `placement` passa por
- * `snapPlacement` (perto de um inteiro vira o inteiro; senão x e y ficam com 6 casas e a escala
- * com 12 algarismos), para ir e voltar não deixar cauda de ponto flutuante no `mapping.json`.
+ * When some item is a canvas marking, the canvas offset is rounded **once** and also applies to
+ * the containers: the marking's rectangle is an integer and the container's is not, so each
+ * with its own offset would leave a container flush with the marking's edge a few fractions
+ * outside it and the settle would take it out of containment. Without a canvas marking the
+ * container moves by the exact `dx`, `dy` (smooth drag with zoom); the `placement` goes through
+ * `snapPlacement` (near an integer it becomes the integer; otherwise x and y keep 6 decimal
+ * places and the scale 12 digits), so going back and forth leaves no floating-point tail in
+ * `mapping.json`.
  *
- * Tudo ou nada: com qualquer item de `movingItems` travado falha com `locked`; um container
- * movido que passe a sobrepor um container que NÃO se move falha com `image-overlap` (os
- * movidos mantêm a posição relativa entre si e não são testados entre si). Deslocamento zero,
- * ou nada para mover, devolve `p` como está, **sem conferir a trava** (decisão do dono, etapa
- * #1190): o encosto que zera o deslocamento é um no-op mesmo com item trancado, e a interface não
- * começa esse arrasto (intenção `locked`); o MCP não usa esta função. No fim assenta uma só vez,
- * sobre o resultado inteiro (salvo `settle: false`, das prévias de gesto): é o assentar que
- * refaz o `parentId` e que faz uma marcação do canvas que acabou inteira dentro de um container
- * passar a ser dele.
+ * All or nothing: with any item of `movingItems` locked it fails with `locked`; a moved
+ * container that comes to overlap a container that does NOT move fails with `image-overlap`
+ * (the moved ones keep their relative position among themselves and are not tested against each
+ * other). A zero offset, or nothing to move, returns `p` as is, **without checking the lock**
+ * (owner's decision, stage #1190): the snap that zeroes the offset is a no-op even with a
+ * locked item, and the interface does not start that drag (intent `locked`); the MCP does not
+ * use this function. At the end it settles once, over the whole result (unless
+ * `settle: false`, from gesture previews): the settle is what redoes the `parentId` and what
+ * makes a canvas marking that ended up entirely inside a container become the container's.
  */
 export function moveItems(
   p: Project,
@@ -187,20 +189,20 @@ export function moveItems(
       const cx = Math.round(dx);
       const cy = Math.round(dy);
       if (cx === 0 && cy === 0) continue;
-      // Com as ancoradas (v20), também do canvas.
+      // With the anchored ones (v20), also from the canvas.
       for (const id of withAnchoredFollowers(p, [marking.id])) {
         const m = index.markings.get(id);
         if (m !== undefined) rects.set(id, translateRect(m.rect, cx, cy));
       }
       continue;
     }
-    // Marcação de container: o deslocamento do canvas em pixels do container, para ela e as
-    // descendentes; nada a mudar se o arredondamento zera os dois eixos.
+    // Container marking: the canvas offset in the container's pixels, for it and the
+    // descendants; nothing to change if the rounding zeroes both axes.
     const space = spaceOf(p, marking);
     const mx = Math.round(dx / space.placement.scale);
     const my = Math.round(dy / space.placement.scale);
     if (mx === 0 && my === 0) continue;
-    // Com as descendentes e as ancoradas (v20), que andam junto.
+    // With the descendants and the anchored ones (v20), which move along.
     for (const id of withAnchoredFollowers(p, [marking.id])) {
       const m = index.markings.get(id);
       if (m === undefined) continue;
@@ -215,7 +217,7 @@ export function moveItems(
   return applyMoves(p, placements, rects, options);
 }
 
-/** Algum item que anda é marcação do canvas (o deslocamento do canvas é inteiro). */
+/** Some item that moves is a canvas marking (the canvas offset is an integer). */
 function hasCanvasMarking(p: Project, moving: readonly ItemRef[]): boolean {
   const { markings } = projectIndex(p);
   return moving.some(
@@ -224,16 +226,17 @@ function hasCanvasMarking(p: Project, moving: readonly ItemRef[]): boolean {
 }
 
 /**
- * O deslocamento do arrasto conjunto depois de encostar (decisão 4 da etapa #764): quando `dx`,
- * `dy` fariam um container que anda sobrepor um que NÃO anda, devolve o maior deslocamento sem
- * sobreposição, eixo a eixo (as bordas ficam iguais e ele desliza ao longo do obstáculo);
- * deslocamento que cabe volta como está. É o que as prévias e o fim do gesto passam a `moveItems`,
- * que continua recusando a sobreposição com `image-overlap`. Com marcação do canvas na seleção o
- * deslocamento do canvas é inteiro (como em `moveItems`) e o limite é o inteiro de menor módulo
- * (sobra menos de 1 unidade com vizinho fracionário, sem sobrepor). Só os containers que andam
- * entram no cálculo, contra os que ficam (`touchDelta`, que filtra os que a caixa varrida nem
- * alcança). O encosto que zera o deslocamento é um no-op: `moveItems` devolve o projeto como está,
- * mesmo com item trancado, e a interface não começa esse arrasto (intenção `locked`).
+ * The joint drag's offset after snapping (decision 4 of stage #764): when `dx`, `dy` would make
+ * a container that moves overlap one that does NOT move, returns the largest offset without
+ * overlap, axis by axis (the edges stay equal and it slides along the obstacle); an offset that
+ * fits comes back as is. It is what the previews and the end of the gesture pass to
+ * `moveItems`, which still refuses the overlap with `image-overlap`. With a canvas marking in
+ * the selection the canvas offset is an integer (as in `moveItems`) and the limit is the
+ * integer of smallest magnitude (less than 1 unit is left over with a fractional neighbor,
+ * without overlapping). Only the containers that move enter the computation, against those that
+ * stay (`touchDelta`, which filters out those the swept box does not even reach). The snap that
+ * zeroes the offset is a no-op: `moveItems` returns the project as is, even with a locked item,
+ * and the interface does not start that drag (intent `locked`).
  */
 export function limitItemsMove(
   p: Project,
@@ -258,9 +261,9 @@ export function limitItemsMove(
 }
 
 /**
- * Fecha um movimento: confere que nenhum container movido passa a sobrepor um que não se move
- * (`image-overlap`), grava os novos `placement` e `rect` e assenta uma vez (salvo `settle: false`).
- * Sem nada a gravar devolve `p` como está.
+ * Closes a movement: checks that no moved container comes to overlap one that does not move
+ * (`image-overlap`), writes the new `placement`s and `rect`s and settles once (unless
+ * `settle: false`). With nothing to write it returns `p` as is.
  */
 function applyMoves(
   p: Project,
@@ -304,14 +307,14 @@ function applyMoves(
 }
 
 /**
- * Passo de teclado (setas): move os itens `dx`, `dy` (inteiros) **no espaço próprio de cada um**:
- * container e marcação do canvas (flutuante inclusive) andam `dx`, `dy` unidades do canvas;
- * marcação de container anda `dx`, `dy` pixels da imagem dela, seja qual for a escala (por isso não
- * é `moveItems`, que divide pela escala e zeraria o passo de 1 com escala acima de 2). Quem anda e
- * quem vai junto segue `movingItems`; a seta não anda. Tudo ou nada, como `moveItems`: trancado
- * falha com `locked`, marcação que sairia do container com `rect-out-of-image`, container sobre
- * outro com `image-overlap`. Passo zero ou nada para mover devolve `p`. Assenta no fim, salvo
- * `settle: false` (prévia de gesto).
+ * Keyboard step (arrows): moves the items `dx`, `dy` (integers) **in each one's own space**:
+ * container and canvas marking (floating included) move `dx`, `dy` canvas units; a container
+ * marking moves `dx`, `dy` pixels of its image, whatever the scale (that is why it is not
+ * `moveItems`, which divides by the scale and would zero a step of 1 with a scale above 2). What
+ * moves and what goes along follows `movingItems`; the arrow does not move. All or nothing, like
+ * `moveItems`: locked fails with `locked`, a marking that would leave the container with
+ * `rect-out-of-image`, a container over another with `image-overlap`. A zero step or nothing to
+ * move returns `p`. Settles at the end, unless `settle: false` (gesture preview).
  */
 export function nudgeItems(
   p: Project,
@@ -330,7 +333,9 @@ export function nudgeItems(
   return applyMoves(p, placements, rects, options);
 }
 
-/** Os novos `placement` (containers) e `rect` (marcações) de um passo, cada item no seu espaço. */
+/**
+ * The new `placement`s (containers) and `rect`s (markings) of a step, each item in its own space.
+ */
 function nudgedMoves(
   p: Project,
   moving: readonly ItemRef[],
@@ -355,7 +360,7 @@ function nudgedMoves(
   return { placements, rects };
 }
 
-/** Os novos `rect` de uma marcação, das descendentes e das ancoradas nelas (v20). */
+/** The new `rect`s of a marking, its descendants and those anchored to them (v20). */
 function nudgedMarkingRects(
   p: Project,
   marking: Marking,
@@ -364,7 +369,7 @@ function nudgedMarkingRects(
 ): Map<string, Rect> {
   const out = new Map<string, Rect>();
   if (marking.containerId === null) {
-    // Com as ancoradas (v20), também do canvas.
+    // With the anchored ones (v20), also from the canvas.
     const { markings } = projectIndex(p);
     for (const id of withAnchoredFollowers(p, [marking.id])) {
       const m = markings.get(id);
@@ -374,7 +379,7 @@ function nudgedMarkingRects(
   }
   const space = spaceOf(p, marking);
   const { markings } = projectIndex(p);
-  // As descendentes e as ancoradas (v20) andam junto.
+  // The descendants and the anchored ones (v20) move along.
   for (const id of withAnchoredFollowers(p, [marking.id])) {
     const m = markings.get(id);
     if (m === undefined) continue;
@@ -387,15 +392,15 @@ function nudgedMarkingRects(
 }
 
 // ---------------------------------------------------------------------------
-// Selecionar com o conteúdo
+// Select with content
 
 /**
- * "Selecionar com o conteúdo": a marcação e tudo o que ela cobre, recursivo, pelo pertencimento
- * assentado (`parentId`). Cobre as marcações descendentes e, numa marcação do canvas, os
- * containers membros e todas as marcações de cada um deles. As flutuantes não são membros de
- * nada e nunca entram. Ordem: o conteúdo primeiro (em profundidade, cada marcação seguida do que
- * ela cobre, na ordem dos arrays) e a própria marcação por último, que vira o primário na UI.
- * Marcação inexistente falha com `not-found`.
+ * "Select with content": the marking and everything it covers, recursively, by the settled
+ * containment (`parentId`). It covers the descendant markings and, on a canvas marking, the
+ * member containers and all the markings of each of them. Floating markings are members of
+ * nothing and never enter. Order: the content first (depth-first, each marking followed by what
+ * it covers, in array order) and the marking itself last, which becomes the primary in the UI.
+ * A nonexistent marking fails with `not-found`.
  */
 export function selectionWithContents(p: Project, markingId: string): ItemRef[] {
   const root = findById(p.markings, markingId);
@@ -410,7 +415,7 @@ export function selectionWithContents(p: Project, markingId: string): ItemRef[] 
     return true;
   };
 
-  // Marcações de cada container, montadas uma vez e só se houver container membro.
+  // Markings of each container, built once and only if there is a member container.
   let byContainer: Map<string, Marking[]> | null = null;
   const markingsOf = (containerId: string): readonly Marking[] => {
     if (byContainer === null) {
@@ -425,8 +430,9 @@ export function selectionWithContents(p: Project, markingId: string): ItemRef[] 
     return byContainer.get(containerId) ?? [];
   };
 
-  // Pilha explícita (hierarquia funda não estoura a pilha de chamadas). Cada quadro lê as filhas
-  // e depois os containers do mesmo item, na ordem da recursão: o `cursor` guarda onde parou.
+  // Explicit stack (a deep hierarchy does not overflow the call stack). Each frame reads the
+  // children and then the containers of the same item, in the order of the recursion: the
+  // `cursor` keeps where it stopped.
   const stack: { readonly id: string; cursor: number }[] = [{ id: root.id, cursor: 0 }];
   while (stack.length > 0) {
     const frame = stack[stack.length - 1] as { readonly id: string; cursor: number };
@@ -447,9 +453,11 @@ export function selectionWithContents(p: Project, markingId: string): ItemRef[] 
 }
 
 // ---------------------------------------------------------------------------
-// Excluir
+// Delete
 
-/** Marcações que saem: as selecionadas, as descendentes delas e as dos containers selecionados. */
+/**
+ * Markings that go away: the selected ones, their descendants and those of the selected containers.
+ */
 function removedMarkingIds(p: Project, selected: ResolvedItems): Set<string> {
   const ids = new Set<string>();
   for (const id of selected.markings.keys()) {
@@ -464,7 +472,7 @@ function removedMarkingIds(p: Project, selected: ResolvedItems): Set<string> {
   return ids;
 }
 
-/** Setas que saem: as selecionadas e as presas a qualquer marcação que sai. */
+/** Arrows that go away: the selected ones and those attached to any marking that goes away. */
 function removedArrowIds(
   p: Project,
   selected: ResolvedItems,
@@ -475,7 +483,7 @@ function removedArrowIds(
   return ids;
 }
 
-/** A exclusão em si, sem a trava nem o assentar: também serve para contar o impacto. */
+/** The deletion itself, without the lock or the settle: also serves to count the impact. */
 function cascadeRemoveItems(p: Project, selected: ResolvedItems): Project {
   const markingIds = removedMarkingIds(p, selected);
   return withoutArrows(
@@ -493,28 +501,35 @@ function cascadeRemoveItems(p: Project, selected: ResolvedItems): Project {
 }
 
 export interface ItemsDeletionImpact {
-  /** Marcações que saem: as selecionadas, as descendentes delas e as dos containers selecionados. */
+  /**
+   * Markings that go away: the selected ones, their descendants and those of the selected
+   * containers.
+   */
   readonly markings: number;
-  /** Containers selecionados, que saem. */
+  /** Selected containers, which go away. */
   readonly containers: number;
-  /** Setas que saem: as selecionadas e as presas a qualquer marcação que sai. */
+  /** Arrows that go away: the selected ones and those attached to any marking that goes away. */
   readonly arrows: number;
-  /** Anotações que saem, as de todas as marcações e setas que saem. */
+  /** Annotations that go away: those of all the markings and arrows that go away. */
   readonly annotations: number;
-  /** Das marcações que saem junto (descendentes, as dos containers e as selecionadas que saem com a mãe ou o container), quantas estão trancadas. */
+  /**
+   * Of the markings that go away along (descendants, those of the containers and the selected ones
+   * that go with the parent or the container), how many are locked.
+   */
   readonly lockedMarkings: number;
-  /** Containers que estavam dentro de uma marcação que sai e não foram selecionados: ficam. */
+  /** Containers that were inside a marking that goes away and were not selected: they stay. */
   readonly containersStay: number;
-  /** Referências entre anotações que a exclusão quebraria. */
+  /** References between annotations that the deletion would break. */
   readonly brokenRefs: number;
 }
 
 /**
- * Impacto de excluir a seleção inteira, sem contar nada duas vezes (uma marcação e a filha dela
- * selecionadas, um container e uma marcação dele selecionados). `lockedMarkings` conta as
- * trancadas que saem junto, selecionadas ou não: uma marcação selecionada e trancada que não
- * sai com outra selecionada bloqueia a exclusão (`canDeleteItems`) e o diálogo nem abre. Itens inexistentes são ignorados. As setas presas a
- * uma marcação que sai entram na conta e levam as anotações delas.
+ * Impact of deleting the whole selection, without counting anything twice (a marking and its
+ * selected child, a container and one of its markings selected). `lockedMarkings` counts the
+ * locked ones that go away along, selected or not: a selected locked marking that does not go
+ * away with another selected one blocks the deletion (`canDeleteItems`) and the dialog does not
+ * even open. Nonexistent items are ignored. The arrows attached to a marking that goes away
+ * enter the count and take their annotations.
  */
 export function itemsDeletionImpact(
   p: Project,
@@ -532,8 +547,8 @@ export function itemsDeletionImpact(
   let containersStay = 0;
   for (const id of removed) {
     const locked = index.markings.get(id)?.locked === true;
-    // A selecionada e trancada só chega aqui se sai com a mãe ou o container selecionados
-    // (senão `canDeleteItems` bloqueia): conta como as que saem sem ser selecionadas.
+    // The selected and locked one only gets here if it goes away with the selected parent or
+    // container (otherwise `canDeleteItems` blocks): it counts like those that go away unselected.
     if (
       locked &&
       (!selected.markings.has(id) ||
@@ -557,10 +572,10 @@ export function itemsDeletionImpact(
 }
 
 /**
- * O item selecionado sai junto com outro item selecionado (e, por isso, a trava própria dele
- * não impede a exclusão): uma marcação de container cujo container está selecionado ou que
- * tem uma ancestral selecionada, e uma seta presa a uma marcação que sai. Marcações do canvas
- * e containers não levam ninguém.
+ * The selected item goes away along with another selected item (and, because of that, its own
+ * lock does not prevent the deletion): a container marking whose container is selected or that
+ * has a selected ancestor, and an arrow attached to a marking that goes away. Canvas markings
+ * and containers take nobody along.
  */
 function leavesWithSelection(
   p: Project,
@@ -582,11 +597,11 @@ function leavesWithSelection(
 }
 
 /**
- * Excluir é permitido: há o que excluir e nenhum item selecionado trancado fica de fora da
- * cascata (a trava de um ancestral é de geometria e não impede; as marcações trancadas que
- * saem junto não bloqueiam, como em `canDeleteMarking`/`canDeleteImage`; uma selecionada e
- * trancada que sai junto com a mãe ou com o container selecionados também não; a seta
- * selecionada e trancada só impede se nenhuma das pontas sai).
+ * Deleting is allowed: there is something to delete and no selected locked item is left out of
+ * the cascade (an ancestor's lock is about geometry and does not prevent it; the locked markings
+ * that go away along do not block, as in `canDeleteMarking`/`canDeleteImage`; a selected locked
+ * one that goes away together with the selected parent or container does not either; the
+ * selected locked arrow only prevents it if neither end goes away).
  */
 export function canDeleteItems(p: Project, items: readonly ItemRef[]): boolean {
   const selected = resolveItems(p, items);
@@ -607,13 +622,14 @@ export function canDeleteItems(p: Project, items: readonly ItemRef[]): boolean {
 }
 
 /**
- * Exclui a seleção inteira numa operação: as marcações selecionadas (com as descendentes e as
- * anotações, como `removeMarking`), os containers selecionados (com as marcações e anotações
- * deles, como `removeContainer`) e as setas selecionadas; toda seta presa a uma marcação que sai
- * sai junto, com as anotações dela. Nunca exclui um container não selecionado: os que estavam
- * dentro de uma marcação que sai passam ao pai dela, ou a nenhum (o assentar refaz). Algum item
- * selecionado trancado que não sai junto com outro selecionado (`canDeleteItems`) falha com `locked`, sem excluir nada; itens inexistentes são ignorados.
- * Assenta uma vez, no fim (salvo `settle: false`).
+ * Deletes the whole selection in one operation: the selected markings (with the descendants
+ * and the annotations, like `removeMarking`), the selected containers (with their markings and
+ * annotations, like `removeContainer`) and the selected arrows; every arrow attached to a
+ * marking that goes away goes along, with its annotations. It never deletes an unselected
+ * container: those that were inside a marking that goes away move to its parent, or to none (the
+ * settle redoes it). Some selected locked item that does not go away with another selected one
+ * (`canDeleteItems`) fails with `locked`, deleting nothing; nonexistent items are ignored.
+ * Settles once, at the end (unless `settle: false`).
  */
 export function removeItems(
   p: Project,
@@ -627,11 +643,11 @@ export function removeItems(
 }
 
 // ---------------------------------------------------------------------------
-// Trancar
+// Lock
 
 /**
- * Tranca ou destranca todos os itens selecionados (marcações, containers e setas) numa operação.
- * Itens inexistentes são ignorados; nada a mudar devolve `p` como está.
+ * Locks or unlocks all the selected items (markings, containers and arrows) in one operation.
+ * Nonexistent items are ignored; nothing to change returns `p` as is.
  */
 export function setItemsLocked(
   p: Project,
@@ -666,12 +682,12 @@ export function setItemsLocked(
 }
 
 // ---------------------------------------------------------------------------
-// Envolver
+// Wrap
 
-/** Margem, de cada lado, entre o conjunto envolvido e a marcação pai nova. */
+/** Margin, on each side, between the wrapped set and the new parent marking. */
 export const WRAP_MARGIN = MIN_MARKING_SIZE;
 
-/** Itens que entram numa marcação pai: marcações não flutuantes e containers existentes. */
+/** Items that go into a parent marking: non-floating markings and existing containers. */
 function wrappable(p: Project, items: readonly ItemRef[]) {
   const selected = resolveItems(p, items);
   const markings = [...selected.markings.values()].filter((m) => !m.floating);
@@ -679,7 +695,9 @@ function wrappable(p: Project, items: readonly ItemRef[]) {
   return { selected, markings, containers };
 }
 
-/** Há ao menos um item que entra numa marcação pai (setas e notas flutuantes não entram). */
+/**
+ * There is at least one item that goes into a parent marking (arrows and floating notes do not).
+ */
 export function canWrapItems(p: Project, items: readonly ItemRef[]): boolean {
   const { markings, containers } = wrappable(p, items);
   return markings.length + containers.length > 0;
@@ -688,15 +706,18 @@ export function canWrapItems(p: Project, items: readonly ItemRef[]): boolean {
 interface WrapPlan {
   readonly containerId: string | null;
   readonly rect: Rect;
-  /** O pai atual do conjunto (`currentEnclosing`), ou `null`. */
+  /** The set's current parent (`currentEnclosing`), or `null`. */
   readonly parentId: string | null;
 }
 
-/** O pai comum dos itens de topo da seleção (os que não estão dentro de outra selecionada); `null` se não há um só. */
+/**
+ * The common parent of the selection's top-level items (those not inside another selected one);
+ * `null` if there is not exactly one.
+ */
 function commonParent(selected: ResolvedItems): string | null {
   const parents = new Set<string | null>();
   const items = [
-    // A flutuante não tem pai de pertencimento (`wrappable` a exclui): não entra na conta.
+    // A floating marking has no containment parent (`wrappable` excludes it): it does not count.
     ...[...selected.markings.values()].filter((m) => !m.floating),
     ...selected.containers.values(),
   ];
@@ -709,10 +730,11 @@ function commonParent(selected: ResolvedItems): string | null {
 }
 
 /**
- * Pai atual do conjunto: entre as marcações do mesmo espaço que contêm `bbox`, fora da seleção
- * e dos descendentes dela, a que o assentar escolheria (`enclosingAmong`): o pai comum das
- * selecionadas de topo, se é uma das de menor área; senão, a de dentro da cadeia. Nunca o
- * último do array, que depois de reordenar retângulos iguais pode ser o de fora (#549).
+ * Current parent of the set: among the markings of the same space that contain `bbox`, outside
+ * the selection and its descendants, the one the settle would choose (`enclosingAmong`): the
+ * common parent of the top-level selected ones, if it is one of those of smallest area;
+ * otherwise, the innermost of the chain. Never the last in the array, which after reordering
+ * equal rectangles can be the outer one (#549).
  */
 function currentEnclosing(
   p: Project,
@@ -756,8 +778,8 @@ function planWrap(p: Project, items: readonly ItemRef[]): WrapPlan | null {
   if (inContainer) {
     bbox = boundingBox(markings.map((m) => m.rect)) as Rect;
   } else {
-    // No canvas, a marcação de container conta pelo container inteiro: só ele pode ser
-    // filho de uma marcação do canvas.
+    // On the canvas, a container marking counts by the whole container: only it can be a
+    // child of a canvas marking.
     const raw = boundingBox([
       ...markings.map((m) => {
         const own = m.containerId === null ? null : index.containers.get(m.containerId);
@@ -765,7 +787,7 @@ function planWrap(p: Project, items: readonly ItemRef[]): WrapPlan | null {
       }),
       ...containers.map((c) => imageCanvasRect(c, c.placement)),
     ]) as Rect;
-    // O ruído do arrasto (`-2.27e-13`) conta como inteiro; fração de verdade arredonda para fora.
+    // Drag noise (`-2.27e-13`) counts as an integer; a real fraction rounds outward.
     const x = Math.floor(snapNearInteger(raw.x));
     const y = Math.floor(snapNearInteger(raw.y));
     bbox = {
@@ -810,17 +832,18 @@ function planWrap(p: Project, items: readonly ItemRef[]): WrapPlan | null {
 }
 
 /**
- * Cria uma marcação pai que envolve a seleção (docs/ARCHITECTURE.md, "Marcação pai (Envolver)"). Entram as
- * marcações não flutuantes e os containers; setas e notas são ignoradas, e sem nada que entre
- * falha com `invalid-parent`. O espaço e o retângulo saem de `planWrap`. A nova entra no array
- * antes da primeira marcação selecionada (ou no fim, se só há containers): ela não tem relação
- * com nenhuma selecionada, então o empate de retângulo igual com uma delas é novo e o array
- * decide (a de antes é a de fora). A nova nasce com o pai atual do conjunto de `parentId`
- * (`currentEnclosing`: o pai comum das selecionadas de topo, ou a de dentro da cadeia, nunca o
- * último do array): ela cabe nele e nenhuma menor a contém, e no desempate estável a relação
- * atual vale, então ele continua o pai mesmo com retângulo igual e vindo depois no array.
- * Quem passa a ser filho sai do assentar, nunca é escolhido aqui. Nenhuma geometria existente
- * muda, então a trava não impede.
+ * Creates a parent marking that wraps the selection (docs/ARCHITECTURE.md, "Parent marking
+ * (Wrap)"). Non-floating markings and containers enter; arrows and notes are ignored, and with
+ * nothing that can enter it fails with `invalid-parent`. The space and the rectangle come from
+ * `planWrap`. The new one enters the array before the first selected marking (or at the end, if
+ * there are only containers): it has no relation with any selected one, so the tie of an equal
+ * rectangle with one of them is new and the array decides (the earlier one is the outer one).
+ * The new one is born with the set's current parent as `parentId` (`currentEnclosing`: the
+ * common parent of the top-level selected ones, or the innermost of the chain, never the last
+ * in the array): it fits in it and no smaller one contains it, and in the stable tie-break the
+ * current relation wins, so it stays the parent even with an equal rectangle and coming later
+ * in the array. Whoever becomes a child comes out of the settle, never chosen here. No existing
+ * geometry changes, so the lock does not prevent it.
  */
 export function wrapItems(
   p: Project,

@@ -13,9 +13,9 @@ import { issuesOf, OWNER, parsedV11, v11Json, type Json } from './specV11Fixture
 
 const EVENTS = 'layers[1]';
 const EVENT0 = `${EVENTS}.annotationTypes[0]`;
-const EMPTY_GROUPS = 'não pode ser vazio; tire a chave ou liste ao menos um grupo';
+const EMPTY_GROUPS = 'cannot be empty; remove the key or list at least one group';
 const BAD_PATH =
-  'caminho inválido: use um caminho relativo à raiz do repositório, com "/", sem "." nem ".." e sem unidade (ex: components/button.md)';
+  'invalid path: use a path relative to the repository root, with "/", without "." or ".." and without a drive (e.g. components/button.md)';
 
 const owner = (spec: Json) => spec.layers[0].annotationTypes[0] as Json;
 const event = (spec: Json, i: number) => spec.layers[1].annotationTypes[i] as Json;
@@ -50,7 +50,7 @@ describe('formatVersion 11: versões', () => {
   it('a mensagem de versão inválida lista de 1 a 16', () => {
     expect(issuesOf(v11Json(undefined, 17))).toContainEqual({
       path: 'formatVersion',
-      message: 'deve ser 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 ou 16',
+      message: 'must be 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 or 16',
     });
   });
 
@@ -143,15 +143,14 @@ describe('formatVersion 11: cláusula de allowedChildren', () => {
   it('camada inexistente', () => {
     expect(issuesOf(v11Json(clause({ layer: 'nada' })))).toContainEqual({
       path: `${at}.layer`,
-      message: 'camada "nada" não existe na especialização',
+      message: 'layer "nada" does not exist in the specialization',
     });
   });
 
   it('camada igual à do dono', () => {
     expect(issuesOf(v11Json(clause({ layer: 'componentes' })))).toContainEqual({
       path: `${at}.layer`,
-      message:
-        'camada "componentes" é a do próprio tipo; filhos devem estar em outra camada',
+      message: `layer "componentes" is the type's own layer; children must be in another layer`,
     });
   });
 
@@ -159,7 +158,10 @@ describe('formatVersion 11: cláusula de allowedChildren', () => {
     expect(
       issuesOf(v11Json(clause({ layer: 'eventos', groups: ['dados', 'nada'] }))),
     ).toEqual([
-      { path: `${at}.groups[1]`, message: 'grupo "nada" não existe na camada "eventos"' },
+      {
+        path: `${at}.groups[1]`,
+        message: 'group "nada" does not exist in the layer "eventos"',
+      },
     ]);
   });
 
@@ -171,24 +173,24 @@ describe('formatVersion 11: cláusula de allowedChildren', () => {
 
   it('groups que não é lista é erro de forma, sem derrubar o parseSpec', () => {
     expect(issuesOf(v11Json(clause({ layer: 'eventos', groups: 3 })))).toEqual([
-      { path: `${at}.groups`, message: 'deve ser uma lista de ids de grupo' },
+      { path: `${at}.groups`, message: 'must be a list of group ids' },
     ]);
   });
 
   it('propriedade a mais na cláusula', () => {
     expect(issuesOf(v11Json(clause({ layer: 'eventos', extra: 1 })))).toEqual([
-      { path: at, message: 'propriedade desconhecida: "extra"' },
+      { path: at, message: 'unknown property: "extra"' },
     ]);
   });
 
   it('cláusula sem layer e item que não é texto nem objeto', () => {
     expect(issuesOf(v11Json(clause({ groups: ['dados'] })))).toEqual([
-      { path: `${at}.layer`, message: 'obrigatório' },
+      { path: `${at}.layer`, message: 'required' },
     ]);
     expect(issuesOf(v11Json(clause(5)))).toEqual([
       {
         path: at,
-        message: 'deve ser um id de tipo (texto) ou uma cláusula { layer, groups }',
+        message: 'must be a type id (text) or a clause { layer, groups }',
       },
     ]);
   });
@@ -196,11 +198,11 @@ describe('formatVersion 11: cláusula de allowedChildren', () => {
   it('o id em texto continua conferido como antes', () => {
     expect(issuesOf(v11Json(clause('nada')))).toContainEqual({
       path: at,
-      message: 'tipo "nada" não existe na especialização',
+      message: 'type "nada" does not exist in the specialization',
     });
     expect(issuesOf(v11Json(clause('image')))).toContainEqual({
       path: at,
-      message: 'tipo "image" está na mesma camada; filhos devem estar em outra camada',
+      message: 'type "image" is in the same layer; children must be in another layer',
     });
   });
 });
@@ -211,7 +213,7 @@ describe('formatVersion 11: groups', () => {
     expect(issuesOf(spec)).toEqual([
       {
         path: `${EVENTS}.annotationTypes[1].groups[1]`,
-        message: 'grupo "nada" não existe na camada "eventos"',
+        message: 'group "nada" does not exist in the layer "eventos"',
       },
     ]);
   });
@@ -221,7 +223,7 @@ describe('formatVersion 11: groups', () => {
     expect(issuesOf(spec)).toEqual([
       {
         path: 'layers[0].annotationTypes[1].groups[0]',
-        message: 'grupo "navegacao" não existe na camada "componentes"',
+        message: 'group "navegacao" does not exist in the layer "componentes"',
       },
     ]);
   });
@@ -229,14 +231,14 @@ describe('formatVersion 11: groups', () => {
   it('id de grupo repetido na camada', () => {
     const spec = v11Json((s) => s.layers[1].groups.push({ id: 'dados', name: 'Outro' }));
     expect(issuesOf(spec)).toEqual([
-      { path: `${EVENTS}.groups[2].id`, message: 'id "dados" repetido' },
+      { path: `${EVENTS}.groups[2].id`, message: 'id "dados" repeated' },
     ]);
   });
 
   it('name vazio ou ausente no grupo', () => {
     const spec = v11Json((s) => (s.layers[1].groups[0].name = ''));
     expect(issuesOf(spec)).toEqual([
-      { path: `${EVENTS}.groups[0].name`, message: 'não pode ser vazio' },
+      { path: `${EVENTS}.groups[0].name`, message: 'cannot be empty' },
     ]);
   });
 
@@ -246,7 +248,7 @@ describe('formatVersion 11: groups', () => {
     ]);
     expect(
       issuesOf(v11Json((s) => (event(s, 0).groups = ['navegacao', 'navegacao']))),
-    ).toEqual([{ path: `${EVENT0}.groups[1]`, message: 'grupo "navegacao" repetido' }]);
+    ).toEqual([{ path: `${EVENT0}.groups[1]`, message: 'group "navegacao" repeated' }]);
   });
 });
 
@@ -257,7 +259,7 @@ describe('formatVersion 11: childRoles e childRolesLabel', () => {
     expect(issuesOf(v11Json((s) => (owner(s).childRoles = [])))).toEqual([
       {
         path: `${OWNER}.childRoles`,
-        message: 'não pode ser vazio; tire a chave ou declare ao menos um papel',
+        message: 'cannot be empty; remove the key or declare at least one role',
       },
     ]);
   });
@@ -271,7 +273,7 @@ describe('formatVersion 11: childRoles e childRolesLabel', () => {
         ]),
     );
     expect(issuesOf(spec)).toEqual([
-      { path: `${OWNER}.childRoles[1].id`, message: 'id "click" repetido' },
+      { path: `${OWNER}.childRoles[1].id`, message: 'id "click" repeated' },
     ]);
   });
 
@@ -280,27 +282,27 @@ describe('formatVersion 11: childRoles e childRolesLabel', () => {
     expect(issuesOf(spec)).toEqual([
       {
         path: 'layers[0].annotationTypes[1].childRoles',
-        message: 'só é permitido em tipo com allowedChildren',
+        message: 'only allowed in a type with allowedChildren',
       },
     ]);
   });
 
   it('childRolesLabel sem childRoles; vazio com childRoles', () => {
     expect(issuesOf(v11Json((s) => (owner(s).childRolesLabel = 'Trigger')))).toEqual([
-      { path: `${OWNER}.childRolesLabel`, message: 'só é permitido com childRoles' },
+      { path: `${OWNER}.childRolesLabel`, message: 'only allowed with childRoles' },
     ]);
     const empty = v11Json((s) => {
       owner(s).childRoles = roles;
       owner(s).childRolesLabel = '';
     });
     expect(issuesOf(empty)).toEqual([
-      { path: `${OWNER}.childRolesLabel`, message: 'não pode ser vazio' },
+      { path: `${OWNER}.childRolesLabel`, message: 'cannot be empty' },
     ]);
   });
 
   it('papel sem name ou com propriedade a mais', () => {
     expect(issuesOf(v11Json((s) => (owner(s).childRoles = [{ id: 'a' }])))).toEqual([
-      { path: `${OWNER}.childRoles[0].name`, message: 'obrigatório' },
+      { path: `${OWNER}.childRoles[0].name`, message: 'required' },
     ]);
     expect(
       issuesOf(v11Json((s) => (owner(s).childRoles = [{ id: 'a', name: 'A', x: 1 }]))),
@@ -315,27 +317,27 @@ describe('formatVersion 11: doc em repositório externo', () => {
     expect(issuesOf(withDoc({ repo: 'outro', path: 'a.md' }))).toEqual([
       {
         path: `${OWNER}.doc.repo`,
-        message: 'repositório "outro" não declarado em docRepos',
+        message: 'repository "outro" is not declared in docRepos',
       },
     ]);
     const none = v11Json((s) => (owner(s).doc = doc('a.md')));
     expect(issuesOf(none)).toEqual([
       {
         path: `${OWNER}.doc.repo`,
-        message: 'repositório "design-docs" não declarado em docRepos',
+        message: 'repository "design-docs" is not declared in docRepos',
       },
     ]);
   });
 
   it('path sem .md', () => {
     expect(issuesOf(withDoc(doc('components/button.txt')))).toEqual([
-      { path: `${OWNER}.doc.path`, message: 'extensão inválida: esperava .md' },
+      { path: `${OWNER}.doc.path`, message: 'invalid extension: expected .md' },
     ]);
   });
 
   it('path com #', () => {
     expect(issuesOf(withDoc(doc('components/button.md#topo')))).toEqual([
-      { path: `${OWNER}.doc.path`, message: 'não pode ter "#" (âncora)' },
+      { path: `${OWNER}.doc.path`, message: 'cannot have "#" (anchor)' },
     ]);
   });
 
@@ -349,26 +351,26 @@ describe('formatVersion 11: doc em repositório externo', () => {
 
   it('propriedade a mais, repo ou path ausente, tipo errado', () => {
     expect(issuesOf(withDoc({ ...doc('a.md'), x: 1 }))).toEqual([
-      { path: `${OWNER}.doc`, message: 'propriedade desconhecida: "x"' },
+      { path: `${OWNER}.doc`, message: 'unknown property: "x"' },
     ]);
     expect(issuesOf(withDoc({ path: 'a.md' }))).toContainEqual({
       path: `${OWNER}.doc.repo`,
-      message: 'obrigatório',
+      message: 'required',
     });
     expect(issuesOf(withDoc({ repo: 'design-docs' }))).toEqual([
-      { path: `${OWNER}.doc.path`, message: 'obrigatório' },
+      { path: `${OWNER}.doc.path`, message: 'required' },
     ]);
     expect(issuesOf(withDoc(5))).toEqual([
       {
         path: `${OWNER}.doc`,
-        message: 'deve ser texto (arquivo do pacote) ou um objeto { repo, path }',
+        message: 'must be text (a package file) or an object { repo, path }',
       },
     ]);
   });
 
   it('o doc texto continua conferido como arquivo do pacote', () => {
     expect(issuesOf(withDoc('docs/button.txt'))).toEqual([
-      { path: `${OWNER}.doc`, message: 'extensão inválida: esperava .md' },
+      { path: `${OWNER}.doc`, message: 'invalid extension: expected .md' },
     ]);
   });
 
@@ -383,14 +385,14 @@ describe('formatVersion 11: doc em repositório externo', () => {
           ]),
         ),
       ),
-    ).toEqual([{ path: 'docRepos[1].id', message: 'id "d" repetido' }]);
+    ).toEqual([{ path: 'docRepos[1].id', message: 'id "d" repeated' }]);
     expect(
       issuesOf(
         v11Json(
           repos([{ id: 'd', url: 'https://x.com/a', urlTemplate: 'https://x.com/a' }]),
         ),
       ),
-    ).toEqual([{ path: 'docRepos[0].urlTemplate', message: 'deve conter {path}' }]);
+    ).toEqual([{ path: 'docRepos[0].urlTemplate', message: 'must contain {path}' }]);
   });
 });
 
@@ -398,7 +400,7 @@ describe('formatVersion 11: requiresOwner no conjunto resolvido', () => {
   const requires = (spec: Json) => (event(spec, 2).requiresOwner = true);
   const NOT_OWNED = {
     path: `${EVENTS}.annotationTypes[2].requiresOwner`,
-    message: '"navigate" exige dono, mas nenhum tipo o lista em allowedChildren',
+    message: '"navigate" requires an owner, but no type lists it in allowedChildren',
   };
 
   it('um dono que lista o tipo por cláusula atende', () => {
@@ -442,7 +444,7 @@ describe('formatVersion 11: requiresOwner no conjunto resolvido', () => {
       {
         path: NOT_OWNED.path,
         message:
-          '"navigate" exige dono, mas nenhum outro tipo o aceita como filho (só ele mesmo o lista em allowedChildren)',
+          '"navigate" requires an owner, but no other type accepts it as a child (only itself lists it in allowedChildren)',
       },
     ]);
     const viaLayer = v11Json((s) => {
@@ -455,7 +457,7 @@ describe('formatVersion 11: requiresOwner no conjunto resolvido', () => {
 });
 
 describe('chaves novas numa versão anterior à 11', () => {
-  const ONLY = 'só é permitido com formatVersion 11';
+  const ONLY = 'only allowed with formatVersion 11';
 
   it('cláusula, groups, childRoles, childRolesLabel, docRepos e doc objeto dão erro no caminho exato', () => {
     for (const v of [4, 8, 10]) {
@@ -486,7 +488,7 @@ describe('chaves novas numa versão anterior à 11', () => {
   it('doc texto vale da v4 em diante e continua erro da v4 antes dela', () => {
     expect(issuesOf(v11Json((s) => (owner(s).doc = 'docs/a.md'), 4))).toEqual([]);
     expect(issuesOf(v11Json((s) => (owner(s).doc = 'docs/a.md'), 3))).toEqual([
-      { path: `${OWNER}.doc`, message: 'só é permitido com formatVersion 4' },
+      { path: `${OWNER}.doc`, message: 'only allowed with formatVersion 4' },
     ]);
   });
 

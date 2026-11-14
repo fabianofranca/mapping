@@ -29,11 +29,11 @@ describe('Catálogo: Galeria e Experimentar com o tema da especialização', () 
     expect(warningsAndFills(drawing.root)).toContain('#6750A4');
   });
 
-  it('o exemplo "Com ícone" não avisa "ícone desconhecido"', () => {
+  it('o exemplo "Com ícone" não avisa "unknown icon"', () => {
     const example = button.examples.find((e) => /ícone/i.test(e.name))!;
     expect(example).toBeDefined();
     const drawing = exampleDrawing(catalog, button, example, approximateMeasurer)!;
-    expect(drawing.warnings.filter((w) => /ícone desconhecido/.test(w.text))).toEqual([]);
+    expect(drawing.warnings.filter((w) => /unknown icon/.test(w.text))).toEqual([]);
   });
 
   it('o Experimentar (drawEntry) também usa o tema', () => {

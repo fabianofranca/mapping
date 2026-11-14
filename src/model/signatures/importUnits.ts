@@ -6,19 +6,19 @@ import type { Signature, SignatureParam } from './types';
 
 export type { Models };
 
-// As unidades do importador (etapa #1079, decisões 5 e 7): o que a ficha tem que pode virar um
-// campo (um parâmetro, ou um parâmetro da fábrica ou do `expand` de um parâmetro composto) e a
-// regra que diz o que cada uma vira. Puro.
+// The importer units (stage #1079, decisions 5 and 7): what the sheet has that can become a
+// field (a parameter, or a parameter of the factory or of the `expand` of a composite parameter)
+// and the rule that says what each one becomes. Pure.
 
-/** Uma unidade de ligação: um parâmetro, ou um argumento da fábrica de um composto. */
+/** A binding unit: a parameter, or an argument of a composite's factory. */
 export interface Unit {
-  /** O que o `params` do `code` diz: o nome, `fábrica.nome` ou `#n`. */
+  /** What the `code`'s `params` says: the name, `factory.name` or `#n`. */
   readonly target: string;
-  /** O nome do parâmetro (o da fábrica, nos compostos). */
+  /** The parameter name (the factory's, in composites). */
   readonly name: string;
-  /** O parâmetro dono da fábrica (a chave do `calls`). */
+  /** The parameter that owns the factory (the `calls` key). */
   readonly owner?: string;
-  /** O símbolo da fábrica. */
+  /** The factory symbol. */
   readonly call?: string;
   readonly param: SignatureParam;
 }
@@ -44,7 +44,7 @@ function unitsOfParam(param: SignatureParam, target: string, models: Models): Un
   return expandUnits(param, callName(param), expansion.call, expansion.members);
 }
 
-/** As unidades da ficha, na ordem da fonte. */
+/** The sheet's units, in source order. */
 export function unitsOf(signature: Signature, models: Models): Unit[] {
   const units: Unit[] = [];
   let position = 0;
@@ -55,7 +55,7 @@ export function unitsOf(signature: Signature, models: Models): Unit[] {
   return units;
 }
 
-/** Um parâmetro da ficha achatado (a fábrica vira os seus argumentos), para comparar duas fichas. */
+/** A flattened sheet parameter (the factory becomes its arguments), to compare two sheets. */
 export interface FlatParam {
   readonly target: string;
   readonly param: SignatureParam;
@@ -74,7 +74,7 @@ export function flatParams(signature: Signature): FlatParam[] {
   return out;
 }
 
-/** O que a unidade vira: um campo (com o plano dele), nada de propósito, nada ou pendência. */
+/** What the unit becomes: a field (with its plan), deliberately nothing, nothing or pending. */
 export type Resolution =
   | { readonly kind: 'field'; readonly plan: FieldPlan }
   | { readonly kind: 'ignored' | 'none' | 'pending' };
@@ -83,18 +83,18 @@ export interface FieldPlan {
   readonly type: 'string' | 'number' | 'enum';
   readonly options?: readonly string[];
   readonly suggestions?: readonly string[];
-  /** O molde do valor (`{value}.dp`), para o `formats` do `code`. */
+  /** The value template (`{value}.dp`), for the `code`'s `formats`. */
   readonly format?: string;
-  /** O `code.values` do campo: opção → texto no código. */
+  /** The field's `code.values`: option → text in the code. */
   readonly values?: Readonly<Record<string, string>>;
-  /** O `sources[].values` do campo, quando o alvo é um sistema: texto na fonte → opção. */
+  /** The field's `sources[].values`, when the target is a system: text in the source → option. */
   readonly sourceValues?: Readonly<Record<string, string>>;
 }
 
-/** O que o resolvedor lê da biblioteca: os modelos e o campo de um `like`. */
+/** What the resolver reads from the library: the models and the field of a `like`. */
 export interface ResolveContext {
   readonly models: Models;
-  /** O campo `<tipo>.<campo>` e o que ele tem no alvo (`code.values` ou `sources[].values`). */
+  /** The `<type>.<field>` field and what it has on the target (`code.values` or `sources[].values`). */
   readonly like: (ref: string) => FieldPlan | undefined;
 }
 
@@ -170,7 +170,7 @@ function booleanOptions(models: Models): readonly string[] {
     : DEFAULT_BOOLEAN;
 }
 
-/** A regra da decisão 5; o modelo de campo da biblioteca tem precedência. */
+/** The rule of decision 5; the library's field model takes precedence. */
 export function resolveUnit(unit: Unit, context: ResolveContext): Resolution {
   const { param } = unit;
   if (NO_FIELD_ROLES.has(param.role)) return { kind: 'none' };
@@ -181,7 +181,7 @@ export function resolveUnit(unit: Unit, context: ResolveContext): Resolution {
   return param.role === 'slot' ? { kind: 'none' } : fromKind(param, context.models);
 }
 
-/** O padrão literal da ficha no tipo do campo; `undefined` quando não dá. */
+/** The sheet's literal default in the field's type; `undefined` when it does not fit. */
 export function defaultFor(
   param: SignatureParam,
   plan: FieldPlan,

@@ -1,8 +1,8 @@
 /**
- * Recorte ampliado de um quadro (A3 da etapa "componentes fiéis"): o traço `outside` (e metade do
- * `center`) e a sombra do próprio quadro, e de filhos que passam da caixa só por traço ou sombra,
- * entram no recorte. O conteúdo (formas e texto) continua recortado na caixa: um filho que passa
- * da caixa pelo conteúdo não alarga o recorte além do que o traço e a sombra dele alcançam.
+ * Extended clip of a frame (A3 of the "faithful components" stage): the `outside` stroke (and half of the
+ * `center` one) and the shadow of the frame itself, and of children that go past the box only by stroke or shadow,
+ * enter the clip. The content (shapes and text) stays clipped to the box: a child that goes past
+ * the box by its content does not widen the clip beyond what its stroke and shadow reach.
  */
 import {
   type ClipBox,
@@ -30,15 +30,15 @@ function maxExtent(a: Extent, b: Extent): Extent {
   };
 }
 
-/** Quanto a largura do traço passa do contorno: `outside` toda, `center` metade, `inside` nada. */
+/** How far the stroke width goes past the outline: `outside` all of it, `center` half, `inside` none. */
 function bandOf(stroke: Stroke): number {
   if (stroke.align === 'outside') return stroke.width;
   return stroke.align === 'center' ? stroke.width / 2 : 0;
 }
 
 /**
- * Quanto o traço sai da caixa: o `offset` (o contorno afastado da forma) mais `outside` o traço
- * todo, `center` metade, `inside` nada.
+ * How far the stroke leaves the box: the `offset` (the outline moved away from the shape) plus `outside` the whole
+ * stroke, `center` half, `inside` nothing.
  */
 function strokeExtent(stroke: Stroke | undefined): Extent {
   if (!stroke || stroke.width <= 0) return NONE;
@@ -55,8 +55,8 @@ function strokeExtent(stroke: Stroke | undefined): Extent {
 }
 
 /**
- * Quanto as sombras externas saem da caixa, por lado: o `blur`, o `spread` (cresce a forma, ou
- * encolhe, se negativo) e o deslocamento de cada uma; vale a que passa mais.
+ * How far the outer shadows leave the box, per side: the `blur`, the `spread` (grows the shape, or
+ * shrinks it, if negative) and the offset of each one; the one that goes furthest wins.
  */
 function shadowExtent(node: SceneNode): Extent {
   let out = NONE;
@@ -82,7 +82,7 @@ function isNone(e: Extent): boolean {
   return e.left <= 0 && e.top <= 0 && e.right <= 0 && e.bottom <= 0;
 }
 
-/** A caixa que contém o retângulo `local` do nó depois da `rotation` (e da escala e translação). */
+/** The box that contains the node's `local` rectangle after the `rotation` (and the scale and translation). */
 function boxOfLocal(node: SceneNode, local: ClipBox, ox: number, oy: number): ClipBox {
   const [a, b, c, d, e, f] = nodeMatrix(node);
   const xs: number[] = [];
@@ -101,15 +101,15 @@ function boxOfLocal(node: SceneNode, local: ClipBox, ox: number, oy: number): Cl
   return { x: x0, y: y0, width: Math.max(...xs) - x0, height: Math.max(...ys) - y0 };
 }
 
-/** O mesmo afastamento nos quatro lados (o maior): a extensão de um nó girado, sem lado certo. */
+/** The same offset on the four sides (the largest): the extent of a rotated node, with no right side. */
 function isotropic(e: Extent): Extent {
   const all = Math.max(e.left, e.top, e.right, e.bottom);
   return { left: all, top: all, right: all, bottom: all };
 }
 
 /**
- * O que os descendentes de um quadro girado alcançam só por traço ou sombra, sem lado: o maior
- * afastamento da subárvore (quadros com recorte entram pelo próprio recorte ampliado).
+ * What the descendants of a rotated frame reach only by stroke or shadow, with no side: the largest
+ * offset in the subtree (frames with a clip enter through their own extended clip).
  */
 function deepExtent(node: SceneNode): Extent {
   if (node.type !== 'frame' && node.type !== 'group') return NONE;
@@ -133,7 +133,7 @@ function deepExtent(node: SceneNode): Extent {
   return out;
 }
 
-/** Retângulo do nó no espaço do quadro que recorta; com `rotation`, a caixa do retângulo girado. */
+/** Rectangle of the node in the space of the clipping frame; with `rotation`, the box of the rotated rectangle. */
 function rectOf(node: SceneNode, ox: number, oy: number): ClipBox {
   if (node.rotation)
     return boxOfLocal(
@@ -176,7 +176,7 @@ function union(a: ClipBox, b: ClipBox): ClipBox {
   return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
 }
 
-/** A região que um descendente alcança no espaço do quadro e até onde ela pode crescer. */
+/** The region a descendant reaches in the clipping frame's space and how far it can grow. */
 function reach(
   child: SceneNode,
   ox: number,
@@ -191,7 +191,7 @@ function reach(
       right: Math.max(0, c.x + c.width - child.width),
       bottom: Math.max(0, c.y + c.height - child.height),
     };
-    // Girado, o recorte ampliado (no espaço local do quadro) vira a caixa dele depois do giro.
+    // Rotated, the extended clip (in the frame's local space) becomes its box after the rotation.
     if (child.rotation)
       return { region: boxOfLocal(child, c, ox, oy), limit: isotropic(overhang) };
     return {
@@ -200,20 +200,20 @@ function reach(
     };
   }
   const own = extentOf(child);
-  // Girado, os lados do traço e da sombra giram: vale o maior em volta, com o que há dentro dele.
+  // Rotated, the sides of the stroke and shadow rotate: the largest around counts, with what is inside it.
   const e = child.rotation ? isotropic(maxExtent(own, rotatedInside(child))) : own;
   return isNone(e) ? null : { region: grow(rect, e), limit: e };
 }
 
-/** O que há dentro de um filho girado (quadro que recorta não conta: o recorte vale por ele). */
+/** What is inside a rotated child (a clipping frame does not count: the clip stands for it). */
 function rotatedInside(child: SceneNode): Extent {
   return child.type === 'frame' && child.clip ? NONE : deepExtent(child);
 }
 
 /**
- * Soma ao recorte o que os descendentes alcançam só por traço ou sombra: a região deles
- * (caixa + extensão) limitada à caixa do quadro + a mesma extensão. Não desce em quadro que já
- * recorta: o recorte ampliado dele (ou a caixa) conta como o próprio descendente.
+ * Adds to the clip what the descendants reach only by stroke or shadow: their region
+ * (box + extent) limited to the frame's box + the same extent. Does not descend into a frame that
+ * already clips: its extended clip (or the box) counts as the descendant itself.
  */
 function addDescendants(
   node: FrameNode,
@@ -225,7 +225,7 @@ function addDescendants(
   let out = acc;
   for (const child of node.children) {
     if (!child.visible) continue;
-    // Quadro girado sem recorte: o que há dentro dele gira e não é seguido (só a caixa dele conta).
+    // Rotated frame without a clip: what is inside it rotates and is not followed (only its box counts).
     if (child.type === 'frame' && !child.clip && !child.rotation) {
       const at = rectOf(child, ox, oy);
       out = addDescendants(child, box, at.x, at.y, out);
@@ -238,8 +238,8 @@ function addDescendants(
 }
 
 /**
- * O recorte ampliado de um quadro com `clip`, ou `undefined` quando o recorte é a própria
- * caixa (nada sai dela por traço ou sombra).
+ * The extended clip of a frame with `clip`, or `undefined` when the clip is the box
+ * itself (nothing leaves it by stroke or shadow).
  */
 export function clipBoxOf(frame: FrameNode): ClipBox | undefined {
   const box: ClipBox = { x: 0, y: 0, width: frame.width, height: frame.height };

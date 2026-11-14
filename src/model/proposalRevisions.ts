@@ -1,14 +1,14 @@
 import type { Change, Proposal, ProposalRevision, RevisedPriorState } from './proposal';
 import type { JsonValue } from './types';
 
-// Leitura da marca "Revisada" (etapa #644, decisão 5): funções puras sobre `Proposal.revisions`
-// para a interface e o MCP. A marca de uma mudança é a revisão mais nova que a cita.
+// Reading the "Revised" mark (stage #644, decision 5): pure functions over `Proposal.revisions`
+// for the interface and the MCP. A change's mark is the newest revision that cites it.
 
 export interface RevisionMark {
-  /** `changed`: o agente trocou a mudança; `added`: ela entrou numa revisão. */
+  /** `changed`: the agent replaced the change; `added`: it came in with a revision. */
   readonly kind: 'changed' | 'added';
   readonly at: string;
-  /** Só em `changed`: o `to` e a decisão de antes dessa revisão. */
+  /** Only in `changed`: the `to` and the decision from before that revision. */
   readonly previous?: { readonly to: JsonValue; readonly state: RevisedPriorState };
 }
 
@@ -21,7 +21,7 @@ interface Cached {
 
 const cache = new WeakMap<readonly ProposalRevision[], Cached>();
 
-/** Marca de cada id citado, a revisão mais nova vence (as revisões vêm da mais antiga). */
+/** Mark of each cited id, the newest revision wins (revisions come oldest first). */
 function collectMarks(
   revisions: readonly ProposalRevision[],
   changes: readonly Change[],
@@ -44,7 +44,7 @@ function collectMarks(
   return marks;
 }
 
-/** Marcas de todas as mudanças que ainda estão na proposta (memoizado pelas revisões). */
+/** Marks of all the changes still in the proposal (memoized by the revisions). */
 export function revisionMarks(p: Proposal): ReadonlyMap<string, RevisionMark> {
   const revisions = p.revisions;
   if (revisions === undefined || revisions.length === 0) return EMPTY;
@@ -55,14 +55,14 @@ export function revisionMarks(p: Proposal): ReadonlyMap<string, RevisionMark> {
   return marks;
 }
 
-/** A marca da mudança, ou `null` se nenhuma revisão a cita ou ela já não está em `changes`. */
+/** The change's mark, or `null` if no revision cites it or it is no longer in `changes`. */
 export function revisionMark(p: Proposal, changeId: string): RevisionMark | null {
   return revisionMarks(p).get(changeId) ?? null;
 }
 
 /**
- * Ids (na ordem de `changes`) com marca e sem decisão: a marca "Revisada" só aparece sem
- * decisão; decidir tira da tela e limpar a decisão traz de volta.
+ * Ids (in `changes` order) with a mark and no decision: the "Revised" mark only shows without a
+ * decision; deciding removes it from the screen and clearing the decision brings it back.
  */
 export function visibleRevisedChanges(p: Proposal): string[] {
   const marks = revisionMarks(p);
@@ -72,7 +72,7 @@ export function visibleRevisedChanges(p: Proposal): string[] {
     .map((c) => c.id);
 }
 
-/** Resumo da revisão mais nova (quantas mudanças trocou, acrescentou e retirou), ou `null`. */
+/** Summary of the newest revision (how many changes it replaced, added and dropped), or `null`. */
 export function latestRevisionSummary(
   p: Proposal,
 ): { at: string; changed: number; added: number; dropped: number } | null {
@@ -86,7 +86,7 @@ export function latestRevisionSummary(
   };
 }
 
-/** A mudança retirada de onde a nota (que subiu ao nível da proposta) veio, ou `null`. */
+/** The dropped change the note (which moved up to the proposal level) came from, or `null`. */
 export function droppedNoteOrigin(p: Proposal, noteId: string): Change | null {
   for (const r of p.revisions ?? []) {
     const found = r.dropped.find((d) => d.notes.includes(noteId));
@@ -96,9 +96,9 @@ export function droppedNoteOrigin(p: Proposal, noteId: string): Change | null {
 }
 
 /**
- * Ids das mudanças que uma revisão que a pessoa ainda não viu trocou ou acrescentou: as
- * revisões de `current` além das que `seen` já tinha. Base da guarda da decisão na app
- * (etapa #644, decisão 8): decidir uma delas é recusado até a sessão adotar a versão nova.
+ * Ids of the changes that a revision the person has not seen yet replaced or added: the
+ * revisions of `current` beyond those `seen` already had. Basis of the decision guard in the app
+ * (stage #644, decision 8): deciding one of them is refused until the session adopts the new version.
  */
 export function unseenRevisedIds(seen: Proposal, current: Proposal): ReadonlySet<string> {
   const known = seen.revisions?.length ?? 0;
@@ -115,8 +115,8 @@ export function unseenRevisedIds(seen: Proposal, current: Proposal): ReadonlySet
 }
 
 /**
- * A revisão e a mudança retirada de onde a nota de uma mudança que já não existe saiu (ela
- * sobe ao nível da proposta), ou `null` se a mudança nunca foi retirada.
+ * The revision and dropped change that the note of a change that no longer exists came from (it
+ * moves up to the proposal level), or `null` if the change was never dropped.
  */
 export function droppedEntryOf(
   p: Proposal,
@@ -131,7 +131,8 @@ export function droppedEntryOf(
   return null;
 }
 
-/** Acrescenta o id da nota às notas da mudança retirada (a origem de "Da mudança retirada"). */
+/** Adds the note id to the dropped change's notes (the origin of "From the dropped change"). */
+
 export function withDroppedNote(
   p: Proposal,
   where: { revisionIndex: number; droppedIndex: number },

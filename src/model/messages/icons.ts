@@ -1,22 +1,22 @@
-// Mensagens do conjunto de ícones (`icons.ts`, formato `mapping-icons`): código → modelo do texto
-// pt-BR de hoje, com `{parâmetros}`. O prefixo é `iconsFile.` para não colidir com os
-// `icons.*` escritos à mão (carga dos componentes). O JSON inválido usa `library.invalidJson`.
+// Messages of the icon set (`icons.ts`, `mapping-icons` format): code → template of today's
+// pt-BR text, with `{parameters}`. The prefix is `iconsFile.` so as not to collide with the
+// hand-written `icons.*` (loading of the components). Invalid JSON uses `library.invalidJson`.
 
 export const iconsFileMessages = {
-  'iconsFile.expectedObject': 'esperava um objeto',
-  'iconsFile.expectedObjectShort': 'esperava objeto',
-  'iconsFile.expectedViewBox': 'esperava [largura, altura] com números maiores que 0',
-  'iconsFile.expectedPaint': 'esperava true, false ou uma cor (texto)',
-  'iconsFile.expectedOneOf': 'esperava um de: {options}',
-  'iconsFile.expectedWidth': 'esperava número maior ou igual a 0',
-  'iconsFile.unknownKey': 'chave desconhecida: {key}',
-  'iconsFile.expectedPathData': 'esperava os dados do caminho (texto)',
-  'iconsFile.expectedPaths': 'esperava lista não vazia de caminhos',
-  'iconsFile.formatInvalid': 'deve ser "{format}"',
-  'iconsFile.formatVersionInvalid': 'deve ser 1 ou 2',
-  'iconsFile.v2Only': 'só é permitido com formatVersion 2',
-  'iconsFile.expectedBoolean': 'esperava true ou false',
-  'iconsFile.required': 'campo obrigatório',
-  'iconsFile.expectedIcons': 'esperava um objeto com ao menos um ícone',
-  'iconsFile.nameInvalid': 'nome inválido; use [a-z0-9][a-z0-9-_]*',
+  'iconsFile.expectedObject': 'expected an object',
+  'iconsFile.expectedObjectShort': 'expected object',
+  'iconsFile.expectedViewBox': 'expected [width, height] with numbers greater than 0',
+  'iconsFile.expectedPaint': 'expected true, false or a color (text)',
+  'iconsFile.expectedOneOf': 'expected one of: {options}',
+  'iconsFile.expectedWidth': 'expected a number greater than or equal to 0',
+  'iconsFile.unknownKey': 'unknown key: {key}',
+  'iconsFile.expectedPathData': 'expected the path data (text)',
+  'iconsFile.expectedPaths': 'expected a non-empty list of paths',
+  'iconsFile.formatInvalid': 'must be "{format}"',
+  'iconsFile.formatVersionInvalid': 'must be 1 or 2',
+  'iconsFile.v2Only': 'only allowed with formatVersion 2',
+  'iconsFile.expectedBoolean': 'expected true or false',
+  'iconsFile.required': 'required field',
+  'iconsFile.expectedIcons': 'expected an object with at least one icon',
+  'iconsFile.nameInvalid': 'invalid name; use [a-z0-9][a-z0-9-_]*',
 } as const;

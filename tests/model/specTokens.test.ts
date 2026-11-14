@@ -59,7 +59,7 @@ describe('formatVersion 15: tokens', () => {
     const r = parseSpec(spec(bad));
     expect(r.ok).toBe(false);
     const issue = (r.ok ? [] : r.issues).find((i) => i.path === 'tokens.extra');
-    expect(issue?.message).toBe('chave desconhecida: extra');
+    expect(issue?.message).toBe('unknown key: extra');
   });
 
   it('modes vazio e modo repetido falham', () => {
@@ -79,7 +79,7 @@ describe('formatVersion 15: tokens', () => {
   it('tokens numa especialização v14 falha com a mensagem de versão', () => {
     expect(issuesOf(spec(GOOD, 14))).toContainEqual({
       path: 'tokens',
-      message: 'só é permitido com formatVersion 15',
+      message: 'only allowed with formatVersion 15',
     });
   });
 });

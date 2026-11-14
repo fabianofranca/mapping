@@ -245,12 +245,12 @@ describe('instantiate: botão', () => {
     expect(names({ label: '  ', icon: '' })).toEqual(['not']);
   });
 
-  it('avisa uma vez de cada campo não informado', () => {
+  it('avisa uma vez de cada field not provided', () => {
     const { warnings } = run(button, { label: 'A' }, BOX);
-    expect(warnings).toContain('campo não informado: variant');
-    expect(warnings).toContain('campo não informado: icon');
-    expect(warnings.filter((w) => w === 'campo não informado: variant')).toHaveLength(1);
-    expect(warnings).not.toContain('campo não informado: label');
+    expect(warnings).toContain('field not provided: variant');
+    expect(warnings).toContain('field not provided: icon');
+    expect(warnings.filter((w) => w === 'field not provided: variant')).toHaveLength(1);
+    expect(warnings).not.toContain('field not provided: label');
   });
 });
 
@@ -332,7 +332,7 @@ describe('instantiate: cartão', () => {
       { title: 'Título' },
       { x: 0, y: 0, width: 300, height: 40 },
     );
-    expect(warnings).toContain('conteúdo maior que a caixa: card');
+    expect(warnings).toContain('content larger than the box: card');
   });
 
   it('overflowWarnings lista exatamente os avisos de "não cabe", sem os outros', () => {
@@ -341,7 +341,7 @@ describe('instantiate: cartão', () => {
       {},
       { x: 0, y: 0, width: 300, height: 40 },
     );
-    expect(overflowWarnings).toEqual(['conteúdo maior que a caixa: card']);
+    expect(overflowWarnings).toEqual(['content larger than the box: card']);
     expect(warnings.length).toBeGreaterThan(overflowWarnings?.length ?? 0);
   });
 
@@ -447,7 +447,7 @@ describe('instantiate: tamanhos, estilo e ids', () => {
     expect(warnings).toEqual([]);
   });
 
-  it('hug em linha soma filhos e espaços, e fill dentro de hug vira 0 com aviso', () => {
+  it('hug em linha soma filhos e espaços, e fill inside hug becomes 0 com aviso', () => {
     const tpl: FrameTemplate = {
       type: 'frame',
       layout: { type: 'none' },
@@ -469,7 +469,7 @@ describe('instantiate: tamanhos, estilo e ids', () => {
     const group = child(root, 0);
     expect([group.width, group.height]).toEqual([10 + 0 + 20 + 8, 14]);
     expect(child(group, 1).width).toBe(0);
-    expect(warnings.filter((w) => w === 'fill dentro de hug vira 0')).toHaveLength(1);
+    expect(warnings.filter((w) => w === 'fill inside hug becomes 0')).toHaveLength(1);
   });
 
   it('visible falso remove o nó e não conta no layout', () => {
@@ -568,14 +568,14 @@ describe('instantiate: tamanhos, estilo e ids', () => {
     ]);
   });
 
-  it('avisa ícone esticado quando a escala difere nos eixos', () => {
+  it('avisa stretched icon quando a escala difere nos eixos', () => {
     const tpl: FrameTemplate = {
       type: 'frame',
       layout: { type: 'none' },
       children: [{ type: 'path', d: 'M0 0', viewBox: [10, 10], width: 20, height: 10 }],
     };
     const { warnings } = run(tpl, {}, { x: 0, y: 0, width: 50, height: 50 });
-    expect(warnings).toEqual(['ícone esticado: escala diferente nos dois eixos']);
+    expect(warnings).toEqual(['stretched icon: different scale on the two axes']);
   });
 
   it('texto com largura fixa e altura hug mede com quebra de linha', () => {
@@ -712,7 +712,7 @@ describe('instantiate: slotContent e measureComponent', () => {
     const result = measure(columnWithSlot, { width: null, height: null });
     expect(result.height).toBeCloseTo(textHeight);
     expect(result.width).toBeCloseTo(textWidth);
-    expect(result.warnings).toContain('fill dentro de hug vira 0');
+    expect(result.warnings).toContain('fill inside hug becomes 0');
   });
 
   it('com slotContent o slot fill vale o conteúdo dos filhos, sem aviso', () => {
@@ -723,7 +723,7 @@ describe('instantiate: slotContent e measureComponent', () => {
     );
     expect(result.height).toBeCloseTo(textHeight + 20);
     expect(result.width).toBeCloseTo(90);
-    expect(result.warnings).not.toContain('fill dentro de hug vira 0');
+    expect(result.warnings).not.toContain('fill inside hug becomes 0');
   });
 
   it('slot hug vale o slotContent do eixo (e 0 sem ele)', () => {
@@ -1015,14 +1015,14 @@ describe('$lines: o número de linhas medidas de um nó text', () => {
       { x: 0, y: 0, width: 200, height: 100 },
       { measure: approximateMeasurer },
     );
-    expect(result.warnings).toContain('$lines instável: msg');
+    expect(result.warnings).toContain('$lines unstable: msg');
     const stable = instantiate(
       c,
       { msg: ONE },
       { x: 0, y: 0, width: 200, height: 100 },
       { measure: approximateMeasurer },
     );
-    expect(stable.warnings).not.toContain('$lines instável: msg');
+    expect(stable.warnings).not.toContain('$lines unstable: msg');
   });
 
   it('measureComponent também avisa "$lines instável" (é o caminho do hug e do ajuste)', () => {
@@ -1051,8 +1051,8 @@ describe('$lines: o número de linhas medidas de um nó text', () => {
         { width: 200, height: null },
         { measure: approximateMeasurer },
       ).warnings;
-    expect(measure(THREE)).toContain('$lines instável: msg');
-    expect(measure(ONE)).not.toContain('$lines instável: msg');
+    expect(measure(THREE)).toContain('$lines unstable: msg');
+    expect(measure(ONE)).not.toContain('$lines unstable: msg');
   });
 
   it('sem $lines no template a passagem é uma só (o medidor é chamado as mesmas vezes)', () => {
@@ -1202,7 +1202,7 @@ describe('instantiate: none alinhado (align vertical, justify horizontal)', () =
   });
 });
 
-describe('instantiate: aviso de conteúdo maior que a caixa no none (#1093)', () => {
+describe('instantiate: aviso de content larger than the box no none (#1093)', () => {
   const chip = (rootLayout: 'row' | 'none'): FrameTemplate => ({
     type: 'frame',
     name: 'raiz',
@@ -1219,7 +1219,7 @@ describe('instantiate: aviso de conteúdo maior que a caixa no none (#1093)', ()
     ],
   });
   const SMALL: Box = { x: 0, y: 0, width: 58, height: 40 };
-  const TOO_BIG = 'conteúdo maior que a caixa: raiz';
+  const TOO_BIG = 'content larger than the box: raiz';
 
   it('raiz row avisa (87 de conteúdo numa caixa de 58)', () => {
     const result = run4(chip('row'), {}, SMALL);
@@ -1334,7 +1334,7 @@ describe('instantiate: o button real da Material 3 no none (#1093)', () => {
       { x: 0, y: 0, width, height },
       instantiateOptions(catalog, 'light'),
     );
-  const TOO_BIG = 'conteúdo maior que a caixa: button';
+  const TOO_BIG = 'content larger than the box: button';
 
   // Em 58×40 o motor NÃO avisa: o rótulo da biblioteca tem `maxWidth` = largura − 48, então o
   // texto é cortado em 10 px e o quadro `conteúdo` fecha em 58 (ver o retorno da fase L2).

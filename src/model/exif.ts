@@ -1,6 +1,6 @@
 /**
- * Leitor mínimo da orientação EXIF (tag 0x0112) de um JPEG.
- * Só olha o IFD0 do segmento APP1 "Exif". Qualquer coisa inesperada → 1 (normal).
+ * Minimal reader of the EXIF orientation (tag 0x0112) of a JPEG.
+ * It only looks at the IFD0 of the APP1 "Exif" segment. Anything unexpected → 1 (normal).
  */
 export type ExifOrientation = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
@@ -16,7 +16,7 @@ export function readExifOrientation(buffer: ArrayBuffer): ExifOrientation {
   let offset = 2;
   while (offset + 4 <= view.byteLength) {
     const marker = view.getUint16(offset);
-    // Fim dos metadados: início da imagem comprimida ou marcador inválido.
+    // End of the metadata: start of the compressed image or an invalid marker.
     if (marker === 0xffda || (marker & 0xff00) !== 0xff00) return 1;
     const length = view.getUint16(offset + 2);
     if (marker === 0xffe1) {

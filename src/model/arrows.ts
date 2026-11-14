@@ -22,21 +22,22 @@ import {
   type Rect,
 } from './types';
 
-// Setas (etapa Marcações espaciais, ME4; decisão 14): uma seta é uma marcação que aponta. Liga
-// duas MARCAÇÕES (`from`, `to`; nunca outra seta nem um container), tem rota (`points`) e estilo
-// próprios e pode ter anotações por camada (`annotations[].markingId` = id da seta; os ids das
-// setas e os das marcações dividem o mesmo espaço). Fica fora da árvore de pertencimento: não
-// tem `rect`, container nem pai, e nada a carrega num arrasto. Funções puras e imutáveis.
+// Arrows (Spatial markings stage, ME4; decision 14): an arrow is a marking that points. It links
+// two MARKINGS (`from`, `to`; never another arrow or a container), has its own route (`points`)
+// and style and can have annotations per layer (`annotations[].markingId` = the arrow's id; the
+// ids of arrows and those of markings share the same space). It stays outside the ownership
+// tree: it has no `rect`, container or parent, and nothing carries it along in a drag. Pure,
+// immutable functions.
 
-/** Ponta da seta: a origem (`from`) ou o destino (`to`). */
+/** Arrow endpoint: the origin (`from`) or the destination (`to`). */
 export type ArrowEnd = 'from' | 'to';
 
 // ---------------------------------------------------------------------------
-// Consultas
+// Queries
 
 /**
- * Setas presas à marcação, na ordem do array: as que saem dela (`outgoing`, ela é a origem) e as
- * que chegam nela (`incoming`, ela é o destino).
+ * Arrows attached to the marking, in array order: those that leave it (`outgoing`, it is the
+ * origin) and those that arrive at it (`incoming`, it is the destination).
  */
 export function arrowsOf(
   p: Project,
@@ -49,18 +50,21 @@ export function arrowsOf(
   };
 }
 
-/** Uma seta presa à marcação, com o lado em que ela está e a marcação da outra ponta. */
+/** An arrow attached to the marking, with the side it is on and the marking at the other end. */
 export interface ArrowLink {
   readonly arrow: Arrow;
-  /** `out`: a marcação é a origem (a seta sai dela); `in`: é o destino (a seta chega nela). */
+  /**
+   * `out`: the marking is the origin (the arrow leaves it); `in`: it is the destination (the arrow
+   * arrives at it).
+   */
   readonly direction: 'out' | 'in';
-  /** A marcação da outra ponta. */
+  /** The marking at the other end. */
   readonly otherId: string;
 }
 
 /**
- * As setas presas à marcação, para a seção "Ligado por seta": primeiro as que saem, depois as que
- * chegam, cada grupo na ordem de `arrows` do projeto.
+ * The arrows attached to the marking, for the "Linked by arrow" section: first those that leave,
+ * then those that arrive, each group in the project's `arrows` order.
  */
 export function arrowLinksOf(p: Project, markingId: string): ArrowLink[] {
   const { outgoing, incoming } = arrowsOf(p, markingId);
@@ -75,17 +79,17 @@ export function arrowLinksOf(p: Project, markingId: string): ArrowLink[] {
 }
 
 /**
- * Container onde a seta aparece na revisão e nas listas: o da marcação de origem; `null` = o
- * canvas (origem do canvas ou inexistente).
+ * Container where the arrow appears in the review and in the lists: the origin marking's; `null`
+ * = the canvas (origin on the canvas or nonexistent).
  */
 export function arrowContainerId(p: Project, arrow: Pick<Arrow, 'from'>): string | null {
   return projectIndex(p).markings.get(arrow.from)?.containerId ?? null;
 }
 
 /**
- * Espaço dos `points` da seta, derivado das duas pontas e nunca gravado (decisão (d)): o do
- * container quando as duas marcações são do mesmo container; em qualquer outro caso (containers
- * diferentes, uma ponta do canvas ou flutuante, ponta inexistente), o canvas.
+ * Space of the arrow's `points`, derived from the two endpoints and never saved (decision (d)):
+ * the container's when both markings belong to the same container; in any other case (different
+ * containers, an endpoint on the canvas or floating, a nonexistent endpoint), the canvas.
  */
 export function arrowPointsSpace(p: Project, arrow: Pick<Arrow, 'from' | 'to'>): Space {
   const index = projectIndex(p);
@@ -99,9 +103,9 @@ export function arrowPointsSpace(p: Project, arrow: Pick<Arrow, 'from' | 'to'>):
 }
 
 // ---------------------------------------------------------------------------
-// Rota
+// Route
 
-/** Ponto médio do lado do retângulo. */
+/** Midpoint of the rectangle's side. */
 export function sideAnchor(rect: Rect, side: ArrowSide): ArrowPoint {
   switch (side) {
     case 'top':
@@ -116,8 +120,8 @@ export function sideAnchor(rect: Rect, side: ArrowSide): ArrowPoint {
 }
 
 /**
- * Lado automático: o da caixa voltado para `target`, pelo eixo dominante do vetor centro → alvo.
- * Empate (e alvo no centro) fica no eixo horizontal.
+ * Automatic side: the box's side facing `target`, by the dominant axis of the center → target
+ * vector. A tie (and a target at the center) goes to the horizontal axis.
  */
 export function autoArrowSide(rect: Rect, target: ArrowPoint): ArrowSide {
   const dx = target.x - (rect.x + rect.width / 2);
@@ -127,24 +131,24 @@ export function autoArrowSide(rect: Rect, target: ArrowPoint): ArrowSide {
 }
 
 /**
- * Um segmento do meio de uma seta `elbow` que a pessoa pode mover em paralelo ("pista"): `axis`
- * é a coordenada que ele fixa (`x` num segmento vertical, `y` num horizontal) e `value` o valor
- * dela, em unidades do canvas.
+ * A middle segment of an `elbow` arrow that the person can move in parallel ("lane"): `axis` is
+ * the coordinate it fixes (`x` on a vertical segment, `y` on a horizontal one) and `value` its
+ * value, in canvas units.
  */
 export interface ElbowLane {
   readonly axis: 'x' | 'y';
   readonly value: number;
 }
 
-/** A polilinha da seta em unidades do canvas e os lados em que ela prende nas marcações. */
+/** The arrow's polyline in canvas units and the sides on which it attaches to the markings. */
 export interface ArrowRoute {
-  /** Âncora de saída, pontos de passagem (já no canvas) e âncora de chegada. */
+  /** Exit anchor, waypoints (already on the canvas) and arrival anchor. */
   readonly points: readonly ArrowPoint[];
   readonly fromSide: ArrowSide;
   readonly toSide: ArrowSide;
   /**
-   * Só no `elbow`: os segmentos do meio, na ordem do traço. A pista `j` é o trecho entre
-   * `points[j + 1]` e `points[j + 2]`. Vazio nos outros estilos e no canto de uma dobra só.
+   * `elbow` only: the middle segments, in stroke order. Lane `j` is the stretch between
+   * `points[j + 1]` and `points[j + 2]`. Empty in the other styles and in a single-bend corner.
    */
   readonly lanes: readonly ElbowLane[];
 }
@@ -153,7 +157,10 @@ function centerOf(rect: Rect): ArrowPoint {
   return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
 }
 
-/** Trecho mínimo (unidades do canvas) que o canto percorre ao sair e ao chegar perpendicular ao lado. */
+/**
+ * Minimum stretch (canvas units) the corner runs when leaving and arriving perpendicular to the
+ * side.
+ */
 export const ELBOW_STUB = 16;
 
 function sideNormal(side: ArrowSide): ArrowPoint {
@@ -172,21 +179,22 @@ function sideNormal(side: ArrowSide): ArrowPoint {
 const transpose = (pt: ArrowPoint): ArrowPoint => ({ x: pt.y, y: pt.x });
 
 /**
- * O roteador do canto (sem desvio de obstáculos): uma polilinha só de trechos horizontais e
- * verticais, em unidades do canvas.
+ * The corner router (without obstacle avoidance): a polyline made only of horizontal and
+ * vertical stretches, in canvas units.
  *
- * O traço é uma sequência de segmentos que alternam de direção. O primeiro sai da âncora `a`
- * perpendicular ao lado `fromSide` e o último chega na âncora `b` perpendicular ao `toSide`. Os
- * segmentos do meio ("pistas") são o que `points` controla: **cada ponto de passagem fixa um
- * segmento do meio**, na ordem do traço, e só conta a coordenada perpendicular ao segmento (o `x`
- * num segmento vertical, o `y` num horizontal; a outra é ignorada, e o gesto grava ali o meio do
- * segmento). Mover uma marcação então estica só o primeiro ou o último segmento.
+ * The stroke is a sequence of segments that alternate direction. The first leaves the anchor `a`
+ * perpendicular to the side `fromSide` and the last arrives at the anchor `b` perpendicular to
+ * `toSide`. The middle segments ("lanes") are what `points` controls: **each waypoint fixes one
+ * middle segment**, in stroke order, and only the coordinate perpendicular to the segment counts
+ * (the `x` on a vertical segment, the `y` on a horizontal one; the other is ignored, and the
+ * gesture stores the segment's middle there). Moving a marking then stretches only the first or
+ * the last segment.
  *
- * `points` só vale se a quantidade casa com os lados: ímpar quando o primeiro e o último segmento
- * são paralelos (os dois horizontais ou os dois verticais), par quando são perpendiculares. Do
- * contrário, e vazio, vale a rota padrão: a menor que sai e chega do lado certo, com um trecho
- * mínimo de `ELBOW_STUB` (uma pista no Z ou no C, nenhuma no L, três ou duas quando os lados não
- * deixam o caminho curto); ela segue as marcações.
+ * `points` is only valid if the count matches the sides: odd when the first and last segments
+ * are parallel (both horizontal or both vertical), even when they are perpendicular. Otherwise,
+ * and when empty, the default route applies: the shortest one that leaves and arrives at the
+ * right side, with a minimum stretch of `ELBOW_STUB` (one lane in the Z or C, none in the L,
+ * three or two when the sides do not allow a short path); it follows the markings.
  */
 function elbowRoute(
   a: ArrowPoint,
@@ -195,7 +203,7 @@ function elbowRoute(
   toSide: ArrowSide,
   given: readonly ArrowPoint[],
 ): { readonly points: ArrowPoint[]; readonly lanes: ElbowLane[] } {
-  // Trabalha com o primeiro segmento horizontal (transpõe x e y quando ele é vertical).
+  // Works with the first segment horizontal (transposes x and y when it is vertical).
   const swap = fromSide === 'top' || fromSide === 'bottom';
   const f = (pt: ArrowPoint): ArrowPoint => (swap ? transpose(pt) : pt);
   const A = f(a);
@@ -225,8 +233,8 @@ function elbowRoute(
     values = direct ? [] : [A.x + sx * ELBOW_STUB, B.y + ty * ELBOW_STUB];
   }
 
-  // Segmento i (1 a n): horizontal nos ímpares, vertical nos pares; `fixed` é a coordenada que ele
-  // fixa. Cada canto leva o `x` do vertical e o `y` do horizontal.
+  // Segment i (1 to n): horizontal on the odd ones, vertical on the even ones; `fixed` is the
+  // coordinate it fixes. Each corner takes the `x` of the vertical and the `y` of the horizontal.
   const n = values.length + 2;
   const fixed = (i: number): number => {
     if (i === 1) return A.y;
@@ -246,16 +254,16 @@ function elbowRoute(
 }
 
 /**
- * A rota completa da seta, **em unidades do canvas**, para o desenho e o hit-test: âncora de
- * saída, pontos de passagem (convertidos do espaço deles, `arrowPointsSpace`) e âncora de
- * chegada. A âncora é o ponto médio do lado; o lado `null` (automático) é o da caixa voltado
- * para o ponto seguinte (o primeiro ponto de passagem, ou o centro da outra ponta; na chegada, o
- * último ponto de passagem ou o centro da origem). `null` se uma ponta não existe.
+ * The arrow's complete route, **in canvas units**, for drawing and hit-testing: exit anchor,
+ * waypoints (converted from their space, `arrowPointsSpace`) and arrival anchor. The anchor is
+ * the midpoint of the side; the `null` (automatic) side is the box's side facing the next point
+ * (the first waypoint, or the center of the other endpoint; on arrival, the last waypoint or
+ * the center of the origin). `null` if an endpoint does not exist.
  *
- * `straight` e `curve` têm a mesma polilinha (a curva é só a suavização do desenho). O `elbow`
- * troca a polilinha pelo caminho ortogonal de `elbowRoute`, em que os pontos de passagem são
- * segmentos do meio; o lado automático dele olha só o centro da outra marcação (um ponto de
- * passagem fixa só uma coordenada, não aponta para lugar nenhum).
+ * `straight` and `curve` have the same polyline (the curve is only the drawing's smoothing). The
+ * `elbow` swaps the polyline for the orthogonal path from `elbowRoute`, in which the waypoints
+ * are middle segments; its automatic side looks only at the center of the other marking (a
+ * waypoint fixes only one coordinate, it does not point anywhere).
  */
 export function arrowRoute(p: Project, arrow: Arrow): ArrowRoute | null {
   const markings = projectIndex(p).markings;
@@ -279,9 +287,9 @@ export function arrowRoute(p: Project, arrow: Arrow): ArrowRoute | null {
 }
 
 // ---------------------------------------------------------------------------
-// Cascata (apagar marcação, container ou seleção leva as setas presas)
+// Cascade (deleting a marking, container or selection takes the attached arrows along)
 
-/** Ids das setas presas a alguma das marcações (como origem ou destino). */
+/** Ids of the arrows attached to any of the markings (as origin or destination). */
 export function arrowIdsAttachedTo(
   p: Project,
   markingIds: ReadonlySet<string>,
@@ -294,7 +302,10 @@ export function arrowIdsAttachedTo(
   return ids;
 }
 
-/** O projeto sem as setas de `arrowIds` e sem as anotações delas. Não confere a trava. */
+/**
+ * The project without the arrows in `arrowIds` and without their annotations. Does not check the
+ * lock.
+ */
 export function withoutArrows(p: Project, arrowIds: ReadonlySet<string>): Project {
   if (arrowIds.size === 0) return p;
   return {
@@ -305,11 +316,11 @@ export function withoutArrows(p: Project, arrowIds: ReadonlySet<string>): Projec
 }
 
 // ---------------------------------------------------------------------------
-// Operações
+// Operations
 
 /**
- * A dona de uma anotação existe: uma marcação ou uma seta (v13; os ids dividem o espaço).
- * Falha com `not-found`.
+ * The owner of an annotation exists: a marking or an arrow (v13; the ids share the space).
+ * Fails with `not-found`.
  */
 export function requireAnnotationOwner(p: Project, ownerId: string): void {
   const index = projectIndex(p);
@@ -335,24 +346,24 @@ function checkStyle(style: ArrowStyle): void {
 
 export interface NewArrowArgs {
   readonly id: string;
-  /** Marcação de origem. */
+  /** Origin marking. */
   readonly from: string;
-  /** Marcação de destino, diferente da origem. */
+  /** Destination marking, different from the origin. */
   readonly to: string;
-  /** Padrão: `curve`. */
+  /** Default: `curve`. */
   readonly style?: ArrowStyle;
   readonly name?: string | null;
-  /** `null` ou ausente = lado automático. */
+  /** `null` or absent = automatic side. */
   readonly fromSide?: ArrowSide | null;
   readonly toSide?: ArrowSide | null;
 }
 
 /**
- * Cria a seta entre duas marcações. As pontas precisam existir e ser marcações (nem outra
- * seta, `arrow-endpoint`; nem um container, que não está entre as marcações) e ser diferentes
- * (`arrow-self`); o id não pode repetir o de uma marcação nem o de outra seta. Nasce com a rota
- * padrão (`points: []`, só a pessoa traça pontos de passagem), destrancada. Duas setas iguais
- * são permitidas.
+ * Creates the arrow between two markings. The endpoints must exist and be markings (neither
+ * another arrow, `arrow-endpoint`; nor a container, which is not among the markings) and be
+ * different (`arrow-self`); the id must not repeat that of a marking or of another arrow. It
+ * starts with the default route (`points: []`, only the person draws waypoints), unlocked. Two
+ * equal arrows are allowed.
  */
 export function createArrow(p: Project, args: NewArrowArgs): Project {
   if (idInUse(p, args.id)) fail('duplicate-id', args.id);
@@ -380,8 +391,8 @@ export function createArrow(p: Project, args: NewArrowArgs): Project {
 }
 
 /**
- * Exclui a seta e as anotações dela (as vinculadas por `parentAnnotationId` são da mesma dona e
- * saem juntas). Falha com `locked` se a seta está trancada.
+ * Deletes the arrow and its annotations (those linked by `parentAnnotationId` belong to the same
+ * owner and go together). Fails with `locked` if the arrow is locked.
  */
 export function removeArrow(p: Project, arrowId: string): Project {
   findById(p.arrows, arrowId);
@@ -389,7 +400,9 @@ export function removeArrow(p: Project, arrowId: string): Project {
   return withoutArrows(p, new Set([arrowId]));
 }
 
-/** O que sai junto com a seta: as anotações dela e as referências de outras que quebrariam. */
+/**
+ * What goes along with the arrow: its annotations and the references from others that would break.
+ */
 export function arrowDeletionImpact(
   p: Project,
   arrowId: string,
@@ -402,10 +415,10 @@ export function arrowDeletionImpact(
 }
 
 /**
- * Troca a marcação de uma ponta e/ou o lado dela (`side` `null` = automático). Se o espaço dos
- * pontos de passagem muda com a troca (`arrowPointsSpace`), a rota padrão volta (`points`
- * apagado); a marcação nova não pode ser outra seta nem a outra ponta. Sem mudança devolve `p`
- * como está, sem conferir a trava; trancada, falha com `locked`.
+ * Changes the marking at an endpoint and/or its side (`side` `null` = automatic). If the space of
+ * the waypoints changes with the swap (`arrowPointsSpace`), the default route returns (`points`
+ * cleared); the new marking cannot be another arrow or the other endpoint. With no change it
+ * returns `p` as is, without checking the lock; when locked, it fails with `locked`.
  */
 export function setArrowEndpoint(
   p: Project,
@@ -440,9 +453,9 @@ function samePoints(a: readonly ArrowPoint[], b: readonly ArrowPoint[]): boolean
 }
 
 /**
- * Define os pontos de passagem (no espaço de `arrowPointsSpace`; `[]` volta à rota padrão).
- * Coordenadas finitas. Sem mudança devolve `p` como está, sem conferir a trava; trancada, falha
- * com `locked`.
+ * Sets the waypoints (in the space of `arrowPointsSpace`; `[]` goes back to the default route).
+ * Finite coordinates. With no change it returns `p` as is, without checking the lock; when
+ * locked, it fails with `locked`.
  */
 export function setArrowRoute(
   p: Project,
@@ -462,7 +475,10 @@ export function setArrowRoute(
   };
 }
 
-/** Estilo do traço (`straight`, `curve` ou `elbow`). Sem mudança devolve `p`; trancada, `locked`. */
+/**
+ * Stroke style (`straight`, `curve` or `elbow`). With no change it returns `p`; when locked,
+ * `locked`.
+ */
 export function setArrowStyle(p: Project, arrowId: string, style: ArrowStyle): Project {
   const arrow = findById(p.arrows, arrowId);
   checkStyle(style);
@@ -472,8 +488,8 @@ export function setArrowStyle(p: Project, arrowId: string, style: ArrowStyle): P
 }
 
 /**
- * Rótulo da seta; vazio vira `null`, como em `renameMarking`. Renomear não é geometria: a trava
- * não impede (selecionar, renomear e anotar seguem livres).
+ * Arrow label; empty becomes `null`, as in `renameMarking`. Renaming is not geometry: the lock
+ * does not block it (selecting, renaming and annotating stay free).
  */
 export function setArrowName(p: Project, arrowId: string, name: string | null): Project {
   const normalized = normalizeOptionalName(name);
@@ -483,7 +499,7 @@ export function setArrowName(p: Project, arrowId: string, name: string | null): 
   };
 }
 
-/** Tranca ou destranca a seta (só a dela: a trava não vem das pontas). */
+/** Locks or unlocks the arrow (only its own: the lock does not come from the endpoints). */
 export function setArrowLocked(p: Project, arrowId: string, locked: boolean): Project {
   if (findById(p.arrows, arrowId).locked === locked) return p;
   return { ...p, arrows: updateById(p.arrows, arrowId, (a) => ({ ...a, locked })) };

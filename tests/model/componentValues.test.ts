@@ -120,7 +120,7 @@ describe('drawingValues: tipos simples', () => {
 const BROKEN_TARGET = modelMessage(
   'value.refBroken',
   { key: 'target' },
-  'referência quebrada: target',
+  'broken reference: target',
 );
 
 describe('drawingValues: referências', () => {
@@ -173,7 +173,7 @@ describe('drawingValues: referências', () => {
       modelMessage(
         'value.refDeep',
         { key: 'target' },
-        'referência em mais de um nível: target',
+        'reference through more than one level: target',
       ),
     ]);
   });
@@ -183,7 +183,7 @@ describe('drawingValues: referências', () => {
     const { values, warnings } = valuesOf(p);
     expect(values.target).toBeNull();
     expect(warnings).toEqual([
-      modelMessage('value.refCycle', { key: 'target' }, 'referência em ciclo: target'),
+      modelMessage('value.refCycle', { key: 'target' }, 'reference cycle: target'),
     ]);
   });
 

@@ -1,15 +1,16 @@
 import type { Change } from './proposal';
 import type { Marking } from './types';
 
-// Onde a marcação criada entra no array `markings` (proposta formatVersion 4, `insertBefore`).
-// A mesma regra serve ao cálculo das mudanças (`computeChanges`) e à aplicação
-// (`patchProject`), para o aplicado ter a ordem do projeto proposto.
+// Where the created marking goes in the `markings` array (proposal formatVersion 4,
+// `insertBefore`). The same rule serves the computation of the changes (`computeChanges`) and
+// the application (`patchProject`), so that the applied project has the proposed project's order.
 
 /**
- * Âncora de partida de cada marcação criada no projeto proposto: o id da primeira marcação
- * **depois** dela que já existia na base (ela continua no proposto, então a proposta não a
- * remove). Sem uma, a criada vai para o fim e não aparece no mapa. O mapa sai na ordem do array
- * (crescente). A âncora final, que respeita os empates, é a de `proposalAnchors`.
+ * Starting anchor of each marking created in the proposed project: the id of the first marking
+ * **after** it that already existed in the base (it stays in the proposed one, so the proposal
+ * does not remove it). Without one, the created marking goes to the end and does not appear in
+ * the map. The map comes out in array order (ascending). The final anchor, which respects ties,
+ * is the one from `proposalAnchors`.
  */
 export function insertAnchors(
   baseIds: ReadonlySet<string>,
@@ -26,19 +27,19 @@ export function insertAnchors(
 }
 
 /**
- * Põe cada marcação criada (que `markings` traz no fim, na ordem das mudanças) antes da
- * âncora, se a âncora estiver na lista; sem âncora, ou com ela fora da lista, a criada fica no
- * fim. `anchors` é lido na ordem: as criadas com a mesma âncora entram na ordem do mapa, que é a
- * do proposto (as mudanças, em `anchorsOfChanges`, e o array, em `insertAnchors` e
- * `proposalAnchors`).
+ * Puts each created marking (which `markings` carries at the end, in the order of the changes)
+ * before its anchor, if the anchor is in the list; without an anchor, or with it outside the
+ * list, the created marking stays at the end. `anchors` is read in order: those created with the
+ * same anchor enter in the map's order, which is the proposed project's (the changes, in
+ * `anchorsOfChanges`, and the array, in `insertAnchors` and `proposalAnchors`).
  */
 export function placeCreatedMarkings(
   markings: readonly Marking[],
   anchors: ReadonlyMap<string, string>,
 ): Marking[] {
-  // Lista encadeada por id: cada movimento é O(1), em vez de `findIndex`/`splice` por âncora.
+  // Linked list by id: each move is O(1), instead of `findIndex`/`splice` per anchor.
   const list = new LinkedMarkings(markings);
-  // A âncora igual ao próprio id não move nada.
+  // An anchor equal to the id itself moves nothing.
   for (const [id, anchor] of anchors) if (id !== anchor) list.moveBefore(id, anchor);
   return list.toArray();
 }
@@ -64,7 +65,7 @@ class LinkedMarkings {
     }
   }
 
-  /** Move `id` para antes de `anchor`; sem um dos dois na lista, não faz nada. */
+  /** Moves `id` before `anchor`; if either is missing from the list, does nothing. */
   moveBefore(id: string, anchor: string): void {
     const node = this.nodes.get(id);
     const target = this.nodes.get(anchor);
@@ -86,7 +87,7 @@ class LinkedMarkings {
   }
 }
 
-/** As âncoras que as mudanças de criação de marcação trazem (`insertBefore`), na ordem delas. */
+/** The anchors that the marking-creation changes carry (`insertBefore`), in their order. */
 export function anchorsOfChanges(
   changes: readonly Change[],
   baseIds: ReadonlySet<string>,

@@ -480,7 +480,7 @@ describe('M4 grupo C — list-item', () => {
     near(title.y, overline.y + 16);
   });
 
-  it('título de uma linha só: texto longo é cortado com reticências, sem aviso de texto maior que a caixa', () => {
+  it('título de uma linha só: texto longo é cortado com reticências, sem aviso de text larger than the box', () => {
     const long =
       'Reunião de planejamento trimestral com toda a equipe de produto e engenharia da empresa'.repeat(
         2,
@@ -494,7 +494,7 @@ describe('M4 grupo C — list-item', () => {
     const title = textBox(d, long);
     expect(title.node.style).toMatchObject({ maxLines: 1, ellipsis: true });
     expect(title.height).toBe(24);
-    expect(d.warnings.filter((w) => /texto maior que a caixa|não cabe/.test(w))).toEqual(
+    expect(d.warnings.filter((w) => /text larger than the box|não cabe/.test(w))).toEqual(
       [],
     );
   });
@@ -528,7 +528,7 @@ describe('M4 grupo C — list-item', () => {
     expect(support.node.style).toMatchObject({ maxLines: 2, ellipsis: true });
     expect(support.height).toBe(40);
     expect(
-      alone.warnings.filter((w) => /texto maior que a caixa|não cabe/.test(w)),
+      alone.warnings.filter((w) => /text larger than the box|não cabe/.test(w)),
     ).toEqual([]);
   });
 
@@ -590,7 +590,7 @@ describe('M4 grupo C — list-item', () => {
 
 describe('M4 grupo C — o padrão e os exemplos desenham sem aviso', () => {
   const BAD =
-    /não cabe|texto maior que a caixa|conteúdo maior que a caixa|ícone desconhecido|ícone esticado|token inexistente|token desconhecido|campo não informado/i;
+    /não cabe|text larger than the box|content larger than the box|unknown icon|stretched icon|does not exist in the specialization tokens|field not provided/i;
   it.each(['tabs', 'list-item'])('%s: preview e exemplos, em light e dark', (id) => {
     const entry = entryOf(id);
     const preview = entry.component!.preview ?? {};

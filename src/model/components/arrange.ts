@@ -1,10 +1,10 @@
 /**
- * Motor dos componentes (etapa Biblioteca): organização dos filhos de um componente com slot. Um componente
- * com slot é uma instância cujo componente tem um nó `slot`; as instâncias filhas (`parentId`) ficam na ordem
- * em que aparecem em `screen.instances`. Quando o slot declara `layout` `row`/`column`, o
- * editor calcula os retângulos dos filhos e os **grava** (o arquivo guarda só retângulos
- * absolutos; o layout é uma ferramenta de edição). Slot sem layout (ou `none`) deixa os filhos
- * onde estão. Funções puras, sem DOM.
+ * Component engine (Library stage): arrangement of the children of a component with a slot. A component
+ * with a slot is an instance whose component has a `slot` node; the child instances (`parentId`) stay in the order
+ * they appear in `screen.instances`. When the slot declares `layout` `row`/`column`, the
+ * editor computes the children's rectangles and **writes** them (the file only stores absolute
+ * rectangles; the layout is an editing tool). A slot without layout (or `none`) leaves the children
+ * where they are. Pure functions, no DOM.
  */
 import type {
   ComponentFile,
@@ -52,9 +52,9 @@ import { TRACK_KEYS, isTrackAbsent, lineExtents, validTrack } from './gridPlan';
 import { breakLines, stackLines } from './wrapLines';
 
 /**
- * As trilhas da grade (`layout.type: "grid"`): `count` (`columns`/`rows`) ou `min`
- * (`minColumnWidth`/`minRowHeight`); `vertical` preenche linhas (as trilhas são colunas),
- * `horizontal` preenche colunas (as trilhas são linhas).
+ * The tracks of the grid (`layout.type: "grid"`): `count` (`columns`/`rows`) or `min`
+ * (`minColumnWidth`/`minRowHeight`); `vertical` fills rows (the tracks are columns),
+ * `horizontal` fills columns (the tracks are rows).
  */
 export interface ResolvedGrid {
   readonly count?: number | undefined;
@@ -64,15 +64,15 @@ export interface ResolvedGrid {
 
 export interface ResolvedSlotLayout {
   readonly type: 'none' | 'row' | 'column' | 'grid';
-  /** Só `grid`: as trilhas. */
+  /** `grid` only: the tracks. */
   readonly grid?: ResolvedGrid | undefined;
   readonly gap: number;
   readonly padding: Padding;
   readonly align: LayoutAlign;
   readonly justify: LayoutJustify;
-  /** Filhos em ordem inversa e `start` no fim (`layout.reverse`). */
+  /** Children in reverse order and `start` at the end (`layout.reverse`). */
   readonly reverse: boolean;
-  /** Quebra de fileira (`layout.wrap`): as linhas, o espaço entre elas e os limites (v4). */
+  /** Row wrap (`layout.wrap`): the lines, the space between them and the limits (v4). */
   readonly wrap: LayoutWrap;
   readonly lineGap: number;
   readonly maxPerLine?: number | undefined;
@@ -90,7 +90,7 @@ const NO_LAYOUT: ResolvedSlotLayout = {
   lineGap: 0,
 };
 
-/** Primeiro nó `slot` do template (busca em profundidade pelos `children` dos frames), ou nenhum. */
+/** First `slot` node of the template (depth-first search through the frames' `children`), or none. */
 export function findSlot(component: ComponentFile): SlotTemplate | undefined {
   const search = (node: TemplateNode): SlotTemplate | undefined => {
     if (node.type === 'slot') return node;
@@ -105,14 +105,14 @@ export function findSlot(component: ComponentFile): SlotTemplate | undefined {
 }
 
 /**
- * O componente com os `$token` trocados pela tabela do desenho dele (`resolvedTokens`, ou só os
- * embutidos), como o `instantiate` faz: o `gap` e o `padding` do slot só valem depois disso.
+ * The component with the `$token`s replaced by its drawing's table (`resolvedTokens`, or only the
+ * embedded ones), as `instantiate` does: the slot's `gap` and `padding` only apply after that.
  */
 export function tokenizedComponent(component: ComponentFile): ComponentFile {
   return applyTokens(component, component.resolvedTokens ?? resolveTokens(undefined, {}));
 }
 
-/** Um tipo é um componente com slot quando o componente dele tem um slot. */
+/** A type is a component with a slot when its component has a slot. */
 export function hasSlot(type: TypeDef | undefined): boolean {
   return type?.component !== undefined && findSlot(type.component) !== undefined;
 }
@@ -122,7 +122,7 @@ function toNumber(value: unknown, fallback: number): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
-/** Avalia uma expressão de conjunto fechado (sem aviso: cai no padrão se vier algo de fora). */
+/** Evaluates a closed-set expression (without a warning: falls back to the default if something outside comes in). */
 function choice<T extends string>(
   expr: Expr<T> | undefined,
   allowed: readonly T[],
@@ -136,7 +136,7 @@ function choice<T extends string>(
   );
 }
 
-/** `maxPerLine`/`maxLines`: inteiro ≥ 1, ou nenhum limite. */
+/** `maxPerLine`/`maxLines`: integer ≥ 1, or no limit. */
 function limitCount(
   expr: Expr<number> | undefined,
   values: FieldValues,
@@ -146,7 +146,7 @@ function limitCount(
   return Number.isInteger(n) && n >= 1 ? n : undefined;
 }
 
-/** A quebra de fileira do layout do slot (sem `wrap`, ou `none`, as outras três chaves não valem). */
+/** The row wrap of the slot's layout (without `wrap`, or `none`, the other three keys do not apply). */
 function resolveWrap(
   layout: LayoutSpec,
   values: FieldValues,
@@ -164,10 +164,10 @@ function resolveWrap(
   };
 }
 
-/** As trilhas da grade; a chave inválida (ou nenhuma) cai em uma trilha da orientação dela. */
+/** The tracks of the grid; an invalid key (or none) falls into one track of its orientation. */
 function resolveGrid(layout: LayoutSpec, values: FieldValues): ResolvedGrid {
-  // A primeira chave que tem valor decide (`columns` e `minColumnWidth` por expressão escolhem o
-  // `Fixed` ou o `Adaptive` por um campo); sem valor em nenhuma, vale a primeira presente.
+  // The first key that has a value decides (`columns` and `minColumnWidth` by expression choose
+  // `Fixed` or `Adaptive` by a field); with no value in any, the first one present applies.
   const present = TRACK_KEYS.filter((entry) => layout[entry.key] !== undefined).map(
     (entry) => ({
       entry,
@@ -185,9 +185,9 @@ function resolveGrid(layout: LayoutSpec, values: FieldValues): ResolvedGrid {
 }
 
 /**
- * O slot `none` com `align` (vertical) e `justify` (horizontal): `start` (padrão), `center`, `end`
- * e `stretch`, o `Box(contentAlignment)` do Compose. Sem eles é o `none` de sempre (cada filha
- * fica no próprio retângulo).
+ * The `none` slot with `align` (vertical) and `justify` (horizontal): `start` (default), `center`, `end`
+ * and `stretch`, Compose's `Box(contentAlignment)`. Without them it is the usual `none` (each child
+ * stays in its own rectangle).
  */
 function resolveNoneLayout(layout: LayoutSpec, values: FieldValues): ResolvedSlotLayout {
   const align = choice(layout.align, NONE_ALIGNS, 'start', values);
@@ -197,12 +197,12 @@ function resolveNoneLayout(layout: LayoutSpec, values: FieldValues): ResolvedSlo
     : { ...NO_LAYOUT, align, justify };
 }
 
-/** O slot `none` sem alinhamento: o Arrumar deixa as filhas onde estão. */
+/** The `none` slot without alignment: Arrange leaves the children where they are. */
 export function isPlainNone(layout: ResolvedSlotLayout): boolean {
   return layout.type === 'none' && layout.align === 'start' && layout.justify === 'start';
 }
 
-/** Avalia o layout do slot com os valores da instância (`gap`/`padding` podem ser expressões). Sem layout → type 'none'. */
+/** Evaluates the slot's layout with the instance's values (`gap`/`padding` can be expressions). Without a layout → type 'none'. */
 export function resolveSlotLayout(
   slot: SlotTemplate,
   values: FieldValues,
@@ -239,7 +239,7 @@ export function resolveSlotLayout(
       ),
     };
   }
-  // `baseline` só vale numa `row`: numa `column` cai em `start`, como no motor.
+  // `baseline` only applies in a `row`: in a `column` it falls back to `start`, as in the engine.
   const aligns =
     type === 'row' ? LAYOUT_ALIGNS : LAYOUT_ALIGNS.filter((a) => a !== 'baseline');
   return {
@@ -253,7 +253,7 @@ export function resolveSlotLayout(
   };
 }
 
-/** Caixa absoluta (na tela) do slot de uma instância, instanciando o componente na caixa da instância (na `direction` da tela, `ltr` por padrão); nenhuma se o slot estiver invisível. */
+/** Absolute box (on screen) of an instance's slot, instantiating the component in the instance's box (in the screen's `direction`, `ltr` by default); none if the slot is invisible. */
 export function slotBox(
   component: ComponentFile,
   instance: Instance,
@@ -267,13 +267,13 @@ export function slotBox(
   });
   for (const node of walk(root)) {
     if (node.type !== 'unknown' || node.sourceType !== 'slot') continue;
-    // A raiz tem `translate(box.x, box.y)`: as caixas absolutas já estão no espaço da tela.
+    // The root has `translate(box.x, box.y)`: the absolute boxes are already in screen space.
     return absoluteBoxes(root).get(node.id);
   }
   return undefined;
 }
 
-/** Caixa absoluta do slot numa cena já instanciada (a raiz leva o `translate` da caixa); nenhuma se o slot estiver invisível. */
+/** Absolute box of the slot in an already instantiated scene (the root carries the box's `translate`); none if the slot is invisible. */
 export function slotBoxOfScene(root: FrameNode): Box | undefined {
   for (const node of walk(root)) {
     if (node.type !== 'unknown' || node.sourceType !== 'slot') continue;
@@ -282,7 +282,7 @@ export function slotBoxOfScene(root: FrameNode): Box | undefined {
   return undefined;
 }
 
-/** A caixa do slot (primeiro da cena) quando ele tem `clip`; senão nenhuma. */
+/** The slot's box (first in the scene) when it has `clip`; otherwise none. */
 export function clippedSlotBox(root: FrameNode): Box | undefined {
   for (const node of walk(root)) {
     if (node.type !== 'unknown' || node.sourceType !== 'slot') continue;
@@ -291,7 +291,7 @@ export function clippedSlotBox(root: FrameNode): Box | undefined {
   return undefined;
 }
 
-/** Posição e tamanho no eixo cruzado. */
+/** Position and size on the cross axis. */
 function crossAxis(
   layout: ResolvedSlotLayout,
   start: number,
@@ -310,7 +310,7 @@ function crossAxis(
   }
 }
 
-/** Os eixos do slot: onde começa e quanto mede a área de conteúdo, no eixo principal e no cruzado. */
+/** The slot's axes: where the content area starts and how large it is, on the main and cross axes. */
 interface SlotGeometry {
   readonly row: boolean;
   readonly mainStart: number;
@@ -338,7 +338,7 @@ interface LayoutChild {
   readonly baseline?: number | undefined;
 }
 
-/** A extensão de uma linha no eixo cruzado: a maior (ou, com `baseline`, do topo mais alto ao fundo mais baixo). */
+/** The extent of a line on the cross axis: the largest (or, with `baseline`, from the highest top to the lowest bottom). */
 function lineExtent(
   layout: ResolvedSlotLayout,
   row: boolean,
@@ -351,7 +351,7 @@ function lineExtent(
   return above + Math.max(0, ...crosses.map((size, i) => size - (lines[i] ?? size)));
 }
 
-/** Posição e tamanho no eixo cruzado de um filho de uma linha de extensão `extent` que começa em `start`. */
+/** Position and size on the cross axis of a child of a line of extent `extent` that starts at `start`. */
 function crossInLine(
   layout: ResolvedSlotLayout,
   start: number,
@@ -364,13 +364,13 @@ function crossInLine(
 }
 
 /**
- * Retângulos novos (arredondados) dos filhos, na ordem de `children`. Com `align: "baseline"` cada
- * filho traz a `baseline` dele (a primeira linha de base, a partir do topo da caixa; sem ela vale o
- * fundo da caixa) e a fileira se alinha pela mais baixa. Com `wrap`, os filhos se repartem em
- * linhas (o que não cabe no que resta do eixo principal vai para a seguinte, `maxPerLine` e
- * `maxLines` valem) e `justify`, `reverse`, `align` e `baseline` valem em cada linha; as linhas se
- * empilham no início do eixo cruzado, separadas por `lineGap` (`wrap-reverse`: a ordem inversa).
- * Os filhos além de `maxLines` linhas não se movem (a arrumação devolve a caixa que já tinham).
+ * New (rounded) rectangles of the children, in the order of `children`. With `align: "baseline"` each
+ * child brings its `baseline` (the first baseline, from the top of the box; without it the
+ * bottom of the box applies) and the row aligns by the lowest one. With `wrap`, the children are split into
+ * lines (what does not fit in what remains of the main axis goes to the next one, `maxPerLine` and
+ * `maxLines` apply) and `justify`, `reverse`, `align` and `baseline` apply in each line; the lines
+ * stack at the start of the cross axis, separated by `lineGap` (`wrap-reverse`: the reverse order).
+ * Children beyond `maxLines` lines do not move (the arrangement returns the box they already had).
  */
 export function layoutChildren(
   slot: Box,
@@ -383,9 +383,9 @@ export function layoutChildren(
 }
 
 /**
- * Em `rtl`, as caixas já arrumadas (como em `ltr`) espelhadas dentro da área de conteúdo do slot
- * (`x' = esquerda + largura útil − (x − esquerda) − w`): vale de uma vez para `row`, `column`,
- * `none`, grade e `wrap`, e `reverse` compõe. O `padding` fica físico (a área é a mesma).
+ * In `rtl`, the already arranged boxes (as in `ltr`) mirrored inside the slot's content area
+ * (`x' = left + usable width − (x − left) − w`): it applies at once to `row`, `column`,
+ * `none`, grid and `wrap`, and `reverse` composes. The `padding` stays physical (the area is the same).
  */
 function mirrorInContent(
   slot: Box,
@@ -416,7 +416,7 @@ function layoutPhysical(
       })
     : { lines: [children.map((_, i) => i)], dropped: 0 };
   const members = broken.lines.map((line) => line.map((i) => children[i] as LayoutChild));
-  // Sem `wrap` há uma linha só, com a extensão do conteúdo todo (`center` e `end` valem nele).
+  // Without `wrap` there is a single line, with the extent of the whole content (`center` and `end` apply to it).
   const extents = wrapped
     ? members.map((line) => lineExtent(layout, row, line))
     : [geometry.crossContent];
@@ -432,7 +432,7 @@ function layoutPhysical(
   return out;
 }
 
-/** As filhas do slot `none` alinhado: cada uma, sozinha, na caixa do slot (`justify` na largura, `align` na altura). */
+/** The children of the aligned `none` slot: each one, alone, in the slot's box (`justify` on the width, `align` on the height). */
 function layoutOverlaid(
   slot: Box,
   layout: ResolvedSlotLayout,
@@ -451,11 +451,11 @@ function layoutOverlaid(
 }
 
 /**
- * A extensão que os filhos ocupam no slot, sem o padding (o que o `hug` do componente com slot
- * mede): a soma com os `gap` no eixo principal e a maior extensão no cruzado (com `baseline`, do
- * topo mais alto ao fundo mais baixo). Com `wrap`, as linhas se repartem como em `layoutChildren`
- * (`available`: o espaço do eixo principal; nulo = só o `maxPerLine` quebra): o eixo principal
- * mede a linha mais cheia e o cruzado soma as linhas com os `lineGap`.
+ * The extent the children occupy in the slot, without the padding (what the `hug` of the component with a slot
+ * measures): the sum with the `gap`s on the main axis and the largest extent on the cross axis (with `baseline`, from the
+ * highest top to the lowest bottom). With `wrap`, the lines are split as in `layoutChildren`
+ * (`available`: the main-axis space; null = only `maxPerLine` breaks): the main axis
+ * measures the fullest line and the cross axis adds up the lines with the `lineGap`s.
  */
 export function contentExtent(
   layout: ResolvedSlotLayout,
@@ -497,24 +497,24 @@ export function contentExtent(
 }
 
 // ---------------------------------------------------------------------------------------
-// Grade (`layout.type: "grid"`): cada filha ocupa uma célula
+// Grid (`layout.type: "grid"`): each child occupies a cell
 // ---------------------------------------------------------------------------------------
 
-/** A colocação das filhas nas células: a ordem (`reverse` inverte) e a extensão de cada linha de fluxo. */
+/** The placement of the children in the cells: the order (`reverse` inverts) and the extent of each flow line. */
 interface GridPlan {
   readonly vertical: boolean;
   readonly count: number;
-  /** Índices das filhas na ordem de colocação. */
+  /** Indices of the children in placement order. */
   readonly order: readonly number[];
   readonly cells: ReturnType<typeof placeCells>['cells'];
-  /** Extensão de cada linha de fluxo (a maior filha dela), no eixo das linhas. */
+  /** Extent of each flow line (its largest child), on the line axis. */
   readonly extents: readonly number[];
 }
 
 const gridVertical = (layout: ResolvedSlotLayout) =>
   layout.grid?.orientation !== 'horizontal';
 
-/** A extensão da filha no eixo das trilhas (`t`) ou no das linhas de fluxo. */
+/** The extent of the child on the track axis (`t`) or on the flow-line axis. */
 function gridSize(child: LayoutChild, vertical: boolean, onTracks: boolean): number {
   return vertical === onTracks ? child.box.width : child.box.height;
 }
@@ -545,7 +545,7 @@ function roundedBox(raw: Box): Box {
   };
 }
 
-/** Os retângulos (arredondados) das filhas nas células da grade: `justify` nas trilhas, `align` nas linhas. */
+/** The (rounded) rectangles of the children in the grid cells: `justify` on the tracks, `align` on the lines. */
 function layoutGrid(
   slot: Box,
   layout: ResolvedSlotLayout,
@@ -583,9 +583,9 @@ function layoutGrid(
 }
 
 /**
- * O que as filhas pedem ao slot em grade (sem o padding): no eixo das trilhas, `n` vezes a maior
- * filha mais os `gap`; no das linhas, a soma das extensões das linhas com os `lineGap`.
- * `available`: o espaço do eixo das trilhas (nulo = uma trilha, com `minColumnWidth`).
+ * What the children ask of the grid slot (without the padding): on the track axis, `n` times the largest
+ * child plus the `gap`s; on the line axis, the sum of the extents of the lines with the `lineGap`s.
+ * `available`: the track-axis space (null = one track, with `minColumnWidth`).
  */
 function gridExtent(
   layout: ResolvedSlotLayout,
@@ -601,7 +601,7 @@ function gridExtent(
     : { width: flow, height: tracks };
 }
 
-/** Posições no eixo principal de uma linha: `justify` sobre a folga da linha e `reverse` espelhando-a. */
+/** Positions on a line's main axis: `justify` over the line's slack and `reverse` mirroring it. */
 function lineMainPositions(
   layout: ResolvedSlotLayout,
   geometry: SlotGeometry,
@@ -620,7 +620,7 @@ function lineMainPositions(
   });
 }
 
-/** Os retângulos (arredondados) de uma linha de filhos, dados o começo e a extensão dela no eixo cruzado. */
+/** The (rounded) rectangles of a line of children, given its start and extent on the cross axis. */
 function placeLine(
   layout: ResolvedSlotLayout,
   geometry: SlotGeometry,
@@ -657,7 +657,7 @@ function sameBox(a: Box, b: Box): boolean {
   );
 }
 
-/** A primeira linha de base do desenho de uma instância (`undefined` = sem texto ou sem componente). */
+/** The first baseline of an instance's drawing (`undefined` = no text or no component). */
 function instanceBaseline(
   types: ReadonlyMap<string, TypeDef>,
   child: Instance,
@@ -673,7 +673,7 @@ function instanceBaseline(
   }).firstBaseline;
 }
 
-/** Os alvos das filhas de uma instância com slot row/column, ou `null` quando não há o que arrumar. */
+/** The targets of the children of an instance with a row/column slot, or `null` when there is nothing to arrange. */
 function childTargets(
   instance: Instance,
   raw: ComponentFile | undefined,
@@ -702,7 +702,7 @@ function childTargets(
   );
 }
 
-/** Recalcula e grava os retângulos dos filhos de todos os componentes com slot com layout row/column. Puro; devolve o MESMO objeto quando nada muda. */
+/** Recomputes and writes the rectangles of the children of all the components with a slot with row/column layout. Pure; returns the SAME object when nothing changes. */
 export function arrange(
   screen: Screen,
   library: Library,
@@ -711,11 +711,11 @@ export function arrange(
 ): Screen {
   const types = new Map(library.types.map((t) => [t.id, t]));
   let current = screen;
-  // Pais antes dos filhos; a ordem é fixada no início, as instâncias são relidas a cada passo
-  // (o pai pode ter movido o componente com slot ao organizar os filhos dele).
+  // Parents before children; the order is fixed at the start, the instances are reread at each step
+  // (the parent may have moved the component with a slot when arranging its children).
   const ids = renderOrder(screen).map((i) => i.id);
-  // Estrutura (pais e ordem dos filhos) não muda ao arrumar, só as caixas: um índice por id
-  // (refeito quando uma caixa muda); os filhos vêm do índice de `childrenOf` da tela original.
+  // Structure (parents and order of the children) does not change when arranging, only the boxes: an index by id
+  // (rebuilt when a box changes); the children come from the `childrenOf` index of the original screen.
   let byId = new Map(current.instances.map((i) => [i.id, i]));
   for (const id of ids) {
     const instance = byId.get(id);
@@ -740,7 +740,7 @@ export function arrange(
   return current;
 }
 
-/** Índice entre os irmãos em que um ponto (centro do arrastado) cairia, segundo o eixo do layout: quantos irmãos (exceto `excludeId`) têm o centro antes dele. Para 'none' devolve o fim. */
+/** Index among the siblings where a point (the dragged one's center) would fall, along the layout's axis: how many siblings (except `excludeId`) have their center before it. For 'none' it returns the end. */
 export function dropIndex(
   screen: Screen,
   parentId: string,
@@ -755,8 +755,8 @@ export function dropIndex(
     const center =
       layout.type === 'row' ? s.box.x + s.box.width / 2 : s.box.y + s.box.height / 2;
     const at = layout.type === 'row' ? point.x : point.y;
-    // Em `reverse` a ordem corre do fim para o início: antes dele são os irmãos depois do ponto.
-    // Numa `row` em `rtl` ela também inverte (a linha corre para a esquerda); as duas compõem.
+    // In `reverse` the order runs from end to start: before it are the siblings after the point.
+    // In a `row` in `rtl` it also inverts (the line runs to the left); the two compose.
     const backwards = layout.reverse !== (layout.type === 'row' && direction === 'rtl');
     return backwards ? center > at : center < at;
   }).length;

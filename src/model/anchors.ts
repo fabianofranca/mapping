@@ -4,23 +4,25 @@ import { findById, updateById } from './project';
 import { projectIndex } from './projectIndex';
 import type { Marking, MarkingAnchor, Project } from './types';
 
-// Âncora da marcação (schema v20, etapa "direção e âncora", R3). A âncora liga uma marcação a
-// outra do mesmo espaço; ela não entra no pertencimento (`settleHierarchy` não a lê). Aqui
-// ficam a conferência, o gravar e o conjunto que anda junto quando a âncora se move.
+// Marking anchor (schema v20, stage "direction and anchor", R3). The anchor links a marking to
+// another in the same space; it does not take part in containment (`settleHierarchy` does not
+// read it). Here live the checking, the writing and the set that moves along when the anchor
+// moves.
 
 /**
- * Fechar a âncora de `id` em `to` faria `to` andar junto com `id` (ciclo da cadeia de âncoras,
- * descendente de `id` ou seguidor, direto ou indireto, de um descendente): `withAnchoredFollowers`
- * é o que move com ela, e mover o alvo junto deslocaria a marcação sem fim a cada encosto.
+ * Closing the anchor of `id` on `to` would make `to` move along with `id` (anchor-chain cycle:
+ * a descendant of `id` or a follower, direct or indirect, of a descendant): `withAnchoredFollowers`
+ * is what moves with it, and moving the target along would shift the marking endlessly on each
+ * snap.
  */
 function wouldCycle(p: Project, id: string, to: string): boolean {
   return withAnchoredFollowers(p, [id]).has(to);
 }
 
 /**
- * Confere a âncora nova de `id` (que está em `containerId`, ou ainda não existe) e falha com o
- * código da invariante quebrada; devolve a marcação-alvo. Serve também à criação, antes de a
- * marcação existir (sem ela não há ciclo possível).
+ * Checks the new anchor of `id` (which is in `containerId`, or does not exist yet) and fails
+ * with the code of the broken invariant; returns the target marking. It also serves creation,
+ * before the marking exists (without it no cycle is possible).
  */
 export function checkAnchorTarget(
   p: Project,
@@ -37,9 +39,10 @@ export function checkAnchorTarget(
 }
 
 /**
- * `setMarkingAnchor` aceitaria ancorar `markingId` em `targetId`? O alvo existe, não é a própria
- * marcação, está no mesmo espaço e não depende dela pela cadeia de âncoras. É o que a lista da
- * seção Âncora oferece, sem tentar e capturar o erro.
+ * Would `setMarkingAnchor` accept anchoring `markingId` to `targetId`? The target exists, is
+ * not the marking itself, is in the same space and does not depend on it through the anchor
+ * chain. This is what the Anchor section's list offers, without trying and catching the
+ * error.
  */
 export function canAnchorTo(p: Project, markingId: string, targetId: string): boolean {
   if (targetId === markingId) return false;
@@ -53,9 +56,9 @@ export function canAnchorTo(p: Project, markingId: string, targetId: string): bo
 }
 
 /**
- * As marcações de `pool` (as do espaço da marcação, na ordem delas) em que `canAnchorTo` deixaria
- * ancorar `markingId`, com uma varredura só: `canAnchorTo` por item refaz o conjunto que anda
- * junto a cada chamada (quadrático quando a marcação é dona de muitas).
+ * The markings of `pool` (those in the marking's space, in their order) to which `canAnchorTo`
+ * would let `markingId` be anchored, in a single sweep: `canAnchorTo` per item rebuilds the set
+ * that moves along on each call (quadratic when the marking owns many).
  */
 export function anchorCandidates(
   p: Project,
@@ -86,10 +89,11 @@ function sameAnchor(
 }
 
 /**
- * Grava (ou, com `null`, tira) a âncora da marcação. Confere as invariantes: o alvo existe
- * (`anchor-missing`), não é a própria marcação (`anchor-self`), está no mesmo espaço
- * (`anchor-other-space`) e não fecha um ciclo (`anchor-cycle`). Não move nada (o encosto é
- * `snapToAnchor`) e não é geometria: a trava não impede. A mesma âncora devolve `p`.
+ * Writes (or, with `null`, removes) the marking's anchor. Checks the invariants: the target
+ * exists (`anchor-missing`), is not the marking itself (`anchor-self`), is in the same space
+ * (`anchor-other-space`) and does not close a cycle (`anchor-cycle`). It moves nothing (the
+ * snap is `snapToAnchor`) and is not geometry: the lock does not prevent it. The same anchor
+ * returns `p`.
  */
 export function setMarkingAnchor(
   p: Project,
@@ -106,12 +110,13 @@ export function setMarkingAnchor(
 }
 
 /**
- * Grava a âncora de uma marcação RECÉM-CRIADA depois do assentar: como `setMarkingAnchor`, mas se o
- * assentar deixou a marcação e o alvo em espaços diferentes (ex.: uma marcação do canvas encostada
- * num alvo do canvas cai inteira dentro de um container e passa a ser dele), a âncora é solta em
- * vez de falhar (a regra de sempre: o assentar solta a relação, `releaseStrandedAnchors`); devolve
- * `p` como está. A âncora tem de ter passado por `checkAnchorTarget` antes da criação (os outros
- * erros, alvo inexistente e a própria marcação, continuam falhando aqui).
+ * Writes the anchor of a NEWLY CREATED marking after the settle: like `setMarkingAnchor`, but
+ * if the settle left the marking and the target in different spaces (e.g. a canvas marking
+ * snapped to a canvas target falls entirely inside a container and becomes its child), the
+ * anchor is released instead of failing (the usual rule: the settle releases the relation,
+ * `releaseStrandedAnchors`); returns `p` as is. The anchor must have gone through
+ * `checkAnchorTarget` before creation (the other errors, nonexistent target and the marking
+ * itself, still fail here).
  */
 export function setNewMarkingAnchor(
   p: Project,
@@ -125,10 +130,10 @@ export function setNewMarkingAnchor(
 }
 
 /**
- * O que anda junto quando `ids` se movem: as marcações ancoradas em qualquer delas, as
- * descendentes delas (dentro de um container; no canvas a marcação é uma lente e anda sozinha) e
- * as ancoradas dessas, transitivamente. Sem duplicar: um id que já está em `ids` ou que várias
- * cadeias alcançam entra uma vez. Devolve um conjunto novo com `ids` inclusive.
+ * What moves along when `ids` move: the markings anchored to any of them, their descendants
+ * (inside a container; on the canvas a marking is a lens and moves alone) and those anchored
+ * to those, transitively. Without duplicates: an id that is already in `ids` or that several
+ * chains reach enters once. Returns a new set including `ids`.
  */
 export function withAnchoredFollowers(p: Project, ids: Iterable<string>): Set<string> {
   const { anchoredBy, markings } = projectIndex(p);

@@ -242,7 +242,7 @@ describe('--out', () => {
     );
     expect(result.code).toBe(1);
     expect(result.stderr).toContain('erro interno');
-    expect(result.stderr).toContain('repetido');
+    expect(result.stderr).toContain('repeated');
     expect(readdirSync(dir)).toEqual(['A.kt']);
   });
 

@@ -2,15 +2,15 @@ import { memoByProject } from './projectIndex';
 import { findSpecType } from './specLookup';
 import type { Project } from './types';
 
-// Tipo estrutural (etapa #747, CF8; `structural: true` na especialização, `formatVersion` 15): o
-// tipo agrupa e não desenha. A marcação dele não mostra o cabeçalho com o nome e, como as que
-// têm desenho, só mostra o contorno com o mouse ou selecionada.
+// Structural type (stage #747, CF8; `structural: true` in the specialization, `formatVersion`
+// 15): the type groups and does not draw. Its marking does not show the header with the name
+// and, like the ones that have a drawing, only shows the outline on hover or when selected.
 
 const NONE: ReadonlySet<string> = new Set();
 
 /**
- * Marcações com alguma anotação tipada própria cujo tipo é estrutural. Memoizado por versão do
- * projeto (o objeto imutável).
+ * Markings with some typed annotation of their own whose type is structural. Memoized by
+ * project version (the immutable object).
  */
 export const structuralMarkingIds: (p: Project) => ReadonlySet<string> = memoByProject(
   (p) => {

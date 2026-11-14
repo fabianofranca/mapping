@@ -26,7 +26,7 @@ const M4 = [
   'dropdown-menu',
 ];
 const BAD_WARNING =
-  /não cabe|texto maior que a caixa|ícone desconhecido|ícone esticado|token inexistente|token desconhecido/i;
+  /não cabe|text larger than the box|unknown icon|stretched icon|does not exist in the specialization tokens/i;
 
 type Rec = Record<string, unknown>;
 const rawSpec = JSON.parse(text(SPEC_FILE)) as { layers: { annotationTypes: Rec[] }[] };
@@ -51,7 +51,7 @@ describe('M4 — navegação e listas no formato 4', () => {
     expect(text(`components/${id}.json`)).not.toMatch(/"M\d[^"]{40,}"/);
   });
 
-  // A ME4 deu a coluna `selected` aos itens do `dropdown-menu`: o preview a traz (senão o desenho avisa "campo não informado").
+  // A ME4 deu a coluna `selected` aos itens do `dropdown-menu`: o preview a traz (senão o desenho avisa "field not provided").
   const withoutAddedPreview = (id: string, preview: unknown): unknown => {
     const p = preview as { items?: Rec[] } | undefined;
     if (id !== 'dropdown-menu' || p?.items === undefined) return preview;

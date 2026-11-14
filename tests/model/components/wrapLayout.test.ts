@@ -22,7 +22,7 @@ const schema: Record<string, unknown> = JSON.parse(
 );
 
 type Json = Record<string, unknown>;
-const V4 = 'só é permitido com formatVersion 4';
+const V4 = 'only allowed with formatVersion 4';
 
 function file(template: Json, formatVersion = 4, extra: Json = {}): Json {
   return {
@@ -210,12 +210,12 @@ describe('wrap: maxPerLine, maxLines e filho maior que a linha', () => {
     expect(at('k1').x).toBe(54);
   });
 
-  it('maxLines 1 não desenha o que passa da linha e avisa "<n> filhos fora de maxLines: <nó>"', () => {
+  it('maxLines 1 não desenha o que passa da linha e avisa "<n> children outside maxLines: <nó>"', () => {
     const result = build(frame({ wrap: 'wrap', gap: 8, maxLines: 1 }, kids(5)));
     expect(result.has('k2')).toBe(true);
     expect(result.has('k3')).toBe(false);
     expect(result.has('k4')).toBe(false);
-    expect(result.warnings).toContain('2 filhos fora de maxLines: host');
+    expect(result.warnings).toContain('2 children outside maxLines: host');
     expect(result.messages.map((m) => m.code)).toContain(
       'engine.childrenOutsideMaxLines',
     );
@@ -233,7 +233,7 @@ describe('wrap: maxPerLine, maxLines e filho maior que a linha', () => {
     expect(at('a')).toMatchObject({ x: 0, y: 0 });
     expect(at('big')).toMatchObject({ x: 0, y: 24 });
     expect(at('b')).toMatchObject({ x: 0, y: 48 });
-    expect(warnings).toContain('conteúdo maior que a caixa: host');
+    expect(warnings).toContain('content larger than the box: host');
   });
 });
 
@@ -310,7 +310,7 @@ describe('wrap: repeat', () => {
     expect(ys).toEqual([0, 0, 0, 32, 32]);
     const limited = build(repeatFile({ wrap: 'wrap', lineGap: 12, maxLines: 1 }));
     expect([...walk(limited.root)].filter((n) => n.name === 'cell')).toHaveLength(3);
-    expect(limited.warnings).toContain('2 filhos fora de maxLines: rep');
+    expect(limited.warnings).toContain('2 children outside maxLines: rep');
   });
 
   it('um repeat em linha com wrap e sem largura ocupa a largura do pai (senão não teria onde quebrar)', () => {
@@ -363,32 +363,32 @@ describe('wrap: validação', () => {
 
   it('lineGap, maxPerLine e maxLines sem wrap (ausente ou "none") são erro', () => {
     expect(issues(flow({ lineGap: 4 }))).toContain(
-      'template.layout.lineGap: só vale com wrap',
+      'template.layout.lineGap: only valid with wrap',
     );
     expect(issues(flow({ wrap: 'none', maxPerLine: 2 }))).toContain(
-      'template.layout.maxPerLine: só vale com wrap',
+      'template.layout.maxPerLine: only valid with wrap',
     );
     expect(issues(flow({ maxLines: 2 }))).toContain(
-      'template.layout.maxLines: só vale com wrap',
+      'template.layout.maxLines: only valid with wrap',
     );
   });
 
   it('valores inválidos', () => {
     expect(issues(flow({ wrap: 'sim' })).join('\n')).toMatch(/template\.layout\.wrap/);
     expect(issues(flow({ wrap: 'wrap', lineGap: -1 })).join('\n')).toMatch(
-      /template\.layout\.lineGap: .*maior ou igual a 0/,
+      /template\.layout\.lineGap: .*greater than or equal to 0/,
     );
     expect(issues(flow({ wrap: 'wrap', maxPerLine: 0 })).join('\n')).toMatch(
-      /template\.layout\.maxPerLine: .*inteiro/,
+      /template\.layout\.maxPerLine: .*integer/,
     );
     expect(issues(flow({ wrap: 'wrap', maxLines: 1.5 })).join('\n')).toMatch(
-      /template\.layout\.maxLines: .*inteiro/,
+      /template\.layout\.maxLines: .*integer/,
     );
   });
 
   it('layout none não aceita wrap (só type vale)', () => {
     const list = issues(frame({ type: 'none', wrap: 'wrap' }, kids(1)));
-    expect(list.join('\n')).toMatch(/template\.layout\.wrap: chave desconhecida: wrap/);
+    expect(list.join('\n')).toMatch(/template\.layout\.wrap: unknown key: wrap/);
   });
 
   it.each([1, 2, 3])('numa formatVersion %i as chaves novas são erro', (version) => {
@@ -415,7 +415,7 @@ describe('wrap: validação', () => {
       issues(repeat({ wrap: 'wrap', lineGap: 4, maxPerLine: 2, maxLines: 3 })),
     ).toEqual([]);
     expect(issues(repeat({ lineGap: 4 }))).toContain(
-      'template.children[0].lineGap: só vale com wrap',
+      'template.children[0].lineGap: only valid with wrap',
     );
     expect(issues(repeat({ wrap: 'x' })).join('\n')).toMatch(
       /template\.children\[0\]\.wrap/,

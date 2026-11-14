@@ -608,7 +608,7 @@ describe('plan_changes e propose_changes: operationsFile', () => {
     }
   });
 
-  it('JSON inválido: erro com a posição', async () => {
+  it('invalid JSON: erro com a posição', async () => {
     writeFileSync(join(aprox.base, 'quebrado.json'), '[{"op": "add_container",,}]');
     const reply = await call(aprox, 'plan_changes', {
       project: 'telas',

@@ -110,8 +110,8 @@ describe('validateLibrary com repeat', () => {
     expect(report.ok).toBe(true);
     // Só os campos `cor` e `total` não são usados pelo desenho.
     expect(report.warnings.map((w) => w.message)).toEqual([
-      expect.stringContaining('campo "cor" do tipo "tabela" não é usado'),
-      expect.stringContaining('campo "total" do tipo "tabela" não é usado'),
+      expect.stringContaining('field "cor" of the type "tabela" is not used'),
+      expect.stringContaining('field "total" of the type "tabela" is not used'),
     ]);
   });
 
@@ -121,7 +121,7 @@ describe('validateLibrary com repeat', () => {
       'error',
       'components/tab.json',
       'template.children[1].field',
-      'o desenho usa o campo "inexistente", que o tipo "tabela" não declara',
+      'the drawing uses the field "inexistente", which the type "tabela" does not declare',
     ]);
   });
 
@@ -131,7 +131,7 @@ describe('validateLibrary com repeat', () => {
       'error',
       'components/tab.json',
       'template.children[1].field',
-      'o repeat repete as linhas de "titulo", que é um campo string do tipo "tabela", não uma table',
+      'the repeat repeats the rows of "titulo", which is a string field of the type "tabela", not a table',
     ]);
   });
 
@@ -150,7 +150,7 @@ describe('validateLibrary com repeat', () => {
         'error',
         'components/tab.json',
         'template.children[1].template.children[1].text.$field',
-        'o desenho da linha usa "sumiu", que não é coluna da table "linhas" nem campo do tipo "tabela"',
+        'the row drawing uses "sumiu", which is neither a column of the table "linhas" nor a field of the type "tabela"',
       ],
     ]);
   });
@@ -166,8 +166,8 @@ describe('validateLibrary com repeat', () => {
       }),
     );
     expect(report.errors).toEqual([]);
-    expect(report.warnings.map((w) => w.message).join('\n')).not.toContain('campo "cor"');
-    expect(report.warnings.map((w) => w.message).join('\n')).toContain('campo "total"');
+    expect(report.warnings.map((w) => w.message).join('\n')).not.toContain('field "cor"');
+    expect(report.warnings.map((w) => w.message).join('\n')).toContain('field "total"');
   });
 
   it('a coluna usada que não existe mais na table é erro', () => {
@@ -186,7 +186,7 @@ describe('validateLibrary com repeat', () => {
         'error',
         'components/tab.json',
         'template.children[1].type',
-        'o nó repeat só existe na formatVersion 2',
+        'the repeat node only exists in formatVersion 2',
       ],
     ]);
   });
@@ -197,7 +197,7 @@ describe('validateLibrary com repeat', () => {
       'warning',
       'components/tab.json',
       'preview.linhas',
-      '"linhas" é uma table do tipo "tabela"; o preview dele deve ser uma lista de linhas',
+      '"linhas" is a table of the type "tabela"; its preview must be a list of rows',
     ]);
     const extra = validate(
       component({}, { preview: { linhas: [{ chave: 'a', extra: 'x' }] } }),
@@ -206,14 +206,14 @@ describe('validateLibrary com repeat', () => {
       'warning',
       'components/tab.json',
       'preview.linhas[0].extra',
-      '"extra" não é coluna da table "linhas" do tipo "tabela"',
+      '"extra" is not a column of the table "linhas" of the type "tabela"',
     ]);
     const scalar = validate(component({}, { preview: { titulo: [{ a: 'b' }] } }));
     expect(scalar.warnings.map(brief)).toContainEqual([
       'warning',
       'components/tab.json',
       'preview.titulo',
-      '"titulo" não é uma table do tipo "tabela"; o preview dele deve ser um valor simples',
+      '"titulo" is not a table of the type "tabela"; its preview must be a simple value',
     ]);
   });
 
@@ -221,12 +221,12 @@ describe('validateLibrary com repeat', () => {
     const many = Array.from({ length: 12 }, (_, i) => ({ chave: `k${i}`, valor: 'v' }));
     const report = validate(component({}, { preview: { titulo: 'T', linhas: many } }));
     expect(report.errors).toEqual([]);
-    const overflow = report.warnings.filter((w) => w.message.includes('conteúdo maior'));
+    const overflow = report.warnings.filter((w) => w.message.includes('content larger'));
     expect(overflow.map((w) => [w.file, w.path])).toEqual([
       ['components/tab.json', 'preview'],
     ]);
     // O tamanho mínimo não é desenhado: só o tamanho inicial.
-    expect(overflow[0]?.message).toContain('tamanho inicial 200×100');
+    expect(overflow[0]?.message).toContain('initial size 200×100');
   });
 
   it('sem preview, a prova usa a tabela vazia e passa', () => {
@@ -235,7 +235,7 @@ describe('validateLibrary com repeat', () => {
     const report = validate(comp);
     expect(report.errors).toEqual([]);
     expect(report.warnings.map((w) => w.message).join('\n')).not.toContain(
-      'conteúdo maior',
+      'content larger',
     );
   });
 });
@@ -262,14 +262,14 @@ describe('validateLibrary: $rows, $index e repeat por count (formato 4)', () => 
       'error',
       'components/tab.json',
       'template.children[0].text.$rows',
-      '$rows conta as linhas de "titulo", que é um campo string do tipo "tabela", não uma table',
+      '$rows counts the rows of "titulo", which is a string field of the type "tabela", not a table',
     ]);
   });
 
   it('$rows sobre campo inexistente é erro de campo não declarado', () => {
     const report = validate(v4([{ ...text('x'), text: { $rows: 'nada' } }]));
     expect(report.errors.map((e) => e.message)).toContain(
-      'o desenho usa o campo "nada", que o tipo "tabela" não declara',
+      'the drawing uses the field "nada", which the type "tabela" does not declare',
     );
   });
 
@@ -308,7 +308,7 @@ describe('validateLibrary: $rows, $index e repeat por count (formato 4)', () => 
       'error',
       'components/tab.json',
       'template.children[0].template.children[0].text.$field',
-      'o desenho da linha usa "inexistente", que o tipo "tabela" não declara',
+      'the row drawing uses "inexistente", which the type "tabela" does not declare',
     ]);
   });
 });
