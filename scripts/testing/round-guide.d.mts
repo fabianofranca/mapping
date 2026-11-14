@@ -1,23 +1,23 @@
-// Tipos de `round-guide.mjs` para quem o importa de TypeScript (tests/tooling/roundGuide.test.ts).
+// Types of `round-guide.mjs` for whoever imports it from TypeScript (tests/tooling/roundGuide.test.ts).
 export function listRoteiros(markdown: string): string[];
 /**
- * `roteiros` aceita `all`, `R6` e faixas de passos como `R6.3-R6.7`. Com `mandatoryOnly`, as seções de
- * `SECOES_SOB_DEMANDA` do guia viram uma linha com o comando `cloud.mjs secao` (a medida dos blocos).
+ * `roteiros` accepts `all`, `R6` and step ranges such as `R6.3-R6.7`. With `mandatoryOnly`, the
+ * `SECOES_SOB_DEMANDA` sections of the guide become a line with the `cloud.mjs secao` command (the measure of the blocks).
  */
 export function buildRoundGuide(
   markdown: string,
   roteiros: string[],
   options?: { commit?: string; mandatoryOnly?: boolean },
 ): string;
-/** A base do guia: só o obrigatório, sem as seções `### R<n>` (linha do `cloud.mjs passo`) nem as sob demanda (linha do `secao`). */
+/** The base of the guide: only the mandatory part, without the `### R<n>` sections (a `cloud.mjs passo` line) or the on-demand ones (a `secao` line). */
 export function buildGuideBase(
   markdown: string,
   roteiros: string[],
   options?: { commit?: string; name?: string },
 ): string;
-/** O índice TSV (`tipo`, `chave`, `ini`, `fim`, `título`) com linhas 1-based do guia da rodada. */
+/** The TSV index (`tipo`, `chave`, `ini`, `fim`, `título`) with 1-based lines of the round guide. */
 export function buildGuideIndex(guideText: string): string;
-/** O trecho do guia da rodada para `R<n>`, `R<n>.<m>` ou `R<n>.<a>-R<n>.<b>`; erro de item lança `Error`. */
+/** The part of the round guide for `R<n>`, `R<n>.<m>` or `R<n>.<a>-R<n>.<b>`; an item error throws `Error`. */
 export const FORA_DO_GUIA: string;
 export function guideExcerpt(
   guideText: string,
@@ -35,7 +35,7 @@ export interface GroupPlan {
   single: boolean;
   groups: { n: number; tokens: string[]; steps: number }[];
 }
-/** Divide a dirigida em grupos de até `limit` passos (sem o R0), no máximo 5, sem separar cadeias. */
+/** Splits the directed round into groups of up to `limit` steps (without R0), at most 5, without splitting chains. */
 export function planGroups(
   markdown: string,
   roteiros: string[],
@@ -48,15 +48,15 @@ export interface Faixa {
   token: string;
   steps: number;
 }
-/** Os lotes dos subagentes do testador (sem o R0), na ordem do guia: roteiro de até `limit` passos inteiro, acima disso faixas consecutivas; passo dependente (R22.6a) fica com o anterior. */
+/** The batches of the tester's subagents (without R0), in the guide's order: a script of up to `limit` steps whole, above that consecutive ranges; a dependent step (R22.6a) stays with the previous one. */
 export function planFaixas(
   markdown: string,
   roteiros: string[],
   options?: { limit?: number },
 ): Faixa[];
-/** O texto do `--faixas`: uma linha `lote k de n: <token> (<m> passos)` por lote. */
+/** The text of `--faixas`: one line `batch k of n: <token> (<m> steps)` per batch. */
 export function formatFaixas(lotes: Faixa[]): string;
-/** O Preparo de roteiros inteiros (antes do primeiro passo), com o corte de 25 mil; item que não é roteiro inteiro lança `Error`. */
+/** The setup text of whole scripts (before the first step), cut at 25 thousand; an item that is not a whole script throws `Error`. */
 export function guidePreparo(
   guideText: string,
   itens: string[],
@@ -70,13 +70,13 @@ export interface SecaoSobDemanda {
   fonte: 'guia' | 'consulta';
   quando: string;
 }
-/** As seções que o testador lê sob demanda pelo `cloud.mjs secao` (etapa #1533, decisões 1 e 4). */
+/** The sections the tester reads on demand through `cloud.mjs secao` (stage #1533, decisions 1 and 4). */
 export const SECOES_SOB_DEMANDA: SecaoSobDemanda[];
-/** O recorte das seções por chave, separadas por `---`; `consultaText` atende as chaves `consulta.*`; chave desconhecida lança `Error`. */
+/** The sections cut out by key, separated by `---`; `consultaText` serves the `consulta.*` keys; an unknown key throws `Error`. */
 export function guideSection(
   guideText: string,
   chaves: string[],
   consultaText?: string,
 ): string;
-/** A lista do `cloud.mjs secao` sem chave: chave, tamanho e "quando ler". */
+/** The list of `cloud.mjs secao` without a key: key, size and "when to read". */
 export function listSecoes(guideText: string, consultaText?: string): string;

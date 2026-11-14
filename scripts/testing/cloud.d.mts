@@ -1,14 +1,15 @@
-// Declaração de tipos de `cloud.mjs` (JS puro) para quem o importa de TypeScript
-// (ex.: tests/tooling/cloudHelpers.test.ts). Os parâmetros do Playwright (`page`, `browser`) ficam
-// como `unknown`: quem os usa de verdade já tem o valor com o tipo certo vindo do `connect()`.
+// Type declarations of `cloud.mjs` (plain JS) for whoever imports it from TypeScript
+// (e.g. tests/tooling/cloudHelpers.test.ts). The Playwright parameters (`page`, `browser`) are
+// left as `unknown`: whoever really uses them already has the value with the right type coming
+// from `connect()`.
 export interface ConnectOptions {
-  /** Prazo padrão das ações da página (ms); 5000. */
+  /** Default timeout of page actions (ms); 5000. */
   timeoutMs?: number;
-  /** Prazo padrão das navegações (ms); 15000. */
+  /** Default timeout of navigations (ms); 15000. */
   navigationTimeoutMs?: number;
-  /** Origem da app; `http://localhost:8080`. */
+  /** The app's origin; `http://localhost:8080`. */
   origin?: string;
-  /** Injetável para teste: no lugar de `chromium.connectOverCDP`. */
+  /** Injectable for tests: in place of `chromium.connectOverCDP`. */
   connectOverCDP?: (cdpUrl: string) => Promise<unknown>;
 }
 export function connect(
@@ -63,7 +64,7 @@ export interface TesterState {
   notices: string[];
   saveStatus: string | null;
   focus: { role: string; name: string } | null;
-  /** O que está selecionado (`data-selection`); `name` só com o `mapping.json` lido. */
+  /** What is selected (`data-selection`); `name` only with `mapping.json` read. */
   selection?: { type: string; id: string; name?: string } | null;
   windows: string[];
   project?: {
@@ -120,9 +121,9 @@ export function mark(apoioDir: string, roteiro: string, fase: 'start' | 'end'): 
 
 export interface TempoItem {
   nome: string;
-  /** Duração do primeiro `start` ao último `end`; `null` quando falta uma marca (tempo não medido). */
+  /** Duration from the first `start` to the last `end`; `null` when a mark is missing (time not measured). */
   segundos: number | null;
-  /** Com o `runs.log`: os `run` e os checks gravados entre o `start` e o `end` do roteiro. */
+  /** With `runs.log`: the `run`s and checks recorded between the script's `start` and `end`. */
   runs?: number;
   checks?: number;
 }
@@ -135,7 +136,7 @@ export interface Tempos {
 }
 export function temposFromLog(text: string, runsText?: string): Tempos;
 export function temposFromDir(apoioDir: string): Tempos;
-/** A `apoio/` da rodada mais recente em `~/mapping-testes`, ou `null` (usada quando `APOIO` não está exportado). */
+/** The `apoio/` of the most recent round in `~/mapping-testes`, or `null` (used when `APOIO` is not exported). */
 export function defaultApoioDir(home?: string): string | null;
 export function formatTempos(tempos: Tempos): string;
 
@@ -161,7 +162,7 @@ export function containerScreenPoint(args: {
   host: { x: number; y: number };
   perspective?: string;
   marking?: boolean;
-  /** O texto do `data-container-boxes` (ou o `Map` já lido): a posição desenhada. */
+  /** The text of `data-container-boxes` (or the `Map` already read): the drawn position. */
   boxes?: string | Map<string, ContainerBox> | null;
   warn?: (message: string) => void;
 }): { x: number; y: number };

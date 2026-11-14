@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Preparo do R8.5 (docs/TESTING.md): cria, na pasta dada, o que o roteiro usa, sem mexer no pacote
-# do repositório (`libraries/material3-compose/`):
-#   solta.json     especialização solta inválida (tipo de campo desconhecido e uma chave a mais);
-#   mat-sem-badge  o Material 3 (Compose) sem o tipo badge e sem migração (uma versão acima do pacote instalado);
-#   mat-aviso      o Material 3 (Compose) com o rótulo do primeiro exemplo do Switch grande demais.
+# Setup for R8.5 (docs/TESTING.md): creates, in the given folder, what the test script uses, without touching the repository's
+# package (`libraries/material3-compose/`):
+#   solta.json     invalid loose specialization (unknown field type and an extra key);
+#   mat-sem-badge  Material 3 (Compose) without the badge type and without a migration (one version above the installed package);
+#   mat-aviso      Material 3 (Compose) with the label of the Switch's first example too long.
 #
-# Uso: scripts/testing/r85-prep.sh <pasta-de-destino>   (na raiz do repositório; precisa de python3)
+# Usage: scripts/testing/r85-prep.sh <destination-folder>   (at the repository root; needs python3)
 set -euo pipefail
 
-out="${1:?uso: scripts/testing/r85-prep.sh <pasta-de-destino>}"
+out="${1:?usage: scripts/testing/r85-prep.sh <destination-folder>}"
 src="libraries/material3-compose"
 mkdir -p "$out"
 
@@ -32,7 +32,7 @@ def edit(folder, change):
     json.dump(s, open(p, "w"), ensure_ascii=False, indent=2)
 
 def no_badge(s):
-    s["version"] += 1  # uma acima do pacote instalado: com a mesma versão a app diz "Nada a fazer"
+    s["version"] += 1  # one above the installed package: with the same version the app says "Nothing to do"
     for layer in s["layers"]:
         layer["annotationTypes"] = [t for t in layer["annotationTypes"] if t["id"] != "badge"]
 
@@ -43,4 +43,4 @@ def long_label(s):
 edit("mat-sem-badge", no_badge)
 edit("mat-aviso", long_label)
 PY
-echo "R8.5: $out/solta.json, $out/mat-sem-badge e $out/mat-aviso prontos"
+echo "R8.5: $out/solta.json, $out/mat-sem-badge and $out/mat-aviso ready"

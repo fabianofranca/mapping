@@ -1,23 +1,23 @@
-// justificado.mjs: node justificado.mjs <pasta da biblioteca>
-// Troca o `card` de uma cópia de `m3-tokens` por um componente de formato 4 de 300 × 120, de fundo
-// branco, com as chaves do épico "Material 3 fiel, o resto" que o R25.87 em diante confere: o texto
-// justificado (`font.align` `justify`) e a cor composta (`over` no `$token`). Os nós, em unidades
-// do card:
-//   - o parágrafo `par` em (20, 20), de 120 de largura e linhas de 16, texto vermelho `#D32F2F`
-//     (Roboto 12, a fonte padrão) com sete palavras `WWW`: cabem três por linha (cerca de 108 de
-//     tinta, a 12 da largura), então são três linhas (3, 3 e 1 palavra); a tinta das duas primeiras
-//     vai até x 140 (justificadas) e a da última, de uma palavra só, fica à esquerda;
-//   - a faixa preta `#000000` em (180, 20), de 100 × 80;
-//   - o `véu` em (200, 30), de 60 × 20, de fill `{ $token: primary, alpha: 0.5, over: '#FFFFFF' }`:
-//     o primary (`#6750A4`) a 50% composto sobre branco, opaco (`#B3A7D1`), sem deixar a faixa passar;
-//   - o `translúcido` em (200, 60), de 60 × 20, com o mesmo `$token` e `alpha`, mas sem `over`: o
-//     primary a 50% sobre a faixa preta (`#33284F`).
-// Também tira o campo `interaction` do `card` (o componente mínimo não o desenha), como o
-// `tokens.mjs` do R25.22; sem efeito se a cópia já não o tem.
+// justificado.mjs: node justificado.mjs <library folder>
+// Replaces the `card` of a copy of `m3-tokens` with a 300 × 120 format 4 component, white
+// background, with the keys of the "faithful Material 3, the rest" epic that R25.87 onwards
+// checks: justified text (`font.align` `justify`) and the composite color (`over` on the `$token`).
+// The nodes, in card units:
+//   - the paragraph `par` at (20, 20), 120 wide with 16 lines, red text `#D32F2F`
+//     (Roboto 12, the default font) with seven `WWW` words: three fit per line (about 108 of
+//     ink, 12 short of the width), so there are three lines (3, 3 and 1 word); the ink of the first
+//     two goes up to x 140 (justified) and that of the last, a single word, stays on the left;
+//   - the black stripe `#000000` (node `faixa`) at (180, 20), 100 × 80;
+//   - the `véu` (veil) at (200, 30), 60 × 20, with fill `{ $token: primary, alpha: 0.5, over: '#FFFFFF' }`:
+//     the primary (`#6750A4`) at 50% composited over white, opaque (`#B3A7D1`), not letting the stripe through;
+//   - the `translúcido` (translucent) at (200, 60), 60 × 20, with the same `$token` and `alpha`, but without `over`: the
+//     primary at 50% over the black stripe (`#33284F`).
+// It also removes the `interaction` field from `card` (the minimal component does not draw it), like
+// `tokens.mjs` of R25.22; no effect if the copy no longer has it.
 import fs from 'node:fs';
 
 const dir = process.argv[2];
-if (!dir) throw new Error('uso: node justificado.mjs <pasta da biblioteca>');
+if (!dir) throw new Error('usage: node justificado.mjs <library folder>');
 const specFile = dir + '/material3-compose.spec.json';
 const spec = JSON.parse(fs.readFileSync(specFile, 'utf8'));
 for (const layer of spec.layers)

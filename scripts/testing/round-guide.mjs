@@ -1,34 +1,35 @@
-// Guia da rodada (etapa #421, decisão 7): gera o docs/TESTING.md só com os roteiros pedidos.
+// Round guide (stage #421, decision 7): generates docs/TESTING.md with only the requested test scripts.
 //
-// Uso:
-//   node scripts/testing/round-guide.mjs <roteiro…> [--out <pasta>/<nome>.md]   (ex.: R0 R2 R4 R11; `all` = todos)
-//   node scripts/testing/round-guide.mjs --grupos <roteiro…>            (divide a dirigida em grupos; ver abaixo)
-//   node scripts/testing/round-guide.mjs --faixas <roteiro|faixa…>      (lotes de até 20 passos para os subagentes do testador)
+// Usage:
+//   node scripts/testing/round-guide.mjs <script…> [--out <folder>/<name>.md]   (e.g. R0 R2 R4 R11; `all` = every script)
+//   node scripts/testing/round-guide.mjs --grupos <script…>            (splits the directed round into groups; see below)
+//   node scripts/testing/round-guide.mjs --faixas <script|range…>      (batches of up to 20 steps for the tester's subagents)
 //
-// Com `--out`, grava três arquivos (etapa #1232, GL1): `<nome>.md` (o guia da rodada), `<nome>-base.md`
-// (o mesmo guia sem as seções `### R<n>`, que viram uma linha com o comando) e `<nome>-indice.tsv`
-// (seção, roteiro e passo → linhas do `<nome>.md`). O roteiro e os passos saem por demanda com
-// `node scripts/testing/cloud.mjs passo <item…>` (`guideExcerpt`, abaixo).
+// With `--out`, it writes three files (stage #1232, GL1): `<name>.md` (the round guide), `<name>-base.md`
+// (the same guide without the `### R<n>` sections, which become a line with the command) and
+// `<name>-indice.tsv` (section, script and step → lines of `<name>.md`). The script and its steps are
+// printed on demand with `node scripts/testing/cloud.mjs passo <item…>` (`guideExcerpt`, below).
 //
-// Um roteiro pode ser pedido por faixa de passos (`R6.3-R6.7`): o guia leva só as linhas da tabela
-// do roteiro nessa faixa (mais o cabeçalho e o texto de preparo). Duas faixas do mesmo roteiro se
-// somam; o roteiro inteiro (`R6`) vence a faixa.
+// A script can be requested by a range of steps (`R6.3-R6.7`): the guide then carries only the script's
+// table rows in that range (plus the header and the setup text). Two ranges of the same script are
+// added together; the whole script (`R6`) wins over the range.
 //
-// Trechos marcados (etapa #841, RB1): no docs/TESTING.md, um trecho que só alguns roteiros usam fica
-// entre `<!-- roteiros: R12 R22 -->` e `<!-- /roteiros -->` (cada marca em linha própria, sem
-// aninhar). O trecho só entra no guia se um desses roteiros for pedido; trecho sem marca vai em
-// todos os guias. A marca é um comentário HTML: não aparece no guia lido por gente.
+// Marked passages (stage #841, RB1): in docs/TESTING.md, a passage that only some scripts use sits
+// between `<!-- roteiros: R12 R22 -->` and `<!-- /roteiros -->` (each marker on its own line, not
+// nested). The passage only enters the guide if one of those scripts is requested; a passage without
+// a marker goes in every guide. The marker is an HTML comment: it does not show in the guide read by
+// people.
 //
-// Base obrigatória (etapa #1533, TE1): o `<nome>-base.md` leva só o que o testador precisa antes de
-// começar (ver `SECOES_SOB_DEMANDA`); as outras seções do guia viram uma linha com o comando
-// `cloud.mjs secao <chave>`, que `guideSection` atende.
+// Mandatory base (stage #1533, TE1): `<name>-base.md` carries only what the tester needs before
+// starting (see `SECOES_SOB_DEMANDA`); the other sections of the guide become a line with the
+// command `cloud.mjs secao <key>`, which `guideSection` serves.
 //
-// Tira do guia os roteiros não pedidos, os "Roteiros sob demanda (manuais)", a seção 9 e o
-// "Registro do marco Uso real"; no quadro do "Comece aqui" ficam só as linhas dos roteiros pedidos
-// (MF3, #1025: o quadro inteiro pesa uns 5 mil caracteres em todo guia de bloco); mantém o resto na
-// ordem do guia ("Comece aqui", seções 1 a 7, a
-// introdução da seção 8, o template do relato e os apêndices A e B). A granularidade é o roteiro
-// inteiro. Roteiro inexistente: erro com a lista dos que existem (código de saída 2).
+// It drops from the guide the scripts not requested, the "On-demand scripts (manual)", section 9 and
+// the "Real-use milestone record"; in the "Start here" table only the rows of the requested scripts
+// stay (MF3, #1025: the whole table weighs about 5 thousand characters in every block guide); it
+// keeps the rest in the guide's order ("Start here", sections 1 to 7, the introduction of section 8,
+// the report template and appendices A and B). The granularity is the whole script. Nonexistent
+// script: error listing the ones that exist (exit code 2).
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -43,7 +44,7 @@ const GUIDE_FILE = path.join(
   'TESTING.md',
 );
 
-/** Parte o Markdown em trechos por cabeçalho `##`/`###` fora de bloco de código. */
+/** Splits the Markdown into sections by `##`/`###` heading, outside code blocks. */
 function splitSections(markdown) {
   const sections = [{ level: 0, title: '', lines: [] }];
   let fence = null;
@@ -63,13 +64,13 @@ function splitSections(markdown) {
   return sections;
 }
 
-const ROTEIRO = /^(R\d+)\b/;
+const SCRIPT_ID = /^(R\d+)\b/;
 
-/** Ids dos roteiros (`R0`, `R1`, …) que o guia tem, na ordem em que aparecem. */
+/** Ids of the scripts (`R0`, `R1`, …) the guide has, in the order they appear. */
 export function listRoteiros(markdown) {
   return splitSections(markdown)
-    .filter((section) => section.level === 3 && ROTEIRO.test(section.title))
-    .map((section) => ROTEIRO.exec(section.title)[1]);
+    .filter((section) => section.level === 3 && SCRIPT_ID.test(section.title))
+    .map((section) => SCRIPT_ID.exec(section.title)[1]);
 }
 
 const MARK_OPEN = /^<!-- roteiros: ([^>]*?) -->$/;
@@ -78,41 +79,42 @@ const STEP_ROW = /^\|\s*(?:\*\*)?(R\d+\.\d+[a-z]?)(?:\*\*)?[^|]*\|/;
 const STEP_ITEM = /^(R\d+)\.(\d+[a-z]?)$/i;
 const RANGE = /^(R\d+)\.(\d+[a-z]?)-(R\d+)\.(\d+[a-z]?)$/i;
 
-/** Tira as marcas de trecho: o trecho fica se um dos roteiros citados é pedido. */
+/** Strips the passage markers: the passage stays if one of the scripts it cites is requested. */
 function applyMarks(text, wanted, existing) {
   const out = [];
   let open = null;
   for (const line of text.split('\n')) {
     const mark = MARK_OPEN.exec(line);
     if (mark) {
-      if (open) throw new Error('Marca <!-- roteiros --> aninhada no guia.');
+      if (open) throw new Error('Nested <!-- roteiros --> marker in the guide.');
       const ids = mark[1].trim().split(/\s+/).filter(Boolean);
       for (const id of ids) {
         if (!existing.includes(id)) {
           throw new Error(
-            `Marca cita roteiro inexistente: ${id}. Existem: ${existing.join(', ')}.`,
+            `Marker cites a nonexistent script: ${id}. Existing: ${existing.join(', ')}.`,
           );
         }
       }
       open = { keep: ids.some((id) => wanted.has(id)) };
     } else if (line === MARK_CLOSE) {
-      if (!open) throw new Error('Marca <!-- /roteiros --> sem abertura no guia.');
+      if (!open)
+        throw new Error('Marker <!-- /roteiros --> without an opening in the guide.');
       open = null;
     } else if (!open || open.keep) {
       out.push(line);
     }
   }
   if (open)
-    throw new Error('Marca <!-- roteiros --> sem o <!-- /roteiros --> de fechamento.');
+    throw new Error('Marker <!-- roteiros --> without the closing <!-- /roteiros -->.');
   return out.join('\n');
 }
 
-/** Códigos dos passos (`R6.3`, `R6.8a`…) da tabela de um trecho de roteiro, na ordem. */
+/** Codes of the steps (`R6.3`, `R6.8a`…) in the table of a script section, in order. */
 function stepCodes(lines) {
   return lines.map((line) => STEP_ROW.exec(line)?.[1]).filter(Boolean);
 }
 
-/** O trecho do roteiro só com as linhas de passo dentro das faixas (`from`/`to` sem o roteiro). */
+/** The script section with only the step rows inside the ranges (`from`/`to` without the script). */
 function cutRanges(lines, ranges, id) {
   const codes = stepCodes(lines);
   const allowed = new Set();
@@ -121,7 +123,7 @@ function cutRanges(lines, ranges, id) {
     const b = codes.indexOf(`${id}.${to}`);
     if (a < 0 || b < 0 || b < a) {
       throw new Error(
-        `Faixa inválida: ${id}.${from}-${id}.${to}. Passos: ${codes.join(', ')}.`,
+        `Invalid range: ${id}.${from}-${id}.${to}. Steps: ${codes.join(', ')}.`,
       );
     }
     for (const code of codes.slice(a, b + 1)) allowed.add(code);
@@ -132,11 +134,11 @@ function cutRanges(lines, ranges, id) {
   });
 }
 
-/** Separa os argumentos em roteiros inteiros e faixas por roteiro. */
-function parseRequest(roteiros, existing) {
+/** Splits the arguments into whole scripts and ranges per script. */
+function parseRequest(requested, existing) {
   const whole = new Set();
   const ranges = new Map();
-  for (const raw of roteiros) {
+  for (const raw of requested) {
     if (raw.toLowerCase() === 'all') {
       for (const id of existing) whole.add(id);
       continue;
@@ -145,13 +147,13 @@ function parseRequest(roteiros, existing) {
     if (range) {
       const id = range[1].toUpperCase();
       if (id !== range[3].toUpperCase()) {
-        throw new Error(`Faixa de passos de roteiros diferentes: ${raw}.`);
+        throw new Error(`Step range across different scripts: ${raw}.`);
       }
       const list = ranges.get(id) ?? [];
       list.push({ from: range[2], to: range[4] });
       ranges.set(id, list);
     } else if (STEP_ITEM.test(raw)) {
-      // Passo avulso (`R0.1`): a faixa de um passo só.
+      // Single step (`R0.1`): a range of one step.
       const [rawId, step] = raw.split('.');
       const id = rawId.toUpperCase();
       const list = ranges.get(id) ?? [];
@@ -163,18 +165,19 @@ function parseRequest(roteiros, existing) {
   }
   for (const id of [...whole, ...ranges.keys()]) {
     if (!existing.includes(id)) {
-      throw new Error(`Roteiro inexistente: ${id}. Existem: ${existing.join(', ')}.`);
+      throw new Error(`Nonexistent script: ${id}. Existing: ${existing.join(', ')}.`);
     }
   }
   return { whole, ranges };
 }
 
-const OVERVIEW_ROW = /^\|\s*(?:\d+|sob demanda)\s*\|\s*(R\d+|R[A-Z])\b/;
+const OVERVIEW_ROW = /^\|\s*(?:\d+|on[- ]demand)\s*\|\s*(R\d+|R[A-Z])\b/;
 
 /**
- * As linhas do quadro "Comece aqui" sem as linhas dos roteiros que o guia não leva (e dos sob
- * demanda, que também saem): sobra a linha de cada roteiro pedido, a da seção 6 e o resto do texto.
- * O quadro lista os 27 roteiros e pesa uns 5 mil caracteres em todo guia de bloco.
+ * The rows of the "Start here" table without the rows of the scripts the guide does not carry (and
+ * of the on-demand ones, which also go): what remains is the row of each requested script, the one
+ * for section 6 and the rest of the text. The table lists the 27 scripts and weighs about 5
+ * thousand characters in every block guide.
  */
 function trimOverview(lines, wanted) {
   return lines.filter((line) => {
@@ -184,114 +187,112 @@ function trimOverview(lines, wanted) {
 }
 
 /**
- * Seções que o testador lê sob demanda (etapa #1533, TE1, decisões 1 e 4): a chave do `cloud.mjs
- * secao`, o início do título (`titulo`), o `nivel` do cabeçalho, a `fonte` (`guia`: o `apoio/guia.md`;
- * `consulta`: o `docs/TESTING-NUVEM-CONSULTA.md` do clone; `consulta.regras` guarda as regras do R21 e do passo que exige o dono) e o `quando` ler.
+ * Sections the tester reads on demand (stage #1533, TE1, decisions 1 and 4): the key of `cloud.mjs
+ * secao` (`chave`), the start of the heading (`titulo`), the heading level (`nivel`), the source
+ * (`fonte`; `guia`: the `apoio/guia.md`; `consulta`: the clone's `docs/TESTING-NUVEM-CONSULTA.md`;
+ * `consulta.regras` holds the rules for R21 and for the step that needs the owner) and when to
+ * read it (`quando`).
  */
 export const SECOES_SOB_DEMANDA = [
   {
     chave: '1',
-    titulo: '1. Onde pegar a app',
+    titulo: '1. Where to get the app',
     nivel: 2,
     fonte: 'guia',
-    quando: 'se a URL da app ou o canal (estável ou prévia) estiver em dúvida',
+    quando: 'if the app URL or the channel (stable or preview) is in doubt',
   },
   {
     chave: '2',
-    titulo: '2. Requisitos',
+    titulo: '2. Requirements',
     nivel: 2,
     fonte: 'guia',
     quando:
-      'se faltar pasta de trabalho, imagem de teste ou se uma extensão atrapalhar a digitação',
+      'if the working folder or the test image is missing, or if an extension gets in the way of typing',
   },
   {
     chave: '3',
-    titulo: '3. Conferir a versão que está aberta',
+    titulo: '3. Check which version is open',
     nivel: 2,
     fonte: 'guia',
-    quando:
-      'antes do R0.1, para achar o build id na barra de status ou em Configurações › Sobre',
+    quando: 'before R0.1, to find the build id in the status bar or in Settings › About',
   },
   {
     chave: '5',
-    titulo: '5. Mapa da interface',
+    titulo: '5. Interface map',
     nivel: 2,
     fonte: 'guia',
     quando:
-      'quando um passo citar um nome, ícone, janela ou notação da interface que você não achar',
+      'when a step cites an interface name, icon, window or notation you cannot find',
   },
   {
     chave: '6',
-    titulo: '6. Instalar o servidor MCP',
+    titulo: '6. Install the MCP server',
     nivel: 2,
     fonte: 'guia',
     quando:
-      'antes da seção 6 da rodada (repositório de teste e MCP), no bloco ou grupo que a tem',
+      'before section 6 of the round (test repository and MCP), in the block or group that has it',
   },
   {
     chave: '7',
-    titulo: '7. Como relatar um problema',
+    titulo: '7. How to report a problem',
     nivel: 2,
     fonte: 'guia',
     quando:
-      'antes do primeiro achado e antes de escrever o relato (severidade e Diagnóstico)',
+      'before the first finding and before writing the report (severity and Diagnostic)',
   },
   {
     chave: 'A.seletores',
-    titulo: 'Seletores e nomes que enganam',
+    titulo: 'Misleading selectors and names',
     nivel: 3,
     fonte: 'guia',
-    quando:
-      'quando um localizador falhar por timeout, por modo estrito ou por nome repetido',
+    quando: 'when a locator fails by timeout, by strict mode or by a repeated name',
   },
   {
     chave: 'B',
-    titulo: 'Apêndice B',
+    titulo: 'Appendix B',
     nivel: 2,
     fonte: 'guia',
-    quando:
-      'nas operações de disco (mover, copiar, tirar a permissão de escrita): R6.8b e R6.11',
+    quando: 'in disk operations (move, copy, remove write permission): R6.8b and R6.11',
   },
   {
     chave: 'consulta.subagente',
-    titulo: 'Subagente por lote',
+    titulo: 'Subagent per batch',
     nivel: 2,
     fonte: 'consulta',
-    quando: 'antes do primeiro lote (o R0)',
+    quando: 'before the first batch (R0)',
   },
   {
     chave: 'consulta.grupos',
-    titulo: 'Rodada dirigida em grupos',
+    titulo: 'Directed round in groups',
     nivel: 2,
     fonte: 'consulta',
-    quando:
-      'se a mensagem disser "grupo k de n" ou se você tiver de dividir uma dirigida',
+    quando: 'if the message says "grupo k de n" or if you have to split a directed round',
   },
   {
     chave: 'consulta.passada',
-    titulo: 'Passada visual',
+    titulo: 'Visual pass',
     nivel: 2,
     fonte: 'consulta',
     quando:
-      'antes da passada visual (bloco 4, ou a dirigida que a pede) e no reteste de janelas',
+      'before the visual pass (block 4, or the directed round that asks for it) and in the window retest',
   },
   {
     chave: 'consulta.regras',
-    titulo: 'Regras de exceção',
+    titulo: 'Exception rules',
     nivel: 2,
     fonte: 'consulta',
-    quando: 'antes do R21 (tag da release) ou de um passo que só a pessoa faria',
+    quando: 'before R21 (release tag) or a step that only the person would do',
   },
   {
     chave: 'consulta.historico',
-    titulo: 'Histórico dos blocos',
+    titulo: 'Block history',
     nivel: 2,
     fonte: 'consulta',
-    quando: 'só para comparar tempos e contagens com as rodadas anteriores',
+    quando: 'only to compare times and counts with the previous rounds',
   },
 ];
 
-/** A entrada de `SECOES_SOB_DEMANDA` do guia (`fonte: 'guia'`) que esta seção é, se for. */
+/** The `SECOES_SOB_DEMANDA` entry of the guide (`fonte: 'guia'`) that this section is, if any. */
 function onDemandEntry(section) {
   if (section.level < 2) return undefined;
   return SECOES_SOB_DEMANDA.find(
@@ -302,28 +303,29 @@ function onDemandEntry(section) {
   );
 }
 
-/** A linha do comando que no lugar da seção sob demanda diz como lê-la. */
+/** The command line that, in place of the on-demand section, says how to read it. */
 function onDemandPointer(section, entry) {
   return [
     `${'#'.repeat(section.level)} ${section.title}: \`node scripts/testing/cloud.mjs secao ${entry.chave}\``,
     '',
-    `Quando ler: ${entry.quando}.`,
+    `When to read: ${entry.quando}.`,
     '',
   ];
 }
 
 /**
- * O guia sem os roteiros não pedidos, os sob demanda, a seção 9 e o registro do Uso real. Com
- * `mandatoryOnly`, também sem as seções de `SECOES_SOB_DEMANDA`, cada uma trocada por uma linha com o
- * comando `cloud.mjs secao` (o que o testador lê antes dos roteiros; é a medida do limite dos blocos).
+ * The guide without the scripts not requested, the on-demand ones, section 9 and the Real-use
+ * record. With `mandatoryOnly`, also without the `SECOES_SOB_DEMANDA` sections, each replaced by a
+ * line with the `cloud.mjs secao` command (what the tester reads before the scripts; it is the
+ * measure of the block limit).
  */
 export function buildRoundGuide(
   markdown,
-  roteiros,
-  { commit = 'desconhecido', mandatoryOnly = false } = {},
+  scripts,
+  { commit = 'unknown', mandatoryOnly = false } = {},
 ) {
   const existing = listRoteiros(markdown);
-  const { whole, ranges } = parseRequest(roteiros, existing);
+  const { whole, ranges } = parseRequest(scripts, existing);
   const wanted = new Set([...whole, ...ranges.keys()]);
   let dropParent = false;
   let pointedLevel2 = false;
@@ -332,17 +334,17 @@ export function buildRoundGuide(
     if (section.level === 2) {
       dropParent = /^9\./.test(section.title);
       pointedLevel2 = false;
-      if (/^Comece aqui/.test(section.title))
+      if (/^Start here/.test(section.title))
         section.lines = trimOverview(section.lines, wanted);
     }
-    const roteiro = section.level === 3 ? ROTEIRO.exec(section.title)?.[1] : undefined;
+    const script = section.level === 3 ? SCRIPT_ID.exec(section.title)?.[1] : undefined;
     const drop =
       (section.level === 2 && dropParent) ||
       (section.level === 3 &&
         (dropParent ||
-          (roteiro && !wanted.has(roteiro)) ||
-          /^Roteiros sob demanda/.test(section.title) ||
-          /^Registro do marco/.test(section.title)));
+          (script && !wanted.has(script)) ||
+          /^On-demand scripts/.test(section.title) ||
+          /^Real-use milestone record/.test(section.title)));
     if (drop) continue;
     const entry = mandatoryOnly ? onDemandEntry(section) : undefined;
     if (entry) {
@@ -351,9 +353,9 @@ export function buildRoundGuide(
       continue;
     }
     if (pointedLevel2 && section.level === 3) continue;
-    const cut = roteiro && !whole.has(roteiro) && ranges.has(roteiro);
+    const cut = script && !whole.has(script) && ranges.has(script);
     kept.push(
-      (cut ? cutRanges(section.lines, ranges.get(roteiro), roteiro) : section.lines).join(
+      (cut ? cutRanges(section.lines, ranges.get(script), script) : section.lines).join(
         '\n',
       ),
     );
@@ -368,13 +370,13 @@ export function buildRoundGuide(
             .map((r) => `${id}.${r.from}-${id}.${r.to}`)
             .join(', ')})`,
     );
-  const note = `> Guia da rodada (commit ${commit}): roteiros ${ids.join(', ')}. O guia inteiro é o docs/TESTING.md; consulte-o por trecho (Grep) para o que faltar aqui.`;
+  const note = `> Round guide (commit ${commit}): scripts ${ids.join(', ')}. The whole guide is docs/TESTING.md; look things up there by section (Grep) for anything missing here.`;
   return `${note}\n\n${applyMarks(kept.join('\n'), wanted, existing)}`;
 }
 
-// --- Guia da rodada sob demanda (etapa #1232, GL1) ---
+// --- On-demand round guide (stage #1232, GL1) ---
 
-/** Linhas de passo de um trecho (fora de bloco de código): o código e o índice da linha. */
+/** Step rows of a section (outside code blocks): the code and the line index. */
 function stepRows(lines) {
   const rows = [];
   let fence = false;
@@ -390,20 +392,19 @@ function stepRows(lines) {
 }
 
 /**
- * A base do guia da rodada: o `buildRoundGuide` com `mandatoryOnly` (a base obrigatória), sem as
- * seções `### R<n>`, cada uma trocada por uma linha com o comando que a imprime (`cloud.mjs passo
- * R<n>`). `name` é o nome do
- * arquivo do índice (`<name>-indice.tsv`).
+ * The base of the round guide: `buildRoundGuide` with `mandatoryOnly` (the mandatory base), without
+ * the `### R<n>` sections, each replaced by a line with the command that prints it (`cloud.mjs passo
+ * R<n>`). `name` is the name of the index file (`<name>-indice.tsv`).
  */
 export function buildGuideBase(
   markdown,
-  roteiros,
-  { commit = 'desconhecido', name = 'guia' } = {},
+  scripts,
+  { commit = 'unknown', name = 'guia' } = {},
 ) {
   const out = [];
-  const guide = buildRoundGuide(markdown, roteiros, { commit, mandatoryOnly: true });
+  const guide = buildRoundGuide(markdown, scripts, { commit, mandatoryOnly: true });
   for (const section of splitSections(guide)) {
-    const id = section.level === 3 ? ROTEIRO.exec(section.title)?.[1] : undefined;
+    const id = section.level === 3 ? SCRIPT_ID.exec(section.title)?.[1] : undefined;
     if (id) {
       out.push(
         `### ${section.title}: \`node scripts/testing/cloud.mjs passo ${id}\``,
@@ -413,7 +414,7 @@ export function buildGuideBase(
       const [note = '', ...rest] = section.lines;
       out.push(
         note,
-        `> Os roteiros saem por \`cloud.mjs passo\`; o índice está em \`${name}-indice.tsv\`. As seções sob demanda saem por \`cloud.mjs secao <chave>\` (sem chave, lista).`,
+        `> The scripts are printed by \`cloud.mjs passo\`; the index is in \`${name}-indice.tsv\`. The on-demand sections are printed by \`cloud.mjs secao <key>\` (without a key, it lists them).`,
         ...rest,
       );
     } else {
@@ -424,9 +425,9 @@ export function buildGuideBase(
 }
 
 /**
- * O índice do guia da rodada, em TSV (`tipo`, `chave`, `ini`, `fim`, `título`), com linhas 1-based
- * do próprio guia: uma `secao` por cabeçalho que não é roteiro, um `roteiro` por `### R<n>` e um
- * `passo` por linha de passo.
+ * The index of the round guide, as TSV (`tipo`, `chave`, `ini`, `fim`, `título`; the header row is
+ * read by cloud.mjs, so it stays as is), with 1-based lines of the guide itself: one `secao` per
+ * heading that is not a script, one `roteiro` per `### R<n>` and one `passo` per step row.
  */
 export function buildGuideIndex(guideText) {
   const lines = guideText.split('\n');
@@ -442,7 +443,7 @@ export function buildGuideIndex(guideText) {
     if (section.level === 0) continue;
     let fim = consumed;
     while (fim > ini && !lines[fim - 1].trim()) fim -= 1;
-    const id = section.level === 3 ? ROTEIRO.exec(section.title)?.[1] : undefined;
+    const id = section.level === 3 ? SCRIPT_ID.exec(section.title)?.[1] : undefined;
     rows.push([
       id ? 'roteiro' : 'secao',
       id ?? cell(section.title),
@@ -459,18 +460,18 @@ export function buildGuideIndex(guideText) {
   return `${rows.map((row) => row.join('\t')).join('\n')}\n`;
 }
 
-/** Limite de caracteres do que o `cloud.mjs passo` imprime (abaixo dos 30 mil do Bash). */
+/** Character limit of what `cloud.mjs passo` prints (below Bash's 30 thousand). */
 export const EXCERPT_LIMIT = 25000;
 const CUT_RESERVE = 200;
-const STEP_HEADER = /^\|\s*Passo\b/;
+const STEP_HEADER = /^\|\s*Step\b/;
 
-/** Interpreta um item do `passo`: `R12`, `R12.4` ou `R12.4-R12.9`. */
+/** Parses an item of `passo`: `R12`, `R12.4` or `R12.4-R12.9`. */
 function parseExcerptItem(raw) {
   const range = RANGE.exec(raw);
   if (range) {
     const id = range[1].toUpperCase();
     if (id !== range[3].toUpperCase()) {
-      throw new Error(`Faixa de passos de roteiros diferentes: ${raw}.`);
+      throw new Error(`Step range across different scripts: ${raw}.`);
     }
     return {
       raw,
@@ -485,18 +486,18 @@ function parseExcerptItem(raw) {
     return { raw, id: step[1].toUpperCase(), from: code, to: code };
   }
   if (/^R\d+$/i.test(raw)) return { raw, id: raw.toUpperCase() };
-  throw new Error(`Item inválido: ${raw}. Use R<n>, R<n>.<m> ou R<n>.<a>-R<n>.<b>.`);
+  throw new Error(`Invalid item: ${raw}. Use R<n>, R<n>.<m> or R<n>.<a>-R<n>.<b>.`);
 }
 
-/** O roteiro inteiro sem as linhas de passo: cada sequência delas vira `Passos (k): a, b, …, z`. */
-function wholeRoteiro(section, rows) {
+/** The whole script without the step rows: each run of them becomes `Steps (k): a, b, …, z`. */
+function wholeScript(section, rows) {
   const stepAt = new Map(rows.map((r) => [r.i, r.code]));
   const entries = [];
   let run = [];
   const flush = () => {
     if (run.length === 0) return;
     const shown = run.length <= 3 ? run : [run[0], run[1], '…', run[run.length - 1]];
-    entries.push({ text: `Passos (${run.length}): ${shown.join(', ')}` });
+    entries.push({ text: `Steps (${run.length}): ${shown.join(', ')}` });
     run = [];
   };
   section.lines.forEach((line, i) => {
@@ -511,14 +512,14 @@ function wholeRoteiro(section, rows) {
   return entries;
 }
 
-/** As linhas do primeiro ao último passo pedido, com o cabeçalho da tabela do primeiro. */
+/** The lines from the first to the last requested step, with the table header of the first. */
 function stepRange(section, rows, item, guideId) {
   const codes = rows.map((r) => r.code);
   const absent = (code) => {
     const span = codes.length
-      ? `tem ${codes[0]} a ${codes[codes.length - 1]} (${codes.length} passos)`
-      : 'não tem passos';
-    return new Error(`${code} não está no guia da rodada; o ${guideId} ${span}`);
+      ? `has ${codes[0]} to ${codes[codes.length - 1]} (${codes.length} steps)`
+      : 'has no steps';
+    return new Error(`${code} is not in the round guide; ${guideId} ${span}`);
   };
   const a = codes.indexOf(item.from);
   let b = codes.indexOf(item.to);
@@ -526,9 +527,9 @@ function stepRange(section, rows, item, guideId) {
   if (b < 0) throw absent(item.to);
   if (b < a)
     throw new Error(
-      `Faixa inválida: ${item.from}-${item.to}. Passos: ${codes.join(', ')}.`,
+      `Invalid range: ${item.from}-${item.to}. Steps: ${codes.join(', ')}.`,
     );
-  // O último passo pedido leva consigo os que dependem dele (R22.6 traz o R22.6a).
+  // The last requested step brings along the ones that depend on it (R22.6 brings R22.6a).
   while (
     /\d$/.test(item.to) &&
     codes[b + 1]?.startsWith(item.to) &&
@@ -551,7 +552,7 @@ function stepRange(section, rows, item, guideId) {
   return entries;
 }
 
-/** Corta as linhas em `EXCERPT_LIMIT` caracteres, na última linha inteira, e diz como continuar. */
+/** Cuts the lines at `EXCERPT_LIMIT` characters, at the last whole line, and says how to continue. */
 function cutExcerpt(entries, items) {
   const total = entries.reduce((n, e) => n + e.text.length + 1, -1);
   if (total <= EXCERPT_LIMIT) return entries.map((e) => e.text).join('\n');
@@ -570,43 +571,43 @@ function cutExcerpt(entries, items) {
   const later = [...new Set(rest.map((e) => e.item))]
     .filter((n) => items[n] !== item)
     .map((n) => items[n].raw);
-  const tail = later.length ? `; depois, os itens ${later.join(' ')}` : '';
-  const message = `… corte em 25.000 caracteres: continue com cloud.mjs passo ${target}${tail}`;
+  const tail = later.length ? `; then, the items ${later.join(' ')}` : '';
+  const message = `… cut at 25,000 characters: continue with cloud.mjs passo ${target}${tail}`;
   return [...entries.slice(0, end).map((e) => e.text), message].join('\n');
 }
 
-/** Os roteiros (`R<n>`) de um texto de guia, com a seção e as linhas de passo de cada um. */
-function roteiroSections(text) {
+/** The scripts (`R<n>`) of a guide text, with the section and step rows of each. */
+function scriptSections(text) {
   const map = new Map();
   for (const section of splitSections(text)) {
-    const id = section.level === 3 ? ROTEIRO.exec(section.title)?.[1] : undefined;
+    const id = section.level === 3 ? SCRIPT_ID.exec(section.title)?.[1] : undefined;
     if (id) map.set(id, { section, rows: stepRows(section.lines) });
   }
   return map;
 }
 
 /**
- * O Preparo de roteiros inteiros para o `cloud.mjs passo <Rn> --preparo` (etapa #1639, TC1, decisão 4):
- * o trecho do roteiro antes do cabeçalho da tabela do primeiro passo (título, "O que cobre", Preparo,
- * com os blocos de código), com o corte de `EXCERPT_LIMIT`. Item que não é roteiro inteiro lança.
+ * The setup text of whole scripts for `cloud.mjs passo <Rn> --preparo` (stage #1639, TC1, decision
+ * 4): the part of the script before the table header of the first step (title, "What it covers",
+ * setup, with the code blocks), cut at `EXCERPT_LIMIT`. An item that is not a whole script throws.
  */
-export function guidePreparo(guideText, itens, fallbackText) {
-  const sections = roteiroSections(guideText);
-  const fallback = fallbackText === undefined ? undefined : roteiroSections(fallbackText);
+export function guidePreparo(guideText, requested, fallbackText) {
+  const sections = scriptSections(guideText);
+  const fallback = fallbackText === undefined ? undefined : scriptSections(fallbackText);
   const entries = [];
-  itens.forEach((raw, n) => {
+  requested.forEach((raw, n) => {
     if (!/^R\d+$/i.test(raw)) {
       throw new Error(
-        `Item inválido com --preparo: ${raw}. Use só roteiros inteiros: cloud.mjs passo R<n> --preparo.`,
+        `Invalid item with --preparo: ${raw}. Use only whole scripts: cloud.mjs passo R<n> --preparo.`,
       );
     }
     const id = raw.toUpperCase();
     let found = sections.get(id);
-    const fora = !found && fallback?.has(id);
-    if (fora) found = fallback.get(id);
+    const external = !found && fallback?.has(id);
+    if (external) found = fallback.get(id);
     if (!found) {
       throw new Error(
-        `${id} não está no guia da rodada; o guia tem ${[...sections.keys()].join(', ')}.`,
+        `${id} is not in the round guide; the guide has ${[...sections.keys()].join(', ')}.`,
       );
     }
     const { section, rows } = found;
@@ -617,7 +618,7 @@ export function guidePreparo(guideText, itens, fallbackText) {
     const lines = section.lines.slice(0, end);
     while (lines.length && !lines[lines.length - 1].trim()) lines.pop();
     if (n > 0) entries.push('---');
-    if (fora) entries.push(FORA_DO_GUIA);
+    if (external) entries.push(FORA_DO_GUIA);
     entries.push(...lines);
   });
   const total = entries.reduce((n, e) => n + e.length + 1, -1);
@@ -632,54 +633,53 @@ export function guidePreparo(guideText, itens, fallbackText) {
   }
   return [
     ...entries.slice(0, end),
-    `… corte em 25.000 caracteres: o resto do Preparo está no apoio/guia.md (Read com offset a partir de "${entries[end]?.slice(0, 40)}")`,
+    `… cut at 25,000 characters: the rest of the setup text is in apoio/guia.md (Read with an offset starting at "${entries[end]?.slice(0, 40)}")`,
   ].join('\n');
 }
 
 /**
- * O trecho do guia da rodada para o `cloud.mjs passo`: `R<n>` (o roteiro sem as linhas de passo),
- * `R<n>.<m>` ou `R<n>.<a>-R<n>.<b>` (as linhas dos passos, com o cabeçalho da tabela). Os itens saem
- * na ordem pedida, separados por `---`; erro de item lança `Error` sem imprimir trecho.
+ * The part of the round guide for `cloud.mjs passo`: `R<n>` (the script without the step rows),
+ * `R<n>.<m>` or `R<n>.<a>-R<n>.<b>` (the step rows, with the table header). The items come out in
+ * the requested order, separated by `---`; an item error throws `Error` without printing a section.
  */
-export function guideExcerpt(guideText, itens, fallbackText) {
-  const rotulos = roteiroSections;
-  const sections = rotulos(guideText);
-  // Item que o guia da rodada não tem: lido do docs/TESTING.md (`fallbackText`), com a marca (TE3).
-  const fallback = fallbackText === undefined ? undefined : rotulos(fallbackText);
-  const items = itens.map(parseExcerptItem);
+export function guideExcerpt(guideText, requested, fallbackText) {
+  const sections = scriptSections(guideText);
+  // Item the round guide does not have: read from docs/TESTING.md (`fallbackText`), with the mark (TE3).
+  const fallback = fallbackText === undefined ? undefined : scriptSections(fallbackText);
+  const items = requested.map(parseExcerptItem);
   const entries = [];
   items.forEach((item, n) => {
     let found = sections.get(item.id);
-    const fora = !found && fallback?.has(item.id);
-    if (fora) found = fallback.get(item.id);
+    const external = !found && fallback?.has(item.id);
+    if (external) found = fallback.get(item.id);
     if (!found) {
       throw new Error(
-        `${item.from ?? item.id} não está no guia da rodada; o guia tem ${[...sections.keys()].join(', ')}. Para outro roteiro, gere o guia de novo com round-guide.mjs ou procure o trecho com Grep no docs/TESTING.md.`,
+        `${item.from ?? item.id} is not in the round guide; the guide has ${[...sections.keys()].join(', ')}. For another script, generate the guide again with round-guide.mjs or look for the section with Grep in docs/TESTING.md.`,
       );
     }
     const part = item.from
       ? stepRange(found.section, found.rows, item, item.id)
-      : wholeRoteiro(found.section, found.rows);
+      : wholeScript(found.section, found.rows);
     if (n > 0) entries.push({ text: '---', item: n });
-    if (fora) entries.push({ text: FORA_DO_GUIA, item: n });
+    if (external) entries.push({ text: FORA_DO_GUIA, item: n });
     for (const entry of part) entries.push({ ...entry, item: n });
   });
   return cutExcerpt(entries, items);
 }
 
-/** Primeira linha do trecho de um item que veio do `docs/TESTING.md` e não do guia da rodada. */
-export const FORA_DO_GUIA = 'fora do guia da rodada (lido do docs/TESTING.md)';
+/** First line of the section of an item that came from `docs/TESTING.md` and not from the round guide. */
+export const FORA_DO_GUIA = 'outside the round guide (read from docs/TESTING.md)';
 
-// --- Seções sob demanda (etapa #1533, TE1, decisão 2) ---
+// --- On-demand sections (stage #1533, TE1, decision 2) ---
 
-/** O texto da seção da `entrada`: o cabeçalho, o corpo e as subseções de nível maior. */
-function extractSection(text, entry, origem) {
+/** The text of the `entry` section: the heading, the body and the subsections of a deeper level. */
+function extractSection(text, entry, origin) {
   const sections = splitSections(text);
   const i = sections.findIndex(
     (s) => s.level === entry.nivel && s.title.startsWith(entry.titulo),
   );
   if (i < 0) {
-    throw new Error(`A seção ${entry.chave} (${entry.titulo}) não está em ${origem}.`);
+    throw new Error(`Section ${entry.chave} (${entry.titulo}) is not in ${origin}.`);
   }
   const lines = [...sections[i].lines];
   for (let j = i + 1; j < sections.length && sections[j].level > entry.nivel; j += 1) {
@@ -689,24 +689,24 @@ function extractSection(text, entry, origem) {
   return lines.join('\n');
 }
 
-/** As chaves de `SECOES_SOB_DEMANDA`, para a mensagem de chave desconhecida. */
+/** The keys of `SECOES_SOB_DEMANDA`, for the unknown-key message. */
 function keyList() {
   return SECOES_SOB_DEMANDA.map((e) => e.chave).join(', ');
 }
 
 /**
- * As seções sob demanda pedidas por chave (`SECOES_SOB_DEMANDA`), na ordem pedida, separadas por
- * `---`. `guideText` é o guia da rodada (`apoio/guia.md`); as chaves `consulta.*` leem `consultaText`
- * (o `docs/TESTING-NUVEM-CONSULTA.md`). Corta em `EXCERPT_LIMIT` na última seção ou linha inteira e diz
- * como continuar; chave desconhecida lança `Error` com a lista das chaves.
+ * The on-demand sections requested by key (`SECOES_SOB_DEMANDA`), in the requested order, separated
+ * by `---`. `guideText` is the round guide (`apoio/guia.md`); the `consulta.*` keys read
+ * `consultaText` (`docs/TESTING-NUVEM-CONSULTA.md`). Cuts at `EXCERPT_LIMIT` at the last whole
+ * section or line and says how to continue; an unknown key throws `Error` with the list of keys.
  */
-export function guideSection(guideText, chaves, consultaText) {
-  const entries = chaves.map((chave) => {
-    const entry = SECOES_SOB_DEMANDA.find((e) => e.chave === chave);
-    if (!entry) throw new Error(`Chave desconhecida: ${chave}. Chaves: ${keyList()}.`);
+export function guideSection(guideText, keys, consultaText) {
+  const entries = keys.map((key) => {
+    const entry = SECOES_SOB_DEMANDA.find((e) => e.chave === key);
+    if (!entry) throw new Error(`Unknown key: ${key}. Keys: ${keyList()}.`);
     if (entry.fonte === 'consulta' && consultaText === undefined) {
       throw new Error(
-        `A chave ${chave} lê o docs/TESTING-NUVEM-CONSULTA.md do clone, que não foi lido.`,
+        `Key ${key} reads the clone's docs/TESTING-NUVEM-CONSULTA.md, which was not read.`,
       );
     }
     return entry;
@@ -714,7 +714,7 @@ export function guideSection(guideText, chaves, consultaText) {
   const texts = entries.map((e) =>
     e.fonte === 'consulta'
       ? extractSection(consultaText, e, 'docs/TESTING-NUVEM-CONSULTA.md')
-      : extractSection(guideText, e, 'o guia da rodada'),
+      : extractSection(guideText, e, 'the round guide'),
   );
   const sep = '\n\n---\n\n';
   const budget = EXCERPT_LIMIT - CUT_RESERVE;
@@ -730,7 +730,7 @@ export function guideSection(guideText, chaves, consultaText) {
     if (out.length > 0) {
       const rest = entries.slice(i).map((e) => e.chave);
       out.push(
-        `… corte em 25.000 caracteres: continue com cloud.mjs secao ${rest.join(' ')}`,
+        `… cut at 25,000 characters: continue with cloud.mjs secao ${rest.join(' ')}`,
       );
     } else {
       const kept = [];
@@ -741,7 +741,7 @@ export function guideSection(guideText, chaves, consultaText) {
         n += line.length + 1;
       }
       kept.push(
-        `… corte em 25.000 caracteres: o resto da seção ${entries[i].chave} está no guia (Grep pelo título "${entries[i].titulo}" no apoio/guia.md)`,
+        `… cut at 25,000 characters: the rest of section ${entries[i].chave} is in the guide (Grep for the heading "${entries[i].titulo}" in apoio/guia.md)`,
       );
       out.push(kept.join('\n'));
     }
@@ -750,9 +750,9 @@ export function guideSection(guideText, chaves, consultaText) {
   return out.join(sep);
 }
 
-/** A lista do `cloud.mjs secao` sem chave: uma linha por chave, com o tamanho e o "quando ler". */
+/** The list of `cloud.mjs secao` without a key: one line per key, with the size and the "when to read". */
 export function listSecoes(guideText, consultaText) {
-  const lines = ['Chaves do cloud.mjs secao (chave, caracteres, quando ler):'];
+  const lines = ['Keys of cloud.mjs secao (key, characters, when to read):'];
   for (const e of SECOES_SOB_DEMANDA) {
     const source = e.fonte === 'consulta' ? consultaText : guideText;
     let size = '?';
@@ -766,31 +766,31 @@ export function listSecoes(guideText, consultaText) {
   return lines.join('\n');
 }
 
-// --- Rodada dirigida em grupos paralelos (etapa #1148, TR4, decisões 15 a 17) ---
+// --- Directed round in parallel groups (stage #1148, TR4, decisions 15 to 17) ---
 
-/** Passos por grupo: acima disso (sem o R0), a dirigida se divide em sessões paralelas. */
+/** Steps per group: above this (without R0), the directed round is split into parallel sessions. */
 export const GROUP_LIMIT = 40;
-/** No máximo 5 sessões por rodada. */
+/** At most 5 sessions per round. */
 export const MAX_GROUPS = 5;
 
 /**
- * Cadeias de dependência que nunca se separam entre grupos (decisão 16; docs/TESTING-NUVEM.md,
- * "Rodada dirigida em grupos"). Cada item é um roteiro (`R1`) ou uma faixa (`R6.3-R6.7`).
+ * Dependency chains that are never split between groups (decision 16; docs/TESTING-NUVEM.md,
+ * "Directed round in groups"). Each item is a script (`R1`) or a range (`R6.3-R6.7`).
  */
 export const CHAINS = [
   {
-    name: 'principal',
+    name: 'main',
     items: ['R1', 'R3', 'R5', 'R6.3-R6.7', 'R6.12-R6.14', 'R7', 'R8'],
   },
-  { name: 'loja', items: ['R4', 'R6.8a-R6.11'] },
-  { name: 'telas', items: ['R9', 'R10'] },
+  { name: 'store', items: ['R4', 'R6.8a-R6.11'] },
+  { name: 'screens', items: ['R9', 'R10'] },
 ];
 
-/** Códigos dos passos de cada roteiro principal (fora de bloco de código), na ordem do guia. */
-function stepsByRoteiro(markdown) {
+/** Step codes of each script (outside code blocks), in the guide's order. */
+function stepsByScript(markdown) {
   const map = new Map();
   for (const section of splitSections(markdown)) {
-    const id = section.level === 3 ? ROTEIRO.exec(section.title)?.[1] : undefined;
+    const id = section.level === 3 ? SCRIPT_ID.exec(section.title)?.[1] : undefined;
     if (!id) continue;
     let fence = false;
     const codes = [];
@@ -807,30 +807,30 @@ function stepsByRoteiro(markdown) {
   return map;
 }
 
-/** Os códigos de um item (`R12` ou `R6.3-R6.7`). */
-function itemCodes(token, byRoteiro) {
+/** The codes of an item (`R12` or `R6.3-R6.7`). */
+function itemCodes(token, byScript) {
   const range = RANGE.exec(token);
-  if (!range) return byRoteiro.get(token.toUpperCase()) ?? [];
+  if (!range) return byScript.get(token.toUpperCase()) ?? [];
   const id = range[1].toUpperCase();
-  const codes = byRoteiro.get(id) ?? [];
+  const codes = byScript.get(id) ?? [];
   const a = codes.indexOf(`${id}.${range[2]}`);
   const b = codes.indexOf(`${id}.${range[4]}`);
   if (a < 0 || b < 0 || b < a) {
-    throw new Error(`Faixa inválida: ${token}. Passos: ${codes.join(', ')}.`);
+    throw new Error(`Invalid range: ${token}. Steps: ${codes.join(', ')}.`);
   }
   return codes.slice(a, b + 1);
 }
 
 /**
- * Divide os roteiros pedidos em grupos de até `limit` passos (sem o R0), no máximo 5, sem separar
- * uma cadeia nem um roteiro. Devolve os passos de cada item, o total e os grupos propostos.
+ * Splits the requested scripts into groups of up to `limit` steps (without R0), at most 5, without
+ * splitting a chain or a script. Returns the steps of each item, the total and the proposed groups.
  */
-export function planGroups(markdown, roteiros, { limit = GROUP_LIMIT } = {}) {
+export function planGroups(markdown, scripts, { limit = GROUP_LIMIT } = {}) {
   const existing = listRoteiros(markdown);
-  const byRoteiro = stepsByRoteiro(markdown);
-  const { whole, ranges } = parseRequest(roteiros, existing);
+  const byScript = stepsByScript(markdown);
+  const { whole, ranges } = parseRequest(scripts, existing);
   const order = (code) => existing.indexOf(code.split('.')[0]);
-  // Um token por roteiro inteiro ou faixa pedida; o inteiro vence a faixa; o R0 fica de fora.
+  // One token per whole script or requested range; the whole script wins over the range; R0 stays out.
   const tokens = [];
   for (const id of existing) {
     if (id === 'R0') continue;
@@ -841,11 +841,11 @@ export function planGroups(markdown, roteiros, { limit = GROUP_LIMIT } = {}) {
   const chainOf = new Map();
   for (const chain of CHAINS) {
     for (const item of chain.items) {
-      for (const code of itemCodes(item, byRoteiro)) chainOf.set(code, chain.name);
+      for (const code of itemCodes(item, byScript)) chainOf.set(code, chain.name);
     }
   }
-  const items = tokens.map((token) => ({ token, codes: itemCodes(token, byRoteiro) }));
-  // União das chaves (cadeia, ou o próprio roteiro) que um mesmo item toca.
+  const items = tokens.map((token) => ({ token, codes: itemCodes(token, byScript) }));
+  // Union of the keys (chain, or the script itself) that a single item touches.
   const parent = new Map();
   const find = (k) => {
     if (!parent.has(k)) parent.set(k, k);
@@ -880,7 +880,7 @@ export function planGroups(markdown, roteiros, { limit = GROUP_LIMIT } = {}) {
   const total = list.reduce((n, u) => n + u.steps, 0);
   const planItems = items.map((i) => ({ token: i.token, steps: i.codes.length }));
   if (total <= limit) return { items: planItems, total, single: true, groups: [] };
-  // Maior primeiro; cada unidade vai ao grupo mais cheio onde ainda cabe, senão abre um grupo.
+  // Largest first; each unit goes to the fullest group where it still fits, otherwise it opens a group.
   const groups = [];
   for (const unit of [...list].sort((a, b) => b.steps - a.steps || a.first - b.first)) {
     const fits = groups
@@ -892,7 +892,7 @@ export function planGroups(markdown, roteiros, { limit = GROUP_LIMIT } = {}) {
     } else if (groups.length < MAX_GROUPS) {
       groups.push({ units: [unit], steps: unit.steps });
     } else {
-      // Passou de 5 grupos: o excedente vai ao grupo mais leve (passa de ~40, nunca de 5 sessões).
+      // Past 5 groups: the excess goes to the lightest group (it exceeds ~40, never 5 sessions).
       const lightest = groups.reduce((a, b) => (b.steps < a.steps ? b : a));
       lightest.units.push(unit);
       lightest.steps += unit.steps;
@@ -916,15 +916,15 @@ export function planGroups(markdown, roteiros, { limit = GROUP_LIMIT } = {}) {
   };
 }
 
-/** O texto que o `--grupos` imprime: passos por item, total e uma linha `grupo k de n` por grupo. */
+/** The text that `--grupos` prints: steps per item, total and one `grupo k de n` line per group. */
 export function formatGroupPlan(plan, { limit = GROUP_LIMIT } = {}) {
-  const lines = ['Passos por item (sem o R0):'];
+  const lines = ['Steps per item (without R0):'];
   for (const i of plan.items) lines.push(`  ${i.token}: ${i.steps}`);
-  lines.push(`Total: ${plan.total} (limite por grupo: ${limit})`, '');
+  lines.push(`Total: ${plan.total} (limit per group: ${limit})`, '');
   if (plan.single) {
     lines.push('uma sessão');
   } else {
-    for (const g of plan.groups) lines.push(`# grupo ${g.n}: ${g.steps} passos`);
+    for (const g of plan.groups) lines.push(`# group ${g.n}: ${g.steps} steps`);
     for (const g of plan.groups) {
       lines.push(`grupo ${g.n} de ${plan.groups.length}: ${g.tokens.join(' ')}`);
     }
@@ -932,12 +932,12 @@ export function formatGroupPlan(plan, { limit = GROUP_LIMIT } = {}) {
   return lines.join('\n');
 }
 
-// --- Lotes dos subagentes do testador (etapa #1639, TC1, decisão 3) ---
+// --- Batches of the tester's subagents (stage #1639, TC1, decision 3) ---
 
-/** Passos por lote de subagente: com a base do subagente (~25 mil), 20 passos ficam abaixo de ~200 mil. */
+/** Steps per subagent batch: with the subagent's base (~25 thousand), 20 steps stay below ~200 thousand. */
 export const FAIXA_LIMIT = 20;
 
-/** Avança `i` por todos os passos com letra (R12.11a, R12.11b…) do código-base que o `guideExcerpt` junta. */
+/** Advances `i` over all the lettered steps (R12.11a, R12.11b…) of the base code that `guideExcerpt` joins. */
 function extendOverSuffixes(codes, i) {
   const base = codes[i].replace(/[a-z]$/, '');
   while (
@@ -950,8 +950,8 @@ function extendOverSuffixes(codes, i) {
 }
 
 /**
- * Parte os códigos de um item em faixas consecutivas de até `limit` passos. O passo que o
- * `guideExcerpt` junta ao anterior (R22.6a com R22.6) fica no mesmo lote.
+ * Splits the codes of an item into consecutive ranges of up to `limit` steps. The step that
+ * `guideExcerpt` joins to the previous one (R22.6a with R22.6) stays in the same batch.
  */
 function chunkCodes(codes, limit) {
   const chunks = [];
@@ -966,20 +966,21 @@ function chunkCodes(codes, limit) {
 }
 
 /**
- * Os lotes dos subagentes do testador, na ordem do guia, sem o R0 (lote próprio): o roteiro de até
- * `limit` passos é um lote (`R13`); acima disso, faixas consecutivas (`R25.1-R25.20`); uma faixa
- * pedida é respeitada e só se parte acima do limite. Cada lote é `{ token, steps }`.
+ * The batches of the tester's subagents, in the guide's order, without R0 (a batch of its own): a
+ * script of up to `limit` steps is one batch (`R13`); above that, consecutive ranges
+ * (`R25.1-R25.20`); a requested range is respected and only split above the limit. Each batch is
+ * `{ token, steps }`.
  */
-export function planFaixas(markdown, roteiros, { limit = FAIXA_LIMIT } = {}) {
+export function planFaixas(markdown, scripts, { limit = FAIXA_LIMIT } = {}) {
   const existing = listRoteiros(markdown);
-  const byRoteiro = stepsByRoteiro(markdown);
-  const { whole, ranges } = parseRequest(roteiros, existing);
-  const lotes = [];
-  // Um lote só leva o token pedido (`R13`, `R6.3-R6.7`); partido, o de cada faixa de códigos.
+  const byScript = stepsByScript(markdown);
+  const { whole, ranges } = parseRequest(scripts, existing);
+  const batches = [];
+  // A single batch carries the requested token (`R13`, `R6.3-R6.7`); when split, that of each code range.
   const add = (token, codes) => {
     const chunks = chunkCodes(codes, limit);
     for (const chunk of chunks) {
-      lotes.push({
+      batches.push({
         token: chunks.length === 1 ? token : `${chunk[0]}-${chunk[chunk.length - 1]}`,
         steps: chunk.length,
       });
@@ -987,19 +988,19 @@ export function planFaixas(markdown, roteiros, { limit = FAIXA_LIMIT } = {}) {
   };
   for (const id of existing) {
     if (id === 'R0') continue;
-    const codes = byRoteiro.get(id) ?? [];
+    const codes = byScript.get(id) ?? [];
     if (whole.has(id)) {
       add(id, codes);
       continue;
     }
-    // Faixas pedidas que se sobrepõem viram uma só: nenhum passo cai em dois lotes.
+    // Requested ranges that overlap become one: no step falls in two batches.
     const spans = [];
     for (const { from, to } of ranges.get(id) ?? []) {
       const a = codes.indexOf(`${id}.${from}`);
       const b = codes.indexOf(`${id}.${to}`);
       if (a < 0 || b < 0 || b < a) {
         throw new Error(
-          `Faixa inválida: ${id}.${from}-${id}.${to}. Passos: ${codes.join(', ')}.`,
+          `Invalid range: ${id}.${from}-${id}.${to}. Steps: ${codes.join(', ')}.`,
         );
       }
       spans.push({ a, b: extendOverSuffixes(codes, b), from, to });
@@ -1019,25 +1020,25 @@ export function planFaixas(markdown, roteiros, { limit = FAIXA_LIMIT } = {}) {
       add(`${id}.${from}-${id}.${to}`, codes.slice(a, b + 1));
     }
   }
-  return lotes;
+  return batches;
 }
 
-/** O texto do `--faixas`: uma linha `lote k de n: <token> (<m> passos)` por lote. */
-export function formatFaixas(lotes) {
-  return lotes
-    .map((l, i) => `lote ${i + 1} de ${lotes.length}: ${l.token} (${l.steps} passos)`)
+/** The text of `--faixas`: one line `batch k of n: <token> (<m> steps)` per batch. */
+export function formatFaixas(batches) {
+  return batches
+    .map((l, i) => `batch ${i + 1} of ${batches.length}: ${l.token} (${l.steps} steps)`)
     .join('\n');
 }
 
-function runFaixasCli(roteiros) {
-  if (roteiros.length === 0) {
-    console.error('Uso: node scripts/testing/round-guide.mjs --faixas <roteiro|faixa…>');
+function runFaixasCli(scripts) {
+  if (scripts.length === 0) {
+    console.error('Usage: node scripts/testing/round-guide.mjs --faixas <script|range…>');
     process.exitCode = 2;
     return;
   }
   try {
-    const lotes = planFaixas(fs.readFileSync(GUIDE_FILE, 'utf8'), roteiros);
-    process.stdout.write(`${formatFaixas(lotes)}\n`);
+    const batches = planFaixas(fs.readFileSync(GUIDE_FILE, 'utf8'), scripts);
+    process.stdout.write(`${formatFaixas(batches)}\n`);
   } catch (error) {
     console.error(error.message);
     process.exitCode = 2;
@@ -1051,18 +1052,18 @@ function currentCommit() {
       stdio: ['ignore', 'pipe', 'ignore'],
     }).trim();
   } catch {
-    return 'desconhecido';
+    return 'unknown';
   }
 }
 
-function runGroupsCli(roteiros) {
-  if (roteiros.length === 0) {
-    console.error('Uso: node scripts/testing/round-guide.mjs --grupos <roteiro|faixa…>');
+function runGroupsCli(scripts) {
+  if (scripts.length === 0) {
+    console.error('Usage: node scripts/testing/round-guide.mjs --grupos <script|range…>');
     process.exitCode = 2;
     return;
   }
   try {
-    const plan = planGroups(fs.readFileSync(GUIDE_FILE, 'utf8'), roteiros);
+    const plan = planGroups(fs.readFileSync(GUIDE_FILE, 'utf8'), scripts);
     process.stdout.write(`${formatGroupPlan(plan)}\n`);
   } catch (error) {
     console.error(error.message);
@@ -1079,18 +1080,18 @@ function runCli(argv) {
     runGroupsCli(argv.filter((a) => a !== '--grupos'));
     return;
   }
-  const roteiros = [];
+  const scripts = [];
   let out = null;
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === '--out') {
       out = argv[(i += 1)];
     } else {
-      roteiros.push(argv[i]);
+      scripts.push(argv[i]);
     }
   }
-  if (roteiros.length === 0 || (argv.includes('--out') && !out)) {
+  if (scripts.length === 0 || (argv.includes('--out') && !out)) {
     console.error(
-      'Uso: node scripts/testing/round-guide.mjs <roteiro|faixa…|all> [--out <arquivo>]',
+      'Usage: node scripts/testing/round-guide.mjs <script|range…|all> [--out <file>]',
     );
     process.exitCode = 2;
     return;
@@ -1099,7 +1100,7 @@ function runCli(argv) {
   const commit = currentCommit();
   let guide;
   try {
-    guide = buildRoundGuide(markdown, roteiros, { commit });
+    guide = buildRoundGuide(markdown, scripts, { commit });
   } catch (error) {
     console.error(error.message);
     process.exitCode = 2;
@@ -1111,7 +1112,7 @@ function runCli(argv) {
       [out, guide],
       [
         `${stem}-base.md`,
-        buildGuideBase(markdown, roteiros, { commit, name: path.basename(stem) }),
+        buildGuideBase(markdown, scripts, { commit, name: path.basename(stem) }),
       ],
       [`${stem}-indice.tsv`, buildGuideIndex(guide)],
     ];
@@ -1122,7 +1123,7 @@ function runCli(argv) {
         (Buffer.byteLength(text) / Buffer.byteLength(markdown)) * 100,
       );
       console.error(
-        `${file}: ${Buffer.byteLength(text)} bytes (${percent}% do docs/TESTING.md)`,
+        `${file}: ${Buffer.byteLength(text)} bytes (${percent}% of docs/TESTING.md)`,
       );
     }
   } else {
