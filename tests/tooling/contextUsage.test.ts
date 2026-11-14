@@ -408,7 +408,9 @@ describe('CM1 — flow texts that use the measure (decisions 5 to 10)', () => {
 
   it('implementar-fila: the "Session switch" measures with --max and the ctx of its own cost comes from the script', () => {
     expect(switching).toContain('`node scripts/ci/contextUsage.mjs --max <max_tokens>`');
-    expect(switching).toContain('`painel.py context <folder> --medir --max <max_tokens>`');
+    expect(switching).toContain(
+      '`painel.py context <folder> --medir --max <max_tokens>`',
+    );
     expect(switching).toContain('`painel.py context <folder> <pct> --fonte get_session`');
     const old = between(
       switching,

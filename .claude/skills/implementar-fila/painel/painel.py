@@ -1576,7 +1576,7 @@ def wave_round(pending, ready):
 def assign_waves(rows, wave, deps):
     """Decisions 6 of #1761 and of #1813: simulation in rounds; `wave` already carries wave 0 and receives the others."""
     w = 0
-    total = len({r["issue"] for r in rows})  # issue repetida em duas linhas conta uma vez
+    total = len({r["issue"] for r in rows})  # an issue repeated on two rows counts once
     while len(wave) < total:
         w += 1
         pending = [r for r in rows if r["issue"] not in wave]

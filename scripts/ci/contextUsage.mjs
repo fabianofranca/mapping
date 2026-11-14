@@ -22,7 +22,7 @@ function count(value) {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }
 
-/** Soma das entradas de uma linha do transcript que vale como medida, ou `null`. */
+/** Sum of the inputs of a transcript line that counts as a measurement, or `null`. */
 function lineContext(line) {
   let entry;
   try {
@@ -62,7 +62,7 @@ function safeDirs(path) {
   }
 }
 
-// Os `.jsonl` direto em cada pasta de `<config>/projects`, sem descer em `<id>/subagents`.
+// The `.jsonl` files directly in each folder of `<config>/projects`, without descending into `<id>/subagents`.
 function transcripts(config) {
   const found = [];
   for (const folder of safeDirs(join(config, 'projects'))) {

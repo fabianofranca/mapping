@@ -773,7 +773,7 @@ export function openSession(options: SessionOptions): ProjectSession {
       if (have?.key === key) continue;
       const files = packageCache.get(key);
       if (!files) {
-        reportError('session.package', `pacote ${key} fora da memória: ${dir}`);
+        reportError('session.package', `package ${key} missing from memory: ${dir}`);
         continue;
       }
       planned.push({ spec: s, dir, key, have, files });

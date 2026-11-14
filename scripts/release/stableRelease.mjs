@@ -18,7 +18,7 @@ import { releaseInputsIn } from './releaseInputs.mjs';
 export const STABLE_TAG = /^mcp-v(\d+)\.(\d+)\.(\d+)$/;
 const MAX_LISTED = 5;
 
-/** Nomes de tag de um texto: `git ls-remote --tags` (`<sha>\trefs/tags/<tag>`) ou `git tag -l`. */
+/** Tag names from a text: `git ls-remote --tags` (`<sha>\trefs/tags/<tag>`) or `git tag -l`. */
 export function parseTags(text) {
   const tags = [];
   for (const line of text.split('\n')) {

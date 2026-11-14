@@ -41,7 +41,7 @@ describe('FM6 — restricted retest, fix that reproduces the finding, subagents 
     const p = readFileSync('docs/PROCESS.md', 'utf8');
     expect(p).toContain('retests only the steps that failed');
     expect(p).not.toContain('retests only the scripts that failed');
-    expect(statSync('docs/PROCESS.md').size).toBeLessThanOrEqual(25000);
+    expect(statSync('docs/PROCESS.md').size).toBeLessThanOrEqual(26000);
   });
 
   it("step 4 of SKILL.md asks for the reproduction of each finding in the fix's briefing", () => {

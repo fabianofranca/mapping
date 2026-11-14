@@ -184,18 +184,18 @@ Checked on 2026-11-02 by name and by value, in both themes: no DS token is missi
 
 On the same date the seven that were missing entered the DS: `size-grid-col-min` (`96px`) and the roles `control-height`, `control-height-sm`, `control-icon`, `control-check`, `row-height` (`size` family) and `control-radius` (`radius` family). The roles matter because `CLAUDE.md` tells the CSS to use only the `--control-*` ones, not the raw tokens; since the format only accepts aliases in color, each role entered with the literal value and the `usage` says which token it represents.
 
-| Family                             | In the DS | In the code     |
-| ---------------------------------- | --------- | --------------- |
-| `color` (includes `cv-*`, `layer-*`) | 72      | 72              |
-| `type` (`t-*` styles)              | 12        | 12 (+ 5 aliases) |
-| `spacing`                          | 9         | 9               |
-| `radius`                           | 7         | 7               |
-| `shadow`                           | 1         | 1               |
-| `size`                             | 61        | 56 (+ 5 roles)  |
-| `opacity`                          | 11        | 11              |
-| `duration`                         | 6         | 6               |
-| `zIndex`                           | 8         | 8               |
-| `breakpoint`                       | 2         | 2               |
+| Family                               | In the DS | In the code      |
+| ------------------------------------ | --------- | ---------------- |
+| `color` (includes `cv-*`, `layer-*`) | 72        | 72               |
+| `type` (`t-*` styles)                | 12        | 12 (+ 5 aliases) |
+| `spacing`                            | 9         | 9                |
+| `radius`                             | 7         | 7                |
+| `shadow`                             | 1         | 1                |
+| `size`                               | 61        | 56 (+ 5 roles)   |
+| `opacity`                            | 11        | 11               |
+| `duration`                           | 6         | 6                |
+| `zIndex`                             | 8         | 8                |
+| `breakpoint`                         | 2         | 2                |
 
 Count checked on 2026-11-10 (DS3, `tokens.json` of the artifact at version 69 against `src/theme/tokens.ts`, name and value in both themes): 177 tokens in the lists, 21 of them entered in DS3 (the six `color-thread-*`, `cv-component-unknown-fill`, `opacity-slot`, the eleven `size-cv-pin-*` and `size-cv-arrival-*` and the two `size-minimap-*`; `size-tw-bottom` became `360px`). The five `size` roles (`control-height`, `control-height-sm`, `control-icon`, `control-check`, `row-height`) are aliases in the code and literal values in the DS. The old divergence of `size-review-col-name-min` (194px in the code, 208px in the DS) was fixed in DS5 (version 71): the DS went to 194px.
 
@@ -282,6 +282,6 @@ The five text roles of the code did not enter the DS: the format's `type` family
 
 ## Sync history
 
-One file per epic in [`docs/design-system/`](design-system/), with what the closing wrote to the artifact (or "Sem impacto") and what was left unwritten. `ls docs/design-system/` comes out in chronological order, with the unreleased ones (`<name>.md`, no date) at the end; epics of the same day are in alphabetical order, and the exact merge order is that of `git log --first-parent main`. The first line of each file is `# <Stage> — <YYYY-MM-DD | [Não lançado]> (épico \`epic/<name>\`)`, and the sections are only `## Pendências`, `## Sincronização` and `## Ficou sem gravar`. Open pending items are found with `grep -rn -A99 '^## Ficou sem gravar' docs/design-system/`.
+One file per epic in [`docs/design-system/`](design-system/), with what the closing wrote to the artifact (or "Sem impacto") and what was left unwritten. `ls docs/design-system/` comes out in chronological order, with the unreleased ones (`<name>.md`, no date) at the end; epics of the same day are in alphabetical order, and the exact merge order is that of `git log --first-parent main`. The first line of each file is `# <Stage> — <YYYY-MM-DD | [Não lançado]> (épico \`epic/<name>\`)`, and the sections are only `## Pendências`, `## Sincronização`and`## Ficou sem gravar`. Open pending items are found with `grep -rn -A99 '^## Ficou sem gravar' docs/design-system/`.
 
 Each item of `## Ficou sem gravar` carries `Motivo:` (what prevented the write, concrete) or "Passou para o registro do épico `epic/<name>`: <summary>", when another epic started writing it; that epic's record must exist in the folder.

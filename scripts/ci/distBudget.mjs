@@ -44,7 +44,7 @@ function grouped(n) {
   return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
-/** Os limites que, ultrapassados pela subida, pedem um `bug` (o `reason` vai na linha `bug:`, o `item` no `history`). */
+/** The limits that, when the raise exceeds them, call for a `bug` (the `reason` goes on the `bug:` line, the `item` in the `history`). */
 function overLimits({ excess, growth, since, steps }) {
   const over = [];
   if (excess > MAX_EXCESS) {
@@ -121,7 +121,7 @@ export function loadBudget(file) {
   return data;
 }
 
-/** Devolve os dados com o teto novo e a frase da subida no fim do `history` (com os itens acima dos limites, se houver). */
+/** Returns the data with the new ceiling and the raise phrase at the end of the `history` (with the items above the limits, if any). */
 export function applyRaise(data, d, { epic, date }) {
   if (data.indexHtmlMaxBytes !== d.ceiling) {
     throw new Error(`O arquivo tem teto ${data.indexHtmlMaxBytes}, não ${d.ceiling}.`);

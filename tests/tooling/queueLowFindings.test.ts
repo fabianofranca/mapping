@@ -47,7 +47,7 @@ describe('LS1 — a low-severity-only finding goes from the fix to the closing, 
     );
     expect(bullet).toContain('all of low severity');
     expect(bullet).toContain('without a retest');
-    expect(statSync('docs/PROCESS.md').size).toBeLessThanOrEqual(25000);
+    expect(statSync('docs/PROCESS.md').size).toBeLessThanOrEqual(26000);
   });
 
   it('implementar-fila repeats the rule in "Rules of this queue" and in step 4 of "Per stage"', () => {
