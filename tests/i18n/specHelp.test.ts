@@ -165,11 +165,20 @@ describe('specializations help: version and structure', () => {
     expect(format('pt-BR')).toEqual(format('en-US'));
   });
 
-  it('the en-US examples carry no Portuguese sample text', () => {
-    const code = specHelpSections('en-US')
-      .flatMap((s) => s.blocks)
-      .flatMap((b) => (b.kind === 'code' ? [b.code] : []))
-      .join('\n');
-    expect(code).not.toMatch(/[ãõçáéíóúâêôà]/i);
+  it('the en-US page carries no Portuguese (prose, terms and sample code)', () => {
+    // Accented letters, plus words that are Portuguese only: names the examples used to carry
+    // and the title of a section that the en-US prose cited by its Portuguese name.
+    const portuguese =
+      /[ãõçáéíóúâêôà]|\b(Componentes|Eventos|Celular|Clique|Pressionar|Navegação|Tabela|Loja|Assinaturas|Configurações|Notas?|Dados|camadas?|chave|tipo|campo|pacote)\b/;
+    const text = specHelpSections('en-US').flatMap((s) => [
+      s.title,
+      ...s.blocks.flatMap((b) => {
+        if (b.kind === 'p') return [b.text];
+        if (b.kind === 'list') return b.items;
+        if (b.kind === 'terms') return b.items.flatMap((i) => [i.term, i.text]);
+        return [b.code];
+      }),
+    ]);
+    expect(text.filter((t) => portuguese.test(t))).toEqual([]);
   });
 });

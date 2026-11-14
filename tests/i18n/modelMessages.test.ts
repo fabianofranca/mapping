@@ -44,7 +44,7 @@ describe('model messages', () => {
   it('raw and unknown code stay as text, in any language', () => {
     locale.value = 'en-US';
     expect(messageText(rawMessage('texto do motor'))).toBe('texto do motor');
-    expect(messageText(modelMessage('nao.existe', {}, 'texto'))).toBe('texto');
+    expect(messageText(modelMessage('does.not.exist', {}, 'text'))).toBe('text');
   });
 
   it("the code's pt-BR is the model's `text` (each message built by the model)", () => {

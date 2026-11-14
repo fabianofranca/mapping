@@ -134,9 +134,9 @@ describe('guard: every model problem and warning has a code', () => {
     // missing, empty, stray file and broken JSON (the large library, once each)
     const base = m3Files.filter((f) => f.text !== undefined);
     const dropped = base.filter((f) => f.path !== 'components/button.json');
-    check('library/ausente', validateLibrary({ files: dropped, level: 3 }).issues);
+    check('library/missing', validateLibrary({ files: dropped, level: 3 }).issues);
     const extra = [...base, { path: 'extra.json', text: '{}' }];
-    check('library/solto', validateLibrary({ files: extra, level: 3 }).issues);
+    check('library/stray', validateLibrary({ files: extra, level: 3 }).issues);
     const brokenJson = base.map((f) =>
       f.path === 'components/button.json' ? { ...f, text: '{' } : f,
     );
@@ -162,7 +162,10 @@ describe('guard: every model problem and warning has a code', () => {
   }, 120_000);
 
   it('the guard rejects a problem without a code', () => {
-    check('simulado', [{ message: 'sem código' }, { message: 'x', code: 'nao.existe' }]);
+    check('simulated', [
+      { message: 'no code' },
+      { message: 'x', code: 'does.not.exist' },
+    ]);
     expect(problems).toHaveLength(2);
   });
 
