@@ -1,7 +1,7 @@
 // @vitest-environment node
-// Etapa #971, fase CRI5 (itens 51 a 57 e 58/59): a CLI de `cloud.mjs` e `round-guide.mjs` roda
-// num caminho com acento e espaço (`import.meta.url` vem codificado), e o cliente MCP por stdio
-// lida com multibyte entre chunks, servidor que sai e servidor que não existe.
+// Stage #971, phase CRI5 (items 51 to 57 and 58/59): the `cloud.mjs` and `round-guide.mjs` CLI runs
+// on a path with an accent and a space (`import.meta.url` comes encoded), and the stdio MCP client
+// handles multibyte across chunks, a server that exits and a server that does not exist.
 import { spawnSync } from 'node:child_process';
 import {
   cpSync,
@@ -18,7 +18,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 const tmp = mkdtempSync(path.join(tmpdir(), 'mapping cópia-'));
 afterAll(() => rmSync(tmp, { recursive: true, force: true }));
 
-const copy = path.join(tmp, 'repositório com espaço');
+const copy = path.join(tmp, 'répository with space');
 mkdirSync(path.join(copy, 'scripts'), { recursive: true });
 mkdirSync(path.join(copy, 'docs'), { recursive: true });
 cpSync('scripts/testing', path.join(copy, 'scripts', 'testing'), { recursive: true });
@@ -34,39 +34,39 @@ function run(args: string[], options: { input?: string; env?: NodeJS.ProcessEnv 
   });
 }
 
-describe('CLI em caminho com acento e espaço (itens 51 e 52)', () => {
-  it('round-guide.mjs imprime o guia', () => {
+describe('CLI on a path with an accent and a space (items 51 and 52)', () => {
+  it('round-guide.mjs prints the guide', () => {
     const r = run([path.join(copy, 'scripts/testing/round-guide.mjs'), 'R0']);
     expect(r.stdout).toContain('### R0 ');
   });
 
-  it('cloud.mjs executa o comando (help)', () => {
+  it('cloud.mjs runs the command (help)', () => {
     const r = run([path.join(copy, 'scripts/testing/cloud.mjs'), 'help']);
     expect(r.stdout + r.stderr).toMatch(/saveFile/);
   });
 
-  it('cloud.mjs passo lê o guia gerado na cópia (#1232)', () => {
-    const guia = path.join(tmp, 'apoio com acento', 'guia.md');
+  it('cloud.mjs passo reads the guide generated in the copy (#1232)', () => {
+    const guide = path.join(tmp, 'apoio with accént', 'guia.md');
     const gen = run([
       path.join(copy, 'scripts/testing/round-guide.mjs'),
       'R0',
       '--out',
-      guia,
+      guide,
     ]);
     expect(gen.status).toBe(0);
     const r = run([
       path.join(copy, 'scripts/testing/cloud.mjs'),
       'passo',
       'R0.1',
-      `--guia=${guia}`,
+      `--guia=${guide}`,
     ]);
     expect(r.status).toBe(0);
     expect(r.stdout).toMatch(
-      /^\| Passo \| Ação \| Esperado \|\n\| --- \|[^\n]*\n\| R0\.1 \|/,
+      /^\| Step \| Action \| Expected \|\n\| --- \|[^\n]*\n\| R0\.1 \|/,
     );
   });
 
-  it('round-guide.mjs: ALL e All valem como all (item 59)', () => {
+  it('round-guide.mjs: ALL and All count as all (item 59)', () => {
     const upper = run([path.join(copy, 'scripts/testing/round-guide.mjs'), 'ALL']);
     expect(upper.stdout).toContain('### R0 ');
     expect(upper.stdout).toContain('### R2 ');
@@ -95,8 +95,8 @@ rl.on('line', (line) => {
     return file;
   }
 
-  it('multibyte cortado entre chunks chega inteiro (55)', () => {
-    writeFileSync(calls, JSON.stringify([{ name: 'ferramenta', args: {} }]));
+  it('multibyte split across chunks arrives whole (55)', () => {
+    writeFileSync(calls, JSON.stringify([{ name: 'tool', args: {} }]));
     const server = fakeServer(
       'multibyte.cjs',
       `if (m.method === 'tools/call') {
@@ -110,8 +110,8 @@ rl.on('line', (line) => {
     expect(r.stdout).toContain('ação ✓');
   });
 
-  it('request depois do exit do servidor rejeita na hora (56)', () => {
-    writeFileSync(calls, JSON.stringify([{ name: 'ferramenta', args: {} }]));
+  it('a request after the server exits rejects right away (56)', () => {
+    writeFileSync(calls, JSON.stringify([{ name: 'tool', args: {} }]));
     const server = fakeServer(
       'sai.cjs',
       `if (m.method === 'initialize') setTimeout(() => process.exit(0), 50);`,
@@ -120,16 +120,16 @@ rl.on('line', (line) => {
     const r = run([client, calls, '--', server]);
     expect(Date.now() - started).toBeLessThan(10000);
     expect(r.status).not.toBe(null);
-    expect(r.stderr).toMatch(/servidor terminou/i);
+    expect(r.stderr).toMatch(/server ended/i);
   });
 
-  it('servidor inexistente: mensagem curta, sem stack (57)', () => {
+  it('nonexistent server: short message, no stack (57)', () => {
     writeFileSync(calls, JSON.stringify([{ list: true }]));
     const r = run([client, calls, '--', 'x.js'], {
-      env: { ...process.env, PATH: '/nao-existe' },
+      env: { ...process.env, PATH: '/does-not-exist' },
     });
     expect(r.status).not.toBe(0);
-    expect(r.stderr).toMatch(/não consegui iniciar o servidor/i);
+    expect(r.stderr).toMatch(/could not start the server/i);
     expect(r.stderr).not.toMatch(/\n\s+at /);
   });
 });
