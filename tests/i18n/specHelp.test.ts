@@ -36,19 +36,51 @@ function codeBlocks(markdown: string): string[] {
   return [...markdown.matchAll(/```[^\n]*\n([\s\S]*?)\n```/g)].map((m) => m[1] ?? '');
 }
 
-/** Compara JSON pelo conteúdo: o Prettier reformata os blocos ```json do Markdown. */
+/**
+ * Prose fields of the example blocks: the help carries them in the UI language while the doc
+ * is English, so their text is not compared. Ids, keys, structure and every other value are.
+ */
+const PROSE_KEYS = new Set([
+  'name',
+  'description',
+  'label',
+  'notes',
+  'title',
+  'childRolesLabel',
+  'message',
+  'true',
+  'false',
+]);
+
+function withoutProse(value: unknown, key?: string): unknown {
+  if (Array.isArray(value)) return value.map((item) => withoutProse(item));
+  if (value !== null && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([k, v]) => [k, withoutProse(v, k)]),
+    );
+  }
+  return typeof value === 'string' && key !== undefined && PROSE_KEYS.has(key)
+    ? ''
+    : value;
+}
+
+/** Compares JSON by content (Prettier reformats the ```json blocks) minus the prose fields. */
 function normalized(code: string): string {
   try {
-    return JSON.stringify(JSON.parse(code));
+    return JSON.stringify(withoutProse(JSON.parse(code)));
   } catch {
-    return code.trim();
+    // A file tree: compare the paths, not the comment text after them.
+    return code
+      .split('\n')
+      .map((line) => line.trim().split(/\s{2,}/)[0])
+      .join('\n');
   }
 }
 
 const sections = docSections(doc);
 
 describe('ajuda de especializações × docs/SPEC-FORMAT.md', () => {
-  const help = specHelpSections('pt-BR');
+  const help = specHelpSections('en-US');
 
   it('tem as mesmas seções, na mesma ordem', () => {
     const titles = [...sections.keys()];

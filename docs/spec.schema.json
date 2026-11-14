@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mapping.local/spec.schema.json",
-  "title": "Mapping — especialização (formatVersion 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 e 16)",
-  "description": "Valida a estrutura. Regras entre elementos (ids únicos, allowedChildren em outra camada (a partir da formatVersion 13, também na camada do próprio dono), requiresOwner, labelField, rowLabel, default compatível, rowLabel/tags, plataformas declaradas em platforms, chaves de params e values, platforms/code a partir do formatVersion 2, sources só no formatVersion 3, values de sources só em campos enum e com destinos nas options) e, na formatVersion 4, as chaves novas só com formatVersion 4, sources com slot/ignore/path só em sistema declarado em origins (com path obrigatório lá e name obrigatório fora), exemplos com um só modo e valores compatíveis com os campos do tipo, system dos exemplos declarado em origins, par family+weight+style único em fonts, faixa de peso com o primeiro valor menor, regras de origins (o detalhe está em origins, validado pelo parseOrigins) e as conferências das migrations (to maior que from e até version, from único, a chave de campo de um passo é campo ou tabela.coluna, o lado novo existe e o lado antigo não existe mais, destinos de map-values nas options, default de fill-field compatível) só são verificadas pelo validador da app; na formatVersion 5, platforms[].repo (a formatVersion 5 é a 4 mais repo; em versão anterior é erro) também só é verificado pelo validador da app; na formatVersion 6, containers (a 6 é a 5 mais containers; em versão anterior é erro, e o id repetido é verificado pelo validador da app); na formatVersion 7, floating e appliesTo no tipo e ref como tipo de coluna de table (a 7 é a 6 mais floating, appliesTo e a coluna ref; em versão anterior é erro, verificado pelo validador da app; appliesTo não vazio, sem repetição, e um tipo só de seta não tem component nem floating); na formatVersion 8, suggestions e linkedRef em campo e coluna string (a 8 é a 7 mais suggestions e linkedRef; linkedRef aponta para um campo ref do tipo ou uma coluna ref da table; em versão anterior ou em outro tipo é erro, verificado pelo validador da app; lista não vazia, até 200 textos únicos, não vazios e sem espaço nas pontas; não restringe o valor); na formatVersion 9, variants na entrada de code (a 9 é a 8 mais variants; em versão anterior é erro; field é a key de um campo enum do tipo no nível de cima, cada chave de cases é uma das options dele, o caso não é vazio e params e values dos casos seguem as regras dos da base, tudo verificado pelo validador da app); na formatVersion 10, notices no tipo, no campo e na coluna de table (a 10 é a 9 mais notices; em versão anterior é erro, verificado pelo validador da app; dois avisos com o mesmo kind e a mesma message na lista são erro, o que o JSON Schema não expressa; o aviso só informa); na formatVersion 11, a cláusula { layer, groups } em allowedChildren, layers[].groups, annotationTypes[].groups, childRoles, childRolesLabel, docRepos na raiz e o doc como objeto { repo, path } (a 11 é a 10 mais esses recursos; em versão anterior é erro; a camada da cláusula existe e, antes da formatVersion 13, não é a do próprio dono, os grupos existem na camada da cláusula, requiresOwner é conferido no conjunto resolvido dos filhos, ids de grupo únicos na camada, grupos do tipo só da própria camada, childRoles só em tipo com allowedChildren e childRolesLabel só com childRoles, ids de papel únicos no tipo, ids de docRepos únicos, o repo do doc existe em docRepos e urlTemplate com {path}, tudo verificado pelo validador da app); na formatVersion 12, os passos de migração de papel rename-role, remove-role e set-role (a 12 é a 11 mais esses passos; em versão anterior é erro; type é um tipo desta versão, com childRoles em rename-role e set-role; to e role de set-role são papéis do tipo, from de rename-role e role de remove-role não são mais; childType de set-role só tem o formato conferido; tudo verificado pelo validador da app); na formatVersion 13, allowedChildren aceita a cláusula { layer } da camada do próprio dono e o id de um tipo da mesma camada, inclusive o próprio tipo (a 13 é a 12 mais isso; em versão anterior é erro; verificado pelo validador da app); na formatVersion 14, accepts.annotations em campo e coluna ref (a 14 é a 13 mais isso; em versão anterior é erro; os itens usam a sintaxe do allowedChildren e camada, grupo e tipo precisam existir na especialização, verificado pelo validador da app); na formatVersion 15, structural no tipo (em versão anterior é erro; structural: true não pode ter component, verificado pelo validador da app) e origins[].kind (tree ou measured; em versão anterior é erro; a origem measured só tem system, kind, name e booleans, verificado pelo validador da app); na formatVersion 16, fieldModels na raiz e signature, ignore, calls e formats no code (e no caso de variants) e signature nas sources do tipo (em versão anterior é erro; o caminho e o posicional em params só valem na 16; o conteúdo da ficha, verificado pelo validador do pacote); veja SPEC-FORMAT.md.",
+  "title": "Mapping — specialization (formatVersion 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, and 16)",
+  "description": "Validates the structure. Rules between elements (unique ids, allowedChildren in another layer (from formatVersion 13, also in the owner's own layer), requiresOwner, labelField, rowLabel, compatible default, rowLabel/tags, platforms declared in platforms, keys of params and values, platforms/code from formatVersion 2, sources only in formatVersion 3, values of sources only on enum fields and with targets in the options) and, in formatVersion 4, the new keys only with formatVersion 4, sources with slot/ignore/path only on a system declared in origins (with path required there and name required elsewhere), examples with a single mode and values compatible with the type's fields, system of the examples declared in origins, unique family+weight+style pair in fonts, weight range with the first value smaller, rules of origins (the detail is in origins, validated by parseOrigins) and the migrations checks (to greater than from and up to version, unique from, the field key of a step is a field or table.column, the new side exists and the old side no longer exists, targets of map-values in the options, compatible default of fill-field) are only checked by the app validator; in formatVersion 5, platforms[].repo (formatVersion 5 is 4 plus repo; in an earlier version it is an error) is also only checked by the app validator; in formatVersion 6, containers (6 is 5 plus containers; in an earlier version it is an error, and the repeated id is checked by the app validator); in formatVersion 7, floating and appliesTo on the type and ref as a table column type (7 is 6 plus floating, appliesTo, and the ref column; in an earlier version it is an error, checked by the app validator; appliesTo not empty, with no repetition, and an arrow-only type has neither component nor floating); in formatVersion 8, suggestions and linkedRef on a string field and column (8 is 7 plus suggestions and linkedRef; linkedRef points to a ref field of the type or a ref column of the table; in an earlier version or on another type it is an error, checked by the app validator; non-empty list, up to 200 unique texts, non-empty and with no whitespace at the ends; it does not restrict the value); in formatVersion 9, variants on the code entry (9 is 8 plus variants; in an earlier version it is an error; field is the key of an enum field of the type at the top level, each key of cases is one of its options, the case is not empty, and params and values of the cases follow the rules of those of the base, all checked by the app validator); in formatVersion 10, notices on the type, the field, and the table column (10 is 9 plus notices; in an earlier version it is an error, checked by the app validator; two notices with the same kind and the same message in the list are an error, which JSON Schema does not express; the notice only informs); in formatVersion 11, the { layer, groups } clause in allowedChildren, layers[].groups, annotationTypes[].groups, childRoles, childRolesLabel, docRepos at the root, and the doc as an object { repo, path } (11 is 10 plus these features; in an earlier version it is an error; the clause's layer exists and, before formatVersion 13, is not the owner's own, the groups exist in the clause's layer, requiresOwner is checked on the resolved set of children, unique group ids in the layer, type groups only from its own layer, childRoles only on a type with allowedChildren and childRolesLabel only with childRoles, unique role ids in the type, unique docRepos ids, the doc's repo exists in docRepos and urlTemplate with {path}, all checked by the app validator); in formatVersion 12, the role migration steps rename-role, remove-role, and set-role (12 is 11 plus these steps; in an earlier version it is an error; type is a type of this version, with childRoles in rename-role and set-role; to and role of set-role are roles of the type, from of rename-role and role of remove-role no longer are; childType of set-role only has its format checked; all checked by the app validator); in formatVersion 13, allowedChildren accepts the { layer } clause for the owner's own layer and the id of a type in the same layer, including the type itself (13 is 12 plus this; in an earlier version it is an error; checked by the app validator); in formatVersion 14, accepts.annotations on a ref field and column (14 is 13 plus this; in an earlier version it is an error; the items use the allowedChildren syntax and layer, group, and type must exist in the specialization, checked by the app validator); in formatVersion 15, structural on the type (in an earlier version it is an error; structural: true cannot have a component, checked by the app validator) and origins[].kind (tree or measured; in an earlier version it is an error; the measured source only has system, kind, name, and booleans, checked by the app validator); in formatVersion 16, fieldModels at the root and signature, ignore, calls, and formats on code (and in the variants case) and signature on the type's sources (in an earlier version it is an error; the path and the positional value in params are only valid in 16; the content of the sheet is checked by the package validator); see SPEC-FORMAT.md.",
   "type": "object",
   "additionalProperties": false,
   "required": ["format", "formatVersion", "id", "name", "version", "layers"],
@@ -35,14 +35,14 @@
       }
     },
     "containers": {
-      "description": "formatVersion 6: presets de tamanho do diálogo Novo container, agrupados pelo nome da especialização. Em versão anterior é erro; id único.",
+      "description": "formatVersion 6: size presets of the New container dialog, grouped by specialization name. In an earlier version it is an error; unique id.",
       "type": "array",
       "items": {
         "$ref": "#/$defs/container"
       }
     },
     "docRepos": {
-      "description": "formatVersion 11: repositórios de documentos externos, citados pelo id no doc { repo, path } dos tipos. Em versão anterior é erro; id único (verificado pelo validador da app).",
+      "description": "formatVersion 11: external document repositories, referenced by id in the types' doc { repo, path }. In an earlier version it is an error; unique id (checked by the app validator).",
       "type": "array",
       "items": {
         "$ref": "#/$defs/docRepo"
@@ -76,12 +76,12 @@
       "$ref": "#/$defs/tokens"
     },
     "icons": {
-      "description": "Conjunto de ícones da biblioteca (formatVersion 15): o caminho de UM arquivo .json do pacote (format mapping-icons), relativo ao arquivo da especialização, lido pelo nó icon dos componentes de formato 4.",
+      "description": "Icon set of the library (formatVersion 15): the path of ONE .json file in the package (format mapping-icons), relative to the specialization file, read by the icon node of format 4 components.",
       "$ref": "#/$defs/jsonFile"
     },
     "fieldModels": {
       "type": "object",
-      "description": "formatVersion 16: modelos de campo por id de plataforma ou system e, dentro, por tipo na fonte (texto exato, ou boolean).",
+      "description": "formatVersion 16: field models by platform id or system and, inside, by type in the source (exact text, or boolean).",
       "additionalProperties": {
         "type": "object",
         "additionalProperties": {
@@ -92,7 +92,7 @@
   },
   "$defs": {
     "tokens": {
-      "description": "Tokens de design (formatVersion 15): valores nomeados por modo, lidos por { \"$token\": \"nome\" } nos componentes de formato 4. Cada token é um valor simples (vale em todos os modos) ou um valor por modo, com todos os modos de modes e do mesmo tipo (texto ou número). font-sans e font-mono são embutidos (valem a fonte do hospedeiro) e podem ser redefinidos aqui.",
+      "description": "Design tokens (formatVersion 15): values named per mode, read by { \"$token\": \"name\" } in format 4 components. Each token is either a simple value (valid in all modes) or a value per mode, with every mode from modes and all of the same type (text or number). font-sans and font-mono are built in (they resolve to the host font) and can be redefined here.",
       "type": "object",
       "additionalProperties": false,
       "required": ["modes", "values"],
@@ -173,7 +173,7 @@
           "items": {
             "$ref": "#/$defs/layerGroup"
           },
-          "description": "formatVersion 11: grupos da camada, a que os tipos pertencem (annotationTypes[].groups) e que as cláusulas de allowedChildren citam. Em versão anterior é erro; id único na camada (verificado pelo validador da app)."
+          "description": "formatVersion 11: groups of the layer, which the types belong to (annotationTypes[].groups) and which the allowedChildren clauses reference. In an earlier version it is an error; unique id within the layer (checked by the app validator)."
         },
         "annotationTypes": {
           "type": "array",
@@ -187,12 +187,12 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["id", "name"],
-      "description": "formatVersion 11: um grupo de tipos de uma camada. A ordem da lista é a ordem dos cabeçalhos.",
+      "description": "formatVersion 11: a group of types of a layer. The list order is the order of the headers.",
       "properties": {
         "id": {
           "type": "string",
           "minLength": 1,
-          "description": "Único dentro da camada."
+          "description": "Unique within the layer."
         },
         "name": {
           "type": "string",
@@ -207,12 +207,12 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["layer"],
-      "description": "formatVersion 11: cláusula de allowedChildren. Sem groups, cobre todos os tipos da camada; com groups, os tipos da camada que estão em algum dos grupos. A camada existe e, antes da formatVersion 13, não é a do próprio dono (a partir da 13, pode ser), e os grupos existem na camada da cláusula (verificado pelo validador da app).",
+      "description": "formatVersion 11: allowedChildren clause. Without groups, it covers all types of the layer; with groups, the types of the layer that are in any of the groups. The layer exists and, before formatVersion 13, is not the owner's own (from 13 on, it can be), and the groups exist in the clause's layer (checked by the app validator).",
       "properties": {
         "layer": {
           "type": "string",
           "minLength": 1,
-          "description": "Id de uma camada da especialização, diferente da camada do dono."
+          "description": "Id of a layer of the specialization, different from the owner's layer."
         },
         "groups": {
           "type": "array",
@@ -221,7 +221,7 @@
             "type": "string",
             "minLength": 1
           },
-          "description": "Ids de grupos da camada da cláusula (não vazia; para a camada inteira, omita)."
+          "description": "Ids of groups of the clause's layer (not empty; for the whole layer, omit it)."
         }
       }
     },
@@ -229,12 +229,12 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["id", "name"],
-      "description": "formatVersion 11: um papel em que um filho se liga ao dono. O papel pertence ao vínculo, não ao filho.",
+      "description": "formatVersion 11: a role in which a child is linked to the owner. The role belongs to the link, not to the child.",
       "properties": {
         "id": {
           "type": "string",
           "minLength": 1,
-          "description": "Único no tipo (verificado pelo validador da app)."
+          "description": "Unique within the type (checked by the app validator)."
         },
         "name": {
           "type": "string",
@@ -249,7 +249,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["id", "url"],
-      "description": "formatVersion 11: repositório de documentos externos, com as mesmas regras do repo de uma plataforma. O urlTemplate leva {path}.",
+      "description": "formatVersion 11: external document repository, with the same rules as the repo of a platform. The urlTemplate carries {path}.",
       "properties": {
         "id": {
           "$ref": "#/$defs/platformId"
@@ -257,17 +257,17 @@
         "url": {
           "type": "string",
           "pattern": "^[hH][tT][tT][pP][sS]?://\\S+$",
-          "description": "Endereço do repositório (http:// ou https://, sem espaços)."
+          "description": "Repository address (http:// or https://, no spaces)."
         },
         "urlTemplate": {
           "type": "string",
           "pattern": "^[hH][tT][tT][pP][sS]?://\\S*\\{path\\}\\S*$",
-          "description": "Modelo do endereço de um arquivo: http(s):// sem espaços, com {path}."
+          "description": "Template for a file address: http(s):// with no spaces, with {path}."
         },
         "ref": {
           "type": "string",
           "minLength": 1,
-          "description": "Revisão (tag, branch ou commit); informativa."
+          "description": "Revision (tag, branch, or commit); informational."
         }
       }
     },
@@ -275,7 +275,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["repo", "path"],
-      "description": "formatVersion 11: documento em repositório externo. repo é o id de um item de docRepos (verificado pelo validador da app).",
+      "description": "formatVersion 11: document in an external repository. repo is the id of a docRepos item (checked by the app validator).",
       "properties": {
         "repo": {
           "$ref": "#/$defs/platformId"
@@ -283,7 +283,7 @@
         "path": {
           "type": "string",
           "pattern": "^(?![A-Za-z]:)(?!/)(?!.*(^|/)\\.{1,2}(/|$))(?!.*//)(?!.*/$)[^\\u0000-\\u001f\\u007f\\\\#]*[^/\\\\#]\\.md$",
-          "description": "Arquivo .md relativo à raiz do repositório, com /, sem ., .. nem / no começo e sem #."
+          "description": ".md file relative to the repository root, with /, with no ., .. or leading /, and no #."
         }
       }
     },
@@ -322,7 +322,7 @@
               }
             ]
           },
-          "description": "Tipos que podem ser vinculados a este: id de tipo ou, a partir da formatVersion 11, cláusula { layer, groups }. Em versão anterior à 11 a cláusula é erro (verificado pelo validador da app)."
+          "description": "Types that can be linked to this one: type id or, from formatVersion 11, a { layer, groups } clause. In a version earlier than 11 the clause is an error (checked by the app validator)."
         },
         "groups": {
           "type": "array",
@@ -332,7 +332,7 @@
             "type": "string",
             "minLength": 1
           },
-          "description": "formatVersion 11: ids de grupos da própria camada a que o tipo pertence. Em versão anterior é erro; os grupos precisam existir na camada (verificado pelo validador da app)."
+          "description": "formatVersion 11: ids of groups of its own layer that the type belongs to. In an earlier version it is an error; the groups must exist in the layer (checked by the app validator)."
         },
         "childRoles": {
           "type": "array",
@@ -340,12 +340,12 @@
           "items": {
             "$ref": "#/$defs/childRole"
           },
-          "description": "formatVersion 11: papéis em que um filho se liga a este tipo. Em versão anterior é erro; só em tipo com allowedChildren e com id único no tipo (verificado pelo validador da app)."
+          "description": "formatVersion 11: roles in which a child is linked to this type. In an earlier version it is an error; only on a type with allowedChildren and with a unique id within the type (checked by the app validator)."
         },
         "childRolesLabel": {
           "type": "string",
           "minLength": 1,
-          "description": "formatVersion 11: nome do seletor de papel; só com childRoles. Sem ele a app usa Papel / Role. Em versão anterior é erro."
+          "description": "formatVersion 11: name of the role selector; only with childRoles. Without it the app uses Papel / Role. In an earlier version it is an error."
         },
         "fields": {
           "type": "array",
@@ -380,7 +380,7 @@
               "$ref": "#/$defs/docRef"
             }
           ],
-          "description": "Texto: caminho do .md do pacote (formatVersion 4). Objeto { repo, path }: documento em repositório externo declarado em docRepos (formatVersion 11; em versão anterior é erro)."
+          "description": "Text: path of the package's .md (formatVersion 4). Object { repo, path }: document in an external repository declared in docRepos (formatVersion 11; in an earlier version it is an error)."
         },
         "examples": {
           "type": "array",
@@ -390,11 +390,11 @@
         },
         "floating": {
           "type": "boolean",
-          "description": "formatVersion 7: a instância do tipo é uma marcação flutuante (vive no canvas, fora do pertencimento, desenhada acima de tudo). Em versão anterior é erro."
+          "description": "formatVersion 7: the type's instance is a floating marking (it lives on the canvas, outside containment, drawn above everything). In an earlier version it is an error."
         },
         "structural": {
           "type": "boolean",
-          "description": "formatVersion 15: o tipo agrupa e não desenha. Não pode ter component; a marcação não mostra o cabeçalho com o nome e o contorno só aparece com o mouse ou selecionada. Em versão anterior é erro."
+          "description": "formatVersion 15: the type groups and does not draw. It cannot have a component; the marking does not show the header with the name, and the outline only appears on hover or when selected. In an earlier version it is an error."
         },
         "appliesTo": {
           "type": "array",
@@ -403,14 +403,14 @@
           "items": {
             "enum": ["marking", "arrow"]
           },
-          "description": "formatVersion 7: a que a anotação se aplica, marking (uma marcação), arrow (uma seta) ou os dois; padrão [\"marking\"]. Um tipo só de seta não tem component nem floating. Em versão anterior é erro."
+          "description": "formatVersion 7: what the annotation applies to: marking (a marking), arrow (an arrow), or both; default [\"marking\"]. An arrow-only type has neither component nor floating. In an earlier version it is an error."
         },
         "notices": {
           "type": "array",
           "items": {
             "$ref": "#/$defs/notice"
           },
-          "description": "formatVersion 10: avisos (pode ser vazia). Em versão anterior é erro (verificado pelo validador da app)."
+          "description": "formatVersion 10: notices (may be empty). In an earlier version it is an error (checked by the app validator)."
         }
       }
     },
@@ -475,18 +475,18 @@
                 "minLength": 1,
                 "pattern": "^\\S(.*\\S)?$"
               },
-              "description": "formatVersion 8: vocabulário sugerido ao digitar, só em campo ou coluna string; não restringe o valor. Em versão anterior ou em outro tipo é erro."
+              "description": "formatVersion 8: vocabulary suggested while typing, only on a string field or column; it does not restrict the value. In an earlier version or on another type it is an error."
             },
             "linkedRef": {
               "type": "string",
-              "description": "formatVersion 8: chave de um campo ref do mesmo tipo (ou de uma coluna ref da mesma table) cujos alvos mapeados entram na lista de sugestões; só em campo ou coluna string. Em versão anterior, em outro tipo ou com chave que não é ref é erro (verificado pelo validador da app)."
+              "description": "formatVersion 8: key of a ref field of the same type (or of a ref column of the same table) whose mapped targets go into the suggestion list; only on a string field or column. In an earlier version, on another type, or with a key that is not a ref it is an error (checked by the app validator)."
             },
             "notices": {
               "type": "array",
               "items": {
                 "$ref": "#/$defs/notice"
               },
-              "description": "formatVersion 10: avisos (pode ser vazia). Em versão anterior é erro (verificado pelo validador da app)."
+              "description": "formatVersion 10: notices (may be empty). In an earlier version it is an error (checked by the app validator)."
             }
           }
         },
@@ -531,7 +531,7 @@
               "items": {
                 "$ref": "#/$defs/notice"
               },
-              "description": "formatVersion 10: avisos (pode ser vazia). Em versão anterior é erro (verificado pelo validador da app)."
+              "description": "formatVersion 10: notices (may be empty). In an earlier version it is an error (checked by the app validator)."
             }
           }
         },
@@ -585,7 +585,7 @@
               "items": {
                 "$ref": "#/$defs/notice"
               },
-              "description": "formatVersion 10: avisos (pode ser vazia). Em versão anterior é erro (verificado pelo validador da app)."
+              "description": "formatVersion 10: notices (may be empty). In an earlier version it is an error (checked by the app validator)."
             }
           }
         }
@@ -633,18 +633,18 @@
                 "minLength": 1,
                 "pattern": "^\\S(.*\\S)?$"
               },
-              "description": "formatVersion 8: vocabulário sugerido ao digitar, só em campo ou coluna string; não restringe o valor. Em versão anterior ou em outro tipo é erro."
+              "description": "formatVersion 8: vocabulary suggested while typing, only on a string field or column; it does not restrict the value. In an earlier version or on another type it is an error."
             },
             "linkedRef": {
               "type": "string",
-              "description": "formatVersion 8: chave de um campo ref do mesmo tipo (ou de uma coluna ref da mesma table) cujos alvos mapeados entram na lista de sugestões; só em campo ou coluna string. Em versão anterior, em outro tipo ou com chave que não é ref é erro (verificado pelo validador da app)."
+              "description": "formatVersion 8: key of a ref field of the same type (or of a ref column of the same table) whose mapped targets go into the suggestion list; only on a string field or column. In an earlier version, on another type, or with a key that is not a ref it is an error (checked by the app validator)."
             },
             "notices": {
               "type": "array",
               "items": {
                 "$ref": "#/$defs/notice"
               },
-              "description": "formatVersion 10: avisos (pode ser vazia). Em versão anterior é erro (verificado pelo validador da app)."
+              "description": "formatVersion 10: notices (may be empty). In an earlier version it is an error (checked by the app validator)."
             }
           }
         },
@@ -683,7 +683,7 @@
               "items": {
                 "$ref": "#/$defs/notice"
               },
-              "description": "formatVersion 10: avisos (pode ser vazia). Em versão anterior é erro (verificado pelo validador da app)."
+              "description": "formatVersion 10: notices (may be empty). In an earlier version it is an error (checked by the app validator)."
             }
           }
         },
@@ -731,13 +731,13 @@
               "items": {
                 "$ref": "#/$defs/notice"
               },
-              "description": "formatVersion 10: avisos (pode ser vazia). Em versão anterior é erro (verificado pelo validador da app)."
+              "description": "formatVersion 10: notices (may be empty). In an earlier version it is an error (checked by the app validator)."
             }
           }
         },
         {
           "$ref": "#/$defs/refField",
-          "description": "formatVersion 7: coluna de referência; a célula guarda uma referência (dado, não seta)."
+          "description": "formatVersion 7: reference column; the cell holds a reference (data, not an arrow)."
         }
       ]
     },
@@ -789,7 +789,7 @@
           "items": {
             "$ref": "#/$defs/notice"
           },
-          "description": "formatVersion 10: avisos (pode ser vazia). Em versão anterior é erro (verificado pelo validador da app)."
+          "description": "formatVersion 10: notices (may be empty). In an earlier version it is an error (checked by the app validator)."
         }
       }
     },
@@ -807,7 +807,7 @@
           }
         ]
       },
-      "description": "formatVersion 14: ids de tipo ou cláusulas { layer, groups } da mesma especialização, com a sintaxe e o resolvedor de allowedChildren. Camada, grupo e tipo existem na especialização (verificado pelo validador da app)."
+      "description": "formatVersion 14: type ids or { layer, groups } clauses of the same specialization, with the syntax and the resolver of allowedChildren. Layer, group, and type exist in the specialization (checked by the app validator)."
     },
     "refField": {
       "type": "object",
@@ -891,7 +891,7 @@
               }
             }
           ],
-          "description": "formatVersion 14: annotations aceita a anotação inteira como alvo. Em versão anterior é erro (verificado pelo validador da app)."
+          "description": "formatVersion 14: annotations accepts the whole annotation as a target. In an earlier version it is an error (checked by the app validator)."
         },
         "sources": {
           "type": "array",
@@ -904,7 +904,7 @@
           "items": {
             "$ref": "#/$defs/notice"
           },
-          "description": "formatVersion 10: avisos (pode ser vazia). Em versão anterior é erro (verificado pelo validador da app)."
+          "description": "formatVersion 10: notices (may be empty). In an earlier version it is an error (checked by the app validator)."
         }
       }
     },
@@ -963,24 +963,24 @@
     },
     "platformRepo": {
       "type": "object",
-      "description": "formatVersion 5: repositório da biblioteca nessa plataforma, onde estão os arquivos citados nos path do code. Em versão anterior é erro.",
+      "description": "formatVersion 5: repository of the library on that platform, where the files referenced in the code paths are. In an earlier version it is an error.",
       "additionalProperties": false,
       "required": ["url"],
       "properties": {
         "url": {
           "type": "string",
           "pattern": "^[hH][tT][tT][pP][sS]?://\\S+$",
-          "description": "Endereço do repositório (http:// ou https://, sem espaços)."
+          "description": "Repository address (http:// or https://, no spaces)."
         },
         "urlTemplate": {
           "type": "string",
           "pattern": "^[hH][tT][tT][pP][sS]?://\\S*\\{path\\}\\S*$",
-          "description": "Modelo do endereço de um arquivo: http(s):// sem espaços, com {path} e {line} opcional. Sem ele, os arquivos não viram link."
+          "description": "Template for a file address: http(s):// with no spaces, with {path} and an optional {line}. Without it, files do not become links."
         },
         "ref": {
           "type": "string",
           "minLength": 1,
-          "description": "Revisão (tag, branch ou commit) a que o code corresponde; informativa."
+          "description": "Revision (tag, branch, or commit) that the code corresponds to; informational."
         }
       }
     },
@@ -997,7 +997,7 @@
           "type": "string",
           "minLength": 1,
           "pattern": "^(?![A-Za-z]:)(?!/)(?!.*(^|/)\\.{1,2}(/|$))(?!.*//)(?!.*/$)[^\\u0000-\\u001f\\u007f\\\\]+$",
-          "description": "Arquivo que define o symbol, relativo à raiz do repositório da plataforma (sem linha)."
+          "description": "File that defines the symbol, relative to the root of the platform's repository (no line)."
         },
         "params": {
           "type": "object",
@@ -1005,7 +1005,7 @@
             "type": "string",
             "minLength": 1
           },
-          "description": "Chave do campo → nome do parâmetro. Na formatVersion 16 o valor também pode ser um caminho (colors.containerColor, o argumento containerColor da fábrica de calls.colors) ou posicional (#0)."
+          "description": "Field key → parameter name. In formatVersion 16 the value can also be a path (colors.containerColor, the containerColor argument of the calls.colors factory) or positional (#0)."
         },
         "values": {
           "type": "object",
@@ -1027,7 +1027,7 @@
           "type": "string",
           "minLength": 1,
           "pattern": "^(?![A-Za-z]:)(?!/)(?!.*(^|/)\\.{1,2}(/|$))(?!.*//)(?!.*/$)[^\\u0000-\\u001f\\u007f\\\\]+\\.json$",
-          "description": "formatVersion 16: caminho da ficha mapping-signature no pacote (signatures/<tipo>.<plataforma>.json)."
+          "description": "formatVersion 16: path of the mapping-signature sheet in the package (signatures/<type>.<platform>.json)."
         },
         "ignore": {
           "type": "array",
@@ -1036,7 +1036,7 @@
             "type": "string",
             "minLength": 1
           },
-          "description": "formatVersion 16: nomes de parâmetro da ficha que ficam fora de propósito, sem aviso."
+          "description": "formatVersion 16: names of sheet parameters that are deliberately left out, with no notice."
         },
         "calls": {
           "type": "object",
@@ -1044,7 +1044,7 @@
             "type": "string",
             "minLength": 1
           },
-          "description": "formatVersion 16: nome do parâmetro → símbolo da fábrica do argumento aninhado (ButtonDefaults.buttonColors)."
+          "description": "formatVersion 16: parameter name → symbol of the factory of the nested argument (ButtonDefaults.buttonColors)."
         },
         "formats": {
           "type": "object",
@@ -1053,7 +1053,7 @@
             "minLength": 1,
             "pattern": "\\{value\\}"
           },
-          "description": "formatVersion 16: chave do campo → molde do valor, com {value} ({value}.dp)."
+          "description": "formatVersion 16: field key → value template, with {value} ({value}.dp)."
         }
       }
     },
@@ -1061,7 +1061,7 @@
       "type": "object",
       "additionalProperties": false,
       "minProperties": 1,
-      "description": "formatVersion 9: o que muda neste valor da variante. symbol, path, notes, signature e ignore substituem os da base; params, values, calls e formats se somam aos da base, chave por chave.",
+      "description": "formatVersion 9: what changes for this variant value. symbol, path, notes, signature, and ignore replace those of the base; params, values, calls, and formats are added to those of the base, key by key.",
       "properties": {
         "symbol": {
           "type": "string",
@@ -1096,7 +1096,7 @@
           "type": "string",
           "minLength": 1,
           "pattern": "^(?![A-Za-z]:)(?!/)(?!.*(^|/)\\.{1,2}(/|$))(?!.*//)(?!.*/$)[^\\u0000-\\u001f\\u007f\\\\]+\\.json$",
-          "description": "formatVersion 16: caminho da ficha mapping-signature no pacote (signatures/<tipo>.<plataforma>.json)."
+          "description": "formatVersion 16: path of the mapping-signature sheet in the package (signatures/<type>.<platform>.json)."
         },
         "ignore": {
           "type": "array",
@@ -1105,7 +1105,7 @@
             "type": "string",
             "minLength": 1
           },
-          "description": "formatVersion 16: nomes de parâmetro da ficha que ficam fora de propósito, sem aviso."
+          "description": "formatVersion 16: names of sheet parameters that are deliberately left out, with no notice."
         },
         "calls": {
           "type": "object",
@@ -1113,7 +1113,7 @@
             "type": "string",
             "minLength": 1
           },
-          "description": "formatVersion 16: nome do parâmetro → símbolo da fábrica do argumento aninhado (ButtonDefaults.buttonColors)."
+          "description": "formatVersion 16: parameter name → symbol of the factory of the nested argument (ButtonDefaults.buttonColors)."
         },
         "formats": {
           "type": "object",
@@ -1122,7 +1122,7 @@
             "minLength": 1,
             "pattern": "\\{value\\}"
           },
-          "description": "formatVersion 16: chave do campo → molde do valor, com {value} ({value}.dp)."
+          "description": "formatVersion 16: field key → value template, with {value} ({value}.dp)."
         }
       }
     },
@@ -1130,12 +1130,12 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["field", "cases"],
-      "description": "formatVersion 9: um campo enum do tipo escolhe a variante do código (um nível só). Em versão anterior é erro; field e as chaves de cases são conferidos contra o tipo pelo validador da app.",
+      "description": "formatVersion 9: an enum field of the type selects the code variant (one level only). In an earlier version it is an error; field and the keys of cases are checked against the type by the app validator.",
       "properties": {
         "field": {
           "type": "string",
           "minLength": 1,
-          "description": "key de um campo enum do tipo (nível de cima; coluna de table não conta)."
+          "description": "key of an enum field of the type (top level; a table column does not count)."
         },
         "cases": {
           "type": "object",
@@ -1143,7 +1143,7 @@
           "additionalProperties": {
             "$ref": "#/$defs/codeCase"
           },
-          "description": "Valor do campo (uma das options) → o que muda no code."
+          "description": "Field value (one of the options) → what changes in the code."
         }
       }
     },
@@ -1169,7 +1169,7 @@
             "slot": {
               "type": "string",
               "minLength": 1,
-              "description": "formatVersion 4, só em sistema declarado em origins."
+              "description": "formatVersion 4, only on a system declared in origins."
             },
             "ignore": {
               "type": "array",
@@ -1178,13 +1178,13 @@
                 "type": "string",
                 "minLength": 1
               },
-              "description": "formatVersion 4, só em sistema declarado em origins."
+              "description": "formatVersion 4, only on a system declared in origins."
             },
             "signature": {
               "type": "string",
               "minLength": 1,
               "pattern": "^(?![A-Za-z]:)(?!/)(?!.*(^|/)\\.{1,2}(/|$))(?!.*//)(?!.*/$)[^\\u0000-\\u001f\\u007f\\\\]+\\.json$",
-              "description": "formatVersion 16: caminho da ficha mapping-signature no pacote (signatures/<tipo>.<plataforma>.json)."
+              "description": "formatVersion 16: path of the mapping-signature sheet in the package (signatures/<type>.<platform>.json)."
             }
           }
         },
@@ -1208,7 +1208,7 @@
             "slot": {
               "type": "string",
               "minLength": 1,
-              "description": "formatVersion 4, só em sistema declarado em origins."
+              "description": "formatVersion 4, only on a system declared in origins."
             },
             "ignore": {
               "type": "array",
@@ -1217,13 +1217,13 @@
                 "type": "string",
                 "minLength": 1
               },
-              "description": "formatVersion 4, só em sistema declarado em origins."
+              "description": "formatVersion 4, only on a system declared in origins."
             },
             "signature": {
               "type": "string",
               "minLength": 1,
               "pattern": "^(?![A-Za-z]:)(?!/)(?!.*(^|/)\\.{1,2}(/|$))(?!.*//)(?!.*/$)[^\\u0000-\\u001f\\u007f\\\\]+\\.json$",
-              "description": "formatVersion 16: caminho da ficha mapping-signature no pacote (signatures/<tipo>.<plataforma>.json)."
+              "description": "formatVersion 16: path of the mapping-signature sheet in the package (signatures/<type>.<platform>.json)."
             }
           }
         }
@@ -1247,7 +1247,7 @@
             "path": {
               "type": "string",
               "minLength": 1,
-              "description": "formatVersion 4: caminho do valor nas props do nó externo (a.b[0].c), só em sistema declarado em origins; obrigatório lá, e name passa a ser opcional."
+              "description": "formatVersion 4: path of the value in the external node's props (a.b[0].c), only on a system declared in origins; required there, and name becomes optional."
             },
             "values": {
               "type": "object",
@@ -1274,7 +1274,7 @@
             "path": {
               "type": "string",
               "minLength": 1,
-              "description": "formatVersion 4: caminho do valor nas props do nó externo (a.b[0].c), só em sistema declarado em origins; obrigatório lá, e name passa a ser opcional."
+              "description": "formatVersion 4: path of the value in the external node's props (a.b[0].c), only on a system declared in origins; required there, and name becomes optional."
             },
             "values": {
               "type": "object",
@@ -1290,17 +1290,17 @@
     "jsonFile": {
       "type": "string",
       "pattern": "^(?![A-Za-z]:)(?!/)(?!.*(^|/)\\.{1,2}(/|$))(?!.*//)(?!.*/$)[^\\u0000-\\u001f\\u007f\\\\]*[^/\\\\]\\.json$",
-      "description": "Caminho de um arquivo .json do pacote, relativo ao arquivo da especialização (com /, sem . nem .., sem unidade de disco)."
+      "description": "Path of a .json file in the package, relative to the specialization file (with /, no . or .., no drive letter)."
     },
     "markdownFile": {
       "type": "string",
       "pattern": "^(?![A-Za-z]:)(?!/)(?!.*(^|/)\\.{1,2}(/|$))(?!.*//)(?!.*/$)[^\\u0000-\\u001f\\u007f\\\\]*[^/\\\\]\\.md$",
-      "description": "Caminho de um arquivo .md do pacote, relativo ao arquivo da especialização."
+      "description": "Path of a .md file in the package, relative to the specialization file."
     },
     "fontFile": {
       "type": "string",
       "pattern": "^(?![A-Za-z]:)(?!/)(?!.*(^|/)\\.{1,2}(/|$))(?!.*//)(?!.*/$)[^\\u0000-\\u001f\\u007f\\\\]*[^/\\\\]\\.(ttf|otf|woff|woff2)$",
-      "description": "Caminho de um arquivo de fonte (.ttf, .otf, .woff ou .woff2) do pacote, relativo ao arquivo da especialização."
+      "description": "Path of a font file (.ttf, .otf, .woff, or .woff2) in the package, relative to the specialization file."
     },
     "font": {
       "type": "object",
@@ -1324,7 +1324,7 @@
             {
               "type": "string",
               "pattern": "^(100|[1-9][0-9]{2}|1000) (100|[1-9][0-9]{2}|1000)$",
-              "description": "Faixa \"100 900\": dois inteiros de 100 a 1000 separados por um espaço, o primeiro menor (a ordem só o validador confere)."
+              "description": "Range \"100 900\": two integers from 100 to 1000 separated by a space, the first one smaller (only the validator checks the order)."
             }
           ]
         },
@@ -1342,7 +1342,7 @@
           "$ref": "#/$defs/fileExample"
         }
       ],
-      "description": "Exatamente um dos dois modos: valores do tipo (values) ou o JSON de um sistema externo (system + file)."
+      "description": "Exactly one of the two modes: values of the type (values) or the JSON of an external system (system + file)."
     },
     "migration": {
       "type": "object",
@@ -1510,7 +1510,7 @@
               "minLength": 1
             }
           },
-          "description": "formatVersion 12: o papel from do tipo dono passou a se chamar to (se to já existia, os dois se juntam). Em versão anterior é erro (verificado pelo validador da app)."
+          "description": "formatVersion 12: the role from of the owner type was renamed to to (if to already existed, the two are merged). In an earlier version it is an error (checked by the app validator)."
         },
         {
           "type": "object",
@@ -1532,7 +1532,7 @@
               "enum": ["clear", "unlink"]
             }
           },
-          "description": "formatVersion 12: o papel role do tipo dono saiu. clear mantém os filhos vinculados e sem papel; unlink desvincula os filhos que usavam o papel. Em versão anterior é erro (verificado pelo validador da app)."
+          "description": "formatVersion 12: the role role of the owner type was removed. clear keeps the children linked and without a role; unlink unlinks the children that used the role. In an earlier version it is an error (checked by the app validator)."
         },
         {
           "type": "object",
@@ -1555,7 +1555,7 @@
               "minLength": 1
             }
           },
-          "description": "formatVersion 12: dá o papel role aos filhos do dono que não têm papel (só aos do tipo childType, se vier); nunca sobrescreve. Em versão anterior é erro (verificado pelo validador da app)."
+          "description": "formatVersion 12: gives the role role to the owner's children that have no role (only those of type childType, if present); it never overwrites. In an earlier version it is an error (checked by the app validator)."
         }
       ]
     },
@@ -1597,7 +1597,7 @@
         "path": {
           "type": "string",
           "minLength": 1,
-          "description": "Caminho da raiz no documento; [*] faz de cada elemento da lista uma raiz."
+          "description": "Path of the root in the document; [*] makes each element of the list a root."
         },
         "anchor": {
           "$ref": "#/$defs/valueSource"
@@ -1634,7 +1634,7 @@
         "direction": {
           "type": "string",
           "enum": ["ltr", "rtl"],
-          "description": "Direção de leitura da tela: literal `ltr` (padrão) ou `rtl`. Só o literal vale (não aceita `{ path, values?, default? }`)."
+          "description": "Reading direction of the screen: literal `ltr` (default) or `rtl`. Only the literal is valid (it does not accept `{ path, values?, default? }`)."
         },
         "roots": {
           "type": "array",
@@ -1649,7 +1649,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["system"],
-      "description": "Declaração de origem executável. A estrutura é espelhada aqui; as regras finas (caminhos, âncoras, [*] só em roots[].path, system único) são do validador (parseOrigins). `kind` (formatVersion 15): `tree` (padrão) exige `node` e `screen`; `measured` aceita só `system`, `kind`, `name` e `booleans`.",
+      "description": "Executable source declaration. The structure is mirrored here; the fine-grained rules (paths, anchors, [*] only in roots[].path, unique system) belong to the validator (parseOrigins). `kind` (formatVersion 15): `tree` (default) requires `node` and `screen`; `measured` accepts only `system`, `kind`, `name`, and `booleans`.",
       "properties": {
         "system": {
           "type": "string",
@@ -1658,7 +1658,7 @@
         "kind": {
           "type": "string",
           "enum": ["tree", "measured"],
-          "description": "formatVersion 15: `tree` (padrão, o JSON de um backend lido por node e screen) ou `measured` (uma árvore de retângulos medidos importada pela op import_measured do MCP; as sources dos tipos casam o nó pelo id e pelo name contra classes e type, e o campo pelo path nas props). Em versão anterior à 15 é erro."
+          "description": "formatVersion 15: `tree` (default, the JSON of a backend read through node and screen) or `measured` (a tree of measured rectangles imported by the MCP import_measured op; the types' sources match the node by id and by name against classes and type, and the field by path in the props). In a version earlier than 15 it is an error."
         },
         "name": {
           "type": "string"
@@ -1744,7 +1744,7 @@
         },
         "values": {
           "type": "object",
-          "description": "Valor de cada campo: texto, número ou null; num campo table, a lista de linhas (objetos coluna → texto, número ou null; uma coluna ref só aceita null).",
+          "description": "Value of each field: text, number, or null; on a table field, the list of rows (objects column → text, number, or null; a ref column only accepts null).",
           "additionalProperties": {
             "anyOf": [
               {
@@ -1789,32 +1789,32 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["kind", "message"],
-      "description": "formatVersion 10: aviso sobre um tipo, campo ou coluna. Só informa: não impede importar, aplicar nem criar anotação, e não é pendência. A lista de avisos não pode repetir o mesmo kind com a mesma message (erro \"aviso repetido\"); o JSON Schema não expressa a unicidade do par e o validador da app a confere.",
+      "description": "formatVersion 10: notice about a type, field, or column. It only informs: it does not prevent importing, applying, or creating an annotation, and it is not a pending item. The list of notices cannot repeat the same kind with the same message (error \"repeated notice\"); JSON Schema does not express the uniqueness of the pair and the app validator checks it.",
       "properties": {
         "kind": {
           "enum": ["pending", "deprecated", "diverges", "removed"],
-          "description": "pending: uma fonte já tem e a outra ainda não; deprecated: obsoleto; diverges: as fontes discordam; removed: saiu do contrato. Gravidade: removed > deprecated = diverges > pending."
+          "description": "pending: one source already has it and the other does not yet; deprecated: obsolete; diverges: the sources disagree; removed: left the contract. Severity: removed > deprecated = diverges > pending."
         },
         "message": {
           "type": "string",
           "minLength": 1,
           "pattern": "\\S",
-          "description": "Texto não vazio e que não seja só espaços."
+          "description": "Non-empty text that is not only whitespace."
         },
         "since": {
           "type": "string",
           "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$",
-          "description": "Data AAAA-MM-DD. O validador da app confere que é uma data real (ex.: recusa 2026-02-30)."
+          "description": "Date YYYY-MM-DD. The app validator checks that it is a real date (e.g., it rejects 2026-02-30)."
         },
         "ref": {
           "type": "string",
           "minLength": 1,
-          "description": "De onde o aviso vem (texto livre não vazio): a página do contrato, o arquivo do código."
+          "description": "Where the notice comes from (non-empty free text): the contract page, the code file."
         }
       }
     },
     "fieldModel": {
-      "description": "formatVersion 16: como um tipo da fonte vira campo. Exatamente uma das quatro formas; like, o texto do format e o cruzamento com os tipos são conferidos pelo validador da app.",
+      "description": "formatVersion 16: how a type in the source becomes a field. Exactly one of the four forms; like, the text of format, and the cross-check with the types are checked by the app validator.",
       "oneOf": [
         {
           "type": "object",
@@ -1825,7 +1825,7 @@
               "type": "string",
               "minLength": 1,
               "pattern": "^[^.]+\\.[^.]+$",
-              "description": "<tipo>.<campo> de um campo que já existe na biblioteca."
+              "description": "<type>.<field> of a field that already exists in the library."
             }
           }
         },
@@ -1849,7 +1849,7 @@
             "format": {
               "type": "string",
               "pattern": "\\{value\\}",
-              "description": "Molde do valor, com {value}."
+              "description": "Value template, with {value}."
             }
           }
         },

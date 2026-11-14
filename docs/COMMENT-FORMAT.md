@@ -1,12 +1,12 @@
-# Formato da conversa ancorada (`mapping-thread`, `formatVersion` 1)
+# Anchored conversation format (`mapping-thread`, `formatVersion` 1)
 
-Uma **conversa** é uma sequência de mensagens, de pessoas e de agentes, ancorada num item do mapeamento (uma marcação, um campo de anotação, uma camada, um ponto solto do canvas…). Ela fica aberta até **uma pessoa** resolver. Este documento descreve o arquivo da conversa, a gramática das referências e citações e a API do modelo. O formato do projeto está em [`FORMAT.md`](FORMAT.md) e o da proposta, em [`PROPOSAL-FORMAT.md`](PROPOSAL-FORMAT.md).
+A **conversation** is a sequence of messages, from people and agents, anchored to an item of the mapping (a marking, an annotation field, a layer, a loose point on the canvas…). It stays open until **a person** resolves it. This document describes the conversation file, the grammar of references and citations, and the model API. The project format is in [`FORMAT.md`](FORMAT.md) and the proposal format is in [`PROPOSAL-FORMAT.md`](PROPOSAL-FORMAT.md).
 
-**O formato é novo** (etapa Comentários; o `mapping.json` continua no schema v15). A app guarda e lê `comments/` (pasta, projeto local e zip) e mostra as conversas nos Detalhes, na janela Comentários e nos pinos do canvas; o servidor MCP (a partir da 0.25.0) lê a caixa de entrada, abre conversas, responde e liga propostas a elas (`list_threads`, `get_thread`, `open_thread`, `post_message`, `wait_for_comment` e o argumento `thread` do `propose_changes`; regras de uso no "Conversas" do guia do agente, `mapping-docs://AGENT-GUIDE.md`).
+**The format is new** (Comments stage; `mapping.json` stays on schema v15). The app stores and reads `comments/` (folder, local project and zip) and shows the conversations in Details, in the Comments window and on the canvas pins; the MCP server (from 0.25.0 on) reads the inbox, opens conversations, replies and links proposals to them (`list_threads`, `get_thread`, `open_thread`, `post_message`, `wait_for_comment` and the `thread` argument of `propose_changes`; usage rules in "Conversas" in the agent guide, `mapping-docs://AGENT-GUIDE.md`).
 
-A validação (zod) e todas as regras ficam em `src/model/` (`thread.ts`, `threadOps.ts`, `threadView.ts`, `threadUsers.ts`, `threadFilters.ts`, `threadPins.ts`, `threadDelete.ts`, `citations.ts` e `refGrammar.ts`), como funções puras usadas pela app e pelo servidor MCP.
+Validation (zod) and all the rules live in `src/model/` (`thread.ts`, `threadOps.ts`, `threadView.ts`, `threadUsers.ts`, `threadFilters.ts`, `threadPins.ts`, `threadDelete.ts`, `citations.ts` and `refGrammar.ts`), as pure functions used by the app and by the MCP server.
 
-## Onde fica
+## Where it lives
 
 ```
 meu-projeto/
@@ -14,20 +14,20 @@ meu-projeto/
 ├── images/
 ├── proposals/
 └── comments/
-    ├── 5d0e8a41-2c7b-4f1e-9a63-b8c1d4e7f902.json     # conversa aberta
+    ├── 5d0e8a41-2c7b-4f1e-9a63-b8c1d4e7f902.json     # open conversation
     ├── c3a96f10-8e24-47bd-b5d0-1f7a2e9c6b38.json
     └── resolved/
-        └── 91b7e2d5-0a4c-4c68-8f3e-6d2b5a1c9e70.json   # conversa resolvida
+        └── 91b7e2d5-0a4c-4c68-8f3e-6d2b5a1c9e70.json   # resolved conversation
 ```
 
-- **Um arquivo por conversa.** As abertas ficam em `comments/<id>.json`; as resolvidas, em `comments/resolved/<id>.json`. Duas pessoas que abrem conversa no mesmo item geram ids diferentes, e o git mescla sem conflito.
-- **Fora do `mapping.json`.** A conversa não entra no desfazer, não vira proposta e não sobe o schema (continua v15).
-- O `id` é um UUID e segue a regra do id de proposta: só `[A-Za-z0-9._-]` e não começa com ponto (vira nome de arquivo). O mesmo `id` aparece no nome do arquivo e no campo.
-- **O campo `resolved` é a verdade; a pasta é só o índice.** Um arquivo em `comments/` com `resolved` preenchido, ou em `resolved/` com `resolved: null`, vale pelo campo. A app o muda de pasta na próxima gravação dela.
-- O `repairProject` (reparo mecânico) e a limpeza da sessão **nunca leem** `comments/`: nada apaga uma conversa sozinho, nem a órfã.
-- As conversas ficam na pasta do projeto, versionadas no git junto com o resto, e vão no zip exportado (veja "Zip, projeto local e somente leitura").
+- **One file per conversation.** Open ones live in `comments/<id>.json`; resolved ones, in `comments/resolved/<id>.json`. Two people who open a conversation on the same item generate different ids, and git merges without conflict.
+- **Outside `mapping.json`.** The conversation does not enter undo, does not become a proposal and does not raise the schema (it stays v15).
+- The `id` is a UUID and follows the proposal id rule: only `[A-Za-z0-9._-]` and it does not start with a dot (it becomes a file name). The same `id` appears in the file name and in the field.
+- **The `resolved` field is the truth; the folder is only the index.** A file in `comments/` with `resolved` filled in, or in `resolved/` with `resolved: null`, counts by the field. The app moves it to the right folder on its next write.
+- `repairProject` (mechanical repair) and the session cleanup **never read** `comments/`: nothing deletes a conversation on its own, not even an orphan one.
+- Conversations stay in the project folder, versioned in git together with the rest, and go in the exported zip (see "Zip, local project and read-only").
 
-## Exemplo
+## Example
 
 ```json
 {
@@ -47,7 +47,7 @@ meu-projeto/
       "id": "0b6f31c2-5e8a-4d97-a1c4-72e9d03b8f15",
       "author": { "kind": "agent", "name": "Claude Code", "email": null },
       "at": "2026-11-07T09:14:03.000Z",
-      "text": "A especialização não diz qual **variante** usar aqui. Pelo desenho parece `outlined`, mas o botão da [tela de login](mapping://meu-projeto/m/7c41b0e9) é `filled`. Qual vale?",
+      "text": "The specialization does not say which **variant** to use here. From the design it looks like `outlined`, but the button on the [login screen](mapping://meu-projeto/m/7c41b0e9) is `filled`. Which one applies?",
       "proposal": null
     },
     {
@@ -58,259 +58,259 @@ meu-projeto/
         "email": "marina@exemplo.com"
       },
       "at": "2026-11-07T09:41:20.000Z",
-      "text": "É `outlined`. O da tela de login é o principal da página, por isso `filled`.",
+      "text": "It is `outlined`. The one on the login screen is the main one on the page, so it is `filled`.",
       "proposal": null
     },
     {
       "id": "a2c5d718-9f04-4b3e-86d1-0e7b4a93c5f6",
       "author": { "kind": "agent", "name": "Claude Code", "email": null },
       "at": "2026-11-07T10:02:47.000Z",
-      "text": "Proposta: [Variantes dos botões](mapping://meu-projeto/p/8c1f2d9e)",
+      "text": "Proposal: [Button variants](mapping://meu-projeto/p/8c1f2d9e)",
       "proposal": "8c1f2d9e"
     }
   ]
 }
 ```
 
-Nesse exemplo a última mensagem é de agente, então a conversa **aguarda humano**. O assunto, derivado, é "A especialização não diz qual variante usar aqui. Pelo desenho parece outlined, mas o botão da tela…" (cortado em 80 caracteres).
+In this example the last message is from an agent, so the conversation is **waiting for a human**. The derived subject is "The specialization does not say which variant to use here. From the design it looks like outlined, but the button on the…" (cut at 80 characters).
 
-## Campos da raiz
+## Root fields
 
-Todos são obrigatórios; o "vazio" é `null`, como na proposta.
+All are required; the "empty" value is `null`, as in the proposal.
 
-| Campo           | Tipo             | Descrição                                                                                                                   |
-| --------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `format`        | string           | Sempre `"mapping-thread"`.                                                                                                  |
-| `formatVersion` | `1`              | Versão do formato.                                                                                                          |
-| `id`            | string           | Id da conversa (nome do arquivo). `[A-Za-z0-9._-]`, sem começar com ponto.                                                  |
-| `anchor`        | objeto           | Onde a conversa está ancorada (veja "Âncoras").                                                                             |
-| `createdAt`     | string           | Data ISO 8601 (UTC) em que a conversa foi aberta.                                                                           |
-| `revision`      | inteiro ≥ 0      | Contador de gravações do arquivo, com a mesma conferência do `mapping.json` e da proposta (veja "`revision` e a gravação"). |
-| `resolved`      | objeto ou `null` | `{ "by": { "name", "email" }, "at" }` quando uma pessoa resolveu; `null` na conversa aberta. `name` e `email` não vazios.   |
-| `messages`      | array            | As mensagens (abaixo), ao menos uma. A leitura as ordena por `at` e, no empate, por `id`.                                   |
+| Field           | Type             | Description                                                                                                                    |
+| --------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `format`        | string           | Always `"mapping-thread"`.                                                                                                     |
+| `formatVersion` | `1`              | Format version.                                                                                                                |
+| `id`            | string           | Conversation id (the file name). `[A-Za-z0-9._-]`, not starting with a dot.                                                    |
+| `anchor`        | object           | Where the conversation is anchored (see "Anchors").                                                                            |
+| `createdAt`     | string           | ISO 8601 date (UTC) when the conversation was opened.                                                                          |
+| `revision`      | integer ≥ 0      | Write counter of the file, with the same check as `mapping.json` and the proposal (see "`revision` and writing").              |
+| `resolved`      | object or `null` | `{ "by": { "name", "email" }, "at" }` when a person resolved it; `null` on an open conversation. `name` and `email` not empty. |
+| `messages`      | array            | The messages (below), at least one. Reading sorts them by `at` and, on a tie, by `id`.                                         |
 
-### Mensagem
+### Message
 
-| Campo      | Tipo             | Descrição                                                                                                                                           |
-| ---------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`       | string           | Único na conversa.                                                                                                                                  |
-| `author`   | objeto           | `{ "kind": "human" \| "agent", "name", "email" }`. `name` não vazio; `email` é obrigatório na pessoa e `null` no agente.                            |
-| `at`       | string           | Data ISO 8601 (UTC).                                                                                                                                |
-| `text`     | string           | Markdown, não vazio (nem só espaços) e com até 10.000 caracteres (`String.length`). Pode conter citações (veja "Referências e citações").           |
-| `proposal` | string ou `null` | Id de uma proposta ligada à mensagem. Só o servidor MCP o preenche, no `propose_changes` com `thread`; na app a mensagem vira o cartão da proposta. |
+| Field      | Type             | Description                                                                                                                                                 |
+| ---------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`       | string           | Unique within the conversation.                                                                                                                             |
+| `author`   | object           | `{ "kind": "human" \| "agent", "name", "email" }`. `name` not empty; `email` is required for a person and `null` for an agent.                              |
+| `at`       | string           | ISO 8601 date (UTC).                                                                                                                                        |
+| `text`     | string           | Markdown, not empty (not only spaces) and up to 10,000 characters (`String.length`). May contain citations (see "References and citations").                |
+| `proposal` | string or `null` | Id of a proposal linked to the message. Only the MCP server fills it, in `propose_changes` with `thread`; in the app the message becomes the proposal card. |
 
-- **Só se acrescenta:** ninguém altera nem remove uma mensagem. Para apagar, apaga-se a conversa inteira (veja "Quem grava o quê").
-- Campos desconhecidos são descartados na leitura (e, por isso, não voltam na gravação): uma versão nova do formato sobe o `formatVersion`.
+- **Append only:** nobody changes or removes a message. To delete, the whole conversation is deleted (see "Who writes what").
+- Unknown fields are dropped on read (and, for that reason, do not come back on write): a new version of the format raises the `formatVersion`.
 
-## Âncoras
+## Anchors
 
-A âncora é **por id**: acompanha o item que se move ou troca de pai. São nove formas:
+The anchor is **by id**: it follows the item that moves or changes parent. There are nine forms:
 
-| `kind`       | Campos                         | Aponta para                                                                                                      | Onde o pino mora (hospedeiro)   |
-| ------------ | ------------------------------ | ---------------------------------------------------------------------------------------------------------------- | ------------------------------- |
-| `marking`    | `id`                           | Uma marcação.                                                                                                    | A própria marcação.             |
-| `container`  | `id`                           | Um container.                                                                                                    | O próprio container.            |
-| `annotation` | `id`                           | Uma anotação.                                                                                                    | A marcação ou a seta dona dela. |
-| `arrow`      | `id`                           | Uma seta.                                                                                                        | A própria seta.                 |
-| `layer`      | `id`                           | Uma camada.                                                                                                      | Nenhum (a camada não tem pino). |
-| `field`      | `annotationId`, `key`          | Um campo tipado da anotação (a `key` do campo).                                                                  | A dona da anotação.             |
-| `entry`      | `annotationId`, `entryId`      | Um par da anotação livre.                                                                                        | A dona da anotação.             |
-| `row`        | `annotationId`, `key`, `rowId` | Uma linha de uma `table` (o `_id` da linha) no campo `key`.                                                      | A dona da anotação.             |
-| `point`      | `containerId`, `x`, `y`        | Um ponto solto. `containerId` não nulo: pixels do container, e o ponto anda com ele; `null`: unidades do canvas. | O próprio ponto.                |
+| `kind`       | Fields                         | Points to                                                                                                   | Where the pin lives (host)         |
+| ------------ | ------------------------------ | ----------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| `marking`    | `id`                           | A marking.                                                                                                  | The marking itself.                |
+| `container`  | `id`                           | A container.                                                                                                | The container itself.              |
+| `annotation` | `id`                           | An annotation.                                                                                              | The marking or arrow that owns it. |
+| `arrow`      | `id`                           | An arrow.                                                                                                   | The arrow itself.                  |
+| `layer`      | `id`                           | A layer.                                                                                                    | None (a layer has no pin).         |
+| `field`      | `annotationId`, `key`          | A typed field of the annotation (the field's `key`).                                                        | The owner of the annotation.       |
+| `entry`      | `annotationId`, `entryId`      | A pair of the free annotation.                                                                              | The owner of the annotation.       |
+| `row`        | `annotationId`, `key`, `rowId` | A row of a `table` (the row's `_id`) in the `key` field.                                                    | The owner of the annotation.       |
+| `point`      | `containerId`, `x`, `y`        | A loose point. `containerId` not null: container pixels, and the point moves with it; `null`: canvas units. | The point itself.                  |
 
-- O container de um ponto é decidido **uma vez**, quando a conversa é criada: o container mais alto sob o cursor, ou o canvas. O ponto não é marcação e não passa pelo `settleHierarchy`. `x` e `y` são números quaisquer (podem ser negativos e fracionários, no canvas).
-- **Um pino por item que hospeda a âncora, não por proximidade:** a conversa num campo aparece no pino da marcação dona, sem um segundo pino em cima do primeiro.
+- A point's container is decided **once**, when the conversation is created: the topmost container under the cursor, or the canvas. The point is not a marking and does not go through `settleHierarchy`. `x` and `y` are any numbers (they may be negative and fractional, on the canvas).
+- **One pin per item that hosts the anchor, not by proximity:** a conversation on a field appears on the owner marking's pin, with no second pin on top of the first.
 
-### Órfã
+### Orphan
 
-É a conversa cuja âncora **não existe mais no projeto**: o item apagado, ou o container do ponto apagado. A resolução diz o que sumiu (`marking`, `container`, `arrow`, `layer`, `annotation`, `entry` ou `row`):
+It is a conversation whose anchor **no longer exists in the project**: the item was deleted, or the point's container was deleted. The resolution says what disappeared (`marking`, `container`, `arrow`, `layer`, `annotation`, `entry` or `row`):
 
-- `field`: basta a anotação existir; `entry` e `row` também precisam existir (o par entre os pares da anotação, a linha entre as linhas da tabela);
-- `point` só fica órfão com `containerId` não nulo e o container apagado;
-- uma `annotation` ou um `field` cuja dona não existe mais não tem pino, mas também não é órfã.
+- `field`: it is enough for the annotation to exist; `entry` and `row` also need to exist (the pair among the annotation's pairs, the row among the table's rows);
+- `point` is only orphan with a non-null `containerId` and the container deleted;
+- an `annotation` or a `field` whose owner no longer exists has no pin, but is not an orphan either.
 
-A conversa órfã continua listada, sem pino ("<tipo> apagado(a) · órfã"). **Nada a apaga sozinho.**
+The orphan conversation stays listed, without a pin ("<kind> deleted · orphan"). **Nothing deletes it on its own.**
 
-## Estados e o que é derivado
+## States and what is derived
 
-O arquivo guarda só os fatos (mensagens e `resolved`). Tudo o que segue é **calculado** pelo modelo e **nunca é gravado**:
+The file stores only the facts (messages and `resolved`). Everything that follows is **computed** by the model and **never written**:
 
-| Derivado       | Regra                                                                                                                                                                                                                                                                            |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Aguardando** | Só na conversa aberta. A última mensagem (na ordem `at`, `id`) de **pessoa** dá **Aguardando agente**; a de **agente** dá **Aguardando humano**. Ninguém é marcado. A resolvida não aguarda ninguém.                                                                             |
-| **Assunto**    | A primeira linha com texto da primeira mensagem, sem a marcação do markdown (título, lista, citação, ênfase, código), com o rótulo das citações como texto e cortada em 80 caracteres (a reticência `…` conta).                                                                  |
-| **Não lida**   | **Por dispositivo.** A conversa é não lida quando tem mensagem de **outra pessoa** (outro e-mail) ou de **agente** estritamente depois do `lastReadAt` daquela conversa. A própria mensagem nunca conta. O `lastReadAt` fica no `localStorage` do dispositivo, nunca no arquivo. |
-| **Órfã**       | A âncora não existe no projeto (acima).                                                                                                                                                                                                                                          |
-| **Pino**       | Grupos por item hospedeiro, com a cor da conversa mais urgente: aguardando humano, depois aguardando agente, depois resolvida. A resolvida só tem pino enquanto está selecionada. Camada e órfã não têm pino. Mostrar ou esconder os pinos é estado da interface.                |
-| **Citada em**  | Backlinks: para cada conversa citada por outra (`c/<código>`), as conversas que a citam. Considera as abertas e as resolvidas.                                                                                                                                                   |
+| Derived      | Rule                                                                                                                                                                                                                                                                                            |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Waiting**  | Only on an open conversation. The last message (in `at`, `id` order) from a **person** gives **Waiting for agent**; from an **agent** it gives **Waiting for human**. Nobody is tagged. A resolved conversation waits for nobody.                                                               |
+| **Subject**  | The first line with text of the first message, without the markdown markup (heading, list, quote, emphasis, code), with the citation labels as text and cut at 80 characters (the ellipsis `…` counts).                                                                                         |
+| **Unread**   | **Per device.** The conversation is unread when it has a message from **another person** (another email) or from an **agent** strictly after that conversation's `lastReadAt`. The person's own message never counts. The `lastReadAt` lives in the device's `localStorage`, never in the file. |
+| **Orphan**   | The anchor does not exist in the project (above).                                                                                                                                                                                                                                               |
+| **Pin**      | Groups by host item, with the color of the most urgent conversation: waiting for human, then waiting for agent, then resolved. A resolved one only has a pin while it is selected. Layer and orphan have no pin. Showing or hiding the pins is interface state.                                 |
+| **Cited in** | Backlinks: for each conversation cited by another (`c/<code>`), the conversations that cite it. It considers open and resolved ones.                                                                                                                                                            |
 
-Consequência aceita do "aguardando": uma conversa só entre pessoas fica "Aguardando agente" enquanto a última mensagem for de pessoa. O guia do agente manda responder só ao que lhe é pedido.
+Accepted consequence of "waiting": a conversation only between people stays "Waiting for agent" while the last message is from a person. The agent guide tells it to answer only what it is asked.
 
-## Quem grava o quê
+## Who writes what
 
-- **A app** grava como `human`, com a identidade das Configurações (nome e e-mail, por dispositivo, nunca no projeto): abre a conversa, acrescenta mensagens, **resolve** (grava `resolved` e muda o arquivo para `comments/resolved/`), **reabre** (limpa o campo e devolve o arquivo) e **apaga** (conversa a conversa ou em lote, com o aviso de quem são as mensagens que vão embora). Sem identidade, a pessoa só lê.
-- **O servidor MCP** (a partir da 0.25.0) grava só como `agent`, com `email: null`, e só em `comments/<id>.json`:
-  - **Conversa nova** (`open_thread`): arquivo novo por **arquivo temporário + hard link**, que nunca sobrescreve um existente (num disco sem hard link, grava direto, ainda sem sobrescrever). O `id` e o da primeira mensagem são UUIDs gerados pelo servidor.
-  - **Mensagem acrescentada** (`post_message`, e o `propose_changes` com `thread`, que acrescenta uma mensagem com `proposal`): **relê o arquivo imediatamente antes de gravar**, refaz a operação sobre a versão do disco se a app a mudou no meio e grava o arquivo inteiro de forma **atômica** (temporário + renomear) com `revision + 1`; depois de 3 tentativas sem estabilidade, recusa com `revision-conflict`. O `post_message` exige o `after` (o id da última mensagem lida): se entrou mensagem depois, não grava (`stale-thread`). O horário da mensagem nunca fica antes da última da conversa.
-  - **Nunca** resolve, reabre nem apaga uma conversa (não há tool para isso), **nunca** grava em `comments/resolved/` (uma mensagem do MCP numa conversa resolvida é recusada com `thread-resolved`) e **nunca** altera o `mapping.json`. Um arquivo ilegível não é sobrescrito (`invalid-thread`).
-  - O nome do autor é o argumento `author` da tool, senão o `clientInfo.name` do cliente MCP, senão "agente". O servidor nunca assina como pessoa: não existe `kind: "human"` vindo do MCP.
-- **O `kind` nunca vem do chamador:** a app só escreve `human` e o MCP só `agent`. No modelo, o autor entra como argumento das funções; o modelo não decide quem é humano.
-- **Ninguém altera nem remove uma mensagem.**
-- **Nenhum outro código escreve em `comments/`.** Uma alteração externa (o MCP, um editor de texto, o git) vira recarga na app.
+- **The app** writes as `human`, with the identity from Settings (name and email, per device, never in the project): it opens the conversation, appends messages, **resolves** (writes `resolved` and moves the file to `comments/resolved/`), **reopens** (clears the field and moves the file back) and **deletes** (conversation by conversation or in bulk, with the notice of whose messages are going away). Without an identity, the person can only read.
+- **The MCP server** (from 0.25.0 on) writes only as `agent`, with `email: null`, and only in `comments/<id>.json`:
+  - **New conversation** (`open_thread`): new file by **temporary file + hard link**, which never overwrites an existing one (on a disk without hard link, it writes directly, still without overwriting). The `id` and the first message's id are UUIDs generated by the server.
+  - **Appended message** (`post_message`, and `propose_changes` with `thread`, which appends a message with `proposal`): **rereads the file immediately before writing**, redoes the operation on the disk version if the app changed it in the meantime and writes the whole file **atomically** (temporary + rename) with `revision + 1`; after 3 attempts without stability, it refuses with `revision-conflict`. `post_message` requires `after` (the id of the last message read): if a message came in after it, it does not write (`stale-thread`). The message time is never before the conversation's last one.
+  - It **never** resolves, reopens or deletes a conversation (there is no tool for that), **never** writes in `comments/resolved/` (an MCP message on a resolved conversation is refused with `thread-resolved`) and **never** changes `mapping.json`. An unreadable file is not overwritten (`invalid-thread`).
+  - The author name is the tool's `author` argument, else the MCP client's `clientInfo.name`, else "agente". The server never signs as a person: there is no `kind: "human"` coming from MCP.
+- **The `kind` never comes from the caller:** the app only writes `human` and MCP only `agent`. In the model, the author enters as an argument of the functions; the model does not decide who is human.
+- **Nobody changes or removes a message.**
+- **No other code writes in `comments/`.** An external change (MCP, a text editor, git) becomes a reload in the app.
 
-## `revision` e a gravação
+## `revision` and writing
 
-Toda gravação, da app ou do MCP, **relê o arquivo** antes de gravar:
+Every write, from the app or from MCP, **rereads the file** before writing:
 
-1. Se o texto mudou desde a última leitura ou gravação, adota a versão do disco.
-2. **Refaz a operação sobre ela** (acrescentar, resolver e reabrir são funções puras) e grava `revision + 1`.
-3. Um arquivo que ficou ilegível **não é sobrescrito**.
+1. If the text changed since the last read or write, it adopts the disk version.
+2. **It redoes the operation on it** (append, resolve and reopen are pure functions) and writes `revision + 1`.
+3. A file that became unreadable is **not overwritten**.
 
-Convenção do modelo: toda operação que **muda** a conversa devolve `revision + 1`; a que não muda (resolver uma conversa já resolvida, reabrir uma aberta) devolve a mesma conversa, intacta, sem tocar na `revision`. Assim, refazer a operação sobre uma versão do disco que outra pessoa já resolveu não muda nada.
+Model convention: every operation that **changes** the conversation returns `revision + 1`; one that does not change it (resolving an already resolved conversation, reopening an open one) returns the same conversation, intact, without touching `revision`. That way, redoing the operation on a disk version that someone else already resolved changes nothing.
 
-## A mesma conversa em duas pastas
+## The same conversation in two folders
 
-Uma mesclagem do git, ou uma mudança de pasta que falhou no meio (resolver ou reabrir), pode deixar o mesmo `id` em `comments/` e em `comments/resolved/`. A leitura **junta as duas cópias** (`mergeThreadCopies`):
+A git merge, or a folder move that failed halfway (resolve or reopen), can leave the same `id` in `comments/` and in `comments/resolved/`. Reading **joins the two copies** (`mergeThreadCopies`):
 
-- **Uma cópia só:** vale ela, e o campo `resolved` diz o lugar.
-- **Duas cópias:**
-  - as mensagens são a **união por `id`** (um id repetido é a mesma mensagem; vale a da cópia aberta);
-  - a `revision` é a **maior** das duas (sem somar: quem grava o resultado é que soma);
-  - se as duas cópias têm **as mesmas mensagens** e `revision` diferente, a cópia de **maior `revision`** decide: aberta (a reabertura interrompida, aberta na `revision` 6 e resolvida na 5, não se perde) ou resolvida (com o `resolved` dela);
-  - nos demais casos (mensagens diferentes, ou a mesma `revision`), a conversa fica **resolvida só se** o `resolved.at` da cópia resolvida é **posterior à última mensagem** da união; senão fica aberta, com `resolved: null` (alguém escreveu depois de resolverem, o que equivale a reabrir);
-  - a âncora e o `createdAt` vêm da cópia de maior `revision` (a aberta, no empate).
-- A próxima gravação da app grava no lugar certo (a pasta que o campo `resolved` indica) e apaga a outra cópia. O MCP lê do mesmo jeito.
-- Cópias de ids diferentes, ou nenhuma cópia, são `invalid-thread`.
+- **Only one copy:** it wins, and the `resolved` field says the location.
+- **Two copies:**
+  - the messages are the **union by `id`** (a repeated id is the same message; the open copy's wins);
+  - the `revision` is the **greater** of the two (no summing: whoever writes the result does the adding);
+  - if the two copies have **the same messages** and a different `revision`, the copy with the **greater `revision`** decides: open (the interrupted reopening, open at `revision` 6 and resolved at 5, is not lost) or resolved (with its `resolved`);
+  - in the other cases (different messages, or the same `revision`), the conversation is **resolved only if** the resolved copy's `resolved.at` is **later than the last message** of the union; otherwise it is open, with `resolved: null` (someone wrote after it was resolved, which amounts to reopening);
+  - the anchor and `createdAt` come from the copy with the greater `revision` (the open one, on a tie).
+- The app's next write writes in the right place (the folder the `resolved` field indicates) and deletes the other copy. MCP reads the same way.
+- Copies with different ids, or no copy, are `invalid-thread`.
 
-## O limite do git: duas máquinas na mesma conversa
+## The git limit: two machines on the same conversation
 
-Duas pessoas que acrescentam mensagens à **mesma** conversa em máquinas diferentes têm **conflito textual** no git, porque as duas escrevem no fim da lista `messages` (e mudam a linha `revision`). O conflito é só textual: nenhum dado se perde, e a ordenação por `at` e `id` da leitura aceita o resultado. Para resolver:
+Two people who append messages to the **same** conversation on different machines get a **textual conflict** in git, because both write at the end of the `messages` list (and change the `revision` line). The conflict is only textual: no data is lost, and the read-time ordering by `at` and `id` accepts the result. To resolve it:
 
-1. `git status` mostra `comments/<id>.json` como "both modified". Abra o arquivo: as marcas `<<<<<<<`, `=======` e `>>>>>>>` cercam o fim de `messages` (e, às vezes, a linha `revision`).
-2. **Fique com as duas mensagens.** Apague só as três linhas de marca e deixe os dois blocos de mensagem, um depois do outro. A ordem entre eles não importa (a leitura ordena por `at` e `id`, e a próxima gravação da app regrava na ordem canônica).
-3. Confira a **vírgula** entre os dois blocos (o último objeto de cada lado não tem vírgula e, juntos, precisam de uma) e que o array continua fechando com `]`. Nenhuma marca do git pode sobrar: o arquivo precisa ser JSON válido.
-4. Na linha `revision`, fique com o **maior** dos dois números. Qualquer inteiro ≥ 0 é válido; a app apenas adota o que está no disco e soma 1 na gravação seguinte.
-5. Se os dois lados acrescentaram a **mesma** mensagem (mesmo `id`), fique com uma só: o `id` é único na conversa.
-6. Se um lado **resolveu** e o outro acrescentou mensagem, fique com as duas coisas (as duas mensagens e o `resolved` de um dos lados): a regra da junção das cópias decide sozinha (a conversa só fica resolvida se a resolução é posterior à última mensagem).
-7. `git add comments/<id>.json` e conclua a mesclagem. Um conflito "modificado aqui, apagado lá" (uma pessoa apagou a conversa, a outra escreveu nela) é decisão sua: apagar é irreversível; na dúvida, fique com o arquivo.
+1. `git status` shows `comments/<id>.json` as "both modified". Open the file: the `<<<<<<<`, `=======` and `>>>>>>>` markers surround the end of `messages` (and, sometimes, the `revision` line).
+2. **Keep both messages.** Delete only the three marker lines and leave the two message blocks, one after the other. The order between them does not matter (reading sorts by `at` and `id`, and the app's next write rewrites in canonical order).
+3. Check the **comma** between the two blocks (the last object on each side has no comma and, together, they need one) and that the array still closes with `]`. No git marker may remain: the file must be valid JSON.
+4. On the `revision` line, keep the **greater** of the two numbers. Any integer ≥ 0 is valid; the app just adopts what is on disk and adds 1 on the next write.
+5. If both sides appended the **same** message (same `id`), keep only one: the `id` is unique within the conversation.
+6. If one side **resolved** and the other appended a message, keep both things (both messages and one side's `resolved`): the copy-join rule decides on its own (the conversation is only resolved if the resolution is later than the last message).
+7. `git add comments/<id>.json` and finish the merge. A "modified here, deleted there" conflict (one person deleted the conversation, the other wrote in it) is your decision: deleting is irreversible; when in doubt, keep the file.
 
-Se o arquivo continuar inválido, a app e o MCP o tratam como ilegível: não o sobrescrevem e mostram o erro com o caminho exato.
+If the file remains invalid, the app and MCP treat it as unreadable: they do not overwrite it and show the error with the exact path.
 
-## Zip, projeto local e somente leitura
+## Zip, local project and read-only
 
-- **Zip exportado:** leva `comments/` e `comments/resolved/`. Na importação entram **só esses dois caminhos**, com id válido (o nome do arquivo, sem a extensão, segue a regra do `id`; nada de `..`). O texto de um arquivo inválido volta idêntico ao exportar de novo, como o da proposta: nada é perdido por não ser entendido.
-- **Projeto local** (IndexedDB): as chaves são as mesmas caminhos. Gravar marca o projeto como "não exportado". No projeto local a conversa funciona entre pessoas, sem agente, e não é observada (não há `stat` para comparar).
-- **Somente leitura:** num projeto aberto só para leitura (`readOnly`), as conversas também ficam só para leitura. A pessoa lê, mas não grava, resolve nem apaga. Durante a revisão de uma proposta, as conversas também ficam só para leitura (a revisão mostra o projeto proposto, e uma âncora que só existe na prévia ficaria órfã).
+- **Exported zip:** carries `comments/` and `comments/resolved/`. On import **only those two paths** come in, with a valid id (the file name, without the extension, follows the `id` rule; no `..`). The text of an invalid file comes back identical on exporting again, like the proposal's: nothing is lost for not being understood.
+- **Local project** (IndexedDB): the keys are the same paths. Writing marks the project as "not exported". In the local project the conversation works between people, without an agent, and is not watched (there is no `stat` to compare).
+- **Read-only:** in a project opened only for reading (`readOnly`), the conversations are also read-only. The person reads, but does not write, resolve or delete. During the review of a proposal, the conversations are also read-only (the review shows the proposed project, and an anchor that exists only in the preview would become orphan).
 
-## Regras de validade
+## Validity rules
 
-`parseThread` / `parseThreadText` validam o arquivo e devolvem os erros com o caminho exato (`errors`, no formato `caminho: mensagem`, e `issues`, com `path` e `message` à parte); a leitura devolve também `warnings` (vazio na `formatVersion` 1). Os erros reais:
+`parseThread` / `parseThreadText` validate the file and return the errors with the exact path (`errors`, in the `path: message` format, and `issues`, with `path` and `message` separate); reading also returns `warnings` (empty in `formatVersion` 1). The actual errors:
 
-| Situação                                                        | Erro                                                                                                             |
-| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Não é JSON                                                      | `JSON inválido: Expected property name or '}' in JSON at position 1 (line 1 column 2)`                           |
-| `format` ou `formatVersion` errado                              | `format: deve ser "mapping-thread"`, `formatVersion: deve ser 1`                                                 |
-| Id da conversa inválido                                         | `id: id inválido; use [A-Za-z0-9._-], sem começar com ponto`                                                     |
-| Data que não é ISO 8601                                         | `createdAt: data inválida; use ISO 8601 (UTC)` (também em `messages[i].at` e `resolved.at`)                      |
-| Conversa sem mensagem                                           | `messages: deve ter ao menos uma mensagem`                                                                       |
-| Id de mensagem repetido                                         | `messages[2].id: id "a" repetido`                                                                                |
-| Pessoa sem e-mail                                               | `messages[2].author.email: obrigatório na pessoa`                                                                |
-| Agente com e-mail                                               | `messages[2].author.email: deve ser null no agente`                                                              |
-| `kind` do autor inválido                                        | `messages[2].author.kind: deve ser "human" ou "agent"`                                                           |
-| Nome vazio                                                      | `messages[2].author.name: não pode ser vazio` (e `resolved.by.name`)                                             |
-| Texto vazio, só com espaços                                     | `messages[2].text: não pode ser vazio`                                                                           |
-| Texto com mais de 10.000 caracteres                             | `messages[2].text: no máximo 10000 caracteres`                                                                   |
-| `kind` da âncora inválido                                       | `anchor.kind: deve ser "marking", "container", "annotation", "arrow", "layer", "field", "entry", "row", "point"` |
-| Campo da âncora que falta                                       | `anchor.key: Invalid input: expected string, received undefined`                                                 |
-| Campo obrigatório que falta (inclusive `resolved` e `proposal`) | `resolved: Invalid input: expected object, received undefined`                                                   |
-| `resolved` inválido                                             | `resolved.by.name: não pode ser vazio`, `resolved.at: data inválida; use ISO 8601 (UTC)`                         |
+| Situation                                                    | Error                                                                                                            |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| Not JSON                                                     | `JSON inválido: Expected property name or '}' in JSON at position 1 (line 1 column 2)`                           |
+| Wrong `format` or `formatVersion`                            | `format: deve ser "mapping-thread"`, `formatVersion: deve ser 1`                                                 |
+| Invalid conversation id                                      | `id: id inválido; use [A-Za-z0-9._-], sem começar com ponto`                                                     |
+| Date that is not ISO 8601                                    | `createdAt: data inválida; use ISO 8601 (UTC)` (also in `messages[i].at` and `resolved.at`)                      |
+| Conversation without a message                               | `messages: deve ter ao menos uma mensagem`                                                                       |
+| Repeated message id                                          | `messages[2].id: id "a" repetido`                                                                                |
+| Person without email                                         | `messages[2].author.email: obrigatório na pessoa`                                                                |
+| Agent with email                                             | `messages[2].author.email: deve ser null no agente`                                                              |
+| Invalid author `kind`                                        | `messages[2].author.kind: deve ser "human" ou "agent"`                                                           |
+| Empty name                                                   | `messages[2].author.name: não pode ser vazio` (and `resolved.by.name`)                                           |
+| Empty text, only spaces                                      | `messages[2].text: não pode ser vazio`                                                                           |
+| Text with more than 10,000 characters                        | `messages[2].text: no máximo 10000 caracteres`                                                                   |
+| Invalid anchor `kind`                                        | `anchor.kind: deve ser "marking", "container", "annotation", "arrow", "layer", "field", "entry", "row", "point"` |
+| Missing anchor field                                         | `anchor.key: Invalid input: expected string, received undefined`                                                 |
+| Missing required field (including `resolved` and `proposal`) | `resolved: Invalid input: expected object, received undefined`                                                   |
+| Invalid `resolved`                                           | `resolved.by.name: não pode ser vazio`, `resolved.at: data inválida; use ISO 8601 (UTC)`                         |
 
-Em resumo:
+In short:
 
-- raiz com todos os campos; `format` e `formatVersion` exatos; `id` pela regra do id de proposta; datas ISO 8601 (aceitam fuso, e a leitura as normaliza para UTC com `Z`); `revision` inteiro ≥ 0;
-- `messages` com ao menos uma mensagem, ids únicos, `text` não vazio e até `THREAD_MESSAGE_MAX` (10.000) caracteres, `proposal` string ou `null`;
-- autor `human` com `email` preenchido e `agent` com `email: null`;
-- âncora de uma das nove formas, com `id`, `annotationId`, `key`, `entryId` e `rowId` não vazios, e `containerId` string ou `null`, `x` e `y` números;
-- `resolved` `null` ou `{ by: { name, email }, at }`, com `name` e `email` não vazios.
+- root with all the fields; exact `format` and `formatVersion`; `id` by the proposal id rule; ISO 8601 dates (they accept a time zone, and reading normalizes them to UTC with `Z`); `revision` integer ≥ 0;
+- `messages` with at least one message, unique ids, non-empty `text` of up to `THREAD_MESSAGE_MAX` (10,000) characters, `proposal` string or `null`;
+- `human` author with `email` filled in and `agent` with `email: null`;
+- anchor of one of the nine forms, with `id`, `annotationId`, `key`, `entryId` and `rowId` not empty, and `containerId` string or `null`, `x` and `y` numbers;
+- `resolved` `null` or `{ by: { name, email }, at }`, with `name` and `email` not empty.
 
-Fora do arquivo (regras de quem chama, não do formato): uma mensagem do MCP numa conversa resolvida (`thread-resolved`) e a guarda `after` do `post_message`. As operações do modelo lançam `ThreadError` com `thread-message-duplicate` (acrescentar um `id` que já existe) ou `invalid-thread` (dado inválido, cópias que não casam).
+Outside the file (rules of the caller, not of the format): an MCP message on a resolved conversation (`thread-resolved`) and the `after` guard of `post_message`. The model operations throw `ThreadError` with `thread-message-duplicate` (appending an `id` that already exists) or `invalid-thread` (invalid data, copies that do not match).
 
-A gravação (`serializeThread`) é canônica: chaves sempre na mesma ordem, mensagens na ordem `at`/`id`, indentação de 2 espaços e quebra de linha no final. Assim, uma mensagem acrescentada é um bloco novo no fim do array e o diff do git fica pequeno.
+Writing (`serializeThread`) is canonical: keys always in the same order, messages in `at`/`id` order, 2-space indentation and a line break at the end. That way, an appended message is a new block at the end of the array and the git diff stays small.
 
-## Referências e citações
+## References and citations
 
-### Gramática da referência
+### Reference grammar
 
-A referência `mapping://` é a mesma para a app e para o MCP (`refGrammar.ts`, sobre `itemRef.ts`). As letras e os segmentos vêm **depois do código**, nunca como sufixo:
+The `mapping://` reference is the same for the app and for MCP (`refGrammar.ts`, on top of `itemRef.ts`). The letters and segments come **after the code**, never as a suffix:
 
 ```
-mapping://<projeto>/<m|i|a|p|l|c>/<código>              item, proposta, camada (l) ou conversa (c)
-mapping://<projeto>/a/<código>/f/<campo>                campo tipado (a key, codificada)
-mapping://<projeto>/a/<código>/e/<código>               par da anotação livre
-mapping://<projeto>/a/<código>/f/<campo>/r/<código>     linha de table
+mapping://<project>/<m|i|a|p|l|c>/<code>                item, proposal, layer (l) or conversation (c)
+mapping://<project>/a/<code>/f/<field>                  typed field (the key, encoded)
+mapping://<project>/a/<code>/e/<code>                   pair of the free annotation
+mapping://<project>/a/<code>/f/<field>/r/<code>         table row
 ```
 
-| Forma                                                    | Exemplo                                                                |
-| -------------------------------------------------------- | ---------------------------------------------------------------------- |
-| Marcação ou seta (`m`; os ids dos dois dividem o espaço) | `mapping://meu-projeto/m/7c41b0e9`                                     |
-| Container (`i`)                                          | `mapping://meu-projeto/i/9b1c4d2e`                                     |
-| Anotação (`a`)                                           | `mapping://meu-projeto/a/3f2a9c1e`                                     |
-| Proposta (`p`)                                           | `mapping://meu-projeto/p/8c1f2d9e`                                     |
-| Camada (`l`)                                             | `mapping://meu-projeto/l/d41e7a05`                                     |
-| Conversa (`c`)                                           | `mapping://meu-projeto/c/5d0e8a41`                                     |
-| Campo tipado                                             | `mapping://meu-projeto/a/3f2a9c1e/f/variant`                           |
-| Campo cuja key tem caracteres especiais (codificada)     | `mapping://meu-projeto/a/3f2a9c1e/f/cor%20de%20fundo`                  |
-| Par da anotação livre                                    | `mapping://meu-projeto/a/3f2a9c1e/e/b07c15d3`                          |
-| Linha de `table`                                         | `mapping://meu-projeto/a/3f2a9c1e/f/passos/r/2e90a6f4`                 |
-| Forma curta (sem o projeto)                              | `c/5d0e8a41`, `a/3f2a9c1e/f/variant`, `a/3f2a9c1e/f/passos/r/2e90a6f4` |
+| Form                                                    | Example                                                                |
+| ------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Marking or arrow (`m`; the ids of both share the space) | `mapping://meu-projeto/m/7c41b0e9`                                     |
+| Container (`i`)                                         | `mapping://meu-projeto/i/9b1c4d2e`                                     |
+| Annotation (`a`)                                        | `mapping://meu-projeto/a/3f2a9c1e`                                     |
+| Proposal (`p`)                                          | `mapping://meu-projeto/p/8c1f2d9e`                                     |
+| Layer (`l`)                                             | `mapping://meu-projeto/l/d41e7a05`                                     |
+| Conversation (`c`)                                      | `mapping://meu-projeto/c/5d0e8a41`                                     |
+| Typed field                                             | `mapping://meu-projeto/a/3f2a9c1e/f/variant`                           |
+| Field whose key has special characters (encoded)        | `mapping://meu-projeto/a/3f2a9c1e/f/cor%20de%20fundo`                  |
+| Pair of the free annotation                             | `mapping://meu-projeto/a/3f2a9c1e/e/b07c15d3`                          |
+| `table` row                                             | `mapping://meu-projeto/a/3f2a9c1e/f/passos/r/2e90a6f4`                 |
+| Short form (without the project)                        | `c/5d0e8a41`, `a/3f2a9c1e/f/variant`, `a/3f2a9c1e/f/passos/r/2e90a6f4` |
 
-- **Códigos curtos.** O código é o início do id normalizado (sem hífens, em minúsculas): 8 caracteres, crescendo de 4 em 4 se houver colisão. O código de `m` é único entre marcações e setas; o de `i`, entre containers; o de `a`, entre anotações; o de `l`, entre camadas; o de `p`, entre as propostas do projeto; o de `c`, entre as conversas do projeto (abertas e resolvidas); o do par (`e`), entre os pares da anotação; o da linha (`r`), entre as linhas da tabela. Na resolução, o id cujo normalizado é exatamente o código vence; senão, vale o único id que começa com ele (mais de um é ambíguo).
-- **`<projeto>`** é o nome da pasta, codificado com o conjunto _unreserved_ da RFC 3986 (`A-Z a-z 0-9 - . _ ~`; o resto vira `%XX` em UTF-8, `( ) ! ' *` também).
-- **`<campo>`** é a `key` do campo, codificada do mesmo jeito (a leitura a decodifica; `%` inválido dá `null`).
-- **Leitura estrita** (`parseAnyRef`): qualquer coisa depois do código, `?`, `#`, espaço no meio, segmento vazio, letra desconhecida ou `e`/`f`/`r` fora do lugar dão `null` (o MCP o chama de `invalid-ref`). Só se aceita a URL completa, ou a curta começando pela letra (`c/…`, `a/…`); o código solto é do `parseRef` antigo (`m`, `i`, `a`).
-- **Os links dos documentos da biblioteca** (`mapping://<typeId>` e `mapping://<specId>/<typeId>`) têm no máximo dois segmentos depois do esquema, e a gramática exige a letra seguida do código: nunca se confundem com uma referência, e `extractCitations` os ignora.
-- As referências de antes (`m`, `i`, `a`, `p`) continuam valendo, sem mudança. O servidor MCP aceita as formas novas (`l`, `c`, `/f/`, `/e/`, `/r/`) a partir da 0.25.0: `resolve` as entende todas, e `get_annotation` e as outras tools de item aceitam campo, par e linha como a anotação que os contém (numa tool de marcação ou de container, uma parte é `wrong-kind`; um sufixo que a gramática não conhece, `invalid-ref`).
+- **Short codes.** The code is the start of the normalized id (without hyphens, lowercase): 8 characters, growing by 4 at a time if there is a collision. The `m` code is unique among markings and arrows; the `i` code, among containers; the `a` code, among annotations; the `l` code, among layers; the `p` code, among the project's proposals; the `c` code, among the project's conversations (open and resolved); the pair's code (`e`), among the annotation's pairs; the row's code (`r`), among the table's rows. On resolution, the id whose normalized form is exactly the code wins; otherwise the only id that starts with it counts (more than one is ambiguous).
+- **`<project>`** is the folder name, encoded with the _unreserved_ set of RFC 3986 (`A-Z a-z 0-9 - . _ ~`; the rest becomes `%XX` in UTF-8, and so do `( ) ! ' *`).
+- **`<field>`** is the field's `key`, encoded the same way (reading decodes it; an invalid `%` gives `null`).
+- **Strict reading** (`parseAnyRef`): anything after the code, `?`, `#`, a space in the middle, an empty segment, an unknown letter or `e`/`f`/`r` in the wrong place give `null` (MCP calls it `invalid-ref`). Only the full URL is accepted, or the short one starting with the letter (`c/…`, `a/…`); the bare code belongs to the old `parseRef` (`m`, `i`, `a`).
+- **The links of the library documents** (`mapping://<typeId>` and `mapping://<specId>/<typeId>`) have at most two segments after the scheme, and the grammar requires the letter followed by the code: they are never confused with a reference, and `extractCitations` ignores them.
+- The earlier references (`m`, `i`, `a`, `p`) remain valid, unchanged. The MCP server accepts the new forms (`l`, `c`, `/f/`, `/e/`, `/r/`) from 0.25.0 on: `resolve` understands all of them, and `get_annotation` and the other item tools accept a field, pair and row as the annotation that contains them (on a marking or container tool, a part is `wrong-kind`; a suffix the grammar does not know, `invalid-ref`).
 
-### A citação é um link markdown
+### The citation is a markdown link
 
-Não há sintaxe nova: a citação é o link `[<nome atual>](<referência>)` no texto da mensagem, e o texto continua legível em qualquer leitor de markdown (no git, no editor).
+There is no new syntax: the citation is the link `[<current name>](<reference>)` in the message text, and the text stays readable in any markdown reader (in git, in the editor).
 
-- A app grava o rótulo com `[`, `]` e `\` escapados (`formatCitation`, `escapeCitationLabel`): `[a\[0\] da lista](mapping://meu-projeto/a/3f2a9c1e/f/lista)`. Um rótulo vazio não é link em markdown: quem não tem nome usa um texto neutro.
-- **Dentro de uma conversa, a citação vale no projeto da conversa.** O `<projeto>` da URL só informa quem lê o arquivo cru: a app e o MCP resolvem o código no projeto da conversa, e uma pasta renomeada não quebra nada. Num projeto local, a app escreve o nome do projeto nesse segmento.
-- `extractCitations` lê o texto com o mesmo leitor de markdown que desenha a mensagem (com `lineBreaks`), então vale o que a tela mostra como link; link dentro de bloco de código não conta. Um link `mapping://` que não fecha a gramática volta com `ref: null` (citação **quebrada**); links comuns (`https://`, `#âncora`) e os da biblioteca não são citações.
+- The app writes the label with `[`, `]` and `\` escaped (`formatCitation`, `escapeCitationLabel`): `[a\[0\] da lista](mapping://meu-projeto/a/3f2a9c1e/f/lista)`. An empty label is not a link in markdown: whoever has no name uses a neutral text.
+- **Inside a conversation, the citation counts in the conversation's project.** The `<project>` in the URL only informs whoever reads the raw file: the app and MCP resolve the code in the conversation's project, and a renamed folder breaks nothing. In a local project, the app writes the project name in that segment.
+- `extractCitations` reads the text with the same markdown reader that draws the message (with `lineBreaks`), so what the screen shows as a link counts; a link inside a code block does not. A `mapping://` link that does not satisfy the grammar comes back with `ref: null` (a **broken** citation); ordinary links (`https://`, `#anchor`) and the library ones are not citations.
 
-### O chip vivo
+### The live chip
 
-O chip mostra o nome **de agora** do alvo, resolvido pela referência (`liveLabel`):
+The chip shows the target's **current** name, resolved through the reference (`liveLabel`):
 
-| Alvo                                | Rótulo do chip                                                  |
-| ----------------------------------- | --------------------------------------------------------------- |
-| Marcação, container, seta, anotação | O nome (a anotação, o nome da instância ou do tipo).            |
-| Campo                               | O `label` do campo (a `key`, se não há tipo).                   |
-| Par                                 | A `key` do par.                                                 |
-| Linha                               | O valor da coluna do `rowLabel` (a posição `#n` se não houver). |
-| Camada                              | O nome.                                                         |
-| Conversa                            | O assunto.                                                      |
-| Proposta                            | O título.                                                       |
+| Target                                | Chip label                                                               |
+| ------------------------------------- | ------------------------------------------------------------------------ |
+| Marking, container, arrow, annotation | The name (the annotation's, the instance's or the type's name).          |
+| Field                                 | The field's `label` (the `key`, if there is no type).                    |
+| Pair                                  | The pair's `key`.                                                        |
+| Row                                   | The value of the `rowLabel` column (the `#n` position if there is none). |
+| Layer                                 | The name.                                                                |
+| Conversation                          | The subject.                                                             |
+| Proposal                              | The title.                                                               |
 
-- O rótulo entre colchetes do link é a **reserva**. Com o alvo apagado (ou o código que não resolve), o chip fica riscado com esse rótulo e a dica diz que o alvo não existe mais. O motivo é `missing` (o código não existe, ou o campo, par ou linha não existe na anotação), `ambiguous` (o código curto serve a mais de um alvo) ou `invalid` (o link nem fecha a gramática).
-- Alvo que existe mas não tem nome (marcação sem nome, por exemplo) volta com `label: null`; a interface mostra o texto traduzido.
-- O clique leva ao alvo: seleciona o item e foca o campo, abre a conversa, ou mostra a proposta na janela Propostas.
-- **Citada em:** uma conversa citada por outra (`c/<código>`) lista as conversas que a citam; é derivado das conversas carregadas, e ninguém o escreve à mão (`backlinks`).
+- The label between the link's brackets is the **fallback**. With the target deleted (or the code not resolving), the chip is struck through with that label and the tooltip says the target no longer exists. The reason is `missing` (the code does not exist, or the field, pair or row does not exist in the annotation), `ambiguous` (the short code serves more than one target) or `invalid` (the link does not even satisfy the grammar).
+- A target that exists but has no name (a marking without a name, for example) comes back with `label: null`; the interface shows the translated text.
+- Clicking takes you to the target: it selects the item and focuses the field, opens the conversation, or shows the proposal in the Proposals window.
+- **Cited in:** a conversation cited by another (`c/<code>`) lists the conversations that cite it; it is derived from the loaded conversations, and nobody writes it by hand (`backlinks`).
 
-## API em `src/model/`
+## API in `src/model/`
 
-- Formato (`thread.ts`): `THREAD_FORMAT`, `THREAD_FORMAT_VERSION`, `COMMENTS_DIR`, `RESOLVED_DIR`, `THREAD_MESSAGE_MAX`, `THREAD_ID_RE`, `THREAD_ANCHOR_KINDS`, `threadFilePath`, `compareThreadMessages`, `sortThreadMessages`, `parseThread`, `parseThreadText`, `serializeThread`, e os schemas `threadSchema`, `threadMessageSchema`, `threadAuthorSchema`, `threadAnchorSchema`, `threadResolvedSchema`, `threadResolverSchema`; tipos `Thread`, `ThreadMessage`, `ThreadAuthor`, `ThreadAuthorKind`, `ThreadAnchor`, `ThreadAnchorKind`, `ThreadResolved`, `ThreadResolver`, `ThreadParseResult`.
-- Operações puras (`threadOps.ts`): `openThread`, `appendMessage`, `resolveThread`, `reopenThread`, `mergeThreadCopies` (a junção das duas cópias), `threadLocation` (`open` ou `resolved`, a pasta onde o arquivo deve ficar), a classe `ThreadError` (`thread-message-duplicate`, `invalid-thread`); tipos `OpenThreadArgs`, `MergedThread`, `ThreadLocation`, `ThreadErrorCode`.
-- Vista (`threadView.ts`): `resolveAnchor`, `isOrphan`, `hostOf`, `hostKey` (âncora, órfã e hospedeiro do pino), `lastMessage`, `awaiting`, `threadSubject` (com `SUBJECT_MAX` e um `resolveLabel` opcional para o rótulo vivo das citações), `isUnread`; tipos `ThreadHost`, `ThreadMissingKind`, `AnchorResolution`, `ThreadAwaiting`, `SubjectLabelResolver`, `ThreadViewer`.
-- Usuários (`threadUsers.ts`): `normalizeEmail`, `userKey` (`human:<e-mail>` ou `agent:<nome>`), `userLabel`, `initials` (primeira e última palavra; o agente é `AG`), `threadUsers` (o filtro Usuário, com a contagem de conversas de cada um); tipo `ThreadUser`.
-- Filtros (`threadFilters.ts`): `filterThreads` (status, usuário, texto sem diferença de caixa nem de acento e "só as que citam a seleção", em conjunto); tipos `ThreadFilter`, `ThreadStatusFilter`, `ThreadSelectionFilter`.
-- Pinos (`threadPins.ts`): `pinGroups` (um grupo por item hospedeiro, com cor, iniciais, número de mensagens, rótulo e "não lida"); tipos `PinGroup`, `PinColor`, `PinGroupOptions`.
-- Apagar (`threadDelete.ts`): `deleteImpact` (as mensagens e os autores que vão embora, e se dá para apagar direto), `bulkDeleteCandidates` ("Só as resolvidas" e "última mensagem antes de"); tipos `DeleteImpact`, `DeleteAuthorCount`, `MessageSummary`, `BulkDeleteCriteria`, `BulkDeleteCandidates`.
-- Gramática (`refGrammar.ts`): `parseAnyRef`, `formatAnyRef`, `formatSubRef`, `ANY_REF_KINDS`, `layerShortCodes`, `layerShortCode`, `matchLayerCode`, `threadShortCodes`; tipos `AnyRef`, `AnyRefKind`, `ItemAnyRef`, `FieldAnyRef`, `EntryAnyRef`, `RowAnyRef`, `SubRef`, `ParsedAnyRef`. `parseRef` e `formatRef` (`itemRef.ts`) seguem como estavam.
-- Citações (`citations.ts`): `extractCitations`, `escapeCitationLabel`, `formatCitation`, `resolveCitation`, `citationTargetKey`, `liveLabel`, `liveCitation`, `citedTargets`, `backlinks`; tipos `Citation`, `CitationTarget`, `CitationTargetKind`, `CitationResolution`, `CitationContext`, `CitationProposal`, `LiveLabel`, `LiveCitation`.
-- Markdown (`markdown.ts`): `parseMarkdown(texto, { lineBreaks: true })` quebra a linha dentro do parágrafo, para as mensagens; o Catálogo continua como está.
+- Format (`thread.ts`): `THREAD_FORMAT`, `THREAD_FORMAT_VERSION`, `COMMENTS_DIR`, `RESOLVED_DIR`, `THREAD_MESSAGE_MAX`, `THREAD_ID_RE`, `THREAD_ANCHOR_KINDS`, `threadFilePath`, `compareThreadMessages`, `sortThreadMessages`, `parseThread`, `parseThreadText`, `serializeThread`, and the schemas `threadSchema`, `threadMessageSchema`, `threadAuthorSchema`, `threadAnchorSchema`, `threadResolvedSchema`, `threadResolverSchema`; types `Thread`, `ThreadMessage`, `ThreadAuthor`, `ThreadAuthorKind`, `ThreadAnchor`, `ThreadAnchorKind`, `ThreadResolved`, `ThreadResolver`, `ThreadParseResult`.
+- Pure operations (`threadOps.ts`): `openThread`, `appendMessage`, `resolveThread`, `reopenThread`, `mergeThreadCopies` (the join of the two copies), `threadLocation` (`open` or `resolved`, the folder where the file must live), the class `ThreadError` (`thread-message-duplicate`, `invalid-thread`); types `OpenThreadArgs`, `MergedThread`, `ThreadLocation`, `ThreadErrorCode`.
+- View (`threadView.ts`): `resolveAnchor`, `isOrphan`, `hostOf`, `hostKey` (anchor, orphan and pin host), `lastMessage`, `awaiting`, `threadSubject` (with `SUBJECT_MAX` and an optional `resolveLabel` for the citations' live label), `isUnread`; types `ThreadHost`, `ThreadMissingKind`, `AnchorResolution`, `ThreadAwaiting`, `SubjectLabelResolver`, `ThreadViewer`.
+- Users (`threadUsers.ts`): `normalizeEmail`, `userKey` (`human:<email>` or `agent:<name>`), `userLabel`, `initials` (first and last word; the agent is `AG`), `threadUsers` (the User filter, with each one's conversation count); type `ThreadUser`.
+- Filters (`threadFilters.ts`): `filterThreads` (status, user, text insensitive to case and accents, and "only those that cite the selection", combined); types `ThreadFilter`, `ThreadStatusFilter`, `ThreadSelectionFilter`.
+- Pins (`threadPins.ts`): `pinGroups` (one group per host item, with color, initials, message count, label and "unread"); types `PinGroup`, `PinColor`, `PinGroupOptions`.
+- Delete (`threadDelete.ts`): `deleteImpact` (the messages and authors that go away, and whether it can be deleted directly), `bulkDeleteCandidates` ("Only the resolved ones" and "last message before"); types `DeleteImpact`, `DeleteAuthorCount`, `MessageSummary`, `BulkDeleteCriteria`, `BulkDeleteCandidates`.
+- Grammar (`refGrammar.ts`): `parseAnyRef`, `formatAnyRef`, `formatSubRef`, `ANY_REF_KINDS`, `layerShortCodes`, `layerShortCode`, `matchLayerCode`, `threadShortCodes`; types `AnyRef`, `AnyRefKind`, `ItemAnyRef`, `FieldAnyRef`, `EntryAnyRef`, `RowAnyRef`, `SubRef`, `ParsedAnyRef`. `parseRef` and `formatRef` (`itemRef.ts`) stay as they were.
+- Citations (`citations.ts`): `extractCitations`, `escapeCitationLabel`, `formatCitation`, `resolveCitation`, `citationTargetKey`, `liveLabel`, `liveCitation`, `citedTargets`, `backlinks`; types `Citation`, `CitationTarget`, `CitationTargetKind`, `CitationResolution`, `CitationContext`, `CitationProposal`, `LiveLabel`, `LiveCitation`.
+- Markdown (`markdown.ts`): `parseMarkdown(text, { lineBreaks: true })` breaks the line inside the paragraph, for the messages; the Catalog stays as it is.
 
-## Na app e no MCP
+## In the app and in MCP
 
-A app usa o modelo para o armazenamento (pasta, projeto local e zip), a sessão com a conferência de `revision`, a identidade e o "não lida". O servidor MCP o usa nas tools `list_threads`, `get_thread`, `open_thread`, `post_message`, `wait_for_comment`, no `propose_changes` com `thread` e no `resolve` com a gramática nova, e serve este documento como o recurso `mapping-docs://COMMENT-FORMAT.md`. O guia do agente (`mapping-docs://AGENT-GUIDE.md`, seção "Conversas") traz as regras de uso: quando abrir uma conversa, o `after`, e o que o agente nunca faz.
+The app uses the model for storage (folder, local project and zip), the session with the `revision` check, the identity and the "unread" state. The MCP server uses it in the tools `list_threads`, `get_thread`, `open_thread`, `post_message`, `wait_for_comment`, in `propose_changes` with `thread` and in `resolve` with the new grammar, and serves this document as the resource `mapping-docs://COMMENT-FORMAT.md`. The agent guide (`mapping-docs://AGENT-GUIDE.md`, "Conversas" section) carries the usage rules: when to open a conversation, the `after`, and what the agent never does.
