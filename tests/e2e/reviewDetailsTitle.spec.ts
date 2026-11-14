@@ -1,9 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
 import { fixtureZip } from './proposalFixture';
 
-// Revisão a 900×720: o título dos Detalhes não quebra no meio da palavra e a alça do
-// Deslizar fica inteira dentro da área de comparação, também com a divisória em 0% e 100%.
+// Review at 900×720: the Details title does not break in the middle of a word and the Slide
+// handle stays whole inside the comparison area, also with the divider at 0% and 100%.
 
+// pt-BR kept: shared fixture data (proposalFixture names such as 'Cabeçalho', 'Carrinho') asserted by tests/examples and tests/store
 test.use({ viewport: { width: 900, height: 720 } });
 
 async function openReview(page: Page) {
@@ -15,23 +16,23 @@ async function openReview(page: Page) {
       mimeType: 'application/zip',
       buffer: await fixtureZip(),
     });
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   await page.keyboard.press('Control+Shift+3');
   await page.keyboard.press('Control+Shift+7');
   await page
-    .getByRole('button', { name: /^Revisar/ })
+    .getByRole('button', { name: /^Review/ })
     .first()
     .click();
 }
 
-test('o título dos Detalhes fica numa linha só, sem quebrar a palavra', async ({
+test('the Details title stays on a single line, without breaking the word', async ({
   page,
 }) => {
   await openReview(page);
   await page.locator('.tree-row', { hasText: 'Cabeçalho' }).first().click();
   const name = page.locator('.identity-name').first();
   await expect(name).toContainText('Cabeçalho do checkout');
-  // A largura do nome cobre o texto numa linha só (ou a linha inteira): sem palavra partida.
+  // The name width covers the text on a single line (or the whole row): no broken word.
   const { width, natural, row } = await name.evaluate((e) => {
     const width = e.clientWidth;
     e.style.whiteSpace = 'nowrap';
@@ -42,18 +43,18 @@ test('o título dos Detalhes fica numa linha só, sem quebrar a palavra', async 
   expect(width).toBeGreaterThanOrEqual(Math.min(natural, row) - 1);
 });
 
-test('a alça do Deslizar fica inteira em 0% e em 100%', async ({ page }) => {
+test('the Slide handle stays whole at 0% and at 100%', async ({ page }) => {
   await openReview(page);
   await page.locator('.tree-row', { hasText: 'Carrinho' }).first().click();
   await page
-    .getByRole('button', { name: /Arquivo da imagem/ })
+    .getByRole('button', { name: /Image file/ })
     .first()
     .click();
   await page
-    .getByRole('button', { name: /^Comparar/ })
+    .getByRole('button', { name: /^Compare/ })
     .first()
     .click();
-  const grip = page.getByRole('slider', { name: 'Divisória entre antes e depois' });
+  const grip = page.getByRole('slider', { name: 'Divider between before and after' });
   await expect(grip).toBeVisible();
   await grip.focus();
   for (const key of ['Home', 'End']) {

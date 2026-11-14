@@ -4,7 +4,7 @@ import { addImage, canvasPoint, createProject, drawMarking } from './helpers';
 const viewportOf = async (page: import('@playwright/test').Page) =>
   page.locator('.canvas-host').getAttribute('data-viewport');
 
-/** A vista depois de parar de mudar (o enquadramento anima): três leituras iguais seguidas. */
+/** The view after it stops changing (the fit animates): three equal readings in a row. */
 async function settledViewport(
   page: import('@playwright/test').Page,
 ): Promise<string | null> {
@@ -24,20 +24,20 @@ async function settledViewport(
   return last;
 }
 
-// Enquadrar seleção (EQ2): o botão e o `Shift+2` dão zoom e centram a vista nos itens
-// selecionados; sem seleção não fazem nada e, com o foco num campo, o atalho é do campo.
+// Fit selection (EQ2): the button and `Shift+2` zoom and center the view on the
+// selected items; with no selection they do nothing and, with focus in a field, the shortcut belongs to the field.
 
 const numbers = (text: string | null): number[] => (text ?? '').split(' ').map(Number);
 
-test('Enquadrar seleção: botão, atalho, sem seleção e com o foco num campo', async ({
+test('Fit selection: button, shortcut, no selection and with focus in a field', async ({
   page,
 }) => {
-  await createProject(page, 'Enquadrar');
+  await createProject(page, 'Fit');
   await addImage(page);
   const host = page.locator('.canvas-host');
-  const fit = page.getByRole('button', { name: 'Enquadrar seleção' });
+  const fit = page.getByRole('button', { name: 'Fit selection' });
 
-  // Sem seleção (a imagem recém-adicionada vem selecionada): botão desabilitado e atalho sem efeito.
+  // No selection (the newly added image comes selected): disabled button and shortcut without effect.
   await page.keyboard.press('Escape');
   await expect(fit).toBeDisabled();
   const viewport = async () => host.getAttribute('data-viewport');
@@ -45,7 +45,7 @@ test('Enquadrar seleção: botão, atalho, sem seleção e com o foco num campo'
   await page.keyboard.press('Shift+2');
   expect(await viewport()).toBe(initial);
 
-  // Uma marcação pequena fora do centro, depois selecionada.
+  // A small marking off center, then selected.
   const spot = await canvasPoint(page, 0.2);
   await drawMarking(page, { x: spot.x - 40, y: spot.y }, { width: 60, height: 40 });
   await page.mouse.click(spot.x - 40, spot.y);
@@ -61,7 +61,7 @@ test('Enquadrar seleção: botão, atalho, sem seleção e com o foco num campo'
       await host.getAttribute('data-selection-box'),
     );
     const box = await host.boundingBox();
-    if (!box) throw new Error('canvas sem tamanho');
+    if (!box) throw new Error('canvas has no size');
     return {
       dx: x + w / 2 - box.width / 2,
       dy: y + h / 2 - box.height / 2,
@@ -73,7 +73,7 @@ test('Enquadrar seleção: botão, atalho, sem seleção e com o foco num campo'
   expect(Math.abs(afterButton.dy)).toBeLessThan(1);
   expect(afterButton.fits).toBe(true);
 
-  // O atalho: depois de afastar a vista, Shift+2 volta a enquadrar.
+  // The shortcut: after zooming out, Shift+2 fits again.
   const fitted = numbers(await viewport())[2] ?? 0;
   await page.keyboard.press('Control+-');
   await page.keyboard.press('Control+-');
@@ -85,10 +85,10 @@ test('Enquadrar seleção: botão, atalho, sem seleção e com o foco num campo'
   expect(Math.abs(afterKey.dx)).toBeLessThan(1);
   expect(Math.abs(afterKey.dy)).toBeLessThan(1);
 
-  // Com o foco num campo dos Detalhes, o Shift+2 é do campo e a vista não muda.
+  // With focus in a Details field, Shift+2 belongs to the field and the view does not change.
   await page.keyboard.press('Control+-');
   await expect.poll(async () => numbers(await viewport())[2]).toBeLessThan(fitted);
-  const field = page.getByLabel('Nome', { exact: true }).first();
+  const field = page.getByLabel('Name', { exact: true }).first();
   await field.focus();
   const typing = await viewport();
   await page.keyboard.press('Shift+2');
@@ -96,32 +96,32 @@ test('Enquadrar seleção: botão, atalho, sem seleção e com o foco num campo'
   await expect(field).toHaveValue(/[@"2]/);
 });
 
-// #1204: o Shift+1 logo depois do Adicionar da Paleta enquadra (o foco está no botão); com o
-// foco no campo X da Posição nos Detalhes, o atalho é do campo (decisão 13 da #841).
-test('Shift+1 depois do Adicionar da Paleta enquadra; no campo da Posição é do campo', async ({
+// #1204: Shift+1 right after the Palette Add fits (the focus is on the button); with the
+// focus on the X field of Position in Details, the shortcut belongs to the field (decision 13 of #841).
+test('Shift+1 after the Palette Add fits; in the Position field it belongs to the field', async ({
   page,
 }) => {
-  await createProject(page, 'Paleta');
+  await createProject(page, 'Palette');
   const host = page.locator('.canvas-host');
-  await page.getByRole('button', { name: 'Novo container' }).first().click();
+  await page.getByRole('button', { name: 'New container' }).first().click();
   const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Nome', { exact: true }).fill('Home');
-  await dialog.getByRole('button', { name: 'Criar container' }).click();
+  await dialog.getByLabel('Name', { exact: true }).fill('Home');
+  await dialog.getByRole('button', { name: 'Create container' }).click();
   await expect(dialog).toBeHidden();
 
   await page.keyboard.press('Control+Shift+Digit9');
-  await page.getByRole('tab', { name: 'Paleta' }).click();
+  await page.getByRole('tab', { name: 'Palette' }).click();
   const add = page.getByRole('button', {
-    name: 'Adicionar no canvas: Nota',
+    name: 'Add to canvas: Nota',
     exact: true,
   });
   await add.click();
   await expect(host).toHaveAttribute('data-components', '1');
   await expect(add).toBeFocused();
 
-  // Afasta a vista; com o foco no botão da Paleta, o atalho enquadra...
+  // Zoom out; with the focus on the Palette button, the shortcut fits...
   const canvas = page.locator('main[data-canvas-area]');
-  const fitAll = page.getByRole('button', { name: 'Enquadrar tudo' });
+  const fitAll = page.getByRole('button', { name: 'Fit all' });
   await canvas.focus();
   await page.keyboard.press('Control+-');
   await page.keyboard.press('Control+-');
@@ -131,7 +131,7 @@ test('Shift+1 depois do Adicionar da Paleta enquadra; no campo da Posição é d
   await expect.poll(() => viewportOf(page)).not.toBe(zoomedOut);
   const byKey = await settledViewport(page);
 
-  // ...para o mesmo valor do botão Enquadrar tudo.
+  // ...to the same value as the Fit all button.
   await canvas.focus();
   await page.keyboard.press('Control+-');
   await page.keyboard.press('Control+-');
@@ -140,7 +140,7 @@ test('Shift+1 depois do Adicionar da Paleta enquadra; no campo da Posição é d
   await fitAll.click();
   await expect.poll(() => viewportOf(page)).toBe(byKey);
 
-  // Com o foco no campo X da Posição, o Shift+1 digita no campo e a vista fica igual.
+  // With the focus on the X field of Position, Shift+1 types in the field and the view stays the same.
   await page.keyboard.press('Control+Shift+Digit3');
   const x = page
     .locator('section[data-window="details"]')

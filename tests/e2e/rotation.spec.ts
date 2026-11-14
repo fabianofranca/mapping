@@ -1,6 +1,6 @@
-// `rotation` por nó (EX3) no Chromium de verdade: o desenho do Konva (renderScene) com a cor de um
-// ponto dentro e fora de um retângulo girado 45°, o recorte do quadro que gira junto e o hover
-// (a forma girada). Não abre a app: monta o Konva numa página em branco, como o textMetrics.
+// Per-node `rotation` (EX3) in a real Chromium: the Konva drawing (renderScene) with the color of a
+// point inside and outside a rectangle rotated 45°, the frame clip that rotates along with it and the hover
+// (the rotated shape). It does not open the app: it mounts Konva on a blank page, like textMetrics.
 import { expect, test, type Page } from '@playwright/test';
 import { build } from 'esbuild';
 
@@ -11,7 +11,7 @@ import { Stage } from 'konva/lib/Stage';
 import { renderScene, sceneIdOf } from './src/canvas/components/renderScene';
 import { approximateMeasurer, instantiate } from './src/model/components/instantiate';
 Konva.autoDrawEnabled = false;
-// Instancia o componente (100 × 100), desenha no Konva e devolve a leitura de pixels e do hover.
+// Instantiates the component (100 × 100), draws it in Konva and returns the pixel and hover readings.
 window.draw = (children) => {
   const component = {
     format: 'mapping-component', formatVersion: 4, id: 'r', name: 'R', size: { width: 100, height: 100 },
@@ -79,32 +79,32 @@ const bar = (rotation: number) => ({
   rotation,
 });
 
-test('um retângulo girado 45° pinta dentro e deixa fora o que o sem giro cobriria', async ({
+test('a rectangle rotated 45° paints inside and leaves out what the unrotated one would cover', async ({
   page,
 }) => {
   await draw(page, [bar(45)]);
   // 60 × 20 centrado em (50, 50): o eixo comprido vai para a diagonal descendente.
   expect(await pixel(page, 50, 50)).toEqual([255, 0, 0, 255]);
-  expect(await pixel(page, 64, 64)).toEqual([255, 0, 0, 255]); // dentro só girado
+  expect(await pixel(page, 64, 64)).toEqual([255, 0, 0, 255]); // inside only when rotated
   expect(await pixel(page, 36, 36)).toEqual([255, 0, 0, 255]);
-  expect(await pixel(page, 22, 42)).toEqual([0, 0, 0, 0]); // canto sem giro, fora do girado
+  expect(await pixel(page, 22, 42)).toEqual([0, 0, 0, 0]); // unrotated corner, outside the rotated one
   expect(await pixel(page, 78, 58)).toEqual([0, 0, 0, 0]);
-  expect(await pixel(page, 64, 36)).toEqual([0, 0, 0, 0]); // fora dos dois
+  expect(await pixel(page, 64, 36)).toEqual([0, 0, 0, 0]); // outside both
 });
 
-test('sem rotation o retângulo fica alinhado aos eixos', async ({ page }) => {
+test('without rotation the rectangle stays axis-aligned', async ({ page }) => {
   await draw(page, [bar(0)]);
   expect(await pixel(page, 22, 42)).toEqual([255, 0, 0, 255]);
   expect(await pixel(page, 64, 64)).toEqual([0, 0, 0, 0]);
 });
 
-test('o recorte do quadro gira com ele e o que passa do losango some', async ({
+test('the frame clip rotates with it and what goes past the diamond disappears', async ({
   page,
 }) => {
   await draw(page, [
     {
       type: 'frame',
-      name: 'janela',
+      name: 'window',
       clip: true,
       width: 40,
       height: 40,
@@ -114,18 +114,18 @@ test('o recorte do quadro gira com ele e o que passa do losango some', async ({
   ]);
   expect(await pixel(page, 50, 50)).toEqual([0, 0, 255, 255]);
   expect(await pixel(page, 50, 25)).toEqual([0, 0, 255, 255]);
-  expect(await pixel(page, 31, 31)).toEqual([0, 0, 0, 0]); // canto do quadrado sem giro
+  expect(await pixel(page, 31, 31)).toEqual([0, 0, 0, 0]); // corner of the unrotated square
   expect(await pixel(page, 80, 50)).toEqual([0, 0, 0, 0]);
 });
 
-test('o hover acha o nó pela forma girada; fora dela, o quadro de trás', async ({
+test('hover finds the node by its rotated shape; outside it, the frame behind', async ({
   page,
 }) => {
   await draw(page, [bar(45)]);
-  const inside = await hover(page, 64, 64); // dentro só girado
+  const inside = await hover(page, 64, 64); // inside only when rotated
   expect(inside).not.toBeNull();
   expect(inside).not.toBe('c/root');
   expect(await hover(page, 36, 36)).toBe(inside);
-  expect(await hover(page, 22, 42)).toBe('c/root'); // canto do retângulo sem giro
+  expect(await hover(page, 22, 42)).toBe('c/root'); // corner of the unrotated rectangle
   expect(await hover(page, 64, 36)).toBe('c/root');
 });

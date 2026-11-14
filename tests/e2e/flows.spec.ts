@@ -13,25 +13,26 @@ import {
 } from './helpers';
 
 const SDUI = join(process.cwd(), 'examples', 'specs', 'sdui.json');
+// pt-BR kept: the example spec file is named 'modelo-de-dados.json' (examples/specs)
 const MODELO = join(process.cwd(), 'examples', 'specs', 'modelo-de-dados.json');
 
-test('projeto novo → imagem → marcação → anotação → zip com o mapping.json', async ({
+test('new project → image → marking → annotation → zip with the mapping.json', async ({
   page,
 }) => {
-  await createProject(page, 'Projeto E2E');
+  await createProject(page, 'E2E project');
   await addImage(page);
   await drawMarking(page, await canvasPoint(page));
   await page
-    .getByRole('button', { name: /Adicionar anotação na camada/ })
+    .getByRole('button', { name: /Add annotation to layer/ })
     .first()
     .click();
-  await page.getByLabel('Nome da anotação').fill('Botão Entrar');
-  await page.getByLabel('Nome da anotação').press('Enter');
-  await page.getByRole('button', { name: '+ Par' }).click();
-  await page.getByLabel('Chave').fill('acao');
-  await page.getByLabel('Chave').press('Tab');
-  await page.getByLabel('Valor').fill('login');
-  await page.getByLabel('Valor').press('Enter');
+  await page.getByLabel('Annotation name').fill('Sign in button');
+  await page.getByLabel('Annotation name').press('Enter');
+  await page.getByRole('button', { name: '+ Pair' }).click();
+  await page.getByLabel('Key').fill('action');
+  await page.getByLabel('Key').press('Tab');
+  await page.getByLabel('Value').fill('login');
+  await page.getByLabel('Value').press('Enter');
 
   const { mapping, files } = await exportMapping(page);
   expect(mapping.schemaVersion).toBe(20);
@@ -44,9 +45,9 @@ test('projeto novo → imagem → marcação → anotação → zip com o mappin
   });
   expect(mapping.markings).toHaveLength(1);
   const marking = mapping.markings[0];
-  if (!marking) throw new Error('sem marcação');
+  if (!marking) throw new Error('no marking');
   expect(marking.containerId).toBe(mapping.containers[0]?.id);
-  // O retângulo vai em pixels da imagem original, dentro dela.
+  // The rectangle is in pixels of the original image, inside it.
   const { x, y, width, height } = marking.rect;
   expect(width).toBeGreaterThan(0);
   expect(height).toBeGreaterThan(0);
@@ -55,48 +56,50 @@ test('projeto novo → imagem → marcação → anotação → zip com o mappin
   expect(mapping.annotations).toHaveLength(1);
   expect(mapping.annotations[0]).toMatchObject({
     markingId: marking.id,
-    name: 'Botão Entrar',
+    name: 'Sign in button',
     type: null,
   });
   expect(mapping.annotations[0]?.entries.map((e) => [e.key, e.value])).toEqual([
-    ['acao', 'login'],
+    ['action', 'login'],
   ]);
 });
 
-test('exemplo SDUI → Input com `dado` apontando para uma tupla livre', async ({
-  page,
-}) => {
-  await createProject(page, 'Projeto SDUI');
+test('SDUI example → Input with `dado` pointing to a free tuple', async ({ page }) => {
+  await createProject(page, 'SDUI project');
   await addImage(page);
   await drawMarking(page, await canvasPoint(page));
   await applySpecialization(page, SDUI);
 
-  // Anotação livre com a tupla `name: string` (camada livre).
+  // Free annotation with the `name: string` tuple (free layer).
   await page
-    .getByRole('button', { name: 'Adicionar anotação na camada Camada 1' })
+    .getByRole('button', { name: 'Add annotation to layer Layer 1' })
     .first()
     .click();
-  await page.getByLabel('Nome da anotação').fill('User');
-  await page.getByLabel('Nome da anotação').press('Enter');
-  await page.getByRole('button', { name: '+ Par' }).click();
-  await page.getByLabel('Chave').fill('name');
-  await page.getByLabel('Chave').press('Tab');
-  await page.getByLabel('Valor').fill('string');
-  await page.getByLabel('Valor').press('Enter');
+  await page.getByLabel('Annotation name').fill('User');
+  await page.getByLabel('Annotation name').press('Enter');
+  await page.getByRole('button', { name: '+ Pair' }).click();
+  await page.getByLabel('Key').fill('name');
+  await page.getByLabel('Key').press('Tab');
+  await page.getByLabel('Value').fill('string');
+  await page.getByLabel('Value').press('Enter');
 
-  // Input na camada de componentes.
+  // Input in the components layer.
   await page
-    .getByRole('button', { name: 'Adicionar anotação na camada Componentes' })
+    .getByRole('button', {
+      // pt-BR kept: layer name of examples/specs/sdui.json
+      name: 'Add annotation to layer Componentes',
+    })
     .click();
   await page.getByRole('button', { name: /^Input/ }).click();
-  await page.getByLabel('id', { exact: true }).fill('input_nome');
+  await page.getByLabel('id', { exact: true }).fill('input_name');
   await page.getByLabel('id', { exact: true }).press('Enter');
-  // Seletor de referência em popup (B14): busca e Enter escolhe.
+  // Reference picker in a popup (B14): search and Enter picks.
+  // pt-BR kept: field id `dado` of examples/specs/sdui.json
   const dado = page.getByRole('button', { name: /: dado$/ });
   await dado.click();
-  await page.getByRole('combobox', { name: 'Buscar alvo' }).fill('name');
-  await page.getByRole('combobox', { name: 'Buscar alvo' }).press('Enter');
-  // Uma seta só no campo: o ícone (etapa 7, O2); a seta em texto fica na dica.
+  await page.getByRole('combobox', { name: 'Search target' }).fill('name');
+  await page.getByRole('combobox', { name: 'Search target' }).press('Enter');
+  // A single arrow in the field: the icon (stage 7, O2); the text arrow stays in the hint.
   await expect(dado).toContainText('User.name');
   await expect(dado).not.toContainText('→');
   await expect(dado.locator('xpath=..').locator('[data-tooltip]')).toContainText(
@@ -105,7 +108,7 @@ test('exemplo SDUI → Input com `dado` apontando para uma tupla livre', async (
 
   const { mapping } = await exportMapping(page);
   expect(mapping.specializations).toEqual(
-    // A biblioteca de notas já vem aplicada em todo projeto novo (ME3).
+    // The notes library comes already applied in every new project (ME3).
     [
       { id: 'notas', version: 3 },
       { id: 'sdui', version: 4 },
@@ -116,63 +119,61 @@ test('exemplo SDUI → Input com `dado` apontando para uma tupla livre', async (
   expect(free?.entries).toHaveLength(1);
   expect(input?.type).toEqual({ specId: 'sdui', typeId: 'input' });
   expect(input?.values).toMatchObject({
-    id: 'input_nome',
+    id: 'input_name',
     dado: { annotationId: free?.id, entryId: free?.entries[0]?.id },
   });
 });
 
-test('caixa de seleção e texto de "Componentes sobre fotos" ficam na mesma linha', async ({
+test('checkbox and text of "Show components over photos" stay on the same line', async ({
   page,
 }) => {
   await page.goto('/');
-  // Configurações é um diálogo: botão da coluna lateral (desktop) ou da barra (celular).
-  await page.getByRole('button', { name: 'Configurações', exact: true }).click();
-  const check = page.getByLabel('Mostrar componentes sobre fotos');
+  // Settings is a dialog: button of the side column (desktop) or of the bar (phone).
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  const check = page.getByLabel('Show components over photos');
   const text = page.locator('label.choice .choice-label').first();
   await expect(check).toBeVisible();
   const [c, s] = await Promise.all([check.boundingBox(), text.boundingBox()]);
-  if (!c || !s) throw new Error('sem bounding box');
-  // Mesma faixa vertical (as caixas se sobrepõem) e a caixa fica à esquerda do texto.
+  if (!c || !s) throw new Error('no bounding box');
+  // Same vertical band (the boxes overlap) and the checkbox is to the left of the text.
   expect(c.y).toBeLessThan(s.y + s.height);
   expect(s.y).toBeLessThan(c.y + c.height);
   expect(c.x + c.width).toBeLessThanOrEqual(s.x + 1);
 });
 
-// R4: estrutura do editor no desktop (B1, B2, B8, B11, P4).
-test('desktop: janelas de ferramenta abrem, redimensionam e ficam guardadas', async ({
-  page,
-}) => {
-  await createProject(page, 'Janelas');
+// R4: editor structure on the desktop (B1, B2, B8, B11, P4).
+test('desktop: tool windows open, resize and are remembered', async ({ page }) => {
+  await createProject(page, 'Windows');
 
-  // Barra de status e breadcrumbs sem seleção.
+  // Status bar and breadcrumbs with no selection.
   await expect(page.getByText('schema v20')).toBeVisible();
-  await expect(page.locator('.crumbs')).toContainText('Nada selecionado');
+  await expect(page.locator('.crumbs')).toContainText('Nothing selected');
 
-  // Árvore e Detalhes abrem por padrão; a Lista abre pela faixa.
-  const tree = page.getByRole('region', { name: 'Árvore de marcações' });
-  const list = page.getByRole('region', { name: 'Lista de anotações' });
+  // Tree and Details open by default; the List opens from the strip.
+  const tree = page.getByRole('region', { name: 'Marking tree' });
+  const list = page.getByRole('region', { name: 'Annotation list' });
   await expect(tree).toBeVisible();
-  await expect(page.getByRole('region', { name: 'Detalhes' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Details' })).toBeVisible();
   await expect(list).toBeHidden();
-  await page.getByRole('button', { name: 'Lista de anotações', exact: true }).click();
+  await page.getByRole('button', { name: 'Annotation list', exact: true }).click();
   await expect(list).toBeVisible();
 
-  // Fechar pelo cabeçalho; reabrir pelo atalho oficial (Ctrl+Shift+4).
-  await page.getByRole('button', { name: 'Fechar a janela Lista de anotações' }).click();
+  // Close from the header; reopen with the official shortcut (Ctrl+Shift+4).
+  await page.getByRole('button', { name: 'Close the Annotation list window' }).click();
   await expect(list).toBeHidden();
   await page.keyboard.press('Control+Shift+Digit4');
   await expect(list).toBeVisible();
 
-  // A janela inferior tem uma aba por janela (R7): Incompletas (5) e Diagnóstico (6).
+  // The bottom window has one tab per window (R7): Incomplete (5) and Diagnostics (6).
   await page.keyboard.press('Control+Shift+Digit5');
-  await expect(page.getByRole('region', { name: 'Incompletas' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Incomplete' })).toBeVisible();
   await expect(list).toBeHidden();
   await page.keyboard.press('Control+Shift+Digit6');
-  await expect(page.getByRole('region', { name: 'Diagnóstico' })).toBeVisible();
-  await page.getByRole('tab', { name: 'Lista' }).click();
+  await expect(page.getByRole('region', { name: 'Diagnostics' })).toBeVisible();
+  await page.getByRole('tab', { name: 'List' }).click();
   await expect(list).toBeVisible();
 
-  // Ctrl+Shift+setas redimensionam a janela em foco, em passos de 16px.
+  // Ctrl+Shift+arrows resize the focused window, in steps of 16px.
   const width = () =>
     tree.evaluate((el: HTMLElement) => el.getBoundingClientRect().width);
   const before = await width();
@@ -180,69 +181,69 @@ test('desktop: janelas de ferramenta abrem, redimensionam e ficam guardadas', as
   await page.keyboard.press('Control+Shift+ArrowRight');
   expect(await width()).toBe(before + 16);
 
-  // O layout fica guardado: volta à tela inicial e abre o projeto de novo.
-  await page.getByRole('button', { name: /: ações do projeto$/ }).click();
-  await page.getByRole('menuitem', { name: 'Fechar projeto', exact: true }).click();
+  // The layout is remembered: back to the home screen and open the project again.
+  await page.getByRole('button', { name: /: project actions$/ }).click();
+  await page.getByRole('menuitem', { name: 'Close project', exact: true }).click();
   await page.locator('[data-recent-open]').first().click();
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   await expect(list).toBeVisible();
   expect(await width()).toBe(before + 16);
 });
 
-// R6: Árvore e Camadas como janelas à esquerda (B3).
-test('desktop: Árvore e Camadas dividem a coluna da esquerda', async ({ page }) => {
-  await createProject(page, 'Camadas');
+// R6: Tree and Layers as windows on the left (B3).
+test('desktop: Tree and Layers share the left column', async ({ page }) => {
+  await createProject(page, 'Layers project');
   await addImage(page);
   await drawMarking(page, await canvasPoint(page));
 
-  const tree = page.getByRole('region', { name: 'Árvore de marcações' });
-  const layers = page.getByRole('region', { name: 'Camadas', exact: true });
+  const tree = page.getByRole('region', { name: 'Marking tree' });
+  const layers = page.getByRole('region', { name: 'Layers', exact: true });
   await expect(tree).toBeVisible();
   await expect(layers).toBeVisible();
   const [t, l] = await Promise.all([tree.boundingBox(), layers.boundingBox()]);
-  if (!t || !l) throw new Error('janelas sem tamanho');
-  // Mesma largura e Camadas embaixo da Árvore.
+  if (!t || !l) throw new Error('windows have no size');
+  // Same width and Layers below the Tree.
   expect(l.width).toBe(t.width);
   expect(l.y).toBeGreaterThanOrEqual(t.y + t.height - 1);
 
-  // Nova camada pelo cabeçalho; renomear na própria linha. O projeto novo já tem a camada
-  // Notas (biblioteca de notas aplicada por padrão): a nova é a terceira.
-  await layers.getByRole('button', { name: 'Nova camada' }).click();
-  const names = layers.getByLabel('Nome da camada');
+  // New layer from the header; rename in the row itself. The new project already has the
+  // Notes layer (notes library applied by default): the new one is the third.
+  await layers.getByRole('button', { name: 'New layer' }).click();
+  const names = layers.getByLabel('Layer name');
   await expect(names).toHaveCount(3);
-  await names.nth(2).fill('Pintura');
+  await names.nth(2).fill('Painting');
   await names.nth(2).press('Enter');
-  await expect(names.nth(2)).toHaveValue('Pintura');
+  await expect(names.nth(2)).toHaveValue('Painting');
 
-  // A paleta abre em popover, troca a cor e fecha.
-  await layers.getByRole('button', { name: 'Cor da camada Pintura' }).click();
-  const palette = page.getByRole('group', { name: 'Cor da camada Pintura' });
+  // The palette opens in a popover, changes the color and closes.
+  await layers.getByRole('button', { name: 'Color of layer Painting' }).click();
+  const palette = page.getByRole('group', { name: 'Color of layer Painting' });
   await expect(palette).toBeVisible();
   await palette.getByRole('button', { name: '#1E88E5' }).click();
   await expect(palette).toBeHidden();
 
-  // Não há camada ativa: sem "Tornar ativa" nem chip, e qualquer camada se esconde.
-  await expect(layers.getByRole('button', { name: /^Tornar ativa/ })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: /^Camadas \(ativa/ })).toHaveCount(0);
-  const paintingBox = layers.getByRole('checkbox', { name: 'Mostrar a camada Pintura' });
+  // There is no active layer: no "Make active" nor chip, and any layer can be hidden.
+  await expect(layers.getByRole('button', { name: /^Make active/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^Layers \(active/ })).toHaveCount(0);
+  const paintingBox = layers.getByRole('checkbox', { name: 'Show layer Painting' });
   await paintingBox.uncheck();
   await expect(paintingBox).not.toBeChecked();
   await paintingBox.check();
 
-  // Excluir fica no menu da linha e pede confirmação.
-  await layers.getByRole('button', { name: 'Mais ações da camada Pintura' }).click();
-  await page.getByRole('menuitem', { name: 'Excluir camada' }).click();
-  await page.getByRole('button', { name: 'Excluir', exact: true }).click();
+  // Delete is in the row menu and asks for confirmation.
+  await layers.getByRole('button', { name: 'More actions for layer Painting' }).click();
+  await page.getByRole('menuitem', { name: 'Delete layer' }).click();
+  await page.getByRole('button', { name: 'Delete', exact: true }).click();
   await expect(names).toHaveCount(2);
 
-  // O modo "sem anotação" fica no rodapé da janela.
-  const mode = layers.getByLabel('Marcações sem anotação');
+  // The "without annotation" mode is in the window footer.
+  const mode = layers.getByLabel('Markings without annotations');
   await mode.selectOption('hide');
   await expect(mode).toHaveValue('hide');
   await mode.selectOption('dim');
 
-  // Fechar as Camadas deixa a Árvore sozinha; Ctrl+Shift+2 as reabre e foca.
-  await page.getByRole('button', { name: 'Fechar a janela Camadas' }).click();
+  // Closing Layers leaves the Tree alone; Ctrl+Shift+2 reopens and focuses it.
+  await page.getByRole('button', { name: 'Close the Layers window' }).click();
   await expect(layers).toBeHidden();
   await expect(tree).toBeVisible();
   await page.keyboard.press('Control+Shift+Digit2');
@@ -250,73 +251,73 @@ test('desktop: Árvore e Camadas dividem a coluna da esquerda', async ({ page })
   await expect(layers).toBeFocused();
 });
 
-test('desktop: a árvore recolhe nós, recolhe tudo e localiza a seleção', async ({
+test('desktop: the tree collapses nodes, collapses all and locates the selection', async ({
   page,
 }) => {
-  await createProject(page, 'Árvore');
+  await createProject(page, 'Tree view');
   await addImage(page);
   await drawMarking(page, await canvasPoint(page), { width: 160, height: 160 });
   await drawMarking(page, await canvasPoint(page, 0.7), { width: 80, height: 60 });
 
-  const tree = page.getByRole('region', { name: 'Árvore de marcações' });
+  const tree = page.getByRole('region', { name: 'Marking tree' });
   const rows = tree.locator('.tree-item');
   await expect(rows).toHaveCount(3);
-  // A altura da linha segue a densidade do desktop (28px).
+  // The row height follows the desktop density (28px).
   const box = await rows.first().boundingBox();
   expect(box?.height).toBe(28);
 
-  await tree.getByRole('button', { name: /^Recolher images\/tela/ }).click();
+  await tree.getByRole('button', { name: /^Collapse images\/tela/ }).click();
   await expect(rows).toHaveCount(1);
-  await tree.getByRole('button', { name: /^Expandir images\/tela/ }).click();
+  await tree.getByRole('button', { name: /^Expand images\/tela/ }).click();
   await expect(rows).toHaveCount(3);
 
-  await tree.getByRole('button', { name: 'Recolher tudo' }).click();
+  await tree.getByRole('button', { name: 'Collapse all' }).click();
   await expect(rows).toHaveCount(1);
-  // Localizar abre os ancestrais da seleção e põe o foco na linha dela.
-  await tree.getByRole('button', { name: 'Localizar a seleção na árvore' }).click();
+  // Locate opens the ancestors of the selection and focuses its row.
+  await tree.getByRole('button', { name: 'Locate the selection in the tree' }).click();
   await expect(rows).toHaveCount(3);
   await expect(tree.locator('.tree-item[aria-current="true"]')).toBeFocused();
 });
 
-// R8: celular com barra de cima, Painéis, telas cheias e gaveta de três alturas (B6, B7).
-test('desktop: Detalhes com atalhos, arrasto de pares e seções recolhíveis', async ({
+// R8: phone with a top bar, Panels, full screens and a three-height drawer (B6, B7).
+test('desktop: Details with shortcuts, pair dragging and collapsible sections', async ({
   page,
 }) => {
-  await createProject(page, 'Detalhes');
+  await createProject(page, 'Details project');
   await addImage(page);
   await drawMarking(page, await canvasPoint(page));
-  const details = page.getByRole('region', { name: 'Detalhes' });
+  const details = page.getByRole('region', { name: 'Details' });
 
-  // O + da camada cria a anotação, com o foco no nome (o Alt+N não faz nada).
+  // The layer's + creates the annotation, with focus on the name (Alt+N does nothing).
   await page.keyboard.press('Alt+KeyN');
-  await expect(details.getByLabel('Nome da anotação')).toHaveCount(0);
+  await expect(details.getByLabel('Annotation name')).toHaveCount(0);
   await details
-    .getByRole('button', { name: /Adicionar anotação na camada/ })
+    .getByRole('button', { name: /Add annotation to layer/ })
     .first()
     .click();
-  const name = details.getByLabel('Nome da anotação');
+  const name = details.getByLabel('Annotation name');
   await expect(name).toBeFocused();
-  await name.fill('Botão');
+  await name.fill('Button');
   await name.press('Enter');
 
-  // + Par e Alt+Enter criam pares.
-  await details.getByRole('button', { name: '+ Par' }).click();
-  await details.getByLabel('Chave').fill('a');
-  await details.getByLabel('Chave').press('Tab');
-  await details.getByLabel('Valor').fill('1');
-  await details.getByLabel('Valor').press('Alt+Enter');
-  const keys = details.getByLabel('Chave');
+  // + Pair and Alt+Enter create pairs.
+  await details.getByRole('button', { name: '+ Pair' }).click();
+  await details.getByLabel('Key').fill('a');
+  await details.getByLabel('Key').press('Tab');
+  await details.getByLabel('Value').fill('1');
+  await details.getByLabel('Value').press('Alt+Enter');
+  const keys = details.getByLabel('Key');
   await expect(keys.nth(1)).toBeFocused();
   await keys.nth(1).fill('b');
   await keys.nth(1).press('Enter');
   await expect(keys).toHaveCount(2);
 
-  // Arrastar o par "b" pela alça para cima de "a" (P6).
-  const grip = details.getByRole('button', { name: 'Mover o par b' });
-  const target = details.getByRole('button', { name: 'Mover o par a' });
+  // Drag pair "b" by its handle onto "a" (P6).
+  const grip = details.getByRole('button', { name: 'Move pair b' });
+  const target = details.getByRole('button', { name: 'Move pair a' });
   const from = await grip.boundingBox();
   const to = await target.boundingBox();
-  if (!from || !to) throw new Error('sem alças');
+  if (!from || !to) throw new Error('no handles');
   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
   await page.mouse.down();
   await page.mouse.move(to.x + to.width / 2, to.y + 2, { steps: 5 });
@@ -324,8 +325,8 @@ test('desktop: Detalhes com atalhos, arrasto de pares e seções recolhíveis', 
   await expect(keys.nth(0)).toHaveValue('b');
   await expect(keys.nth(1)).toHaveValue('a');
 
-  // Seção Marcação recolhida: mostra o resumo e esconde os campos (B15).
-  await details.getByRole('button', { name: /^Marcação/ }).click();
+  // Marking section collapsed: shows the summary and hides the fields (B15).
+  await details.getByRole('button', { name: /^Marking/ }).click();
   await expect(details.getByLabel('X', { exact: true })).toBeHidden();
   await expect(details.getByText(/^X \d+ · Y \d+ · \d+ × \d+ px$/)).toBeVisible();
 
@@ -333,137 +334,137 @@ test('desktop: Detalhes com atalhos, arrasto de pares e seções recolhíveis', 
   expect(mapping.annotations[0]?.entries.map((e) => e.key)).toEqual(['b', 'a']);
 });
 
-// R9: diálogos e tela inicial (B9, B10, B16, P8, P10).
-test('tela inicial: ações, busca e tabela de recentes', async ({ page }) => {
-  await createProject(page, 'Carro');
-  await page.getByRole('button', { name: /: ações do projeto$/ }).click();
-  await page.getByRole('menuitem', { name: 'Fechar projeto', exact: true }).click();
+// R9: dialogs and home screen (B9, B10, B16, P8, P10).
+test('home screen: actions, search and recents table', async ({ page }) => {
+  await createProject(page, 'Car');
+  await page.getByRole('button', { name: /: project actions$/ }).click();
+  await page.getByRole('menuitem', { name: 'Close project', exact: true }).click();
 
-  await expect(page.getByRole('button', { name: /Novo projeto/ })).toBeVisible();
-  await expect(page.getByRole('button', { name: /Abrir zip/ })).toBeVisible();
-  await expect(page.getByRole('table')).toContainText('Neste dispositivo');
-  await expect(page.getByRole('complementary', { name: 'Tela inicial' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /New project/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Open zip/ })).toBeVisible();
+  await expect(page.getByRole('table')).toContainText('On this device');
+  await expect(page.getByRole('complementary', { name: 'Home' })).toBeVisible();
 
-  // A busca ignora acentos e maiúsculas.
-  await page.getByRole('searchbox', { name: 'Buscar projetos' }).fill('CARRO');
-  await expect(page.getByText('Carro', { exact: true })).toBeVisible();
-  await page.getByRole('searchbox', { name: 'Buscar projetos' }).fill('zzz');
-  await expect(page.getByText('Nenhum projeto encontrado para "zzz".')).toBeVisible();
+  // The search ignores accents and case.
+  await page.getByRole('searchbox', { name: 'Search projects' }).fill('CAR');
+  await expect(page.getByText('Car', { exact: true })).toBeVisible();
+  await page.getByRole('searchbox', { name: 'Search projects' }).fill('zzz');
+  await expect(page.getByText('No project found for "zzz".')).toBeVisible();
 });
 
-test('Ajuda: busca e seção Atalhos; Configurações leva até ela', async ({ page }) => {
+test('Help: search and Shortcuts section; Settings leads to it', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Configurações', exact: true }).click();
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
   const settings = page.getByRole('dialog');
 
-  // Tema em segmentado.
-  const theme = settings.getByRole('group', { name: 'Tema' });
-  await theme.getByRole('button', { name: 'Escuro' }).click();
+  // Theme as a segmented control.
+  const theme = settings.getByRole('group', { name: 'Theme' });
+  await theme.getByRole('button', { name: 'Dark' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await theme.getByRole('button', { name: 'Claro' }).click();
+  await theme.getByRole('button', { name: 'Light' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 
-  await settings.getByRole('button', { name: 'Ver os atalhos de teclado' }).click();
+  await settings.getByRole('button', { name: 'View keyboard shortcuts' }).click();
   const help = page.getByRole('dialog');
   await expect(
-    help.getByRole('heading', { name: 'Atalhos de teclado' }),
+    help.getByRole('heading', { name: 'Keyboard shortcuts' }),
   ).toBeInViewport();
   await expect(help.getByText('Ctrl', { exact: true }).first()).toBeVisible();
 
-  // "referência" agora também está nos atalhos (copiar referência): usa um termo só de outras seções.
-  await help.getByRole('searchbox', { name: 'Buscar na ajuda' }).fill('especializacao');
-  await expect(help.getByRole('link', { name: 'Atalhos de teclado' })).toHaveCount(0);
-  await help.getByRole('button', { name: 'Fechar diálogo' }).click();
+  // "reference" is now also in the shortcuts (copy reference): use a term from other sections only.
+  await help.getByRole('searchbox', { name: 'Search help' }).fill('specialization');
+  await expect(help.getByRole('link', { name: 'Keyboard shortcuts' })).toHaveCount(0);
+  await help.getByRole('button', { name: 'Close dialog' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
-test('Exportar: o diálogo mostra o arquivo e fecha pelo cabeçalho', async ({ page }) => {
-  await createProject(page, 'Exporta');
+test('Export: the dialog shows the file and closes from the header', async ({ page }) => {
+  await createProject(page, 'Exports');
   await addImage(page);
   await openExport(page);
   const dialog = page.getByRole('dialog');
   await expect(dialog.locator('.file-card')).toContainText('.zip');
-  await expect(dialog.locator('.file-card')).toContainText('Arquivo zip');
-  await dialog.getByRole('button', { name: 'Fechar diálogo' }).click();
+  await expect(dialog.locator('.file-card')).toContainText('Zip file');
+  await dialog.getByRole('button', { name: 'Close dialog' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
-// Fase 6.1 (achado 7): no Chrome, Baixar abre o "Salvar como" (`showSaveFilePicker`) e o
-// aviso "Alterações não exportadas" só sai depois de o zip ser gravado. O seletor é
-// simulado: cancelar rejeita com `AbortError`; salvar devolve um arquivo do OPFS, gravado
-// pelo `createWritable` de verdade.
+// Phase 6.1 (finding 7): in Chrome, Download opens "Save as" (`showSaveFilePicker`) and the
+// "Unexported changes" notice only goes away after the zip is written. The picker is
+// simulated: cancelling rejects with `AbortError`; saving returns an OPFS file, written
+// by the real `createWritable`.
 async function simulateSavePicker(page: Page, outcome: 'cancel' | 'save'): Promise<void> {
   await page.evaluate((outcome) => {
     Reflect.set(window, 'showSaveFilePicker', async (options: unknown) => {
       Reflect.set(window, '__savePickerOptions', options);
-      if (outcome === 'cancel') throw new DOMException('cancelado', 'AbortError');
+      if (outcome === 'cancel') throw new DOMException('cancelled', 'AbortError');
       const root = await navigator.storage.getDirectory();
-      return root.getFileHandle('exportado.zip', { create: true });
+      return root.getFileHandle('exported.zip', { create: true });
     });
   }, outcome);
 }
 
-test('Exportar: cancelar o "Salvar como" mantém "Alterações não exportadas"', async ({
-  page,
-}) => {
-  await createProject(page, 'Cancela');
+test('Export: cancelling "Save as" keeps "Unexported changes"', async ({ page }) => {
+  await createProject(page, 'Cancels');
   await addImage(page);
   const statusbar = page.locator('.statusbar');
-  await expect(statusbar).toContainText('Alterações não exportadas');
+  await expect(statusbar).toContainText('Unexported changes');
   await simulateSavePicker(page, 'cancel');
   await openExport(page);
   const dialog = page.getByRole('dialog');
-  await dialog.getByRole('button', { name: 'Baixar' }).click();
-  await expect(dialog.getByRole('button', { name: 'Baixar' })).toBeVisible();
-  await dialog.getByRole('button', { name: 'Cancelar' }).click();
+  await dialog.getByRole('button', { name: 'Download' }).click();
+  await expect(dialog.getByRole('button', { name: 'Download' })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(statusbar).toContainText('Alterações não exportadas');
+  await expect(statusbar).toContainText('Unexported changes');
 });
 
-test('Exportar: salvar pelo "Salvar como" grava o zip e limpa o aviso', async ({
+test('Export: saving through "Save as" writes the zip and clears the notice', async ({
   page,
 }) => {
-  await createProject(page, 'Salva');
+  await createProject(page, 'Saves');
   await addImage(page);
   const statusbar = page.locator('.statusbar');
-  await expect(statusbar).toContainText('Alterações não exportadas');
+  await expect(statusbar).toContainText('Unexported changes');
   await simulateSavePicker(page, 'save');
   await openExport(page);
-  await page.getByRole('dialog').getByRole('button', { name: 'Baixar' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Download' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(statusbar).not.toContainText('Alterações não exportadas');
+  await expect(statusbar).not.toContainText('Unexported changes');
   const options = await page.evaluate(() => Reflect.get(window, '__savePickerOptions'));
   expect(options).toMatchObject({ suggestedName: expect.stringMatching(/\.zip$/) });
   const bytes = await page.evaluate(async () => {
     const root = await navigator.storage.getDirectory();
-    const file = await (await root.getFileHandle('exportado.zip')).getFile();
+    const file = await (await root.getFileHandle('exported.zip')).getFile();
     return Array.from(new Uint8Array(await file.arrayBuffer()));
   });
   const zip = await JSZip.loadAsync(new Uint8Array(bytes));
   expect(Object.keys(zip.files)).toContain('mapping.json');
 });
 
-// Altura mínima (AG4, #552): abaixo de 720 px de altura também vale o aviso, sem desmontar.
-test('janela baixa: aviso abaixo de 720 px de altura e volta ao crescer', async ({
+// Minimum height (AG4, #552): the notice also applies below 720 px of height, without unmounting.
+test('short window: notice below 720 px of height and back when it grows', async ({
   page,
 }) => {
-  await createProject(page, 'Baixa');
+  await createProject(page, 'Short');
   await page.setViewportSize({ width: 1280, height: 719 });
   await expect(
-    page.getByRole('heading', { name: 'Abra numa janela maior' }),
+    page.getByRole('heading', { name: 'Open in a larger window' }),
   ).toBeVisible();
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeHidden();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeHidden();
   await page.setViewportSize({ width: 1280, height: 720 });
-  await expect(page.getByRole('heading', { name: 'Abra numa janela maior' })).toHaveCount(
-    0,
-  );
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Open in a larger window' }),
+  ).toHaveCount(0);
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
 });
 
-// Fase 5.8: só desktop. Abaixo de 900 px a app mostra o aviso no lugar do editor, sem
-// desmontar nada; ao alargar, o editor volta com a mesma seleção e o mesmo zoom.
-test('janela estreita: aviso no lugar do editor e volta ao alargar', async ({ page }) => {
-  await createProject(page, 'Estreita');
+// Phase 5.8: desktop only. Below 900 px the app shows the notice in place of the editor,
+// without unmounting anything; when widened, the editor returns with the same selection and zoom.
+test('narrow window: notice in place of the editor and back when widened', async ({
+  page,
+}) => {
+  await createProject(page, 'Narrow');
   await addImage(page);
   await drawMarking(page, await canvasPoint(page));
   const rect = await selectedRect(page);
@@ -475,23 +476,23 @@ test('janela estreita: aviso no lugar do editor e volta ao alargar', async ({ pa
 
   await page.setViewportSize({ width: 600, height: 860 });
   await expect(
-    page.getByRole('heading', { name: 'Abra numa janela maior' }),
+    page.getByRole('heading', { name: 'Open in a larger window' }),
   ).toBeVisible();
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeHidden();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeHidden();
 
   await page.setViewportSize({ width: 1280, height: 860 });
-  await expect(page.getByRole('heading', { name: 'Abra numa janela maior' })).toHaveCount(
-    0,
-  );
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Open in a larger window' }),
+  ).toHaveCount(0);
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   await expect(zoom).toHaveText(zoomText ?? '');
   expect(await selectedRect(page)).toEqual(rect);
-  // O canvas não foi remontado nem reenquadrado.
+  // The canvas was neither remounted nor refitted.
   expect(await host.getAttribute('data-fits')).toBe(fits);
 });
 
-// Etapa 6 (6.4), achado 2: dicas ocultas não alargam diálogos, janelas nem o editor.
-// Mede os contêineres que rolam (overflow auto/scroll) e o `.editor` (que nunca rola).
+// Stage 6 (6.4), finding 2: hidden hints do not widen dialogs, windows or the editor.
+// Measures the containers that scroll (overflow auto/scroll) and the `.editor` (which never scrolls).
 async function horizontalOverflow(page: Page, root: string): Promise<string[]> {
   return page.evaluate((selector) => {
     const found: string[] = [];
@@ -511,26 +512,26 @@ async function horizontalOverflow(page: Page, root: string): Promise<string[]> {
   }, root);
 }
 
-test('sem barra horizontal: Configurações, janelas e o editor', async ({ page }) => {
+test('no horizontal bar: Settings, windows and the editor', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Configurações', exact: true }).click();
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   expect(await horizontalOverflow(page, 'dialog[open]')).toEqual([]);
-  await page.getByRole('dialog').getByRole('button', { name: 'Fechar diálogo' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Close dialog' }).click();
 
-  await createProject(page, 'Sem rolagem');
+  await createProject(page, 'No scrolling');
   await addImage(page);
   await drawMarking(page, await canvasPoint(page));
   await applySpecialization(page, SDUI);
   await page
-    .getByRole('button', { name: /Adicionar anotação na camada/ })
+    .getByRole('button', { name: /Add annotation to layer/ })
     .first()
     .click();
-  await page.getByLabel('Nome da anotação').fill('Botão');
-  await page.getByLabel('Nome da anotação').press('Enter');
+  await page.getByLabel('Annotation name').fill('Button');
+  await page.getByLabel('Annotation name').press('Enter');
   expect(await horizontalOverflow(page, '.editor')).toEqual([]);
 
-  // Levar à vista cada botão do editor (como a rolagem automática do relato) não o desloca.
+  // Scrolling each editor button into view (like the report's auto-scroll) does not shift it.
   await page.evaluate(() => {
     for (const b of document.querySelectorAll<HTMLElement>('.editor button')) {
       b.scrollIntoView({ block: 'nearest', inline: 'end' });
@@ -539,59 +540,63 @@ test('sem barra horizontal: Configurações, janelas e o editor', async ({ page 
   expect(await horizontalOverflow(page, '.editor')).toEqual([]);
 });
 
-// Etapa 6 (6.4), achado 3: com a janela Camadas baixa, o selo fica dentro da linha (a
-// lista rola em vez de encolher as linhas). Achado 5: na largura padrão de Detalhes, as
-// colunas da tabela não se sobrepõem.
-test('selo da especialização dentro da linha com a janela Camadas baixa', async ({
+// Stage 6 (6.4), finding 3: with the Layers window short, the badge stays inside the row (the
+// list scrolls instead of shrinking the rows). Finding 5: at the default width of Details, the
+// table columns do not overlap.
+test('specialization badge inside the row with the Layers window short', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 860 });
-  await createProject(page, 'Selos');
+  await createProject(page, 'Badges');
   await addImage(page);
   await drawMarking(page, await canvasPoint(page));
   await applySpecialization(page, SDUI);
   await applySpecialization(page, MODELO);
 
-  const layers = page.getByRole('region', { name: 'Camadas', exact: true });
+  const layers = page.getByRole('region', { name: 'Layers', exact: true });
   const rows = layers.locator('.layer-row');
-  // As seis de antes mais a Notas (biblioteca de notas aplicada por padrão).
+  // The previous six plus Notes (notes library applied by default).
   await expect(rows).toHaveCount(7);
   for (const row of await rows.all()) {
     const badge = row.locator('.layer-badge');
     if ((await badge.count()) === 0) continue;
     const [r, b] = await Promise.all([row.boundingBox(), badge.boundingBox()]);
-    if (!r || !b) continue; // fora da área visível da lista (que rola)
+    if (!r || !b) continue; // outside the visible area of the list (which scrolls)
     expect(b.y + b.height).toBeLessThanOrEqual(r.y + r.height + 0.5);
-    // O nome da especialização aparece inteiro (a dica só cobre o que não couber no painel).
+    // The specialization name shows in full (the hint only covers what does not fit in the panel).
     expect(
       await badge.evaluate((e) => e.scrollWidth - e.clientWidth),
     ).toBeLessThanOrEqual(1);
   }
 });
 
-test('tabela `atributos` sem colunas sobrepostas na largura padrão de Detalhes', async ({
+test('`atributos` table without overlapping columns at the default width of Details', async ({
   page,
 }) => {
-  await createProject(page, 'Tabela');
+  await createProject(page, 'Table');
   await addImage(page);
   await drawMarking(page, await canvasPoint(page));
   await applySpecialization(page, MODELO);
   await page
-    .getByRole('button', { name: 'Adicionar anotação na camada Classes' })
+    .getByRole('button', {
+      // pt-BR kept: layer and type names of examples/specs/modelo-de-dados.json
+      name: 'Add annotation to layer Classes',
+    })
     .click();
   await page
     .getByRole('dialog')
     .getByRole('button', { name: /^Classe/ })
     .click();
-  const details = page.getByRole('region', { name: 'Detalhes' });
-  await details.getByRole('button', { name: '+ Linha' }).click();
-  await details.getByLabel('exemplo (Linha 1)').fill('ana@exemplo.com');
-  await details.getByLabel('exemplo (Linha 1)').press('Enter');
-  const required = details.getByRole('group', { name: 'obrigatório (Linha 1)' });
+  const details = page.getByRole('region', { name: 'Details' });
+  await details.getByRole('button', { name: '+ Row' }).click();
+  // pt-BR kept: field labels `exemplo` and `obrigatório` of examples/specs/modelo-de-dados.json
+  await details.getByLabel('exemplo (Row 1)').fill('ana@example.com');
+  await details.getByLabel('exemplo (Row 1)').press('Enter');
+  const required = details.getByRole('group', { name: 'obrigatório (Row 1)' });
   const [seg, example] = await Promise.all([
     required.boundingBox(),
-    details.getByLabel('exemplo (Linha 1)').boundingBox(),
+    details.getByLabel('exemplo (Row 1)').boundingBox(),
   ]);
-  if (!seg || !example) throw new Error('tabela sem tamanho');
+  if (!seg || !example) throw new Error('table has no size');
   expect(seg.x + seg.width).toBeLessThanOrEqual(example.x + 0.5);
 });

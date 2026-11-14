@@ -1,8 +1,8 @@
-// R25.83 a R25.86 (MF3) pela interface: a biblioteca que o `scripts/testing/herdada.mjs` monta, o
-// Card com um Text dentro (a filha) e outro Text solto na tela. A filha desenha na cor que o Card
-// oferece (o `default` azul do `ink` vazio; vermelha depois de o campo `Tinta` valer `#D32F2F`) e o
-// Text solto, no `default` verde dele. A cor é lida do recorte PNG do canvas (como o roteiro faz),
-// e o `mapping.json` não guarda nada do desenho.
+// R25.83 to R25.86 (MF3) through the interface: the library that `scripts/testing/herdada.mjs` builds, the
+// Card with a Text inside (the child) and another loose Text on the screen. The child draws in the color the Card
+// offers (the blue `default` of the empty `ink`; red after the `Tinta` field is `#D32F2F`) and the
+// loose Text, in its green `default`. The color is read from the PNG crop of the canvas (as the script does),
+// and `mapping.json` stores nothing of the drawing.
 import { execFileSync } from 'node:child_process';
 import { cpSync, mkdtempSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -10,12 +10,12 @@ import { join, relative } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import JSZip from 'jszip';
 
-const FOLDER = 'fiel-herdada';
+const FOLDER = 'faithful-inherited';
 const BLUE = [0x19, 0x76, 0xd2];
 const RED = [0xd3, 0x2f, 0x2f];
 const GREEN = [0x2e, 0x7d, 0x32];
 
-/** Monta a `m3-herdada` (cópia da biblioteca + `herdada.mjs`) e devolve o zip dela. */
+/** Builds `m3-herdada` (copy of the library + `herdada.mjs`) and returns its zip. */
 async function herdadaZip(): Promise<Buffer> {
   const dir = join(mkdtempSync(join(tmpdir(), 'm3-herdada-')), 'm3-herdada');
   cpSync('libraries/material3-compose', dir, { recursive: true });
@@ -60,7 +60,7 @@ async function setPosition(page: Page, x: number, y: number): Promise<void> {
   }
 }
 
-/** Quantos pixels do recorte PNG têm exatamente a cor (o miolo das letras), lidos num canvas. */
+/** How many pixels of the PNG crop have exactly the color (the core of the letters), read on a canvas. */
 async function countColors(
   page: Page,
   png: Buffer,
@@ -96,11 +96,11 @@ async function countColors(
   }
 }
 
-/** O recorte do canvas com o Card enquadrado (Árvore e `Shift+2`), sem seleção. */
+/** The canvas crop with the Card framed (Tree and `Shift+2`), with no selection. */
 async function cardShot(page: Page): Promise<Buffer> {
   const rows = page.locator('.tree-row');
   if ((await rows.count()) === 0)
-    await page.getByRole('button', { name: 'Árvore de marcações', exact: true }).click();
+    await page.getByRole('button', { name: 'Marking tree', exact: true }).click();
   await rows.filter({ hasText: 'Card' }).first().click();
   await page.keyboard.press('Shift+2');
   await page.waitForTimeout(400);
@@ -123,7 +123,7 @@ interface Disk {
 
 test.use({ actionTimeout: 10_000 });
 
-test('R25.84 a R25.86: a filha herda a cor do Card e o disco não guarda o desenho', async ({
+test('R25.84 to R25.86: the child inherits the Card color and the disk does not store the drawing', async ({
   page,
 }) => {
   test.setTimeout(120_000);
@@ -134,45 +134,45 @@ test('R25.84 a R25.86: a filha herda a cor do Card e o disco não guarda o desen
     });
   }, FOLDER);
   await page.goto('/');
-  await page.getByRole('button', { name: /Abrir pasta/ }).click();
+  await page.getByRole('button', { name: /Open folder/ }).click();
   await page.getByRole('textbox').fill(FOLDER);
-  await page.getByRole('button', { name: 'Criar' }).click();
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await page.getByRole('button', { name: 'Create' }).click();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   await page
     .locator('.main-bar')
-    .getByRole('button', { name: 'Especializações', exact: true })
+    .getByRole('button', { name: 'Specializations', exact: true })
     .click();
   await page.locator('input[type=file][accept=".zip,application/zip"]').setInputFiles({
     name: 'm3-herdada.zip',
     mimeType: 'application/zip',
     buffer: await herdadaZip(),
   });
-  const confirm = page.getByRole('button', { name: 'Aplicar', exact: true });
+  const confirm = page.getByRole('button', { name: 'Apply', exact: true });
   await expect(confirm).toBeEnabled();
   await confirm.click();
-  await expect(page.getByRole('status').filter({ hasText: 'aplicada' })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: 'applied' })).toBeVisible();
   await page
     .getByRole('dialog')
-    .getByRole('button', { name: 'Fechar', exact: true })
+    .getByRole('button', { name: 'Close', exact: true })
     .click();
-  await page.getByRole('button', { name: 'Novo container' }).first().click();
+  await page.getByRole('button', { name: 'New container' }).first().click();
   const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Nome', { exact: true }).fill('Telas');
-  await dialog.getByLabel('Tamanho predefinido').selectOption({ label: 'Personalizado' });
-  await dialog.getByLabel('Largura', { exact: true }).fill('340');
-  await dialog.getByLabel('Altura', { exact: true }).fill('260');
-  await dialog.getByLabel('Cor de fundo').fill('#FFFFFF');
-  await dialog.getByRole('button', { name: 'Criar container' }).click();
+  await dialog.getByLabel('Name', { exact: true }).fill('Screens');
+  await dialog.getByLabel('Preset size').selectOption({ label: 'Custom' });
+  await dialog.getByLabel('Width', { exact: true }).fill('340');
+  await dialog.getByLabel('Height', { exact: true }).fill('260');
+  await dialog.getByLabel('Background color').fill('#FFFFFF');
+  await dialog.getByRole('button', { name: 'Create container' }).click();
   await expect(dialog).toBeHidden();
 
-  // R25.84: o Card, o Text dentro dele (a Paleta oferece "Adicionar dentro de Card") e o Text solto.
+  // R25.84: the Card, the Text inside it (the Palette offers "Add inside Card") and the loose Text.
   await page.keyboard.press('Control+Shift+9');
-  await page.getByRole('tab', { name: 'Paleta' }).click();
-  await page.getByRole('button', { name: /^Adicionar na tela Telas: Card$/ }).click();
+  await page.getByRole('tab', { name: 'Palette' }).click();
+  await page.getByRole('button', { name: /^Add to screen Screens: Card$/ }).click();
   await setPosition(page, 20, 20);
-  await page.getByRole('button', { name: /^Adicionar dentro de Card: Text$/ }).click();
+  await page.getByRole('button', { name: /^Add inside Card: Text$/ }).click();
   await setPosition(page, 30, 30);
-  await page.getByRole('button', { name: /^Adicionar na tela Telas: Text$/ }).click();
+  await page.getByRole('button', { name: /^Add to screen Screens: Text$/ }).click();
   await setPosition(page, 20, 160);
 
   let raw = '';
@@ -202,14 +202,15 @@ test('R25.84 a R25.86: a filha herda a cor do Card e o disco não guarda o desen
   for (const drawn of ['content-color', '#1976D2', '#2E7D32', '$provided'])
     expect(raw, drawn).not.toContain(drawn);
 
-  // A filha, azul (o `default` do `ink` vazio); o Text solto, verde; nada vermelho.
+  // The child, blue (the `default` of the empty `ink`); the loose Text, green; nothing red.
   const before = await countColors(page, await cardShot(page), [BLUE, RED, GREEN]);
   expect(before[0]).toBeGreaterThan(300);
   expect(before[1]).toBe(0);
   expect(before[2]).toBeGreaterThan(300);
 
-  // R25.86: o campo `Tinta` do Card vale `#D32F2F`: a filha fica vermelha, o Text solto não muda.
+  // R25.86: the Card's `Tinta` field is `#D32F2F`: the child turns red, the loose Text does not change.
   await page.locator('.tree-row').filter({ hasText: 'Card' }).first().click();
+  // pt-BR kept: field label `Tinta` comes from scripts/testing/herdada.mjs (outside this batch)
   const ink = page.getByLabel('Tinta', { exact: true });
   await ink.fill('#D32F2F');
   await ink.press('Tab');

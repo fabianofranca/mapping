@@ -1,15 +1,15 @@
-Fontes do pacote Material 3
-===========================
+Material 3 package fonts
+========================
 
-A especialização (material3.spec.json) declara a Roboto em "fonts":
+The specialization (material3.spec.json) declares Roboto in "fonts":
 
-  - fonts/Roboto-Regular.ttf (peso 400)
-  - fonts/Roboto-Medium.ttf  (peso 500)
+  - fonts/Roboto-Regular.ttf (weight 400)
+  - fonts/Roboto-Medium.ttf  (weight 500)
 
-Os arquivos .ttf NÃO estão no repositório (licença e peso). A Roboto é licenciada
-sob Apache 2.0 e pode ser baixada em https://fonts.google.com/specimen/Roboto
-(botão "Get font" / "Download all"); copie os dois arquivos acima para esta pasta,
-com esses nomes.
+The .ttf files are NOT in the repository (license and size). Roboto is licensed
+under Apache 2.0 and can be downloaded at https://fonts.google.com/specimen/Roboto
+("Get font" / "Download all" button); copy the two files above into this folder,
+with those names.
 
-Sem os arquivos, o desenho cai na fonte do sistema e o Diagnóstico mostra um aviso
-por fonte ausente. O pacote continua válido.
+Without the files, the drawing falls back to the system font and Diagnostics shows a warning
+for each missing font. The package stays valid.

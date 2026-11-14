@@ -8,46 +8,46 @@ import {
   drawMarking,
 } from './helpers';
 
-// Etapa #679 (CF3): o seletor de `ref` com a anotação inteira como alvo e a linha
-// "Referenciada por" não geram barra horizontal a 900 px, mesmo com rótulos longos (como o R11.12).
+// Stage #679 (CF3): the `ref` picker with the whole annotation as target and the
+// "Referenced by" row do not generate a horizontal bar at 900 px, even with long labels (like R11.12).
 
 test.use({ viewport: { width: 900, height: 720 } });
 
-const LONG = 'Componente com um nome extremamente longo para forçar a quebra de linha';
+const LONG = 'Component with an extremely long name to force the line to break';
 
 const spec = {
   format: 'mapping-spec',
   formatVersion: 14,
-  id: 'fora',
-  name: 'Fora da imagem',
+  id: 'outside',
+  name: 'Outside the image',
   version: 1,
   layers: [
     {
-      id: 'componentes',
-      name: 'Componentes',
+      id: 'components',
+      name: 'Components',
       color: '#43A047',
       annotationTypes: [
         {
           id: 'item',
-          name: 'Item de lista',
-          labelField: 'titulo',
-          fields: [{ key: 'titulo', type: 'string' }],
+          name: 'List item',
+          labelField: 'title',
+          fields: [{ key: 'title', type: 'string' }],
         },
       ],
     },
     {
-      id: 'eventos',
-      name: 'Eventos',
+      id: 'events',
+      name: 'Events',
       color: '#1E88E5',
       annotationTypes: [
         {
-          id: 'evento',
-          name: 'Evento',
+          id: 'event',
+          name: 'Event',
           fields: [
             {
-              key: 'principal',
+              key: 'main',
               type: 'ref',
-              accepts: { annotations: [{ layer: 'componentes' }] },
+              accepts: { annotations: [{ layer: 'components' }] },
             },
           ],
         },
@@ -56,7 +56,7 @@ const spec = {
   ],
 };
 
-/** Os contêineres que rolam (auto/scroll) e a própria raiz: texto cortado com reticências não conta. */
+/** The containers that scroll (auto/scroll) and the root itself: text cut with an ellipsis does not count. */
 async function overflow(page: Page, selector: string) {
   return page.evaluate((sel) => {
     const found: string[] = [];
@@ -75,62 +75,59 @@ async function overflow(page: Page, selector: string) {
   }, selector);
 }
 
-test('seletor e linha Referenciada por sem barra horizontal a 900 px', async ({
+test('picker and Referenced by row without a horizontal bar at 900 px', async ({
   page,
 }, info) => {
-  const file = info.outputPath('fora.json');
+  const file = info.outputPath('outside.json');
   writeFileSync(file, JSON.stringify(spec));
-  await createProject(page, 'Fora da imagem');
+  await createProject(page, 'Outside the image');
   await addImage(page);
   await drawMarking(page, await canvasPoint(page, 1 / 4));
   await applySpecialization(page, file);
-  await page.getByRole('button', { name: 'Detalhes', exact: true }).click();
+  await page.getByRole('button', { name: 'Details', exact: true }).click();
 
-  // O item: anotação tipada da camada Componentes, com o título longo.
+  // The item: typed annotation of the Components layer, with the long title.
   await page
-    .getByRole('button', { name: /Adicionar anotação na camada Componentes/ })
+    .getByRole('button', { name: /Add annotation to layer Components/ })
     .first()
     .click();
   await page
     .getByRole('dialog')
-    .getByRole('button', { name: /Item de lista/ })
+    .getByRole('button', { name: /List item/ })
     .click();
-  const title = page.getByRole('textbox', { name: 'titulo' });
+  const title = page.getByRole('textbox', { name: 'title' });
   await title.fill(LONG);
   await title.press('Enter');
 
-  // O evento aponta para o item pelo seletor.
+  // The event points to the item through the picker.
   await drawMarking(page, await canvasPoint(page, 2 / 3));
   await page
-    .getByRole('button', { name: /Adicionar anotação na camada Eventos/ })
+    .getByRole('button', { name: /Add annotation to layer Events/ })
     .first()
     .click();
-  await page
-    .getByRole('dialog')
-    .getByRole('button', { name: /Evento/ })
-    .click();
-  await page.getByRole('button', { name: /^Escolher: principal/i }).click();
+  await page.getByRole('dialog').getByRole('button', { name: /Event/ }).click();
+  await page.getByRole('button', { name: /^Choose: main/i }).click();
   const picker = page.getByRole('dialog');
   await expect(picker.getByRole('option')).toHaveCount(1);
   expect(await overflow(page, 'dialog[open]')).toEqual([]);
   await picker.getByRole('option').first().click();
   expect(await overflow(page, '.editor')).toEqual([]);
 
-  // O item mostra "Referenciada por" com o evento.
-  await page.getByRole('button', { name: 'Ir para o alvo' }).click();
-  await expect(page.getByRole('group', { name: 'Referenciada por' })).toBeVisible();
+  // The item shows "Referenced by" with the event.
+  await page.getByRole('button', { name: 'Go to target' }).click();
+  await expect(page.getByRole('group', { name: 'Referenced by' })).toBeVisible();
   expect(await overflow(page, '.editor')).toEqual([]);
 });
 
-// CF13 (R24.15): na janela estreita o nome do alvo no campo `ref` dos Detalhes não pode ficar
-// espremido ("→ Pl…", 24 de 50 px) pelos botões ao lado: ou cabe inteiro, ou os botões quebram
-// de linha. Vale a 900 px e a 1280 px.
+// CF13 (R24.15): in the narrow window the target name in the `ref` field of the Details cannot get
+// squeezed ("→ Pl…", 24 of 50 px) by the buttons next to it: either it fits whole, or the buttons wrap
+// to the next line. Holds at 900 px and at 1280 px.
 async function measureRef(page: Page) {
   return page.evaluate(() => {
     const text = document.querySelector<HTMLElement>('.ref-field .ref-control-text')!;
     const field = text.closest<HTMLElement>('.ref-field')!;
     const box = (el: Element) => Math.round(el.getBoundingClientRect().width);
-    // O texto desenhado (Range) contra a caixa, em fração de pixel: 0,3 px a menos já põe reticências.
+    // The drawn text (Range) against the box, in pixel fraction: 0.3 px less already puts an ellipsis.
     const range = document.createRange();
     range.selectNodeContents(text);
     return {
@@ -142,42 +139,41 @@ async function measureRef(page: Page) {
   });
 }
 
-test('o nome do alvo do campo ref cabe a 900 e a 1280 px', async ({ page }, info) => {
-  const file = info.outputPath('fora.json');
+test('the target name of the ref field fits at 900 and 1280 px', async ({
+  page,
+}, info) => {
+  const file = info.outputPath('outside.json');
   writeFileSync(file, JSON.stringify(spec));
-  await createProject(page, 'Fora da imagem');
+  await createProject(page, 'Outside the image');
   await addImage(page);
   await drawMarking(page, await canvasPoint(page, 1 / 4));
   await applySpecialization(page, file);
-  await page.getByRole('button', { name: 'Detalhes', exact: true }).click();
+  await page.getByRole('button', { name: 'Details', exact: true }).click();
   await page
-    .getByRole('button', { name: /Adicionar anotação na camada Componentes/ })
+    .getByRole('button', { name: /Add annotation to layer Components/ })
     .first()
     .click();
   await page
     .getByRole('dialog')
-    .getByRole('button', { name: /Item de lista/ })
+    .getByRole('button', { name: /List item/ })
     .click();
-  const title = page.getByRole('textbox', { name: 'titulo' });
+  const title = page.getByRole('textbox', { name: 'title' });
   await title.fill('Plugin B');
   await title.press('Enter');
   await drawMarking(page, await canvasPoint(page, 2 / 3));
   await page
-    .getByRole('button', { name: /Adicionar anotação na camada Eventos/ })
+    .getByRole('button', { name: /Add annotation to layer Events/ })
     .first()
     .click();
-  await page
-    .getByRole('dialog')
-    .getByRole('button', { name: /Evento/ })
-    .click();
-  await page.getByRole('button', { name: /^Escolher: principal/i }).click();
+  await page.getByRole('dialog').getByRole('button', { name: /Event/ }).click();
+  await page.getByRole('button', { name: /^Choose: main/i }).click();
   await page.getByRole('dialog').getByRole('option').first().click();
 
   for (const width of [900, 1280]) {
     await page.setViewportSize({ width, height: 720 });
     const m = await measureRef(page);
-    expect(m.shown, `largura ${width}`).toBeGreaterThanOrEqual(m.full - 0.05);
-    // Os ícones de Ir para e Limpar mantêm o tamanho do botão (a âncora do Tooltip não estica).
+    expect(m.shown, `width ${width}`).toBeGreaterThanOrEqual(m.full - 0.05);
+    // The Go to and Clear icons keep the button size (the Tooltip anchor does not stretch).
     const row = await page.evaluate(() => {
       const field = document.querySelector('.ref-field:not(.ref-cell)');
       return [...(field?.children ?? [])].map((c) => {
@@ -186,19 +182,19 @@ test('o nome do alvo do campo ref cabe a 900 e a 1280 px', async ({ page }, info
       });
     });
     for (const icon of row.slice(1))
-      expect(icon.width, `ícone a ${width}`).toBeLessThanOrEqual(40);
+      expect(icon.width, `icon at ${width}`).toBeLessThanOrEqual(40);
   }
 });
 
-// AF2 (#784, decisão 4): a 900×720 com Árvore, Camadas e Detalhes abertos (Detalhes ~279 px), o
-// rótulo do alvo tem prioridade sobre o nome da camada: ele aparece inteiro e o texto completo
-// (alvo e camada) está no tooltip.
-test('com 3 janelas abertas o rotulo do alvo fica inteiro e o tooltip traz tudo', async ({
+// AF2 (#784, decision 4): at 900×720 with Tree, Layers and Details open (Details ~279 px), the
+// target label has priority over the layer name: it shows whole and the full text
+// (target and layer) is in the tooltip.
+test('with 3 windows open the target label stays whole and the tooltip carries everything', async ({
   page,
 }, info) => {
-  const file = info.outputPath('fora.json');
+  const file = info.outputPath('outside.json');
   writeFileSync(file, JSON.stringify(spec));
-  await createProject(page, 'Fora da imagem');
+  await createProject(page, 'Outside the image');
   await addImage(page);
   await drawMarking(page, await canvasPoint(page, 1 / 4));
   await applySpecialization(page, file);
@@ -206,42 +202,39 @@ test('com 3 janelas abertas o rotulo do alvo fica inteiro e o tooltip traz tudo'
   await page.keyboard.press('Control+Shift+2');
   await page.keyboard.press('Control+Shift+3');
   await page
-    .getByRole('button', { name: /Adicionar anotação na camada Componentes/ })
+    .getByRole('button', { name: /Add annotation to layer Components/ })
     .first()
     .click();
   await page
     .getByRole('dialog')
-    .getByRole('button', { name: /Item de lista/ })
+    .getByRole('button', { name: /List item/ })
     .click();
-  const title = page.getByRole('textbox', { name: 'titulo' });
+  const title = page.getByRole('textbox', { name: 'title' });
   await title.fill('Plugin B');
   await title.press('Enter');
   await drawMarking(page, await canvasPoint(page, 2 / 3));
   await page
-    .getByRole('button', { name: /Adicionar anotação na camada Eventos/ })
+    .getByRole('button', { name: /Add annotation to layer Events/ })
     .first()
     .click();
-  await page
-    .getByRole('dialog')
-    .getByRole('button', { name: /Evento/ })
-    .click();
-  await page.getByRole('button', { name: /^Escolher: principal/i }).click();
+  await page.getByRole('dialog').getByRole('button', { name: /Event/ }).click();
+  await page.getByRole('button', { name: /^Choose: main/i }).click();
   await page.getByRole('dialog').getByRole('option').first().click();
 
   const m = await measureRef(page);
-  expect(m.shown, 'rótulo cortado').toBeGreaterThanOrEqual(m.full - 0.05);
+  expect(m.shown, 'label cut').toBeGreaterThanOrEqual(m.full - 0.05);
 
-  // O que ficar cortado (aqui, o nome da camada) mostra o texto inteiro no tooltip.
+  // What stays cut (here, the layer name) shows the whole text in the tooltip.
   const control = page.locator('.ref-field .ref-control');
   await control.hover();
   const tip = page.locator('[data-tooltip]', { hasText: 'Plugin B' }).first();
   await expect(tip).toBeVisible();
-  await expect(tip).toContainText('Componentes');
+  await expect(tip).toContainText('Components');
 });
 
-// CL1 (#784, achados 1 e 2 do relato da #827): o controle de `ref` em célula de tabela não deixa o
-// ✕ de Limpar sobre o rótulo nem quebra a "(referência quebrada)" em várias linhas; e o rótulo do
-// campo `qualquer` não é cortado nem por meio pixel. Mede o texto desenhado (Range), não o scrollWidth.
+// CL1 (#784, findings 1 and 2 of the #827 report): the `ref` control in a table cell does not leave the
+// Clear ✕ over the label nor break the "(broken reference)" into several lines; and the label of the
+// `any` field is not cut even by half a pixel. Measures the drawn text (Range), not the scrollWidth.
 const tableSpec = {
   ...spec,
   layers: [
@@ -250,14 +243,14 @@ const tableSpec = {
       ...spec.layers[1],
       annotationTypes: [
         {
-          id: 'evento',
-          name: 'Evento',
+          id: 'event',
+          name: 'Event',
           fields: [
             {
               key: 'plugins',
               type: 'table',
               columns: [
-                { key: 'nota', type: 'string' },
+                { key: 'note', type: 'string' },
                 {
                   key: 'item',
                   type: 'ref',
@@ -272,8 +265,8 @@ const tableSpec = {
   ],
 };
 
-// CL2 (#784, achado 1-R): a tabela não rola na horizontal e o ✕ de Limpar e a célula ficam dentro
-// da área visível da tabela (`.data-grid`).
+// CL2 (#784, finding 1-R): the table does not scroll horizontally and the Clear ✕ and the cell stay inside
+// the visible area of the table (`.data-grid`).
 async function measureGrid(page: Page) {
   return page.evaluate(() => {
     const grid = document.querySelector<HTMLElement>('.data-grid')!;
@@ -301,7 +294,7 @@ async function measureRefCells(page: Page) {
       const x = clear.getBoundingClientRect();
       return {
         text: text.textContent,
-        // Só conta se o ✕ está na mesma faixa vertical do controle (ele pode descer para a linha de baixo).
+        // Only counts if the ✕ is in the same vertical band as the control (it may drop to the line below).
         overlap:
           x.top < c.bottom - 1 && x.bottom > c.top + 1
             ? Math.max(0, c.right - x.left)
@@ -317,74 +310,71 @@ async function measureRefCells(page: Page) {
 }
 
 for (const width of [1280, 900]) {
-  test(`celulas ref da tabela: X de limpar fora do rotulo e referencia quebrada legivel a ${width} px`, async ({
+  test(`ref table cells: Clear X outside the label and legible broken reference at ${width} px`, async ({
     page,
   }, info) => {
-    const file = info.outputPath('fora.json');
+    const file = info.outputPath('outside.json');
     writeFileSync(file, JSON.stringify(tableSpec));
     await page.setViewportSize({ width, height: 720 });
-    await createProject(page, 'Fora da imagem');
+    await createProject(page, 'Outside the image');
     await addImage(page);
     await page.keyboard.press('Control+Shift+1');
     await page.keyboard.press('Control+Shift+2');
     await page.keyboard.press('Control+Shift+3');
-    await expect(page.getByRole('region', { name: 'Detalhes' })).toBeVisible();
-    await page.waitForTimeout(300); // o canvas reajusta o tamanho depois que as janelas abrem
+    await expect(page.getByRole('region', { name: 'Details' })).toBeVisible();
+    await page.waitForTimeout(300); // the canvas readjusts its size after the windows open
     await drawMarking(page, await canvasPoint(page, 1 / 4));
     await applySpecialization(page, file);
     await page
-      .getByRole('button', { name: /Adicionar anotação na camada Componentes/ })
+      .getByRole('button', { name: /Add annotation to layer Components/ })
       .first()
       .click();
     await page
       .getByRole('dialog')
-      .getByRole('button', { name: /Item de lista/ })
+      .getByRole('button', { name: /List item/ })
       .click();
-    const title = page.getByRole('textbox', { name: 'titulo' });
+    const title = page.getByRole('textbox', { name: 'title' });
     await title.fill('Plugin A');
     await title.press('Enter');
     await drawMarking(page, await canvasPoint(page, 2 / 3));
     await page
-      .getByRole('button', { name: /Adicionar anotação na camada Eventos/ })
+      .getByRole('button', { name: /Add annotation to layer Events/ })
       .first()
       .click();
-    await page
-      .getByRole('dialog')
-      .getByRole('button', { name: /Evento/ })
-      .click();
-    await page.getByRole('button', { name: '+ Linha' }).click();
-    await page.getByRole('button', { name: /^Escolher: item/i }).click();
+    await page.getByRole('dialog').getByRole('button', { name: /Event/ }).click();
+    await page.getByRole('button', { name: '+ Row' }).click();
+    await page.getByRole('button', { name: /^Choose: item/i }).click();
     await page.getByRole('dialog').getByRole('option').first().click();
 
     const ok = (await measureRefCells(page))[0]!;
-    expect(ok.overlap, 'âncora e ✕ sobrepostos').toBe(0);
-    expect(ok.cut, 'rótulo cortado').toBeLessThanOrEqual(0.5);
-    // CD6 (R24.15, achado 1.1 da #1372): "Plugin A" cabe em uma linha, sem quebrar em "Plu/gin/A".
-    expect(ok.lines, 'rótulo do alvo em uma linha').toBe(1);
+    expect(ok.overlap, 'anchor and ✕ overlapping').toBe(0);
+    expect(ok.cut, 'label cut').toBeLessThanOrEqual(0.5);
+    // CD6 (R24.15, finding 1.1 of #1372): "Plugin A" fits on one line, without breaking into "Plu/gin/A".
+    expect(ok.lines, 'target label on one line').toBe(1);
     for (const theme of ['light', 'dark'] as const) {
       await page.evaluate(
         (th) => document.documentElement.setAttribute('data-theme', th),
         theme,
       );
       const g = await measureGrid(page);
-      expect(g.scroll, `rolagem horizontal (${theme})`).toBeLessThanOrEqual(0);
-      expect(g.outside, `fora da tabela (${theme})`).toBeLessThanOrEqual(0.5);
+      expect(g.scroll, `horizontal scroll (${theme})`).toBeLessThanOrEqual(0);
+      expect(g.outside, `outside the table (${theme})`).toBeLessThanOrEqual(0.5);
     }
 
-    // Exclui o alvo (Plugin A) e volta ao evento: a célula fica quebrada.
-    const tree = page.getByRole('list', { name: 'Árvore de marcações' });
-    await tree.getByRole('button', { name: 'Marcação sem nome' }).first().click();
-    await page.getByRole('button', { name: 'Excluir marcação' }).click();
-    await page.getByRole('alertdialog').getByRole('button', { name: 'Excluir' }).click();
-    await tree.getByRole('button', { name: 'Marcação sem nome' }).first().click();
+    // Deletes the target (Plugin A) and goes back to the event: the cell becomes broken.
+    const tree = page.getByRole('list', { name: 'Marking tree' });
+    await tree.getByRole('button', { name: 'Unnamed marking' }).first().click();
+    await page.getByRole('button', { name: 'Delete marking' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click();
+    await tree.getByRole('button', { name: 'Unnamed marking' }).first().click();
     await expect(page.locator('.ref-cell .ref-control.is-broken')).toBeVisible();
     const broken = (await measureRefCells(page))[0]!;
-    expect(broken.text).toContain('quebrada');
-    expect(broken.lines, 'quebra em poucas linhas').toBeLessThanOrEqual(8);
-    expect(broken.overlap, 'âncora e ✕ sobrepostos').toBe(0);
-    expect(broken.cut, 'rótulo cortado').toBeLessThanOrEqual(0.5);
-    // TE1 (#1477): a quebra é entre palavras; cada palavra de "(referência quebrada)" fica numa
-    // linha só (um Range sobre a palavra tem um retângulo por linha que ela ocupa).
+    expect(broken.text).toContain('broken');
+    expect(broken.lines, 'wraps in few lines').toBeLessThanOrEqual(8);
+    expect(broken.overlap, 'anchor and ✕ overlapping').toBe(0);
+    expect(broken.cut, 'label cut').toBeLessThanOrEqual(0.5);
+    // TE1 (#1477): the break is between words; each word of "(broken reference)" stays on a
+    // single line (a Range over the word has one rectangle per line it occupies).
     const split = await page.evaluate(() => {
       const text = document.querySelector<HTMLElement>(
         '.ref-cell .ref-control.is-broken .ref-control-text',
@@ -400,17 +390,17 @@ for (const width of [1280, 900]) {
         })
         .filter((w) => w.lines > 1);
     });
-    expect(split, 'palavra partida entre linhas').toEqual([]);
+    expect(split, 'word split across lines').toEqual([]);
     for (const theme of ['light', 'dark'] as const) {
       await page.evaluate(
         (th) => document.documentElement.setAttribute('data-theme', th),
         theme,
       );
       const g = await measureGrid(page);
-      expect(g.scroll, `rolagem horizontal (${theme})`).toBeLessThanOrEqual(0);
-      expect(g.outside, `fora da tabela (${theme})`).toBeLessThanOrEqual(0.5);
+      expect(g.scroll, `horizontal scroll (${theme})`).toBeLessThanOrEqual(0);
+      expect(g.outside, `outside the table (${theme})`).toBeLessThanOrEqual(0.5);
     }
-    // Volta com Ctrl+Z: o alvo reaparece e a célula deixa de ser quebrada.
+    // Back with Ctrl+Z: the target reappears and the cell stops being broken.
     await page.keyboard.press('Control+Z');
     await expect(page.locator('.ref-cell .ref-control.is-broken')).toHaveCount(0);
   });

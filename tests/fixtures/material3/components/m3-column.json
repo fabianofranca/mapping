@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "m3-column",
   "name": "Column",
-  "description": "Container vertical do Compose: os filhos se empilham pela ordem, com spacing e padding.",
+  "description": "Vertical Compose container: children stack in order, with spacing and padding.",
   "size": {
     "width": 380,
     "height": 200

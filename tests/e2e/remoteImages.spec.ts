@@ -22,26 +22,27 @@ import {
 import { projectAction, watchViolations } from './helpers';
 import { solidPng } from './png';
 
-// Etapa Imagens remotas (RI3): o consentimento por origem, os interruptores de Privacidade, a
-// política de URL e o carregador, de ponta a ponta. O Playwright responde as origens fictícias
-// (`*.mapping.test`, `localhost`, `192.168.0.10`) por `page.route`; nenhuma requisição sai da
-// máquina e não há variável de build. O canvas publica `data-component-images` (quantas imagens
-// de componente estão desenhadas de fato; o reservado não conta), `data-components` e as
-// requisições são contadas por rota.
+// Remote images stage (RI3): consent per origin, the Privacy switches, the
+// URL policy and the loader, end to end. Playwright answers the fictitious origins
+// (`*.mapping.test`, `localhost`, `192.168.0.10`) through `page.route`; no request leaves the
+// machine and there is no build variable. The canvas publishes `data-component-images` (how many component
+// images are actually drawn; the placeholder does not count), `data-components` and the
+// requests are counted per route.
+// pt-BR kept: shared fixture data (tests/fixtures/pessoas library: spec id 'pessoas', type 'avatar', fields 'nome'/'foto', label 'Foto', example 'Ana Souza') asserted by tests/model, tests/store and tests/examples
 
 const LIBRARY_DIR = 'tests/fixtures/pessoas';
 const NOW = '2026-10-31T12:00:00.000Z';
 
-const ORIGIN = 'https://imagens.mapping.test';
-const IMG = `${ORIGIN}/foto.png`;
-const OTHER_ORIGIN = 'https://outra.mapping.test';
-const OTHER_IMG = `${OTHER_ORIGIN}/foto.png`;
-const HTTP_ORIGIN = 'http://imagens.mapping.test';
-const HTTP_IMG = `${HTTP_ORIGIN}/foto.png`;
+const ORIGIN = 'https://images.mapping.test';
+const IMG = `${ORIGIN}/photo.png`;
+const OTHER_ORIGIN = 'https://other.mapping.test';
+const OTHER_IMG = `${OTHER_ORIGIN}/photo.png`;
+const HTTP_ORIGIN = 'http://images.mapping.test';
+const HTTP_IMG = `${HTTP_ORIGIN}/photo.png`;
 const LAN_ORIGIN = 'https://192.168.0.10';
-const LAN_IMG = `${LAN_ORIGIN}/foto.png`;
+const LAN_IMG = `${LAN_ORIGIN}/photo.png`;
 
-// Chaves de `src/storage/imagePermissions.ts` (o consentimento é do navegador, no localStorage).
+// Keys of `src/storage/imagePermissions.ts` (consent belongs to the browser, in localStorage).
 const KEYS = {
   origins: 'mapping.imageOrigins',
   anyOrigin: 'mapping.imageAllowAnyOrigin',
@@ -58,11 +59,11 @@ interface Seed {
   readonly noCors?: boolean;
 }
 
-/** Deixa o consentimento e os interruptores como o teste pede, antes de a app carregar. */
+/** Leaves the consent and the switches as the test asks, before the app loads. */
 async function seed(page: Page, config: Seed): Promise<void> {
   await page.addInitScript(
     ({ keys, config: c }) => {
-      // Só na primeira carga da aba: o que a pessoa mudar na tela vale depois.
+      // Only on the first load of the tab: what the person changes on screen applies afterwards.
       if (sessionStorage.getItem('seeded') !== null) return;
       sessionStorage.setItem('seeded', '1');
       if (c.origins) localStorage.setItem(keys.origins, JSON.stringify(c.origins));
@@ -79,17 +80,17 @@ async function seed(page: Page, config: Seed): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------------------
-// Servidores de imagem fictícios
+// Fictitious image servers
 
 type Behavior = 'cors' | 'no-cors' | 'fail' | 'hang';
 
 interface Hits {
   count: number;
-  /** `true` quando o pedido veio com o cabeçalho `Origin` (a tentativa com `crossOrigin`). */
+  /** `true` when the request came with the `Origin` header (the attempt with `crossOrigin`). */
   readonly withOrigin: boolean[];
 }
 
-/** Responde as URLs de `pattern` com o PNG (com ou sem CORS), com erro ou nunca. */
+/** Answers the `pattern` URLs with the PNG (with or without CORS), with an error or never. */
 async function serve(
   page: Page,
   pattern: string,
@@ -101,16 +102,16 @@ async function serve(
     hits.count += 1;
     const origin = 'origin' in route.request().headers();
     hits.withOrigin.push(origin);
-    if (behavior === 'hang') return; // nunca responde: o tempo limite do carregador age
+    if (behavior === 'hang') return; // never answers: the loader timeout acts
     if (behavior === 'fail') {
-      await route.fulfill({ status: 404, body: 'não há' });
+      await route.fulfill({ status: 404, body: 'not found' });
       return;
     }
-    // O Playwright acrescenta sozinho o `Access-Control-Allow-Origin` a um pedido com `Origin`
-    // quando a resposta não o traz; "sem CORS" é por isso um cabeçalho que não autoriza a app.
-    // O pedido sem `crossOrigin` (a nova tentativa) não leva `Origin` e é atendido normalmente.
+    // Playwright adds `Access-Control-Allow-Origin` on its own to a request with `Origin`
+    // when the response does not carry it; "no CORS" is therefore a header that does not authorize the app.
+    // The request without `crossOrigin` (the retry) carries no `Origin` and is served normally.
     const cors =
-      behavior === 'cors' || !origin ? '*' : 'https://nao-autorizado.mapping.test';
+      behavior === 'cors' || !origin ? '*' : 'https://not-authorized.mapping.test';
     await route.fulfill({
       status: 200,
       contentType: 'image/png',
@@ -122,7 +123,7 @@ async function serve(
 }
 
 // ---------------------------------------------------------------------------------------
-// Projeto com o Avatar da biblioteca de exemplo `pessoas` (um avatar por URL)
+// Project with the Avatar of the example library `pessoas` (one avatar per URL)
 
 function libraryTexts(): Map<string, string> {
   const out = new Map<string, string>();
@@ -141,7 +142,7 @@ function libraryTexts(): Map<string, string> {
   return out;
 }
 
-/** A especialização `pessoas`; `exampleUrl` põe a foto no exemplo (para a galeria do Catálogo). */
+/** The `pessoas` specialization; `exampleUrl` puts the photo in the example (for the Catalog gallery). */
 function peopleSpec(exampleUrl?: string): Spec {
   const raw = JSON.parse(
     readFileSync(join(LIBRARY_DIR, 'pessoas.spec.json'), 'utf8'),
@@ -171,17 +172,17 @@ function catalogOf(spec: Spec): ComponentCatalog {
   ]);
 }
 
-/** Tela em branco 360 × 800, sem especialização. */
+/** Blank screen 360 × 800, without a specialization. */
 function blankProject(): Project {
   return addBackgroundContainer(
     createProject({
-      name: 'Pessoas',
+      name: 'People',
       now: NOW,
-      firstLayer: { id: 'L1', name: 'Componentes', color: '#1e88e5' },
+      firstLayer: { id: 'L1', name: 'Components', color: '#1e88e5' },
     }),
     {
       id: 'B1',
-      name: 'Tela',
+      name: 'Screen',
       width: 360,
       height: 800,
       background: '#FFFFFF',
@@ -190,7 +191,7 @@ function blankProject(): Project {
   );
 }
 
-/** Põe um Avatar por URL na tela (a partir de `project`, que já tem a especialização). */
+/** Puts one Avatar per URL on the screen (from `project`, which already has the specialization). */
 function withAvatars(project: Project, urls: readonly string[]): Project {
   const catalog = catalogOf(peopleSpec());
   let out = project;
@@ -206,7 +207,7 @@ function withAvatars(project: Project, urls: readonly string[]): Project {
         specId: 'pessoas',
         typeId: 'avatar',
         center: { x: 180, y: 60 + i * 80 },
-        values: { nome: `Pessoa ${i}`, foto: url },
+        values: { nome: `Person ${i}`, foto: url },
       },
       approximateMeasurer,
     );
@@ -232,7 +233,7 @@ async function zipOf(files: Map<string, string>): Promise<Buffer> {
   return zip.generateAsync({ type: 'nodebuffer', platform: 'UNIX' });
 }
 
-/** O zip de um projeto com a biblioteca `pessoas` aplicada e um Avatar por URL. */
+/** The zip of a project with the `pessoas` library applied and one Avatar per URL. */
 async function projectZip(urls: readonly string[]): Promise<Buffer> {
   const project = withPeople(urls);
   const files = new Map<string, string>([['mapping.json', serialize(project)]]);
@@ -243,9 +244,9 @@ async function projectZip(urls: readonly string[]): Promise<Buffer> {
   return zipOf(files);
 }
 
-const PROPOSAL_ID = 'pessoas-novas';
+const PROPOSAL_ID = 'new-people';
 
-/** Projeto em branco e uma proposta que cria um Avatar com um pacote que só a proposta traz. */
+/** Blank project and a proposal that creates an Avatar with a package that only the proposal brings. */
 async function proposalZip(url: string): Promise<Buffer> {
   const base = blankProject();
   const spec = peopleSpec();
@@ -258,7 +259,7 @@ async function proposalZip(url: string): Promise<Buffer> {
   );
   const proposal = buildProposal(base, after, {
     id: PROPOSAL_ID,
-    title: 'Pessoas novas',
+    title: 'New people',
     createdAt: NOW,
   });
   const files = new Map<string, string>([['mapping.json', serialize(base)]]);
@@ -274,34 +275,34 @@ async function importZip(page: Page, buffer: Buffer): Promise<void> {
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
     .setInputFiles({ name: 'pessoas.zip', mimeType: 'application/zip', buffer });
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
 }
 
-/** Abre um projeto com um Avatar por URL e espera os componentes serem desenhados. */
+/** Opens a project with one Avatar per URL and waits for the components to be drawn. */
 async function openPeople(page: Page, urls: readonly string[]): Promise<void> {
   await importZip(page, await projectZip(urls));
   await expect(host(page)).toHaveAttribute('data-components', String(urls.length));
 }
 
 // ---------------------------------------------------------------------------------------
-// Leituras
+// Readings
 
 const host = (page: Page): Locator => page.locator('.canvas-host');
-const banner = (page: Page): Locator => page.getByText(/Este projeto tem imagens de/);
+const banner = (page: Page): Locator => page.getByText(/This project has images from/);
 const allowButton = (page: Page): Locator =>
-  page.getByRole('button', { name: 'Permitir estas', exact: true });
+  page.getByRole('button', { name: 'Allow these', exact: true });
 
-/** Quantas imagens remotas estão desenhadas (o reservado não conta). */
+/** How many remote images are drawn (the placeholder does not count). */
 async function drawnImages(page: Page): Promise<number> {
   return Number((await host(page).getAttribute('data-component-images')) ?? 0);
 }
 
-/** Espera o desenho (a carga e o redesenho) chegar a `count` imagens. */
+/** Waits for the drawing (the load and the redraw) to reach `count` images. */
 async function expectDrawn(page: Page, count: number): Promise<void> {
   await expect(host(page)).toHaveAttribute('data-component-images', String(count));
 }
 
-/** Dá tempo de uma requisição (indevida) acontecer e confere que nada foi desenhado. */
+/** Gives an (undue) request time to happen and checks that nothing was drawn. */
 async function expectNothingHappens(page: Page, ...servers: Hits[]): Promise<void> {
   await page.waitForTimeout(600);
   for (const server of servers) expect(server.count).toBe(0);
@@ -309,14 +310,14 @@ async function expectNothingHappens(page: Page, ...servers: Hits[]): Promise<voi
 }
 
 async function openPrivacy(page: Page): Promise<Locator> {
-  await projectAction(page, 'Configurações');
+  await projectAction(page, 'Settings');
   const dialog = page.getByRole('dialog');
-  await expect(dialog.getByRole('heading', { name: 'Privacidade' })).toBeVisible();
+  await expect(dialog.getByRole('heading', { name: 'Privacy' })).toBeVisible();
   return dialog;
 }
 
-// O fixture automático confere, ao fim de cada teste, que a CSP e os Trusted Types não
-// recusaram nada (violações do documento e erros do console).
+// The automatic fixture checks, at the end of each test, that the CSP and Trusted Types
+// refused nothing (document violations and console errors).
 const test = base.extend<{ cleanConsole: void }>({
   cleanConsole: [
     async ({ page }, use) => {
@@ -338,8 +339,8 @@ const test = base.extend<{ cleanConsole: void }>({
   ],
 });
 
-test.describe('imagens remotas: carga e CORS', () => {
-  test('com CORS e consentimento a imagem aparece, com um pedido anônimo', async ({
+test.describe('remote images: loading and CORS', () => {
+  test('with CORS and consent the image shows, with a single anonymous request', async ({
     page,
   }) => {
     const server = await serve(page, `${ORIGIN}/**`, 'cors');
@@ -351,7 +352,7 @@ test.describe('imagens remotas: carga e CORS', () => {
     await expect(banner(page)).toHaveCount(0);
   });
 
-  test('sem CORS e com o interruptor desligado fica no reservado, com um só pedido', async ({
+  test('without CORS and with the switch off it stays on the placeholder, with a single request', async ({
     page,
   }) => {
     const server = await serve(page, `${ORIGIN}/**`, 'no-cors');
@@ -363,19 +364,19 @@ test.describe('imagens remotas: carga e CORS', () => {
     expect(await drawnImages(page)).toBe(0);
   });
 
-  test('sem CORS e com o interruptor ligado aparece, em duas tentativas', async ({
+  test('without CORS and with the switch on it shows, in two attempts', async ({
     page,
   }) => {
     const server = await serve(page, `${ORIGIN}/**`, 'no-cors');
     await seed(page, { origins: [ORIGIN], noCors: true });
     await openPeople(page, [IMG]);
     await expectDrawn(page, 1);
-    // Primeiro com `crossOrigin` (falha por falta do cabeçalho), depois uma só vez sem ele.
+    // First with `crossOrigin` (fails for lack of the header), then once without it.
     expect(server.count).toBe(2);
     expect(server.withOrigin).toEqual([true, false]);
   });
 
-  test('imagem grande demais (cabeçalho acima de 8192 px) fica no reservado', async ({
+  test('image too large (header above 8192 px) stays on the placeholder', async ({
     page,
   }) => {
     const server = await serve(page, `${ORIGIN}/**`, 'cors', solidPng(9000, 1));
@@ -387,13 +388,13 @@ test.describe('imagens remotas: carga e CORS', () => {
     expect(await drawnImages(page)).toBe(0);
   });
 
-  test('tempo limite: a imagem que nunca chega vira reservado, sem nova tentativa', async ({
+  test('timeout: the image that never arrives becomes the placeholder, without a retry', async ({
     page,
   }) => {
-    // O relógio é do Playwright: avançar 20 s não custa 20 s de teste.
+    // The clock is Playwright's: advancing 20 s does not cost 20 s of test.
     await page.clock.install();
     const server = await serve(page, `${ORIGIN}/**`, 'hang');
-    // Com o interruptor de CORS ligado: o tempo limite não é falta de CORS, não repete.
+    // With the CORS switch on: the timeout is not a lack of CORS, it does not retry.
     await seed(page, { origins: [ORIGIN], noCors: true });
     await openPeople(page, [IMG]);
     await expect.poll(() => server.count).toBe(1);
@@ -404,8 +405,8 @@ test.describe('imagens remotas: carga e CORS', () => {
   });
 });
 
-test.describe('imagens remotas: Catálogo', () => {
-  /** Abre a biblioteca `pessoas` (exemplo com foto) no Catálogo e devolve o desenho do exemplo. */
+test.describe('remote images: Catalog', () => {
+  /** Opens the `pessoas` library (example with a photo) in the Catalog and returns the example drawing. */
   async function galleryImage(
     page: Page,
     behavior: Behavior,
@@ -433,44 +434,44 @@ test.describe('imagens remotas: Catálogo', () => {
       mimeType: 'application/zip',
       buffer: zip,
     });
-    const screen = page.getByRole('main', { name: 'Catálogo da biblioteca' });
+    const screen = page.getByRole('main', { name: 'Library catalog' });
     await expect(screen).toBeVisible();
     await screen
-      .getByRole('navigation', { name: 'Componentes' })
+      .getByRole('navigation', { name: 'Components' })
       .locator('button[data-type-id="avatar"]')
       .click();
     const article = screen.getByRole('article', { name: 'Avatar' });
     await expect(article).toBeVisible();
     await hits(server);
-    // A galeria redesenha quando a imagem termina de carregar (a época entra na chave).
+    // The gallery redraws when the image finishes loading (the epoch is part of the key).
     await page.waitForTimeout(800);
     return article.getByRole('img', { name: 'Ana Souza', exact: true });
   }
 
-  test('sem CORS com o interruptor ligado aparece no canvas, mas não entra na galeria', async ({
+  test('without CORS with the switch on it shows on the canvas, but does not enter the gallery', async ({
     browser,
   }) => {
     const context = await browser.newContext({
       baseURL: test.info().project.use.baseURL,
-      locale: 'pt-BR',
+      locale: 'en-US',
       viewport: { width: 1280, height: 860 },
     });
     try {
       const wait = (n: number) => async (s: Hits) => {
         await expect.poll(() => s.count).toBeGreaterThanOrEqual(n);
       };
-      // A referência do reservado: o servidor responde erro, a foto não existe.
+      // The placeholder reference: the server answers an error, the photo does not exist.
       const failing = await context.newPage();
       const placeholder = await (
         await galleryImage(failing, 'fail', wait(2))
       ).getAttribute('src');
-      // Com CORS a foto entra na galeria (o desenho muda).
+      // With CORS the photo enters the gallery (the drawing changes).
       const good = await context.newPage();
       const withPhoto = await (
         await galleryImage(good, 'cors', wait(1))
       ).getAttribute('src');
       expect(withPhoto).not.toBe(placeholder);
-      // Sem CORS a imagem carrega (duas tentativas) mas a galeria desenha o reservado.
+      // Without CORS the image loads (two attempts) but the gallery draws the placeholder.
       const opaque = await context.newPage();
       const image = await galleryImage(opaque, 'no-cors', wait(2));
       expect(await image.getAttribute('src')).toBe(placeholder);
@@ -480,8 +481,8 @@ test.describe('imagens remotas: Catálogo', () => {
   });
 });
 
-test.describe('imagens remotas: consentimento por origem', () => {
-  test('origem sem consentimento: a faixa aparece e nenhuma requisição é feita', async ({
+test.describe('remote images: consent per origin', () => {
+  test('origin without consent: the banner shows and no request is made', async ({
     page,
   }) => {
     const server = await serve(page, `${ORIGIN}/**`);
@@ -490,7 +491,7 @@ test.describe('imagens remotas: consentimento por origem', () => {
     await expectNothingHappens(page, server);
   });
 
-  test('Permitir estas libera a origem, grava no navegador e a imagem aparece', async ({
+  test('Allow these frees the origin, saves it in the browser and the image shows', async ({
     page,
   }) => {
     const server = await serve(page, `${ORIGIN}/**`);
@@ -504,17 +505,19 @@ test.describe('imagens remotas: consentimento por origem', () => {
     expect(JSON.parse(stored ?? '[]')).toEqual([ORIGIN]);
   });
 
-  test('Agora não esconde a faixa sem permitir nada', async ({ page }) => {
+  test('Not now hides the banner without allowing anything', async ({ page }) => {
     const server = await serve(page, `${ORIGIN}/**`);
     await openPeople(page, [IMG]);
-    await page.getByRole('button', { name: 'Agora não', exact: true }).click();
+    await page.getByRole('button', { name: 'Not now', exact: true }).click();
     await expect(banner(page)).toHaveCount(0);
     await expectNothingHappens(page, server);
     const stored = await page.evaluate((key) => localStorage.getItem(key), KEYS.origins);
     expect(stored).toBeNull();
   });
 
-  test('origem nova depois de permitir: a faixa volta só com ela', async ({ page }) => {
+  test('new origin after allowing: the banner comes back only with it', async ({
+    page,
+  }) => {
     const first = await serve(page, `${ORIGIN}/**`);
     const second = await serve(page, `${OTHER_ORIGIN}/**`);
     await openPeople(page, [IMG]);
@@ -522,7 +525,7 @@ test.describe('imagens remotas: consentimento por origem', () => {
     await expectDrawn(page, 1);
     await expect(banner(page)).toHaveCount(0);
 
-    // Edita a foto da pessoa para uma origem que ainda não foi permitida.
+    // Edits the person's photo to an origin that has not been allowed yet.
     await selectFirstMarking(page);
     const field = page.getByLabel('Foto', { exact: true });
     await field.fill(OTHER_IMG);
@@ -538,7 +541,7 @@ test.describe('imagens remotas: consentimento por origem', () => {
     expect(first.count).toBe(1);
   });
 
-  test('duas origens novas e uma já permitida: a faixa lista só as novas', async ({
+  test('two new origins and one already allowed: the banner lists only the new ones', async ({
     page,
   }) => {
     const known = await serve(page, `${ORIGIN}/**`);
@@ -552,7 +555,7 @@ test.describe('imagens remotas: consentimento por origem', () => {
     expect(fresh.count).toBe(0);
   });
 
-  test('Revogar (Configurações › Privacidade) tira a origem e a imagem volta ao reservado', async ({
+  test('Revoke (Settings › Privacy) removes the origin and the image goes back to the placeholder', async ({
     page,
   }) => {
     const server = await serve(page, `${ORIGIN}/**`);
@@ -562,11 +565,9 @@ test.describe('imagens remotas: consentimento por origem', () => {
 
     const dialog = await openPrivacy(page);
     await expect(dialog.getByText(ORIGIN, { exact: true })).toBeVisible();
-    await dialog.getByRole('button', { name: `Revogar ${ORIGIN}` }).click();
-    await expect(
-      dialog.getByText('Nenhuma origem permitida neste navegador.'),
-    ).toBeVisible();
-    await dialog.getByRole('button', { name: 'Fechar', exact: true }).click();
+    await dialog.getByRole('button', { name: `Revoke ${ORIGIN}` }).click();
+    await expect(dialog.getByText('No origins allowed in this browser.')).toBeVisible();
+    await dialog.getByRole('button', { name: 'Close', exact: true }).click();
 
     await expectDrawn(page, 0);
     await expect(banner(page)).toContainText(ORIGIN);
@@ -575,7 +576,7 @@ test.describe('imagens remotas: consentimento por origem', () => {
     expect(server.count).toBe(1);
   });
 
-  test('"qualquer origem" ligado: sem faixa e a imagem carrega', async ({ page }) => {
+  test('"any origin" on: no banner and the image loads', async ({ page }) => {
     const server = await serve(page, `${ORIGIN}/**`);
     await seed(page, { anyOrigin: true });
     await openPeople(page, [IMG]);
@@ -584,36 +585,32 @@ test.describe('imagens remotas: consentimento por origem', () => {
     await expect(banner(page)).toHaveCount(0);
   });
 
-  test('o interruptor "qualquer origem" liga pela Privacidade e libera sem faixa', async ({
+  test('the "any origin" switch turns on through Privacy and frees without a banner', async ({
     page,
   }) => {
     const server = await serve(page, `${ORIGIN}/**`);
     await openPeople(page, [IMG]);
     await expect(banner(page)).toBeVisible();
     const dialog = await openPrivacy(page);
-    await dialog.getByLabel('Permitir imagens de qualquer origem').check();
-    await dialog.getByRole('button', { name: 'Fechar', exact: true }).click();
+    await dialog.getByLabel('Allow images from any origin').check();
+    await dialog.getByRole('button', { name: 'Close', exact: true }).click();
     await expectDrawn(page, 1);
     await expect(banner(page)).toHaveCount(0);
     expect(server.count).toBe(1);
   });
 });
 
-test.describe('imagens remotas: rede local', () => {
-  test('rede local recusada, sem pedido, com o interruptor desligado', async ({
-    page,
-  }) => {
+test.describe('remote images: local network', () => {
+  test('local network refused, no request, with the switch off', async ({ page }) => {
     const server = await serve(page, `${LAN_ORIGIN}/**`);
-    // Nem consentimento nem "qualquer origem" abrem a rede local.
+    // Neither consent nor "any origin" opens the local network.
     await seed(page, { origins: [LAN_ORIGIN], anyOrigin: true });
     await openPeople(page, [LAN_IMG]);
     await expectNothingHappens(page, server);
     await expect(banner(page)).toHaveCount(0);
   });
 
-  test('rede local aceita com o interruptor ligado e o consentimento', async ({
-    page,
-  }) => {
+  test('local network accepted with the switch on and the consent', async ({ page }) => {
     const server = await serve(page, `${LAN_ORIGIN}/**`);
     await seed(page, { origins: [LAN_ORIGIN], localNetwork: true });
     await openPeople(page, [LAN_IMG]);
@@ -621,34 +618,34 @@ test.describe('imagens remotas: rede local', () => {
     expect(server.count).toBe(1);
   });
 
-  test('rede local pede consentimento próprio mesmo com "qualquer origem" ligado', async ({
+  test('local network asks for its own consent even with "any origin" on', async ({
     page,
   }) => {
     const server = await serve(page, `${LAN_ORIGIN}/**`);
     await seed(page, { anyOrigin: true, localNetwork: true });
     await openPeople(page, [LAN_IMG]);
     await expect(banner(page)).toContainText(LAN_ORIGIN);
-    await expect(banner(page)).toContainText('rede local');
+    await expect(banner(page)).toContainText('local network');
     await expectNothingHappens(page, server);
     await allowButton(page).click();
     await expectDrawn(page, 1);
     expect(server.count).toBe(1);
   });
 
-  test('private-host: IP, localhost, nome sem ponto e .local não geram requisição', async ({
+  test('private-host: IP, localhost, dotless name and .local generate no request', async ({
     page,
   }) => {
     const urls = [
-      'https://10.0.0.5/foto.png',
-      'https://localhost:8443/foto.png',
-      'https://intranet/foto.png',
-      'https://impressora.local/foto.png',
+      'https://10.0.0.5/photo.png',
+      'https://localhost:8443/photo.png',
+      'https://intranet/photo.png',
+      'https://printer.local/photo.png',
     ];
     const servers = [
       await serve(page, 'https://10.0.0.5/**'),
       await serve(page, 'https://localhost:8443/**'),
       await serve(page, 'https://intranet/**'),
-      await serve(page, 'https://impressora.local/**'),
+      await serve(page, 'https://printer.local/**'),
     ];
     await seed(page, {
       origins: urls.map((u) => new URL(u).origin),
@@ -660,8 +657,8 @@ test.describe('imagens remotas: rede local', () => {
   });
 });
 
-test.describe('imagens remotas: http', () => {
-  test('http: recusado com o interruptor desligado, sem requisição', async ({ page }) => {
+test.describe('remote images: http', () => {
+  test('http: refused with the switch off, no request', async ({ page }) => {
     const server = await serve(page, `${HTTP_ORIGIN}/**`);
     await seed(page, { origins: [HTTP_ORIGIN], anyOrigin: true });
     await openPeople(page, [HTTP_IMG]);
@@ -669,7 +666,7 @@ test.describe('imagens remotas: http', () => {
     await expect(banner(page)).toHaveCount(0);
   });
 
-  test('http: aceito com o interruptor ligado e o consentimento', async ({ page }) => {
+  test('http: accepted with the switch on and the consent', async ({ page }) => {
     const server = await serve(page, `${HTTP_ORIGIN}/**`);
     await seed(page, { origins: [HTTP_ORIGIN], http: true });
     await openPeople(page, [HTTP_IMG]);
@@ -677,7 +674,7 @@ test.describe('imagens remotas: http', () => {
     expect(server.count).toBe(1);
   });
 
-  test('http e https do mesmo host têm consentimentos separados', async ({ page }) => {
+  test('http and https of the same host have separate consents', async ({ page }) => {
     const secure = await serve(page, `${ORIGIN}/**`);
     const plain = await serve(page, `${HTTP_ORIGIN}/**`);
     await seed(page, { origins: [ORIGIN], http: true });
@@ -685,7 +682,7 @@ test.describe('imagens remotas: http', () => {
     await expectDrawn(page, 1);
     expect(secure.count).toBe(1);
     expect(plain.count).toBe(0);
-    await expect(banner(page)).toContainText(`${HTTP_ORIGIN} (sem criptografia)`);
+    await expect(banner(page)).toContainText(`${HTTP_ORIGIN} (unencrypted)`);
     await allowButton(page).click();
     await expectDrawn(page, 2);
     expect(plain.count).toBe(1);
@@ -693,24 +690,24 @@ test.describe('imagens remotas: http', () => {
   });
 });
 
-test.describe('imagens remotas: pacote que chega por proposta', () => {
-  test('a visão Proposto mostra a faixa da origem do pacote e só carrega depois de permitir', async ({
+test.describe('remote images: package that arrives through a proposal', () => {
+  test('the Proposed view shows the banner of the package origin and only loads after allowing', async ({
     page,
   }) => {
     const server = await serve(page, `${ORIGIN}/**`);
     await importZip(page, await proposalZip(IMG));
 
     await page.keyboard.press('Control+Shift+7');
-    await expect(page.getByText('Pessoas novas').first()).toBeVisible();
+    await expect(page.getByText('New people').first()).toBeVisible();
     await page
-      .getByRole('button', { name: /^Revisar/ })
+      .getByRole('button', { name: /^Review/ })
       .first()
       .click();
-    await expect(page.getByText('Somente leitura').first()).toBeVisible();
+    await expect(page.getByText('Read-only').first()).toBeVisible();
 
-    const view = page.getByRole('group', { name: 'Visão do canvas' });
+    const view = page.getByRole('group', { name: 'Canvas view' });
     await expect(
-      view.getByRole('button', { name: 'Proposto', exact: true }),
+      view.getByRole('button', { name: 'Proposed', exact: true }),
     ).toHaveAttribute('aria-pressed', 'true');
     await expect(host(page)).toHaveAttribute('data-components', '1');
     await expect(banner(page)).toContainText(ORIGIN);
@@ -723,7 +720,7 @@ test.describe('imagens remotas: pacote que chega por proposta', () => {
   });
 });
 
-/** Seleciona o primeiro Avatar pela Árvore de marcações e espera o campo Foto no painel. */
+/** Selects the first Avatar through the marking Tree and waits for the Foto field in the panel. */
 async function selectFirstMarking(page: Page): Promise<void> {
   await page.getByText('Avatar', { exact: true }).first().click();
   await expect(page.getByLabel('Foto', { exact: true })).toBeVisible();

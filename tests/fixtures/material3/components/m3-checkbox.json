@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "m3-checkbox",
   "name": "Checkbox",
-  "description": "Checkbox de 18 dp (forma 2) com rótulo body-large.",
+  "description": "18 dp checkbox (shape 2) with a body-large label.",
   "size": {
     "width": 200,
     "height": 40

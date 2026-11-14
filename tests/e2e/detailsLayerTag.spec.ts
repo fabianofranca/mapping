@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
-// Selo da especialização no cabeçalho de camada dos Detalhes a 900 px (#371): o selo
-// encolhe com reticências e dica, o + não o cobre e o painel não ganha barra horizontal.
+// Specialization badge in the layer header of Details at 900 px (#371): the badge
+// shrinks with an ellipsis and a hint, the + does not cover it and the panel gets no horizontal bar.
 
 test.use({ viewport: { width: 900, height: 720 } });
 
@@ -15,16 +15,17 @@ async function openExample(page: Page): Promise<void> {
       mimeType: 'application/zip',
       buffer: readFileSync('examples/exemplo-completo.zip'),
     });
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   await page.keyboard.press('Control+Shift+Digit3');
 }
 
-test('selo longo da especialização encolhe sem criar barra horizontal nos Detalhes', async ({
+test('long specialization badge shrinks without creating a horizontal bar in Details', async ({
   page,
 }) => {
   await openExample(page);
   await page
-    .getByRole('list', { name: 'Árvore de marcações' })
+    .getByRole('list', { name: 'Marking tree' })
+    // pt-BR kept: shared fixture data (examples/exemplo-completo.zip) asserted by other tests
     .getByRole('button', { name: 'Cadastrar', exact: true })
     .click();
 
@@ -70,14 +71,14 @@ test('selo longo da especialização encolhe sem criar barra horizontal nos Deta
   }
 });
 
-test('o nome da camada só encolhe depois de o selo ter sumido (900 e 1000 px)', async ({
+test('the layer name only shrinks after the badge has vanished (900 and 1000 px)', async ({
   page,
 }) => {
   for (const width of [900, 1000]) {
     await page.setViewportSize({ width, height: 860 });
     await openExample(page);
     await page
-      .getByRole('list', { name: 'Árvore de marcações' })
+      .getByRole('list', { name: 'Marking tree' })
       .getByRole('button', { name: 'Cadastrar', exact: true })
       .click();
     const heads = await page.locator('.layer-group-head').evaluateAll((all) =>
@@ -95,7 +96,7 @@ test('o nome da camada só encolhe depois de o selo ter sumido (900 e 1000 px)',
         ];
       }),
     );
-    // O cenário existe: um selo cortado, que ainda mostra texto.
+    // The scenario exists: a cut badge that still shows text.
     expect(heads.some((h) => h.tagCut && h.tagWidth > 0)).toBe(true);
     for (const h of heads) {
       if (h.tagWidth > 0) expect(h.nameCut, `${h.name} a ${width} px`).toBe(false);
@@ -103,13 +104,14 @@ test('o nome da camada só encolhe depois de o selo ter sumido (900 e 1000 px)',
   }
 });
 
-test('a 1592 px os selos curtos (SDUI, Modelo de dados) continuam inteiros', async ({
+// pt-BR kept: 'Modelo de dados' is a badge of the shared fixture examples/exemplo-completo.zip
+test('at 1592 px the short badges (SDUI, Modelo de dados) stay whole', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1592, height: 860 });
   await openExample(page);
   await page
-    .getByRole('list', { name: 'Árvore de marcações' })
+    .getByRole('list', { name: 'Marking tree' })
     .getByRole('button', { name: 'Cadastrar', exact: true })
     .click();
   const tags = page.locator('.layer-group-head .tag');

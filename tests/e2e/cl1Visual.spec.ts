@@ -5,13 +5,13 @@ import { join, relative } from 'node:path';
 import { createProject, projectAction } from './helpers';
 import { fixtureZip } from './proposalFixture';
 
-// Etapa sobras do testador, CL1: achados da passada visual a 900×720 (a janela mínima).
+// Tester leftovers stage, CL1: findings of the visual pass at 900×720 (the minimum window).
 
 test.use({ viewport: { width: 900, height: 720 } });
 
 const PACKAGE_DIR = 'libraries/material3-compose';
 
-/** Zip do pacote Material 3 (Compose), gerado na hora a partir da pasta do repositório. */
+/** Zip of the Material 3 (Compose) package, generated on the fly from the repository folder. */
 async function packageZip(): Promise<Buffer> {
   const zip = new JSZip();
   const walk = (dir: string): void => {
@@ -26,29 +26,29 @@ async function packageZip(): Promise<Buffer> {
 }
 
 async function openWithLibrary(page: Page): Promise<void> {
-  await createProject(page, 'Espaço');
-  await projectAction(page, 'Especializações');
+  await createProject(page, 'Space');
+  await projectAction(page, 'Specializations');
   await page.locator('input[type=file][accept=".zip,application/zip"]').setInputFiles({
     name: 'material3-compose.zip',
     mimeType: 'application/zip',
     buffer: await packageZip(),
   });
-  const confirm = page.getByRole('button', { name: 'Aplicar', exact: true });
+  const confirm = page.getByRole('button', { name: 'Apply', exact: true });
   await expect(confirm).toBeEnabled();
   await confirm.click();
-  await expect(page.getByRole('status').filter({ hasText: 'aplicada' })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: 'applied' })).toBeVisible();
   await page
     .getByRole('dialog')
-    .getByRole('button', { name: 'Fechar', exact: true })
+    .getByRole('button', { name: 'Close', exact: true })
     .click();
 }
 
-test('1.1 Paleta: nome do tipo legível e botão Adicionar inteiro em todas as linhas', async ({
+test('1.1 Palette: readable type name and whole Add button on every row', async ({
   page,
 }) => {
   await openWithLibrary(page);
   await page.keyboard.press('Control+Shift+9');
-  await page.getByRole('tab', { name: 'Paleta' }).click();
+  await page.getByRole('tab', { name: 'Palette' }).click();
   await expect(page.locator('.library-type').first()).toBeVisible();
   const cut = await page.evaluate(() =>
     [...document.querySelectorAll<HTMLElement>('.library-type')].flatMap((row) =>
@@ -67,7 +67,7 @@ test('1.1 Paleta: nome do tipo legível e botão Adicionar inteiro em todas as l
   ).toBe(true);
 });
 
-/** Palavras soltas (nó de texto sem espaço) que o navegador parte em mais de uma linha. */
+/** Loose words (text node without spaces) that the browser splits across more than one line. */
 async function brokenWords(page: Page, selector: string): Promise<string[]> {
   return page.evaluate((sel) => {
     const out: string[] = [];
@@ -75,7 +75,7 @@ async function brokenWords(page: Page, selector: string): Promise<string[]> {
       const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
       for (let n = walker.nextNode(); n; n = walker.nextNode()) {
         const text = (n.textContent ?? '').trim();
-        // Com espaço ou hífen o navegador pode quebrar ali, de propósito; o defeito é no meio da palavra.
+        // With a space or hyphen the browser may break there, on purpose; the defect is in the middle of the word.
         if (text === '' || /[\s-]/.test(text)) continue;
         const range = document.createRange();
         range.selectNodeContents(n);
@@ -87,7 +87,7 @@ async function brokenWords(page: Page, selector: string): Promise<string[]> {
   }, selector);
 }
 
-test('1.3 Catálogo: palavras da tabela Campos e da lista não partem no meio', async ({
+test('1.3 Catalog: words of the Fields table and of the list do not break in the middle', async ({
   page,
 }) => {
   await page.goto('/');
@@ -96,9 +96,9 @@ test('1.3 Catálogo: palavras da tabela Campos e da lista não partem no meio', 
     mimeType: 'application/zip',
     buffer: await packageZip(),
   });
-  const screen = page.getByRole('main', { name: 'Catálogo da biblioteca' });
+  const screen = page.getByRole('main', { name: 'Library catalog' });
   const entries = screen
-    .getByRole('navigation', { name: 'Componentes' })
+    .getByRole('navigation', { name: 'Components' })
     .locator('button[data-type-id]');
   await expect.poll(() => entries.count()).toBeGreaterThan(10);
   expect(await brokenWords(page, '.catalog-entry-name')).toEqual([]);
@@ -116,24 +116,25 @@ test('1.3 Catálogo: palavras da tabela Campos e da lista não partem no meio', 
   }
   expect(broken).toEqual([]);
 
-  // Lista estreita (como a da janela do Catálogo): nenhum nome de componente parte no meio.
+  // Narrow list (like the Catalog window one): no component name breaks in the middle.
   await screen.locator('.catalog-list').evaluate((el) => (el.style.width = '200px'));
   expect(await brokenWords(page, '.catalog-entry-name')).toEqual([]);
 });
 
-test('1.4 Árvore + Detalhes: o corte tem dica e o resumo da camada vazia não é cortado', async ({
+test('1.4 Tree + Details: the cut has a hint and the summary of the empty layer is not cut', async ({
   page,
 }) => {
   await page.goto('/');
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
     .setInputFiles({
-      name: 'loja.zip',
+      name: 'store.zip',
       mimeType: 'application/zip',
       buffer: await fixtureZip(),
     });
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   await page.keyboard.press('Control+Shift+1');
+  // pt-BR kept: shared fixture data (proposalFixture.ts) asserted by other e2e specs
   await page.locator('.tree-row', { hasText: 'Cabeçalho' }).first().click();
   await page.keyboard.press('Control+Shift+3');
   await expect(page.locator('.layer-group-empty').first()).toBeVisible();
@@ -159,7 +160,7 @@ test('1.4 Árvore + Detalhes: o corte tem dica e o resumo da camada vazia não �
   expect(report.summaryCut).toEqual([]);
 });
 
-/** Linhas da paleta (CL2, 1.1a): nome sem quebra no meio da palavra, botão de uma linha, sem rolagem lateral. */
+/** Palette rows (CL2, 1.1a): name without a break in the middle of the word, one-line button, no side scrolling. */
 async function paletteReport(page: Page): Promise<{
   width: number;
   brokenNames: string[];
@@ -169,7 +170,7 @@ async function paletteReport(page: Page): Promise<{
 }> {
   const base = await page.evaluate(() => {
     const win = document.querySelector<HTMLElement>(
-      'section.tool-window[aria-label="Catálogo"]',
+      'section.tool-window[aria-label="Catalog"]',
     )!;
     const body = win.querySelector<HTMLElement>('.tool-window-body')!;
     const heights = [...win.querySelectorAll<HTMLElement>('.library-type > button')].map(
@@ -190,16 +191,16 @@ async function paletteReport(page: Page): Promise<{
   return { ...base, brokenNames: await brokenWords(page, '.library-type-name') };
 }
 
-test('1.1a Paleta com os Detalhes abertos e fechados: nome inteiro, botão inteiro, sem rolagem lateral', async ({
+test('1.1a Palette with Details open and closed: whole name, whole button, no side scrolling', async ({
   page,
 }) => {
   await openWithLibrary(page);
   await page.keyboard.press('Control+Shift+9');
-  await page.getByRole('tab', { name: 'Paleta' }).click();
+  await page.getByRole('tab', { name: 'Palette' }).click();
   await expect(page.locator('.library-type').first()).toBeVisible();
   const closed = await paletteReport(page);
   await page.keyboard.press('Control+Shift+3');
-  await expect(page.locator('section.tool-window[aria-label="Detalhes"]')).toBeVisible();
+  await expect(page.locator('section.tool-window[aria-label="Details"]')).toBeVisible();
   const open = await paletteReport(page);
   for (const r of [closed, open]) {
     expect(r.brokenNames).toEqual([]);

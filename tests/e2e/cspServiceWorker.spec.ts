@@ -8,8 +8,8 @@ import { extname, join, normalize } from 'node:path';
 import { addImage, createProject, watchViolations } from './helpers';
 import { solidPng } from './png';
 
-// Etapa 2.4: a CSP com o service worker (instalação, cache, aviso de nova versão),
-// na versão principal (/) e no preview (/preview/), como no GitHub Pages.
+// Stage 2.4: the CSP with the service worker (installation, cache, new version notice),
+// on the main version (/) and on the preview (/preview/), like on GitHub Pages.
 
 const DIST = join(process.cwd(), 'dist');
 
@@ -23,9 +23,9 @@ const MIME: Record<string, string> = {
 };
 
 /**
- * Serve pastas de build por `https://` (o service worker só existe em https), como o
- * GitHub Pages: `/` vem do build principal e `/preview/` do build do preview. O
- * certificado é autoassinado (openssl) e o contexto do teste ignora o erro dele.
+ * Serves build folders over `https://` (the service worker only exists on https), like
+ * GitHub Pages: `/` comes from the main build and `/preview/` from the preview build. The
+ * certificate is self-signed (openssl) and the test context ignores its error.
  */
 async function serveSite(
   dirs: { readonly main: string; readonly preview: string },
@@ -59,7 +59,7 @@ async function serveSite(
         /^\/+/,
         '',
       );
-      // Como o GitHub Pages: um diretório (`guia/`) serve o `index.html` dele.
+      // Like GitHub Pages: a directory (`guia/`) serves its `index.html`.
       const file = normalize(
         join(
           dir,
@@ -67,12 +67,12 @@ async function serveSite(
         ),
       );
       if (!file.startsWith(dir) || !existsSync(file) || !statSync(file).isFile()) {
-        response.writeHead(404).end('não encontrado');
+        response.writeHead(404).end('not found');
         return;
       }
       let body = readFileSync(file);
       if (file.endsWith('sw.js') && state.swVersionSuffix) {
-        // Simula um build novo: o sw.js muda, e é isso que o navegador detecta.
+        // Simulates a new build: sw.js changes, and that is what the browser detects.
         body = Buffer.from(
           body
             .toString('utf8')
@@ -95,7 +95,7 @@ async function serveSite(
     origin: `https://localhost:${port}`,
     close: () =>
       new Promise((resolve) => {
-        // O navegador mantém conexões keep-alive abertas: sem fechá-las, close() não termina.
+        // The browser keeps keep-alive connections open: without closing them, close() does not finish.
         server.close(() => resolve());
         server.closeAllConnections();
       }),
@@ -108,8 +108,8 @@ test.afterEach(async () => {
   openSite = null;
 });
 
-// Servidor https local com certificado autoassinado: o service worker só se registra
-// com o certificado aceito pelo navegador inteiro (não basta `ignoreHTTPSErrors`).
+// Local https server with a self-signed certificate: the service worker only registers
+// with the certificate accepted by the whole browser (`ignoreHTTPSErrors` is not enough).
 test.use({
   ignoreHTTPSErrors: true,
   launchOptions: {
@@ -118,11 +118,11 @@ test.use({
   },
 });
 
-test('GitHub Pages e preview: service worker instala, faz cache e avisa da versão nova', async ({
+test('GitHub Pages and preview: service worker installs, caches and announces the new version', async ({
   page,
   context,
 }) => {
-  // Inclui o build do preview (VITE_CHANNEL=preview) numa pasta temporária.
+  // Includes the preview build (VITE_CHANNEL=preview) in a temporary folder.
   test.setTimeout(90_000);
   const previewDir = mkdtempSync(join(tmpdir(), 'mapeador-preview-'));
   execFileSync(
@@ -136,9 +136,9 @@ test('GitHub Pages e preview: service worker instala, faz cache e avisa da vers�
   const origin = site.origin;
   const violations = await watchViolations(page);
 
-  // Versão principal: instala o service worker e o precache completo.
+  // Main version: installs the service worker and the full precache.
   await page.goto(`${origin}/`);
-  await expect(page.getByRole('button', { name: /Novo projeto/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /New project/ })).toBeVisible();
   await page.evaluate(() => navigator.serviceWorker.ready.then(() => undefined));
   await expect
     .poll(() =>
@@ -149,40 +149,41 @@ test('GitHub Pages e preview: service worker instala, faz cache e avisa da vers�
       }),
     )
     .toBeGreaterThanOrEqual(7);
-  // O manifest (manifest-src 'self') foi ligado pela app.
+  // The manifest (manifest-src 'self') was linked by the app.
   await expect(page.locator('link[rel=manifest]')).toHaveAttribute(
     'href',
     './manifest.webmanifest',
   );
 
-  // A app continua usável com o service worker no controle (offline inclusive).
+  // The app stays usable with the service worker in control (offline included).
   await expect
     .poll(() => page.evaluate(() => navigator.serviceWorker.controller !== null))
     .toBe(true);
-  await createProject(page, 'Projeto SW', `${origin}/`);
+  await createProject(page, 'SW project', `${origin}/`);
   await addImage(page);
-  // Versão nova: o sw.js muda → aviso → Atualizar → recarrega com o cache novo.
-  state.swVersionSuffix = '-nova';
+  // New version: sw.js changes → notice → Update → reloads with the new cache.
+  state.swVersionSuffix = '-new';
   await page.evaluate(() =>
     navigator.serviceWorker.getRegistration().then((r) => r?.update()),
   );
-  await expect(page.getByText('Nova versão disponível.')).toBeVisible();
-  await page.getByRole('button', { name: 'Atualizar', exact: true }).click();
-  await expect(page.getByText('Nova versão disponível.')).toBeHidden();
+  await expect(page.getByText('New version available.')).toBeVisible();
+  await page.getByRole('button', { name: 'Update', exact: true }).click();
+  await expect(page.getByText('New version available.')).toBeHidden();
   await expect
     .poll(() => page.evaluate(() => caches.keys()))
-    .toEqual([expect.stringMatching(/-nova$/)]);
+    .toEqual([expect.stringMatching(/-new$/)]);
 
   await context.setOffline(true);
   await page.reload();
-  await expect(page.getByRole('button', { name: /Novo projeto/ })).toBeVisible();
-  // O guia interativo (guia/) também vem do cache, sem rede.
+  await expect(page.getByRole('button', { name: /New project/ })).toBeVisible();
+  // The interactive guide (guia/) also comes from the cache, without network.
   await page.goto(`${origin}/guia/`);
+  // pt-BR kept: the interactive guide is pt-BR (its <title>)
   await expect(page).toHaveTitle('Guia do Mapping');
   await expect(page.locator('#steps button')).toHaveCount(14);
   await context.setOffline(false);
 
-  // Preview em /preview/: outro build, outro service worker, mesma política.
+  // Preview at /preview/: another build, another service worker, same policy.
   await page.goto(`${origin}/preview/`);
   await expect(page.getByText('PREVIEW', { exact: true }).first()).toBeVisible();
   await expect
@@ -205,9 +206,10 @@ test('GitHub Pages e preview: service worker instala, faz cache e avisa da vers�
     .getAttribute('content');
   expect(policy).toContain("connect-src 'none'");
 
-  // O guia do preview é o do build do preview, também do cache.
+  // The preview guide is the one from the preview build, also from the cache.
   await context.setOffline(true);
   await page.goto(`${origin}/preview/guia/`);
+  // pt-BR kept: the interactive guide is pt-BR (its <title>)
   await expect(page).toHaveTitle('Guia do Mapping');
   await expect(page.locator('#steps button')).toHaveCount(14);
   await context.setOffline(false);
@@ -215,17 +217,17 @@ test('GitHub Pages e preview: service worker instala, faz cache e avisa da vers�
   expect(violations()).toEqual([]);
 });
 
-test('Trusted Types ligado: o service worker registra e controla a página; imagem de outra origem não passa por ele', async ({
+test('Trusted Types on: the service worker registers and controls the page; an image from another origin does not go through it', async ({
   page,
   context,
 }) => {
   const site = await serveSite({ main: DIST, preview: DIST }, { swVersionSuffix: '' });
   openSite = site;
   const violations = await watchViolations(page);
-  // Host fictício respondido pelo Playwright: nunca rede real.
-  const IMAGE = 'https://imagens.mapping.test/x.png';
+  // Fictitious host answered by Playwright: never a real network.
+  const IMAGE = 'https://images.mapping.test/x.png';
   const served: string[] = [];
-  await context.route('https://imagens.mapping.test/**', (route) => {
+  await context.route('https://images.mapping.test/**', (route) => {
     served.push(route.request().url());
     return route.fulfill({
       status: 200,
@@ -236,8 +238,8 @@ test('Trusted Types ligado: o service worker registra e controla a página; imag
   });
 
   await page.goto(`${site.origin}/`);
-  await expect(page.getByRole('button', { name: /Novo projeto/ })).toBeVisible();
-  // Prova da exceção `./sw.js` na política: o registro passou pelo `createScriptURL`.
+  await expect(page.getByRole('button', { name: /New project/ })).toBeVisible();
+  // Proof of the `./sw.js` exception in the policy: the registration went through `createScriptURL`.
   await page.evaluate(() => navigator.serviceWorker.ready.then(() => undefined));
   await expect
     .poll(() => page.evaluate(() => navigator.serviceWorker.controller !== null))
@@ -258,7 +260,7 @@ test('Trusted Types ligado: o service worker registra e controla a página; imag
   expect(loaded).toBe(true);
   expect(response.fromServiceWorker()).toBe(false);
   expect(served).toEqual([IMAGE]);
-  // O service worker só atende a própria origem: nenhum pedido a outra origem foi dele.
+  // The service worker only serves its own origin: no request to another origin was its.
   expect(
     context
       .serviceWorkers()

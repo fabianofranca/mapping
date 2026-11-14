@@ -1,14 +1,14 @@
 import { expect, test } from '@playwright/test';
 import { createProject } from './helpers';
 
-// Barra de status a 900 px com uma mensagem longa (que encolhe) à esquerda ("1 aceita aguardando
-// aplicação"): a versão do build (à direita) nunca é cortada; quem trunca é a esquerda.
-// jsdom não tem layout; a medição é no Chromium.
+// Status bar at 900 px with a long message (which shrinks) on the left ("1 accepted awaiting
+// application"): the build version (on the right) is never cut; the left one is what truncates.
+// jsdom has no layout; the measurement is in Chromium.
 
 test.use({ viewport: { width: 900, height: 720 } });
 
-test('a versão não é cortada quando a mensagem da esquerda é longa', async ({ page }) => {
-  await createProject(page, 'Barra');
+test('the version is not cut when the left message is long', async ({ page }) => {
+  await createProject(page, 'Bar');
   const bar = page.locator('.statusbar');
   await expect(bar).toBeVisible();
   const result = await bar.evaluate((el) => {

@@ -1,7 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 import { fixtureZip } from './proposalFixture';
 
-// Fechar uma janela de ferramenta nunca deixa o foco no body (etapa #295, FJ1).
+// Closing a tool window never leaves focus on the body (stage #295, FJ1).
+// pt-BR kept: shared fixture data (proposalFixture zip) asserted by tests/examples and tests/store
 
 async function open(page: Page): Promise<void> {
   await page.goto('/');
@@ -12,36 +13,36 @@ async function open(page: Page): Promise<void> {
       mimeType: 'application/zip',
       buffer: await fixtureZip(),
     });
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
 }
 
 const activeTag = (page: Page) => page.evaluate(() => document.activeElement?.tagName);
 
-test('Árvore: fechar pelo atalho e pelo X mantém o foco fora do body', async ({
+test('Tree: closing by shortcut and by the X keeps focus off the body', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 860 });
   await open(page);
-  const tree = page.getByRole('region', { name: 'Árvore' });
-  // Se a Árvore já veio aberta, fecha para começar do canvas.
+  const tree = page.getByRole('region', { name: 'Tree' });
+  // If the Tree came open already, close it to start from the canvas.
   if (await tree.isVisible())
-    await page.getByRole('button', { name: /Fechar.*Árvore/ }).click();
-  await page.getByRole('main', { name: 'Canvas do projeto' }).focus();
+    await page.getByRole('button', { name: /Close.*Marking tree/ }).click();
+  await page.getByRole('main', { name: 'Project canvas' }).focus();
   await page.keyboard.press('Control+Shift+1');
   await expect(tree).toBeFocused();
   await tree.getByRole('button').first().focus();
   await page.keyboard.press('Control+Shift+1');
   await expect(tree).toBeHidden();
   expect(await activeTag(page)).not.toBe('BODY');
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeFocused();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeFocused();
 
-  // Pelo X, com a janela aberta pela faixa: o foco volta ao botão da faixa.
-  await page.getByRole('button', { name: 'Árvore de marcações', exact: true }).click();
+  // By the X, with the window opened from the strip: focus returns to the strip button.
+  await page.getByRole('button', { name: 'Marking tree', exact: true }).click();
   await tree.getByRole('button').first().focus();
-  await page.getByRole('button', { name: /Fechar.*Árvore/ }).click();
+  await page.getByRole('button', { name: /Close.*Marking tree/ }).click();
   await expect(tree).toBeHidden();
   expect(await activeTag(page)).not.toBe('BODY');
   await expect(
-    page.getByRole('button', { name: 'Árvore de marcações', exact: true }),
+    page.getByRole('button', { name: 'Marking tree', exact: true }),
   ).toBeFocused();
 });

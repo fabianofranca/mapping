@@ -15,9 +15,9 @@
  */
 
 // Trecho de compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Button.kt
-// do androidx (commit 5113b82a4ed6416d6344efa50e41db8cb65928ff): a assinatura e o KDoc do `Button`
-// e as duas sobrecargas de `ButtonDefaults.buttonColors`, sem os corpos (a `buttonElevation` ficou de fora). Fixture dos testes do
-// extrator `mapping-signature` e do roteiro R26; não compila.
+// from androidx (commit 5113b82a4ed6416d6344efa50e41db8cb65928ff): the signature and the KDoc of `Button`
+// and the two overloads of `ButtonDefaults.buttonColors`, without the bodies (`buttonElevation` was left out). Fixture of the tests of the
+// `mapping-signature` extractor and of script R26; it does not compile.
 
 package androidx.compose.material3
 

@@ -1,46 +1,47 @@
 import { expect, test, type Page } from '@playwright/test';
 import { fixtureZip } from './proposedComponentsFixture';
 
-// Etapa Proposto com componentes (PC1): a visão Proposto desenha os componentes que a
-// proposta cria (de um tipo já aplicado e de um pacote que a proposta traz); a Atual não.
-// O host do canvas publica `data-components` (quantos componentes foram desenhados).
+// Proposed-with-components stage (PC1): the Proposed view draws the components that the
+// proposal creates (of an already applied type and of a package the proposal brings); Current does not.
+// The canvas host publishes `data-components` (how many components were drawn).
+// pt-BR kept: shared fixture data (proposal title 'Telas novas') asserted by tests/e2e/proposedComponentsFixture.ts
 
 async function importFixture(page: Page): Promise<void> {
   await page.goto('/');
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
     .setInputFiles({
-      name: 'telas.zip',
+      name: 'screens.zip',
       mimeType: 'application/zip',
       buffer: await fixtureZip(),
     });
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
 }
 
-test('Proposto desenha os componentes que a proposta cria; Atual não', async ({
+test('Proposed draws the components that the proposal creates; Current does not', async ({
   page,
 }) => {
   await importFixture(page);
   const host = page.locator('.canvas-host');
 
-  // Janela Propostas (Ctrl+Shift+7) e Revisar: a revisão começa na visão Proposto.
+  // Proposals window (Ctrl+Shift+7) and Review: the review starts in the Proposed view.
   await page.keyboard.press('Control+Shift+7');
   await expect(page.getByText('Telas novas').first()).toBeVisible();
   await page
-    .getByRole('button', { name: /^Revisar/ })
+    .getByRole('button', { name: /^Review/ })
     .first()
     .click();
-  await expect(page.getByText('Somente leitura').first()).toBeVisible();
+  await expect(page.getByText('Read-only').first()).toBeVisible();
 
-  const view = page.getByRole('group', { name: 'Visão do canvas' });
-  const proposed = view.getByRole('button', { name: 'Proposto', exact: true });
-  const current = view.getByRole('button', { name: 'Atual', exact: true });
+  const view = page.getByRole('group', { name: 'Canvas view' });
+  const proposed = view.getByRole('button', { name: 'Proposed', exact: true });
+  const current = view.getByRole('button', { name: 'Current', exact: true });
   await expect(proposed).toHaveAttribute('aria-pressed', 'true');
 
-  // O tipo já aplicado e o do pacote da proposta (lido de proposals/<id>/) são desenhados.
+  // The already applied type and the one from the proposal package (read from proposals/<id>/) are drawn.
   await expect(host).toHaveAttribute('data-components', '2');
 
-  // Na Atual, nenhum dos dois existe ainda.
+  // In Current, neither of the two exists yet.
   await current.click();
   await expect(current).toHaveAttribute('aria-pressed', 'true');
   await expect(host).toHaveAttribute('data-components', '0');

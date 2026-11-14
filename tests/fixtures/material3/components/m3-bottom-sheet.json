@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "m3-bottom-sheet",
   "name": "Bottom sheet",
-  "description": "Modal bottom sheet: surface-container-low, cantos superiores extra-large (28), alça de 32 × 4 a 22 dp do topo, título e itens de lista.",
+  "description": "Modal bottom sheet: surface-container-low, extra-large top corners (28), 32 × 4 handle 22 dp from the top, title and list items.",
   "size": {
     "width": 412,
     "height": 320

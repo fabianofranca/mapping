@@ -1,11 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 
-// AC1 (#641): os avisos da lista da revisão (conflitos novos e proposta substituída) ocupam
-// uma linha, com X. Na altura padrão da janela Propostas (240 px), a 900×720 e a 1280×720,
-// a lista mostra 2 linhas inteiras com o aviso e 3 depois do X; o rodapé fica na janela.
-// O aviso sai da receita das "Medidas de partida" da #636: revisar, sair, renomear o
-// Cabeçalho para Topo e revisar de novo.
+// AC1 (#641): the review list notices (new conflicts and superseded proposal) take up
+// one line, with an X. At the default height of the Proposals window (240 px), at 900×720 and 1280×720,
+// the list shows 2 whole rows with the notice and 3 after the X; the footer stays in the window.
+// The notice comes from the "Starting measurements" recipe of #636: review, exit, rename the
+// Cabeçalho (Header) to Top and review again.
+// pt-BR kept: shared fixture data (proposta-exemplo.zip marking 'Cabeçalho') asserted by tests/examples
 
 const ZIP = readFileSync('examples/proposta-exemplo.zip');
 
@@ -14,30 +15,30 @@ async function openStaleReview(page: Page) {
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
     .setInputFiles({ name: 'loja.zip', mimeType: 'application/zip', buffer: ZIP });
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   await page.keyboard.press('Control+Shift+3');
   await page.keyboard.press('Control+Shift+7');
   await page
-    .getByRole('button', { name: /^Revisar/ })
+    .getByRole('button', { name: /^Review/ })
     .first()
     .click();
-  await page.getByRole('button', { name: 'Sair da revisão' }).click();
+  await page.getByRole('button', { name: 'Exit review' }).click();
   await page.locator('.tree-row', { hasText: 'Cabeçalho' }).first().click();
   const name = page
     .locator('[data-window="details"]')
-    .getByRole('textbox', { name: 'Nome' })
+    .getByRole('textbox', { name: 'Name' })
     .first();
-  await name.fill('Topo');
+  await name.fill('Top');
   await name.press('Enter');
   await page
-    .getByRole('button', { name: /^Revisar/ })
+    .getByRole('button', { name: /^Review/ })
     .first()
     .click();
   await expect(page.locator('.review-levels')).toBeVisible();
   await page.screenshot({});
 }
 
-/** Linhas da lista inteiras dentro do corpo rolável. */
+/** List rows fully inside the scrollable body. */
 async function wholeRows(page: Page): Promise<number> {
   return page.locator('.review-levels-body').evaluate((body) => {
     const view = body.getBoundingClientRect();
@@ -62,19 +63,19 @@ for (const size of [
   { width: 900, height: 720 },
   { width: 1280, height: 720 },
 ]) {
-  test(`aviso de conflitos novos numa linha a ${size.width}×${size.height}`, async ({
+  test(`new-conflicts notice on one line at ${size.width}×${size.height}`, async ({
     page,
   }) => {
     await page.setViewportSize(size);
     await openStaleReview(page);
     const notice = page.locator('.review-levels > .notice-box-line');
     await expect(notice).toBeVisible();
-    await expect(notice).toContainText('1 conflito(s) novo(s)');
+    await expect(notice).toContainText('1 new conflict(s)');
     await expect(
-      notice.getByRole('button', { name: /Ver os conflitos novos/ }),
-    ).toHaveText('Ver conflitos');
+      notice.getByRole('button', { name: /Show the new conflicts/ }),
+    ).toHaveText('Show conflicts');
 
-    // Uma linha: no máximo a altura de um controle pequeno mais a borda e as margens.
+    // One line: at most the height of a small control plus the border and margins.
     const limit = await page.evaluate(() => {
       const root = getComputedStyle(document.documentElement);
       const px = (token: string) => parseFloat(root.getPropertyValue(token));
@@ -86,7 +87,7 @@ for (const size of [
     expect(await wholeRows(page)).toBeGreaterThanOrEqual(2);
     await expectFooterInside(page);
 
-    await notice.getByRole('button', { name: 'Dispensar' }).click();
+    await notice.getByRole('button', { name: 'Dismiss' }).click();
     await expect(notice).toHaveCount(0);
     await expect(page.getByRole('tree', { name: /./ })).toBeFocused();
     expect(await wholeRows(page)).toBeGreaterThanOrEqual(3);

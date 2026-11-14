@@ -1,37 +1,37 @@
 # List item
 
-Item de lista de uma ou duas linhas: avatar ou ícone à esquerda, headline, texto de apoio e ícone à direita.
+One- or two-line list item: avatar or icon on the left, headline, supporting text and an icon on the right.
 
-Tipo de anotação: `m3-list-item` (List item).
+Annotation type: `m3-list-item` (List item).
 
-## Tamanho
+## Size
 
-- Inicial: 412 × 72 px
-- Mínimo: 120 × 48 px
-- Dimensionamento: largura fill, altura 72
+- Initial: 412 × 72 px
+- Minimum: 120 × 48 px
+- Sizing: width fill, height 72
 
-## Campos
+## Fields
 
-| Chave        | Rótulo          | Tipo   | Obrigatório | Opções                                                                                               | Padrão | Descrição |
-| ------------ | --------------- | ------ | ----------- | ---------------------------------------------------------------------------------------------------- | ------ | --------- |
-| `headline`   | Headline        | string | sim         |                                                                                                      |        |           |
-| `supporting` | Supporting text | string | não         |                                                                                                      |        |           |
-| `leading`    | Leading icon    | enum   | não         | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings |        |           |
-| `initials`   | Avatar initials | string | não         |                                                                                                      |        |           |
-| `trailing`   | Trailing icon   | enum   | não         | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings |        |           |
+| Key          | Label           | Type   | Required | Options                                                                                              | Default | Description |
+| ------------ | --------------- | ------ | -------- | ---------------------------------------------------------------------------------------------------- | ------- | ----------- |
+| `headline`   | Headline        | string | yes      |                                                                                                      |         |             |
+| `supporting` | Supporting text | string | no       |                                                                                                      |         |             |
+| `leading`    | Leading icon    | enum   | no       | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings |         |             |
+| `initials`   | Avatar initials | string | no       |                                                                                                      |         |             |
+| `trailing`   | Trailing icon   | enum   | no       | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings |         |             |
 
-## Exemplos
+## Examples
 
-- **Padrão**: headline=Headline, supporting=Supporting text, leading=person, trailing=chevron
+- **Default**: headline=Headline, supporting=Supporting text, leading=person, trailing=chevron
 
-## Origem externa
+## External origin
 
-Sistema `sdui`: tipo externo `ListItem`.
+System `sdui`: external type `ListItem`.
 
-| Campo        | Caminho em `props` |
-| ------------ | ------------------ |
-| `headline`   | `headline`         |
-| `supporting` | `supportingText`   |
-| `leading`    | `leadingIcon`      |
-| `initials`   | `avatar.initials`  |
-| `trailing`   | `trailingIcon`     |
+| Field        | Path in `props`   |
+| ------------ | ----------------- |
+| `headline`   | `headline`        |
+| `supporting` | `supportingText`  |
+| `leading`    | `leadingIcon`     |
+| `initials`   | `avatar.initials` |
+| `trailing`   | `trailingIcon`    |

@@ -10,15 +10,15 @@ import {
   type Point,
 } from './helpers';
 
-// Etapa Comentários, CM4: os pinos das conversas (escondidos por padrão), o botão Conversas, o botão
-// Comentar e o clique no pino. O canvas publica `data-pins` (quantos pinos desenhou).
+// Comments stage, CM4: the conversation pins (hidden by default), the Conversations button, the
+// Comment button and the click on the pin. The canvas publishes `data-pins` (how many pins it drew).
 
 async function setIdentity(page: Page): Promise<void> {
   await page.keyboard.press('Control+,');
   const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Nome', { exact: true }).fill('Marina Alves');
-  await dialog.getByLabel('E-mail', { exact: true }).fill('marina@exemplo.com');
-  await dialog.getByRole('button', { name: 'Salvar' }).click();
+  await dialog.getByLabel('Name', { exact: true }).fill('Marina Alves');
+  await dialog.getByLabel('Email', { exact: true }).fill('marina@example.com');
+  await dialog.getByRole('button', { name: 'Save' }).click();
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
 }
@@ -27,72 +27,72 @@ async function pins(host: Locator): Promise<number> {
   return Number((await host.getAttribute('data-pins')) ?? 0);
 }
 
-test('os pinos nascem escondidos, o Comentar abre o rascunho e o clique no pino abre a conversa', async ({
+test('the pins are born hidden, Comment opens the draft and the click on the pin opens the conversation', async ({
   page,
 }) => {
-  await createProject(page, 'Comentários');
+  await createProject(page, 'Comments');
   await addImage(page);
   await setIdentity(page);
   const host = page.locator('.canvas-host');
   const center = await canvasPoint(page);
   await drawMarking(page, center);
-  await setMode(page, 'Navegar');
-  const conversas = page.getByRole('button', { name: 'Conversas', exact: true });
-  await expect(conversas).toHaveAttribute('aria-pressed', 'false');
+  await setMode(page, 'Navigate');
+  const conversations = page.getByRole('button', { name: 'Conversations', exact: true });
+  await expect(conversations).toHaveAttribute('aria-pressed', 'false');
   expect(await pins(host)).toBe(0);
 
-  // Comentar: arma o clique, liga os pinos e, sobre a marcação, abre o rascunho ancorado nela.
-  await page.getByRole('button', { name: 'Comentar', exact: true }).first().click();
-  await expect(conversas).toHaveAttribute('aria-pressed', 'true');
+  // Comment: arms the click, turns the pins on and, over the marking, opens the draft anchored to it.
+  await page.getByRole('button', { name: 'Comment', exact: true }).first().click();
+  await expect(conversations).toHaveAttribute('aria-pressed', 'true');
   await page.mouse.click(center.x, center.y);
-  const composer = page.getByRole('textbox', { name: /Comentar como Marina Alves/ });
+  const composer = page.getByRole('textbox', { name: /Comment as Marina Alves/ });
   await expect(composer).toBeVisible();
-  await composer.fill('Qual é a variante?');
+  await composer.fill('What is the variant?');
   await composer.press('Control+Enter');
   await expect.poll(() => pins(host)).toBe(1);
 
-  // Desligar o Conversas esconde o pino (a conversa continua nos Detalhes).
+  // Turning Conversations off hides the pin (the conversation stays in Details).
   const elsewhere = await canvasPoint(page, 0.9);
   await page.mouse.click(elsewhere.x, elsewhere.y);
-  await conversas.click();
-  await expect(conversas).toHaveAttribute('aria-pressed', 'false');
+  await conversations.click();
+  await expect(conversations).toHaveAttribute('aria-pressed', 'false');
   await expect.poll(() => pins(host)).toBe(0);
-  // Ligar de novo traz o pino de volta.
-  await conversas.click();
+  // Turning it on again brings the pin back.
+  await conversations.click();
   await expect.poll(() => pins(host)).toBe(1);
 
-  // O clique no pino (canto de cima à direita da marcação, por fora) abre a conversa nos Detalhes.
+  // The click on the pin (top right corner of the marking, outside) opens the conversation in Details.
   await page.mouse.click(center.x + 60 + 22, center.y - 40 - 10);
-  await expect(page.getByText('Qual é a variante?')).toBeVisible();
+  await expect(page.getByText('What is the variant?')).toBeVisible();
   await expect(
-    page.getByRole('textbox', { name: /Responder como Marina Alves/ }),
+    page.getByRole('textbox', { name: /Reply as Marina Alves/ }),
   ).toBeVisible();
 });
 
-test('o Comentar num lugar vazio abre o rascunho num ponto, com o pino tracejado', async ({
+test('Comment on an empty spot opens the draft at a point, with the dashed pin', async ({
   page,
 }) => {
-  await createProject(page, 'Comentários ponto');
+  await createProject(page, 'Comments point');
   await addImage(page);
   await setIdentity(page);
   const host = page.locator('.canvas-host');
   const empty = await canvasPoint(page, 0.15);
-  await page.getByRole('button', { name: 'Comentar', exact: true }).first().click();
+  await page.getByRole('button', { name: 'Comment', exact: true }).first().click();
   await page.mouse.click(empty.x, empty.y);
   await expect(
-    page.getByRole('textbox', { name: /Comentar como Marina Alves/ }),
+    page.getByRole('textbox', { name: /Comment as Marina Alves/ }),
   ).toBeVisible();
-  // Nada gravado ainda, mas o rascunho mostra o pino tracejado.
+  // Nothing saved yet, but the draft shows the dashed pin.
   await expect.poll(() => pins(host)).toBe(1);
 });
 
 // ---------------------------------------------------------------------------------------------
-// CM5: o editor de citações (contenteditable com chips), num Chromium de verdade — o jsdom não
-// cobre seleção nem cursor. Projeto de PASTA (uma pasta do OPFS faz o papel da escolhida).
+// CM5: the citation editor (contenteditable with chips), in a real Chromium — jsdom does not
+// cover selection or cursor. FOLDER project (an OPFS folder plays the chosen one).
 
-const FOLDER = 'comentarios-e2e';
+const FOLDER = 'comments-e2e';
 const SDUI = join(process.cwd(), 'examples', 'specs', 'sdui.json');
-const EDITOR = /Comentar como|Responder como/;
+const EDITOR = /Comment as|Reply as/;
 const CHIP = 'span.citation-chip.citation-chip-editor';
 
 async function openFolderProject(page: Page, name: string): Promise<void> {
@@ -103,25 +103,25 @@ async function openFolderProject(page: Page, name: string): Promise<void> {
     });
   }, FOLDER);
   await page.goto('/');
-  await page.getByRole('button', { name: /Abrir pasta/ }).click();
+  await page.getByRole('button', { name: /Open folder/ }).click();
   await page.getByRole('textbox').fill(name);
-  await page.getByRole('button', { name: 'Criar' }).click();
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await page.getByRole('button', { name: 'Create' }).click();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
 }
 
-/** Desenha uma marcação em `fy`, dá nome a ela e a deixa selecionada. */
+/** Draws a marking at `fy`, names it and leaves it selected. */
 async function namedMarking(page: Page, fy: number, name: string): Promise<Point> {
   const at = await canvasPoint(page, fy);
   await drawMarking(page, at);
-  const field = page.getByLabel('Nome', { exact: true }).first();
+  const field = page.getByLabel('Name', { exact: true }).first();
   await field.fill(name);
   await field.press('Enter');
   return at;
 }
 
-/** Abre o rascunho de uma conversa ancorada na marcação em `at`. */
+/** Opens the draft of a conversation anchored to the marking at `at`. */
 async function openComposer(page: Page, at: Point): Promise<Locator> {
-  await page.getByRole('button', { name: 'Comentar', exact: true }).first().click();
+  await page.getByRole('button', { name: 'Comment', exact: true }).first().click();
   await page.mouse.click(at.x, at.y);
   const composer = page.getByRole('textbox', { name: EDITOR });
   await expect(composer).toBeVisible();
@@ -129,7 +129,7 @@ async function openComposer(page: Page, at: Point): Promise<Locator> {
   return composer;
 }
 
-/** Os arquivos `comments/<id>.json` da pasta do projeto, já lidos. */
+/** The `comments/<id>.json` files of the project folder, already read. */
 async function readThreads(page: Page): Promise<readonly Record<string, unknown>[]> {
   return page.evaluate(async (folder) => {
     const root = await navigator.storage.getDirectory();
@@ -143,7 +143,7 @@ async function readThreads(page: Page): Promise<readonly Record<string, unknown>
       try {
         out.push(JSON.parse(await file.text()));
       } catch {
-        // gravação em andamento (arquivo ainda incompleto): a próxima leitura do poll pega
+        // write in progress (file still incomplete): the next poll read picks it up
       }
     }
     return out;
@@ -153,17 +153,17 @@ async function readThreads(page: Page): Promise<readonly Record<string, unknown>
 const threadText = (threads: readonly Record<string, unknown>[]): string =>
   JSON.stringify(threads);
 
-test('o @ abre a lista de itens e o Enter troca o @termo por um chip', async ({
+test('the @ opens the item list and Enter swaps the @term for a chip', async ({
   page,
 }) => {
-  await openFolderProject(page, 'Citações');
+  await openFolderProject(page, 'Citations');
   await addImage(page);
   await setIdentity(page);
-  const at = await namedMarking(page, 1 / 3, 'Porta');
+  const at = await namedMarking(page, 1 / 3, 'Door');
   const composer = await openComposer(page, at);
 
-  await composer.pressSequentially('Veja @Por');
-  const picker = page.getByRole('listbox', { name: 'Itens para citar' });
+  await composer.pressSequentially('See @Doo');
+  const picker = page.getByRole('listbox', { name: 'Items to cite' });
   await expect(picker).toBeVisible();
   await expect(composer).toHaveAttribute('aria-controls', /./);
   await expect(picker.getByRole('option').first()).toBeVisible();
@@ -173,115 +173,115 @@ test('o @ abre a lista de itens e o Enter troca o @termo por um chip', async ({
   const chip = composer.locator(CHIP);
   await expect(chip).toHaveCount(1);
   await expect(chip).toHaveAttribute('role', 'img');
-  await expect(chip).toHaveAttribute('aria-label', 'Porta, citação');
-  await expect(chip).toHaveText('Porta');
-  // O `@Por` sumiu: o chip tomou o lugar dele.
-  await expect(composer).not.toContainText('@Por');
-  await expect(composer).toContainText('Veja');
+  await expect(chip).toHaveAttribute('aria-label', 'Door, citation');
+  await expect(chip).toHaveText('Door');
+  // The `@Doo` is gone: the chip took its place.
+  await expect(composer).not.toContainText('@Doo');
+  await expect(composer).toContainText('See');
 });
 
-test('o Backspace logo depois do chip apaga o chip inteiro', async ({ page }) => {
-  await openFolderProject(page, 'Citações backspace');
+test('Backspace right after the chip deletes the whole chip', async ({ page }) => {
+  await openFolderProject(page, 'Citations backspace');
   await addImage(page);
   await setIdentity(page);
-  const at = await namedMarking(page, 1 / 3, 'Porta');
+  const at = await namedMarking(page, 1 / 3, 'Door');
   const composer = await openComposer(page, at);
 
-  await composer.pressSequentially('@Por');
+  await composer.pressSequentially('@Doo');
   await composer.press('Enter');
   const chip = composer.locator(CHIP);
   await expect(chip).toHaveCount(1);
-  // O cursor fica depois do espaço que vem depois do chip: o primeiro Backspace tira o espaço…
+  // The cursor stays after the space that follows the chip: the first Backspace removes the space…
   await composer.press('Backspace');
   await expect(chip).toHaveCount(1);
-  // …e o segundo, colado ao chip, apaga o chip inteiro (não só uma letra do nome).
+  // …and the second, next to the chip, deletes the whole chip (not just one letter of the name).
   await composer.press('Backspace');
   await expect(chip).toHaveCount(0);
-  await expect(composer).not.toContainText('Porta');
+  await expect(composer).not.toContainText('Door');
 });
 
-/** Projeto de pasta com uma anotação SDUI "Input" (campo `id` preenchido) e uma marcação. */
+/** Folder project with an SDUI "Input" annotation (`id` field filled in) and a marking. */
 async function projectWithField(page: Page): Promise<Point> {
-  await openFolderProject(page, 'Citações propriedade');
+  await openFolderProject(page, 'Citations property');
   await addImage(page);
   await setIdentity(page);
-  const at = await namedMarking(page, 1 / 3, 'Porta');
+  const at = await namedMarking(page, 1 / 3, 'Door');
   await applySpecialization(page, SDUI);
-  await page
-    .getByRole('button', { name: 'Adicionar anotação na camada Componentes' })
-    .click();
+  await page.getByRole('button', { name: 'Add annotation to layer Componentes' }).click();
   await page.getByRole('button', { name: /^Input/ }).click();
   const id = page.getByLabel('id', { exact: true });
-  await id.fill('input_nome');
+  await id.fill('input_name');
   await id.press('Enter');
   return at;
 }
 
-test('colar a referência copiada de uma propriedade vira chip', async ({
+test('pasting the reference copied from a property becomes a chip', async ({
   page,
   context,
 }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   const at = await projectWithField(page);
-  // Sem texto selecionado no campo, o Ctrl+C copia a referência da propriedade.
+  // With no text selected in the field, Ctrl+C copies the property reference.
   await page.getByLabel('id', { exact: true }).press('Control+c');
   const reference = await page.evaluate(() => navigator.clipboard.readText());
   expect(reference).toMatch(new RegExp(`^mapping://${FOLDER}/a/[0-9a-f]{8}/f/id$`));
 
   const composer = await openComposer(page, at);
-  await composer.pressSequentially('Veja ');
+  await composer.pressSequentially('See ');
   await composer.press('Control+v');
   const chip = composer.locator(CHIP);
   await expect(chip).toHaveCount(1);
   await expect(chip).toHaveAttribute('data-url', reference);
-  await expect(chip).toHaveAttribute('aria-label', /, citação$/);
-  // O texto colado não ficou como URL solta.
+  await expect(chip).toHaveAttribute('aria-label', /, citation$/);
+  // The pasted text did not stay as a loose URL.
   await expect(composer).not.toContainText('mapping://');
 });
 
-test('o Ctrl+Enter envia e o arquivo em comments/ guarda o link markdown', async ({
+test('Ctrl+Enter sends and the file in comments/ keeps the markdown link', async ({
   page,
 }) => {
-  await openFolderProject(page, 'Citações envio');
+  await openFolderProject(page, 'Citations send');
   await addImage(page);
   await setIdentity(page);
-  const at = await namedMarking(page, 1 / 3, 'Porta');
+  const at = await namedMarking(page, 1 / 3, 'Door');
   const composer = await openComposer(page, at);
 
-  await composer.pressSequentially('Confira @Por');
+  await composer.pressSequentially('Check @Doo');
   await composer.press('Enter');
-  await composer.pressSequentially('agora');
+  await composer.pressSequentially('now');
   await composer.press('Control+Enter');
 
   await expect.poll(async () => (await readThreads(page)).length).toBe(1);
   const text = threadText(await readThreads(page));
   expect(text).toMatch(
-    new RegExp(`Confira \\[Porta\\]\\(mapping://${FOLDER}/m/[0-9a-f]{8}\\) agora`),
+    new RegExp(`Check \\[Door\\]\\(mapping://${FOLDER}/m/[0-9a-f]{8}\\) now`),
   );
-  // A mensagem enviada mostra o chip (botão), não o markdown.
-  const sent = page.getByRole('button', { name: 'Porta, citação' });
+  // The sent message shows the chip (button), not the markdown.
+  const sent = page.getByRole('button', { name: 'Door, citation' });
   await expect(sent).toBeVisible();
   await expect(sent).toHaveClass(/citation-chip/);
 });
 
-test('papéis e nomes acessíveis do campo, do chip e da lista', async ({ page }) => {
-  await openFolderProject(page, 'Citações acessibilidade');
+test('accessible roles and names of the field, the chip and the list', async ({
+  page,
+}) => {
+  await openFolderProject(page, 'Citations accessibility');
   await addImage(page);
   await setIdentity(page);
-  const at = await namedMarking(page, 1 / 3, 'Porta');
-  await namedMarking(page, 0.7, 'Janela');
+  const at = await namedMarking(page, 1 / 3, 'Door');
+  await namedMarking(page, 0.7, 'Window');
   const composer = await openComposer(page, at);
 
   await expect(composer).toHaveAttribute('role', 'textbox');
   await expect(composer).toHaveAttribute('aria-multiline', 'true');
-  // role=textbox não admite aria-haspopup/aria-expanded; aria-controls só com a lista aberta.
+  // role=textbox does not allow aria-haspopup/aria-expanded; aria-controls only with the list open.
   await expect(composer).not.toHaveAttribute('aria-haspopup', /./);
   await expect(composer).not.toHaveAttribute('aria-expanded', /./);
   await expect(composer).not.toHaveAttribute('aria-controls', /./);
   await expect(composer).not.toHaveAttribute('aria-activedescendant', /./);
 
   await composer.pressSequentially('@');
-  const picker = page.getByRole('listbox', { name: 'Itens para citar' });
+  const picker = page.getByRole('listbox', { name: 'Items to cite' });
   await expect(picker).toBeVisible();
   const options = picker.getByRole('option');
   expect(await options.count()).toBeGreaterThan(1);
@@ -290,7 +290,7 @@ test('papéis e nomes acessíveis do campo, do chip e da lista', async ({ page }
     (await picker.getAttribute('id')) ?? '',
   );
 
-  // O `aria-activedescendant` aponta a opção ativa (a selecionada) e acompanha as setas.
+  // The `aria-activedescendant` points to the active option (the selected one) and follows the arrows.
   const active = async (): Promise<string> => {
     const id = (await composer.getAttribute('aria-activedescendant')) ?? '';
     expect(id).not.toBe('');
@@ -306,47 +306,47 @@ test('papéis e nomes acessíveis do campo, do chip e da lista', async ({ page }
   await composer.press('ArrowUp');
   expect(await active()).toBe(first);
 
-  // Depois de escolher, o chip é lido como "<nome>, citação" e a lista fecha.
+  // After choosing, the chip is read as "<name>, citation" and the list closes.
   await composer.press('Enter');
   await expect(picker).toBeHidden();
   await expect(composer).not.toHaveAttribute('aria-controls', /./);
   const chip = composer.locator(CHIP);
   await expect(chip).toHaveCount(1);
   const name = await chip.textContent();
-  await expect(chip).toHaveAttribute('aria-label', `${name}, citação`);
-  await expect(page.getByRole('img', { name: `${name}, citação` })).toHaveCount(1);
+  await expect(chip).toHaveAttribute('aria-label', `${name}, citation`);
+  await expect(page.getByRole('img', { name: `${name}, citation` })).toHaveCount(1);
 });
 
-test('o chip é vivo: renomear o alvo muda o nome e apagar o alvo risca o chip', async ({
+test('the chip is live: renaming the target changes the name and deleting the target strikes the chip', async ({
   page,
 }) => {
-  await openFolderProject(page, 'Citações vivas');
+  await openFolderProject(page, 'Citations live');
   await addImage(page);
   await setIdentity(page);
-  const target = await namedMarking(page, 0.7, 'Janela');
-  const anchor = await namedMarking(page, 1 / 3, 'Porta');
+  const target = await namedMarking(page, 0.7, 'Window');
+  const anchor = await namedMarking(page, 1 / 3, 'Door');
   const composer = await openComposer(page, anchor);
 
-  await composer.pressSequentially('Veja @Jan');
+  await composer.pressSequentially('See @Win');
   await composer.press('Enter');
   await composer.press('Control+Enter');
-  const sent = page.getByRole('button', { name: 'Janela, citação' });
+  const sent = page.getByRole('button', { name: 'Window, citation' });
   await expect(sent).toBeVisible();
   await expect
     .poll(async () => threadText(await readThreads(page)))
-    .toContain('[Janela](');
+    .toContain('[Window](');
 
-  // Renomeia o alvo: a mensagem mostra o nome de agora.
+  // Rename the target: the message shows the current name.
   await page.mouse.click(target.x, target.y);
-  const name = page.getByLabel('Nome', { exact: true }).first();
-  await name.fill('Janela lateral');
+  const name = page.getByLabel('Name', { exact: true }).first();
+  await name.fill('Side window');
   await name.press('Enter');
   await page.mouse.click(anchor.x, anchor.y);
-  const renamed = page.getByRole('button', { name: 'Janela lateral, citação' });
+  const renamed = page.getByRole('button', { name: 'Side window, citation' });
   await expect(renamed).toBeVisible();
   await expect(renamed).not.toHaveClass(/citation-chip-broken/);
 
-  // Apaga o alvo: o chip continua na mensagem, riscado.
+  // Delete the target: the chip stays in the message, struck through.
   await page.mouse.click(target.x, target.y);
   await page.keyboard.press('Delete');
   await page.mouse.click(anchor.x, anchor.y);

@@ -2,10 +2,10 @@ import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { addImage, canvasPoint, createProject, drag, setMode } from './helpers';
 
-// Dica do modo Desenhar na barra do canvas (etapa #810, AD1): ela não flutua mais sobre a
-// imagem; ocupa o lugar de "Nada selecionado" e, a 900 px, encolhe com reticências e `title`.
+// Draw mode hint in the canvas bar (stage #810, AD1): it no longer floats over the
+// image; it takes the place of "Nothing selected" and, at 900 px, shrinks with an ellipsis and `title`.
 
-const HINT = 'Arraste sobre uma imagem para criar uma marcação.';
+const HINT = 'Drag over an image to create a marking.';
 
 async function openExample(page: Page): Promise<void> {
   await page.goto('/');
@@ -16,12 +16,12 @@ async function openExample(page: Page): Promise<void> {
       mimeType: 'application/zip',
       buffer: readFileSync('examples/exemplo-completo.zip'),
     });
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
 }
 
 async function drawAtLowZoom(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Desenhar', exact: true }).click();
-  await page.getByRole('main', { name: 'Canvas do projeto' }).click({
+  await page.getByRole('button', { name: 'Draw', exact: true }).click();
+  await page.getByRole('main', { name: 'Project canvas' }).click({
     position: { x: 4, y: 4 },
   });
   await page.keyboard.press('Escape');
@@ -32,14 +32,14 @@ for (const size of [
   { width: 1280, height: 720 },
   { width: 900, height: 720 },
 ]) {
-  test(`dica do Desenhar na barra do canvas a ${size.width}×${size.height}`, async ({
+  test(`Draw hint in the canvas bar at ${size.width}×${size.height}`, async ({
     page,
   }) => {
     await page.setViewportSize(size);
     await openExample(page);
     await drawAtLowZoom(page);
 
-    // Nenhum aviso flutuando sobre o canvas.
+    // No notice floating over the canvas.
     await expect(page.locator('.canvas-overlay .notice')).toHaveCount(0);
     await expect(page.locator('.canvas-hint')).toHaveCount(0);
 
@@ -53,7 +53,7 @@ for (const size of [
     expect(e.title).toBe(HINT);
     if (e.cut) expect(e.ellipsis).toBe('ellipsis');
 
-    // Nenhum item da barra do canvas passa da borda dela.
+    // No canvas bar item goes past its edge.
     const overflow = await page.locator('.canvas-bar').evaluate((bar) => {
       const right = bar.getBoundingClientRect().right;
       return {
@@ -68,40 +68,38 @@ for (const size of [
   });
 }
 
-// Aviso curto no pé do canvas (PV2, decisão 7): "Cada lado precisa ter pelo menos 8 px."
-// fica à esquerda, da largura do texto, sem passar sob o minimapa nem cobrir o topo da imagem.
-// Com Árvore e Detalhes abertos a 900×720 o canvas fica com ~360 px e o pé com ~200 px (CL1, 1.1):
-// o aviso quebra em duas linhas em vez de ser cortado com reticências.
+// Short notice at the foot of the canvas (PV2, decision 7): "Each side must be at least 8 px."
+// stays on the left, the width of the text, without going under the minimap or covering the top of the image.
+// With Tree and Details open at 900×720 the canvas gets ~360 px and the foot ~200 px (CL1, 1.1):
+// the notice wraps into two lines instead of being cut with an ellipsis.
 for (const size of [
   { width: 1280, height: 720, panels: false },
   { width: 900, height: 720, panels: false },
   { width: 900, height: 720, panels: true },
   { width: 1440, height: 900, panels: false },
 ]) {
-  test(`aviso de 8 px no pé do canvas a ${size.width}×${size.height}${size.panels ? ' com Árvore e Detalhes' : ''}`, async ({
+  test(`8 px notice at the foot of the canvas at ${size.width}×${size.height}${size.panels ? ' with Tree and Details' : ''}`, async ({
     page,
   }) => {
     await page.setViewportSize({ width: size.width, height: size.height });
-    await createProject(page, 'Aviso');
+    await createProject(page, 'Notice');
     if (size.panels) {
-      for (const name of ['Árvore de marcações', 'Detalhes']) {
+      for (const name of ['Marking tree', 'Details']) {
         const toggle = page.getByRole('button', { name, exact: true });
         if ((await toggle.getAttribute('aria-pressed')) !== 'true') await toggle.click();
       }
     }
     await addImage(page);
-    // Zoom acima de 100%: 7 px de tela são menos que os 8 px da imagem.
+    // Zoom above 100%: 7 screen px are less than the 8 image px.
     for (let i = 0; i < 2; i++) await page.keyboard.press('Control+Equal');
     const start = await canvasPoint(page, 1 / 2);
-    await setMode(page, 'Desenhar');
+    await setMode(page, 'Draw');
     await page.mouse.click(start.x, start.y);
     await drag(page, start, { x: start.x + 7, y: start.y + 7 });
-    const box = (await page
-      .getByRole('main', { name: 'Canvas do projeto' })
-      .boundingBox())!;
+    const box = (await page.getByRole('main', { name: 'Project canvas' }).boundingBox())!;
 
     const notice = page.locator('.canvas-overlay-foot .notice', {
-      hasText: 'Cada lado precisa ter pelo menos 8 px.',
+      hasText: 'Each side must be at least 8 px.',
     });
     await expect(notice).toBeVisible();
     await expect(page.locator('.canvas-overlay .notice')).toHaveCount(0);
@@ -120,7 +118,7 @@ for (const size of [
         right: r.right - c.left,
       };
     });
-    // O texto inteiro: nada cortado por `overflow` (CL1, achado 1.1).
+    // The whole text: nothing cut by `overflow` (CL1, finding 1.1).
     const cut = await notice.evaluate((el) => el.scrollWidth > el.clientWidth);
     expect(cut, JSON.stringify(m)).toBe(false);
     expect(m.left, JSON.stringify(m)).toBeLessThan(24);
@@ -128,7 +126,7 @@ for (const size of [
     expect(m.bottomGap, JSON.stringify(m)).toBeLessThan(m.top);
     if (m.miniLeft !== null)
       expect(m.right, JSON.stringify(m)).toBeLessThanOrEqual(m.miniLeft);
-    // Abaixo do topo da imagem enquadrada: o aviso não cobre a metade de cima do canvas.
+    // Below the top of the fitted image: the notice does not cover the upper half of the canvas.
     expect(m.top, JSON.stringify(m)).toBeGreaterThan(box.height / 2);
   });
 }

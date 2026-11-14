@@ -1,35 +1,35 @@
 # Checkbox
 
-Checkbox de 18 dp (forma 2) com rótulo body-large.
+18 dp checkbox (shape 2) with a body-large label.
 
-Tipo de anotação: `m3-checkbox` (Checkbox).
+Annotation type: `m3-checkbox` (Checkbox).
 
-## Tamanho
+## Size
 
-- Inicial: 200 × 40 px
-- Mínimo: 40 × 24 px
-- Dimensionamento: largura fill, altura 40
+- Initial: 200 × 40 px
+- Minimum: 40 × 24 px
+- Sizing: width fill, height 40
 
-## Campos
+## Fields
 
-| Chave     | Rótulo  | Tipo   | Obrigatório | Opções   | Padrão | Descrição |
-| --------- | ------- | ------ | ----------- | -------- | ------ | --------- |
-| `label`   | Label   | string | não         |          |        |           |
-| `checked` | Checked | enum   | não         | sim, não | não    |           |
-| `error`   | Error   | enum   | não         | sim, não | não    |           |
+| Key       | Label   | Type   | Required | Options  | Default | Description |
+| --------- | ------- | ------ | -------- | -------- | ------- | ----------- |
+| `label`   | Label   | string | no       |          |         |             |
+| `checked` | Checked | enum   | no       | sim, não | não     |             |
+| `error`   | Error   | enum   | no       | sim, não | não     |             |
 
-## Exemplos
+## Examples
 
-- **Padrão**: label=Label, checked=sim, error=não
-- **Desmarcado**: label=Label, checked=não, error=não
-- **Com erro**: label=Label, checked=sim, error=sim
+- **Default**: label=Label, checked=sim, error=não
+- **Unchecked**: label=Label, checked=não, error=não
+- **With error**: label=Label, checked=sim, error=sim
 
-## Origem externa
+## External origin
 
-Sistema `sdui`: tipo externo `Checkbox`.
+System `sdui`: external type `Checkbox`.
 
-| Campo     | Caminho em `props` |
-| --------- | ------------------ |
-| `label`   | `label`            |
-| `checked` | `checked`          |
-| `error`   | `error`            |
+| Field     | Path in `props` |
+| --------- | --------------- |
+| `label`   | `label`         |
+| `checked` | `checked`       |
+| `error`   | `error`         |

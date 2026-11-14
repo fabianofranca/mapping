@@ -8,40 +8,40 @@ import {
   type Rect,
 } from './helpers';
 
-// Etapa Marcações espaciais, ME1: marcação do canvas e pertencimento por geometria. O canvas
-// publica no container (`.canvas-host`) as contagens do que já desenhou: `data-canvas-markings`
-// é a das marcações do canvas.
+// Spatial markings stage, ME1: canvas marking and containment by geometry. The canvas
+// publishes on the container (`.canvas-host`) the counts of what it has already drawn: `data-canvas-markings`
+// is the one for the canvas markings.
 
-/** Margem, em px de tela, que o enquadramento deixa em volta de tudo (`FIT_PADDING`). */
+/** Margin, in screen px, that the fit leaves around everything (`FIT_PADDING`). */
 const FIT_PADDING = 24;
 
-/** Novo container (Personalizado) com o nome dado, pelo diálogo. */
+/** New container (Custom) with the given name, through the dialog. */
 async function addContainer(page: Page, host: Locator, name: string): Promise<void> {
   const before = Number((await host.getAttribute('data-images')) ?? 0);
-  await page.getByRole('button', { name: 'Novo container' }).first().click();
+  await page.getByRole('button', { name: 'New container' }).first().click();
   const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Nome', { exact: true }).fill(name);
-  await dialog.getByRole('button', { name: 'Criar container' }).click();
+  await dialog.getByLabel('Name', { exact: true }).fill(name);
+  await dialog.getByRole('button', { name: 'Create container' }).click();
   await expect(dialog).toBeHidden();
   await expect(host).toHaveAttribute('data-images', String(before + 1));
 }
 
-/** Enquadrar tudo, esperando o canvas desenhar o enquadramento novo. */
+/** Fit all, waiting for the canvas to draw the new fit. */
 async function fitAll(page: Page, host: Locator): Promise<void> {
   const before = Number((await host.getAttribute('data-fits')) ?? 0);
-  await page.getByRole('button', { name: 'Enquadrar tudo' }).click();
+  await page.getByRole('button', { name: 'Fit all' }).click();
   await expect(host).toHaveAttribute('data-fits', String(before + 1));
 }
 
 /**
- * Onde cada container está na tela, logo depois de Enquadrar tudo: as posições vêm do
- * `mapping.json` exportado e o enquadramento é o do canvas (`fitRect`: tudo centrado, com a
- * margem de `FIT_PADDING`).
+ * Where each container is on screen, right after Fit all: the positions come from the
+ * exported `mapping.json` and the fit is the canvas one (`fitRect`: everything centered, with the
+ * `FIT_PADDING` margin).
  */
 async function containerRects(page: Page, host: Locator): Promise<Map<string, Rect>> {
   const { mapping } = await exportMapping(page);
   const box = await host.boundingBox();
-  if (!box) throw new Error('canvas sem tamanho');
+  if (!box) throw new Error('canvas has no size');
   const canvas = mapping.containers.map((c) => ({
     id: c.id,
     x: c.placement.x,
@@ -90,24 +90,24 @@ const union = (a: Rect, b: Rect): Rect => {
 };
 
 /**
- * Botão Desfazer/Refazer da barra: um clique é um passo do histórico, como o atalho, sem depender
- * de onde o foco ficou depois de exportar o zip.
+ * Undo/Redo button of the bar: one click is one history step, like the shortcut, without depending
+ * on where the focus ended up after exporting the zip.
  */
-function historyButton(page: Page, name: 'Desfazer' | 'Refazer') {
+function historyButton(page: Page, name: 'Undo' | 'Redo') {
   return page.getByRole('button', { name: new RegExp(`^${name}`) }).first();
 }
 
-test('desenhar no vazio em volta de dois containers cria uma marcação do canvas; desfazer volta tudo em uma vez', async ({
+test('drawing in the empty space around two containers creates a canvas marking; undo reverts everything at once', async ({
   page,
 }) => {
   await createProject(page, 'Canvas');
   const host = page.locator('.canvas-host');
-  // Três telas lado a lado (variações dark, light e custom de uma mesma tela).
-  for (const name of ['Claro', 'Escuro', 'Custom']) await addContainer(page, host, name);
+  // Three screens side by side (dark, light and custom variations of the same screen).
+  for (const name of ['Light', 'Dark', 'Custom']) await addContainer(page, host, name);
   await fitAll(page, host);
   await expect(host).toHaveAttribute('data-canvas-markings', '0');
 
-  // Dois containers cuja caixa não toca o terceiro.
+  // Two containers whose box does not touch the third.
   const rects = await containerRects(page, host);
   const ids = [...rects.keys()];
   const pairs = ids.flatMap((a, i) => ids.slice(i + 1).map((b) => [a, b] as const));
@@ -116,12 +116,12 @@ test('desenhar no vazio em volta de dois containers cria uma marcação do canva
     const box = union(rects.get(a) as Rect, rects.get(b) as Rect);
     return third !== undefined && !overlaps(box, rects.get(third) as Rect);
   });
-  if (!pair) throw new Error('nenhum par de containers isolado do terceiro');
+  if (!pair) throw new Error('no pair of containers isolated from the third');
   const box = union(rects.get(pair[0]) as Rect, rects.get(pair[1]) as Rect);
   const third = rects.get(ids.find((id) => id !== pair[0] && id !== pair[1]) as string);
 
-  // No vazio: começa fora de todos os containers e termina além do par, sem encostar no terceiro
-  // (uma margem de até 8 px, no máximo metade do vão até ele).
+  // In the empty space: starts outside all containers and ends beyond the pair, without touching the third
+  // (a margin of up to 8 px, at most half the gap to it).
   const gap = third
     ? Math.max(
         third.x - (box.x + box.width),
@@ -132,20 +132,20 @@ test('desenhar no vazio em volta de dois containers cria uma marcação do canva
     : 16;
   const margin = Math.min(8, Math.floor(gap / 2));
   expect(margin).toBeGreaterThanOrEqual(2);
-  await setMode(page, 'Desenhar');
+  await setMode(page, 'Draw');
   await drag(
     page,
     { x: box.x - margin, y: box.y - margin },
     { x: box.x + box.width + margin, y: box.y + box.height + margin },
   );
-  await setMode(page, 'Navegar');
+  await setMode(page, 'Navigate');
   await expect(host).toHaveAttribute('data-canvas-markings', '1');
 
-  // No disco: a marcação é do canvas e os dois containers têm `parentId` dela; o terceiro, não.
+  // On disk: the marking belongs to the canvas and the two containers have its `parentId`; the third does not.
   const { mapping } = await exportMapping(page);
   expect(mapping.markings).toHaveLength(1);
   const canvasMarking = mapping.markings[0];
-  if (!canvasMarking) throw new Error('sem marcação do canvas');
+  if (!canvasMarking) throw new Error('no canvas marking');
   expect(canvasMarking).toMatchObject({
     containerId: null,
     parentId: null,
@@ -157,15 +157,15 @@ test('desenhar no vazio em volta de dois containers cria uma marcação do canva
     ),
   );
 
-  // Ctrl+Z desfaz tudo de uma vez: a marcação e o pertencimento.
-  await historyButton(page, 'Desfazer').click();
+  // Ctrl+Z undoes everything at once: the marking and the containment.
+  await historyButton(page, 'Undo').click();
   await expect(host).toHaveAttribute('data-canvas-markings', '0');
   const undone = (await exportMapping(page)).mapping;
   expect(undone.markings).toHaveLength(0);
   expect(undone.containers.every((c) => c.parentId === null)).toBe(true);
 
-  // E refazer traz as duas coisas de volta.
-  await historyButton(page, 'Refazer').click();
+  // And redo brings both things back.
+  await historyButton(page, 'Redo').click();
   await expect(host).toHaveAttribute('data-canvas-markings', '1');
   const redone = (await exportMapping(page)).mapping;
   expect(redone.containers.filter((c) => c.parentId === canvasMarking.id)).toHaveLength(
@@ -173,7 +173,7 @@ test('desenhar no vazio em volta de dois containers cria uma marcação do canva
   );
 });
 
-test('arrastar uma marcação de uma tela para a outra a torna marcação da outra, com o mesmo rect', async ({
+test('dragging a marking from one screen to the other makes it a marking of the other, with the same rect', async ({
   page,
 }) => {
   await createProject(page, 'Storyboard');
@@ -182,28 +182,28 @@ test('arrastar uma marcação de uma tela para a outra a torna marcação da out
   await fitAll(page, host);
   const rects = await containerRects(page, host);
   const [first, second] = [...rects.keys()];
-  if (first === undefined || second === undefined) throw new Error('sem containers');
+  if (first === undefined || second === undefined) throw new Error('no containers');
   const from = rects.get(first) as Rect;
   const to = rects.get(second) as Rect;
 
-  // Desenha uma marcação dentro do primeiro quadro (a bola do storyboard).
+  // Draw a marking inside the first frame (the storyboard ball).
   const ball = {
     x: from.x + from.width * 0.3,
     y: from.y + from.height * 0.3,
     width: from.width * 0.25,
     height: from.width * 0.25,
   };
-  await setMode(page, 'Desenhar');
+  await setMode(page, 'Draw');
   await drag(
     page,
     { x: ball.x, y: ball.y },
     { x: ball.x + ball.width, y: ball.y + ball.height },
   );
-  await setMode(page, 'Navegar');
+  await setMode(page, 'Navigate');
   const rect = await selectedRect(page);
   await expect(host).toHaveAttribute('data-canvas-markings', '0');
 
-  // Leva a marcação para o mesmo ponto do segundo quadro (os dois têm a mesma resolução).
+  // Take the marking to the same point of the second frame (both have the same resolution).
   const start = { x: ball.x + ball.width / 2, y: ball.y + ball.height / 2 };
   await drag(page, start, {
     x: start.x + (to.x - from.x),
@@ -214,19 +214,19 @@ test('arrastar uma marcação de uma tela para a outra a torna marcação da out
   expect(mapping.markings).toHaveLength(1);
   const moved = mapping.markings[0];
   expect(moved?.containerId).toBe(second);
-  // Mesma resolução: os mesmos pixels (com um pixel de folga pelo arredondamento do gesto).
+  // Same resolution: the same pixels (with a one pixel slack from the gesture rounding).
   for (const key of ['x', 'y', 'width', 'height'] as const) {
     expect(Math.abs((moved?.rect[key] ?? Number.NaN) - rect[key])).toBeLessThanOrEqual(2);
   }
   expect(mapping.containers.every((c) => c.parentId === null)).toBe(true);
 
-  // Um Ctrl+Z devolve a marcação ao primeiro quadro.
-  await historyButton(page, 'Desfazer').click();
+  // One Ctrl+Z returns the marking to the first frame.
+  await historyButton(page, 'Undo').click();
   const undone = (await exportMapping(page)).mapping;
   expect(undone.markings[0]?.containerId).toBe(first);
 });
 
-test('soltar um arrasto abaixo do mínimo avisa e não cria nada; clicar sem arrastar não avisa', async ({
+test('releasing a drag below the minimum warns and creates nothing; clicking without dragging does not warn', async ({
   page,
 }) => {
   await createProject(page, 'Aviso');
@@ -236,21 +236,21 @@ test('soltar um arrasto abaixo do mínimo avisa e não cria nada; clicar sem arr
   const rect = [...(await containerRects(page, host)).values()][0] as Rect;
   const { mapping } = await exportMapping(page);
   const image = mapping.containers[0];
-  if (!image) throw new Error('sem container');
-  // Px de tela por px da imagem. Um arrasto de 7 px de tela passa do limiar de 6 e fica abaixo
-  // dos 8 px da imagem quando o zoom é maior que 7/8; o enquadramento sozinho não garante isso.
+  if (!image) throw new Error('no container');
+  // Screen px per image px. A 7 screen px drag passes the threshold of 6 and stays below
+  // the 8 image px when the zoom is greater than 7/8; the fit alone does not guarantee that.
   const perPixel = rect.width / image.width;
   expect(perPixel).toBeGreaterThan(0.75);
-  const small = (6 + 8 * perPixel) / 2; // entre o limiar de arrasto e o mínimo, em px de tela
+  const small = (6 + 8 * perPixel) / 2; // between the drag threshold and the minimum, in screen px
   expect(small / perPixel).toBeLessThan(8);
   const start = { x: rect.x + rect.width / 3, y: rect.y + rect.height / 3 };
-  const warning = page.getByRole('status').filter({ hasText: 'Cada lado precisa ter' });
+  const warning = page.getByRole('status').filter({ hasText: 'Each side must be' });
 
-  await setMode(page, 'Desenhar');
+  await setMode(page, 'Draw');
   await page.mouse.click(start.x, start.y);
   await expect(warning).toHaveCount(0);
 
   await drag(page, start, { x: start.x + small, y: start.y + small });
-  await expect(warning).toContainText('pelo menos 8 px.');
+  await expect(warning).toContainText('at least 8 px.');
   expect((await exportMapping(page)).mapping.markings).toHaveLength(0);
 });
