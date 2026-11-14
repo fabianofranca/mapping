@@ -77,15 +77,20 @@ export type HeaderVariant =
   | 'canvas'
   | 'change';
 
+const GROUP_VARIANTS: Partial<Record<ReviewTarget['level'], HeaderVariant>> = {
+  proposal: 'proposal',
+  project: 'project',
+  canvas: 'canvas',
+  change: 'change',
+};
+
 export function headerVariant(
   target: ReviewTarget,
   whole: Change | null | undefined,
   changes: readonly Change[] = [],
 ): HeaderVariant {
-  if (target.level === 'proposal') return 'proposal';
-  if (target.level === 'project') return 'project';
-  if (target.level === 'canvas') return 'canvas';
-  if (target.level === 'change') return 'change';
+  const group = GROUP_VARIANTS[target.level];
+  if (group !== undefined) return group;
   const base = target.level === 'image' ? 'image' : 'marking';
   if (whole?.kind === 'create') return `${base}Create`;
   if (whole?.kind === 'remove') return `${base}Remove`;
