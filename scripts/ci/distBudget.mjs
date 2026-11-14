@@ -1,42 +1,42 @@
-// Subida automática do teto do `dist/index.html` (etapa #1324, decisões 6, 8 e 9), o teto num arquivo
-// de dados (etapa #1614, decisão 3) e a subida que nunca para a fila (etapa #1802, decisões 1 a 3).
-// Só Node, sem dependências.
-//   ceiling [--budget <arquivo>]
-//     Imprime o `indexHtmlMaxBytes` do arquivo. É o que o passo "Tamanho do dist/index.html" do
-//     `ci.yml` chama. Arquivo inválido sai com 2 e a mensagem no stderr.
-//   raise --size <bytes> --main-size <bytes> --review-ceiling <bytes> [--budget <arquivo>]
-//         [--write [--epic <nome>] [--date <AAAA-MM-DD>]]
-//     Sobe o teto o bastante para o build passar e imprime:
-//       "sobe: <teto> → <teto novo> (excesso E, crescimento G, subidas desde a revisão S)"
-//       "bug: <motivos separados por "; ">"  (2ª linha, só quando a subida passa de um limite)
-//       "nada a subir: ..." (o tamanho já cabe no teto)
-//     A subida é de `k` passos de 16 KiB, com `k` o menor inteiro ≥ 1 que deixa pelo menos 2 KiB de
-//     margem (k = ceil((excesso + 2 KiB) / 16 KiB)). Nunca para a fila esperando o dono: o excesso acima de
-//     14 KiB, o crescimento acima de 32 KiB sobre a `main` e as subidas desde a revisão do dono acima
-//     de 64 KiB só acrescentam a linha `bug:`, para o dono revisar depois.
-//     Com `--write` e a subida (com ou sem a linha `bug:`), troca o `indexHtmlMaxBytes` do arquivo e
-//     acrescenta a frase ao fim do `history` (com " Acima dos limites: …" quando há `bug:`).
-//     O código de saída é 0 em toda resposta; erro de uso sai com 2.
-// `--budget` tem como padrão `scripts/ci/dist-budget.json`, relativo à pasta corrente (a raiz do clone).
-// O `--ci <ci.yml>` saiu na etapa #1614 e é recusado.
-// As outras condições da decisão 6 (o tamanho é a única falha do PR) o chamador confere antes.
+// Automatic raise of the `dist/index.html` ceiling (stage #1324, decisions 6, 8 and 9), the ceiling in a
+// data file (stage #1614, decision 3) and the raise that never stops the queue (stage #1802, decisions 1 to 3).
+// Node only, no dependencies.
+//   ceiling [--budget <file>]
+//     Prints the file's `indexHtmlMaxBytes`. It is what the "Tamanho do dist/index.html" step of
+//     `ci.yml` calls. An invalid file exits with 2 and the message on stderr.
+//   raise --size <bytes> --main-size <bytes> --review-ceiling <bytes> [--budget <file>]
+//         [--write [--epic <name>] [--date <YYYY-MM-DD>]]
+//     Raises the ceiling enough for the build to pass and prints:
+//       "sobe: <ceiling> → <new ceiling> (excesso E, crescimento G, subidas desde a revisão S)"
+//       "bug: <reasons separated by "; ">"  (2nd line, only when the raise exceeds a limit)
+//       "nada a subir: ..." (the size already fits the ceiling)
+//     The raise is `k` steps of 16 KiB, with `k` the smallest integer ≥ 1 that leaves at least 2 KiB of
+//     margin (k = ceil((excess + 2 KiB) / 16 KiB)). It never stops the queue waiting for the owner: an excess above
+//     14 KiB, growth above 32 KiB over `main` and raises since the owner's review above
+//     64 KiB only add the `bug:` line, for the owner to review later.
+//     With `--write` and the raise (with or without the `bug:` line), it replaces the file's `indexHtmlMaxBytes` and
+//     appends the sentence to the end of `history` (with " Acima dos limites: …" when there is a `bug:`).
+//     The exit code is 0 on every answer; a usage error exits with 2.
+// `--budget` defaults to `scripts/ci/dist-budget.json`, relative to the current folder (the clone root).
+// `--ci <ci.yml>` was dropped in stage #1614 and is refused.
+// The other conditions of decision 6 (the size is the PR's only failure) the caller checks beforehand.
 import { readFileSync, writeFileSync } from 'node:fs';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 
 const KIB = 1024;
-/** Quanto o teto sobe de uma vez. */
+/** How much the ceiling rises at once. */
 export const RAISE_BYTES = 16 * KIB;
-/** Margem mínima que sobra depois da subida. */
+/** Minimum margin left after the raise. */
 export const MIN_MARGIN = 2 * KIB;
-/** Excesso máximo que a subida cobre: 14 KiB, para sobrar `MIN_MARGIN`. */
+/** Maximum excess the raise covers: 14 KiB, to leave `MIN_MARGIN`. */
 export const MAX_EXCESS = RAISE_BYTES - MIN_MARGIN;
-/** Crescimento máximo do épico sobre a `main`. */
+/** Maximum growth of the epic over `main`. */
 export const MAX_GROWTH = 32 * KIB;
-/** Soma máxima das subidas automáticas desde a última revisão do dono. */
+/** Maximum sum of the automatic raises since the owner's last review. */
 export const MAX_SINCE_REVIEW = 64 * KIB;
 
-/** Arquivo do teto, relativo à pasta corrente. */
+/** The ceiling file, relative to the current folder. */
 export const DEFAULT_BUDGET = 'scripts/ci/dist-budget.json';
 
 /** `1933312` → `1.933.312`. */
@@ -68,7 +68,7 @@ function overLimits({ excess, growth, since, steps }) {
   return over;
 }
 
-/** Decisão pura: `{ action: 'raise' | 'none', ... }`. A subida nunca é recusada (etapa #1802, decisão 1). */
+/** Pure decision: `{ action: 'raise' | 'none', ... }`. The raise is never refused (stage #1802, decision 1). */
 export function decide({ ceiling, size, mainSize, reviewCeiling }) {
   const excess = size - ceiling;
   if (excess <= 0) {
@@ -82,7 +82,7 @@ export function decide({ ceiling, size, mainSize, reviewCeiling }) {
   return { action: 'raise', ceiling, next, excess, growth, since, over };
 }
 
-/** A linha `sobe:` e, quando a subida passa de um limite, a linha `bug:` (separadas por `\n`). */
+/** The `sobe:` line and, when the raise exceeds a limit, the `bug:` line (separated by `\n`). */
 export function describeDecision(d) {
   if (d.action === 'none') return `nada a subir: ${d.reason}`;
   const sobe = `sobe: ${d.ceiling} → ${d.next} (excesso ${d.excess}, crescimento ${d.growth}, subidas desde a revisão ${d.since})`;
@@ -90,7 +90,7 @@ export function describeDecision(d) {
   return `${sobe}\nbug: ${d.over.map((o) => o.reason).join('; ')}`;
 }
 
-/** KiB com vírgula decimal só quando o teto não é múltiplo de 1 KiB: `1904` ou `1.904,5`. */
+/** KiB with a decimal comma only when the ceiling is not a multiple of 1 KiB: `1904` or `1.904,5`. */
 function kib(bytes) {
   const v = bytes / KIB;
   if (Number.isInteger(v)) return grouped(v);
@@ -98,7 +98,7 @@ function kib(bytes) {
   return `${grouped(int)},${frac}`;
 }
 
-/** Lê e valida o arquivo do teto: `{ indexHtmlMaxBytes: <inteiro positivo>, history: string[] }`. */
+/** Reads and validates the ceiling file: `{ indexHtmlMaxBytes: <positive integer>, history: string[] }`. */
 export function loadBudget(file) {
   let data;
   try {
@@ -192,8 +192,8 @@ export function main(argv) {
     if (!args.epic) throw new Error('--write precisa de --epic <nome>.');
     const date = args.date ?? new Date().toISOString().slice(0, 10);
     const next = applyRaise(data, d, { epic: args.epic, date });
-    // O texto que o Prettier deixa para JSON enquanto o `history` tem frases longas (o array não cabe
-    // numa linha); `tests/tooling/distBudget.test.ts` confere.
+    // The text Prettier leaves for JSON while `history` has long sentences (the array does not fit
+    // on one line); `tests/tooling/distBudget.test.ts` checks it.
     writeFileSync(file, `${JSON.stringify(next, null, 2)}\n`);
   }
   return describeDecision(d);

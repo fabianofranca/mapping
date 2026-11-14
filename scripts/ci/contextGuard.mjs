@@ -1,15 +1,15 @@
-// Gancho `PostToolUse` do Claude Code (etapa #1856, fase GC1): mede o contexto do fio principal
-// depois de cada chamada de ferramenta e, acima do gatilho, injeta o aviso de troca de sessão.
-// Só Node, sem dependências; a conta é a do `contextUsage.mjs` (`lastContext`).
-//   Ligado no `.claude/settings.json`: node "$CLAUDE_PROJECT_DIR/scripts/ci/contextGuard.mjs"
-//     Lê a entrada do gancho (JSON) no stdin. Só age na nuvem (`CLAUDE_CODE_REMOTE=true`), no fio
-//     principal (sem `agent_id`) e em sessão de fase ou de correção (o prompt inicial do transcript
-//     abre por `MARCADOR` ou pelo prompt curto do coordenador). Senão sai em silêncio.
-//     Com o contexto acima de `GATILHO`, e a cada +10 mil depois do último aviso, escreve no stdout
-//     `{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"<aviso>"}}`.
-//     O estado fica em `<os.tmpdir()>/context-guard/<session_id>.json`: `fase`, `contexto`,
-//     `ferramenta`, `ultimoAviso`, `saltos` (os 3 maiores) e `erro`.
-//     Sempre código 0: o gancho nunca trava nem atrasa uma chamada, e qualquer falha só cala.
+// Claude Code `PostToolUse` hook (stage #1856, phase GC1): measures the main thread's context
+// after every tool call and, above the trigger, injects the session-switch notice.
+// Node only, no dependencies; the measure is that of `contextUsage.mjs` (`lastContext`).
+//   Wired in `.claude/settings.json`: node "$CLAUDE_PROJECT_DIR/scripts/ci/contextGuard.mjs"
+//     Reads the hook input (JSON) from stdin. Only acts in the cloud (`CLAUDE_CODE_REMOTE=true`), on
+//     the main thread (no `agent_id`) and in a phase or fix session (the transcript's initial prompt
+//     opens with `MARCADOR` or with the coordinator's short prompt). Otherwise it exits silently.
+//     With the context above `GATILHO`, and at every +10 thousand after the last notice, it writes to stdout
+//     `{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"<notice>"}}`.
+//     The state lives in `<os.tmpdir()>/context-guard/<session_id>.json`: `fase`, `contexto`,
+//     `ferramenta`, `ultimoAviso`, `saltos` (the 3 largest) and `erro`.
+//     Always exit code 0: the hook never blocks or delays a call, and any failure only silences it.
 import {
   closeSync,
   mkdirSync,
@@ -27,20 +27,20 @@ import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 import { lastContext } from './contextUsage.mjs';
 
-/** Contexto, em tokens, acima do qual o gancho avisa (fonte única; o teto da fase é 300.000). */
+/** Context, in tokens, above which the hook warns (single source; the phase ceiling is 300,000). */
 export const GATILHO = 270000;
-/** O aviso se repete a cada alta de tanto contexto desde o último. */
+/** The notice repeats at every rise of this much context since the last one. */
 export const PASSO = 10000;
-/** Primeira frase da mensagem de "Para a sessão da fase" do `docs/FLOW.md`. */
+/** First sentence of the "For the phase session" message of `docs/FLOW.md`. */
 export const MARCADOR = 'Você é o agente da fase ';
 /**
- * Abertura do prompt curto que o coordenador manda de fato (skill `implementar-fila`, "Por etapa"):
+ * Opening of the short prompt the coordinator actually sends (skill `implementar-fila`, "Per stage"):
  * `Fase <código> — <título> da etapa #<n> (sub-issue #<n>), …`.
  */
 export const MARCADOR_FILA = /^Fase \S+ — .* da etapa #\d+ \(sub-issue #\d+\)/;
-/** O gancho lê só o fim do transcript, até esta quantidade de bytes. */
+/** The hook reads only the end of the transcript, up to this many bytes. */
 export const TAIL_BYTES = 2 * 1024 * 1024;
-/** O prompt inicial é procurado no começo do transcript, até esta quantidade de bytes. */
+/** The initial prompt is searched for at the start of the transcript, up to this many bytes. */
 export const HEAD_BYTES = 1024 * 1024;
 
 const TETO_MIL = 300;
@@ -48,7 +48,7 @@ const ROTULO_BASH = 40;
 const SALTOS_GUARDADOS = 3;
 const SESSION_ID = /^[A-Za-z0-9_-]+$/;
 
-/** Textos do prompt de uma linha `user` do transcript (a string, ou os blocos `text`). */
+/** Prompt texts of a `user` transcript line (the string, or the `text` blocks). */
 export function promptTexts(entry) {
   const content = entry?.message?.content;
   if (typeof content === 'string') return [content];
@@ -59,9 +59,9 @@ export function promptTexts(entry) {
 }
 
 /**
- * Textos da primeira linha `type: "user"` (a que não é meta) do começo do transcript, ou `null`
- * quando ainda não há uma linha completa dessas. Um bloco de lembrete antes do prompt não o esconde. Com `partial`, o texto é um pedaço do arquivo e a
- * última linha, que pode estar cortada, fica de fora.
+ * Texts of the first `type: "user"` line (the one that is not meta) at the start of the transcript, or
+ * `null` when there is not yet a complete such line. A reminder block before the prompt does not hide
+ * it. With `partial`, the text is a piece of the file and the last line, which may be cut off, is left out.
  */
 export function firstPrompt(head, partial = false) {
   const lines = head.split('\n');
@@ -78,7 +78,7 @@ export function firstPrompt(head, partial = false) {
   return null;
 }
 
-/** Se algum dos textos do prompt inicial abre uma sessão de fase ou de correção. */
+/** Whether any of the initial prompt's texts opens a phase or fix session. */
 export function isPhasePrompt(texts) {
   return texts.some((raw) => {
     const text = raw.trimStart();
@@ -86,29 +86,29 @@ export function isPhasePrompt(texts) {
   });
 }
 
-/** Rótulo da chamada para atribuir os saltos: `Bash: <40 caracteres>`, `Read: <arquivo>`, … */
+/** Call label to attribute the jumps: `Bash: <40 characters>`, `Read: <file>`, … */
 export function toolLabel(toolName, toolInput) {
   const name = typeof toolName === 'string' && toolName ? toolName : 'ferramenta';
   const input = toolInput !== null && typeof toolInput === 'object' ? toolInput : {};
   const field = { Bash: input.command, Read: input.file_path, Agent: input.description }[
     name
   ];
-  // Uma linha só: o aviso vai inteiro numa linha, e um comando pode ter quebras (heredoc).
+  // One line only: the whole notice goes on one line, and a command may have line breaks (heredoc).
   const text = typeof field === 'string' ? field.replace(/\s+/g, ' ').trim() : '';
   const shown = name === 'Bash' ? text.slice(0, ROTULO_BASH).trimEnd() : text;
   return shown ? `${name}: ${shown}` : name;
 }
 
-/** Os maiores saltos (`{ rotulo, mil }`), do maior para o menor, com o novo se ele entra. */
+/** The largest jumps (`{ rotulo, mil }`), largest first, with the new one if it makes it in. */
 export function addJump(jumps, rotulo, delta) {
   if (delta <= 0) return jumps;
   const all = [...jumps, { rotulo, mil: Math.ceil(delta / 1000) }];
-  // `sort` é estável: de salto igual, fica o que entrou antes.
+  // `sort` is stable: on an equal jump, the one that came first stays.
   all.sort((a, b) => b.mil - a.mil);
   return all.slice(0, SALTOS_GUARDADOS);
 }
 
-/** Se o contexto pede aviso: acima do gatilho e, depois de um aviso, a cada +`PASSO`. */
+/** Whether the context calls for a notice: above the trigger and, after a notice, at every +`PASSO`. */
 export function shouldWarn(contexto, ultimoAviso) {
   if (contexto <= GATILHO) return false;
   return (
@@ -116,7 +116,7 @@ export function shouldWarn(contexto, ultimoAviso) {
   );
 }
 
-/** O texto do aviso (uma linha), com o contexto e os maiores saltos da sessão. */
+/** The notice text (one line), with the context and the session's largest jumps. */
 export function warningText(contexto, jumps) {
   const mil = Math.ceil(contexto / 1000);
   const saltos =
@@ -133,7 +133,7 @@ export function warningText(contexto, jumps) {
   );
 }
 
-/** O JSON que o Claude Code lê no stdout do gancho. */
+/** The JSON that Claude Code reads from the hook's stdout. */
 export function warningOutput(contexto, jumps) {
   return JSON.stringify({
     hookSpecificOutput: {
@@ -154,11 +154,11 @@ function readRange(path, start, length) {
   }
 }
 
-/** Contexto da última chamada ao modelo: lê o fim do transcript e, sem medida lá, o arquivo todo. */
+/** Context of the last model call: reads the end of the transcript and, with no measure there, the whole file. */
 export function measureTranscript(path) {
   const size = statSync(path).size;
   if (size <= TAIL_BYTES) return lastContext(readFileSync(path, 'utf8'));
-  // A linha cortada no começo do pedaço não vale: o `JSON.parse` dela falha e ela é pulada.
+  // The line cut off at the start of the piece does not count: its `JSON.parse` fails and it is skipped.
   const tail = lastContext(readRange(path, size - TAIL_BYTES, TAIL_BYTES));
   return tail !== null ? tail : lastContext(readFileSync(path, 'utf8'));
 }
@@ -167,7 +167,7 @@ function statePath(sessionId) {
   return join(tmpdir(), 'context-guard', `${sessionId}.json`);
 }
 
-/** O estado da sessão, ou `null` sem arquivo; estado ilegível lança. */
+/** The session state, or `null` with no file; an unreadable state throws. */
 function loadState(file) {
   let text;
   try {
@@ -182,7 +182,7 @@ function loadState(file) {
   return state;
 }
 
-/** Grava por arquivo temporário e `rename`: chamadas paralelas não corrompem o estado. */
+/** Writes through a temporary file and `rename`: parallel calls do not corrupt the state. */
 function saveState(file, state) {
   mkdirSync(join(file, '..'), { recursive: true });
   const temp = `${file}.${process.pid}.tmp`;
@@ -197,7 +197,7 @@ function readInput(raw) {
   return input;
 }
 
-/** Decide se a sessão é de fase pelo prompt inicial; `null` enquanto o transcript não o traz. */
+/** Decides whether the session is a phase one by the initial prompt; `null` while the transcript does not have it yet. */
 function decidePhase(transcript) {
   const size = statSync(transcript).size;
   const texts = firstPrompt(
@@ -208,8 +208,8 @@ function decidePhase(transcript) {
 }
 
 /**
- * Processa uma chamada do gancho: devolve o JSON do aviso, ou `null` para o silêncio. Grava o
- * estado; lança em qualquer falha (quem chama a transforma em silêncio).
+ * Handles one hook call: returns the notice JSON, or `null` for silence. Writes the
+ * state; throws on any failure (the caller turns it into silence).
  */
 export function handle(input, env = process.env) {
   if (env.CLAUDE_CODE_REMOTE !== 'true') return null;
@@ -225,7 +225,7 @@ export function handle(input, env = process.env) {
   try {
     state = loadState(file);
   } catch (error) {
-    // Estado corrompido: recomeça e guarda o erro, em vez de calar a sessão para sempre.
+    // Corrupted state: start over and keep the error, instead of silencing the session forever.
     erro = error instanceof Error ? error.message : String(error);
   }
   let fase = state?.fase;
@@ -234,7 +234,7 @@ export function handle(input, env = process.env) {
     if (fase === null) return null;
   }
   if (!fase) {
-    // Decidida uma vez: a sessão que não é de fase não grava de novo nem relê o transcript.
+    // Decided once: a session that is not a phase one neither writes again nor rereads the transcript.
     if (state?.fase !== false || erro !== null)
       saveState(file, {
         fase: false,
@@ -258,7 +258,7 @@ export function handle(input, env = process.env) {
       : Array.isArray(state?.saltos)
         ? state.saltos
         : [];
-  // Contexto que volta ao gatilho ou abaixo (compactação) zera o aviso: o próximo cruzamento avisa.
+  // Context that returns to the trigger or below (compaction) resets the notice: the next crossing warns.
   const lastWarning =
     contexto > GATILHO && Number.isFinite(state?.ultimoAviso) ? state.ultimoAviso : null;
   const warn = shouldWarn(contexto, lastWarning);
@@ -277,7 +277,7 @@ function erroEstado(mensagem) {
   return mensagem === null ? null : { mensagem, em: new Date().toISOString() };
 }
 
-/** Grava o último erro no estado, quando dá; nunca lança. */
+/** Writes the last error to the state, when possible; never throws. */
 function recordError(raw, error) {
   try {
     const input = readInput(raw);
@@ -291,11 +291,11 @@ function recordError(raw, error) {
     } catch {
       state = null;
     }
-    if (state === null) return; // sessão que o gancho nem chegou a decidir: nada a registrar
+    if (state === null) return; // a session the hook never got to decide on: nothing to record
     const mensagem = error instanceof Error ? error.message : String(error);
     saveState(file, { ...state, erro: erroEstado(mensagem) });
   } catch {
-    // Sem como registrar: o gancho segue em silêncio.
+    // No way to record: the hook stays silent.
   }
 }
 
