@@ -181,7 +181,7 @@ describe('M4 grupo A — top-app-bar', () => {
     expect(metrics.lines![0]!.endsWith('…')).toBe(true);
     // a largura do título é o que sobra: 412 - (4 + 48 + 4) - (4 + 96 + 4)
     expect(title.width).toBe(412 - 56 - 104);
-    expect(d.warnings.filter((w) => /texto maior que a caixa/.test(w))).toEqual([]);
+    expect(d.warnings.filter((w) => /text larger than the box/.test(w))).toEqual([]);
   });
 
   it('centralizada: título centrado na largura da barra (margens iguais), em title-large e align center', () => {

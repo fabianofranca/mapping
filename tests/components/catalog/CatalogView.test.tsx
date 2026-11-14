@@ -551,7 +551,7 @@ describe('playground', () => {
     expect(Number(widthField().value)).toBeGreaterThan(120);
     expect(heightField().value).toBe('40');
     await waitFor(() =>
-      expect(within(stage()).queryByText(/conteúdo maior que a caixa/)).toBeNull(),
+      expect(within(stage()).queryByText(/content larger than the box/)).toBeNull(),
     );
   });
 

@@ -235,7 +235,7 @@ describe('validateLibrary com repeat', () => {
     const report = validate(comp);
     expect(report.errors).toEqual([]);
     expect(report.warnings.map((w) => w.message).join('\n')).not.toContain(
-      'conteúdo maior',
+      'content larger',
     );
   });
 });

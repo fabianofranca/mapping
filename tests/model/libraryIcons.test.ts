@@ -116,7 +116,7 @@ describe('validateLibrary: conjunto de ícones', () => {
     expect(report.warnings).toEqual([]);
   });
 
-  it('a prova de desenho avisa o ícone desconhecido do preview', () => {
+  it('a prova de desenho avisa o unknown icon do preview', () => {
     const comp = edit('components/badge.json', ['preview', 'icon'], 'nuvem');
     const report = validateLibrary({ files: pack({ 'components/badge.json': comp }) });
     expect(brief(report.warnings).join('\n')).toContain('unknown icon: nuvem');

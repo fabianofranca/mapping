@@ -188,7 +188,7 @@ describe('migrations: versões', () => {
 
   it('steps vazia', () => {
     const spec = withSteps();
-    expectIssue(spec, `${M0}.steps`, 'cannot be empty');
+    expectIssue(spec, `${M0}.steps`, 'cannot be an empty list');
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });
 
@@ -391,7 +391,7 @@ describe('migrations: o lado novo existe nesta versão', () => {
 
   it.each([
     ['label', 5, 'must be text'],
-    ['size', 'doze', 'must be a number'],
+    ['size', 'doze', 'the value must be a number'],
     ['when', '2026-02-30', 'must be a valid date YYYY-MM-DD'],
     ['when', 'hoje', 'must be a valid date YYYY-MM-DD'],
     ['style', 'secondary', 'must be one of the options'],
@@ -676,7 +676,7 @@ describe('migrations: tabela.coluna em fill-field', () => {
 
   it.each([
     ['rows.col', 5, 'must be text'],
-    ['rows.n', 'doze', 'must be a number'],
+    ['rows.n', 'doze', 'the value must be a number'],
     ['rows.d', '2026-02-30', 'must be a valid date YYYY-MM-DD'],
     ['rows.kind', 'z', 'must be one of the options'],
   ])('o default tem de servir ao tipo da coluna: %s com %j', (field, value, message) => {

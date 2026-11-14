@@ -279,7 +279,9 @@ describe('validate_specialization, validate_library e apply_specialization com a
       button(spec).code.compose.variants.field = 'label';
     });
     const expected = appErrors(text);
-    expect(expected).toEqual([`${FIELD}.field: "label" deve ser um campo enum do tipo`]);
+    expect(expected).toEqual([
+      `${FIELD}.field: "label" must be an enum field of the type`,
+    ]);
     const spec = ok(
       await mcp.call<Validated>('validate_specialization', {
         path: 'fontes/m3-ruim.json',
@@ -294,7 +296,7 @@ describe('validate_specialization, validate_library e apply_specialization com a
     expect(library.errors).toEqual([
       expect.objectContaining({
         path: `${FIELD}.cases.elevated`,
-        message: '"elevated" não está nas options de "style"',
+        message: '"elevated" is not in the options of "style"',
       }),
     ]);
     const plan = ok(
@@ -312,7 +314,7 @@ describe('validate_specialization, validate_library e apply_specialization com a
 
   it('variants numa 8 é o mesmo erro no caminho exato', async () => {
     const expected = appErrors(specText(undefined, 8));
-    expect(expected).toEqual([`${FIELD}: só é permitido com formatVersion 9`]);
+    expect(expected).toEqual([`${FIELD}: only allowed with formatVersion 9`]);
     const spec = ok(
       await mcp.call<Validated>('validate_specialization', { path: 'fontes/m3-v8.json' }),
     );
@@ -322,7 +324,7 @@ describe('validate_specialization, validate_library e apply_specialization com a
     expect(library.errors).toEqual([
       expect.objectContaining({
         path: FIELD,
-        message: 'só é permitido com formatVersion 9',
+        message: 'only allowed with formatVersion 9',
       }),
     ]);
     const plan = ok(

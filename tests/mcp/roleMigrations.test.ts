@@ -338,7 +338,7 @@ describe('validate_specialization e validate_library: formatVersion 12', () => {
     const result = await validate(withStep(11));
     expect(result.valid).toBe(false);
     expect(result.errors).toContain(
-      'migrations[0].steps[0].op: só é permitido com formatVersion 12',
+      'migrations[0].steps[0].op: only allowed with formatVersion 12',
     );
   });
 

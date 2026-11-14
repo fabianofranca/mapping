@@ -86,7 +86,7 @@ describe('rótulo da instância', () => {
     };
     expect(refLabel(p, ann('AM'))).toBe('Dono');
     expect(refTargetText(p, ann('AM'))).toBe('Dono');
-    expect(refLabel(removeAnnotation(p, 'AM'), ann('AM'))).toBe('(referência quebrada)');
+    expect(refLabel(removeAnnotation(p, 'AM'), ann('AM'))).toBe('(broken reference)');
     expect(refTargetText(removeAnnotation(p, 'AM'), ann('AM'))).toBeNull();
   });
 
@@ -99,7 +99,7 @@ describe('rótulo da instância', () => {
       entries: [],
     });
     expect(refTargetText(p, ann('AN'))).toBeNull();
-    expect(refLabel(p, ann('AN'))).toBe('Anotação');
+    expect(refLabel(p, ann('AN'))).toBe('Annotation');
   });
 });
 

@@ -312,7 +312,7 @@ describe('arrangeMarking: no canvas e assentar', () => {
     const { project, warnings } = arrange(p, 'C');
     // 2 × 100 + gap 8, a partir de x = 3000; a mesma largura que o teste dentro da imagem pediria.
     expect(rectOf(project, 'C')).toEqual(box(3000, 100, 208, 40));
-    expect(warnings.some((w) => w.text.includes('não cabe'))).toBe(false);
+    expect(warnings.some((w) => w.text.includes('larger than'))).toBe(false);
     expectValid(project);
   });
 

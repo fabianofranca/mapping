@@ -878,7 +878,7 @@ function tinyButton(files: readonly LibraryFile[]): LibraryFile[] {
 }
 
 describe('validateLibrary: nível 3 (prova de desenho)', () => {
-  it('conteúdo que não cabe vira aviso (aproximado), com o caso e o tamanho', () => {
+  it('conteúdo que não cabe vira aviso (approximate), com o caso e o tamanho', () => {
     const report = validate(tinyButton(miniPackage()));
     expect(report.ok).toBe(true);
     // O preview e os dois exemplos de valores, no tamanho inicial.
@@ -1068,12 +1068,12 @@ describe('validateLibrary: Material 3', () => {
       .filter((w) => w.path.startsWith('preview.'))
       .map((w) => `${w.file}:${w.path}`);
     expect(previews).toEqual([]);
-    // O tamanho mínimo não é desenhado: sem aviso de conteúdo maior que a caixa nele.
-    const drawing = report.warnings.filter((w) => w.message.endsWith('(aproximado)'));
-    expect(drawing.every((w) => w.message.includes('tamanho inicial'))).toBe(true);
+    // O tamanho mínimo não é desenhado: sem aviso de content larger than the box nele.
+    const drawing = report.warnings.filter((w) => w.message.endsWith('(approximate)'));
+    expect(drawing.every((w) => w.message.includes('initial size'))).toBe(true);
     // A tela de exemplo do SDUI está no pacote de teste, mas o M3_SPEC não a declara.
     const others = report.warnings.filter(
-      (w) => !w.path.startsWith('preview.') && !w.message.endsWith('(aproximado)'),
+      (w) => !w.path.startsWith('preview.') && !w.message.endsWith('(approximate)'),
     );
     expect(others.map(brief)).toEqual([]);
   });

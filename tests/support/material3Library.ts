@@ -204,7 +204,7 @@ export const LIMIT_EXAMPLES: Record<string, string> = {
 
 /**
  * Exemplos da v1 que a L2 (#1078) tirou: o `size` do tooltip (240 × 24) é o do `plain` e não comporta o `rich`, então o
- * exemplo dele passaria da caixa (aviso `conteúdo maior que a caixa`).
+ * exemplo dele passaria da caixa (aviso `content larger than the box`).
  */
 const L2_REMOVED_EXAMPLES: Record<string, string[]> = {
   tooltip: ['Rich com título', 'Rich com ação'],

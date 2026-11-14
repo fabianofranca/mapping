@@ -734,7 +734,7 @@ describe('EX4 — sem tabelas enumeradas', () => {
     expect(text('components/date-picker.json').length).toBeLessThan(52_000);
     // O time-picker passou de 36 kB com a cópia dos números dentro da `alça` (MF4, número sob a alça; cresce de 31 kB a ~40 kB):
     // teto de 41 kB (39.718). A L2 (#1078) posiciona os números pelas âncoras `right` e `bottom` e a cópia sob a alça por
-    // `max(…, -24)`, para nenhum filho passar da caixa do quadro `posição` (aviso `conteúdo maior que a caixa`): teto de 45 kB (hoje 43.643).
+    // `max(…, -24)`, para nenhum filho passar da caixa do quadro `posição` (aviso `content larger than the box`): teto de 45 kB (hoje 43.643).
     expect(text('components/time-picker.json').length).toBeLessThan(45_000);
   });
 });

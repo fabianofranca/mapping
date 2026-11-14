@@ -237,7 +237,7 @@ describe('M5 grupo B — tooltip', () => {
     expect(entryOf('tooltip').component!.minSize).toEqual({ width: 40, height: 24 });
     for (const mode of MODES) {
       const d = both('tooltip', {})[mode];
-      expect(d.warnings.filter((w) => /não cabe|maior que a caixa/.test(w))).toEqual([]);
+      expect(d.warnings.filter((w) => /larger than the box/.test(w))).toEqual([]);
     }
   });
 });

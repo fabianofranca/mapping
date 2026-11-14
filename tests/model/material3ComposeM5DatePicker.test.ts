@@ -129,7 +129,7 @@ const markedAll = (d: Drawing) =>
     });
 const markedOf = (d: Drawing, text: string) =>
   markedAll(d).find((m) => m.label.text === text);
-const BAD = /não cabe|texto maior que a caixa|unknown icon|ícone esticado|token/i;
+const BAD = /não cabe|text larger than the box|unknown icon|stretched icon|token/i;
 
 describe('M5 date-picker — contêiner e cabeçalho (modo single)', () => {
   it('contêiner em surface-container-high com raio corner-extra-large (28), sem sombra, em light e dark', () => {
@@ -267,7 +267,7 @@ describe('M5 date-picker — grade de dias', () => {
     const d = draw(SINGLE);
     expect(rect(d, 'grade')).toEqual([0, 224, 360, 240]);
     expect([d.root.width, d.root.height]).toEqual([360, 512]);
-    expect(d.warnings.filter((w) => /conteúdo maior que a caixa/.test(w))).toEqual([]);
+    expect(d.warnings.filter((w) => /content larger than the box/.test(w))).toEqual([]);
   });
 
   it('dia escolhido: círculo de 40 (DateContainerWidth/Height) corner-full em primary dentro da célula de 48, número em on-primary, em light e dark', () => {

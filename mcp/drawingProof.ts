@@ -34,8 +34,8 @@ export interface OverflowItem {
 }
 
 const KIND_OF_PREFIX: readonly [string, OverflowItem['kind']][] = [
-  ['texto maior que a caixa', 'text'],
-  ['conteúdo maior que a caixa', 'content'],
+  ['text larger than the box', 'text'],
+  ['content larger than the box', 'content'],
 ];
 
 const json = (value: unknown) => JSON.stringify(value);

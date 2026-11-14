@@ -422,7 +422,7 @@ describe('expandRepeats', () => {
     expect(out.values['$r0_1:chave']).toBe('c');
   });
 
-  it('coluna que nenhuma linha traz (projeto antigo) fica vazia, sem aviso de campo não informado', () => {
+  it('coluna que nenhuma linha traz (projeto antigo) fica vazia, sem aviso de field not provided', () => {
     const c = component(
       {},
       {
@@ -595,7 +595,7 @@ describe('instantiate com repeat', () => {
     expect(texts(root).map((t) => t.text)).toEqual(['T', 'n', '42', 'vazio', '']);
   });
 
-  it('o aviso de conteúdo maior que a caixa vale para as linhas que passam', () => {
+  it('o aviso de content larger than the box vale para as linhas que passam', () => {
     const { warnings } = draw(
       component(),
       { titulo: 'T', linhas: [...ROWS, ...ROWS, ...ROWS] },

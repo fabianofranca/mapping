@@ -154,10 +154,10 @@ describe('herdada.mjs (R25.83 a R25.86)', () => {
     );
     expect(result.errors).toEqual([]);
     // Provisório (decisão do dono pendente no bug #1774; curadoria na #1134): só os avisos
-    // `parâmetro fora da ficha` do conjunto conhecido da Material 3; qualquer outro aviso falha.
+    // `parameter outside the signature` do conjunto conhecido da Material 3; qualquer outro aviso falha.
     expect(
       result.warnings.filter(
-        (w) => !JSON.stringify(w).includes('parâmetro fora da ficha'),
+        (w) => !JSON.stringify(w).includes('parameter outside the signature'),
       ),
     ).toEqual([]);
     expect(result.valid).toBe(true);

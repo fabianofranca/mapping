@@ -14,8 +14,7 @@ import type { PathNode, SceneNode } from '../../../src/model/components/scene';
 import { walk } from '../../../src/model/components/scene';
 import { parseSpecText } from '../../../src/model/spec';
 import { modelMessage } from '../../../src/model/modelMessage';
-import { locale } from '../../../src/store/settings';
-import { messageText } from '../../../src/ui/modelMessage';
+import { ptBRText } from '../../support/modelText';
 
 const V4 = 'only allowed with formatVersion 4';
 
@@ -74,7 +73,7 @@ describe('parseIconsFile', () => {
     expect(parseIconsFile({ ...FILE, formatVersion: 2 }).ok).toBe(true);
   });
 
-  it('a mensagem de formatVersion inválido sai inteira em cada idioma (sem "ou" em inglês)', () => {
+  it('a mensagem de formatVersion inválido: texto do modelo em inglês e a renderização pt-BR inteira', () => {
     const result = parseIconsFile({ ...FILE, formatVersion: 3 });
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -85,14 +84,9 @@ describe('parseIconsFile', () => {
       issue?.params ?? {},
       issue?.message ?? '',
     );
-    try {
-      locale.value = 'pt-BR';
-      expect(messageText(message)).toBe('must be 1 or 2');
-      locale.value = 'en-US';
-      expect(messageText(message)).toBe('must be 1 or 2');
-    } finally {
-      locale.value = 'pt-BR';
-    }
+    expect(issue?.message).toBe('must be 1 or 2');
+    expect(message.text).toBe('must be 1 or 2');
+    expect(ptBRText(message)).toBe('deve ser 1 ou 2');
   });
 
   it('mapping-icons 2 aceita mirror por ícone (booleano); a 1 continua aceita sem ele', () => {

@@ -44,9 +44,7 @@ describe('readSpecComponents com icons', () => {
     const loaded = await readSpecComponents(parsed.spec, SPEC_FILE, 1, (path) =>
       path.endsWith('icons/set.json') ? Promise.resolve(null) : read(path),
     );
-    expect(loaded.problems).toEqual([
-      'icons: arquivo ausente (specs/icons/icons/set.json)',
-    ]);
+    expect(loaded.problems).toEqual(['icons: missing file (specs/icons/icons/set.json)']);
     const component = loaded.byType.get('badge');
     if (component === undefined) throw new Error('sem componente');
     const { warnings } = instantiate(
@@ -55,6 +53,6 @@ describe('readSpecComponents com icons', () => {
       { x: 0, y: 0, width: 48, height: 48 },
       { measure: approximateMeasurer },
     );
-    expect(warnings).toContain('ícone desconhecido: check');
+    expect(warnings).toContain('unknown icon: check');
   });
 });

@@ -245,7 +245,7 @@ describe('instantiate: botão', () => {
     expect(names({ label: '  ', icon: '' })).toEqual(['not']);
   });
 
-  it('avisa uma vez de cada campo não informado', () => {
+  it('avisa uma vez de cada field not provided', () => {
     const { warnings } = run(button, { label: 'A' }, BOX);
     expect(warnings).toContain('field not provided: variant');
     expect(warnings).toContain('field not provided: icon');
@@ -568,7 +568,7 @@ describe('instantiate: tamanhos, estilo e ids', () => {
     ]);
   });
 
-  it('avisa ícone esticado quando a escala difere nos eixos', () => {
+  it('avisa stretched icon quando a escala difere nos eixos', () => {
     const tpl: FrameTemplate = {
       type: 'frame',
       layout: { type: 'none' },
@@ -1202,7 +1202,7 @@ describe('instantiate: none alinhado (align vertical, justify horizontal)', () =
   });
 });
 
-describe('instantiate: aviso de conteúdo maior que a caixa no none (#1093)', () => {
+describe('instantiate: aviso de content larger than the box no none (#1093)', () => {
   const chip = (rootLayout: 'row' | 'none'): FrameTemplate => ({
     type: 'frame',
     name: 'raiz',

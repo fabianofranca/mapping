@@ -219,7 +219,7 @@ function drawn(
   return instantiate(file, {}, box, { measure: approximateMeasurer });
 }
 
-describe('aviso texto maior que a caixa', () => {
+describe('aviso text larger than the box', () => {
   const OVERFLOW = 'text larger than the box: rotulo';
 
   it('3 linhas numa caixa que comporta 2, sem maxLines nem ellipsis: aviso', () => {
@@ -256,7 +256,7 @@ describe('aviso texto maior que a caixa', () => {
   });
 });
 
-describe('tolerância de 1 px no "conteúdo maior que a caixa" vindo de texto', () => {
+describe('tolerância de 1 px no "content larger than the box" vindo de texto', () => {
   const column = (lineHeight: number): ComponentFile => ({
     format: 'mapping-component',
     formatVersion: 4,

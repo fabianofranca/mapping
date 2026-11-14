@@ -434,7 +434,7 @@ describe('derivado: tamanho mínimo, paleta e avisos', () => {
     const warnings = derived.componentWarnings.value;
     expect(warnings.map((w) => w.markingId)).toEqual(['W']);
     expect(warnings[0]?.warnings.map((w) => w.text).join(' ')).toContain(
-      'conteúdo maior que a caixa',
+      'content larger than the box',
     );
   });
 });

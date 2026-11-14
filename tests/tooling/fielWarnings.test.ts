@@ -38,7 +38,7 @@ describe('fiel.mjs (R25.1)', () => {
     expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
   }, 30_000);
 
-  it('m3-fx (R25.71): o card de formato 4 valida sem erro e só com os avisos conhecidos, sem "texto maior que a caixa" (CL1, achado 1.1)', () => {
+  it('m3-fx (R25.71): o card de formato 4 valida sem erro e só com os avisos conhecidos, sem "text larger than the box" (CL1, achado 1.1)', () => {
     const dir = join(mkdtempSync(join(tmpdir(), 'fx-')), 'm3-fx');
     cpSync(join(REPO, 'libraries/material3-compose'), dir, { recursive: true });
     execFileSync('node', [join(REPO, 'scripts/testing/tokens.mjs'), dir]);
@@ -53,7 +53,7 @@ describe('fiel.mjs (R25.1)', () => {
     expect(
       report.warnings
         .map((w) => w.message)
-        .filter((m) => m.includes('maior que a caixa')),
+        .filter((m) => m.includes('larger than the box')),
     ).toEqual([]);
     expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
   }, 30_000);

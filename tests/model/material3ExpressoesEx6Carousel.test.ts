@@ -405,7 +405,7 @@ describe('EX6 carousel — uncontained', () => {
       [0, 0, 140, HEIGHT],
       [152, 0, 140, HEIGHT],
       // L2 (#1078): o item que cruza a borda direita ganha só a largura que sobra (360 − 304), em vez de
-      // passar da caixa e sair cortado (aviso `conteúdo maior que a caixa`)
+      // passar da caixa e sair cortado (aviso `content larger than the box`)
       [304, 0, 56, HEIGHT],
     ]);
     const wide = itemBoxes(

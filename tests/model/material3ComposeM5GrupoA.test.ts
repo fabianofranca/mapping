@@ -146,7 +146,7 @@ const scale = (name: string): number[] => [
 const absOf = (d: Drawing, node: SceneNode) => absoluteBoxes(d.root).get(node.id)!;
 const radiusOf = (node: SceneNode) =>
   'cornerRadius' in node ? node.cornerRadius : undefined;
-const BAD_WARNING = /unknown icon|não cabe|texto maior que a caixa|ícone esticado/;
+const BAD_WARNING = /unknown icon|não cabe|text larger than the box|stretched icon/;
 
 describe('M5 grupo A — alert-dialog', () => {
   const WIDTH = 312;
