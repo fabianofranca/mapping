@@ -1133,7 +1133,7 @@ def cmd_apply(a):
 # --- slots (stage #1440) ---
 
 IGNORED_PREFIXES = ("changelog/", "docs/design-system/")
-IGNORED_EXACT = ("mcp/version.ts", "docs/TESTING-NUVEM.md#blocos")
+IGNORED_EXACT = ("mcp/version.ts", "docs/TESTING-NUVEM.md#blocos", "docs/TESTING-NUVEM.md#full-round-in-blocks")
 SECTION_GLOB = ".claude/skills/*/SKILL.md"  # besides every `.md` of docs/ and of the root: compared by anchor (`##` section)
 TESTING_DOC = "docs/TESTING.md"  # its anchors are also scripts (`R<n>`, `RP`, `RF`, `RA`, `RB`)
 STARTED_STATUS = ("em andamento", "esperando dono", "falhou")
