@@ -731,7 +731,9 @@ describe('plan_changes: repositórios por plataforma e campo inexistente', () =>
       [4, 'not-found'],
       [5, 'unknown-field'],
     ]);
-    expect(result.errors![0]!.message).toContain('platform not declared by the applied specializations');
+    expect(result.errors![0]!.message).toContain(
+      'platform not declared by the applied specializations',
+    );
     expect(result.errors![5]!.message).toContain('field does not exist in the type');
   });
 

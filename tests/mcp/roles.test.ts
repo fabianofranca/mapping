@@ -209,7 +209,9 @@ describe('aviso role-cleared: a troca de dono que limpa o papel', () => {
     const [warning] = cleared(result);
     expect(cleared(result)).toHaveLength(1);
     expect(warning).toMatchObject({ op: 1, annotation: ws.ref('C1'), role: 'click' });
-    expect(warning!.message).toMatch(/is cleared: the annotation is left without an owner$/);
+    expect(warning!.message).toMatch(
+      /is cleared: the annotation is left without an owner$/,
+    );
   });
 
   it('sem aviso: sem papel antes, dona que oferece o mesmo papel, ou role no mesmo passo', async () => {
@@ -323,9 +325,7 @@ describe('set_doc_repo e remove_doc_repo', () => {
     const operations = [{ op: 'set_doc_repo', repo: 'wiki', localPath: '../wiki' }];
     const result = ok(await plan(operations));
     expect(result.valid).toBe(true);
-    expect(result.summary[0]).toContain(
-      'local clone of the documents repository "wiki"',
-    );
+    expect(result.summary[0]).toContain('local clone of the documents repository "wiki"');
     expect(result.changes.docRepos).toEqual({ created: 1, updated: 0, deleted: 0 });
 
     const proposed = await propose(mcp, ws.project, operations);
