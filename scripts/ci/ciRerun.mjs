@@ -39,7 +39,7 @@ export function expectedJobs(yaml) {
   for (const [name, body] of jobBlocks(yaml)) {
     if (/^ {4}name:/m.test(body)) {
       throw new Error(
-        `O job ${name} do ci.yml tem name: próprio; o ci-rerun não sabe lê-lo.`,
+        `Job ${name} of ci.yml has its own name:; ci-rerun cannot read it.`,
       );
     }
     if (!/^ {6}matrix:/m.test(body)) {
@@ -51,7 +51,7 @@ export function expectedJobs(yaml) {
     );
     if (!matrix) {
       throw new Error(
-        `A matriz do job ${name} não é uma lista simples (chave: [a, b]); o ci-rerun não sabe lê-la.`,
+        `The matrix of job ${name} is not a simple list (key: [a, b]); ci-rerun cannot read it.`,
       );
     }
     for (const value of matrix[2].split(',')) names.push(`${name} (${value.trim()})`);
@@ -132,9 +132,9 @@ export function decideQueued({ runs, jobsTotal, head, now }) {
   if (latest.status !== 'queued')
     return { ...decision, reason: `status ${latest.status}` };
   if (seconds <= QUEUED_LIMIT_SECONDS) {
-    return { ...decision, reason: `há ${minutos} min (limite 15)` };
+    return { ...decision, reason: `${minutos} min (limit 15)` };
   }
-  return { ...decision, preso: true, reason: `na fila sem jobs há ${minutos} min` };
+  return { ...decision, preso: true, reason: `queued with no jobs for ${minutos} min` };
 }
 
 function option(argv, name) {
@@ -184,11 +184,11 @@ function runQueued(argv) {
     const latestId = String(latest.id);
     const payload = JSON.parse(readFileSync(jobsFile, 'utf8'));
     if (!Array.isArray(payload.jobs) || typeof payload.total_count !== 'number')
-      throw new Error('O arquivo de jobs não tem total_count nem a lista jobs.');
+      throw new Error('The jobs file has neither total_count nor the jobs list.');
     const other = payload.jobs.find((job) => String(job.run_id) !== latestId);
     if (other)
       throw new Error(
-        `O job ${other.name ?? '?'} tem run_id ${other.run_id}, diferente da execução mais recente do commit (${latestId}).`,
+        `Job ${other.name ?? '?'} has run_id ${other.run_id}, different from the commit's latest run (${latestId}).`,
       );
     jobsTotal = payload.total_count;
   }

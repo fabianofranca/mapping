@@ -1798,8 +1798,558 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'error-messages',
   },
   // ID10 sweep: terms added by area A1 (skills, docs/FLOW.md)
+  {
+    term: 'Teto do dist/index.html acima dos limites',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'issue-markers',
+  },
+  {
+    term: 'acima dos limites',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'issue-markers',
+  },
+  {
+    term: 'para o dono revisar',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'issue-markers',
+  },
+  {
+    term: 'subiu <K> KiB, de X para Y, pela regra do orçamento',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'issue-markers',
+  },
+  {
+    term: 'ESFORÇO HIGH',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Sobreposição',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'item 8 da "Para a sessão da fase"): pergunte no seu chat',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: '#<número>: <N> achados (<código>:<severidade>, …); reteste: sim|não',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: '<rótulo>: ainda trabalhando',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: '<rótulo>: custo lido com a sessão ainda trabalhando',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: '<rótulo>: medida de contexto divergente (aviso <n> mil, get_session <ctx> mil)',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: '(é ciclo|não é ciclo)',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'Pedido de permissão',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'pedido de permissão',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'registre o que pedia a autorização em Defeitos pendentes, não contorne a guarda e termine o que não depende dela',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'a sessão anterior (<id>) parou esperando o dono em: <motivo do wait>; pergunte de novo',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'a sessão anterior (<id>) parou em: <o que os eventos mostram>',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'CI do PR #<n> preso na fila sem jobs há <m> min: <link>. Fecho e reabro o PR?',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: '#<etapa> — Fecho e reabro o PR #<n> para criar uma execução nova do CI?',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'cria uma execução nova no mesmo commit; a presa fica como está',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'nada muda; a conferência de hora em hora segue lendo o CI',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: ' #<n> para criar uma execução nova do CI (execução presa na fila). Não é recusa: o PR volta aberto; recomece a Espera do CI como depois de um push.',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'tem uma ready nova',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'entraram mais ready',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'Nova ready #n incluída depois da #m (porquê)',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'faça a #X primeiro',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'a #Y por último',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'tira a #Z',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'a #741 sempre por último',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'ordem do dono (<restrição>)',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'panel-values',
+  },
+  {
+    term: 'só com a fila vazia',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'entra no próximo detalhamento',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'essa ainda não está pronta',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'não comece mais nada',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'drene a fila',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'termine o que está rodando e pare',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'Etapa #<n> pronta: <resumo>. PR do épico: <link>',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: '#<n> — mesclar o épico na main?',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'mande seus avisos para',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: '<id desta sessão>',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Fila passou para uma sessão nova',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'esperando você',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'este chat é o coordenador; abra uma sessão nova para a supervisão',
+    source: '.claude/skills/supervisionar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'Supervisão acima de 50% e sem vaga na linhagem: abra uma sessão nova e mande',
+    source: '.claude/skills/supervisionar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'Supervisão',
+    source: '.claude/skills/supervisionar-fila/SKILL.md',
+    group: 'names',
+  },
+  {
+    term: 'Via rápida #<n>',
+    source: '.claude/skills/via-rapida/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'Via rápida #<n> pronta: <resumo>. PR do épico: <link>',
+    source: '.claude/skills/via-rapida/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: '#<n> — mesclar o épico na main?',
+    source: '.claude/skills/via-rapida/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'Margem de $margin bytes até o orçamento de $INDEX_HTML_MAX_BYTES bytes',
+    source: '.github/workflows/ci.yml',
+    group: 'script-output',
+  },
+  {
+    term: 'em AAAA-MM-DD: versão <n>',
+    source: 'docs/DESIGN-SYSTEM.md',
+    group: 'record-titles',
+  },
+  {
+    term: 'Versões <n> e <m>',
+    source: 'docs/DESIGN-SYSTEM.md',
+    group: 'record-titles',
+  },
+  {
+    term: 'A versão atual do formato é a N',
+    source: 'docs/PROCESS.md',
+    group: 'script-output',
+  },
+  {
+    term: '13. Versão',
+    source: 'docs/PROCESS.md',
+    group: 'script-output',
+  },
   // ID10 sweep: terms added by area A2 (queue tests)
+  {
+    term: '<link da execução>',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'passagem em <link do comentário>',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'passou a vez com <n> mil; a passagem está em <link>',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Sobreposição',
+    source: '.claude/skills/detalhar-backlog/SKILL.md',
+    group: 'script-output',
+  },
+  {
+    term: 'troque de sessão',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'reteste: não',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'script-output',
+  },
+  {
+    term: 'Fecho e reabro o PR #<n> para criar uma execução nova do CI?',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'para o dono revisar',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'sessão <k> de 5',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'começa',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'liberada pelo dono',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'drenando para a exclusiva',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'horário inválido',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: 'já é o registrado',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'sem medida',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: 'medida velha (há',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'meça com',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'esperando o coordenador',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'sessões',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'novo método',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'não entra no lote',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'error-messages',
+  },
+  {
+    term: 'não achado',
+    source: 'scripts/ci/contextUsage.mjs',
+    group: 'script-output',
+  },
+  {
+    term: 'pedido de permissão',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'aguardando o dono abrir a sessão nova da fila',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'arquivada',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Conferência da fila',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'a fase não avisou',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'CI preso na fila',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Fecho e reabro o PR',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'Fase <código> da',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'passou de 300 mil',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'aviso ao dono',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'direção enviada',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: '<regra> → <o que faço agora>',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: '<código>',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'bloqueia',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'script-output',
+  },
+  {
+    term: 'média',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'script-output',
+  },
+  {
+    term: 'Teto do dist/index.html acima dos limites',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'acima dos limites',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'tentativas 1 a 3',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
   // ID10 sweep: terms added by area A3 (other tooling tests, scripts/ci, scripts/release, pwa)
+  {
+    term: 'épico `epic/',
+    source: 'tests/tooling/changelog.test.ts',
+    group: 'record-titles',
+  },
+  {
+    term: '<rótulo>: medida de contexto divergente (aviso <n> mil, get_session <ctx> mil)',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'custo lido com a sessão ainda trabalhando',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Troca de sessão da fase <código>: contexto <n> mil; passagem em',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Fase GC1 —',
+    source: 'scripts/ci/contextGuard.mjs',
+    group: 'session-notices',
+  },
+  {
+    term: 'Fase <código> —',
+    source: 'scripts/ci/contextGuard.mjs',
+    group: 'session-notices',
+  },
+  {
+    term: 'da etapa #1856 (sub-issue #1882)',
+    source: 'scripts/ci/contextGuard.mjs',
+    group: 'session-notices',
+  },
+  {
+    term: 'Conferência do orquestrador: a fase não avisou. Retome do ponto em que parou (CI do PR, merge, aviso) e avise o coordenador.',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'a sessão anterior (<id>) parou em: <o que os eventos mostram>',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'tipo\\tchave\\tini\\tfim\\ttítulo',
+    source: 'scripts/testing/round-guide.mjs',
+    group: 'script-output',
+  },
+  {
+    term: 'Supervisão acima de 50% e sem vaga na linhagem',
+    source: '.claude/skills/supervisionar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'este chat é o coordenador; abra uma sessão nova para a supervisão',
+    source: '.claude/skills/supervisionar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Supervisão:',
+    source: '.claude/skills/supervisionar-fila/custo.py',
+    group: 'script-output',
+  },
+  {
+    term: 'sem custo (fora das contas)',
+    source: '.claude/skills/supervisionar-fila/custo.py',
+    group: 'script-output',
+  },
+  {
+    term: 'Crie uma issue roadmap (ou bug, se for defeito):',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Coordenador: `<id da sessão do orquestrador>`',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'parâmetro fora da ficha',
+    source: 'src/i18n/modelMessagesTemplatesPtBR.ts',
+    group: 'script-output',
+  },
   // ID10 sweep: terms added by area B (docs, changelog, libraries, examples, scripts/testing)
   // ID10 sweep: terms added by area C (src, viewer, other tests)
 ];
@@ -2558,6 +3108,101 @@ export const PORTUGUESE_LINES: readonly LineException[] = [
     path: 'mappings-workspace/setup.sh',
     pattern: /^## Fluxo típico'$/,
     reason: 'copy of examples/workspace/setup.sh (the sync test requires it equal)',
+  },
+  {
+    path: 'tests/tooling/queueBatch.test.ts',
+    pattern: /\/\^?não publicado/,
+    reason:
+      'expected panel output, frozen vocabulary of decision 16 (the `não publicado` line of `show`, in a regex literal)',
+  },
+  {
+    path: 'tests/tooling/queuePlanPhases.test.ts',
+    pattern: /\/não publicado desde/,
+    reason:
+      'expected panel output, frozen vocabulary of decision 16 (the `não publicado` line of `show`, in a regex literal)',
+  },
+  {
+    path: 'tests/tooling/queueCiWait.test.ts',
+    pattern: /\/horário inválido\//,
+    reason:
+      'expected panel output, frozen vocabulary of decision 16 (error text of painel.py, in a regex literal)',
+  },
+  {
+    path: 'tests/tooling/queueCost.test.ts',
+    pattern: /kind inválido|em \d sessões|\d sessões,|\/correção:\//,
+    reason:
+      'expected panel output, frozen vocabulary of decision 16 (cost lines and error text of painel.py, in regex literals)',
+  },
+  {
+    path: 'tests/tooling/queueExclusive.test.ts',
+    pattern: /Mudanças na fila|Quê\? \(já\)/,
+    reason: 'fixtures of the accent-insensitive slug test',
+  },
+  {
+    path: 'tests/tooling/queueOwnerAuthorization.test.ts',
+    pattern: /Ninguém está olhando/,
+    reason:
+      'negative assertion: the Portuguese phrase that the phase prompt no longer carries',
+  },
+  {
+    path: 'tests/tooling/queuePanel.test.ts',
+    pattern: /\/aguardando o dono abrir|\/<código> arquivada\//,
+    reason:
+      'expected panel output, frozen vocabulary of decision 16 (phrases of the skill, in regex literals)',
+  },
+  {
+    path: 'tests/tooling/queuePhaseContext.test.ts',
+    pattern:
+      /^ {2}'Retomada por contexto \(<k> de 5\)|\/Troca de sessão da fase <código>/,
+    reason: 'frozen resume notice (session-notices, decision 16), a whole sentence',
+  },
+  {
+    path: 'tests/tooling/queueConflict.test.ts',
+    pattern: /dep=nenhuma|mcp=não|schema=não|schema = 'não'|ficha\('nenhuma'/,
+    reason:
+      'fixture ficha of the panel: `nenhuma` and the `não` value that the engine matches (decision 2 of #741)',
+  },
+  {
+    path: 'tests/tooling/queueExclusive.test.ts',
+    pattern: /dep=nenhuma|mcp=não|schema=não|schema = 'não'|ficha\('nenhuma'/,
+    reason:
+      'fixture ficha of the panel: `nenhuma` and the `não` value that the engine matches (decision 2 of #741)',
+  },
+  {
+    path: 'tests/tooling/queueGraph.test.ts',
+    pattern: /dep=nenhuma|mcp=não|schema=não|schema = 'não'|ficha\('nenhuma'/,
+    reason:
+      'fixture ficha of the panel: `nenhuma` and the `não` value that the engine matches (decision 2 of #741)',
+  },
+  {
+    path: 'tests/tooling/queueImport.test.ts',
+    pattern: /dep=nenhuma|mcp=não|schema=não|schema = 'não'|ficha\('nenhuma'/,
+    reason:
+      'fixture ficha of the panel: `nenhuma` and the `não` value that the engine matches (decision 2 of #741)',
+  },
+  {
+    path: 'tests/tooling/queueSlots.test.ts',
+    pattern: /dep=nenhuma|mcp=não|schema=não|schema = 'não'|ficha\('nenhuma'/,
+    reason:
+      'fixture ficha of the panel: `nenhuma` and the `não` value that the engine matches (decision 2 of #741)',
+  },
+  {
+    path: 'tests/tooling/queueToca.test.ts',
+    pattern: /dep=nenhuma|mcp=não|schema=não|schema = 'não'|ficha\('nenhuma'/,
+    reason:
+      'fixture ficha of the panel: `nenhuma` and the `não` value that the engine matches (decision 2 of #741)',
+  },
+  {
+    path: 'tests/tooling/queueGraph.test.ts',
+    pattern: /\bde: '[^']*'(, para: |\s*\})|\bpara: |para: string/,
+    reason:
+      '`para` is a key of the graph arrows that painel.py emits (`de`, `para`, `tipo`), frozen vocabulary of decision 16',
+  },
+  {
+    path: 'tests/tooling/queuePanelPage.test.ts',
+    pattern: /\bde: '[^']*'(, para: |\s*\})|\bpara: |para: string/,
+    reason:
+      '`para` is a key of the graph arrows that painel.py emits (`de`, `para`, `tipo`), frozen vocabulary of decision 16',
   },
 ];
 

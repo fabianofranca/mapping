@@ -73,16 +73,16 @@ export function decideRelease({ version, tags }) {
       publish: false,
       tag,
       level: 'notice',
-      message: `${tag} já publicada; nada a fazer`,
+      message: `${tag} already published; nothing to do`,
     };
   }
-  return { publish: true, tag, level: 'notice', message: `${tag} é nova; publicando.` };
+  return { publish: true, tag, level: 'notice', message: `${tag} is new; publishing.` };
 }
 
 function listFiles(files) {
   const shown = files.slice(0, MAX_LISTED).join(', ');
   const rest = files.length - MAX_LISTED;
-  return rest > 0 ? `${shown} e mais ${rest}` : shown;
+  return rest > 0 ? `${shown} and ${rest} more` : shown;
 }
 
 /** "Versão do MCP" step of the `epic` job. `changed` is only read when the version's tag exists. */
@@ -95,13 +95,13 @@ export function checkEpicVersion({ version, tags, changed }) {
       return {
         ok: false,
         level: 'error',
-        message: `A versão ${version} em mcp/version.ts é menor ou igual à última estável (${last}). Suba SERVER_VERSION para uma versão maior que ${last}.`,
+        message: `Version ${version} in mcp/version.ts is lower than or equal to the latest stable (${last}). Raise SERVER_VERSION to a version above ${last}.`,
       };
     }
     return {
       ok: true,
       level: 'notice',
-      message: `Versão ${version} nova: o merge na main publica a estável ${tag}.`,
+      message: `Version ${version} is new: the merge into main publishes the stable ${tag}.`,
     };
   }
   const touched = releaseInputsIn(changed);
@@ -109,13 +109,13 @@ export function checkEpicVersion({ version, tags, changed }) {
     return {
       ok: false,
       level: 'error',
-      message: `O épico muda o que vai na release do MCP (${listFiles(touched)}) e mantém a versão ${version}, que já tem a estável ${tag}. Suba SERVER_VERSION em mcp/version.ts (e os docs que a citam).`,
+      message: `The epic changes what goes in the MCP release (${listFiles(touched)}) and keeps version ${version}, which already has the stable ${tag}. Raise SERVER_VERSION in mcp/version.ts (and the docs that cite it).`,
     };
   }
   return {
     ok: true,
     level: 'notice',
-    message: `Nada do que vai na release do MCP mudou e a versão ${version} já tem a estável ${tag}: o merge não publica estável.`,
+    message: `Nothing that goes in the MCP release changed and version ${version} already has the stable ${tag}: the merge does not publish a stable.`,
   };
 }
 

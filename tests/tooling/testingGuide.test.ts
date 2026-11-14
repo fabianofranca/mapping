@@ -1104,8 +1104,8 @@ describe('TS2 — prompt with the round guide, foreground, state() and grouped r
     expect(generated).toContain('Round report');
     expect(generated.length).toBeLessThan(guide.length / 2);
     expect(read(out.replace(/\.md$/, '-base.md'))).toContain('cloud.mjs passo R4');
-    expect(read(out.replace(/\.md$/, '-indice.tsv'))).toMatch(
-      /^tipo\tchave\tini\tfim\ttítulo/,
+    expect(read(out.replace(/\.md$/, '-indice.tsv')).split('\n')[0]).toBe(
+      'tipo\tchave\tini\tfim\ttítulo',
     );
   });
 });

@@ -141,7 +141,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
           fetch-tags: true
-      - name: Versão do MCP
+      - name: "Versão do MCP"
         if: github.base_ref == 'main' && startsWith(github.head_ref, 'epic/')
         run: node scripts/release/stableRelease.mjs epic --version-file mcp/version.ts
 

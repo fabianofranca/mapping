@@ -434,7 +434,7 @@ describe('M3 group C — segmented-button', () => {
     near(b.x + b.width / 2, first!.x + first!.width / 2);
     // with no icon in the column and unselected, there is no icon in the segment
     expect(iconOf(d, 'check').node).toBeDefined(); // the selected one's
-    expect(allNamed(d, 'ícone').length + allNamed(d, 'check').length).toBe(1);
+    expect(allNamed(d, 'icon').length + allNamed(d, 'check').length).toBe(1);
   });
 
   it('the icon column appears in the unselected segment; when selected the check replaces it', () => {

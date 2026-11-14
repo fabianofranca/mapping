@@ -189,11 +189,15 @@ export function verifyCsp(html: string, profile: CspProfile): string[] {
     problems.push('there is an external <script src>: the JS must be embedded');
   }
   if (/<link\b[^>]*\brel=["']?stylesheet/i.test(markup)) {
-    problems.push('there is an external <link rel="stylesheet">: the CSS must be embedded');
+    problems.push(
+      'there is an external <link rel="stylesheet">: the CSS must be embedded',
+    );
   }
   const tags = markup.match(/<[a-z][^>]*>/gi) ?? [];
   if (tags.some((tag) => /\sstyle\s*=/i.test(tag))) {
-    problems.push('there is an atributo style="" in the HTML (use classes and the embedded CSS)');
+    problems.push(
+      'there is an atributo style="" in the HTML (use classes and the embedded CSS)',
+    );
   }
   if (tags.some((tag) => /\son[a-z]+\s*=/i.test(tag))) {
     problems.push('there is a handler inline (onclick etc.) in the HTML');

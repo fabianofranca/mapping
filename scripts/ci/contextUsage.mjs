@@ -128,7 +128,7 @@ function parseArgs(argv) {
     const value = argv[i + 1];
     if (value === undefined || value.startsWith('--'))
       throw new Error(
-        `${flag} pede um valor, mas veio ${value === undefined ? 'nada' : `"${value}"`} (caminho que começa com "--": use "./"). ${USAGE}`,
+        `${flag} needs a value, but got ${value === undefined ? 'nothing' : `"${value}"`} (a path that starts with "--": use "./"). ${USAGE}`,
       );
     values.set(flag, value);
     i++;

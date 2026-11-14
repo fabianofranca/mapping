@@ -121,15 +121,15 @@ export function warningText(contexto, jumps) {
   const mil = Math.ceil(contexto / 1000);
   const saltos =
     jumps.length > 0
-      ? jumps.map((j) => `${j.rotulo} +${j.mil} mil`).join('; ')
-      : 'nenhum registrado';
+      ? jumps.map((j) => `${j.rotulo} +${j.mil} thousand`).join('; ')
+      : 'none recorded';
   return (
-    `Gancho de contexto: esta sessão está em ${mil} mil, acima do gatilho de ${GATILHO / 1000} mil ` +
-    `(teto ${TETO_MIL} mil; sub-item "Phase context ceiling" do item 3 de "For the phase session", ` +
-    `docs/FLOW.md). Se o PR da fase ainda não está aberto e esta não é a sessão 5 de 5, ` +
-    `passe a vez agora (passos 1 a 5 da passagem), com <n> = ${mil}. ` +
-    `Com o PR aberto, ou na sessão 5 de 5, siga. ` +
-    `Maiores saltos (aproximados): ${saltos}. Subagente: ignore este aviso.`
+    `Context hook: this session is at ${mil} thousand, above the trigger of ${GATILHO / 1000} thousand ` +
+    `(ceiling ${TETO_MIL} thousand; sub-item "Phase context ceiling" do item 3 de "For the phase session", ` +
+    `docs/FLOW.md). If the phase PR is not open yet and this is not session 5 of 5, ` +
+    `hand over now (steps 1 to 5 of the handover), with <n> = ${mil}. ` +
+    `With the PR open, or in session 5 of 5, carry on. ` +
+    `Largest jumps (approximate): ${saltos}. Subagent: ignore this notice.`
   );
 }
 

@@ -253,7 +253,7 @@ describe('M5 — time-picker: AM/PM selector', () => {
 });
 
 /**
- * The number the handle covers: the on-primary copy (`números sob a alça`, inside the `alça`, which clips) whose
+ * The number the handle covers: the on-primary copy (`numbers under the handle`, inside the `handle`, which clips) whose
  * center falls on the center of the handle (within ±1 px). Without a number at the position (minute off the 5 grid), none.
  */
 const underHandle = (d: Drawing): TextNode | undefined => {

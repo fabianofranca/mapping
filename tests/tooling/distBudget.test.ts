@@ -20,8 +20,8 @@ let dir = '';
 let budget = '';
 
 const HISTORY = [
-  'Orçamento do dist/index.html (autocontido; 1.376.757 bytes, ~1,38 MB em 2026-10-19, com o exemplo embutido: ~80 KB em base64).',
-  'Subido para 1.933.312 (1.888 KiB) na etapa #964 (decisão do dono, 2026-11-09): a Ajuda.',
+  'Budget of dist/index.html (self-contained; 1,376,757 bytes, ~1.38 MB on 2026-10-19, with the example embedded: ~80 KB in base64).',
+  'Raised to 1,933,312 (1,888 KiB) at stage #964 (owner decision, 2026-11-09): the Help.',
 ];
 
 const fixture = (ceiling = CEILING): string =>
@@ -91,14 +91,14 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
   it('raises 16 KiB when excess, growth and raises fit the limits', () => {
     const out = raise({ size: CEILING + 227, main: CEILING - 100 });
     expect(out).toBe(
-      `sobe: ${CEILING} → ${CEILING + KIB16} (excesso 227, crescimento 327, subidas desde a revisão ${CEILING + KIB16 - REVIEW})`,
+      `sobe: ${CEILING} → ${CEILING + KIB16} (excess 227, growth 327, raises since the review ${CEILING + KIB16 - REVIEW})`,
     );
   });
 
   it('excess 14,336 raises 16 KiB on a single line, with no bug', () => {
     const out = raise({ size: CEILING + 14336, main: CEILING });
     expect(out.split('\n')).toEqual([
-      `sobe: ${CEILING} → ${CEILING + KIB16} (excesso 14336, crescimento 14336, subidas desde a revisão ${CEILING + KIB16 - REVIEW})`,
+      `sobe: ${CEILING} → ${CEILING + KIB16} (excess 14336, growth 14336, raises since the review ${CEILING + KIB16 - REVIEW})`,
     ]);
     expect(out).not.toContain('bug:');
   });
@@ -111,7 +111,7 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     expect(bug).toMatch(/^bug: /);
     expect(bug).toContain('14 KiB (14336 bytes)');
     expect(bug).toContain('32 KiB');
-    expect(bug).not.toContain('cresceu');
+    expect(bug).not.toContain('grew');
     expect(bug).not.toContain('subidas desde');
     expect(rest).toEqual([]);
   });
@@ -126,7 +126,7 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
       new RegExp(`^sobe: ${CEILING} → ${CEILING + 3 * KIB16} `),
     );
     expect(next(30721)).toContain(
-      `subidas desde a revisão ${CEILING + 3 * KIB16 - REVIEW})`,
+      `raises since the review ${CEILING + 3 * KIB16 - REVIEW})`,
     );
   });
 
@@ -151,7 +151,7 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     expect(raise({ size, main: size - 32768 })).not.toContain('bug:');
     const lines = raise({ size, main: size - 32769 }).split('\n');
     expect(lines[0]).toMatch(new RegExp(`^sobe: ${CEILING} → ${CEILING + KIB16} `));
-    expect(lines[1]).toMatch(/^bug: .*cresceu 32769 bytes.*32 KiB \(32768 bytes\)/);
+    expect(lines[1]).toMatch(/^bug: .*grew 32769 bytes.*32 KiB \(32768 bytes\)/);
     expect(lines).toHaveLength(2);
   });
 
@@ -176,12 +176,14 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     const reasons = (lines[1] ?? '').slice('bug: '.length).split('; ');
     expect(reasons).toHaveLength(3);
     expect(reasons[0]).toContain('excesso');
-    expect(reasons[1]).toContain('cresceu');
+    expect(reasons[1]).toContain('grew');
     expect(reasons[2]).toContain('subidas desde');
     // `since` uses the new ceiling (2 steps), not just the first: 2 × 16,384 + 100,000.
     expect(reasons[0]).toContain('a subida foi de 32 KiB');
-    expect(reasons[2]).toContain(`somam ${2 * KIB16 + 100000} bytes contando com esta`);
-    expect(lines[0]).toContain(`subidas desde a revisão ${2 * KIB16 + 100000})`);
+    expect(reasons[2]).toContain(
+      `add up to ${2 * KIB16 + 100000} bytes counting this one`,
+    );
+    expect(lines[0]).toContain(`raises since the review ${2 * KIB16 + 100000})`);
   });
 
   it('never calls the owner: exit 0 and no line starts with "chama o dono", not even with --write', () => {
@@ -220,7 +222,7 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     expect(after.history).toHaveLength(HISTORY.length + 1);
     expect(after.history.slice(0, HISTORY.length)).toEqual(HISTORY);
     expect(after.history.at(-1)).toBe(
-      'Subido para 1.949.696 (1.904 KiB) pela regra do orçamento (2026-11-10, épico `ci-resiliente`): excesso de 227 bytes, crescimento de 327 bytes sobre a `main`.',
+      'Raised to 1,949,696 (1,904 KiB) by the budget rule (2026-11-10, epic `ci-resiliente`): excess of 227 bytes, growth of 327 bytes over `main`.',
     );
     expect(Object.keys(after)).toEqual(['indexHtmlMaxBytes', 'history']);
   });
@@ -233,7 +235,7 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     expect(await format(written, { ...config, parser: 'json' })).toBe(written);
   });
 
-  it('with --write above a limit it writes the new ceiling and the sentence with "Acima dos limites"', async () => {
+  it('with --write above a limit it writes the new ceiling and the sentence with "Above the limits"', async () => {
     const size = CEILING + 20000;
     const out = raise({
       size,
@@ -248,7 +250,7 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     expect(after.history).toHaveLength(HISTORY.length + 1);
     expect(after.history.slice(0, HISTORY.length)).toEqual(HISTORY);
     expect(after.history.at(-1)).toBe(
-      'Subido para 1.966.080 (1.920 KiB) pela regra do orçamento (2026-11-10, épico `ci-resiliente`): excesso de 20000 bytes, crescimento de 40000 bytes sobre a `main`. Acima dos limites: excesso acima de 14 KiB; crescimento acima de 32 KiB sobre a `main`; subidas desde a revisão do dono acima de 64 KiB.',
+      'Raised to 1,966,080 (1,920 KiB) by the budget rule (2026-11-10, epic `ci-resiliente`): excess of 20000 bytes, growth of 40000 bytes over `main`. Above the limits: excess above 14 KiB; growth above 32 KiB over `main`; raises since the owner review above 64 KiB.',
     );
     const config =
       (await resolveConfig(path.join(REPO, 'scripts/ci/dist-budget.json'))) ?? {};
@@ -259,7 +261,7 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     raise({ size: CEILING + 100, main: CEILING + 100 - 32769, write: true });
     const after = JSON.parse(readFileSync(budget, 'utf8')) as { history: string[] };
     expect(after.history.at(-1)).toMatch(
-      / Acima dos limites: crescimento acima de 32 KiB sobre a `main`\.$/,
+      / Above the limits: growth above 32 KiB over `main`\.$/,
     );
   });
 

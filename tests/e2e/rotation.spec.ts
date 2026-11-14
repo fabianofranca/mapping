@@ -83,7 +83,7 @@ test('a rectangle rotated 45° paints inside and leaves out what the unrotated o
   page,
 }) => {
   await draw(page, [bar(45)]);
-  // 60 × 20 centrado em (50, 50): o eixo comprido vai para a diagonal descendente.
+  // 60 × 20 centered at (50, 50): the long axis goes to the descending diagonal.
   expect(await pixel(page, 50, 50)).toEqual([255, 0, 0, 255]);
   expect(await pixel(page, 64, 64)).toEqual([255, 0, 0, 255]); // inside only when rotated
   expect(await pixel(page, 36, 36)).toEqual([255, 0, 0, 255]);

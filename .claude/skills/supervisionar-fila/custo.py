@@ -5,7 +5,7 @@ Usage: custo.py <arquivo.jsonl>
 
 Each line is the JSON returned by `get_session` (with or without the `ccr` envelope). The group comes from the title:
 "Testador — …" (Reteste, if the title says reteste), "Fila — coordenador…", "Detalhamento — …",
-"Supervisor…", "<code> — …" (Fase; Correção or Fechamento, if the title says so); the rest is Outras.
+"Supervisor…", "<code> — …" ("Fase"; "Correção" or "Fechamento", if the title says so); the rest is Outras.
 Prints, per group, the number of sessions, the US$ and the median, the total and the % of US$ per model.
 A session without `cost_usd` is left out of the sums (it goes in a `sem custo` line). Standard library only. A usage error, unreadable file or invalid line exits with 2.
 """
@@ -51,16 +51,16 @@ def read(path):
         try:
             lines = list(f)
         except UnicodeDecodeError:
-            raise UsageError("o arquivo não é UTF-8")
+            raise UsageError("the file is not UTF-8")
     for n, line in enumerate(lines, 1):
         if not line.strip():
             continue
         try:
             obj = json.loads(line)
         except ValueError:
-            raise UsageError(f"linha {n}: não é JSON")
+            raise UsageError(f"line {n}: not JSON")
         if not isinstance(obj, dict):
-            raise UsageError(f"linha {n}: não é um objeto")
+            raise UsageError(f"line {n}: not an object")
         s = obj["ccr"] if isinstance(obj.get("ccr"), dict) else obj
         title = s.get("title") if isinstance(s.get("title"), str) else ""
         ctx = s.get("session_context") if isinstance(s.get("session_context"), dict) else {}

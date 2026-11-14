@@ -147,7 +147,7 @@ Each DS component and its origin in the code. A DS name can cover several files,
 | `SpecsDialog` | `src/ui/SpecsDialog.tsx` | Also `specPackageImport.ts`. |
 | `LibraryIssueList` | `src/ui/LibraryIssueList.tsx` |  |
 | `NoticesView` | `src/ui/NoticesView.tsx`, `src/ui/BottomTabs.tsx` | Notices window (`Ctrl+Shift+8`): filters, groups by notice and the tab with a count. |
-| Janela Comentários | `src/ui/toolWindowMeta.ts`, `src/store/toolWindows.ts` | Tab of the bottom window, the last one (`WINDOW_NUMBER.comments = 0`, shortcut `Ctrl+Shift+0`, icon `chat`). |
+| `Janela Comentários` | `src/ui/toolWindowMeta.ts`, `src/store/toolWindows.ts` | Tab of the bottom window, the last one (`WINDOW_NUMBER.comments = 0`, shortcut `Ctrl+Shift+0`, icon `chat`). |
 | `SettingsDialog` | `src/ui/SettingsDialog.tsx` | Also `SettingsBar.tsx`, `PlatformRepos.tsx` and `PrivacySettings.tsx`. |
 
 ### Components: conversations and comments
@@ -213,7 +213,7 @@ Surveyed on 2026-11-02. These files appear on screen and no DS guide covers them
 
 - Dialogs: `src/ui/review/ExitReviewDialog.tsx`, `src/app/ExportDialog.tsx`, `src/ui/SpecsDialog.tsx`, `src/ui/InconsistentProjectDialog.tsx` (the last three only cited in the `Dialog` guide), `src/ui/LinkDialog.tsx`, `src/ui/TypePicker.tsx`.
 - Bars and strips: `src/app/EditorMainBar.tsx`, `src/app/EditorTools.tsx`, `src/ui/SettingsBar.tsx`, `src/ui/ImageConsentBanner.tsx`, `src/ui/InstallHint.tsx`, `src/ui/review/ProposalNotices.tsx`.
-- Review: `src/ui/review/ReviewLevels.tsx` (the progress bar; the collapsed filters and the open panel are in the `ReviewRow` guide and preview), `src/ui/review/ProposalList.tsx` (the search and the empty state), `src/ui/review/ReviewCanvasControls.tsx` (the Atual/Proposto toggle and the legend of the marks), `src/ui/review/RevisedBefore.tsx` (the "Antes da revisão" block).
+- Review: `src/ui/review/ReviewLevels.tsx` (the progress bar; the collapsed filters and the open panel are in the `ReviewRow` guide and preview), `src/ui/review/ProposalList.tsx` (the search and the empty state), `src/ui/review/ReviewCanvasControls.tsx` (the Atual/Proposto toggle and the legend of the marks), `src/ui/review/RevisedBefore.tsx` (the "Before the revision" block).
 - Details and fields: `src/ui/FieldEditors.tsx`, `src/ui/CommitInput.tsx`, `src/ui/AnnotationEditor.tsx`, `src/ui/AnnotationSummary.tsx`, `src/ui/DetailsSection.tsx`, `src/ui/DetailsIdentity.tsx`, `src/ui/MarkingColorField.tsx`, `src/ui/OwnerRoleField.tsx`, `src/ui/LinkedAnnotations.tsx`, `src/ui/IdentitySettings.tsx`.
 - Settings: `src/ui/PrivacySettings.tsx`, `src/ui/PlatformRepos.tsx`.
 - Others: `src/ui/Popover.tsx`, `src/ui/LibraryPalette.tsx`, `src/ui/DiagnosticsView.tsx`, `src/ui/IncompleteView.tsx`, `src/ui/LayersWindow.tsx`, `src/ui/TreeWindow.tsx`, `src/ui/comments/CitePicker.tsx`, `src/ui/comments/StandaloneThreadPanel.tsx`, `src/ui/comments/CitedIn.tsx`.
@@ -237,8 +237,8 @@ Owner decision of 2026-11-08 (stage #954, item 38): the `<button>` of a **common
 | `src/ui/TableField.tsx` | row handle | drag handle (`.grid-grip`) |
 | `src/ui/catalog/CatalogView.tsx` | type in the list | list option (`.catalog-entry`) |
 | `src/ui/review/ChangeMark.tsx` | change marker | opens the change popover and carries the shortcuts A, R and Backspace (`.change-mark`) |
-| `src/ui/review/ReviewBar.tsx` | "N conjuntos inválidos" | clickable problem badge (`.flag.flag-danger`) |
-| `src/app/Home.tsx` | side strip items ("Projetos", "Ajuda", "Configurações") | navigation item, with `aria-current="page"` on the current one (`.home-nav-item`) |
+| `src/ui/review/ReviewBar.tsx` | "N invalid set(s)" | clickable problem badge (`.flag.flag-danger`) |
+| `src/app/Home.tsx` | side strip items ("Projects", "Help", "Settings") | navigation item, with `aria-current="page"` on the current one (`.home-nav-item`) |
 
 ## Pending items
 
@@ -274,7 +274,7 @@ The five text roles of the code did not enter the DS: the format's `type` family
 - **Visual cleanup (write of 2026-11-04).** `Notice`: the `.notice .notice-info` example of the preview still uses the text of the arrow lock notice ("Trancada: a rota, as pontas..."), which the app no longer shows as a paragraph (it became a `HelpTip`); `.notice-info` is still in use in the app (`CanvasNotices`, pickers, `InstallHint`, `AnnotationEditor`). There is no preview of the locked image (container) panel: the `SelectionPanel` has no component in the DS ("Compositions and logic with no shape of their own"); the state was described in the `MarkingPanel` guide. In the `CatalogWindow` preview, a selector `.ds-state-hover .tab:not(:disabled{...}` is missing the closing parenthesis (it is not known whether it was already like that). The previews of `ArrowPanel`, `MarkingPanel`, `PropertyGrid`, `LayerGroup` and `ReferenceField` have repeated ids (`P0-0`, `P0-1`...), coming from the app's rendered preview with several states; the `HelpTip` ids are unique. It was not proven, without a copy of version 26, that the authors' text was preserved byte for byte outside the visual cleanup passages.
 - **Card height.** The `height=` of the six previews changed on 2026-11-02 were estimated, not seen in a browser: `TextField` 710 → 1010, `SettingsDialog` 2800 → 6000, `CodeDefinitions` 230 → 640, `CatalogPage` 1800 → 2300, `MultiSelectionPanel` 662 → 860, `ComponentDrawing` 620 (no change). Check whether any card is cut off.
 - **Contrast.** The changed previews were not seen in a browser in both themes; the new text uses the existing tokens, but the visual check was not done.
-- `ReviewHeader`: the guide describes "Aceitar remoção" and "+ N anotações criadas"; the behavior was not confirmed line by line against `ReviewHeader.tsx`.
+- `ReviewHeader`: the guide describes "Accept removal" and "+ N annotation(s) created"; the behavior was not confirmed line by line against `ReviewHeader.tsx`.
 - `Contraste.md`: the contrast ratios were not recalculated, only the token values.
 - `Notice`: the guide says `.notice-error` and `.notice-success` have no use in the app; not checked in the CSS.
 - `TextField`: the `StringEditor` now strips the trailing line break from the text when writing (`src/ui/FieldEditors.tsx`, from `epic/exemplos-enxutos`). The guide describes the `onCommit` and does not mention this; decide whether it deserves a line.

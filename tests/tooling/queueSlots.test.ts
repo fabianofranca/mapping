@@ -138,9 +138,9 @@ describe('painel.py — vagas (VG1, #1440)', () => {
     run('start', dir, '--paralelo', '5');
     stage('#1', ficha('nenhuma', 'a.ts'), 'started=now');
     stage('#2', ficha('nenhuma', 'a.ts'));
-    stage('#3', ficha('#99:aberta', 'q.ts'), 'hold=ordem do dono (por último)');
+    stage('#3', ficha('#99:aberta', 'q.ts'), 'hold=owner order (last)');
     expect(slots()).toBe(
-      'Vagas 0/5 · #2 arquivo a.ts com #1 · #3 ordem do dono (por último) · nenhuma ready elegível',
+      'Vagas 0/5 · #2 arquivo a.ts com #1 · #3 owner order (last) · nenhuma ready elegível',
     );
     expect(run('show', dir)).toContain('começar agora: nenhuma');
   });
@@ -475,10 +475,8 @@ describe('painel.py — final review fixes (VG3, #1440)', () => {
     stage('#3', ficha('nenhuma', 'c.ts'), 'hold=pausada pelo dono');
     run('row', dir, '#3', 'status=em andamento');
     expect(json('queue').find((r) => r.issue === '#3')?.hold).toBe('');
-    run('row', dir, '#3', 'status=aguardando', 'hold=ordem do dono (por último)');
-    expect(json('queue').find((r) => r.issue === '#3')?.hold).toBe(
-      'ordem do dono (por último)',
-    );
+    run('row', dir, '#3', 'status=aguardando', 'hold=owner order (last)');
+    expect(json('queue').find((r) => r.issue === '#3')?.hold).toBe('owner order (last)');
   });
 
   it('finding 10: meta.vagasItens keeps each piece whole, even with " · " in the hold, and the page uses it', () => {

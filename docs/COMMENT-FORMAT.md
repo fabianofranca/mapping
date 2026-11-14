@@ -208,22 +208,22 @@ If the file remains invalid, the app and MCP treat it as unreadable: they do not
 
 | Situation                                                    | Error                                                                                                            |
 | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| Not JSON                                                     | `JSON inválido: Expected property name or '}' in JSON at position 1 (line 1 column 2)`                           |
-| Wrong `format` or `formatVersion`                            | `format: deve ser "mapping-thread"`, `formatVersion: deve ser 1`                                                 |
-| Invalid conversation id                                      | `id: id inválido; use [A-Za-z0-9._-], sem começar com ponto`                                                     |
-| Date that is not ISO 8601                                    | `createdAt: data inválida; use ISO 8601 (UTC)` (also in `messages[i].at` and `resolved.at`)                      |
-| Conversation without a message                               | `messages: deve ter ao menos uma mensagem`                                                                       |
-| Repeated message id                                          | `messages[2].id: id "a" repetido`                                                                                |
-| Person without email                                         | `messages[2].author.email: obrigatório na pessoa`                                                                |
-| Agent with email                                             | `messages[2].author.email: deve ser null no agente`                                                              |
-| Invalid author `kind`                                        | `messages[2].author.kind: deve ser "human" ou "agent"`                                                           |
-| Empty name                                                   | `messages[2].author.name: não pode ser vazio` (and `resolved.by.name`)                                           |
-| Empty text, only spaces                                      | `messages[2].text: não pode ser vazio`                                                                           |
-| Text with more than 10,000 characters                        | `messages[2].text: no máximo 10000 caracteres`                                                                   |
-| Invalid anchor `kind`                                        | `anchor.kind: deve ser "marking", "container", "annotation", "arrow", "layer", "field", "entry", "row", "point"` |
+| Not JSON                                                     | `invalid JSON: Expected property name or '}' in JSON at position 1 (line 1 column 2)`                           |
+| Wrong `format` or `formatVersion`                            | `format: must be "mapping-thread"`, `formatVersion: must be 1`                                                 |
+| Invalid conversation id                                      | `id: invalid id; use [A-Za-z0-9._-], not starting with a dot`                                                     |
+| Date that is not ISO 8601                                    | `createdAt: invalid date; use ISO 8601 (UTC)` (also in `messages[i].at` and `resolved.at`)                      |
+| Conversation without a message                               | `messages: must have at least one message`                                                                       |
+| Repeated message id                                          | `messages[2].id: duplicate id "a"`                                                                                |
+| Person without email                                         | `messages[2].author.email: required for a person`                                                                |
+| Agent with email                                             | `messages[2].author.email: must be null for an agent`                                                              |
+| Invalid author `kind`                                        | `messages[2].author.kind: must be "human" or "agent"`                                                           |
+| Empty name                                                   | `messages[2].author.name: cannot be empty` (and `resolved.by.name`)                                           |
+| Empty text, only spaces                                      | `messages[2].text: cannot be empty`                                                                           |
+| Text with more than 10,000 characters                        | `messages[2].text: at most 10000 characters`                                                                   |
+| Invalid anchor `kind`                                        | `anchor.kind: must be "marking", "container", "annotation", "arrow", "layer", "field", "entry", "row", "point"` |
 | Missing anchor field                                         | `anchor.key: Invalid input: expected string, received undefined`                                                 |
 | Missing required field (including `resolved` and `proposal`) | `resolved: Invalid input: expected object, received undefined`                                                   |
-| Invalid `resolved`                                           | `resolved.by.name: não pode ser vazio`, `resolved.at: data inválida; use ISO 8601 (UTC)`                         |
+| Invalid `resolved`                                           | `resolved.by.name: cannot be empty`, `resolved.at: invalid date; use ISO 8601 (UTC)`                         |
 
 In short:
 

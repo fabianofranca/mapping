@@ -1716,8 +1716,8 @@ describe('paletteDrag, absolute path and remembered folder (stage #1256, RT2)', 
       },
       evaluate: async (_fn: Fn, arg: Record<string, unknown>) => {
         if (arg && 'timeoutMs' in arg) return null;
-        if (arg && 'x' in arg && !('para' in arg)) return { ok: true, element: 'canvas' };
-        if (arg && 'para' in arg) {
+        if (arg && 'x' in arg && !('to' in arg)) return { ok: true, element: 'canvas' };
+        if (arg && 'to' in arg) {
           events.push('sintetico');
           if (syntheticReason) return { motivo: syntheticReason };
           if (rises === 'sintetico') addMarking();
@@ -3040,7 +3040,7 @@ describe('canvas view for the tester (stage #1076, VC2)', () => {
           }),
           evaluate: async (_fn: unknown, arg: Record<string, unknown>) => {
             if (arg && 'timeoutMs' in arg) return null;
-            if (arg && 'para' in arg) {
+            if (arg && 'to' in arg) {
               fired.push('sintetico');
               return { ok: true };
             }

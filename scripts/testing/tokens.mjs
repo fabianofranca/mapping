@@ -67,7 +67,7 @@ const template = erro
       cornerRadius: { $token: 'radius-md' },
       layout: { type: 'column', gap: 8, padding: { $token: 'space-4' } },
       children: [
-        { type: 'rect', name: 'régua', width: 100, height: 4, fill: '#FFEB3B' },
+        { type: 'rect', name: 'ruler', width: 100, height: 4, fill: '#FFEB3B' },
         line('i-sans', 'iiiiiiiiii', '#00E5FF'),
         line('w-sans', 'WWWWWWWWWW', '#76FF03'),
         line('i-mono', 'iiiiiiiiii', '#FF4081', mono),

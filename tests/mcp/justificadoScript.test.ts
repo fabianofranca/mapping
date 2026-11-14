@@ -87,7 +87,7 @@ describe('justificado.mjs (R25.87 a R25.90)', () => {
       return paint?.type === 'solid' ? paint.color.toLowerCase() : undefined;
     };
     // `#6750A4` at 50% over `#FFFFFF`: `#B3A7D1` (full alpha); without `over`, the `#6750A4` at 50%.
-    expect(fill(named('véu'))).toMatch(/^#b3a7d1(ff)?$/);
-    expect(fill(named('translúcido'))).toBe('#6750a480');
+    expect(fill(named('veil'))).toMatch(/^#b3a7d1(ff)?$/);
+    expect(fill(named('translucent'))).toBe('#6750a480');
   });
 });

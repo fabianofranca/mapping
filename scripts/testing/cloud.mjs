@@ -569,14 +569,14 @@ export async function cancelDialog(apoioDir, { timeoutMs = DIALOG_TIMEOUT_MS } =
   xdotoolKey(windowId, 'alt+c');
 }
 
-/** One call to `atspi-allow.py`; code 1 ("nenhum botão de permitir") is also a success. */
+/** One call to `atspi-allow.py`; code 1 ("no allow button") is also a success. */
 async function runAllowPermissionOnce(scriptPath) {
   try {
     const { stdout } = await execFileAsync('/usr/bin/python3.12', [scriptPath]);
     return stdout.trim();
   } catch (error) {
     if (error.code === 1)
-      return (error.stdout ?? '').trim() || 'nenhum botão de permitir';
+      return (error.stdout ?? '').trim() || 'no allow button';
     throw new Error(
       `allowPermission failed (code ${error.code}): ${(error.stdout ?? '').trim()} ${(error.stderr ?? '').trim()}`,
       { cause: error },
@@ -586,13 +586,13 @@ async function runAllowPermissionOnce(scriptPath) {
 
 /**
  * Recipe 6 of Appendix A: permission prompt through AT-SPI. Calls `atspi-allow.py`; both
- * "clicou" and "nenhum botão de permitir" count as success (the app already had the permission,
+ * "clicked" and "no allow button" count as success (the app already had the permission,
  * or the dialog already closed). Decision of this phase: activates the Chrome window before
  * clicking — AT-SPI's `do_action` returns success even with the Chrome window unfocused (e.g.
  * right after closing the GTK picker, which keeps the focus), but the click has no effect at all
  * in that case; by activating the window first, the click started to work on the first try in
- * every attempt of this phase. Even so, repeats until the dialog really disappears ("nenhum
- * botão de permitir" in a following call) or until the attempt limit, as a safety net.
+ * every attempt of this phase. Even so, repeats until the dialog really disappears ("no allow
+ * button" in a following call) or until the attempt limit, as a safety net.
  */
 export async function allowPermission(apoioDir) {
   loadEnv(apoioDir);
@@ -614,7 +614,7 @@ export async function allowPermission(apoioDir) {
     for (let i = 0; i < 6; i += 1) {
       const out = await runAllowPermissionOnce(scriptPath);
       attempts.push(out);
-      if (out.startsWith('nenhum botão')) break;
+      if (out.startsWith('no allow button')) break;
       await new Promise((resolve) => setTimeout(resolve, 600));
     }
     const summary = attempts.join('; ');
@@ -1565,20 +1565,20 @@ export function nearHandle(box, point, { container = false } = {}) {
 }
 
 /**
- * Drags from `de` to `para` (screen points `{ x, y }`, for example from `ponto`; stage #1148,
+ * Drags from `de` to `to` (screen points `{ x, y }`, for example from `ponto`; stage #1148,
  * decision 9): clicks on `de` to select (with `select`), waits for `settle`, `mouse.down`, one
  * frame, `mouse.move` in `steps` steps and `mouse.up`. If `de` falls within the radius of a handle
  * of the `data-selection-box` (the app's, `nearHandle`), warns (`warn`) that the drag may resize,
  * and carries on.
  * Stage #1076 (decision 8): a `de` that does not fall on the canvas (`onCanvas`) throws before any
- * mouse action, except with `allowOffCanvas: true` (`para` is not checked: the drag may leave the
+ * mouse action, except with `allowOffCanvas: true` (`to` is not checked: the drag may leave the
  * canvas on purpose); the selection click that leaves `data-selection` empty warns that nothing
  * was selected.
  */
 export async function drag(
   page,
   de,
-  para,
+  to,
   {
     select = true,
     steps = 10,
@@ -1627,8 +1627,8 @@ export async function drag(
   );
   for (let i = 1; i <= steps; i += 1) {
     await page.mouse.move(
-      de.x + ((para.x - de.x) * i) / steps,
-      de.y + ((para.y - de.y) * i) / steps,
+      de.x + ((to.x - de.x) * i) / steps,
+      de.y + ((to.y - de.y) * i) / steps,
     );
   }
   await page.mouse.up();
@@ -1651,7 +1651,7 @@ function paletteGroupsOf({ tipo }) {
  * Palette" or "the point (x, y) does not fall on the canvas (<element>)" (no element at the point;
  * the check of being inside the `.canvas-host` is `onCanvas`'s, done by `paletteDrag` beforehand).
  */
-function syntheticPaletteDrag({ tipo, para, grupo }) {
+function syntheticPaletteDrag({ tipo, to, grupo }) {
   const groups = grupo
     ? [...document.querySelectorAll('section.library-group')].filter(
         (g) => g.getAttribute('aria-label') === grupo,
@@ -1661,10 +1661,10 @@ function syntheticPaletteDrag({ tipo, para, grupo }) {
     .flatMap((root) => [...root.querySelectorAll('li.library-type')])
     .find((li) => li.querySelector('.library-type-name')?.textContent?.trim() === tipo);
   if (!item) return { motivo: `the item '${tipo}' disappeared from the Palette` };
-  const target = document.elementFromPoint(para.x, para.y);
+  const target = document.elementFromPoint(to.x, to.y);
   if (!target)
     return {
-      motivo: `the point (${para.x}, ${para.y}) does not fall on the canvas (nothing)`,
+      motivo: `the point (${to.x}, ${to.y}) does not fall on the canvas (nothing)`,
     };
   const data = new DataTransfer();
   const fire = (el, type) =>
@@ -1673,8 +1673,8 @@ function syntheticPaletteDrag({ tipo, para, grupo }) {
         bubbles: true,
         cancelable: true,
         dataTransfer: data,
-        clientX: para.x,
-        clientY: para.y,
+        clientX: to.x,
+        clientY: to.y,
       }),
     );
   fire(item, 'dragstart');
@@ -1711,7 +1711,7 @@ async function countMarkings(projectDir) {
  * 9 and 10). Finds the item by the `.library-type-name` with the exact text (two groups with the
  * same type: throws with the list of groups; `{ grupo }`, the `aria-label` of the
  * `section.library-group`, chooses), does the native drag through Playwright's mouse (`move` on
- * the item, `down`, `move` in `steps` steps to `para`, `up`) and checks that the project folder's
+ * the item, `down`, `move` in `steps` steps to `to`, `up`) and checks that the project folder's
  * `mapping.json` gained a marking. Without a new marking, redoes it through events (`dragstart` on
  * the item; `dragover`, `drop` and `dragend` under the point, which must be on the `.canvas-host`);
  * if the native one created it, the synthetic one does not run. With none, throws "the Palette
@@ -1725,7 +1725,7 @@ async function countMarkings(projectDir) {
 export async function paletteDrag(
   page,
   tipo,
-  para,
+  to,
   { capture, steps = 10, grupo, projectDir, waitMs = PALETTE_WAIT_MS } = {},
 ) {
   if (!projectDir) throw new Error('paletteDrag needs the project folder');
@@ -1760,23 +1760,23 @@ export async function paletteDrag(
   await page.mouse.down();
   for (let i = 1; i <= steps; i += 1) {
     await page.mouse.move(
-      from.x + ((para.x - from.x) * i) / steps,
-      from.y + ((para.y - from.y) * i) / steps,
+      from.x + ((to.x - from.x) * i) / steps,
+      from.y + ((to.y - from.y) * i) / steps,
     );
   }
   if (capture) await host.screenshot({ path: capture });
   await page.mouse.up();
   await settle(page);
   if (await markingsGrewTo(projectDir, before, waitMs)) return { via: 'nativo' };
-  const on = await onCanvas(page, para);
+  const on = await onCanvas(page, to);
   if (!on.ok) {
     throw new Error(
-      `paletteDrag: the point (${para.x}, ${para.y}) does not fall on the canvas (${on.element})`,
+      `paletteDrag: the point (${to.x}, ${to.y}) does not fall on the canvas (${on.element})`,
     );
   }
   const synthetic = await page.evaluate(syntheticPaletteDrag, {
     tipo,
-    para,
+    to,
     grupo: chosen,
   });
   if (synthetic?.motivo) throw new Error(`paletteDrag: ${synthetic.motivo}`);
@@ -2038,8 +2038,8 @@ async function execStep(
       projectDir,
       ...exportsOf(),
       // In the body, the `run` folder applies when the call does not pass `{ projectDir }`.
-      paletteDrag: (p, tipo, para, options = {}) =>
-        paletteDrag(p, tipo, para, {
+      paletteDrag: (p, tipo, to, options = {}) =>
+        paletteDrag(p, tipo, to, {
           projectDir: projectDir ?? lastFolder(apoioDir),
           ...options,
         }),
@@ -2627,7 +2627,7 @@ export const HELP = {
     desc: 'the tool window ids accepted by openWindow and closeWindow',
   },
   drag: {
-    sig: 'drag(page, de, para, { select? = true, steps? = 10, warn?, allowOffCanvas? })',
+    sig: 'drag(page, de, to, { select? = true, steps? = 10, warn?, allowOffCanvas? })',
     desc: 'drags between two screen points ({x, y}); throws if de does not fall on the canvas (allowOffCanvas carries on); warns if de falls within the radius of a handle (corner) of the selection and if the click selected nothing',
   },
   nearHandle: {
@@ -2635,7 +2635,7 @@ export const HELP = {
     desc: 'corner (nw, ne, sw, se) the app would grab at the point (radius 12 to 22 px, chessboard), or null',
   },
   paletteDrag: {
-    sig: 'paletteDrag(page, tipo, para, { capture?, steps? = 10, grupo?, projectDir?, waitMs? })',
+    sig: 'paletteDrag(page, tipo, to, { capture?, steps? = 10, grupo?, projectDir?, waitMs? })',
     desc: 'drags a type from the open Palette to a screen point and checks the new marking in mapping.json (projectDir; in run the run folder applies); grupo chooses between two groups with the same type; capture = PNG before dropping; returns { via: nativo | sintetico }',
   },
   setViewport: {

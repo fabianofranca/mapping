@@ -114,7 +114,7 @@ describe('real text', () => {
 
   it('wrap none + ellipsis stays within the box width', () => {
     const raster = canvas(120, 40);
-    const node = label('Pagar fatura do cartão de crédito', 400, {
+    const node = label('Pay the credit card invoice', 400, {
       style: {
         fontFamily: 'sans-serif',
         fontSize: 14,
@@ -136,7 +136,7 @@ describe('real text', () => {
     'wrap none without ellipsis, align %s: the letter that overflows the box is cut in the middle (FX4)',
     (align) => {
       const raster = canvas(160, 40);
-      const node = label('Pagar fatura do cartão de crédito', 400, {
+      const node = label('Pay the credit card invoice', 400, {
         style: {
           fontFamily: 'sans-serif',
           fontSize: 14,

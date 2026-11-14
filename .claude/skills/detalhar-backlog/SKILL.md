@@ -75,6 +75,7 @@ Create **one** grouping subagent with the `Agent` tool:
 
 Message:
 
+<!-- portuguese-guard:begin frozen report format that the coordinator parses -->
 ```text
 You are a subagent of the coordinator: do not ask the owner anything, and your final report is the message to the coordinator. You are the backlog grouping agent of `fabianofranca/mapping`. Do not edit any issue, do not create a branch or a PR.
 
@@ -103,6 +104,7 @@ BLOQUEADAS: #g — <reason>
 ESFORÇO HIGH: G1 — <reason>; #e — <reason>   (or "ESFORÇO HIGH: nenhuma")
 ORDEM: <suggested implementation order of the groups and standalone ones, with the why in one line each>
 ```
+<!-- portuguese-guard:end -->
 
 With the `AGRUPAMENTO`:
 
@@ -124,6 +126,7 @@ Follow the `ORDEM`. Dependency does not hold back the detailing: the `Depende de
 
 Message:
 
+<!-- portuguese-guard:begin frozen report format that the coordinator parses -->
 ```text
 You are a subagent of the coordinator: do not ask the owner anything, and your final report is the message to the coordinator. You are the detailing agent <of issue #n | of group #a (main), #b, #c> of `fabianofranca/mapping` (docs/PROCESS.md, "Detailing a stage" and "Automated flow", item 2). Do not use the questions tool. Do not create a branch, a commit or a PR: the detailing only touches issues ("No PR exists just to touch a plan").
 
@@ -166,6 +169,7 @@ FALHOU #<main> — <what got stuck and what was done>
 
 <In parallel with you: #x, #y. If your plan touches the same things as theirs, say so in "Sobreposição"; do not coordinate with them on your own.>
 ```
+<!-- portuguese-guard:end -->
 
 ## 4. During
 

@@ -79,7 +79,7 @@ const SESSIONS = [
 ];
 const SLOTS = ['Vaga 1: livre porque a #10 espera o dono', 'Vaga 2: ocupada'];
 const REQUESTS = [
-  { id: 'SUP-1', tipo: 'A', pedido: 'switch the page', estado: 'concluído' },
+  { id: 'SUP-1', tipo: 'A', pedido: 'switch the page', estado: 'aplicado' },
 ];
 const RULES = [
   { id: 'R1', origem: 'dono', texto: 'do not merge without asking' },
@@ -98,7 +98,7 @@ function expectFilledCards(panel: Panel): void {
   ]);
   expect(document.querySelector('#mp-vagas')).toBeNull();
   expect(text('#mp-cur')).toContain(`· ${SLOTS[0]}`);
-  expect(items('#mp-pedidos')).toEqual(['SUP-1 (type A): switch the page — concluído']);
+  expect(items('#mp-pedidos')).toEqual(['SUP-1 (type A): switch the page — aplicado']);
   expect(items('#mp-regras')).toEqual(['R1 (dono): do not merge without asking']);
 }
 
@@ -252,7 +252,7 @@ const NODES: No[] = [
     issue: '#8',
     onda: 3,
     estado: 'segurada',
-    motivo: 'esperando dono (decisão)',
+    motivo: 'owner decision pending',
   }),
 ];
 const ARROWS = [
@@ -570,9 +570,7 @@ describe.each(FORMS)('queue panel page: "Progress" card (PA1), %s', (_forma, wra
       'ficha incompleta (toca)',
     );
     expect(card('#7')?.querySelector('.espera')).toBeNull();
-    expect(card('#8')?.querySelector('.mot')?.textContent).toBe(
-      'esperando dono (decisão)',
-    );
+    expect(card('#8')?.querySelector('.mot')?.textContent).toBe('owner decision pending');
   });
 
   it('the footer: live duration on the started ones and the stage cost in US$ with a comma', () => {

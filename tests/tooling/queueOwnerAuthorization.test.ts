@@ -433,10 +433,10 @@ describe('CL1 — epic review fix (#1627)', () => {
       'status=esperando dono',
       'child=session_c',
       'childAt=now',
-      'wait=pergunta de decisão',
+      'wait=decision question',
     );
     const out = run('2026-11-11T10:05:00Z', 'show', dir);
-    expect(out).toMatch(/esperando o coordenador: #20 \(pergunta de decisão\)/);
+    expect(out).toMatch(/esperando o coordenador: #20 \(decision question\)/);
     expect(out).toContain('esperando o dono no chat da fase: nenhuma');
     expect(out).toContain('esperando o dono há mais de 1 h: nenhuma');
   });

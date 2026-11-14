@@ -33,8 +33,7 @@ export function contentSecurityPolicy(): Plugin {
       order: 'post',
       handler(_options, bundle) {
         const html = bundle['index.html'];
-        if (html?.type !== 'asset')
-          throw new Error('index.html not found in the bundle');
+        if (html?.type !== 'asset') throw new Error('index.html not found in the bundle');
         html.source = applyCsp(String(html.source), 'app');
       },
     },
@@ -56,8 +55,7 @@ export function serviceWorker(channel: BuildChannel): Plugin {
       order: 'post',
       handler(_options, bundle) {
         const html = bundle['index.html'];
-        if (html?.type !== 'asset')
-          throw new Error('index.html not found in the bundle');
+        if (html?.type !== 'asset') throw new Error('index.html not found in the bundle');
         // The guide (public/guide/, generated before the build) and the redirect page of its old
         // address (public/guia/) are in the cache too: if they change, the sw.js changes.
         const guide =
