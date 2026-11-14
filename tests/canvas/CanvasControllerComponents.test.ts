@@ -143,7 +143,7 @@ describe('CanvasController: componentes', () => {
     const { controller, container, ensure } = setup();
     // A foto I1 ainda carrega; só o container está pronta.
     expect(container.dataset.images).toBe('1');
-    expect(ensure.mock.calls.map(([file]) => file)).toEqual(['images/tela.png']);
+    expect(ensure.mock.calls.map(([file]) => file)).toEqual(['images/screen.png']);
     controller.destroy();
   });
 
