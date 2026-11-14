@@ -164,9 +164,7 @@ describe('Details in the review: the normal panel with the markers', () => {
     const pop = screen.getByRole('dialog');
     expect(within(pop).getByText("(doesn't exist)")).toBeTruthy();
     expect(
-      within(pop).getByText(
-        'Part of creating the marking: decide in the header above.',
-      ),
+      within(pop).getByText('Part of creating the marking: decide in the header above.'),
     ).toBeTruthy();
     // The created annotation, in the created layer, with the creation marker in the header.
     expect(
@@ -176,9 +174,7 @@ describe('Details in the review: the normal panel with the markers', () => {
     // In the Current view the item does not exist yet: the panel shows how it would look, with the notice.
     act(() => h.review.setView('current'));
     expect(
-      screen.getByText(
-        'Not in the current project yet. Showing how it would look.',
-      ),
+      screen.getByText('Not in the current project yet. Showing how it would look.'),
     ).toBeTruthy();
     expect(field('Name').value).toBe('Formulário');
     fireEvent.click(screen.getByRole('button', { name: 'See in Proposed' }));
@@ -647,7 +643,9 @@ describe('Apply blocked: the name of the target, never the id', () => {
     const proposal = propose(base, renameLayer(base, 'L2', 'Windows'));
     await blocked(removeLayer(base, 'L2'), proposal);
     expect(
-      screen.getByText('The target of this change (layer) no longer exists in the current project.'),
+      screen.getByText(
+        'The target of this change (layer) no longer exists in the current project.',
+      ),
     ).toBeTruthy();
     expect(screen.queryByText(/L2/)).toBeNull();
   });

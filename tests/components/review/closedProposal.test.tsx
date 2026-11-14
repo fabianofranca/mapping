@@ -106,7 +106,9 @@ describe('superseded proposal', () => {
     expect(
       within(line).getByRole('button', { name: 'Open the new one: Checkout v2' }),
     ).toBeTruthy();
-    const phrase = within(line).getAllByText(/This proposal was superseded by another one\./);
+    const phrase = within(line).getAllByText(
+      /This proposal was superseded by another one\./,
+    );
     expect(phrase.some((n) => n.classList.contains('visually-hidden'))).toBe(true);
     expect(phrase.some((n) => n.getAttribute('data-tooltip') !== null)).toBe(true);
     fireEvent.click(within(line).getByRole('button', { name: 'Dismiss' }));

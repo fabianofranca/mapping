@@ -49,8 +49,7 @@ describe('item header', () => {
     });
     expect(accept.textContent).toBe('Accept marking');
     expect(
-      within(header()).getByRole('button', { name: 'Reject marking: Porta' })
-        .textContent,
+      within(header()).getByRole('button', { name: 'Reject marking: Porta' }).textContent,
     ).toBe('Reject marking');
     expect(
       within(header()).getByText('0 accepted, 0 rejected, 1 undecided'),
@@ -65,9 +64,7 @@ describe('item header', () => {
       screen.getByRole('button', { name: /^Name: changed, accepted\./ }),
     ).toBeTruthy();
     // Pressing the marked button again goes back to "undecided".
-    fireEvent.click(
-      within(header()).getByRole('button', { name: /^Accept marking: / }),
-    );
+    fireEvent.click(within(header()).getByRole('button', { name: /^Accept marking: / }));
     await waitFor(() => expect(stateOf(h, ids.name)).toBeNull());
   });
 
@@ -197,8 +194,7 @@ describe('item header', () => {
     act(() => h.review.select({ level: 'item', id: 'M1' }));
     expect(within(header()).getByText(/Vidros/)).toBeTruthy();
     expect(
-      within(header()).getByRole('button', { name: 'Reject removal: Porta' })
-        .textContent,
+      within(header()).getByRole('button', { name: 'Reject removal: Porta' }).textContent,
     ).toBe('Reject removal');
 
     // Rejected, the removal does not apply: the name is no longer struck through.

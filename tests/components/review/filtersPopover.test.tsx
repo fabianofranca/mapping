@@ -36,9 +36,7 @@ describe('collapsed filters', () => {
     fireEvent.click(trigger());
     expect(trigger().getAttribute('aria-expanded')).toBe('true');
     const pop = screen.getByRole('dialog', { name: 'Review filters' });
-    expect(pop.contains(screen.getByRole('group', { name: 'Change type' }))).toBe(
-      true,
-    );
+    expect(pop.contains(screen.getByRole('group', { name: 'Change type' }))).toBe(true);
   });
 
   it('choosing decision and type does not close the popover; the button counts groups', async () => {

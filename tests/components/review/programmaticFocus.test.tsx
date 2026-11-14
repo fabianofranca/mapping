@@ -18,9 +18,9 @@ import { useShowProblem } from '../../../src/ui/review/useReview';
 import { richScenario } from '../../store/proposalHarness';
 import { openReviewHarness, type ReviewHarness } from './reviewHarness';
 
-// Etapa #323 (FC1): quem abre a revisão por código (botão da lista, aviso, barra de
-// status, "mostrar o problema") guarda o foco de origem, como a faixa e o atalho. Fechar
-// Detalhes ou Propostas devolve o foco a quem abriu → botão da faixa, nunca ao body.
+// Stage #323 (FC1): whoever opens the review from code (list button, notice, status bar,
+// "show the problem") keeps the origin focus, like the strip and the shortcut. Closing
+// Details or Proposals returns focus to whoever opened it → strip button, never the body.
 
 function Shell({ extra }: { readonly extra: preact.ComponentChildren }) {
   const windows = [...openWindowsOf('left'), ...openWindowsOf('right')];
@@ -34,7 +34,7 @@ function Shell({ extra }: { readonly extra: preact.ComponentChildren }) {
       </main>
       {windows.map((id) => (
         <ToolWindow key={id} id={id}>
-          <button type="button">controle {id}</button>
+          <button type="button">control {id}</button>
         </ToolWindow>
       ))}
       <ToolStrip side="right" />
@@ -48,10 +48,10 @@ function Openers() {
   return (
     <>
       <button type="button" onClick={() => openReview('P1')}>
-        abrir revisão
+        open review
       </button>
       <button type="button" onClick={showProblem}>
-        mostrar problema
+        show problem
       </button>
     </>
   );
@@ -62,7 +62,7 @@ const active = () => document.activeElement;
 const stripButton = (id: ToolWindowId) =>
   document.querySelector<HTMLElement>(`[data-strip-window="${id}"]`);
 const control = (id: ToolWindowId) =>
-  screen.getByRole('button', { name: `controle ${id}` });
+  screen.getByRole('button', { name: `control ${id}` });
 const opener = (name: string) => screen.getByRole('button', { name });
 
 async function mount(): Promise<ReviewHarness> {
@@ -76,7 +76,7 @@ async function mount(): Promise<ReviewHarness> {
   return h;
 }
 
-/** Clica no botão (foco nele), roda `act` e redesenha a Shell com as janelas abertas. */
+/** Clicks the button (focus on it), runs `act` and redraws the Shell with the windows open. */
 function press(h: ReviewHarness, name: string) {
   const button = opener(name);
   button.focus();
@@ -94,7 +94,7 @@ function remount(h: ReviewHarness, extra = <Openers />) {
 }
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   localStorage.clear();
   for (const id of TOOL_WINDOWS) hideToolWindow(id);
 });
@@ -103,17 +103,17 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('revisão aberta por código devolve o foco ao fechar', () => {
+describe('review opened from code returns focus on closing', () => {
   it.each(['details', 'proposals'] as const)(
-    'abrir a revisão pelo botão, focar em %s e fechar → botão que abriu',
+    'opening the review via the button, focusing in %s and closing → the button that opened it',
     async (id) => {
       const h = await mount();
-      const button = press(h, 'abrir revisão');
+      const button = press(h, 'open review');
       remount(h);
-      const again = opener('abrir revisão');
+      const again = opener('open review');
       expect(again).not.toBe(button);
-      // A origem guardada é o botão da primeira montagem; ele saiu do DOM, então o
-      // retorno de reserva é o botão da faixa.
+      // The stored origin is the button of the first mount; it left the DOM, so the
+      // fallback return is the strip button.
       control(id).focus();
       closeToolWindow(id);
       await settle();
@@ -121,9 +121,9 @@ describe('revisão aberta por código devolve o foco ao fechar', () => {
     },
   );
 
-  it('com o botão ainda no DOM, o foco volta a ele', async () => {
+  it('with the button still in the DOM, focus returns to it', async () => {
     const h = await mount();
-    const button = press(h, 'abrir revisão');
+    const button = press(h, 'open review');
     await settle();
     control('details').focus();
     closeToolWindow('details');
@@ -135,11 +135,11 @@ describe('revisão aberta por código devolve o foco ao fechar', () => {
     expect(active()).toBe(button);
   });
 
-  it('useShowProblem: Propostas e Detalhes devolvem o foco a quem abriu', async () => {
+  it('useShowProblem: Proposals and Details return focus to whoever opened them', async () => {
     const h = await mount();
     h.review.open('P1');
     const first = h.review.derived.proposal.peek()?.changes[0];
-    if (!first) throw new Error('sem mudança');
+    if (!first) throw new Error('no change');
     vi.spyOn(h.review.derived.invalid, 'peek').mockReturnValue({
       changeIds: new Set([first.id]),
       related: new Set<string>(),
@@ -147,7 +147,7 @@ describe('revisão aberta por código devolve o foco ao fechar', () => {
     for (const id of ['details', 'proposals'] as const) {
       for (const other of TOOL_WINDOWS) hideToolWindow(other);
       remount(h);
-      const button = opener('mostrar problema');
+      const button = opener('show problem');
       button.focus();
       button.click();
       await settle();
@@ -158,13 +158,13 @@ describe('revisão aberta por código devolve o foco ao fechar', () => {
     }
   });
 
-  it('abrir a revisão a partir da Lista troca a Lista por Propostas e o foco vai à aba ativa', async () => {
+  it('opening the review from the List swaps the List for Proposals and focus goes to the active tab', async () => {
     const h = await mount();
     showToolWindow('list');
     remount(h);
-    // Foco dentro da Lista no momento da chamada (o comando vem do conteúdo dela).
+    // Focus inside the List at the time of the call (the command comes from its content).
     control('list').focus();
-    opener('abrir revisão').click();
+    opener('open review').click();
     await settle();
     expect(active()).not.toBe(document.body);
     expect(active()?.getAttribute('role')).toBe('tab');

@@ -77,9 +77,7 @@ describe('Other changes', () => {
     fireEvent.click(within(pop).getByRole('button', { name: 'Compare' }));
     expect(h.ui.compareImage.value).toBe('I2');
     // The popover closes (focus goes back to the marker, which opens the compare dialog).
-    expect(
-      screen.queryByRole('dialog', { name: 'Image file · replaced' }),
-    ).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Image file · replaced' })).toBeNull();
 
     // The canvas position has no field: it stays in "Other changes".
     const others = screen.getByRole('region', { name: 'Other changes' });

@@ -66,9 +66,7 @@ describe('dependency notice: batch decision', () => {
   it('"Reject the N that cause it" decides in a single call and Undo returns all of them', async () => {
     const { h, ids } = await openWithIssue();
     const decideMany = vi.spyOn(h.review, 'decideMany');
-    fireEvent.click(
-      await screen.findByRole('button', { name: /^Reject the cause/ }),
-    );
+    fireEvent.click(await screen.findByRole('button', { name: /^Reject the cause/ }));
     await waitFor(() => expect(stateOf(h, ids.name)).toBe('rejected'));
     expect(stateOf(h, ids.rect)).toBe('rejected');
     expect(decideMany).toHaveBeenCalledTimes(1);

@@ -20,7 +20,9 @@ describe('ImageCompare', () => {
         afterName="images/cart-v2.png"
       />,
     );
-    const slider = screen.getByRole('slider', { name: 'Divider between before and after' });
+    const slider = screen.getByRole('slider', {
+      name: 'Divider between before and after',
+    });
     expect(slider.getAttribute('aria-valuenow')).toBe('50');
     fireEvent.keyDown(slider, { key: 'ArrowRight' });
     expect(slider.getAttribute('aria-valuenow')).toBe('55');
@@ -46,7 +48,9 @@ describe('ImageCompare', () => {
         afterName="b.png"
       />,
     );
-    const slide = screen.getByRole('slider', { name: 'Divider between before and after' });
+    const slide = screen.getByRole('slider', {
+      name: 'Divider between before and after',
+    });
     const layer = () => document.querySelector<HTMLElement>('.image-compare-before')!;
     fireEvent.keyDown(slide, { key: 'Home' });
     expect(slide.getAttribute('aria-valuetext')).toBe('0% of the before');
