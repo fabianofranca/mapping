@@ -1,4 +1,4 @@
-# Impact on roadmap issues — 2026-11-08 (epic `epic/impacto-roadmap`, PR #858, MCP 0.28.0, schema v18)
+# Impact on roadmap issues — 2026-11-08 (épico `epic/impacto-roadmap`, PR #858, MCP 0.28.0, schema v18)
 
 ## Alterado
 

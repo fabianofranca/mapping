@@ -1,4 +1,4 @@
-# Canvas in a large project — 2026-11-09 (epic `epic/canvas-escala`, PR #1195, MCP 0.28.11 with no new version, schema v18)
+# Canvas in a large project — 2026-11-09 (épico `epic/canvas-escala`, PR #1195, MCP 0.28.11 with no new version, schema v18)
 
 ## Alterado
 

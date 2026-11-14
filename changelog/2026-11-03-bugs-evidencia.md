@@ -1,4 +1,4 @@
-# English labels, bug and visual evidence — 2026-11-03 (epic `epic/bugs-evidencia`, PR #382, MCP 0.13.0, schema v13)
+# English labels, bug and visual evidence — 2026-11-03 (épico `epic/bugs-evidencia`, PR #382, MCP 0.13.0, schema v13)
 
 ## Alterado
 

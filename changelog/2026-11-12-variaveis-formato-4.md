@@ -1,4 +1,4 @@
-# Variables in format 4, carousel like Compose and range slider — 2026-11-12 (epic `epic/variaveis-formato-4`, PR #1742, MCP 0.38.0, schema v19)
+# Variables in format 4, carousel like Compose and range slider — 2026-11-12 (épico `epic/variaveis-formato-4`, PR #1742, MCP 0.38.0, schema v19)
 
 ## Adicionado
 

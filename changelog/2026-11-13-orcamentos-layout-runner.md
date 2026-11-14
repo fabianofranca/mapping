@@ -1,4 +1,4 @@
-# Layout budgets measured on the runner — 2026-11-13 (epic `epic/orcamentos-layout-runner`, PR #1811, MCP unchanged, schema v19)
+# Layout budgets measured on the runner — 2026-11-13 (épico `epic/orcamentos-layout-runner`, PR #1811, MCP unchanged, schema v19)
 
 ## Alterado
 

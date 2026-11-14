@@ -1,4 +1,4 @@
-# Queue without waiting — 2026-11-09 (epic `epic/fila-sem-espera`, PR #1366, MCP 0.28.15 unchanged, schema v18)
+# Queue without waiting — 2026-11-09 (épico `epic/fila-sem-espera`, PR #1366, MCP 0.28.15 unchanged, schema v18)
 
 ## Alterado
 

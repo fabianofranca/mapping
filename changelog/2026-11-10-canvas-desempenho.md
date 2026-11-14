@@ -1,4 +1,4 @@
-# Canvas performance — 2026-11-10 (epic `epic/canvas-desempenho`, PR #1436, MCP 0.30.0, schema v18)
+# Canvas performance — 2026-11-10 (épico `epic/canvas-desempenho`, PR #1436, MCP 0.30.0, schema v18)
 
 ## Alterado
 

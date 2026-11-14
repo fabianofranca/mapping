@@ -1,4 +1,4 @@
-# Font and preview — 2026-11-07 (epic `epic/fonte-e-preview`, PR #755, MCP 0.25.1, schema v15)
+# Font and preview — 2026-11-07 (épico `epic/fonte-e-preview`, PR #755, MCP 0.25.1, schema v15)
 
 ## Adicionado
 

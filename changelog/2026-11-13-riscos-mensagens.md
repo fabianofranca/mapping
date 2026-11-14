@@ -1,4 +1,4 @@
-# Model messages: maintenance risks — 2026-11-13 (epic `epic/riscos-mensagens`, PR #1797, MCP 0.39.1, schema v19)
+# Model messages: maintenance risks — 2026-11-13 (épico `epic/riscos-mensagens`, PR #1797, MCP 0.39.1, schema v19)
 
 ## Alterado
 

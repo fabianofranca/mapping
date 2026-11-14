@@ -1,4 +1,4 @@
-# Proposal review — 2026-11-09 (epic `epic/revisao-propostas`, PR #1158, MCP 0.28.8, schema v18)
+# Proposal review — 2026-11-09 (épico `epic/revisao-propostas`, PR #1158, MCP 0.28.8, schema v18)
 
 ## Adicionado
 

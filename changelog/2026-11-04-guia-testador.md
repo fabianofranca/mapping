@@ -1,4 +1,4 @@
-# Tester guide and cloud helpers — 2026-11-04 (epic `epic/guia-testador`, PR #508, MCP 0.15.0, schema v13)
+# Tester guide and cloud helpers — 2026-11-04 (épico `epic/guia-testador`, PR #508, MCP 0.15.0, schema v13)
 
 ## Adicionado
 

@@ -1,4 +1,4 @@
-# Readable Carousel label and aligned scripts — 2026-11-13 (epic `epic/rotulo-carousel-roteiros`, PR #1828, MCP 0.39.1 unchanged, schema v19)
+# Readable Carousel label and aligned scripts — 2026-11-13 (épico `epic/rotulo-carousel-roteiros`, PR #1828, MCP 0.39.1 unchanged, schema v19)
 
 ## Alterado
 

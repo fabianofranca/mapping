@@ -1,4 +1,4 @@
-# Queue panel reads the list fields of the meta — 2026-11-11 (epic `epic/painel-meta-texto`, PR #1624, MCP 0.34.3 unchanged, schema v18)
+# Queue panel reads the list fields of the meta — 2026-11-11 (épico `epic/painel-meta-texto`, PR #1624, MCP 0.34.3 unchanged, schema v18)
 
 ## Corrigido
 

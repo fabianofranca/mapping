@@ -1,4 +1,4 @@
-# Impact on agents — 2026-11-07 (epic `epic/impacto-nos-agentes`, PR #696, MCP 0.23.1, schema v14)
+# Impact on agents — 2026-11-07 (épico `epic/impacto-nos-agentes`, PR #696, MCP 0.23.1, schema v14)
 
 ## Alterado
 

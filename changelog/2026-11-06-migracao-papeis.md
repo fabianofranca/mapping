@@ -1,4 +1,4 @@
-# Migration of link roles — 2026-11-06 (epic `epic/migracao-papeis`, PR #616, MCP 0.20.0, schema v14)
+# Migration of link roles — 2026-11-06 (épico `epic/migracao-papeis`, PR #616, MCP 0.20.0, schema v14)
 
 ## Adicionado
 

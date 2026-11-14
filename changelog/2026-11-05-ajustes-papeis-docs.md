@@ -1,4 +1,4 @@
-# Role and external document adjustments — 2026-11-05 (epic `epic/ajustes-papeis-docs`, PR #584, MCP 0.18.1, schema v14)
+# Role and external document adjustments — 2026-11-05 (épico `epic/ajustes-papeis-docs`, PR #584, MCP 0.18.1, schema v14)
 
 ## Corrigido
 

@@ -1,4 +1,4 @@
-# Link in the same layer — 2026-11-07 (epic `epic/vinculo-mesma-camada`, PR #703, MCP 0.24.0, schema v15)
+# Link in the same layer — 2026-11-07 (épico `epic/vinculo-mesma-camada`, PR #703, MCP 0.24.0, schema v15)
 
 ## Adicionado
 

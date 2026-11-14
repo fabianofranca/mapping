@@ -1,4 +1,4 @@
-# Remote images — 2026-11-01 (epic `epic/imagens-remotas`, MCP 0.11.0, schema v13)
+# Remote images — 2026-11-01 (épico `epic/imagens-remotas`, MCP 0.11.0, schema v13)
 
 ## Adicionado
 

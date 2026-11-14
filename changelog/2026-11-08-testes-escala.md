@@ -1,4 +1,4 @@
-# Scale tests — 2026-11-08 (epic `epic/testes-escala`, PR #1072, MCP 0.28.5, schema v18)
+# Scale tests — 2026-11-08 (épico `epic/testes-escala`, PR #1072, MCP 0.28.5, schema v18)
 
 ## Adicionado
 

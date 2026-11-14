@@ -1,4 +1,4 @@
-# Comments window at width — 2026-11-08 (epic `epic/comentarios-largura`, PR #885, MCP 0.28.2 no change, schema v18)
+# Comments window at width — 2026-11-08 (épico `epic/comentarios-largura`, PR #885, MCP 0.28.2 no change, schema v18)
 
 ## Alterado
 

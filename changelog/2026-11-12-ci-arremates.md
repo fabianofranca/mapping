@@ -1,4 +1,4 @@
-# CI finishing touches — 2026-11-12 (epic `epic/ci-arremates`, PR #1753, MCP unchanged, schema v19)
+# CI finishing touches — 2026-11-12 (épico `epic/ci-arremates`, PR #1753, MCP unchanged, schema v19)
 
 ## Alterado
 

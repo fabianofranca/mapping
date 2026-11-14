@@ -1,4 +1,4 @@
-# Coordinator context measured by the panel — 2026-11-14 (epic `epic/contexto-medido`, PR #1909, MCP unchanged, schema v19)
+# Coordinator context measured by the panel — 2026-11-14 (épico `epic/contexto-medido`, PR #1909, MCP unchanged, schema v19)
 
 ## Adicionado
 

@@ -1,4 +1,4 @@
-# DS sync — 2026-11-10 (epic `epic/sincronia-ds-2`, PR #1439, MCP 0.30.0 unchanged, schema v18)
+# DS sync — 2026-11-10 (épico `epic/sincronia-ds-2`, PR #1439, MCP 0.30.0 unchanged, schema v18)
 
 ## Alterado
 

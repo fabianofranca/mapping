@@ -1,4 +1,4 @@
-# CI that recovers by itself — 2026-11-09 (epic `epic/ci-autorrecupera`, PR #1353, MCP 0.28.15, schema v18)
+# CI that recovers by itself — 2026-11-09 (épico `epic/ci-autorrecupera`, PR #1353, MCP 0.28.15, schema v18)
 
 ## Adicionado
 

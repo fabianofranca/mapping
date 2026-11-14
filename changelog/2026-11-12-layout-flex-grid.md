@@ -1,4 +1,4 @@
-# Layout aligned with Flexbox and CSS Grid — 2026-11-12 (epic `epic/layout-flex-grid`, PR #1676, MCP 0.36.0, schema v18)
+# Layout aligned with Flexbox and CSS Grid — 2026-11-12 (épico `epic/layout-flex-grid`, PR #1676, MCP 0.36.0, schema v18)
 
 ## Adicionado
 

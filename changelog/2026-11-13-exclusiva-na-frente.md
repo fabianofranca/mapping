@@ -1,4 +1,4 @@
-# Exclusive in front drains the queue — 2026-11-13 (epic `epic/exclusiva-na-frente`, PR #1839, MCP 0.39.1 unchanged, schema v19)
+# Exclusive in front drains the queue — 2026-11-13 (épico `epic/exclusiva-na-frente`, PR #1839, MCP 0.39.1 unchanged, schema v19)
 
 ## Alterado
 

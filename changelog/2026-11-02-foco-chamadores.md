@@ -1,4 +1,4 @@
-# Focus on window callers — 2026-11-02 (epic `epic/foco-chamadores`, PR #336, MCP 0.12.0, schema v13)
+# Focus on window callers — 2026-11-02 (épico `epic/foco-chamadores`, PR #336, MCP 0.12.0, schema v13)
 
 ## Corrigido
 

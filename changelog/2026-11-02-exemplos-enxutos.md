@@ -1,4 +1,4 @@
-# Lean examples — 2026-11-02 (epic `epic/exemplos-enxutos`, PR #273, MCP 0.12.0, schema v13)
+# Lean examples — 2026-11-02 (épico `epic/exemplos-enxutos`, PR #273, MCP 0.12.0, schema v13)
 
 ## Adicionado
 

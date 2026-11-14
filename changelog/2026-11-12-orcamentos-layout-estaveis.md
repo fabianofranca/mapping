@@ -1,4 +1,4 @@
-# Stable layout budgets — 2026-11-12 (epic `epic/orcamentos-layout-estaveis`, PR #1720, MCP 0.37.0 unchanged, schema v19)
+# Stable layout budgets — 2026-11-12 (épico `epic/orcamentos-layout-estaveis`, PR #1720, MCP 0.37.0 unchanged, schema v19)
 
 ## Alterado
 

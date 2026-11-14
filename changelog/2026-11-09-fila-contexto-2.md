@@ -1,4 +1,4 @@
-# Queue coordinator: fine-tuning of context use — 2026-11-09 (epic `epic/fila-contexto-2`, PR #1352, MCP 0.28.15, schema v18)
+# Queue coordinator: fine-tuning of context use — 2026-11-09 (épico `epic/fila-contexto-2`, PR #1352, MCP 0.28.15, schema v18)
 
 ## Alterado
 

@@ -1,4 +1,4 @@
-# CR of the detailing skill — 2026-11-09 (epic `epic/cr-skill-detalhar`, PR #1218, MCP 0.28.10 unchanged, schema v18)
+# CR of the detailing skill — 2026-11-09 (épico `epic/cr-skill-detalhar`, PR #1218, MCP 0.28.10 unchanged, schema v18)
 
 ## Alterado
 

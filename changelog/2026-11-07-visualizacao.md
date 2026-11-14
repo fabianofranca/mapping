@@ -1,4 +1,4 @@
-# View — 2026-11-07 (epic `epic/visualizacao`, PR #714, MCP 0.24.1, schema v15)
+# View — 2026-11-07 (épico `epic/visualizacao`, PR #714, MCP 0.24.1, schema v15)
 
 ## Adicionado
 

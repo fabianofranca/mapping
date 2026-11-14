@@ -1,4 +1,4 @@
-# Child in the slot — 2026-11-10 (epic `epic/filha-no-slot`, PR #1519, MCP 0.33.0, schema v18)
+# Child in the slot — 2026-11-10 (épico `epic/filha-no-slot`, PR #1519, MCP 0.33.0, schema v18)
 
 ## Adicionado
 

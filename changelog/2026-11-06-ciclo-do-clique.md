@@ -1,4 +1,4 @@
-# Click cycle — 2026-11-06 (epic `epic/ciclo-do-clique`, PR #615, MCP 0.19.0, schema v14)
+# Click cycle — 2026-11-06 (épico `epic/ciclo-do-clique`, PR #615, MCP 0.19.0, schema v14)
 
 ## Corrigido
 

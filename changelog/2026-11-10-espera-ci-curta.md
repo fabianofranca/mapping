@@ -1,4 +1,4 @@
-# Shorter CI wait — 2026-11-10 (epic `epic/espera-ci-curta`, PR #1457, MCP 0.30.0 unchanged, schema v18)
+# Shorter CI wait — 2026-11-10 (épico `epic/espera-ci-curta`, PR #1457, MCP 0.30.0 unchanged, schema v18)
 
 ## Alterado
 

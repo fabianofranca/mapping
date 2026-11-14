@@ -1,4 +1,4 @@
-# Model messages in the app's language — 2026-11-10 (epic `epic/mensagens-modelo`, PR #1512, MCP 0.33.1, schema v18)
+# Model messages in the app's language — 2026-11-10 (épico `epic/mensagens-modelo`, PR #1512, MCP 0.33.1, schema v18)
 
 ## Corrigido
 

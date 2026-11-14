@@ -1,4 +1,4 @@
-# CI stuck in the queue: close and reopen the PR with the owner's "yes" — 2026-11-11 (epic `epic/ci-preso-na-fila`, PR #1674, MCP unchanged, schema v18)
+# CI stuck in the queue: close and reopen the PR with the owner's "yes" — 2026-11-11 (épico `epic/ci-preso-na-fila`, PR #1674, MCP unchanged, schema v18)
 
 ## Corrigido
 

@@ -1,4 +1,4 @@
-# Nightly CR: scheduling finishing touches — 2026-11-12 (epic `epic/cr-noturno-arremates`, PR #1760, MCP 0.38.1 unchanged, schema v19)
+# Nightly CR: scheduling finishing touches — 2026-11-12 (épico `epic/cr-noturno-arremates`, PR #1760, MCP 0.38.1 unchanged, schema v19)
 
 ## Alterado
 

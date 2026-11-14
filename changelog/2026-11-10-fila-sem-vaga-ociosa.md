@@ -1,4 +1,4 @@
-# Queue without an idle slot — 2026-11-10 (epic `epic/fila-sem-vaga-ociosa`, PR #1449, MCP 0.30.0 unchanged, schema v18)
+# Queue without an idle slot — 2026-11-10 (épico `epic/fila-sem-vaga-ociosa`, PR #1449, MCP 0.30.0 unchanged, schema v18)
 
 ## Adicionado
 

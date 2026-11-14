@@ -1,4 +1,4 @@
-# Cleanups of the model messages epic — 2026-11-11 (epic `epic/limpezas-mensagens`, PR #1579, MCP 0.34.2, schema v18)
+# Cleanups of the model messages epic — 2026-11-11 (épico `epic/limpezas-mensagens`, PR #1579, MCP 0.34.2, schema v18)
 
 ## Alterado
 

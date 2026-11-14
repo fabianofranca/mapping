@@ -1,4 +1,4 @@
-# Nightly CR without repetition — 2026-11-11 (epic `epic/cr-noturno`, PR #1597, MCP 0.34.2 unchanged, schema v18)
+# Nightly CR without repetition — 2026-11-11 (épico `epic/cr-noturno`, PR #1597, MCP 0.34.2 unchanged, schema v18)
 
 ## Alterado
 

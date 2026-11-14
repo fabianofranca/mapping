@@ -1,4 +1,4 @@
-# Defects fixed in the stage itself — 2026-11-05 (epic `epic/correcao-na-etapa`, PR #586, MCP 0.18.0, schema v14)
+# Defects fixed in the stage itself — 2026-11-05 (épico `epic/correcao-na-etapa`, PR #586, MCP 0.18.0, schema v14)
 
 ## Alterado
 

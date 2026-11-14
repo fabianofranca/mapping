@@ -1,4 +1,4 @@
-# Perspectives — 2026-11-07 (epic `epic/perspectivas`, PR #739, MCP 0.26.0, schema v16)
+# Perspectives — 2026-11-07 (épico `epic/perspectivas`, PR #739, MCP 0.26.0, schema v16)
 
 ## Alterado
 

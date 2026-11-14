@@ -1,4 +1,4 @@
-# Design system sync — 2026-11-02 (epic `epic/sincronia-ds`, PR #287, MCP unchanged, schema v13)
+# Design system sync — 2026-11-02 (épico `epic/sincronia-ds`, PR #287, MCP unchanged, schema v13)
 
 ## Adicionado
 

@@ -1,4 +1,4 @@
-# Canvas without dots — 2026-11-08 (epic `epic/canvas-sem-bolinhas`, PR #986, MCP 0.28.4, schema v18)
+# Canvas without dots — 2026-11-08 (épico `epic/canvas-sem-bolinhas`, PR #986, MCP 0.28.4, schema v18)
 
 ## Alterado
 

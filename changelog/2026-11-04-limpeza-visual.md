@@ -1,4 +1,4 @@
-# Visual cleanup — 2026-11-04 (epic `epic/limpeza-visual`, PR #451, MCP 0.13.0, schema v13)
+# Visual cleanup — 2026-11-04 (épico `epic/limpeza-visual`, PR #451, MCP 0.13.0, schema v13)
 
 ## Alterado
 

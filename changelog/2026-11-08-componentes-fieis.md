@@ -1,4 +1,4 @@
-# Faithful components — 2026-11-08 (epic `epic/componentes-fieis`, PR #786, MCP 0.28.0, schema v18)
+# Faithful components — 2026-11-08 (épico `epic/componentes-fieis`, PR #786, MCP 0.28.0, schema v18)
 
 ## Adicionado
 

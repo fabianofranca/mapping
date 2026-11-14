@@ -1,4 +1,4 @@
-# Cloud tester step by step — 2026-11-04 (epic `epic/testador-por-passo`, PR #429, MCP 0.13.0, schema v13)
+# Cloud tester step by step — 2026-11-04 (épico `epic/testador-por-passo`, PR #429, MCP 0.13.0, schema v13)
 
 ## Alterado
 

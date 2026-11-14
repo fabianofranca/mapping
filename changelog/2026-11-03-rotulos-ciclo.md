@@ -1,4 +1,4 @@
-# Cycle labels — 2026-11-03 (epic `epic/rotulos-ciclo`, PR #367, MCP 0.13.0, schema v13)
+# Cycle labels — 2026-11-03 (épico `epic/rotulos-ciclo`, PR #367, MCP 0.13.0, schema v13)
 
 ## Alterado
 

@@ -1,4 +1,4 @@
-# Workspace updated — 2026-11-07 (epic `epic/workspace-atualizado`, PR #710, MCP 0.24.1, schema v15)
+# Workspace updated — 2026-11-07 (épico `epic/workspace-atualizado`, PR #710, MCP 0.24.1, schema v15)
 
 ## Adicionado
 

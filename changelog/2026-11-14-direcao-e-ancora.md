@@ -1,4 +1,4 @@
-# Reading direction (RTL) and anchor between markings — 2026-11-14 (epic `epic/direcao-e-ancora`, PR #1859, MCP 0.40.0, schema v20)
+# Reading direction (RTL) and anchor between markings — 2026-11-14 (épico `epic/direcao-e-ancora`, PR #1859, MCP 0.40.0, schema v20)
 
 ## Adicionado
 

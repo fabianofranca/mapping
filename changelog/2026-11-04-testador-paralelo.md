@@ -1,4 +1,4 @@
-# Parallel tester — 2026-11-04 (epic `epic/testador-paralelo`, PR #470, MCP 0.14.0, schema v13)
+# Parallel tester — 2026-11-04 (épico `epic/testador-paralelo`, PR #470, MCP 0.14.0, schema v13)
 
 ## Adicionado
 

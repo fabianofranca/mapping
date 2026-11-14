@@ -1,4 +1,4 @@
-# Hug grid under a max-content/min-content parent proven by test — 2026-11-12 (epic `epic/grade-hug-intrinseco`, PR #1768, MCP 0.38.2, schema v19)
+# Hug grid under a max-content/min-content parent proven by test — 2026-11-12 (épico `epic/grade-hug-intrinseco`, PR #1768, MCP 0.38.2, schema v19)
 
 ## Alterado
 

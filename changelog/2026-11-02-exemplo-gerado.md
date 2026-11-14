@@ -1,4 +1,4 @@
-# Example generated from sources — 2026-11-02 (epic `epic/exemplo-gerado`, PR #334, MCP 0.12.0, schema v13)
+# Example generated from sources — 2026-11-02 (épico `epic/exemplo-gerado`, PR #334, MCP 0.12.0, schema v13)
 
 ## Alterado
 

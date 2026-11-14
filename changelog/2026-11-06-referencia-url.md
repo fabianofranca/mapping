@@ -1,4 +1,4 @@
-# Reference as URL — 2026-11-06 (epic `epic/referencia-url`, PR #622, MCP 0.21.0, schema v14)
+# Reference as URL — 2026-11-06 (épico `epic/referencia-url`, PR #622, MCP 0.21.0, schema v14)
 
 ## Alterado
 

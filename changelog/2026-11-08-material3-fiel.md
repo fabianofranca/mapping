@@ -1,4 +1,4 @@
-# Faithful Material 3 (Compose) — 2026-11-08 (epic `epic/material3-fiel`, PR #860, MCP 0.28.0 (only the arc raster fix, no new version), schema v18)
+# Faithful Material 3 (Compose) — 2026-11-08 (épico `epic/material3-fiel`, PR #860, MCP 0.28.0 (only the arc raster fix, no new version), schema v18)
 
 ## Adicionado
 

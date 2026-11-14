@@ -1,4 +1,4 @@
-# Focus, Esc and view — 2026-11-10 (epic `epic/foco-esc-e-vista`, PR #1483, MCP unchanged, schema v18)
+# Focus, Esc and view — 2026-11-10 (épico `epic/foco-esc-e-vista`, PR #1483, MCP unchanged, schema v18)
 
 ## Corrigido
 

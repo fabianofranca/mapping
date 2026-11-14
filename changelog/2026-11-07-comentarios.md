@@ -1,4 +1,4 @@
-# Comments — 2026-11-07 (epic `epic/comentarios`, PR #724, MCP 0.25.0, schema v15)
+# Comments — 2026-11-07 (épico `epic/comentarios`, PR #724, MCP 0.25.0, schema v15)
 
 ## Adicionado
 

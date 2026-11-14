@@ -1,4 +1,4 @@
-# Lean CLAUDE.md: delivery process in docs/PROCESS.md — 2026-11-09 (epic `epic/claude-md-enxuto`, PR #1342, MCP 0.28.15, schema v18)
+# Lean CLAUDE.md: delivery process in docs/PROCESS.md — 2026-11-09 (épico `epic/claude-md-enxuto`, PR #1342, MCP 0.28.15, schema v18)
 
 ## Adicionado
 

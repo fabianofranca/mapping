@@ -1,4 +1,4 @@
-# Bugs without duplicates and with severity — 2026-11-04 (epic `epic/bugs-severidade`, PR #412, MCP 0.13.0, schema v13)
+# Bugs without duplicates and with severity — 2026-11-04 (épico `epic/bugs-severidade`, PR #412, MCP 0.13.0, schema v13)
 
 ## Alterado
 

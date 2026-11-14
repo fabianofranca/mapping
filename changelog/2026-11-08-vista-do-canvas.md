@@ -1,4 +1,4 @@
-# Canvas view for the tester — 2026-11-08 (epic `epic/vista-do-canvas`, PR #1070, MCP 0.28.4 unchanged, schema v18)
+# Canvas view for the tester — 2026-11-08 (épico `epic/vista-do-canvas`, PR #1070, MCP 0.28.4 unchanged, schema v18)
 
 ## Adicionado
 

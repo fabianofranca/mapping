@@ -1,4 +1,4 @@
-# Invalid does not fit either — 2026-11-09 (epic `epic/invalido-nao-cabe`, PR #1214, MCP 0.28.10 with no new version, schema v18)
+# Invalid does not fit either — 2026-11-09 (épico `epic/invalido-nao-cabe`, PR #1214, MCP 0.28.10 with no new version, schema v18)
 
 ## Corrigido
 

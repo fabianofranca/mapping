@@ -1,4 +1,4 @@
-# Focus on windows — 2026-11-02 (epic `epic/foco-janelas`, PR #315, MCP 0.12.0, schema v13)
+# Focus on windows — 2026-11-02 (épico `epic/foco-janelas`, PR #315, MCP 0.12.0, schema v13)
 
 ## Corrigido
 

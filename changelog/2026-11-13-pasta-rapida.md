@@ -1,4 +1,4 @@
-# Fast folder — 2026-11-13 (epic `epic/pasta-rapida`, PR #1796, MCP unchanged, schema v19)
+# Fast folder — 2026-11-13 (épico `epic/pasta-rapida`, PR #1796, MCP unchanged, schema v19)
 
 ## Adicionado
 

@@ -1,4 +1,4 @@
-# Keyboard focus after the Tree menus — 2026-11-11 (epic `epic/foco-menus-arvore`, PR #1547, MCP unchanged, schema v18)
+# Keyboard focus after the Tree menus — 2026-11-11 (épico `epic/foco-menus-arvore`, PR #1547, MCP unchanged, schema v18)
 
 ## Corrigido
 

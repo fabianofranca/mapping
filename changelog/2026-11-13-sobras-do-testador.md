@@ -1,4 +1,4 @@
-# Tester leftovers — 2026-11-13 (epic `epic/sobras-do-testador`, PR #1845, MCP unchanged, schema v19)
+# Tester leftovers — 2026-11-13 (épico `epic/sobras-do-testador`, PR #1845, MCP unchanged, schema v19)
 
 ## Alterado
 

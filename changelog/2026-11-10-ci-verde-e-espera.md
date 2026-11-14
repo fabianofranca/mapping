@@ -1,4 +1,4 @@
-# Green CI read correctly and coordinator with an alarm clock — 2026-11-10 (epic `epic/ci-verde-e-espera`, PR #1484, MCP 0.30.0 unchanged, schema v18)
+# Green CI read correctly and coordinator with an alarm clock — 2026-11-10 (épico `epic/ci-verde-e-espera`, PR #1484, MCP 0.30.0 unchanged, schema v18)
 
 ## Alterado
 

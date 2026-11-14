@@ -1,4 +1,4 @@
-# Stable accessible names — 2026-11-09 (epic `epic/nomes-estaveis`, PR #1140, MCP 0.28.6 unchanged, schema v18)
+# Stable accessible names — 2026-11-09 (épico `epic/nomes-estaveis`, PR #1140, MCP 0.28.6 unchanged, schema v18)
 
 ## Corrigido
 

@@ -1,4 +1,4 @@
-# Format 4: cheap extensions — 2026-11-10 (epic `epic/formato4-extensoes`, PR #1343, MCP 0.29.0, schema v18)
+# Format 4: cheap extensions — 2026-11-10 (épico `epic/formato4-extensoes`, PR #1343, MCP 0.29.0, schema v18)
 
 ## Adicionado
 

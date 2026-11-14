@@ -1,4 +1,4 @@
-# Clean placement — 2026-11-11 (epic `epic/placement-limpo`, PR #1650, MCP 0.35.1, schema v18)
+# Clean placement — 2026-11-11 (épico `epic/placement-limpo`, PR #1650, MCP 0.35.1, schema v18)
 
 ## Corrigido
 

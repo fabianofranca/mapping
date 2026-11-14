@@ -1,4 +1,4 @@
-# Content-based measurement in format 4 — 2026-11-11 (epic `epic/medida-conteudo`, PR #1580, MCP 0.35.0, schema v18)
+# Content-based measurement in format 4 — 2026-11-11 (épico `epic/medida-conteudo`, PR #1580, MCP 0.35.0, schema v18)
 
 ## Adicionado
 

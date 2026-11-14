@@ -1,4 +1,4 @@
-# Faster zoom in large projects — 2026-11-04 (epic `epic/zoom-rapido`, PR #434, MCP 0.13.0, schema v13)
+# Faster zoom in large projects — 2026-11-04 (épico `epic/zoom-rapido`, PR #434, MCP 0.13.0, schema v13)
 
 ## Alterado
 

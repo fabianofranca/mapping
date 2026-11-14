@@ -1,4 +1,4 @@
-# Stable growth tests — 2026-11-09 (epic `epic/escala-estavel`, PR #1212, MCP 0.28.11, schema v18)
+# Stable growth tests — 2026-11-09 (épico `epic/escala-estavel`, PR #1212, MCP 0.28.11, schema v18)
 
 ## Alterado
 

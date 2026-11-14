@@ -1,4 +1,4 @@
-# Viewer package and CI on base change — 2026-11-08 (epic `epic/viewer-pacote-ci`, PR #1067, MCP unchanged, schema v18, unchanged)
+# Viewer package and CI on base change — 2026-11-08 (épico `epic/viewer-pacote-ci`, PR #1067, MCP unchanged, schema v18, unchanged)
 
 ## Corrigido
 

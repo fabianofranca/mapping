@@ -1,4 +1,4 @@
-# Safe files — 2026-11-09 (epic `epic/arquivos-seguros`, PR #1141, MCP 0.28.7, schema v18)
+# Safe files — 2026-11-09 (épico `epic/arquivos-seguros`, PR #1141, MCP 0.28.7, schema v18)
 
 ## Corrigido
 

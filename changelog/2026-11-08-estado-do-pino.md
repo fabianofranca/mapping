@@ -1,4 +1,4 @@
-# Pin state — 2026-11-08 (epic `epic/estado-do-pino`, PR #924, MCP 0.28.2, schema v18)
+# Pin state — 2026-11-08 (épico `epic/estado-do-pino`, PR #924, MCP 0.28.2, schema v18)
 
 ## Alterado
 

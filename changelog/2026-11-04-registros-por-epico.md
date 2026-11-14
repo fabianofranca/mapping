@@ -1,4 +1,4 @@
-# Records per epic — 2026-11-04 (epic `epic/registros-por-epico`, PR #500, MCP 0.14.0, schema v13)
+# Records per epic — 2026-11-04 (épico `epic/registros-por-epico`, PR #500, MCP 0.14.0, schema v13)
 
 ## Alterado
 

@@ -1,4 +1,4 @@
-# Conversation state color — 2026-11-09 (epic `epic/cor-do-estado`, PR #1304, MCP 0.28.12, schema v18)
+# Conversation state color — 2026-11-09 (épico `epic/cor-do-estado`, PR #1304, MCP 0.28.12, schema v18)
 
 ## Alterado
 

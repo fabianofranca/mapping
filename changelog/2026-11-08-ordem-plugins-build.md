@@ -1,4 +1,4 @@
-# Build resilient to plugin order — 2026-11-08 (epic `epic/ordem-plugins-build`, PR #1069, MCP 0.28.4, schema v18)
+# Build resilient to plugin order — 2026-11-08 (épico `epic/ordem-plugins-build`, PR #1069, MCP 0.28.4, schema v18)
 
 ## Corrigido
 

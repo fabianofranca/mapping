@@ -1,4 +1,4 @@
-# Planning in issues — 2026-11-02 (epic `epic/fluxo-issues`, PR #307, MCP 0.12.0, schema v13)
+# Planning in issues — 2026-11-02 (épico `epic/fluxo-issues`, PR #307, MCP 0.12.0, schema v13)
 
 ## Alterado
 

@@ -1,4 +1,4 @@
-# Review notices on one line — 2026-11-06 (epic `epic/aviso-revisao-compacto`, PR #643, MCP 0.22.0, schema v14)
+# Review notices on one line — 2026-11-06 (épico `epic/aviso-revisao-compacto`, PR #643, MCP 0.22.0, schema v14)
 
 ## Alterado
 

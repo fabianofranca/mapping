@@ -1,4 +1,4 @@
-# Phase context hook — 2026-11-14 (epic `epic/gancho-de-contexto`, PR #1886, MCP unchanged, schema v19)
+# Phase context hook — 2026-11-14 (épico `epic/gancho-de-contexto`, PR #1886, MCP unchanged, schema v19)
 
 ## Adicionado
 

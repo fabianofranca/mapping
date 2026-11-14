@@ -1,4 +1,4 @@
-# Import a component's parameters through the signature — 2026-11-13 (epic `epic/importar-assinatura`, PR #1755, MCP 0.39.0, schema v19)
+# Import a component's parameters through the signature — 2026-11-13 (épico `epic/importar-assinatura`, PR #1755, MCP 0.39.0, schema v19)
 
 ## Adicionado
 

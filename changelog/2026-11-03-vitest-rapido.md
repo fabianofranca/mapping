@@ -1,4 +1,4 @@
-# Faster Vitest — 2026-11-03 (epic `epic/vitest-rapido`, PR #402, MCP 0.13.0, schema v13)
+# Faster Vitest — 2026-11-03 (épico `epic/vitest-rapido`, PR #402, MCP 0.13.0, schema v13)
 
 ## Alterado
 

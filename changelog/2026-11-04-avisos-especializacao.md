@@ -1,4 +1,4 @@
-# Specialization notices — 2026-11-04 (epic `epic/avisos-especializacao`, PR #498, MCP 0.15.0, schema v13)
+# Specialization notices — 2026-11-04 (épico `epic/avisos-especializacao`, PR #498, MCP 0.15.0, schema v13)
 
 ## Adicionado
 

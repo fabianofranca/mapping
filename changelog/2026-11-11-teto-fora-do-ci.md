@@ -1,4 +1,4 @@
-# dist/index.html ceiling outside ci.yml — 2026-11-11 (epic `epic/teto-fora-do-ci`, PR #1648, MCP unchanged, schema v18)
+# dist/index.html ceiling outside ci.yml — 2026-11-11 (épico `epic/teto-fora-do-ci`, PR #1648, MCP unchanged, schema v18)
 
 ## Alterado
 

@@ -1,4 +1,4 @@
-# Phase context ceiling — 2026-11-11 (epic `epic/contexto-da-fase`, PR #1655, MCP 0.35.0 unchanged, schema v18)
+# Phase context ceiling — 2026-11-11 (épico `epic/contexto-da-fase`, PR #1655, MCP 0.35.0 unchanged, schema v18)
 
 ## Adicionado
 

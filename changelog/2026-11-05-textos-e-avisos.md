@@ -1,4 +1,4 @@
-# Interface texts, notice row and guide fixed — 2026-11-05 (epic `epic/textos-e-avisos`, PR #530, MCP 0.16.0, schema v13)
+# Interface texts, notice row and guide fixed — 2026-11-05 (épico `epic/textos-e-avisos`, PR #530, MCP 0.16.0, schema v13)
 
 ## Corrigido
 

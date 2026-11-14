@@ -1,4 +1,4 @@
-# Measured and cheaper queue — 2026-11-11 (epic `epic/fila-medida`, PR #1546, MCP 0.34.2 unchanged, schema v18)
+# Measured and cheaper queue — 2026-11-11 (épico `epic/fila-medida`, PR #1546, MCP 0.34.2 unchanged, schema v18)
 
 ## Adicionado
 

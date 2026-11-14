@@ -1,4 +1,4 @@
-# Queue progress on the panel — 2026-11-13 (epic `epic/painel-andamento`, PR #1863, MCP 0.39.1 unchanged, schema v19)
+# Queue progress on the panel — 2026-11-13 (épico `epic/painel-andamento`, PR #1863, MCP 0.39.1 unchanged, schema v19)
 
 ## Alterado
 

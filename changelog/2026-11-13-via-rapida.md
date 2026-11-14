@@ -1,4 +1,4 @@
-# Fast track for a small process tweak — 2026-11-13 (epic `epic/via-rapida`, PR #1870, MCP unchanged, schema v19)
+# Fast track for a small process tweak — 2026-11-13 (épico `epic/via-rapida`, PR #1870, MCP unchanged, schema v19)
 
 ## Adicionado
 

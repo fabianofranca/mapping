@@ -1,4 +1,4 @@
-# Accessible semantics — 2026-11-03 (epic `epic/semantica-acessivel`, PR #355, MCP 0.13.0, schema v13)
+# Accessible semantics — 2026-11-03 (épico `epic/semantica-acessivel`, PR #355, MCP 0.13.0, schema v13)
 
 ## Alterado
 

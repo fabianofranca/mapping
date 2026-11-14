@@ -1,4 +1,4 @@
-# Stable budgets — 2026-11-04 (epic `epic/orcamentos-estaveis`, PR #408, MCP 0.13.0, schema v13)
+# Stable budgets — 2026-11-04 (épico `epic/orcamentos-estaveis`, PR #408, MCP 0.13.0, schema v13)
 
 ## Corrigido
 

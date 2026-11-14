@@ -1,4 +1,4 @@
-# CR of the app, storage, viewer, scripts and CI — 2026-11-09 (epic `epic/cr-app-infra`, PR #1287, MCP 0.28.15, schema v18)
+# CR of the app, storage, viewer, scripts and CI — 2026-11-09 (épico `epic/cr-app-infra`, PR #1287, MCP 0.28.15, schema v18)
 
 ## Alterado
 

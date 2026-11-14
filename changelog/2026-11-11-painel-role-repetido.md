@@ -1,4 +1,4 @@
-# Repeated registration in the queue panel — 2026-11-11 (epic `epic/painel-role-repetido`, PR #1635, MCP 0.34.3 unchanged, schema v18)
+# Repeated registration in the queue panel — 2026-11-11 (épico `epic/painel-role-repetido`, PR #1635, MCP 0.34.3 unchanged, schema v18)
 
 ## Corrigido
 

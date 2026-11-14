@@ -1,4 +1,4 @@
-# Coordinator handoff on a new skill — 2026-11-09 (epic `epic/fila-troca-skill`, PR #1303, MCP 0.28.12, schema v18)
+# Coordinator handoff on a new skill — 2026-11-09 (épico `epic/fila-troca-skill`, PR #1303, MCP 0.28.12, schema v18)
 
 ## Alterado
 

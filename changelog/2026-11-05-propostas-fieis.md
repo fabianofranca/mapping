@@ -1,4 +1,4 @@
-# Proposals faithful to what is applied — 2026-11-05 (epic `epic/propostas-fieis`, PR #547, MCP 0.17.0, schema v13)
+# Proposals faithful to what is applied — 2026-11-05 (épico `epic/propostas-fieis`, PR #547, MCP 0.17.0, schema v13)
 
 ## Adicionado
 

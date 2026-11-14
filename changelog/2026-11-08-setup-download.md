@@ -1,4 +1,4 @@
-# setup.sh download — 2026-11-08 (epic `epic/setup-download`, PR #880, MCP 0.28.2 no change, schema v18)
+# setup.sh download — 2026-11-08 (épico `epic/setup-download`, PR #880, MCP 0.28.2 no change, schema v18)
 
 ## Corrigido
 

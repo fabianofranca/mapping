@@ -1,4 +1,4 @@
-# Fix in the same proposal — 2026-11-06 (epic `epic/corrigir-proposta`, PR #669, MCP 0.23.0, schema v14)
+# Fix in the same proposal — 2026-11-06 (épico `epic/corrigir-proposta`, PR #669, MCP 0.23.0, schema v14)
 
 ## Adicionado
 

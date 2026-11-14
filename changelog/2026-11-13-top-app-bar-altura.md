@@ -1,4 +1,4 @@
-# Top app bar is born with the style's height — 2026-11-13 (epic `epic/top-app-bar-altura`, PR #1793, MCP 0.39.0, schema v19)
+# Top app bar is born with the style's height — 2026-11-13 (épico `epic/top-app-bar-altura`, PR #1793, MCP 0.39.0, schema v19)
 
 ## Alterado
 

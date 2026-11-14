@@ -1,4 +1,4 @@
-# Effort under the queue's control — 2026-11-09 (epic `epic/esforco-subagentes`, PR #1278, MCP 0.28.12, schema v18)
+# Effort under the queue's control — 2026-11-09 (épico `epic/esforco-subagentes`, PR #1278, MCP 0.28.12, schema v18)
 
 ## Alterado
 

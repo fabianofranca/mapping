@@ -1,4 +1,4 @@
-# Cloud guide — 2026-11-06 (epic `epic/guia-da-nuvem`, PR #612, MCP 0.19.0, schema v14)
+# Cloud guide — 2026-11-06 (épico `epic/guia-da-nuvem`, PR #612, MCP 0.19.0, schema v14)
 
 ## Corrigido
 

@@ -1,4 +1,4 @@
-# Leaner queue coordinator — 2026-11-09 (epic `epic/fila-contexto`, PR #1290, MCP 0.28.12, schema v18)
+# Leaner queue coordinator — 2026-11-09 (épico `epic/fila-contexto`, PR #1290, MCP 0.28.12, schema v18)
 
 ## Alterado
 

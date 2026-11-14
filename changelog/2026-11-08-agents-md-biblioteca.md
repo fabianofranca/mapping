@@ -1,4 +1,4 @@
-# Workspace AGENTS.md fixed — 2026-11-08 (epic `epic/agents-md-biblioteca`, PR #873, MCP 0.28.0 no change, schema v18)
+# Workspace AGENTS.md fixed — 2026-11-08 (épico `epic/agents-md-biblioteca`, PR #873, MCP 0.28.0 no change, schema v18)
 
 ## Corrigido
 

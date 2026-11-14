@@ -1,4 +1,4 @@
-# Context handoff and queue panel — 2026-11-12 (epic `epic/passagem-e-painel`, PR #1758, MCP 0.38.1 unchanged, schema v19)
+# Context handoff and queue panel — 2026-11-12 (épico `epic/passagem-e-painel`, PR #1758, MCP 0.38.1 unchanged, schema v19)
 
 ## Alterado
 

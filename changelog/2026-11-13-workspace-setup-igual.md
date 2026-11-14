@@ -1,4 +1,4 @@
-# mappings-workspace identical to examples/workspace — 2026-11-13 (epic `epic/workspace-setup-igual`, PR #1820, MCP unchanged, schema v19)
+# mappings-workspace identical to examples/workspace — 2026-11-13 (épico `epic/workspace-setup-igual`, PR #1820, MCP unchanged, schema v19)
 
 ## Corrigido
 

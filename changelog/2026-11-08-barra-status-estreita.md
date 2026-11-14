@@ -1,4 +1,4 @@
-# Narrow status bar — 2026-11-08 (epic `epic/barra-status-estreita`, PR #999, MCP 0.28.4, schema v18)
+# Narrow status bar — 2026-11-08 (épico `epic/barra-status-estreita`, PR #999, MCP 0.28.4, schema v18)
 
 ## Corrigido
 

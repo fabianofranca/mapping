@@ -1,4 +1,4 @@
-# Visual pass on Details — 2026-11-10 (epic `epic/detalhes-visual`, PR #1460, MCP 0.30.0 unchanged, schema v18)
+# Visual pass on Details — 2026-11-10 (épico `epic/detalhes-visual`, PR #1460, MCP 0.30.0 unchanged, schema v18)
 
 ## Corrigido
 

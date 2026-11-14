@@ -1,4 +1,4 @@
-# Cleared-role warning — 2026-11-06 (epic `epic/aviso-papel-limpo`, PR #600, MCP 0.19.0, schema v14)
+# Cleared-role warning — 2026-11-06 (épico `epic/aviso-papel-limpo`, PR #600, MCP 0.19.0, schema v14)
 
 ## Adicionado
 

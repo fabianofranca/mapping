@@ -1,4 +1,4 @@
-# Round guide adjustments — 2026-11-06 (epic `epic/ajustes-do-guia-da-rodada`, PR #640, MCP 0.22.0, schema v14)
+# Round guide adjustments — 2026-11-06 (épico `epic/ajustes-do-guia-da-rodada`, PR #640, MCP 0.22.0, schema v14)
 
 ## Corrigido
 

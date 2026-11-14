@@ -1,4 +1,4 @@
-# Placement without noise — 2026-11-08 (epic `epic/placement-sem-ruido`, PR #978, MCP 0.28.4, schema v18)
+# Placement without noise — 2026-11-08 (épico `epic/placement-sem-ruido`, PR #978, MCP 0.28.4, schema v18)
 
 ## Corrigido
 

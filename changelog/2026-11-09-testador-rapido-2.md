@@ -1,4 +1,4 @@
-# Faster cloud tester, part 2 — 2026-11-09 (epic `epic/testador-rapido-2`, PR #1245, MCP 0.28.11, schema v18)
+# Faster cloud tester, part 2 — 2026-11-09 (épico `epic/testador-rapido-2`, PR #1245, MCP 0.28.11, schema v18)
 
 ## Adicionado
 

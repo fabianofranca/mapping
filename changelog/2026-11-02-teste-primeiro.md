@@ -1,4 +1,4 @@
-# Test first and complexity gate — 2026-11-02 (epic `epic/teste-primeiro`, PR #321, MCP 0.12.0, schema v13)
+# Test first and complexity gate — 2026-11-02 (épico `epic/teste-primeiro`, PR #321, MCP 0.12.0, schema v13)
 
 ## Adicionado
 

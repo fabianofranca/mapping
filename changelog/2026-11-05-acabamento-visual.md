@@ -1,4 +1,4 @@
-# Visual polish — 2026-11-05 (epic `epic/acabamento-visual`, PR #541, MCP 0.16.0, schema v13)
+# Visual polish — 2026-11-05 (épico `epic/acabamento-visual`, PR #541, MCP 0.16.0, schema v13)
 
 ## Alterado
 

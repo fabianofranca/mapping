@@ -1,4 +1,4 @@
-# Resilient CI — 2026-11-10 (epic `epic/ci-resiliente`, PR #1381, MCP 0.28.15 unchanged, schema v18)
+# Resilient CI — 2026-11-10 (épico `epic/ci-resiliente`, PR #1381, MCP 0.28.15 unchanged, schema v18)
 
 ## Adicionado
 

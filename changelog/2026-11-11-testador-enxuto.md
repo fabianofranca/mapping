@@ -1,4 +1,4 @@
-# Lean tester — 2026-11-11 (epic `epic/testador-enxuto`, PR #1578, MCP 0.34.3, schema v18)
+# Lean tester — 2026-11-11 (épico `epic/testador-enxuto`, PR #1578, MCP 0.34.3, schema v18)
 
 ## Alterado
 

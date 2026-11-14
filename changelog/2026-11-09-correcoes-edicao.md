@@ -1,4 +1,4 @@
-# Fixes in editing — 2026-11-09 (epic `epic/correcoes-edicao`, PR #1113, MCP 0.28.5 unchanged, schema v18)
+# Fixes in editing — 2026-11-09 (épico `epic/correcoes-edicao`, PR #1113, MCP 0.28.5 unchanged, schema v18)
 
 ## Corrigido
 

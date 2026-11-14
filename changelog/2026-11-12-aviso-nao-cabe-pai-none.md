@@ -1,4 +1,4 @@
-# "The component does not fit" notice with the wide word — 2026-11-12 (epic `epic/aviso-nao-cabe-pai-none`, PR #1746, MCP 0.38.1 provisional, schema v19)
+# "The component does not fit" notice with the wide word — 2026-11-12 (épico `epic/aviso-nao-cabe-pai-none`, PR #1746, MCP 0.38.1 provisional, schema v19)
 
 ## Corrigido
 

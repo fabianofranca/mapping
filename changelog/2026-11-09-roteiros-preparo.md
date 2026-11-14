@@ -1,4 +1,4 @@
-# Scripts that match the app — 2026-11-09 (epic `epic/roteiros-preparo`, PR #1244, MCP 0.28.12, schema v18)
+# Scripts that match the app — 2026-11-09 (épico `epic/roteiros-preparo`, PR #1244, MCP 0.28.12, schema v18)
 
 ## Corrigido
 

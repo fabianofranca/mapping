@@ -1,4 +1,4 @@
-# Visual pass over perspectives and the canvas — 2026-11-10 (epic `epic/passada-perspectivas-canvas`, PR #1496, MCP unchanged, schema v18)
+# Visual pass over perspectives and the canvas — 2026-11-10 (épico `epic/passada-perspectivas-canvas`, PR #1496, MCP unchanged, schema v18)
 
 ## Corrigido
 

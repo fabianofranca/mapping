@@ -1,4 +1,4 @@
-# Context measurement through the transcript — 2026-11-12 (epic `epic/medida-de-contexto`, PR #1709, MCP 0.36.0 unchanged, schema v18)
+# Context measurement through the transcript — 2026-11-12 (épico `epic/medida-de-contexto`, PR #1709, MCP 0.36.0 unchanged, schema v18)
 
 ## Corrigido
 

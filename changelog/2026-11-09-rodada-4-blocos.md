@@ -1,4 +1,4 @@
-# Full round in 5 blocks — 2026-11-09 (epic `epic/rodada-4-blocos`, PR #1145, MCP 0.28.10, schema v18)
+# Full round in 5 blocks — 2026-11-09 (épico `epic/rodada-4-blocos`, PR #1145, MCP 0.28.10, schema v18)
 
 ## Adicionado
 

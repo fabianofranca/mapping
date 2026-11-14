@@ -1,4 +1,4 @@
-# Touches by section in every docs/*.md and the root .md files — 2026-11-13 (epic `epic/toca-por-secao`, PR #1833, MCP 0.39.1 unchanged, schema v19)
+# Touches by section in every docs/*.md and the root .md files — 2026-11-13 (épico `epic/toca-por-secao`, PR #1833, MCP 0.39.1 unchanged, schema v19)
 
 ## Alterado
 

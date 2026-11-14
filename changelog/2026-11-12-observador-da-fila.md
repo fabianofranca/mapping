@@ -1,4 +1,4 @@
-# Queue watcher in the supervisionar-fila skill — 2026-11-12 (epic `epic/observador-da-fila`, PR #1702, MCP 0.36.0 unchanged, schema v18)
+# Queue watcher in the supervisionar-fila skill — 2026-11-12 (épico `epic/observador-da-fila`, PR #1702, MCP 0.36.0 unchanged, schema v18)
 
 ## Corrigido
 

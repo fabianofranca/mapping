@@ -1,4 +1,4 @@
-# High effort in detailing — 2026-11-09 (epic `epic/esforco-detalhamento`, PR #1161, MCP 0.28.6, schema v18)
+# High effort in detailing — 2026-11-09 (épico `epic/esforco-detalhamento`, PR #1161, MCP 0.28.6, schema v18)
 
 ## Alterado
 

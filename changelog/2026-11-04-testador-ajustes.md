@@ -1,4 +1,4 @@
-# Cloud helpers and guide fixed — 2026-11-04 (epic `epic/testador-ajustes`, PR #417, MCP 0.13.0, schema v13)
+# Cloud helpers and guide fixed — 2026-11-04 (épico `epic/testador-ajustes`, PR #417, MCP 0.13.0, schema v13)
 
 ## Corrigido
 

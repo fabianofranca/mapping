@@ -1,4 +1,4 @@
-# Enter saves the long field and Wrap with exact margin — 2026-11-05 (epic `epic/enter-e-margem`, PR #523, MCP 0.16.0, schema v13)
+# Enter saves the long field and Wrap with exact margin — 2026-11-05 (épico `epic/enter-e-margem`, PR #523, MCP 0.16.0, schema v13)
 
 ## Corrigido
 

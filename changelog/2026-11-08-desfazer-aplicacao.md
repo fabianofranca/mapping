@@ -1,4 +1,4 @@
-# Undo apply — 2026-11-08 (epic `epic/desfazer-aplicacao`, PR #927, MCP 0.28.2, schema v18)
+# Undo apply — 2026-11-08 (épico `epic/desfazer-aplicacao`, PR #927, MCP 0.28.2, schema v18)
 
 ## Corrigido
 

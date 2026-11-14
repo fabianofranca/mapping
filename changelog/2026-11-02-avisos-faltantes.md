@@ -1,4 +1,4 @@
-# Missing notices — 2026-11-02 (epic `epic/avisos-faltantes`, PR #333, MCP 0.13.0, schema v13)
+# Missing notices — 2026-11-02 (épico `epic/avisos-faltantes`, PR #333, MCP 0.13.0, schema v13)
 
 ## Adicionado
 

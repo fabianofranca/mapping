@@ -1,4 +1,4 @@
-# Dependency graph in the queue panel — 2026-11-12 (epic `epic/painel-grafo-da-fila`, PR #1773, MCP 0.38.2 unchanged, schema v19)
+# Dependency graph in the queue panel — 2026-11-12 (épico `epic/painel-grafo-da-fila`, PR #1773, MCP 0.38.2 unchanged, schema v19)
 
 ## Adicionado
 

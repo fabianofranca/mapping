@@ -1,4 +1,4 @@
-# Perspectives in the guide and in the example — 2026-11-10 (epic `epic/guia-perspectivas`, PR #1419, MCP 0.29.0 unchanged, schema v18)
+# Perspectives in the guide and in the example — 2026-11-10 (épico `epic/guia-perspectivas`, PR #1419, MCP 0.29.0 unchanged, schema v18)
 
 ## Adicionado
 

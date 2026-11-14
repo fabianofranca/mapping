@@ -1,4 +1,4 @@
-# Touches by file and section on the queue sheet — 2026-11-13 (epic `epic/toca-por-arquivo`, PR #1850, MCP 0.39.1 unchanged, schema v19)
+# Touches by file and section on the queue sheet — 2026-11-13 (épico `epic/toca-por-arquivo`, PR #1850, MCP 0.39.1 unchanged, schema v19)
 
 ## Alterado
 

@@ -1,4 +1,4 @@
-# Queue implementation skill — 2026-11-08 (epic `epic/skill-fila`, PR #979, MCP 0.28.3, schema v18)
+# Queue implementation skill — 2026-11-08 (épico `epic/skill-fila`, PR #979, MCP 0.28.3, schema v18)
 
 ## Adicionado
 

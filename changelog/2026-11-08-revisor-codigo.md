@@ -1,4 +1,4 @@
-# Code reviewer — 2026-11-08 (epic `epic/revisor-codigo`, PR #985, MCP 0.28.4, schema v18)
+# Code reviewer — 2026-11-08 (épico `epic/revisor-codigo`, PR #985, MCP 0.28.4, schema v18)
 
 ## Adicionado
 

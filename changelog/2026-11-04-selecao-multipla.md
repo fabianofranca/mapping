@@ -1,4 +1,4 @@
-# Multiple selection — 2026-11-04 (epic `epic/selecao-multipla`, PR #448, MCP 0.13.0, schema v13)
+# Multiple selection — 2026-11-04 (épico `epic/selecao-multipla`, PR #448, MCP 0.13.0, schema v13)
 
 ## Adicionado
 

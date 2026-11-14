@@ -1,4 +1,4 @@
-# Linked by arrow — 2026-11-07 (epic `epic/ligado-por-seta`, PR #720, MCP 0.24.1, schema v15)
+# Linked by arrow — 2026-11-07 (épico `epic/ligado-por-seta`, PR #720, MCP 0.24.1, schema v15)
 
 ## Adicionado
 

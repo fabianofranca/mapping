@@ -1,4 +1,4 @@
-# The overdue check looks at the CI cycle — 2026-11-14 (epic `epic/ciclo-ci-atrasadas`, PR #1887, MCP unchanged, schema v19)
+# The overdue check looks at the CI cycle — 2026-11-14 (épico `epic/ciclo-ci-atrasadas`, PR #1887, MCP unchanged, schema v19)
 
 ## Alterado
 

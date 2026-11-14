@@ -1,4 +1,4 @@
-# Scripts that match the app and tester helpers — 2026-11-10 (epic `epic/roteiros-com-a-app`, PR #1418, MCP 0.29.0, schema v18)
+# Scripts that match the app and tester helpers — 2026-11-10 (épico `epic/roteiros-com-a-app`, PR #1418, MCP 0.29.0, schema v18)
 
 ## Alterado
 

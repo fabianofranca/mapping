@@ -1,4 +1,4 @@
-# Owner authorization in the phase chat — 2026-11-11 (epic `epic/autorizacao-na-fase`, PR #1622, MCP 0.34.3 unchanged, schema v18)
+# Owner authorization in the phase chat — 2026-11-11 (épico `epic/autorizacao-na-fase`, PR #1622, MCP 0.34.3 unchanged, schema v18)
 
 ## Alterado
 

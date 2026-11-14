@@ -1,4 +1,4 @@
-# Fixes in the component engine — 2026-11-09 (epic `epic/correcoes-componentes`, PR #1173, MCP 0.28.9, schema v18)
+# Fixes in the component engine — 2026-11-09 (épico `epic/correcoes-componentes`, PR #1173, MCP 0.28.9, schema v18)
 
 ## Corrigido
 

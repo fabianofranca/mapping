@@ -1,4 +1,4 @@
-# Queue safety net — 2026-11-10 (epic `epic/rede-de-seguranca`, PR #1434, MCP 0.30.0 unchanged, schema v18)
+# Queue safety net — 2026-11-10 (épico `epic/rede-de-seguranca`, PR #1434, MCP 0.30.0 unchanged, schema v18)
 
 ## Adicionado
 

@@ -1,4 +1,4 @@
-# Ceiling of dist/index.html that always rises — 2026-11-13 (epic `epic/teto-sempre-sobe`, PR #1821, MCP unchanged, schema v19)
+# Ceiling of dist/index.html that always rises — 2026-11-13 (épico `epic/teto-sempre-sobe`, PR #1821, MCP unchanged, schema v19)
 
 ## Alterado
 

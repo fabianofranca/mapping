@@ -1,4 +1,4 @@
-# Queue panel grouped by status — 2026-11-09 (epic `epic/painel-ordem`, PR #1321, MCP 0.28.12, schema v18)
+# Queue panel grouped by status — 2026-11-09 (épico `epic/painel-ordem`, PR #1321, MCP 0.28.12, schema v18)
 
 ## Alterado
 

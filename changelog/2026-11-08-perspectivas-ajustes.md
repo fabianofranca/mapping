@@ -1,4 +1,4 @@
-# Adjustments from the perspectives round — 2026-11-08 (epic `epic/perspectivas-ajustes`, PR #931, MCP 0.28.3, schema v18)
+# Adjustments from the perspectives round — 2026-11-08 (épico `epic/perspectivas-ajustes`, PR #931, MCP 0.28.3, schema v18)
 
 ## Corrigido
 

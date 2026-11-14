@@ -1,4 +1,4 @@
-# Supervision: resume without arguments and handoff in a database — 2026-11-11 (epic `epic/supervisao-retomada`, PR #1672, MCP 0.35.1 unchanged, schema v18)
+# Supervision: resume without arguments and handoff in a database — 2026-11-11 (épico `epic/supervisao-retomada`, PR #1672, MCP 0.35.1 unchanged, schema v18)
 
 ## Adicionado
 

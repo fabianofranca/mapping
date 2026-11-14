@@ -1,4 +1,4 @@
-# Round guide on demand — 2026-11-10 (epic `epic/guia-sob-demanda`, PR #1458, MCP 0.30.0 unchanged, schema v18)
+# Round guide on demand — 2026-11-10 (épico `epic/guia-sob-demanda`, PR #1458, MCP 0.30.0 unchanged, schema v18)
 
 ## Alterado
 

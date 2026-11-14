@@ -1,4 +1,4 @@
-# Polish and guide — 2026-11-06 (epic `epic/acabamento-e-guia`, PR #593, MCP 0.18.1, schema v14)
+# Polish and guide — 2026-11-06 (épico `epic/acabamento-e-guia`, PR #593, MCP 0.18.1, schema v14)
 
 ## Corrigido
 

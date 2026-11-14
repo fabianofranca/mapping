@@ -1,4 +1,4 @@
-# Roles and external documents — 2026-11-05 (epic `epic/papeis-e-docs-externos`, PR #568, MCP 0.18.0, schema v14)
+# Roles and external documents — 2026-11-05 (épico `epic/papeis-e-docs-externos`, PR #568, MCP 0.18.0, schema v14)
 
 ## Adicionado
 

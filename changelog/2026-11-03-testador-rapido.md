@@ -1,4 +1,4 @@
-# Faster tester — 2026-11-03 (epic `epic/testador-rapido`, PR #385, MCP 0.13.0, schema v13)
+# Faster tester — 2026-11-03 (épico `epic/testador-rapido`, PR #385, MCP 0.13.0, schema v13)
 
 ## Alterado
 

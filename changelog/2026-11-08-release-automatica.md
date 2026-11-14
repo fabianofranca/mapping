@@ -1,4 +1,4 @@
-# MCP stable release on epic merge — 2026-11-08 (epic `epic/release-automatica`, PR #933, MCP 0.28.2 no change, schema v18)
+# MCP stable release on epic merge — 2026-11-08 (épico `epic/release-automatica`, PR #933, MCP 0.28.2 no change, schema v18)
 
 ## Alterado
 

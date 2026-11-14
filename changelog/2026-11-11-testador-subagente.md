@@ -1,4 +1,4 @@
-# Tester with a subagent per batch — 2026-11-11 (epic `epic/testador-subagente`, PR #1664, MCP unchanged, schema v18)
+# Tester with a subagent per batch — 2026-11-11 (épico `epic/testador-subagente`, PR #1664, MCP unchanged, schema v18)
 
 ## Alterado
 

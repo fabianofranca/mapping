@@ -1,4 +1,4 @@
-# Review in short windows — 2026-11-06 (epic `epic/revisao-janela-baixa`, PR #623, MCP 0.19.0, schema v14)
+# Review in short windows — 2026-11-06 (épico `epic/revisao-janela-baixa`, PR #623, MCP 0.19.0, schema v14)
 
 ## Alterado
 

@@ -1,4 +1,4 @@
-# New piece in free space — 2026-11-11 (epic `epic/espaco-livre`, PR #1565, MCP 0.34.1, schema v18)
+# New piece in free space — 2026-11-11 (épico `epic/espaco-livre`, PR #1565, MCP 0.34.1, schema v18)
 
 ## Corrigido
 

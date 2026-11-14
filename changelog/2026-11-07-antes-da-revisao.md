@@ -1,4 +1,4 @@
-# Readable before-the-revision — 2026-11-07 (epic `epic/antes-da-revisao`, PR #708, MCP 0.24.0, schema v15)
+# Readable before-the-revision — 2026-11-07 (épico `epic/antes-da-revisao`, PR #708, MCP 0.24.0, schema v15)
 
 ## Corrigido
 

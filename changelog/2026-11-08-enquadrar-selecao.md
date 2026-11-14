@@ -1,4 +1,4 @@
-# Fit selection and the Card that moved in R25 — 2026-11-08 (epic `epic/enquadrar-selecao`, PR #1088, MCP 0.28.5 no change, schema v18)
+# Fit selection and the Card that moved in R25 — 2026-11-08 (épico `epic/enquadrar-selecao`, PR #1088, MCP 0.28.5 no change, schema v18)
 
 ## Adicionado
 

@@ -1,4 +1,4 @@
-# Dark theme and finishing touches — 2026-11-11 (epic `epic/tema-escuro-acabamento`, PR #1566, MCP 0.33.1 unchanged, schema v18)
+# Dark theme and finishing touches — 2026-11-11 (épico `epic/tema-escuro-acabamento`, PR #1566, MCP 0.33.1 unchanged, schema v18)
 
 ## Corrigido
 

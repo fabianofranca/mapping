@@ -1,4 +1,4 @@
-# A low-severity-only finding goes to closing without a retest — 2026-11-13 (epic `epic/low-sem-reteste`, PR #1838, MCP 0.39.1 unchanged, schema v19)
+# A low-severity-only finding goes to closing without a retest — 2026-11-13 (épico `epic/low-sem-reteste`, PR #1838, MCP 0.39.1 unchanged, schema v19)
 
 ## Alterado
 

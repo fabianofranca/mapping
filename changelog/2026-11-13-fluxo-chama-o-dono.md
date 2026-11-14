@@ -1,4 +1,4 @@
-# "Call the owner" in the delivery flow — 2026-11-13 (epic `epic/fluxo-chama-o-dono`, PR #1871, MCP unchanged, schema v19)
+# "Call the owner" in the delivery flow — 2026-11-13 (épico `epic/fluxo-chama-o-dono`, PR #1871, MCP unchanged, schema v19)
 
 ## Alterado
 

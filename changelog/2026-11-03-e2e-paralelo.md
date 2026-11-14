@@ -1,4 +1,4 @@
-# Parallel e2e — 2026-11-03 (epic `epic/e2e-paralelo`, PR #398, MCP 0.13.0, schema v13)
+# Parallel e2e — 2026-11-03 (épico `epic/e2e-paralelo`, PR #398, MCP 0.13.0, schema v13)
 
 ## Alterado
 

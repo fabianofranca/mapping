@@ -1,4 +1,4 @@
-# Queue panel with all the plan's phases — 2026-11-12 (epic `epic/painel-fases-do-plano`, PR #1717, MCP 0.36.0 unchanged, schema v18)
+# Queue panel with all the plan's phases — 2026-11-12 (épico `epic/painel-fases-do-plano`, PR #1717, MCP 0.36.0 unchanged, schema v18)
 
 ## Alterado
 

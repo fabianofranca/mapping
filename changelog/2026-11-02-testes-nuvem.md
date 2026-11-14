@@ -1,4 +1,4 @@
-# Cloud tests — 2026-11-02 (epic `epic/testes-nuvem`, PR #279, MCP unchanged, schema v13)
+# Cloud tests — 2026-11-02 (épico `epic/testes-nuvem`, PR #279, MCP unchanged, schema v13)
 
 ## Adicionado
 

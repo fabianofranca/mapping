@@ -1,4 +1,4 @@
-# Layer badge and accessible names — 2026-11-04 (epic `epic/selo-nomes-acessiveis`, PR #440, MCP 0.13.0, schema v13)
+# Layer badge and accessible names — 2026-11-04 (épico `epic/selo-nomes-acessiveis`, PR #440, MCP 0.13.0, schema v13)
 
 ## Corrigido
 
