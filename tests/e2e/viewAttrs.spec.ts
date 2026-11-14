@@ -10,8 +10,8 @@ import {
   type Point,
 } from './helpers';
 
-// Canvas view stage (#842), PV1: the  publishes  ("x y scale" of the
-// stage) and  ("left top width height" of the primary selection), in CSS px
+// Canvas view stage (#842), PV1: the `.canvas-host` publishes `data-viewport` ("x y scale" of the
+// stage) and `data-selection-box` ("left top width height" of the primary selection), in CSS px
 // relative to the host corner. They are read-only so the tester can find a marking on screen.
 
 const numbers = async (host: Locator, name: string): Promise<number[] | null> => {

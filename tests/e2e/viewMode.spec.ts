@@ -9,11 +9,11 @@ import {
 } from './helpers';
 
 // Stage View, VZ3: the view mode and the "Show on canvas" panel. The canvas publishes on the
-// container ()  and , what it has already drawn.
+// container (`.canvas-host`) `data-arrows` and `data-components`, what it has already drawn.
 
-/** Distance (screen px) from the link handle to the right edge of the marking (). */
+/** Distance (screen px) from the link handle to the right edge of the marking (`LINK_HANDLE_OFFSET`). */
 const LINK_HANDLE_OFFSET = 14;
-/** Margin, in screen px, that the framing leaves around everything (). */
+/** Margin, in screen px, that the framing leaves around everything (`FIT_PADDING`). */
 const FIT_PADDING = 24;
 
 /** New container (Custom) with the given name, through the dialog. */
@@ -34,7 +34,7 @@ async function fitAll(page: Page, host: Locator): Promise<void> {
   await expect(host).toHaveAttribute('data-fits', String(before + 1));
 }
 
-/** Where each container is on screen, right after Fit all (the positions come from ). */
+/** Where each container is on screen, right after Fit all (the positions come from `mapping.json`). */
 async function containerRects(page: Page, host: Locator): Promise<Map<string, Rect>> {
   const { mapping } = await exportMapping(page);
   const box = await host.boundingBox();
@@ -70,8 +70,8 @@ async function containerRects(page: Page, host: Locator): Promise<Map<string, Re
 }
 
 /**
- * Duas telas com uma marcação cada, do mesmo tamanho e no mesmo ponto relativo de cada tela:
- * devolve o retângulo (px de tela) das duas marcações, na ordem das telas.
+ * Two screens with one marking each, of the same size and at the same relative point of each screen:
+ * returns the rectangle (screen px) of the two markings, in the order of the screens.
  */
 async function twoMarkedScreens(page: Page, host: Locator): Promise<[Rect, Rect]> {
   for (const name of ['Tela A', 'Tela B']) await addContainer(page, host, name);
@@ -101,6 +101,7 @@ async function twoMarkedScreens(page: Page, host: Locator): Promise<[Rect, Rect]
 
 const centerOf = (r: Rect): Point => ({ x: r.x + r.width / 2, y: r.y + r.height / 2 });
 
+// pt-BR kept: built-in notes library data ('Nota', 'Notas' from libraries/notas) asserted by tests/examples
 const panel = (page: Page) => page.getByRole('dialog', { name: 'Show on canvas' });
 const box = (page: Page, name: string) =>
   panel(page).getByRole('checkbox', { name, exact: false });
@@ -125,9 +126,7 @@ test('enter, uncheck Outline and a layer with a drawing, Screens only, Esc, and 
   await expect(host).toHaveAttribute('data-arrows', '1');
   await page.keyboard.press('Control+Shift+9');
   await page.getByRole('tab', { name: 'Palette' }).click();
-  await page
-    .getByRole('button', { name: 'Add to canvas: Nota', exact: true })
-    .click();
+  await page.getByRole('button', { name: 'Add to canvas: Nota', exact: true }).click();
   await expect(host).toHaveAttribute('data-components', '1');
 
   // Enter: the button is pressed, Draw is disabled and the panel opens with focus inside.
