@@ -1,7 +1,7 @@
-// EX6 da etapa "expressões que calculam no formato 4" (#897): o progress-indicator da
-// material3-compose desenha o arco (circular) e o comprimento (linear) pela fração, exatos para
-// qualquer `progress` de 0 a 1, sem as tabelas de 99 e 101 casos de antes. A regressão contra as
-// cenas de antes (tests/fixtures/material3-ex6-v1.json) e os limites de `$switch` e `$eq` ficam aqui.
+// EX6 of the "expressions that compute in format 4" stage (#897): the progress-indicator of
+// material3-compose draws the arc (circular) and the length (linear) from the fraction, exact for
+// any `progress` from 0 to 1, without the tables of 99 and 101 cases from before. The regression against the
+// scenes from before (tests/fixtures/material3-ex6-v1.json) and the limits on `$switch` and `$eq` live here.
 import { describe, expect, it } from 'vitest';
 import { absoluteBoxes, walk } from '../../src/model/components/scene';
 import type { PathNode, SceneNode } from '../../src/model/components/scene';
@@ -14,6 +14,7 @@ import {
 } from '../support/material3Ex6Fixture';
 import type { Drawing, Mode, Values } from '../support/material3Ex6Fixture';
 
+// pt-BR kept: node names of libraries/material3-compose and of tests/fixtures/material3-ex6-v1.json are Portuguese data
 const tokens = spec.tokens!.values as Record<string, unknown>;
 const tok = (name: string, mode: Mode = 'light'): string => {
   const value = tokens[name] as string | Record<Mode, string>;
@@ -44,12 +45,12 @@ const rectOf = (d: Drawing, n: SceneNode): number[] => {
 const near = (a: number, b: number, eps = 0.01): boolean => Math.abs(a - b) <= eps;
 
 // ---------------------------------------------------------------------------------------------
-// Circular: o arco pela fração
+// Circular: the arc from the fraction
 // ---------------------------------------------------------------------------------------------
 
-/** O que o Compose faz (ProgressIndicator.kt, 549 a 560): o gap em graus, (4 + 4) / (π × 40) × 360. */
+/** What Compose does (ProgressIndicator.kt, 549 to 560): the gap in degrees, (4 + 4) / (π × 40) × 360. */
 const GAP_SWEEP = ((4 + 4) / (Math.PI * 40)) * 360;
-/** O ponto do círculo de raio 18 centrado em (20, 20), a `degrees` graus das 12h no sentido horário. */
+/** The point of the circle of radius 18 centered at (20, 20), `degrees` degrees from 12 o'clock clockwise. */
 const onCircle = (degrees: number): [number, number] => [
   20 + 18 * Math.sin((degrees * Math.PI) / 180),
   20 - 18 * Math.cos((degrees * Math.PI) / 180),
@@ -61,9 +62,9 @@ function arcOf(d: Drawing, name: string) {
   return { node, start: points[0]!, end: points[1]! };
 }
 
-describe('EX6 progress-indicator — circular: o arco sai da fração, para qualquer valor', () => {
+describe('EX6 progress-indicator — circular: the arc comes from the fraction, for any value', () => {
   it.each([0.333, 0.6667, 0.0123, 0.5, 0.874, 0.9991])(
-    'progress %s: o indicador parte das 12h e termina em 360 × p, no raio 18',
+    'progress %s: the indicator starts at 12 o\'clock and ends at 360 × p, on radius 18',
     (p) => {
       const d = drawCircular(p);
       const { node, start, end } = arcOf(d, 'indicador');
@@ -71,14 +72,14 @@ describe('EX6 progress-indicator — circular: o arco sai da fração, para qual
       expect(start).toMatchObject({ x: 20, y: 2 });
       expect(near(end.x, ex)).toBe(true);
       expect(near(end.y, ey)).toBe(true);
-      // o arco é grande quando passa de meia volta, sempre no sentido horário
+      // the arc is large when it goes past half a turn, always clockwise
       expect(end.flags).toBe(`${p > 0.5 ? 1 : 0}1`);
       expect(solid(node.stroke?.paints ?? [])).toBe(tok('primary'));
     },
   );
 
   it.each([0.333, 0.6667, 0.0123, 0.5, 0.874, 0.9])(
-    'progress %s: o trilho vai de 360 × p + gap até -gap (o gap encurta quando o arco é curto)',
+    'progress %s: the track goes from 360 × p + gap to -gap (the gap shortens when the arc is short)',
     (p) => {
       const d = drawCircular(p);
       const { start, end } = arcOf(d, 'trilho arco');
@@ -90,12 +91,12 @@ describe('EX6 progress-indicator — circular: o arco sai da fração, para qual
       expect(near(end.x, ex)).toBe(true);
       expect(near(end.y, ey)).toBe(true);
       const sweep = 360 - 360 * p - 2 * gap;
-      // varredura negativa (falta pouco): o desenho repete o arco ao contrário do Compose
+      // negative sweep (little is left): the drawing repeats the arc the opposite way from Compose
       expect(end.flags).toBe(`${sweep > 180 ? 1 : 0}${sweep >= 0 ? 1 : 0}`);
     },
   );
 
-  it('o ponto final do arco acompanha a fração por todo o intervalo (1.000 valores)', () => {
+  it('the end point of the arc follows the fraction over the whole range (1,000 values)', () => {
     for (let i = 1; i < 1000; i++) {
       const p = i / 1000;
       const d = drawCircular(p);
@@ -105,7 +106,7 @@ describe('EX6 progress-indicator — circular: o arco sai da fração, para qual
     }
   });
 
-  it('em 0 só o trilho inteiro e em 1 só o anel do indicador, sem arco degenerado', () => {
+  it('at 0 only the full track and at 1 only the indicator ring, with no degenerate arc', () => {
     const zero = drawCircular(0);
     expect(names(zero)).toEqual(['progress indicator', 'circular', 'trilho completo']);
     const one = drawCircular(1);
@@ -115,13 +116,13 @@ describe('EX6 progress-indicator — circular: o arco sai da fração, para qual
     );
   });
 
-  it('valor fora de 0 a 1 é preso (coerceIn do Compose)', () => {
+  it('a value outside 0 to 1 is clamped (Compose coerceIn)', () => {
     expect(names(drawCircular(-0.4))).toEqual(names(drawCircular(0)));
     expect(names(drawCircular(1.7))).toEqual(names(drawCircular(1)));
     expect(names(drawCircular(-0))).toEqual(names(drawCircular(0)));
   });
 
-  it('sem progress é o quadro do indeterminado, com o arco de sempre e sem trilho', () => {
+  it('without progress it is the indeterminate frame, with the usual arc and no track', () => {
     for (const d of [drawCircular(), drawCircular(null), drawCircular('')]) {
       expect(names(d)).toEqual([
         'progress indicator',
@@ -134,7 +135,7 @@ describe('EX6 progress-indicator — circular: o arco sai da fração, para qual
     }
   });
 
-  it('as cores seguem os tokens nos modos claro e escuro', () => {
+  it('the colors follow the tokens in light and dark modes', () => {
     for (const mode of ['light', 'dark'] as const) {
       const d = drawCircular(0.4, mode);
       const paint = (name: string) => solid(named(d, name)[0]!.stroke?.paints ?? []);
@@ -145,14 +146,14 @@ describe('EX6 progress-indicator — circular: o arco sai da fração, para qual
 });
 
 // ---------------------------------------------------------------------------------------------
-// Linear: o comprimento pela fração
+// Linear: the length from the fraction
 // ---------------------------------------------------------------------------------------------
 
 const WIDTH = 240;
 
-describe('EX6 progress-indicator — linear: o comprimento sai da fração, para qualquer valor', () => {
+describe('EX6 progress-indicator — linear: the length comes from the fraction, for any value', () => {
   it.each([0.333, 0.6667, 0.0123, 0.5, 0.9876])(
-    'progress %s: o indicador mede p × a largura, a barra passa 2 (ponta redonda) e a faixa do trilho começa 6 depois (e some no fim da pista)',
+    'progress %s: the indicator measures p × the width, the bar goes 2 past (round cap) and the track band starts 6 later (and disappears at the end of the lane)',
     (p) => {
       const d = drawLinear(p);
       const [ix, iy, iw] = rectOf(d, named(d, 'indicador')[0]!);
@@ -162,22 +163,22 @@ describe('EX6 progress-indicator — linear: o comprimento sai da fração, para
       expect([by, bh]).toEqual([iy, 4]);
       const [tx, , tw] = rectOf(d, named(d, 'trilho')[0]!);
       expect(near(tx!, p * WIDTH) && near(tw!, WIDTH - p * WIDTH)).toBe(true);
-      // L2 (#1078): a faixa só existe com mais pista que o gap de 6 (antes ela media 0 e não desenhava nada), e a
-      // parada de 4 só com pista para ela; nenhum nó passa do trilho (aviso `content larger than the box`).
+      // L2 (#1078): the band only exists with more lane than the gap of 6 (before it measured 0 and drew nothing), and the
+      // stop of 4 only with lane for it; no node goes past the track (warning `content larger than the box`).
       const rest = WIDTH - p * WIDTH;
-      const faixa = named(d, 'faixa')[0];
+      const band = named(d, 'faixa')[0];
       if (rest > 6) {
-        const [fx, , fw] = rectOf(d, faixa!);
+        const [fx, , fw] = rectOf(d, band!);
         expect(near(fx!, p * WIDTH + 6) && near(fw!, rest - 6)).toBe(true);
-      } else expect(faixa).toBeUndefined();
-      // a parada fica encostada no fim da pista
-      const parada = named(d, 'parada')[0];
-      if (rest >= 4) expect(rectOf(d, parada!)).toEqual([236, iy, 4, 4]);
-      else expect(parada).toBeUndefined();
+      } else expect(band).toBeUndefined();
+      // the stop sits against the end of the lane
+      const stop = named(d, 'parada')[0];
+      if (rest >= 4) expect(rectOf(d, stop!)).toEqual([236, iy, 4, 4]);
+      else expect(stop).toBeUndefined();
     },
   );
 
-  it('o comprimento acompanha a fração por todo o intervalo (1.000 valores)', () => {
+  it('the length follows the fraction over the whole range (1,000 values)', () => {
     for (let i = 1; i < 1000; i++) {
       const p = i / 1000;
       const d = drawLinear(p);
@@ -186,7 +187,7 @@ describe('EX6 progress-indicator — linear: o comprimento sai da fração, para
     }
   });
 
-  it('em 0 não há barra e o trilho ocupa tudo; em 1 só a barra cheia', () => {
+  it('at 0 there is no bar and the track fills everything; at 1 only the full bar', () => {
     const zero = drawLinear(0);
     expect(names(zero)).toEqual([
       'progress indicator',
@@ -202,7 +203,7 @@ describe('EX6 progress-indicator — linear: o comprimento sai da fração, para
     expect(rectOf(one, named(one, 'barra')[0]!)[2]).toBe(WIDTH + 2);
   });
 
-  it('valor fora de 0 a 1 é preso (coerceIn do Compose)', () => {
+  it('a value outside 0 to 1 is clamped (Compose coerceIn)', () => {
     expect(names(drawLinear(-3))).toEqual(names(drawLinear(0)));
     expect(names(drawLinear(2))).toEqual(names(drawLinear(1)));
     const over = drawLinear(1.5);
@@ -212,7 +213,7 @@ describe('EX6 progress-indicator — linear: o comprimento sai da fração, para
     expect(named(under, 'barra')).toEqual([]);
   });
 
-  it('sem progress é o quadro do indeterminado: a barra de 30% a 70% com o trilho dos dois lados', () => {
+  it('without progress it is the indeterminate frame: the bar from 30% to 70% with the track on both sides', () => {
     for (const d of [drawLinear(), drawLinear(null)]) {
       expect(names(d)).toEqual([
         'progress indicator',
@@ -230,7 +231,7 @@ describe('EX6 progress-indicator — linear: o comprimento sai da fração, para
     }
   });
 
-  it('as cores seguem os tokens nos modos claro e escuro', () => {
+  it('the colors follow the tokens in light and dark modes', () => {
     for (const mode of ['light', 'dark'] as const) {
       const d = drawLinear(0.4, mode);
       expect(solid(named(d, 'barra')[0]!.fills)).toBe(tok('primary', mode));
@@ -240,8 +241,8 @@ describe('EX6 progress-indicator — linear: o comprimento sai da fração, para
   });
 });
 
-describe('EX6 progress-indicator — sem avisos do motor', () => {
-  it('desenha sem aviso em qualquer valor, preso ou vazio, nas duas formas e nos dois modos', () => {
+describe('EX6 progress-indicator — no engine warnings', () => {
+  it('draws without warnings at any value, clamped or empty, in both shapes and both modes', () => {
     const values: unknown[] = [
       undefined,
       null,
@@ -271,20 +272,20 @@ describe('EX6 progress-indicator — sem avisos do motor', () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-// Regressão: as cenas de antes das tabelas, a ≤ 0,5 px por nó
+// Regression: the scenes from before the tables, within ≤ 0.5 px per node
 // ---------------------------------------------------------------------------------------------
 
-describe('EX6 regressão — o progress-indicator de antes das tabelas, a ≤ 0,5 px por nó', () => {
+describe('EX6 regression — the progress-indicator from before the tables, within ≤ 0.5 px per node', () => {
   const scenes = oldScenes('progress-');
 
-  it('há as 210 cenas gravadas (3 exemplos em 2 modos, 101 + 101 valores e os 2 indeterminados)', () => {
+  it('the 210 recorded scenes exist (3 examples in 2 modes, 101 + 101 values and the 2 indeterminate ones)', () => {
     expect(scenes).toHaveLength(6 + 202 + 2);
   });
 
-  it('todo nó de antes existe agora (tipo, nome, caixa, cor e pontos do arco)', () => {
+  it('every node from before exists now (type, name, box, color and arc points)', () => {
     const failures: string[] = [];
     for (const scene of scenes) {
-      // L2 (#1078): a faixa de largura 0 (nada a desenhar) e a parada sem pista de 4 não são mais desenhadas.
+      // L2 (#1078): the band of width 0 (nothing to draw) and the stop without a lane of 4 are no longer drawn.
       const rest =
         WIDTH * (1 - Math.min(Math.max(Number(scene.values['progress']), 0), 1));
       const linear = scene.values['shape'] === 'linear' && 'progress' in scene.values;
@@ -303,10 +304,10 @@ describe('EX6 regressão — o progress-indicator de antes das tabelas, a ≤ 0,
 });
 
 // ---------------------------------------------------------------------------------------------
-// Sem tabelas
+// Without tables
 // ---------------------------------------------------------------------------------------------
 
-/** Cada `$switch` com mais de 12 casos e cada `$eq` sobre um campo `number` do tipo. */
+/** Each `$switch` with more than 12 cases and each `$eq` over a `number` field of the type. */
 function offenders(id: string): string[] {
   const numberFields = new Set(
     typeOf(id)
@@ -321,26 +322,26 @@ function offenders(id: string): string[] {
     const cases = obj['cases'];
     if ('$switch' in obj && typeof cases === 'object' && cases !== null) {
       const count = Object.keys(cases).length;
-      // O `trackColor` escolhe um papel do ColorScheme (MF5): é um enum de cor, não uma tabela de números.
+      // `trackColor` picks a ColorScheme role (MF5): it is a color enum, not a table of numbers.
       if (count > 12 && obj['$switch'] !== 'trackColor')
-        found.push(`${path}: $switch de ${count} casos`);
+        found.push(`${path}: $switch of ${count} cases`);
     }
     const eq = obj['$eq'];
     if (Array.isArray(eq) && typeof eq[0] === 'string' && numberFields.has(eq[0]))
-      found.push(`${path}: $eq sobre o campo number ${eq[0]}`);
+      found.push(`${path}: $eq over the number field ${eq[0]}`);
     for (const [k, v] of Object.entries(obj)) visit(v, `${path}.${k}`);
   };
   visit(JSON.parse(text(`components/${id}.json`)), id);
   return found;
 }
 
-describe('EX6 progress-indicator — sem tabelas enumeradas', () => {
-  it('não tem $switch com mais de 12 casos nem $eq sobre o campo number progress', () => {
+describe('EX6 progress-indicator — without enumerated tables', () => {
+  it('has no $switch with more than 12 cases nor $eq over the number field progress', () => {
     expect(offenders('progress-indicator')).toEqual([]);
   });
 
-  it('o arquivo fica enxuto (os 23 kB de antes; os papéis de cor do trackColor da MF5 respondem pelo resto)', () => {
-    // Antes da MF5 o limite era de 11 kB. O `trackColor` leva o `$switch` dos 36 papéis do ColorScheme em cada nó do trilho.
+  it('the file stays lean (the 23 kB from before; the trackColor color roles of MF5 account for the rest)', () => {
+    // Before MF5 the limit was 11 kB. `trackColor` carries the `$switch` of the 36 ColorScheme roles in each track node.
     expect(text('components/progress-indicator.json').length).toBeLessThan(27_000);
   });
 });

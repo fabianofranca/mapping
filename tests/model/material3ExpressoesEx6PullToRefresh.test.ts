@@ -1,8 +1,8 @@
-// EX6 da etapa "expressões que calculam no formato 4" (#897): no pull-to-refresh o arco e a seta do
-// indicador de arrasto saem na orientação canônica (o arco no 3 horas, a seta ao lado do centro), e
-// o ângulo vem de `rotation` por expressão com os números do Compose (`ArrowValues(1)`,
-// `drawArrow`), em vez de coordenadas já giradas dentro do `d`. O desenho de antes (cenas gravadas
-// em tests/fixtures/material3-ex6-v1.json) fica o mesmo a ≤ 0,5 px por nó.
+// EX6 of the "expressions that compute in format 4" stage (#897): in pull-to-refresh the arc and the arrow of the
+// drag indicator come out in the canonical orientation (the arc at 3 o'clock, the arrow beside the center), and
+// the angle comes from `rotation` by expression with the Compose numbers (`ArrowValues(1)`,
+// `drawArrow`), instead of already-rotated coordinates inside the `d`. The drawing from before (scenes recorded
+// in tests/fixtures/material3-ex6-v1.json) stays the same within ≤ 0.5 px per node.
 import { describe, expect, it } from 'vitest';
 import { walk } from '../../src/model/components/scene';
 import type { PathNode, SceneNode } from '../../src/model/components/scene';
@@ -16,6 +16,7 @@ import {
   type Drawing,
 } from '../support/material3Ex6Fixture';
 
+// pt-BR kept: node names of libraries/material3-compose and of tests/fixtures/material3-ex6-v1.json are Portuguese data
 const pull = (mode: 'light' | 'dark' = 'light'): Drawing =>
   draw('pull-to-refresh', { isRefreshing: 'false', width: 'fill', height: 'fill' }, mode);
 const refreshing = (mode: 'light' | 'dark' = 'light'): Drawing =>
@@ -32,8 +33,8 @@ const pathNamed = (d: Drawing, name: string): PathNode => {
 };
 
 // ---------------------------------------------------------------------------------------------
-// O que o Compose calcula em `ArrowValues(progress = 1)` (PullToRefresh.kt 690 a 708) e em `drawArrow`
-// (710 a 732), refeito aqui de forma independente do componente
+// What Compose computes in `ArrowValues(progress = 1)` (PullToRefresh.kt 690 to 708) and in `drawArrow`
+// (710 to 732), redone here independently of the component
 // ---------------------------------------------------------------------------------------------
 
 const MAX_PROGRESS_ARC = 0.8;
@@ -71,18 +72,18 @@ const rotate = (
   ];
 };
 
-/** Os pontos do arco e da seta do Compose, no quadro de 24 com o centro em (12, 12). */
+/** The points of the Compose arc and arrow, in the 24 frame with the center at (12, 12). */
 function composeGeometry() {
   const v = arrowValues(1);
   const radius = ARC_RADIUS + STROKE_WIDTH / 2;
-  // o arco: drawArc(startAngle, sweep = endAngle - startAngle) dentro de rotate(values.rotation)
+  // the arc: drawArc(startAngle, sweep = endAngle - startAngle) inside rotate(values.rotation)
   const arcPoint = (angle: number): [number, number] =>
     rotate(
       12 + radius * Math.cos((angle * Math.PI) / 180),
       12 + radius * Math.sin((angle * Math.PI) / 180),
       v.rotation,
     );
-  // a seta: moveTo(0,0), lineTo(w/2, h), lineTo(w, 0), levada para (radius + cx - inset, cy - strokeWidth)
+  // the arrow: moveTo(0,0), lineTo(w/2, h), lineTo(w, 0), moved to (radius + cx - inset, cy - strokeWidth)
   const inset = (ARROW_WIDTH * v.scale) / 2;
   const dx = radius + 12 - inset;
   const dy = 12 - STROKE_WIDTH;
@@ -102,8 +103,8 @@ function composeGeometry() {
 const near = (a: readonly number[], b: readonly number[], eps = 0.01) =>
   a.length === b.length && a.every((v, i) => Math.abs(v - b[i]!) <= eps);
 
-describe('EX6 pull-to-refresh — o arco e a seta do arrasto giram por rotation', () => {
-  it('ArrowValues(1) do Compose: 0,075 de rotação, arco de 27° a 315° (288°) e seta cheia', () => {
+describe('EX6 pull-to-refresh — the arc and the arrow of the drag turn by rotation', () => {
+  it('Compose ArrowValues(1): 0.075 of rotation, arc from 27° to 315° (288°) and full arrow', () => {
     const { v } = composeGeometry();
     expect(v.rotation).toBeCloseTo(0.075, 10);
     expect(v.startAngle).toBeCloseTo(27, 10);
@@ -111,11 +112,11 @@ describe('EX6 pull-to-refresh — o arco e a seta do arrasto giram por rotation'
     expect(v.scale).toBe(1);
   });
 
-  it('o arco tem rotation = startAngle + rotation do Compose (27,075°) e o d na orientação canônica', () => {
+  it('the arc has rotation = startAngle + Compose rotation (27.075°) and the d in the canonical orientation', () => {
     for (const mode of ['light', 'dark'] as const) {
       const arc = pathNamed(pull(mode), 'anel');
       expect(arc.rotation, 'arco').toBeCloseTo(27.075, 6);
-      // canônico: o arco parte do 3 horas (18,75 = 12 + 6,75) e varre 288° até o ponto de 288°
+      // canonical: the arc starts at 3 o'clock (18.75 = 12 + 6.75) and sweeps 288° to the 288° point
       const points = pathPoints(arc.d)!;
       expect(points).toHaveLength(2);
       expect(near([points[0]!.x, points[0]!.y], [18.75, 12])).toBe(true);
@@ -128,11 +129,11 @@ describe('EX6 pull-to-refresh — o arco e a seta do arrasto giram por rotation'
     }
   });
 
-  it('a seta tem rotation = endAngle − strokeWidth + rotation do Compose (312,575°) e o d na orientação canônica', () => {
+  it('the arrow has rotation = endAngle − strokeWidth + Compose rotation (312.575°) and the d in the canonical orientation', () => {
     for (const mode of ['light', 'dark'] as const) {
       const arrow = pathNamed(pull(mode), 'seta');
       expect(arrow.rotation, 'seta').toBeCloseTo(312.575, 6);
-      // canônica: canto esquerdo a 1,75 do centro e 2,5 acima dele, ponta 5 à direita e 5 abaixo
+      // canonical: left corner 1.75 from the center and 2.5 above it, tip 5 to the right and 5 below
       const points = pathPoints(arrow.d)!;
       expect(points.map((p) => [p.x, p.y])).toEqual([
         [13.75, 9.5],
@@ -142,7 +143,7 @@ describe('EX6 pull-to-refresh — o arco e a seta do arrasto giram por rotation'
     }
   });
 
-  it('já giradas, as pontas do arco e os três pontos da seta caem onde o drawCircularIndicator e o drawArrow do Compose os põem', () => {
+  it('once rotated, the ends of the arc and the three points of the arrow fall where the Compose drawCircularIndicator and drawArrow put them', () => {
     const geometry = composeGeometry();
     const d = pull();
     const arc = drawnPathPoints(pathNamed(d, 'anel'))!;
@@ -150,11 +151,11 @@ describe('EX6 pull-to-refresh — o arco e a seta do arrasto giram por rotation'
     expect(near([arc[1]!.x, arc[1]!.y], geometry.arcEnd)).toBe(true);
     const arrow = drawnPathPoints(pathNamed(d, 'seta'))!;
     geometry.arrow.forEach((p, i) => {
-      expect(near([arrow[i]!.x, arrow[i]!.y], p), `ponto ${i}`).toBe(true);
+      expect(near([arrow[i]!.x, arrow[i]!.y], p), `point ${i}`).toBe(true);
     });
   });
 
-  it('o estado "atualizando" não leva rotation: o spinner é o arco do 12 horas e já está na posição', () => {
+  it('the "refreshing" state has no rotation: the spinner is the arc from 12 o\'clock and is already in position', () => {
     const d = refreshing();
     expect(pathNamed(d, 'anel').rotation ?? 0).toBe(0);
     expect(visiblePaths(d).map((p) => p.name)).toEqual(['anel']);
@@ -162,18 +163,18 @@ describe('EX6 pull-to-refresh — o arco e a seta do arrasto giram por rotation'
 });
 
 // ---------------------------------------------------------------------------------------------
-// Regressão: as cenas de antes, a ≤ 0,5 px por nó (os pontos dos path já com a rotation aplicada)
+// Regression: the scenes from before, within ≤ 0.5 px per node (the path points with the rotation already applied)
 // ---------------------------------------------------------------------------------------------
 
-describe('EX6 pull-to-refresh — regressão contra as cenas de antes', () => {
-  it('os dois exemplos (atualizando e em repouso), claro e escuro, ficam iguais a ≤ 0,5 px', () => {
+describe('EX6 pull-to-refresh — regression against the scenes from before', () => {
+  it('the two examples (refreshing and at rest), light and dark, stay equal within ≤ 0.5 px', () => {
     const scenes = oldScenes('pull-to-refresh-');
     expect(scenes).toHaveLength(4);
     for (const s of scenes)
       expect(missingNodes(draw(s.id, s.values, s.mode), s.nodes), s.key).toEqual([]);
   });
 
-  it('o arco e a seta de antes (coordenadas giradas) são achados, ponto a ponto, no desenho girado', () => {
+  it('the arc and the arrow from before (rotated coordinates) are found, point by point, in the rotated drawing', () => {
     const scenes = oldScenes('pull-to-refresh-').filter(
       (s) => s.values['isRefreshing'] === 'false',
     );
@@ -195,10 +196,10 @@ describe('EX6 pull-to-refresh — regressão contra as cenas de antes', () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-// Sem tabelas
+// Without tables
 // ---------------------------------------------------------------------------------------------
 
-/** Cada `$switch` com mais de 12 casos e cada `$eq` sobre um campo `number` do tipo. */
+/** Each `$switch` with more than 12 cases and each `$eq` over a `number` field of the type. */
 function offenders(): string[] {
   const numberFields = new Set(
     typeOf('pull-to-refresh')
@@ -213,19 +214,19 @@ function offenders(): string[] {
     const cases = obj['cases'];
     if ('$switch' in obj && typeof cases === 'object' && cases !== null) {
       const count = Object.keys(cases).length;
-      if (count > 12) found.push(`${path}: $switch de ${count} casos`);
+      if (count > 12) found.push(`${path}: $switch of ${count} cases`);
     }
     const eq = obj['$eq'];
     if (Array.isArray(eq) && typeof eq[0] === 'string' && numberFields.has(eq[0]))
-      found.push(`${path}: $eq sobre o campo number ${eq[0]}`);
+      found.push(`${path}: $eq over the number field ${eq[0]}`);
     for (const [k, v] of Object.entries(obj)) visit(v, `${path}.${k}`);
   };
   visit(JSON.parse(text('components/pull-to-refresh.json')), 'pull-to-refresh');
   return found;
 }
 
-describe('EX6 pull-to-refresh — sem tabelas enumeradas', () => {
-  it('não há $switch com mais de 12 casos nem $eq sobre campo number', () => {
+describe('EX6 pull-to-refresh — without enumerated tables', () => {
+  it('there is no $switch with more than 12 cases nor $eq over a number field', () => {
     expect(offenders()).toEqual([]);
   });
 });

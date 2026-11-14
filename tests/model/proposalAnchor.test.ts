@@ -23,10 +23,10 @@ import {
   type Proposal,
 } from '../../src/model';
 
-// Âncora numa proposta (schema v20, R3): o campo `anchor` da marcação (valor da âncora ou `null`) e
-// o `anchor` do valor de uma marcação criada; a `formatVersion` 9, gravada só quando a proposta o
-// usa (uma app anterior recusa a 9 em vez de descartar a âncora de uma marcação criada). O
-// `snap_to_anchor` é a Posição (`rect`) de sempre.
+// Anchor in a proposal (schema v20, R3): the marking's `anchor` field (anchor value or `null`) and
+// the `anchor` of a created marking's value; `formatVersion` 9, written only when the proposal
+// uses it (an earlier app refuses 9 instead of discarding the anchor of a created marking). The
+// `snap_to_anchor` is the usual Position (`rect`).
 
 const AT = '2026-11-13T10:00:00.000Z';
 const T = { x: 40, y: 40, width: 20, height: 20 };
@@ -35,9 +35,9 @@ const base = createMarking(
   createMarking(
     addBackgroundContainer(
       createProject({
-        name: 'Teste',
+        name: 'Test',
         now: AT,
-        firstLayer: { id: 'l1', name: 'Camada 1', color: '#FF0000' },
+        firstLayer: { id: 'l1', name: 'Layer 1', color: '#FF0000' },
       }),
       { id: 'c1', width: 200, height: 160, background: '#FFFFFF' },
     ),
@@ -46,7 +46,7 @@ const base = createMarking(
   { id: 'B', containerId: 'c1', rect: B },
 );
 const build = (after: Project, from: Project = base): Proposal =>
-  buildProposal(from, after, { title: 'Âncora', createdAt: AT });
+  buildProposal(from, after, { title: 'Anchor', createdAt: AT });
 
 function accept(from: Project, proposal: Proposal, only?: string): Project {
   const tree = reviewTree(proposal, from);
@@ -56,14 +56,14 @@ function accept(from: Project, proposal: Proposal, only?: string): Project {
   const decided = decide(proposal, tree, target, 'accepted', AT);
   if (!decided.ok) throw new Error(decided.reason);
   const applied = applyAccepted(from, { ...proposal, decisions: decided.decisions }, AT);
-  if (!applied.ok) throw new Error('bloqueada');
+  if (!applied.ok) throw new Error('blocked');
   return applied.project;
 }
 
 const markingOf = (p: Project, id: string) => p.markings.find((m) => m.id === id)!;
 
-describe('proposta com a âncora da marcação', () => {
-  it('sem âncora a proposta fica na formatVersion 4 e a 9 é uma versão lida', () => {
+describe('proposal with the marking's anchor', () => {
+  it('with no anchor the proposal stays at formatVersion 4 and 9 is a readable version', () => {
     const proposal = build(base);
     expect(proposal.formatVersion).toBe(PROPOSAL_FORMAT_VERSION);
     expect(proposalUsesAnchor(proposal.changes)).toBe(false);
@@ -71,7 +71,7 @@ describe('proposta com a âncora da marcação', () => {
     expect(PROPOSAL_FORMAT_VERSIONS).toContain(9);
   });
 
-  it('ancorar é o campo anchor da marcação (from null); grava a 9; ida e volta; aceitar grava', () => {
+  it('anchoring is the marking's anchor field (from null); writes 9; round trip; accepting writes', () => {
     const anchored = setMarkingAnchor(base, 'B', { to: 'T', side: 'top' });
     const proposal = build(anchored);
     expect(proposal.formatVersion).toBe(PROPOSAL_ANCHOR_FORMAT_VERSION);
@@ -91,7 +91,7 @@ describe('proposta com a âncora da marcação', () => {
     });
   });
 
-  it('tirar a âncora é anchor null e também sobe a versão', () => {
+  it('removing the anchor is anchor null and also raises the version', () => {
     const anchored = setMarkingAnchor(base, 'B', { to: 'T' });
     const proposal = build(base, anchored);
     expect(proposal.changes).toMatchObject([
@@ -101,7 +101,7 @@ describe('proposta com a âncora da marcação', () => {
     expect(markingOf(accept(anchored, proposal), 'B').anchor ?? null).toBeNull();
   });
 
-  it('uma marcação criada com anchor leva a âncora no valor e a 9', () => {
+  it('a marking created with anchor carries the anchor in the value and 9', () => {
     const after = setMarkingAnchor(
       createMarking(base, {
         id: 'N',
@@ -118,7 +118,7 @@ describe('proposta com a âncora da marcação', () => {
     expect(markingOf(applied, 'N').anchor).toEqual({ to: 'T', align: 'end' });
   });
 
-  it('a âncora criada na mesma proposta exige a criação do alvo (aceitar só a âncora aceita as duas)', () => {
+  it('an anchor created in the same proposal requires the creation of the target (accepting only the anchor accepts both)', () => {
     const withTarget = createMarking(base, {
       id: 'T2',
       containerId: 'c1',
@@ -131,7 +131,7 @@ describe('proposta com a âncora da marcação', () => {
     expect(applied.markings.some((m) => m.id === 'T2')).toBe(true);
   });
 
-  it('excluir a âncora aparece como a mudança anchor null da ancorada', () => {
+  it('deleting the anchor appears as the anchor null change of the anchored one', () => {
     const anchored = setMarkingAnchor(base, 'B', { to: 'T' });
     const proposal = build(removeMarking(anchored, 'T'), anchored);
     expect(
@@ -142,7 +142,7 @@ describe('proposta com a âncora da marcação', () => {
     expect(markingOf(applied, 'B').anchor ?? null).toBeNull();
   });
 
-  it('anchor + snap_to_anchor: a âncora e a Posição são duas mudanças e se aceita só uma', () => {
+  it('anchor + snap_to_anchor: the anchor and the Position are two changes and only one can be accepted', () => {
     const anchored = setMarkingAnchor(base, 'B', { to: 'T', side: 'top' });
     const snapped = snapToAnchor(anchored, 'B').project;
     const proposal = build(snapped);
@@ -158,14 +158,14 @@ describe('proposta com a âncora da marcação', () => {
     expect(markingOf(onlyAnchor, 'B').anchor).toEqual({ to: 'T', side: 'top' });
   });
 
-  it('anchor inválido (side desconhecido, to vazio) é recusado ao ler', () => {
+  it('an invalid anchor (unknown side, empty to) is refused on read', () => {
     const anchored = setMarkingAnchor(base, 'B', { to: 'T', side: 'top' });
     const json = JSON.parse(serializeProposal(build(anchored)));
     json.changes[0].to.side = 'diagonal';
     expect(parseProposal(json).ok).toBe(false);
   });
 
-  it('a versão é monótona: a 9 não desce e a direção sozinha continua 8', () => {
+  it('the version is monotonic: 9 does not go down and direction alone stays 8', () => {
     const direction = build(setContainerDirection(base, 'c1', 'rtl'));
     expect(direction.formatVersion).toBe(PROPOSAL_DIRECTION_FORMAT_VERSION);
     expect(proposalFormatVersionFor(direction.changes, 5, 9)).toBe(9);

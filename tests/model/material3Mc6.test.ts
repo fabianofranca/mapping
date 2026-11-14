@@ -1,8 +1,10 @@
-// MC6 (#1034, etapa #898): a biblioteca Material 3 (Compose) quebra em linhas onde o Compose quebra e mede pelo
-// conteúdo onde o Compose mede (decisões 21 e 22): o `flow-row` com `wrap`, `lineGap` (`verticalSpacing`),
-// `maxPerLine` (`maxItemsInEachRow`) e `maxLines`; os botões do `alert-dialog` com `wrap-reverse` (o
-// `AlertDialogFlowRow`: o confirmar fica acima quando não cabe) e a largura do `dropdown-menu` pelo item mais
-// largo (`IntrinsicSize.Max`), entre 112 e 280. Os testes foram vistos falhando antes da biblioteca mudar.
+// MC6 (#1034, stage #898): the Material 3 (Compose) library breaks into lines where Compose breaks and measures by the
+// content where Compose measures (decisions 21 and 22): the `flow-row` with `wrap`, `lineGap` (`verticalSpacing`),
+// `maxPerLine` (`maxItemsInEachRow`) and `maxLines`; the `alert-dialog` buttons with `wrap-reverse` (the
+// `AlertDialogFlowRow`: the confirm button goes above when it does not fit) and the `dropdown-menu` width by the widest
+// item (`IntrinsicSize.Max`), between 112 and 280. The tests were seen failing before the library changed.
+// pt-BR kept: node names ('dispensar', 'confirmar', 'botões', 'área de toque (…)'), the example names 'Botões em duas linhas' and
+// 'Itens de larguras diferentes' and the doc phrase 'sem quebra de linha' are the Portuguese data of libraries/material3-compose
 import { describe, expect, it } from 'vitest';
 import {
   addComponentMarking,
@@ -24,7 +26,7 @@ import { drawFitted, fittedSize, templateNodes } from '../support/material3Fitte
 import type { Mode, Values } from '../support/material3Fitted';
 
 const MODES: Mode[] = ['light', 'dark'];
-/** Como o ajuste arredonda: para cima, sem deixar o ruído de ponto flutuante subir um px. */
+/** How the fit rounds: up, without letting floating-point noise add a px. */
 const ceilFit = (value: number): number => Math.ceil(value - 1e-6);
 type Drawing = ReturnType<typeof drawFitted>['drawing'];
 
@@ -34,11 +36,11 @@ const named = (d: Drawing, name: string): SceneNode | undefined => {
 };
 const boxOf = (d: Drawing, name: string) => {
   const node = named(d, name);
-  if (node === undefined) throw new Error(`nó ausente: ${name}`);
+  if (node === undefined) throw new Error(`missing node: ${name}`);
   return absoluteBoxes(d.root).get(node.id)!;
 };
 
-describe('MC6 flow-row — o Arrumar quebra as filhas em linhas (FlowLayout.kt)', () => {
+describe('MC6 flow-row — Arrange breaks the children into lines (FlowLayout.kt)', () => {
   const catalog: ComponentCatalog = new Map([
     [
       spec.id,
@@ -55,7 +57,7 @@ describe('MC6 flow-row — o Arrumar quebra as filhas em linhas (FlowLayout.kt)'
     height,
   });
 
-  /** O container com um flow-row `F` (360 de largura) e cinco `image` de 100 × 40, desalinhados, dentro dele. */
+  /** The container with a flow-row `F` (360 wide) and five misaligned 100 × 40 `image`s inside it. */
   function crowd(values: Record<string, number | string> = {}): Project {
     let p = applySpecialization(emptyProject(), spec, {
       newId: (() => {
@@ -64,7 +66,7 @@ describe('MC6 flow-row — o Arrumar quebra as filhas em linhas (FlowLayout.kt)'
       })(),
       packageSpecName: 'material3-compose.spec.json',
     });
-    p = addContainer(p, { id: 'I1', file: 'images/tela.png', width: 1000, height: 800 });
+    p = addContainer(p, { id: 'I1', file: 'images/screen.png', width: 1000, height: 800 });
     const args = { containerId: 'I1', specId: spec.id } as const;
     p = addComponentMarking(
       p,
@@ -101,7 +103,7 @@ describe('MC6 flow-row — o Arrumar quebra as filhas em linhas (FlowLayout.kt)'
     arrangeMarking(crowd(values), catalog, 'F', approximateMeasurer);
   const at = (p: Project, id: string): Rect => p.markings.find((m) => m.id === id)!.rect;
 
-  it('cinco filhas de 100 numa largura de 360 dão 3 + 2 linhas, com o spacing e o verticalSpacing', () => {
+  it('five 100-wide children in a width of 360 give 3 + 2 lines, with the spacing and the verticalSpacing', () => {
     const { project, warnings } = arranged();
     expect([1, 2, 3].map((i) => at(project, `K${i}`))).toEqual([
       rect(100, 100, 100, 40),
@@ -115,13 +117,13 @@ describe('MC6 flow-row — o Arrumar quebra as filhas em linhas (FlowLayout.kt)'
     expect(warnings).toEqual([]);
   });
 
-  it('o verticalSpacing é o espaço entre as linhas', () => {
+  it('the verticalSpacing is the space between the lines', () => {
     const { project } = arranged({ verticalSpacing: 30 });
     expect(at(project, 'K4').y).toBe(100 + 40 + 30);
     expect(at(project, 'K1').y).toBe(100);
   });
 
-  it('maxItemsInEachRow 2 dá 2 + 2 + 1', () => {
+  it('maxItemsInEachRow 2 gives 2 + 2 + 1', () => {
     const { project } = arranged({ maxItemsInEachRow: 2 });
     expect([1, 2, 3, 4, 5].map((i) => at(project, `K${i}`).y)).toEqual([
       100, 100, 152, 152, 204,
@@ -131,20 +133,20 @@ describe('MC6 flow-row — o Arrumar quebra as filhas em linhas (FlowLayout.kt)'
     ]);
   });
 
-  it('maxLines 2 deixa a quinta filha, além da última linha, onde estava', () => {
+  it('maxLines 2 leaves the fifth child, beyond the last line, where it was', () => {
     const { project } = arranged({ maxItemsInEachRow: 2, maxLines: 2 });
     expect([1, 2, 3, 4].map((i) => at(project, `K${i}`).y)).toEqual([100, 100, 152, 152]);
     expect(at(project, 'K5')).toEqual(rect(140, 140, 100, 40));
   });
 
-  it('o flow-row é hug na altura e cresce com as linhas (40 + 12 + 40)', () => {
+  it('the flow-row is hug in height and grows with the lines (40 + 12 + 40)', () => {
     const { project } = arranged();
     expect(at(project, 'F').height).toBe(92);
     expect(at(project, 'F').width).toBe(360);
   });
 
-  it('o passo R17.34: cinco fab de 56 numa flow-row de 200 × 100 dão 3 + 2 e a altura 124', () => {
-    // a mesma peça do roteiro: o fr de 200 × 100 com cinco fab desalinhados dentro dele
+  it('step R17.34: five 56 fabs in a 200 × 100 flow-row give 3 + 2 and the height 124', () => {
+    // the same piece as the script: the 200 × 100 fr with five misaligned fabs inside it
     let p = applySpecialization(emptyProject(), spec, {
       newId: (() => {
         let n = 0;
@@ -152,7 +154,7 @@ describe('MC6 flow-row — o Arrumar quebra as filhas em linhas (FlowLayout.kt)'
       })(),
       packageSpecName: 'material3-compose.spec.json',
     });
-    p = addContainer(p, { id: 'I1', file: 'images/tela.png', width: 400, height: 700 });
+    p = addContainer(p, { id: 'I1', file: 'images/screen.png', width: 400, height: 700 });
     const args = { containerId: 'I1', specId: spec.id, parentId: null } as const;
     p = addComponentMarking(
       p,
@@ -195,35 +197,35 @@ describe('MC6 flow-row — o Arrumar quebra as filhas em linhas (FlowLayout.kt)'
     expect(at(project, 'F')).toEqual(rect(10, 540, 200, 124));
   });
 
-  it('a Fidelidade deixa de dizer que o slot é uma row sem quebra', () => {
+  it('the Fidelity section no longer says the slot is a row without wrapping', () => {
     const doc = text('docs/flow-row.md');
     expect(doc).not.toMatch(/sem quebra de linha/);
     expect(doc).toMatch(/`wrap`/);
   });
 });
 
-describe('MC6 alert-dialog — os botões quebram como o AlertDialogFlowRow (AlertDialog.kt)', () => {
+describe('MC6 alert-dialog — the buttons break like the AlertDialogFlowRow (AlertDialog.kt)', () => {
   const base = {
     style: 'standard',
-    title: 'Descartar rascunho?',
-    text: 'O rascunho será apagado e não poderá ser recuperado.',
+    title: 'Discard draft?',
+    text: 'The draft will be deleted and cannot be recovered.',
     icon: '',
   };
   const LONG = {
     ...base,
-    confirmButton: 'Descartar o rascunho agora',
-    dismissButton: 'Cancelar',
+    confirmButton: 'Discard the draft now',
+    dismissButton: 'Cancel',
   };
 
   it.each(MODES)(
-    'com rótulos longos o confirmar vai para a linha de cima, à direita, sem aviso (%s)',
+    'with long labels the confirm button goes to the top line, on the right, without warnings (%s)',
     (mode) => {
       const { drawing } = drawFitted('alert-dialog', LONG, mode);
       expect(drawing.warnings).toEqual([]);
       const dismiss = boxOf(drawing, 'dispensar');
       const confirm = boxOf(drawing, 'confirmar');
       const row = boxOf(drawing, 'botões');
-      // cada botão (40) está centrado no seu quadro `área de toque` de 48; entre as linhas, 12
+      // each button (40) is centered in its 48 `área de toque` frame; between the lines, 12
       expect(dismiss.y - confirm.y).toBe(48 + 12);
       expect(confirm.y).toBe(row.y + 4);
       expect(confirm.x + confirm.width).toBeCloseTo(row.x + row.width, 5);
@@ -232,18 +234,18 @@ describe('MC6 alert-dialog — os botões quebram como o AlertDialogFlowRow (Ale
     },
   );
 
-  it('o diálogo com rótulos longos tem a altura das duas linhas de botões', () => {
+  it('the dialog with long labels has the height of the two button lines', () => {
     const short = fittedSize('alert-dialog', {
       ...base,
-      confirmButton: 'Descartar',
-      dismissButton: 'Cancelar',
+      confirmButton: 'Discard',
+      dismissButton: 'Cancel',
     });
     const long = fittedSize('alert-dialog', LONG);
     expect(long.height - short.height).toBe(48 + 12 + 48 - 48);
     expect(long.messages.map((m) => m.text)).toEqual([]);
   });
 
-  it('cada botão tem o quadro "área de toque" com nome próprio, de 48 no mínimo', () => {
+  it('each button has the "área de toque" frame with its own name, at least 48', () => {
     for (const name of ['dispensar', 'confirmar']) {
       const wrapper = templateNodes('alert-dialog', `área de toque (${name})`);
       expect(wrapper, name).toHaveLength(1);
@@ -251,11 +253,11 @@ describe('MC6 alert-dialog — os botões quebram como o AlertDialogFlowRow (Ale
     }
   });
 
-  it('com rótulos curtos os botões continuam na mesma linha, cancelar antes do confirmar', () => {
+  it('with short labels the buttons stay on the same line, cancel before confirm', () => {
     const { drawing } = drawFitted('alert-dialog', {
       ...base,
-      confirmButton: 'Descartar',
-      dismissButton: 'Cancelar',
+      confirmButton: 'Discard',
+      dismissButton: 'Cancel',
     });
     const dismiss = boxOf(drawing, 'dispensar');
     const confirm = boxOf(drawing, 'confirmar');
@@ -263,7 +265,7 @@ describe('MC6 alert-dialog — os botões quebram como o AlertDialogFlowRow (Ale
     expect(dismiss.x + dismiss.width + 8).toBeCloseTo(confirm.x, 5);
   });
 
-  it('o exemplo "Botões em duas linhas" existe e desenha sem aviso', () => {
+  it('the "Botões em duas linhas" example exists and draws without warnings', () => {
     const catalog = buildCatalog(files);
     const example = findEntry(catalog, 'alert-dialog')?.examples.find(
       (e) => e.name === 'Botões em duas linhas',
@@ -277,7 +279,7 @@ describe('MC6 alert-dialog — os botões quebram como o AlertDialogFlowRow (Ale
   });
 });
 
-describe('MC6 dropdown-menu — a largura pelo item mais largo, entre 112 e 280 (Menu.kt, IntrinsicSize.Max)', () => {
+describe('MC6 dropdown-menu — the width by the widest item, between 112 and 280 (Menu.kt, IntrinsicSize.Max)', () => {
   const item = (label: string, extra: Record<string, string> = {}) => ({
     text: label,
     leadingIcon: '',
@@ -288,7 +290,7 @@ describe('MC6 dropdown-menu — a largura pelo item mais largo, entre 112 e 280 
   });
   const menu = (items: ReturnType<typeof item>[], extra: Values = {}): Values =>
     ({ style: 'menu', expanded: 'true', items, ...extra }) as unknown as Values;
-  /** A largura do texto de um item no medidor aproximado (label-large 14/20, peso 500, 0,1 de tracking). */
+  /** The width of an item text in the approximate measurer (label-large 14/20, weight 500, 0.1 tracking). */
   const textWidth = (label: string): number =>
     approximateMeasurer(
       label,
@@ -303,7 +305,7 @@ describe('MC6 dropdown-menu — a largura pelo item mais largo, entre 112 e 280 
       undefined,
     ).width;
 
-  it('o sizing.width é hug no menu e fill no campo exposto', () => {
+  it('sizing.width is hug in the menu and fill in the exposed field', () => {
     const entry = findEntry(buildCatalog(files), 'dropdown-menu')!;
     const sizing = entry.component!.sizing as { width: unknown };
     expect(sizing.width).toMatchObject({
@@ -313,38 +315,38 @@ describe('MC6 dropdown-menu — a largura pelo item mais largo, entre 112 e 280 
     });
   });
 
-  it('a largura é a do item mais largo mais os 12 de cada lado e o ícone à esquerda', () => {
+  it('the width is that of the widest item plus the 12 on each side and the icon on the left', () => {
     const items = [
-      item('Editar', { leadingIcon: 'Edit' }),
-      item('Compartilhar com a equipe', { leadingIcon: 'Share' }),
+      item('Edit', { leadingIcon: 'Edit' }),
+      item('Share with the team', { leadingIcon: 'Share' }),
     ];
     const fit = fittedSize('dropdown-menu', menu(items));
     expect(fit.width).toBe(
-      ceilFit(textWidth('Compartilhar com a equipe') + 12 + 24 + 12 + 12),
+      ceilFit(textWidth('Share with the team') + 12 + 24 + 12 + 12),
     );
     expect(fit.width).toBeGreaterThan(112);
     expect(fit.width).toBeLessThan(280);
   });
 
-  it('a largura do ícone à direita também conta (24 e 12 de afastamento)', () => {
-    const items = [item('Salvar', { trailingIcon: 'Check' })];
+  it('the width of the icon on the right also counts (24 and 12 of spacing)', () => {
+    const items = [item('Save', { trailingIcon: 'Check' })];
     const fit = fittedSize('dropdown-menu', menu(items));
-    // 12 + texto + 12 + 24 + 12 = 60 + o texto, mas nunca menos que 112
+    // 12 + text + 12 + 24 + 12 = 60 + the text, but never less than 112
     expect(fit.width).toBe(
-      Math.max(112, ceilFit(textWidth('Salvar') + 12 + 12 + 24 + 12)),
+      Math.max(112, ceilFit(textWidth('Save') + 12 + 12 + 24 + 12)),
     );
   });
 
-  it('nunca fica abaixo de 112 nem passa de 280', () => {
+  it('never falls below 112 nor exceeds 280', () => {
     expect(fittedSize('dropdown-menu', menu([item('Ok')])).width).toBe(112);
     const long = fittedSize(
       'dropdown-menu',
       menu([
         item(
-          'Um item com um texto muito mais comprido do que cabe em duzentos e oitenta pixels',
+          'An item with a text much longer than what fits in two hundred and eighty pixels',
           { leadingIcon: 'Edit' },
         ),
-        item('Excluir'),
+        item('Delete'),
       ]),
     );
     expect(long.width).toBeLessThanOrEqual(280);
@@ -352,12 +354,12 @@ describe('MC6 dropdown-menu — a largura pelo item mais largo, entre 112 e 280 
   });
 
   it.each(MODES)(
-    'no tamanho ajustado todos os itens têm a largura do menu e o texto longo cresce na altura, sem aviso (%s)',
+    'at the fitted size all items have the menu width and the long text grows in height, without warnings (%s)',
     (mode) => {
       const values = menu([
-        item('Editar', { leadingIcon: 'Edit' }),
+        item('Edit', { leadingIcon: 'Edit' }),
         item(
-          'Um item com um texto muito mais comprido do que cabe em duzentos e oitenta pixels',
+          'An item with a text much longer than what fits in two hundred and eighty pixels',
           { trailingIcon: 'Check' },
         ),
       ]);
@@ -373,20 +375,20 @@ describe('MC6 dropdown-menu — a largura pelo item mais largo, entre 112 e 280 
     },
   );
 
-  it('o campo exposto continua com a largura da marcação (fill), sem ajustar a largura', () => {
+  it('the exposed field keeps the marking width (fill), without fitting the width', () => {
     const fit = fittedSize('dropdown-menu', {
       style: 'exposed',
       expanded: 'true',
-      label: 'País',
-      value: 'Brasil',
+      label: 'Country',
+      value: 'Brazil',
       items: [
-        item('Um texto de item que, sozinho, passaria dos 200 de largura do campo'),
+        item('An item text that, on its own, would exceed the 200 width of the field'),
       ],
     } as unknown as Values);
     expect(fit.width).toBe(200);
   });
 
-  it('o exemplo "Itens de larguras diferentes" existe e desenha sem aviso, no size e ajustado', () => {
+  it('the "Itens de larguras diferentes" example exists and draws without warnings, at the size and fitted', () => {
     const catalog = buildCatalog(files);
     const example = findEntry(catalog, 'dropdown-menu')?.examples.find(
       (e) => e.name === 'Itens de larguras diferentes',

@@ -1,4 +1,4 @@
-// `projectDocRepos` (etapa #559, PD5): os repositórios de documentos das especializações aplicadas.
+// `projectDocRepos` (etapa #559, PD5): the document repositories of the applied specializations.
 import { describe, expect, it } from 'vitest';
 import { applySpecialization, parseSpec, projectDocRepos } from '../../src/model';
 import { emptyProject } from './fixtures';
@@ -18,12 +18,12 @@ function specWith(id: string, docRepos: unknown[] | undefined) {
 }
 
 describe('projectDocRepos', () => {
-  it('sem docRepos declarados devolve lista vazia', () => {
+  it('with no declared docRepos returns an empty list', () => {
     expect(projectDocRepos(roleProject())).toEqual([]);
     expect(projectDocRepos(emptyProject())).toEqual([]);
   });
 
-  it('lista os docRepos na ordem declarada, com a especialização que o declara', () => {
+  it('lists the docRepos in declared order, with the specialization that declares it', () => {
     const repos = projectDocRepos(docReposProject());
     expect(repos.map((r) => r.id)).toEqual(['design-docs', 'wiki']);
     expect(repos[0]).toEqual({
@@ -41,7 +41,7 @@ describe('projectDocRepos', () => {
     });
   });
 
-  it('o mesmo id em especializações diferentes é uma entrada só, na ordem de aplicação', () => {
+  it('the same id in different specializations is a single entry, in application order', () => {
     const newId = idGen('SL');
     let p = emptyProject();
     p = applySpecialization(
@@ -70,7 +70,7 @@ describe('projectDocRepos', () => {
     ]);
   });
 
-  it('é memoizada por projeto', () => {
+  it('is memoized by project', () => {
     const p = docReposProject();
     expect(projectDocRepos(p)).toBe(projectDocRepos(p));
   });

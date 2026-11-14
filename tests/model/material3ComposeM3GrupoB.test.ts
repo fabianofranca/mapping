@@ -1,5 +1,5 @@
-// M3 da etapa "Material 3 fiel", grupo B: text-field, secure-text-field e search-bar contra o que
-// o `TextField.kt`, o `TextFieldDefaults.kt`, o `SearchBar.kt` e os tokens fixam no commit 5113b82a.
+// M3 of the "faithful Material 3" stage, group B: text-field, secure-text-field and search-bar against what
+// `TextField.kt`, `TextFieldDefaults.kt`, `SearchBar.kt` and the tokens fix at commit 5113b82a.
 import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import { approximateMeasurer, instantiate } from '../../src/model/components/instantiate';
@@ -13,7 +13,7 @@ const catalog = buildCatalog(files);
 const entryOf = (id: string) => findEntry(catalog, id)!;
 type Values = Parameters<typeof instantiate>[1];
 
-/** Desenha o componente numa caixa `width` × `height` (a padrão é a `size` dele). */
+/** Draws the component in a `width` × `height` box (the default is its own `size`). */
 function draw(
   id: string,
   values: Values,
@@ -40,7 +40,7 @@ const both = (id: string, values: Values, box?: { width: number; height: number 
   dark: draw(id, values, 'dark', box),
 });
 
-/** O primeiro nó visível com o nome. */
+/** The first visible node with the name. */
 const named = (root: SceneNode, name: string): SceneNode | undefined => {
   for (const node of walk(root)) if (node.name === name && node.visible) return node;
   return undefined;
@@ -68,53 +68,53 @@ const fontOf = (node: TextNode | undefined) => {
 const BODY_LARGE = [16, 24, 400, 0.5];
 const BODY_SMALL = [12, 16, 400, 0.4];
 
-describe('M3 grupo B — text-field', () => {
-  it('filled: 56 de altura, fundo surface-container-highest com raio superior 4 e indicador de 1 só embaixo', () => {
-    const base = { label: 'Nome', value: 'Maria', supportingText: 'Obrigatório' };
+describe('M3 group B — text-field', () => {
+  it('filled: height 56, surface-container-highest background with top radius 4 and a 1 indicator only at the bottom', () => {
+    const base = { label: 'Name', value: 'Maria', supportingText: 'Required' };
     const { light, dark } = both('text-field', base);
-    // o contêiner fica em 56 (altura fixa); o desenho tem a altura do size (84) e os 8 que sobram ficam vazios embaixo
+    // the container stays at 56 (fixed height); the drawing has the size's height (84) and the 8 left over stay empty at the bottom
     expect(boxOf(light, 'contêiner')?.height).toBe(56);
     expect(boxOf(light, 'contêiner')?.width).toBe(280);
     const fundo = named(light.root, 'fundo');
     expect(color(fundo)).toBe('#E6E0E9');
     expect(color(named(dark.root, 'fundo'))).toBe('#36343B');
-    // raio superior 4 por token (CornerExtraSmallTop): a lista de 4 raios aceita `$token` por item
+    // top radius 4 by token (CornerExtraSmallTop): the list of 4 radii accepts `$token` per item
     expect(fundo?.type === 'rect' && fundo.cornerRadius).toEqual([4, 4, 0, 0]);
     expect(fundo?.height).toBe(56);
     expect(
       named(light.root, 'contêiner')?.type === 'frame' &&
         (named(light.root, 'contêiner') as { clip: boolean }).clip,
     ).toBe(true);
-    // FilledTextFieldTokens.ActiveIndicatorHeight = 1, só a borda de baixo (stroke.sides)
+    // FilledTextFieldTokens.ActiveIndicatorHeight = 1, only the bottom border (stroke.sides)
     const indicador = named(light.root, 'indicador');
     expect(indicador?.stroke?.sides).toEqual(['bottom']);
     expect(indicador?.stroke?.width).toBe(1);
     expect(strokeColor(indicador)).toBe('#49454F');
     expect(strokeColor(named(dark.root, 'indicador'))).toBe('#CAC4D0');
-    // nenhum retângulo de 1 px de altura faz o papel do indicador
+    // no 1 px high rectangle plays the role of the indicator
     const thin = [...walk(light.root)].filter(
       (n) => n.type === 'rect' && n.visible && n.height === 1,
     );
     expect(thin).toEqual([]);
-    // o contorno do outlined não aparece no filled
+    // the outlined style's outline does not appear on the filled one
     expect(named(light.root, 'contorno')).toBeUndefined();
   });
 
-  it('filled: o indicador é de 1 px sem foco, mesmo em erro (a espessura de 2 é do foco)', () => {
-    const { light } = both('text-field', { label: 'Nome', isError: 'true' });
+  it('filled: the indicator is 1 px without focus, even in error (the thickness of 2 is for focus)', () => {
+    const { light } = both('text-field', { label: 'Name', isError: 'true' });
     expect(named(light.root, 'indicador')?.stroke?.width).toBe(1);
   });
 
-  it('cores do rótulo, do valor, da dica, do apoio e dos ícones por token, em light e dark', () => {
+  it('colors of the label, value, hint, supporting text and icons by token, in light and dark', () => {
     const base = {
-      label: 'Nome',
+      label: 'Name',
       value: 'Maria',
-      supportingText: 'Ajuda',
+      supportingText: 'Help',
       leadingIcon: 'Email',
       trailingIcon: 'Lock',
     };
     const normal = both('text-field', base);
-    // LabelColor/SupportingColor = onSurfaceVariant; InputColor = onSurface; ícones onSurfaceVariant
+    // LabelColor/SupportingColor = onSurfaceVariant; InputColor = onSurface; icons onSurfaceVariant
     expect(textColor(texts(normal.light, 'rótulo'))).toBe('#49454F');
     expect(textColor(texts(normal.dark, 'rótulo'))).toBe('#CAC4D0');
     expect(textColor(texts(normal.light, 'valor'))).toBe('#1D1B20');
@@ -122,12 +122,12 @@ describe('M3 grupo B — text-field', () => {
     expect(textColor(texts(normal.light, 'apoio'))).toBe('#49454F');
     expect(iconOf(normal.light, 'email').color).toBe('#49454F');
     expect(iconOf(normal.dark, 'lock').color).toBe('#CAC4D0');
-    const hint = both('text-field', { label: 'Nome', placeholder: 'Dica' });
+    const hint = both('text-field', { label: 'Name', placeholder: 'Hint' });
     expect(textColor(texts(hint.light, 'dica'))).toBe('#49454F');
     expect(textColor(texts(hint.dark, 'dica'))).toBe('#CAC4D0');
 
-    // erro: indicador, rótulo, apoio e ícone final em error; o valor e o ícone inicial não mudam
-    const erro = both('text-field', { ...base, isError: 'true' });
+    // error: indicator, label, supporting text and trailing icon in error; the value and the leading icon do not change
+    const errored = both('text-field', { ...base, isError: 'true' });
     expect(strokeColor(named(erro.light.root, 'indicador'))).toBe('#B3261E');
     expect(strokeColor(named(erro.dark.root, 'indicador'))).toBe('#F2B8B5');
     expect(textColor(texts(erro.light, 'rótulo'))).toBe('#B3261E');
@@ -135,36 +135,36 @@ describe('M3 grupo B — text-field', () => {
     expect(iconOf(erro.light, 'lock').color).toBe('#B3261E');
     expect(iconOf(erro.light, 'email').color).toBe('#49454F');
     expect(textColor(texts(erro.light, 'valor'))).toBe('#1D1B20');
-    // a dica em erro continua onSurfaceVariant (errorPlaceholderColor)
+    // the hint in error stays onSurfaceVariant (errorPlaceholderColor)
     const dicaErro = both('text-field', {
-      label: 'Nome',
-      placeholder: 'Dica',
+      label: 'Name',
+      placeholder: 'Hint',
       isError: 'true',
     });
     expect(textColor(texts(dicaErro.light, 'dica'))).toBe('#49454F');
   });
 
-  it('tipografia: rótulo e valor em body-large, rótulo minimizado e apoio em body-small', () => {
-    const empty = both('text-field', { label: 'Nome', supportingText: 'Ajuda' });
+  it('typography: label and value in body-large, minimized label and supporting text in body-small', () => {
+    const empty = both('text-field', { label: 'Name', supportingText: 'Help' });
     expect(fontOf(texts(empty.light, 'rótulo'))).toEqual(BODY_LARGE);
-    const filled = both('text-field', { label: 'Nome', value: 'Maria' });
+    const filled = both('text-field', { label: 'Name', value: 'Maria' });
     expect(fontOf(texts(filled.light, 'rótulo'))).toEqual(BODY_SMALL);
     expect(fontOf(texts(filled.light, 'valor'))).toEqual(BODY_LARGE);
-    const hint = both('text-field', { label: 'Nome', placeholder: 'Dica' });
+    const hint = both('text-field', { label: 'Name', placeholder: 'Hint' });
     expect(fontOf(texts(hint.light, 'rótulo'))).toEqual(BODY_SMALL);
     expect(fontOf(texts(hint.light, 'dica'))).toEqual(BODY_LARGE);
-    const support = both('text-field', { label: 'Nome', supportingText: 'Ajuda' });
+    const support = both('text-field', { label: 'Name', supportingText: 'Help' });
     expect(fontOf(texts(support.light, 'apoio'))).toEqual(BODY_SMALL);
-    // nenhum nó de texto declara a família: todos herdam font-sans
+    // no text node declares the family: all inherit font-sans
     for (const node of walk(filled.light.root))
       if (node.type === 'text') expect(node.style.fontFamily).toBe('Roboto, sans-serif');
   });
 
-  it('posições: ícone inicial em 12, texto em 52 (4 do padding + 48 do ícone), apoio com 16 e 4', () => {
+  it('positions: leading icon at 12, text at 52 (4 of padding + 48 of the icon), supporting text with 16 and 4', () => {
     const d = draw('text-field', {
-      label: 'Nome',
+      label: 'Name',
       value: 'Maria',
-      supportingText: 'Ajuda',
+      supportingText: 'Help',
       leadingIcon: 'Email',
       trailingIcon: 'Lock',
     }).root;
@@ -174,21 +174,21 @@ describe('M3 grupo B — text-field', () => {
     expect(at('email').width).toBe(24);
     expect(at('valor').x).toBe(52);
     expect(at('lock').x).toBe(280 - 12 - 24);
-    // rótulo minimizado (16) acima do valor (24), ambos centrados nos 56: começa em 8
+    // minimized label (16) above the value (24), both centered in the 56: starts at 8
     expect(at('rótulo').y).toBe(8);
     expect(at('valor').y).toBe(24);
     expect(at('apoio').x).toBe(16);
     expect(at('apoio').y).toBe(56 + 4);
-    // sem ícones o texto começa em 16
-    const plain = draw('text-field', { label: 'Nome', value: 'Maria' }).root;
+    // without icons the text starts at 16
+    const plain = draw('text-field', { label: 'Name', value: 'Maria' }).root;
     expect(absoluteBoxes(plain).get(named(plain, 'valor')!.id)!.x).toBe(16);
   });
 
-  it('desabilitado: conteúdo a 0,38 sobre onSurface, indicador a 0,38 e contêiner mantido', () => {
+  it('disabled: content at 0.38 over onSurface, indicator at 0.38 and container kept', () => {
     const base = {
-      label: 'Nome',
+      label: 'Name',
       value: 'Maria',
-      supportingText: 'Ajuda',
+      supportingText: 'Help',
       leadingIcon: 'Email',
       enabled: 'false',
     };
@@ -204,18 +204,18 @@ describe('M3 grupo B — text-field', () => {
     }
     expect(iconOf(light, 'email').color).toBe('#1D1B20');
     expect(iconOf(light, 'email').node?.opacity).toBe(0.38);
-    // o desabilitado vence o erro
-    const erro = draw('text-field', { ...base, isError: 'true' }).root;
+    // disabled wins over error
+    const errored = draw('text-field', { ...base, isError: 'true' }).root;
     expect(strokeColor(named(erro, 'indicador'))).toBe('#1D1B20');
   });
 
-  it('outlined: contorno de 1 com raio 4 por token, sem fundo, e 56 de campo sob o rótulo na borda', () => {
+  it('outlined: 1 outline with radius 4 by token, no fill, and 56 of field under the label on the border', () => {
     const { light, dark } = both(
       'text-field',
-      { label: 'Nome', style: 'outlined', supportingText: 'Ajuda' },
+      { label: 'Name', style: 'outlined', supportingText: 'Help' },
       { width: 280, height: 84 },
     );
-    // OutlinedTextField: padding(top = metade do rótulo minimizado = 8) + MinHeight 56
+    // OutlinedTextField: padding(top = half the minimized label = 8) + MinHeight 56
     expect(boxOf(light, 'contêiner')?.height).toBe(64);
     const contorno = named(light.root, 'contorno');
     expect(contorno?.height).toBe(56);
@@ -227,17 +227,17 @@ describe('M3 grupo B — text-field', () => {
     expect(strokeColor(named(dark.root, 'contorno'))).toBe('#938F99');
     expect(named(light.root, 'fundo')).toBeUndefined();
     expect(named(light.root, 'indicador')).toBeUndefined();
-    // erro: OutlinedTextFieldTokens.ErrorOutlineColor = error
-    const erro = both('text-field', {
-      label: 'Nome',
+    // error: OutlinedTextFieldTokens.ErrorOutlineColor = error
+    const errored = both('text-field', {
+      label: 'Name',
       style: 'outlined',
       isError: 'true',
     });
     expect(strokeColor(named(erro.light.root, 'contorno'))).toBe('#B3261E');
     expect(strokeColor(named(erro.dark.root, 'contorno'))).toBe('#F2B8B5');
-    // desabilitado: DisabledOutlineColor = onSurface a 0,12 (state-disabled-container)
+    // disabled: DisabledOutlineColor = onSurface at 0.12 (state-disabled-container)
     const off = draw('text-field', {
-      label: 'Nome',
+      label: 'Name',
       style: 'outlined',
       enabled: 'false',
     });
@@ -245,9 +245,9 @@ describe('M3 grupo B — text-field', () => {
     expect(named(off.root, 'contorno')?.opacity).toBe(0.12);
   });
 
-  it('outlined com texto: o rótulo minimizado abre um vão no contorno (sem remendo de cor), sem 1 px de altura', () => {
-    const d = draw('text-field', { label: 'Nome', value: 'Maria', style: 'outlined' });
-    // um contorno só (rect de raio 4, corner-extra-small) com o vão (stroke.gap) sobre o rótulo; sem `sides` nem trechos
+  it('outlined with text: the minimized label opens a gap in the outline (no color patch), with no 1 px height', () => {
+    const d = draw('text-field', { label: 'Name', value: 'Maria', style: 'outlined' });
+    // a single outline (rect of radius 4, corner-extra-small) with the gap (stroke.gap) over the label; no `sides` or segments
     const contorno = named(d.root, 'contorno');
     expect(contorno).toMatchObject({ type: 'rect', cornerRadius: 4 });
     expect(contorno?.stroke?.sides).toBeUndefined();
@@ -258,52 +258,52 @@ describe('M3 grupo B — text-field', () => {
     const boxes = absoluteBoxes(d.root);
     const label = texts(d, 'rótulo minimizado')!;
     expect(label).toBeDefined();
-    // o rótulo minimizado fica em x = 16 (TextFieldPadding), entre o vão de 4 de cada lado
+    // the minimized label sits at x = 16 (TextFieldPadding), between the gap of 4 on each side
     expect(boxes.get(label.id)!.x).toBe(16);
     expect(contorno?.stroke?.gaps).toHaveLength(1);
     const gap = contorno!.stroke!.gaps![0]!;
     expect(gap.side).toBe('top');
     expect(gap.from).toBe(12);
     expect(gap.to).toBeCloseTo(16 + boxes.get(label.id)!.width + 4, 5);
-    // a linha de cima do contorno está em y = 8, no centro do rótulo de 16
+    // the top line of the outline is at y = 8, at the center of the 16 label
     expect(boxes.get(contorno!.id)!.y).toBe(8);
     expect(fontOf(label)).toEqual(BODY_SMALL);
-    // o vão é um vão de verdade: nenhum quadro ou retângulo cobre o contorno com cor de fundo
+    // the gap is a real gap: no frame or rectangle covers the outline with a background color
     const patch = [...walk(d.root)].filter(
       (n) => (n.type === 'frame' || n.type === 'rect') && n.visible && n.fills.length > 0,
     );
     expect(patch).toEqual([]);
-    // sem texto, o rótulo fica dentro do campo (sem vão) em body-large
-    const empty = draw('text-field', { label: 'Nome', style: 'outlined' });
+    // without text, the label stays inside the field (no gap) in body-large
+    const empty = draw('text-field', { label: 'Name', style: 'outlined' });
     expect(named(empty.root, 'contorno')).toBeDefined();
     expect(named(empty.root, 'contorno')?.stroke?.gaps ?? []).toEqual([]);
     expect(named(empty.root, 'contorno (lados)')).toBeUndefined();
     expect(fontOf(texts(empty, 'rótulo'))).toEqual(BODY_LARGE);
   });
 
-  it('valor: linha única não quebra nem leva reticências; maxLines vem do campo e do singleLine', () => {
-    const long = 'um texto bem comprido que não cabe numa linha do campo de texto';
-    const single = draw('text-field', { label: 'Nome', value: long, singleLine: 'true' });
+  it('value: a single line does not wrap or get an ellipsis; maxLines comes from the field and from singleLine', () => {
+    const long = 'a very long text that does not fit on one line of the text field';
+    const single = draw('text-field', { label: 'Name', value: long, singleLine: 'true' });
     expect(texts(single, 'valor')?.style.wrap).toBe('none');
     expect(texts(single, 'valor')?.style.maxLines).toBe(1);
     expect(texts(single, 'valor')?.style.ellipsis).toBeUndefined();
-    const multi = draw('text-field', { label: 'Nome', value: long }, 'light', {
+    const multi = draw('text-field', { label: 'Name', value: long }, 'light', {
       width: 280,
       height: 200,
     });
     expect(texts(multi, 'valor')?.style.wrap).toBeUndefined();
     expect(texts(multi, 'valor')?.style.maxLines).toBeUndefined();
-    // a quebra por palavra cresce o texto; maxLines corta no número de linhas do campo
-    const two = draw('text-field', { label: 'Nome', value: long, maxLines: 2 }, 'light', {
+    // word wrapping grows the text; maxLines cuts at the field's number of lines
+    const two = draw('text-field', { label: 'Name', value: long, maxLines: 2 }, 'light', {
       width: 280,
       height: 200,
     });
     expect(texts(two, 'valor')?.style.maxLines).toBe(2);
     expect(texts(two, 'valor')?.height).toBe(48);
     expect(texts(multi, 'valor')!.height).toBeGreaterThan(48);
-    // singleLine ignora maxLines, como o BasicTextField
+    // singleLine ignores maxLines, like BasicTextField
     const both1 = draw('text-field', {
-      label: 'Nome',
+      label: 'Name',
       value: long,
       singleLine: 'true',
       maxLines: 3,
@@ -311,11 +311,11 @@ describe('M3 grupo B — text-field', () => {
     expect(texts(both1, 'valor')?.style.maxLines).toBe(1);
   });
 
-  it('rótulo e apoio quebram por palavra, sem limite de linhas nem reticências (como o Text do Compose)', () => {
+  it('label and supporting text wrap by word, with no line limit or ellipsis (like Compose's Text)', () => {
     const d = draw('text-field', {
-      label: 'Rótulo muito comprido do campo',
+      label: 'Very long field label',
       supportingText:
-        'Texto de apoio comprido o bastante para passar de uma linha na largura',
+        'Supporting text long enough to go over one line in the width',
     });
     for (const name of ['rótulo', 'apoio']) {
       const node = texts(d, name);
@@ -325,18 +325,18 @@ describe('M3 grupo B — text-field', () => {
     }
   });
 
-  it('o piso de 56 de altura do campo vem de minHeight, mesmo numa caixa mais baixa', () => {
-    const d = draw('text-field', { label: 'Nome' }, 'light', { width: 280, height: 40 });
+  it('the field's floor of height 56 comes from minHeight, even in a shorter box', () => {
+    const d = draw('text-field', { label: 'Name' }, 'light', { width: 280, height: 40 });
     expect(boxOf(d, 'contêiner')?.height).toBe(56);
   });
 });
 
-describe('M3 grupo B — secure-text-field', () => {
-  it('filled: indicador de 1 só embaixo, fundo e cores por token em light e dark', () => {
+describe('M3 group B — secure-text-field', () => {
+  it('filled: 1 indicator only at the bottom, background and colors by token in light and dark', () => {
     const { light, dark } = both('secure-text-field', {
-      label: 'Senha',
+      label: 'Password',
       hasText: 'true',
-      supportingText: 'Ajuda',
+      supportingText: 'Help',
       leadingIcon: 'Lock',
       trailingIcon: 'Visibility',
     });
@@ -354,26 +354,26 @@ describe('M3 grupo B — secure-text-field', () => {
     expect(textColor(texts(light, 'valor'))).toBe('#1D1B20');
     expect(textColor(texts(dark, 'valor'))).toBe('#E6E0E9');
     expect(fontOf(texts(light, 'valor'))).toEqual(BODY_LARGE);
-    // linha única: não quebra e não leva reticências
+    // single line: does not wrap and gets no ellipsis
     expect(texts(light, 'valor')?.style.wrap).toBe('none');
     expect(texts(light, 'valor')?.style.maxLines).toBe(1);
     expect(iconOf(light, 'lock').color).toBe('#49454F');
     expect(iconOf(dark, 'visibility').color).toBe('#CAC4D0');
     expect(iconOf(light, 'lock').node?.width).toBe(24);
-    // sem texto digitado, o rótulo fica expandido em body-large e não há valor
-    const empty = draw('secure-text-field', { label: 'Senha' });
+    // with no typed text, the label stays expanded in body-large and there is no value
+    const empty = draw('secure-text-field', { label: 'Password' });
     expect(fontOf(texts(empty, 'rótulo'))).toEqual(BODY_LARGE);
     expect(texts(empty, 'valor')).toBeUndefined();
   });
 
-  it('erro e desabilitado seguem o text-field', () => {
+  it('error and disabled follow the text-field', () => {
     const base = {
-      label: 'Senha',
+      label: 'Password',
       hasText: 'true',
-      supportingText: 'Incorreta',
+      supportingText: 'Incorrect',
       trailingIcon: 'Visibility',
     };
-    const erro = both('secure-text-field', { ...base, isError: 'true' });
+    const errored = both('secure-text-field', { ...base, isError: 'true' });
     expect(strokeColor(named(erro.light.root, 'indicador'))).toBe('#B3261E');
     expect(strokeColor(named(erro.dark.root, 'indicador'))).toBe('#F2B8B5');
     expect(textColor(texts(erro.light, 'apoio'))).toBe('#B3261E');
@@ -389,13 +389,13 @@ describe('M3 grupo B — secure-text-field', () => {
     expect(iconOf(off, 'visibility').node?.opacity).toBe(0.38);
   });
 
-  it('outlined: contorno de 1 por token com raio 4, vão no rótulo e desabilitado a 0,12', () => {
+  it('outlined: 1 outline by token with radius 4, gap in the label and disabled at 0.12', () => {
     const d = draw('secure-text-field', {
-      label: 'Senha',
+      label: 'Password',
       hasText: 'true',
       style: 'outlined',
     });
-    // um contorno só, com o vão (stroke.gap) sobre o rótulo minimizado
+    // a single outline, with the gap (stroke.gap) over the minimized label
     const outline = named(d.root, 'contorno');
     expect(outline?.stroke?.sides).toBeUndefined();
     expect(outline?.stroke?.gaps).toHaveLength(1);
@@ -407,7 +407,7 @@ describe('M3 grupo B — secure-text-field', () => {
     expect(texts(d, 'rótulo minimizado')).toBeDefined();
     const empty = both(
       'secure-text-field',
-      { label: 'Senha', style: 'outlined', supportingText: 'Ajuda' },
+      { label: 'Password', style: 'outlined', supportingText: 'Help' },
       { width: 280, height: 84 },
     );
     const contorno = named(empty.light.root, 'contorno');
@@ -416,13 +416,13 @@ describe('M3 grupo B — secure-text-field', () => {
     expect(strokeColor(contorno)).toBe('#79747E');
     expect(strokeColor(named(empty.dark.root, 'contorno'))).toBe('#938F99');
     const off = draw('secure-text-field', {
-      label: 'Senha',
+      label: 'Password',
       style: 'outlined',
       enabled: 'false',
     });
     expect(named(off.root, 'contorno')?.opacity).toBe(0.12);
-    const erro = draw('secure-text-field', {
-      label: 'Senha',
+    const errored = draw('secure-text-field', {
+      label: 'Password',
       style: 'outlined',
       isError: 'true',
     });
@@ -430,15 +430,15 @@ describe('M3 grupo B — secure-text-field', () => {
   });
 });
 
-describe('M3 grupo B — search-bar', () => {
-  it('56 de altura, forma full, fundo surface-container-high e sem sombra', () => {
+describe('M3 group B — search-bar', () => {
+  it('height 56, full shape, surface-container-high background and no shadow', () => {
     const { light, dark } = both('search-bar', {
-      placeholder: 'Pesquisar',
+      placeholder: 'Search',
       leadingIcon: 'Search',
     });
     expect(light.root.height).toBe(56);
     expect(light.root.width).toBe(360);
-    // corner-full (9999) limitado à metade da altura pelo motor
+    // corner-full (9999) clamped to half the height by the engine
     expect(light.root.type === 'frame' && light.root.cornerRadius).toBeGreaterThanOrEqual(
       28,
     );
@@ -449,7 +449,7 @@ describe('M3 grupo B — search-bar', () => {
     expect(light.root.stroke).toBeUndefined();
   });
 
-  it('ícones pelo nó icon: inicial onSurface, final onSurfaceVariant, 24, a 16 das bordas', () => {
+  it('icons by the icon node: leading onSurface, trailing onSurfaceVariant, 24, 16 from the edges', () => {
     const { light, dark } = both('search-bar', {
       query: 'jazz',
       leadingIcon: 'Search',
@@ -464,20 +464,20 @@ describe('M3 grupo B — search-bar', () => {
     const at = (name: string) => boxes.get(named(light.root, name)!.id)!;
     expect(at('search').x).toBe(16);
     expect(at('close').x).toBe(360 - 16 - 24);
-    // texto em 52 = 4 + 48 do ícone (SearchBarIconOffsetX 4 e área de 48)
+    // text at 52 = 4 + 48 of the icon (SearchBarIconOffsetX 4 and area of 48)
     expect(at('consulta').x).toBe(52);
     expect(at('search').y).toBe(16);
   });
 
-  it('consulta e dica em body-large: consulta onSurface em linha única, dica onSurfaceVariant', () => {
-    const query = both('search-bar', { query: 'jazz', placeholder: 'Pesquisar' });
+  it('query and hint in body-large: onSurface query on a single line, onSurfaceVariant hint', () => {
+    const query = both('search-bar', { query: 'jazz', placeholder: 'Search' });
     expect(fontOf(texts(query.light, 'consulta'))).toEqual(BODY_LARGE);
     expect(textColor(texts(query.light, 'consulta'))).toBe('#1D1B20');
     expect(textColor(texts(query.dark, 'consulta'))).toBe('#E6E0E9');
     expect(texts(query.light, 'consulta')?.style.wrap).toBe('none');
     expect(texts(query.light, 'consulta')?.style.maxLines).toBe(1);
     expect(texts(query.light, 'dica')).toBeUndefined();
-    const hint = both('search-bar', { placeholder: 'Pesquisar' });
+    const hint = both('search-bar', { placeholder: 'Search' });
     expect(fontOf(texts(hint.light, 'dica'))).toEqual(BODY_LARGE);
     expect(textColor(texts(hint.light, 'dica'))).toBe('#49454F');
     expect(textColor(texts(hint.dark, 'dica'))).toBe('#CAC4D0');
@@ -486,7 +486,7 @@ describe('M3 grupo B — search-bar', () => {
       if (node.type === 'text') expect(node.style.fontFamily).toBe('Roboto, sans-serif');
   });
 
-  it('expandida: docked leva raio 28 e o divisor logo abaixo dos 56; bar vira tela cheia com 8 de respiro', () => {
+  it('expanded: docked gets radius 28 and the divider right below the 56; bar becomes full screen with 8 of breathing room', () => {
     const docked = draw(
       'search-bar',
       { query: 'jaz', expanded: 'true', style: 'docked' },
@@ -510,7 +510,7 @@ describe('M3 grupo B — search-bar', () => {
         ),
       ),
     ).toBe('#938F99');
-    // bar expandida: CornerNone, campo a 8 do topo (SearchBarVerticalPadding), divisor em 8 + 56 + 8
+    // expanded bar: CornerNone, field 8 from the top (SearchBarVerticalPadding), divider at 8 + 56 + 8
     const bar = draw(
       'search-bar',
       { query: 'jaz', expanded: 'true', style: 'bar' },
@@ -525,13 +525,13 @@ describe('M3 grupo B — search-bar', () => {
     expect(boxes.get(named(bar.root, 'linha')!.id)!.y).toBe(8);
     expect(boxes.get(named(bar.root, 'divisor (bar)')!.id)!.y).toBe(72);
     expect(named(bar.root, 'divisor')).toBeUndefined();
-    // recolhida não tem divisor
-    const closed = draw('search-bar', { placeholder: 'Pesquisar' });
+    // collapsed has no divider
+    const closed = draw('search-bar', { placeholder: 'Search' });
     expect(named(closed.root, 'divisor')).toBeUndefined();
   });
 
-  it('o campo tem no mínimo 56 de altura (InputFieldHeight), mesmo numa caixa mais baixa', () => {
-    const d = draw('search-bar', { placeholder: 'Pesquisar' }, 'light', {
+  it('the field has a minimum height of 56 (InputFieldHeight), even in a shorter box', () => {
+    const d = draw('search-bar', { placeholder: 'Search' }, 'light', {
       width: 360,
       height: 40,
     });
@@ -539,7 +539,7 @@ describe('M3 grupo B — search-bar', () => {
   });
 });
 
-describe('M3 grupo B — ícones e combinações', () => {
+describe('M3 group B — icons and combinations', () => {
   const rawNodes = (id: string) => {
     const raw = JSON.parse(text(`components/${id}.json`)) as { template: unknown };
     const out: { name: { $switch?: string; cases?: Record<string, string> } | string }[] =
@@ -557,7 +557,7 @@ describe('M3 grupo B — ícones e combinações', () => {
     name.replace(/(?<!^)([A-Z])/g, '_$1').toLowerCase();
 
   it.each(['text-field', 'secure-text-field', 'search-bar'])(
-    '%s: o $switch do nó icon cobre toda sugestão, sem caminho SVG',
+    '%s: the icon node's $switch covers every suggestion, with no SVG path',
     (id) => {
       const nodes = rawNodes(id);
       expect(nodes.length).toBe(2);
@@ -584,7 +584,7 @@ describe('M3 grupo B — ícones e combinações', () => {
     },
   );
 
-  it('todas as combinações de estilo, estado e ícones desenham sem aviso em light e dark', () => {
+  it('all combinations of style, state and icons draw without warnings in light and dark', () => {
     for (const mode of ['light', 'dark'] as const) {
       for (const style of ['filled', 'outlined']) {
         for (const enabled of ['true', 'false']) {
@@ -597,11 +597,11 @@ describe('M3 grupo B — ícones e combinações', () => {
             ]) {
               for (const extra of [
                 { value: 'Maria', hasText: 'true' },
-                { placeholder: 'Dica', supportingText: 'Ajuda' },
+                { placeholder: 'Hint', supportingText: 'Help' },
                 {},
               ]) {
                 const values = {
-                  label: 'Campo',
+                  label: 'Field',
                   style,
                   enabled,
                   isError,
@@ -621,7 +621,7 @@ describe('M3 grupo B — ícones e combinações', () => {
         for (const expanded of ['true', 'false']) {
           const values = {
             query: 'jazz',
-            placeholder: 'Pesquisar',
+            placeholder: 'Search',
             leadingIcon: 'Search',
             trailingIcon: 'Close',
             style,

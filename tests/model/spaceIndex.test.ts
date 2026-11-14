@@ -44,9 +44,7 @@ describe('buildRectIndex', () => {
           const found = index.containing(inner, slack);
           const expected = rects.filter((rect) => contains(rect, inner));
           const exact = found.filter((rect) => contains(rect, inner));
-          expect(exact, `seed ${SEED} scale ${scale} query ${q}`).toEqual(
-            expected,
-          );
+          expect(exact, `seed ${SEED} scale ${scale} query ${q}`).toEqual(expected);
           expect(found.map((rect) => rects.indexOf(rect))).toEqual(
             [...found.map((rect) => rects.indexOf(rect))].sort((a, b) => a - b),
           );

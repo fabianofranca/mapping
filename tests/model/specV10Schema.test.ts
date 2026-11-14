@@ -2,10 +2,10 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
-// Especialização formatVersion 10 (etapa Avisos na especialização): `notices` no tipo, no campo
-// e na coluna de table. O JSON Schema (`docs/spec.schema.json`) descreve a estrutura; a unicidade
-// de kind + message, a data real e o `only allowed with formatVersion 10` são do validador da
-// app (tests/model/spec*).
+// formatVersion 10 specialization (stage Notices in the specialization): `notices` on the type, on
+// the field and on the table column. The JSON Schema (`docs/spec.schema.json`) describes the
+// structure; the uniqueness of kind + message, the real date and the `only allowed with
+// formatVersion 10` belong to the app's validator (tests/model/spec*).
 
 const jsonSchema = JSON.parse(readFileSync('docs/spec.schema.json', 'utf8')) as Record<
   string,
@@ -19,13 +19,13 @@ function alert(): Json {
   return {
     format: 'mapping-spec',
     formatVersion: 10,
-    id: 'avisos',
-    name: 'Avisos',
+    id: 'notices',
+    name: 'Notices',
     version: 1,
     layers: [
       {
-        id: 'componentes',
-        name: 'Componentes',
+        id: 'components',
+        name: 'Components',
         color: '#1E88E5',
         annotationTypes: [
           {
@@ -34,7 +34,8 @@ function alert(): Json {
             notices: [
               {
                 kind: 'pending',
-                message: 'O contrato aceita avatarVariant; o SDK do BFF ainda não tem.',
+                message:
+                  'The contract accepts avatarVariant; the BFF SDK does not have it yet.',
                 since: '2026-11-04',
                 ref: 'cross/sdui/all/pe-core/base/plugins/alert.md',
               },
@@ -52,7 +53,9 @@ function alert(): Json {
                   {
                     key: 'name',
                     type: 'string',
-                    notices: [{ kind: 'diverges', message: 'O código usa outro nome.' }],
+                    notices: [
+                      { kind: 'diverges', message: 'The code uses another name.' },
+                    ],
                   },
                   { key: 'target', type: 'ref', accepts: { free: true }, notices: [] },
                 ],
@@ -69,11 +72,11 @@ const type = (spec: Json): Json => spec.layers[0].annotationTypes[0];
 const first = (spec: Json): Json => type(spec).notices[0];
 
 describe('formatVersion 10: notices', () => {
-  it('o JSON Schema aceita a 10 com avisos no tipo, no campo e na coluna', () => {
+  it('the JSON Schema accepts 10 with notices on the type, the field and the column', () => {
     expect(jsonValidator.safeParse(alert()).success).toBe(true);
   });
 
-  it('aceita os quatro kind, lista vazia e só os campos requireds', () => {
+  it('accepts the four kinds, an empty list and only the required fields', () => {
     for (const kind of ['pending', 'deprecated', 'diverges', 'removed']) {
       const spec = alert();
       type(spec).notices = [{ kind, message: 'x' }];
@@ -85,29 +88,29 @@ describe('formatVersion 10: notices', () => {
   });
 
   const bad: [string, (s: Json) => void][] = [
-    ['kind fora dos quatro', (s) => (first(s).kind = 'info')],
-    ['sem kind', (s) => delete first(s).kind],
-    ['sem message', (s) => delete first(s).message],
-    ['message vazia', (s) => (first(s).message = '')],
-    ['message só de espaços', (s) => (first(s).message = '   ')],
-    ['since sem formato de data', (s) => (first(s).since = '04/11/2026')],
-    ['since com mês inválido', (s) => (first(s).since = '2026-13-01')],
-    ['ref vazia', (s) => (first(s).ref = '')],
-    ['propriedade desconhecida', (s) => (first(s).extra = 1)],
-    ['notices que não é lista', (s) => (type(s).notices = first(s))],
+    ['kind outside the four', (s) => (first(s).kind = 'info')],
+    ['without kind', (s) => delete first(s).kind],
+    ['without message', (s) => delete first(s).message],
+    ['empty message', (s) => (first(s).message = '')],
+    ['message of only spaces', (s) => (first(s).message = '   ')],
+    ['since without a date format', (s) => (first(s).since = '04/11/2026')],
+    ['since with an invalid month', (s) => (first(s).since = '2026-13-01')],
+    ['empty ref', (s) => (first(s).ref = '')],
+    ['unknown property', (s) => (first(s).extra = 1)],
+    ['notices that is not a list', (s) => (type(s).notices = first(s))],
     [
-      'propriedade desconhecida no aviso do campo',
+      'unknown property in the field notice',
       (s) => (type(s).fields[0].notices[0].level = 'high'),
     ],
   ];
 
-  it.each(bad)('o JSON Schema rejeita: %s', (_name, mutate) => {
+  it.each(bad)('the JSON Schema rejects: %s', (_name, mutate) => {
     const spec = alert();
     mutate(spec);
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });
 
-  it('o JSON Schema descreve notice e recusa formatVersion 17', () => {
+  it('the JSON Schema describes notice and refuses formatVersion 17', () => {
     const defs = (jsonSchema as Json).$defs;
     expect(Object.keys(defs.notice.properties).sort()).toEqual([
       'kind',

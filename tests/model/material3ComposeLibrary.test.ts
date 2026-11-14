@@ -1,8 +1,8 @@
-// Biblioteca Material 3 (Compose) (`libraries/material3-compose/`, pronta para uso e aplicada pela pessoa):
-// a especialização (`formatVersion` 15, biblioteca v2: tokens claro e escuro e conjunto de ícones) com as estruturas de layout e conteúdo e os componentes do
-// Material 3 do Jetpack Compose, 50 tipos em três camadas, cada um com `code.compose` (símbolo e arquivo no
-// androidx, no commit fixado), componente que desenha, documento e exemplos. As variantes que trocam o
-// símbolo (`variants`) e os ícones por `suggestions` seguem o padrão da biblioteca.
+// Material 3 (Compose) library (`libraries/material3-compose/`, ready to use and applied by the person):
+// the specialization (`formatVersion` 15, library v2: light and dark tokens and an icon set) with the layout and content structures and the
+// Jetpack Compose Material 3 components, 50 types in three layers, each with `code.compose` (symbol and file in
+// androidx, at the pinned commit), a component that draws, a document and examples. The variants that swap the
+// symbol (`variants`) and the icons by `suggestions` follow the library's pattern.
 import { describe, expect, it } from 'vitest';
 import { validateLibrary } from '../../src/model/library';
 import type { Spec, SpecField } from '../../src/model/spec';
@@ -34,7 +34,7 @@ import { defaultValues } from '../../src/model/libraryDrawing';
 
 const COMMIT = '5113b82a4ed6416d6344efa50e41db8cb65928ff';
 
-/** O catálogo se monta uma vez, na coleta: montá-lo dentro de cada teste os levava a ~4 s (limite de 5 s) com a cobertura ligada no CI. */
+/** The catalog is built once, at collection: building it inside each test took them to ~4 s (limit of 5 s) with coverage on in CI. */
 const sharedCatalog = buildCatalog(files);
 
 const LAYERS: Record<string, string[]> = {
@@ -62,7 +62,7 @@ const LAYERS: Record<string, string[]> = {
 };
 const ALL_TYPES = Object.values(LAYERS).flat();
 
-/** As 30 sugestões da biblioteca v1: continuam todas no subconjunto da v2 (decisão 11). */
+/** The 30 suggestions of library v1: all of them remain in the v2 subset (decision 11). */
 const V1_ICONS = [
   ...['Home', 'Search', 'Person', 'Menu', 'MoreVert', 'Add', 'Check', 'Close'],
   ...['ArrowBack', 'Favorite', 'Edit', 'Delete', 'Share', 'Notifications'],
@@ -70,13 +70,13 @@ const V1_ICONS = [
   ...['ShoppingCart', 'AccountCircle', 'KeyboardArrowRight', 'KeyboardArrowDown'],
   ...['Refresh', 'Clear', 'Done', 'Lock', 'List'],
 ];
-/** Os ícones que os componentes ainda desenham por conta própria e que o subconjunto precisa ter. */
+/** The icons the components still draw on their own and that the subset must have. */
 const SELF_DRAWN_ICONS = [
   ...['arrow_drop_down', 'check', 'close', 'schedule', 'calendar_today', 'search'],
   ...['menu', 'more_vert', 'edit', 'keyboard', 'keyboard_arrow_left'],
   ...['keyboard_arrow_right', 'keyboard_arrow_down'],
 ];
-/** Os quatro componentes migrados na M1 (formato 4, sem cor literal, sem `family`). */
+/** The four components migrated in M1 (format 4, no literal color, no `family`). */
 const ICON_KEYS = [
   ...['icon', 'imageVector', 'navigationIcon', 'actionIcon1', 'actionIcon2'],
   ...['actionIcon3', 'actionIcon4', 'floatingActionButton'],
@@ -85,7 +85,7 @@ const ICON_KEYS = [
 
 const MATERIAL = 'androidx.compose.material3.';
 const CAROUSEL = 'androidx.compose.material3.carousel.';
-/** tipo → campo da variante e valor → símbolo esperado (o valor ausente cai no `default` do campo). */
+/** type → variant field and value → expected symbol (an absent value falls back to the field's `default`). */
 const VARIANT_SYMBOLS: Record<
   string,
   { field: string; symbols: Record<string, string> }
@@ -241,7 +241,7 @@ const VARIANT_SYMBOLS: Record<
   },
 };
 
-/** As fichas de assinatura que o `code.compose` e os casos de `variants` citam (S5 da #1079). */
+/** The signature sheets that `code.compose` and the `variants` cases cite (S5 of #1079). */
 function signatureFiles(): string[] {
   const paths: string[] = [];
   for (const type of types) {
@@ -253,11 +253,12 @@ function signatureFiles(): string[] {
   return paths;
 }
 
-describe('biblioteca Material 3 (Compose)', () => {
-  it('tem a especialização, as fontes, um componente e um documento por tipo', () => {
+describe('Material 3 (Compose) library', () => {
+  it('has the specialization, the fonts, a component and a document per type', () => {
     expect(files.map((f) => f.path)).toEqual(
       [
         SPEC_FILE,
+        // pt-BR kept: file names of the library package (libraries/material3-compose/), outside this phase
         'fonts/LEIA-ME.txt',
         'fonts/LICENSE-Roboto.txt',
         'fonts/Roboto-Medium.woff2',
@@ -272,11 +273,12 @@ describe('biblioteca Material 3 (Compose)', () => {
     );
   });
 
-  it('todo documento fala a Fidelidade em unidades do componente (decisão 11 da #1085)', () => {
+  it('every document states Fidelity in component units (decision 11 of #1085)', () => {
     const docs = files.filter((f) => f.path.startsWith('docs/'));
     expect(docs).toHaveLength(50);
     for (const doc of docs) {
       const body = text(doc.path);
+      // pt-BR kept: Portuguese text of the library docs (docs/*.md in libraries/material3-compose/), outside this phase
       expect(body, doc.path).toContain(
         '1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem',
       );
@@ -284,7 +286,7 @@ describe('biblioteca Material 3 (Compose)', () => {
     }
   });
 
-  it('tem 50 tipos nas camadas layout, content e components, na ordem', () => {
+  it('has 50 types in the layout, content and components layers, in order', () => {
     expect(spec.layers.map((l) => l.id)).toEqual(Object.keys(LAYERS));
     for (const layer of spec.layers) {
       expect(layer.annotationTypes.map((t) => t.id)).toEqual(LAYERS[layer.id]);
@@ -292,7 +294,7 @@ describe('biblioteca Material 3 (Compose)', () => {
     expect(types).toHaveLength(50);
   });
 
-  it('valida sem erro nos três níveis, com os avisos conhecidos', () => {
+  it('validates with no error at the three levels, with the known warnings', () => {
     const report = validateLibrary({ files, specPath: SPEC_FILE });
     expect(report.errors).toEqual([]);
     expect(report.ok).toBe(true);
@@ -302,15 +304,15 @@ describe('biblioteca Material 3 (Compose)', () => {
       components: 50,
       docs: 50,
     });
-    // Só os avisos conhecidos `parâmetro fora da ficha` (provisório: decisão do dono pendente no bug #1774; curadoria
-    // na #1134): as fontes vêm no pacote e o `code` cobre os campos que o desenho não usa. O conjunto não pode crescer
-    // nem ficar com item que sumiu.
+    // Only the known `parâmetro fora da ficha` warnings (provisional: owner decision pending in bug #1774; curation
+    // in #1134): the fonts come in the package and `code` covers the fields the drawing does not use. The set cannot grow
+    // or keep an item that disappeared.
     const known = unknownWarnings(report.warnings);
     expect(known.unexpected).toEqual([]);
     expect(known.missing).toEqual([]);
   }, 30_000);
 
-  it('é a formatVersion 16, versão 14, com tokens nos modos light e dark e a plataforma compose no androidx fixado no commit', () => {
+  it('is formatVersion 16, version 14, with tokens in light and dark modes and the compose platform in androidx pinned at the commit', () => {
     expect(spec).toMatchObject({
       formatVersion: 16,
       id: 'material3-compose',
@@ -329,7 +331,7 @@ describe('biblioteca Material 3 (Compose)', () => {
     });
   });
 
-  it('todo tipo tem code.compose com símbolo do androidx e arquivo em compose/', () => {
+  it('every type has code.compose with an androidx symbol and a file in compose/', () => {
     for (const type of types) {
       const code = type.code?.compose;
       expect(code, type.id).toBeDefined();
@@ -349,7 +351,7 @@ describe('biblioteca Material 3 (Compose)', () => {
     }
   });
 
-  it('toda variants resolve para um símbolo, para cada opção do campo', () => {
+  it('every variants resolves to a symbol, for each option of the field', () => {
     let withVariants = 0;
     for (const type of types) {
       const code = type.code?.compose;
@@ -368,7 +370,7 @@ describe('biblioteca Material 3 (Compose)', () => {
   });
 
   it.each(Object.keys(VARIANT_SYMBOLS))(
-    '%s resolve cada valor para o símbolo certo',
+    '%s resolves each value to the right symbol',
     (id) => {
       const type = typeOf(id);
       const code = type.code?.compose;
@@ -385,7 +387,7 @@ describe('biblioteca Material 3 (Compose)', () => {
           symbol.includes('.') ? symbol : MATERIAL + symbol,
         );
       }
-      // Valor ausente cai no default do campo.
+      // An absent value falls back to the field's default.
       const absent = resolveCode(code!, {}, type.fields);
       const dflt = field?.type === 'enum' ? field.default : undefined;
       const dfltSymbol = expected.symbols[dflt ?? '']!;
@@ -395,7 +397,7 @@ describe('biblioteca Material 3 (Compose)', () => {
     },
   );
 
-  it('o checkbox indeterminado soma params e values da base', () => {
+  it('the indeterminate checkbox adds params and values of the base', () => {
     const type = typeOf('checkbox');
     const base = resolveCode(type.code!.compose!, { state: 'checked' }, type.fields);
     expect(base.params?.state).toBe('checked');
@@ -406,7 +408,7 @@ describe('biblioteca Material 3 (Compose)', () => {
     expect(tri.values?.state?.indeterminate).toBe('ToggleableState.Indeterminate');
   });
 
-  it('todo campo de ícone é string com a mesma lista de sugestões', () => {
+  it('every icon field is a string with the same suggestions list', () => {
     const imageVectorField = typeOf('icon').fields.find((f) => f.key === 'imageVector');
     expect(imageVectorField?.type).toBe('string');
     const suggestions =
@@ -433,7 +435,7 @@ describe('biblioteca Material 3 (Compose)', () => {
   });
 
   it.each(ALL_TYPES)(
-    '%s desenha o preview e os exemplos sem aviso no tamanho inicial, nos modos light e dark',
+    '%s draws the preview and the examples without warnings at the initial size, in light and dark modes',
     (id) => {
       const catalog = sharedCatalog;
       expect(catalog.report.errors).toEqual([]);
@@ -451,7 +453,7 @@ describe('biblioteca Material 3 (Compose)', () => {
     },
   );
 
-  it('imagem remota é campo string e o componente é formatVersion 3 ou 4', () => {
+  it('a remote image is a string field and the component is formatVersion 3 or 4', () => {
     const catalog = sharedCatalog;
     for (const [id, key] of [
       ['image', 'url'],
@@ -463,7 +465,7 @@ describe('biblioteca Material 3 (Compose)', () => {
     }
   });
 
-  it('navigation-bar e bottom-sheet repetem as linhas da tabela (componente com repeat)', () => {
+  it('navigation-bar and bottom-sheet repeat the table rows (component with repeat)', () => {
     const catalog = sharedCatalog;
     for (const id of [
       ...['navigation-bar', 'bottom-sheet', 'dropdown-menu', 'navigation-rail'],
@@ -476,8 +478,8 @@ describe('biblioteca Material 3 (Compose)', () => {
     }
   });
 
-  it('todo exemplo de values de um tipo com repeat sobre um campo table traz as linhas (decisão 25 da #897)', () => {
-    /** Os campos `table` que o componente repete (`repeat.field`), em qualquer profundidade. */
+  it('every values example of a type with repeat over a table field brings the rows (decision 25 of #897)', () => {
+    /** The `table` fields the component repeats (`repeat.field`), at any depth. */
     const repeated = (node: unknown, out = new Set<string>()): Set<string> => {
       if (Array.isArray(node)) node.forEach((n) => repeated(n, out));
       else if (typeof node === 'object' && node !== null) {
@@ -503,7 +505,7 @@ describe('biblioteca Material 3 (Compose)', () => {
           const rows = example.values[field];
           expect(
             Array.isArray(rows) && rows.length >= 1,
-            `${type.id}, exemplo ${i} "${example.name}": o campo "${field}" sem linhas`,
+            `${type.id}, example ${i} "${example.name}": the field "${field}" has no rows`,
           ).toBe(true);
         }
       });
@@ -518,7 +520,7 @@ describe('biblioteca Material 3 (Compose)', () => {
   });
 });
 
-// --- M1 da etapa "Material 3 fiel": tokens, ícones e o padrão de migração -------------------
+// --- M1 of the "faithful Material 3" stage: tokens, icons and the migration pattern -------------------
 
 type Rec = Record<string, unknown>;
 const specRaw = JSON.parse(text(SPEC_FILE)) as Rec;
@@ -531,8 +533,8 @@ const iconSet = JSON.parse(text('icons/material-icons.json') || '{"icons":{}}') 
   icons: Record<string, { mirror?: boolean; paths: { d: string }[] }>;
 };
 
-describe('tokens da biblioteca Material 3 (Compose) v2', () => {
-  it('tem todo papel de cor do ColorLightTokens e do ColorDarkTokens, com os dois modos e o valor do .kt', () => {
+describe('Material 3 (Compose) library v2 tokens', () => {
+  it('has every color role of ColorLightTokens and ColorDarkTokens, with both modes and the .kt value', () => {
     const roles = Object.keys(reference.colors);
     expect(roles).toHaveLength(48);
     for (const role of roles) {
@@ -542,11 +544,11 @@ describe('tokens da biblioteca Material 3 (Compose) v2', () => {
         dark: expected.dark,
       });
     }
-    // O `shadow` não vem do ColorLightTokens: é o ColorSchemeKeyTokens.Shadow (preto) nos dois modos.
+    // `shadow` does not come from ColorLightTokens: it is ColorSchemeKeyTokens.Shadow (black) in both modes.
     expect(tokenValues.shadow).toEqual({ light: '#000000', dark: '#000000' });
   });
 
-  it('tem as 15 escalas de tipografia com size, line-height, weight e tracking, e a font-sans Roboto', () => {
+  it('has the 15 typography scales with size, line-height, weight and tracking, and the Roboto font-sans', () => {
     const scales = Object.keys(reference.typography);
     expect(scales).toHaveLength(15);
     for (const scale of scales) {
@@ -559,7 +561,7 @@ describe('tokens da biblioteca Material 3 (Compose) v2', () => {
     expect(String(tokenValues['font-sans'])).toMatch(/^Roboto\b/);
   });
 
-  it('tem forma, elevação e estado', () => {
+  it('has shape, elevation and state', () => {
     for (const [name, value] of Object.entries(reference.shapes)) {
       expect(tokenValues[name], name).toBe(value);
     }
@@ -577,7 +579,7 @@ describe('tokens da biblioteca Material 3 (Compose) v2', () => {
     expect(tokenValues['state-disabled-container']).toBe(0.12);
   });
 
-  it('resolve o primary para cores diferentes em light e dark', () => {
+  it('resolves primary to different colors in light and dark', () => {
     const light = resolveTokens(spec.tokens, {}, 'light');
     const dark = resolveTokens(spec.tokens, {}, 'dark');
     expect(light.primary).toBe('#6750A4');
@@ -586,8 +588,8 @@ describe('tokens da biblioteca Material 3 (Compose) v2', () => {
   });
 });
 
-describe('conjunto de ícones da biblioteca Material 3 (Compose) v2', () => {
-  it('é um mapping-icons válido (a biblioteca valida com 0 erros e só os avisos conhecidos (provisório, #1774) nos três níveis)', () => {
+describe('Material 3 (Compose) library v2 icon set', () => {
+  it('is a valid mapping-icons (the library validates with 0 errors and only the known warnings (provisional, #1774) at the three levels)', () => {
     expect(iconSet.format).toBe('mapping-icons');
     expect(iconSet.formatVersion).toBe(2);
     const report = validateLibrary({ files, specPath: SPEC_FILE });
@@ -596,7 +598,7 @@ describe('conjunto de ícones da biblioteca Material 3 (Compose) v2', () => {
     expect(report.summary.level).toBe(3);
   }, 30_000);
 
-  it('cobre toda sugestão (no nome do Compose) pelo $switch do nó icon, e o que os componentes desenham sozinhos', () => {
+  it('covers every suggestion (by Compose name) through the icon node's $switch, and what the components draw on their own', () => {
     const field = typeOf('icon').fields.find((f) => f.key === 'imageVector');
     const suggestions = field?.type === 'string' ? (field.suggestions ?? []) : [];
     expect(suggestions.length).toBeGreaterThan(0);
@@ -612,30 +614,30 @@ describe('conjunto de ícones da biblioteca Material 3 (Compose) v2', () => {
     for (const name of SELF_DRAWN_ICONS) expect(iconSet.icons[name], name).toBeDefined();
   });
 
-  it('o nome de ícone fora da lista vira o reservado, com o aviso', () => {
+  it('an icon name outside the list becomes the placeholder, with the warning', () => {
     const catalog = sharedCatalog;
     const entry = findEntry(catalog, 'icon')!;
-    const drawing = drawIn(catalog, entry, { imageVector: 'NaoExiste' }, 'light');
+    const drawing = drawIn(catalog, entry, { imageVector: 'DoesNotExist' }, 'light');
     expect(drawing.warnings.join('|')).toMatch(/unknown icon/);
   });
 });
 
-describe('componentes migrados na M1 (text, icon, divider, surface)', () => {
-  it.each(MIGRATED)('%s é formato 4, sem cor literal e sem family literal', (id) => {
+describe('components migrated in M1 (text, icon, divider, surface)', () => {
+  it.each(MIGRATED)('%s is format 4, with no literal color and no literal family', (id) => {
     const raw = text(`components/${id}.json`);
     const component = JSON.parse(raw) as Rec;
     expect(component.formatVersion).toBe(4);
     expect(raw).not.toMatch(/"family"/);
-    // nenhum #hex nem rgb()/rgba() no arquivo (cor só por `$token` ou `none`; layout puro não tem cor)
+    // no #hex or rgb()/rgba() in the file (color only through `$token` or `none`; pure layout has no color)
     expect(raw).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
     expect(raw).not.toMatch(/rgba?\(/);
   });
 
-  it('o text tira a family e usa os tokens de tipografia e de cor', () => {
+  it('text drops the family and uses the typography and color tokens', () => {
     const catalog = sharedCatalog;
     const entry = findEntry(catalog, 'text')!;
-    const light = drawIn(catalog, entry, { text: 'Olá', style: 'titleMedium' }, 'light');
-    const dark = drawIn(catalog, entry, { text: 'Olá', style: 'titleMedium' }, 'dark');
+    const light = drawIn(catalog, entry, { text: 'Hello', style: 'titleMedium' }, 'light');
+    const dark = drawIn(catalog, entry, { text: 'Hello', style: 'titleMedium' }, 'dark');
     const textNode = (d: typeof light) => findText(d.root);
     expect(textNode(light)?.style.fontSize).toBe(16);
     expect(textNode(light)?.style.fontWeight).toBe(500);
@@ -646,7 +648,7 @@ describe('componentes migrados na M1 (text, icon, divider, surface)', () => {
     expect(textNode(light)?.style.fontFamily).toMatch(/Roboto/);
   });
 
-  it('o surface muda de cor entre light e dark e só põe a elevação tonal sobre a cor surface', () => {
+  it('surface changes color between light and dark and only applies tonal elevation over the surface color', () => {
     const catalog = sharedCatalog;
     const entry = findEntry(catalog, 'surface')!;
     const light = drawIn(
@@ -666,16 +668,17 @@ describe('componentes migrados na M1 (text, icon, divider, surface)', () => {
     );
     expect(solid(other.root.fills)).toBe('#6750A4');
     const tonal = (d: typeof light) =>
+      // pt-BR kept: node name of the material3-compose library (libraries/*.json, outside this phase)
       d.root.children.find((c) => c.name === 'elevação tonal');
     expect(tonal(other)?.visible ?? false).toBe(false);
     expect(tonal(light)?.visible).toBe(true);
   });
 });
 
-describe('atualização da biblioteca Material 3 (Compose) com o slider numérico', () => {
-  it('a quebra do slider (enum → number) tem migração em toda versão anterior', () => {
-    // As versões 1 a 5 tinham os mesmos tipos; só o `value`, o `valueStart` e o `valueEnd` do
-    // slider eram `enum` em décimos. A versão atual os declara `number` e cobre com `fill-field`.
+describe('Material 3 (Compose) library update with the numeric slider', () => {
+  it('the slider break (enum → number) has a migration in every earlier version', () => {
+    // Versions 1 to 5 had the same types; only the slider's `value`, `valueStart` and `valueEnd`
+    // were `enum` in tenths. The current version declares them `number` and covers them with `fill-field`.
     const tenths = Array.from({ length: 11 }, (_, i) => String(i / 10));
     const previous = JSON.parse(JSON.stringify(spec)) as Spec;
     (previous as { version: number }).version = 5;
@@ -707,7 +710,7 @@ describe('atualização da biblioteca Material 3 (Compose) com o slider numéric
   }, 30_000);
 });
 
-describe('MC5 (#1033): todo exemplo desenha sem aviso no size e no tamanho ajustado', () => {
+describe('MC5 (#1033): every example draws without warnings at the size and at the fitted size', () => {
   const catalog = buildCatalog(files);
   const cases = ALL_TYPES.flatMap((id) => {
     const entry = findEntry(catalog, id)!;
@@ -719,25 +722,25 @@ describe('MC5 (#1033): todo exemplo desenha sem aviso no size e no tamanho ajust
   });
 
   it.each(['light', 'dark'] as const)(
-    'cada exemplo, no size e no tamanho ajustado, sem aviso (%s)',
+    'each example, at the size and at the fitted size, without warnings (%s)',
     (mode) => {
       expect(cases.length).toBeGreaterThan(100);
       for (const { id, name, values } of cases) {
         const entry = findEntry(catalog, id)!;
         const atSize = drawIn(catalog, entry, values, mode);
-        expect(atSize.warnings, `${id} / ${name} no size`).toEqual([]);
+        expect(atSize.warnings, `${id} / ${name} at size`).toEqual([]);
         const fitted = drawFitted(id, values, mode);
         expect(
           fitted.drawing.warnings,
-          `${id} / ${name} em ${fitted.box.width}×${fitted.box.height}`,
+          `${id} / ${name} at ${fitted.box.width}×${fitted.box.height}`,
         ).toEqual([]);
       }
     },
   );
 });
 
-// R5 (#1110, decisões 16 e 20 da #1096): a Material 3 adota a direção de leitura e a âncora.
-describe('direção de leitura e âncora na biblioteca Material 3 (Compose) (R5, #1110)', () => {
+// R5 (#1110, decisions 16 and 20 of #1096): Material 3 adopts the reading direction and the anchor.
+describe('reading direction and anchor in the Material 3 (Compose) library (R5, #1110)', () => {
   const autoMirrored = new Set<string>(
     (autoMirroredFixture as { names: string[] }).names,
   );
@@ -748,17 +751,17 @@ describe('direção de leitura e âncora na biblioteca Material 3 (Compose) (R5,
       .join('');
   const catalog = buildCatalog(files);
 
-  it('o conjunto de ícones é o formatVersion 2 e a especialização está na versão 14', () => {
+  it('the icon set is formatVersion 2 and the specialization is at version 14', () => {
     expect(iconSet.formatVersion).toBe(2);
     expect(spec.version).toBe(14);
   });
 
-  it('todo ícone AutoMirrored do androidx tem mirror: true no conjunto, e nenhum outro', () => {
+  it('every androidx AutoMirrored icon has mirror: true in the set, and no other does', () => {
     const marked: string[] = [];
     for (const [name, icon] of Object.entries(iconSet.icons)) {
       const expected = autoMirrored.has(pascal(name));
       expect(icon.mirror === true, `${name}: mirror`).toBe(expected);
-      if (!expected) expect(icon.mirror, `${name}: sem a chave`).toBeUndefined();
+      if (!expected) expect(icon.mirror, `${name}: without the key`).toBeUndefined();
       if (expected) marked.push(name);
     }
     for (const name of [
@@ -769,7 +772,7 @@ describe('direção de leitura e âncora na biblioteca Material 3 (Compose) (R5,
     expect(marked.length).toBeGreaterThanOrEqual(24);
   });
 
-  /** A âncora da instância (unidades): o centro relativo à caixa e o lado lógico. */
+  /** The instance's anchor (units): the center relative to the box and the logical side. */
   const anchorOf = (
     side: 'top' | 'bottom' | 'start' | 'end',
     centerX: number,
@@ -805,12 +808,12 @@ describe('direção de leitura e âncora na biblioteca Material 3 (Compose) (R5,
     return { ...result, boxes, nodes, box };
   }
 
-  /** As setas visíveis desenhadas pelo tooltip. */
+  /** The visible arrows drawn by the tooltip. */
   const carets = (drawn: ReturnType<typeof drawWith>) =>
     drawn.nodes.filter((n) => n.name === 'seta' && n.visible);
 
-  describe('o tooltip ancorado desenha a seta sob o centro da âncora', () => {
-    // O tooltip plain de 120 × 24 e a âncora de 40 × 40 a 4 de distância (o espaçamento do Compose).
+  describe('the anchored tooltip draws the arrow under the anchor's center', () => {
+    // The 120 × 24 plain tooltip and the 40 × 40 anchor 4 apart (Compose's spacing).
     const W = 120;
     const H = 24;
     const box = { width: W, height: H };
@@ -850,9 +853,9 @@ describe('direção de leitura e âncora na biblioteca Material 3 (Compose) (R5,
     ] as const;
 
     it.each(cases)(
-      'lado $side (ltr): a seta de 16 × 8 na borda voltada para a âncora, no centro dela',
+      'side $side (ltr): the 16 × 8 arrow on the edge facing the anchor, at its center',
       ({ anchor, x, y, w, h }) => {
-        const drawn = drawWith('tooltip', { text: 'Ajuda' }, { anchor, box });
+        const drawn = drawWith('tooltip', { text: 'Help' }, { anchor, box });
         expect(drawn.warnings).toEqual([]);
         const [caret, ...rest] = carets(drawn);
         expect(rest).toEqual([]);
@@ -867,18 +870,18 @@ describe('direção de leitura e âncora na biblioteca Material 3 (Compose) (R5,
       },
     );
 
-    it('em rtl, start e end trocam de borda e a seta vira para continuar apontando para a âncora', () => {
+    it('in rtl, start and end swap edges and the arrow flips to keep pointing at the anchor', () => {
       const start = drawWith(
         'tooltip',
-        { text: 'Ajuda' },
+        { text: 'Help' },
         { anchor: cases[2].anchor, box, direction: 'rtl' },
       );
       const end = drawWith(
         'tooltip',
-        { text: 'Ajuda' },
+        { text: 'Help' },
         { anchor: cases[3].anchor, box, direction: 'rtl' },
       );
-      // `start` em rtl: a âncora está à esquerda do tooltip, e a seta sai pela borda da esquerda.
+      // `start` in rtl: the anchor is to the left of the tooltip, and the arrow comes out of the left edge.
       const startCaret = carets(start)[0]!;
       const endCaret = carets(end)[0]!;
       const horizontalExtent = (n: typeof startCaret) => {
@@ -887,21 +890,21 @@ describe('direção de leitura e âncora na biblioteca Material 3 (Compose) (R5,
       };
       expect(horizontalExtent(startCaret)).toEqual([-8, 0]);
       expect(horizontalExtent(endCaret)).toEqual([W, W + 8]);
-      // Espelhada (rtl): a escala horizontal é negativa nas duas.
+      // Mirrored (rtl): the horizontal scale is negative on both.
       expect(startCaret.transform[0]).toBeLessThan(0);
       expect(endCaret.transform[0]).toBeLessThan(0);
     });
 
-    it('em rtl, top e bottom seguem o centro físico da âncora (o x do pseudo-campo não espelha)', () => {
+    it('in rtl, top and bottom follow the anchor's physical center (the pseudo-field's x does not mirror)', () => {
       for (const anchorCase of [cases[0], cases[1]]) {
         const ltr = drawWith(
           'tooltip',
-          { text: 'Ajuda' },
+          { text: 'Help' },
           { anchor: anchorCase.anchor, box },
         );
         const rtl = drawWith(
           'tooltip',
-          { text: 'Ajuda' },
+          { text: 'Help' },
           { anchor: anchorCase.anchor, box, direction: 'rtl' },
         );
         const at = (d: typeof ltr) => d.boxes.get(carets(d)[0]!.id)!;
@@ -912,17 +915,17 @@ describe('direção de leitura e âncora na biblioteca Material 3 (Compose) (R5,
       }
     });
 
-    it('sem âncora, sem seta, e sem aviso (como hoje)', () => {
-      const drawn = drawWith('tooltip', { text: 'Ajuda' }, { box });
+    it('without an anchor, no arrow, and no warning (as today)', () => {
+      const drawn = drawWith('tooltip', { text: 'Help' }, { box });
       expect(carets(drawn)).toEqual([]);
       expect(drawn.warnings).toEqual([]);
     });
 
-    it('o tooltip rich também leva a seta, na cor do cartão, em light e dark', () => {
+    it('the rich tooltip also gets the arrow, in the card color, in light and dark', () => {
       for (const mode of ['light', 'dark'] as const) {
         const drawn = drawWith(
           'tooltip',
-          { style: 'rich', text: 'Texto do tooltip rich', title: 'Título' },
+          { style: 'rich', text: 'Rich tooltip text', title: 'Title' },
           { anchor: cases[0].anchor, box: { width: 200, height: 80 }, mode },
         );
         expect(drawn.warnings, mode).toEqual([]);
@@ -933,10 +936,10 @@ describe('direção de leitura e âncora na biblioteca Material 3 (Compose) (R5,
       }
     });
 
-    it('a seta do plain é inverse-surface e acompanha o centro da âncora fora do centro do tooltip', () => {
+    it('the plain arrow is inverse-surface and follows the anchor's center off the tooltip's center', () => {
       const drawn = drawWith(
         'tooltip',
-        { text: 'Ajuda' },
+        { text: 'Help' },
         { anchor: anchorOf('top', 100, 48), box },
       );
       const [caret] = carets(drawn);
@@ -947,10 +950,10 @@ describe('direção de leitura e âncora na biblioteca Material 3 (Compose) (R5,
     });
   });
 
-  describe('anchor na raiz do tooltip, do badge e do dropdown-menu (os números do commit)', () => {
+  describe('anchor on the root of the tooltip, the badge and the dropdown-menu (the commit's numbers)', () => {
     const rootAnchor = (id: string) => findEntry(catalog, id)!.component!.anchor;
 
-    it('tooltip: top/center, 4 de espaçamento (SpacingBetweenTooltipAndAnchor)', () => {
+    it('tooltip: top/center, 4 of spacing (SpacingBetweenTooltipAndAnchor)', () => {
       expect(rootAnchor('tooltip')).toEqual({
         side: 'top',
         align: 'center',
@@ -958,7 +961,7 @@ describe('direção de leitura e âncora na biblioteca Material 3 (Compose) (R5,
       });
     });
 
-    it('badge: end/start, o ponto 6 sobre a borda (BadgeOffset)', () => {
+    it('badge: end/start, the 6 dot over the edge (BadgeOffset)', () => {
       expect(rootAnchor('badge')).toEqual({
         side: 'end',
         align: 'start',
@@ -966,7 +969,7 @@ describe('direção de leitura e âncora na biblioteca Material 3 (Compose) (R5,
       });
     });
 
-    it('dropdown-menu: bottom/start, sem deslocamento (DropdownMenu offset 0, 0)', () => {
+    it('dropdown-menu: bottom/start, no offset (DropdownMenu offset 0, 0)', () => {
       expect(rootAnchor('dropdown-menu')).toEqual({
         side: 'bottom',
         align: 'start',
@@ -974,40 +977,40 @@ describe('direção de leitura e âncora na biblioteca Material 3 (Compose) (R5,
       });
     });
 
-    it('os três padrões saem em pixels pela densidade do container', () => {
+    it('the three defaults come out in pixels through the container's density', () => {
       const file = findEntry(catalog, 'tooltip')!.component!;
       expect(componentAnchorDefaults(file, 3).offset).toEqual({ main: 12, cross: 0 });
     });
   });
 
-  describe('a tela rtl: top-app-bar, list-item e icon arrow-back desenham espelhados', () => {
-    /** O `transform` horizontal do primeiro caminho do ícone `name`. */
+  describe('the rtl screen: top-app-bar, list-item and icon arrow-back draw mirrored', () => {
+    /** The horizontal `transform` of the first path of the `name` icon. */
     const iconScale = (drawn: ReturnType<typeof drawWith>, name: string): number => {
       const group = drawn.nodes.find((n) => n.type === 'group' && n.name === name) as
         { children: { transform: number[] }[] } | undefined;
-      expect(group, `ícone ${name}`).toBeDefined();
+      expect(group, `icon ${name}`).toBeDefined();
       return group!.children[0]!.transform[0]!;
     };
 
-    it('o icon ArrowBack vira em rtl e não em ltr', () => {
-      const values = { imageVector: 'ArrowBack', contentDescription: 'Voltar' };
+    it('the ArrowBack icon flips in rtl and not in ltr', () => {
+      const values = { imageVector: 'ArrowBack', contentDescription: 'Back' };
       expect(iconScale(drawWith('icon', values), 'arrow_back')).toBeGreaterThan(0);
       expect(
         iconScale(drawWith('icon', values, { direction: 'rtl' }), 'arrow_back'),
       ).toBeLessThan(0);
     });
 
-    it('a top-app-bar rtl espelha a seta de voltar e a mantém em ltr', () => {
-      const values = { title: 'Perfil', style: 'center', navigationIcon: 'ArrowBack' };
+    it('the rtl top-app-bar mirrors the back arrow and keeps it in ltr', () => {
+      const values = { title: 'Profile', style: 'center', navigationIcon: 'ArrowBack' };
       expect(iconScale(drawWith('top-app-bar', values), 'arrow_back')).toBeGreaterThan(0);
       const rtl = drawWith('top-app-bar', values, { direction: 'rtl' });
       expect(iconScale(rtl, 'arrow_back')).toBeLessThan(0);
       expect(rtl.warnings).toEqual([]);
     });
 
-    it('o list-item rtl vira o chevron do fim e põe o ícone do início à direita', () => {
+    it('the rtl list-item flips the trailing chevron and puts the leading icon on the right', () => {
       const values = {
-        headlineContent: 'Reunião',
+        headlineContent: 'Meeting',
         leadingIcon: 'DateRange',
         trailingIcon: 'KeyboardArrowRight',
       };
@@ -1022,7 +1025,8 @@ describe('direção de leitura e âncora na biblioteca Material 3 (Compose) (R5,
       expect(rtl.warnings).toEqual([]);
     });
 
-    it('o exemplo "Voltar" do icon e o da top-app-bar existem e cobrem a seta de voltar', () => {
+    it('the "Voltar" example of the icon and the top-app-bar one exist and cover the back arrow', () => {
+      // pt-BR kept: name of an example of the material3-compose library (libraries/*.json, outside this phase)
       const icon = typeOf('icon').examples?.find((e) => e.name === 'Voltar');
       expect(icon?.values).toMatchObject({ imageVector: 'ArrowBack' });
       const bar = typeOf('top-app-bar').examples?.some(
@@ -1032,7 +1036,7 @@ describe('direção de leitura e âncora na biblioteca Material 3 (Compose) (R5,
     });
   });
 
-  describe('todo exemplo desenha sem aviso em light e dark, em ltr e em rtl', () => {
+  describe('every example draws without warnings in light and dark, in ltr and in rtl', () => {
     const cases = ALL_TYPES.flatMap((id) =>
       (findEntry(catalog, id)?.examples ?? []).map((example) => ({
         id,
@@ -1046,7 +1050,7 @@ describe('direção de leitura e âncora na biblioteca Material 3 (Compose) (R5,
       ['light', 'rtl'],
       ['dark', 'ltr'],
       ['dark', 'rtl'],
-    ] as const)('modo %s, direção %s', (mode, direction) => {
+    ] as const)('mode %s, direction %s', (mode, direction) => {
       expect(cases.length).toBeGreaterThan(100);
       for (const { id, name, values } of cases) {
         const drawn = drawWith(id, values, { mode, direction });

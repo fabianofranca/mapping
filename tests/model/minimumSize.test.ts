@@ -15,8 +15,8 @@ import {
 } from '../../src/model';
 import { componentProject, SPEC_ID, testCatalog } from './componentFixtures';
 
-// Decisão 24: a marcação com anotação de tipo COM componente tem mínimo de 1 px (o `minSize` do
-// componente, se houver, continua mandando); as demais mantêm `MIN_MARKING_SIZE` (8) nos gestos.
+// Decision 24: a marking with a type annotation WITH a component has a minimum of 1 px (the component's
+// `minSize`, if any, still rules); the others keep `MIN_MARKING_SIZE` (8) in gestures.
 
 const rect = (x: number, y: number, width: number, height: number) => ({
   x,
@@ -32,10 +32,10 @@ function errorOf(run: () => unknown): ModelError {
     if (e instanceof ModelError) return e;
     throw e;
   }
-  throw new Error('não falhou');
+  throw new Error('did not fail');
 }
 
-/** M1 (200×100) com anotação do tipo `box` (componente sem minSize) ou `row` (minSize 50×30). */
+/** M1 (200×100) with an annotation of type `box` (component without minSize) or `row` (minSize 50×30). */
 function withTyped(typeId: 'box' | 'row' | null): Project {
   let p = createMarking(componentProject(), {
     id: 'M1',
@@ -58,14 +58,14 @@ const optionsFor = (p: Project) => {
   return minSize ? { minSize } : undefined;
 };
 
-describe('checkRectSize: base 1 com componente, 8 sem', () => {
-  it('sem componente o mínimo é 8', () => {
+describe('checkRectSize: base 1 with a component, 8 without', () => {
+  it('without a component the minimum is 8', () => {
     expect(MIN_MARKING_SIZE).toBe(8);
     expect(() => checkRectSize({ width: 3, height: 3 })).toThrow('rect-too-small');
     expect(() => checkRectSize({ width: 8, height: 8 })).not.toThrow();
   });
 
-  it('com componente 1×1, 3×3 passa e abaixo de 1 px falha com origem "component"', () => {
+  it('with a 1×1 component, 3×3 passes and below 1 px fails with source "component"', () => {
     const min = { width: 1, height: 1 };
     expect(() => checkRectSize({ width: 3, height: 3 }, min)).not.toThrow();
     expect(() => checkRectSize({ width: 1, height: 1 }, min)).not.toThrow();
@@ -78,7 +78,7 @@ describe('checkRectSize: base 1 com componente, 8 sem', () => {
     });
   });
 
-  it('o minSize do componente maior continua mandando', () => {
+  it('the larger component minSize still rules', () => {
     expect(() =>
       checkRectSize({ width: 15, height: 30 }, { width: 20, height: 10 }),
     ).toThrow('rect-too-small');
@@ -88,9 +88,9 @@ describe('checkRectSize: base 1 com componente, 8 sem', () => {
   });
 });
 
-describe('fromCanvasRect: base por presença do mínimo', () => {
+describe('fromCanvasRect: base by presence of the minimum', () => {
   const place = { x: 0, y: 0, scale: 1 };
-  it('sem mínimo cresce até 8; com mínimo 1×1 mantém 3×3', () => {
+  it('without a minimum it grows to 8; with a 1×1 minimum it keeps 3×3', () => {
     expect(fromCanvasRect(place, rect(10, 10, 3, 3), null)).toMatchObject({
       width: 8,
       height: 8,
@@ -102,10 +102,10 @@ describe('fromCanvasRect: base por presença do mínimo', () => {
 });
 
 describe('componentMinSize', () => {
-  it('marcação comum (sem anotação ou sem componente) é null', () => {
+  it('a plain marking (without an annotation or without a component) is null', () => {
     expect(componentMinSize(withTyped(null), testCatalog(), 'M1')).toBeNull();
   });
-  it('componente sem minSize é 1×1; com minSize, o dele', () => {
+  it('a component without minSize is 1×1; with minSize, its own', () => {
     expect(componentMinSize(withTyped('box'), testCatalog(), 'M1')).toEqual({
       width: 1,
       height: 1,
@@ -117,8 +117,8 @@ describe('componentMinSize', () => {
   });
 });
 
-describe('gestos do modelo com o mínimo de 1 px', () => {
-  it('setMarkingRect 3×3 passa com componente e falha sem', () => {
+describe('model gestures with the 1 px minimum', () => {
+  it('setMarkingRect 3×3 passes with a component and fails without', () => {
     const typed = withTyped('box');
     const q = setMarkingRect(typed, 'M1', rect(10, 10, 3, 3), optionsFor(typed));
     expect(q.markings.find((m) => m.id === 'M1')?.rect).toEqual(rect(10, 10, 3, 3));
@@ -130,7 +130,7 @@ describe('gestos do modelo com o mínimo de 1 px', () => {
     expect(error.data).toMatchObject({ min: { width: 8, height: 8 }, source: 'marking' });
   });
 
-  it('createMarking 3×3 com minSize 1×1 passa; sem opção falha', () => {
+  it('createMarking 3×3 with minSize 1×1 passes; without the option it fails', () => {
     const base = componentProject();
     const args = { id: 'X', containerId: 'I1', rect: rect(0, 0, 3, 3) };
     expect(
@@ -139,7 +139,7 @@ describe('gestos do modelo com o mínimo de 1 px', () => {
     expect(() => createMarking(base, args)).toThrow('rect-too-small');
   });
 
-  it('adjustMarkingRect: o limite inferior do painel é 1 com componente, 8 sem', () => {
+  it('adjustMarkingRect: the lower limit of the panel is 1 with a component, 8 without', () => {
     const typed = withTyped('box');
     const a = adjustMarkingRect(typed, 'M1', 'width', 2, optionsFor(typed));
     expect(a.markings.find((m) => m.id === 'M1')?.rect.width).toBe(1 + 1);
@@ -150,7 +150,7 @@ describe('gestos do modelo com o mínimo de 1 px', () => {
     expect(c.markings.find((m) => m.id === 'M1')?.rect.width).toBe(8);
   });
 
-  it('minSize [50,30] do componente continua mandando', () => {
+  it('the component minSize [50,30] still rules', () => {
     const row = withTyped('row');
     const error = errorOf(() =>
       setMarkingRect(row, 'M1', rect(10, 10, 3, 3), optionsFor(row)),
@@ -162,8 +162,8 @@ describe('gestos do modelo com o mínimo de 1 px', () => {
   });
 });
 
-describe('leitura do mapping.json', () => {
-  it('aceita marcação de 3×3 px (qualquer tipo) e 1×1; o escritor a grava', () => {
+describe('reading mapping.json', () => {
+  it('accepts a 3×3 px marking (any type) and 1×1; the writer saves it', () => {
     let p = withTyped(null);
     p = {
       ...p,
@@ -172,7 +172,7 @@ describe('leitura do mapping.json', () => {
     const parsed = deserialize(serialize(p));
     expect(parsed.ok).toBe(true);
   });
-  it('0 px segue recusado', () => {
+  it('0 px is still refused', () => {
     const p = withTyped(null);
     const bad = {
       ...p,

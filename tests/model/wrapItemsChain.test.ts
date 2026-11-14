@@ -13,9 +13,9 @@ import {
 } from '../../src/model';
 import { emptyProject } from './fixtures';
 
-// Envolver depois de reordenar marcações de mesmo retângulo (etapa #549, DE3, achado 1): o pai
-// atual do conjunto sai da cadeia (os `parentId`), nunca do último do array. A nova vira filha
-// do pai que as selecionadas tinham e mãe direta delas.
+// Wrap after reordering markings with the same rectangle (stage #549, DE3, finding 1): the current
+// parent of the set comes from the chain (the `parentId`s), never from the last of the array. The new one becomes a child
+// of the parent the selected ones had and their direct parent.
 
 const rect = (x: number, y: number, width: number, height: number): Rect => ({
   x,
@@ -52,8 +52,8 @@ const ids = (p: Project) => p.markings.map((m) => m.id);
 const wrap = (p: Project, items: readonly string[]) =>
   wrapItems(p, { id: 'W', items: items.map((id) => ({ kind: 'marking' as const, id })) });
 
-describe('Envolver na cadeia de retângulos iguais depois de reordenar', () => {
-  it('caso A: a nova entra entre o pai atual e a selecionada', () => {
+describe('Wrap in the chain of equal rectangles after reordering', () => {
+  it('case A: the new one enters between the current parent and the selected one', () => {
     let p = build(200, [
       ['M', rect(0, 0, 50, 50)],
       ['O1', rect(0, 0, 100, 100)],
@@ -79,7 +79,7 @@ describe('Envolver na cadeia de retângulos iguais depois de reordenar', () => {
     expect(['O1', 'O2', 'U'].map((id) => siblingPosition(w, id))).toEqual(orders);
   });
 
-  it('caso B: a nova é filha do pai de dentro da cadeia, não do último do array', () => {
+  it('case B: the new one is a child of the inner parent of the chain, not of the last of the array', () => {
     let p = build(200, [
       ['S', rect(4, 4, 92, 92)],
       ['E1', rect(0, 0, 100, 100)],
@@ -97,7 +97,7 @@ describe('Envolver na cadeia de retângulos iguais depois de reordenar', () => {
   });
 });
 
-/** Gerador congruencial com semente fixa: o teste é reprodutível. */
+/** Congruential generator with a fixed seed: the test is reproducible. */
 function rng(seed: number) {
   let s = seed >>> 0;
   return (n: number) => {
@@ -106,7 +106,7 @@ function rng(seed: number) {
   };
 }
 
-/** Projeto assentado com retângulos de uma grade pequena (força empates dos dois tipos). */
+/** Settled project with rectangles from a small grid (forces ties of both kinds). */
 function randomProject(next: (n: number) => number): Project {
   const items: [string, Rect][] = [];
   const count = 3 + next(5);
@@ -133,13 +133,13 @@ function shuffleOrder(p: Project, next: (n: number) => number): Project {
   return out;
 }
 
-describe('Envolver depois de reordenar: propriedade (semente fixa)', () => {
-  it('a nova fica filha do pai que as selecionadas tinham e mãe direta delas', () => {
+describe('Wrap after reordering: property (fixed seed)', () => {
+  it('the new one becomes a child of the parent the selected ones had and their direct parent', () => {
     const next = rng(549635);
     let checked = 0;
     for (let round = 0; round < 400; round++) {
       const p = shuffleOrder(randomProject(next), next);
-      // Selecionadas de topo com o mesmo pai: uma ou duas irmãs.
+      // Top-level selected ones with the same parent: one or two siblings.
       const first = p.markings[next(p.markings.length)] as Marking;
       const siblings = p.markings.filter(
         (m) => m.parentId === first.parentId && m.id !== first.id,
@@ -155,10 +155,10 @@ describe('Envolver depois de reordenar: propriedade (semente fixa)', () => {
           chosen.map((m) => m.id),
         );
       } catch {
-        continue; // retângulo pequeno demais ou fora: não é o que este teste confere
+        continue; // rectangle too small or outside: not what this test checks
       }
       checked++;
-      const ctx = `rodada ${round}: ${JSON.stringify(p.markings.map((m) => [m.id, m.rect, m.parentId]))}`;
+      const ctx = `round ${round}: ${JSON.stringify(p.markings.map((m) => [m.id, m.rect, m.parentId]))}`;
       expect(parentOf(w, 'W'), ctx).toBe(first.parentId);
       for (const m of chosen) expect(parentOf(w, m.id), ctx).toBe('W');
     }

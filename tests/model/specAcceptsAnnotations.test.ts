@@ -63,10 +63,12 @@ describe('accepts.annotations (formatVersion 14)', () => {
   });
 
   it('nonexistent layer, nonexistent group and nonexistent type', () => {
-    expect(issuesOf(withAccepts({ annotations: [{ layer: 'nothing' }] }))).toContainEqual({
-      path: `${field}.annotations[0].layer`,
-      message: 'layer "nothing" does not exist in the specialization',
-    });
+    expect(issuesOf(withAccepts({ annotations: [{ layer: 'nothing' }] }))).toContainEqual(
+      {
+        path: `${field}.annotations[0].layer`,
+        message: 'layer "nothing" does not exist in the specialization',
+      },
+    );
     expect(
       issuesOf(withAccepts({ annotations: [{ layer: 'eventos', groups: ['zz'] }] })),
     ).toContainEqual({

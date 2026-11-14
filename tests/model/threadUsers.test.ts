@@ -70,7 +70,7 @@ describe('threadUsers', () => {
 });
 
 describe('threadUsers: label and order (item 50)', () => {
-  it('the label is the name of the user's last message, in the input order', () => {
+  it('the label is the name of the last message of the user, in the input order', () => {
     const renamed = { ...HUMAN, name: 'Marina A. Silva' };
     const t1 = sampleThread({
       id: 't1',

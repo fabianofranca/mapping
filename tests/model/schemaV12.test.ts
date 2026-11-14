@@ -12,8 +12,8 @@ import {
 import { emptyProject, sampleProject } from './fixtures';
 import { legacyJson } from './legacyShape';
 
-// Schema v12 (etapa Container): a coleção `images` virou `containers` e a marcação aponta por
-// `containerId` (era `imageId`). A migração v11 → v12 só renomeia as chaves.
+// Schema v12 (stage Container): the `images` collection became `containers` and the marking points by
+// `containerId` (it was `imageId`). The v11 → v12 migration only renames the keys.
 
 function load(text: string) {
   const result = deserialize(text, migrations, new Map());
@@ -21,7 +21,7 @@ function load(text: string) {
   return result;
 }
 
-/** Projeto com imagens com arquivo e um container sem arquivo (fundo), com marcação nele. */
+/** Project with images with a file and a container without a file (background), with a marking in it. */
 function mixedProject(): Project {
   return addBackgroundContainer(sampleProject(), {
     id: 'B1',
@@ -32,13 +32,13 @@ function mixedProject(): Project {
   });
 }
 
-/** Um mapping.json v11 do projeto: `images`, `imageId` e a versão antiga. */
+/** A v11 mapping.json of the project: `images`, `imageId` and the old version. */
 function v11Text(p: Project): string {
   return JSON.stringify({ ...legacyJson(p), schemaVersion: 11 });
 }
 
-describe('migração v11 → v12 (containers)', () => {
-  it('o registro tem a migração v11 → v12 e a cadeia vai até a versão atual', () => {
+describe('migration v11 → v12 (containers)', () => {
+  it('the registry has the v11 → v12 migration and the chain goes up to the current version', () => {
     expect(SCHEMA_VERSION).toBe(20);
     expect(migrations.get(11)).toBe(migrateFrom11To12);
     expect([...migrations.keys()]).toEqual([
@@ -46,12 +46,12 @@ describe('migração v11 → v12 (containers)', () => {
     ]);
   });
 
-  it('v11 com imagem com arquivo e container sem arquivo: tudo igual, só com as chaves novas', () => {
+  it('v11 with an image with a file and a container without a file: all the same, only with the new keys', () => {
     const p = mixedProject();
     expect(p.containers.some((c) => c.file === null)).toBe(true);
     expect(p.containers.some((c) => c.file !== null)).toBe(true);
     const text = v11Text(p);
-    // O ponto de partida tem mesmo o formato antigo.
+    // The starting point really has the old format.
     const old = JSON.parse(text) as Record<string, unknown>;
     expect(old.images).toBeDefined();
     expect(old.containers).toBeUndefined();
@@ -73,7 +73,7 @@ describe('migração v11 → v12 (containers)', () => {
       expect(m.imageId).toBeUndefined();
       expect(typeof m.containerId).toBe('string');
     }
-    // Nada some: as mesmas contagens e os mesmos ids de antes.
+    // Nothing disappears: the same counts and the same ids as before.
     expect((old.images as { id: string }[]).map((i) => i.id)).toEqual(
       p.containers.map((c) => c.id),
     );
@@ -82,39 +82,39 @@ describe('migração v11 → v12 (containers)', () => {
     );
   });
 
-  it('a função só renomeia as chaves e não mexe nos valores', () => {
+  it('the function only renames the keys and does not touch the values', () => {
     expect(
       migrateFrom11To12({
         a: 1,
-        images: [{ id: 'I1', file: null }, 'texto'],
+        images: [{ id: 'I1', file: null }, 'text'],
         markings: [{ id: 'M1', imageId: 'I1', x: 1 }, 7],
       }),
     ).toEqual({
       a: 1,
-      containers: [{ id: 'I1', file: null }, 'texto'],
+      containers: [{ id: 'I1', file: null }, 'text'],
       markings: [{ id: 'M1', containerId: 'I1', x: 1 }, 7],
     });
   });
 
-  it('a chave nova já presente é preservada (a antiga é descartada)', () => {
+  it('a new key that is already present is preserved (the old one is discarded)', () => {
     expect(
       migrateFrom11To12({
-        images: [{ id: 'velho' }],
-        containers: [{ id: 'novo' }],
-        markings: [{ id: 'M1', imageId: 'velho', containerId: 'novo' }],
+        images: [{ id: 'old' }],
+        containers: [{ id: 'new' }],
+        markings: [{ id: 'M1', imageId: 'old', containerId: 'new' }],
       }),
     ).toEqual({
-      containers: [{ id: 'novo' }],
-      markings: [{ id: 'M1', containerId: 'novo' }],
+      containers: [{ id: 'new' }],
+      markings: [{ id: 'M1', containerId: 'new' }],
     });
   });
 
-  it('um arquivo sem as chaves antigas passa sem mudança', () => {
+  it('a file without the old keys passes unchanged', () => {
     const data = { schemaVersion: 11, containers: [], markings: [] };
     expect(migrateFrom11To12(data)).toEqual(data);
   });
 
-  it('grava v12 e a releitura é estável (round-trip)', () => {
+  it('writes v12 and re-reading is stable (round-trip)', () => {
     const first = load(v11Text(mixedProject()));
     const saved = serialize(first.project);
     const again = load(saved);
@@ -123,7 +123,7 @@ describe('migração v11 → v12 (containers)', () => {
     expect(serialize(again.project)).toBe(saved);
   });
 
-  it('a cadeia v1 → v12 (um v1 real) chega ao projeto de hoje', () => {
+  it('the v1 → v12 chain (a real v1) reaches today\'s project', () => {
     const v1 = readFileSync(
       new URL('../fixtures/mapping-v1.json', import.meta.url),
       'utf8',
@@ -148,7 +148,7 @@ describe('migração v11 → v12 (containers)', () => {
 });
 
 describe('schema v12', () => {
-  it('o projeto novo grava a versão atual com containers', () => {
+  it('the new project writes the current version with containers', () => {
     expect(emptyProject().schemaVersion).toBe(20);
     expect(JSON.parse(serialize(emptyProject()))).toMatchObject({
       schemaVersion: 20,
@@ -156,7 +156,7 @@ describe('schema v12', () => {
     });
   });
 
-  it('ordem fixa de chaves: containers no lugar de images, containerId logo após o id', () => {
+  it('fixed key order: containers in place of images, containerId right after the id', () => {
     const data = JSON.parse(serialize(sampleProject())) as {
       containers: unknown[];
       markings: Record<string, unknown>[];
@@ -185,7 +185,7 @@ describe('schema v12', () => {
     ]);
   });
 
-  it('um projeto v12 é lido sem mudança e sem migração', () => {
+  it('a v12 project is read unchanged and without migration', () => {
     const p = mixedProject();
     const text = serialize(p);
     const result = load(text);
@@ -195,7 +195,7 @@ describe('schema v12', () => {
     expect(serialize(result.project)).toBe(text);
   });
 
-  it('um arquivo com as chaves antigas na versão 12 é recusado pelo schema', () => {
+  it('a file with the old keys at version 12 is refused by the schema', () => {
     const data = legacyJson(mixedProject());
     const result = deserialize(
       JSON.stringify({ ...data, schemaVersion: 12 }),

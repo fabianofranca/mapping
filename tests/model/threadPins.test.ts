@@ -24,7 +24,7 @@ function groups(
 const byKey = (gs: readonly PinGroup[], key: string) => gs.find((g) => g.hostKey === key);
 
 describe('pinGroups', () => {
-  it('the field's thread stays on the marking pin, together with the marking's own', () => {
+  it('the thread of the field stays on the marking pin, together with the one of the marking itself', () => {
     const gs = groups([
       on('c1', { kind: 'marking', id: 'a2' }, { messages: waitsAgent }),
       on(
@@ -115,7 +115,7 @@ describe('pinGroups', () => {
     expect(groups([done], 'rs')).toHaveLength(1);
   });
 
-  it('the selected resolved one joins the open one's group, without changing the color', () => {
+  it('the selected resolved one joins the group of the open one, without changing the color', () => {
     const anchor = { kind: 'marking', id: 'a1' } as const;
     const open = on('op', anchor, { messages: waitsHuman });
     const done = on('rs', anchor, { resolved: RESOLVED });

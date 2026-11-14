@@ -1,11 +1,31 @@
-// M5 da etapa "Material 3 fiel": time-picker contra o que `TimePicker.kt`, `TimePickerDialog.kt`,
-// `TimePickerTokens.kt` e `TimeInputTokens.kt` fixam no commit 5113b82a. As cores esperadas saem dos
-// tokens da especificação (light e dark); a geometria, das constantes do Compose (dp = px do componente).
+// M5 of the "faithful Material 3" stage: time-picker against what `TimePicker.kt`, `TimePickerDialog.kt`,
+// `TimePickerTokens.kt` and `TimeInputTokens.kt` fix at commit 5113b82a. The expected colors come from the
+// specification tokens (light and dark); the geometry, from the Compose constants (dp = component px).
 import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import { absoluteBoxes, walk } from '../../src/model/components/scene';
 import type { PathNode, SceneNode, TextNode } from '../../src/model/components/scene';
 import { drawIn, files, solid, spec } from '../support/material3Library';
+
+// pt-BR kept: shared library data, the node names of libraries/material3-compose are in Portuguese
+const NAMES = {
+  header: 'cabeçalho',
+  title: 'título',
+  hourMinute: 'hora e minuto',
+  hour: 'hora',
+  minute: 'minuto',
+  colon: 'dois pontos',
+  amPm: 'AM e PM',
+  divider: 'divisor',
+  numberUnderHandle: 'número sob a alça',
+  number: 'número',
+  face: 'relógio',
+  handle: 'alça',
+  center: 'centro',
+  track: 'trilho',
+  hourLabel: 'rótulo da hora',
+  minuteLabel: 'rótulo do minuto',
+} as const;
 
 const catalog = buildCatalog(files);
 const entry = findEntry(catalog, 'time-picker')!;
@@ -17,7 +37,7 @@ const draw = (values: Values, mode: Mode): Drawing =>
   drawIn(catalog, entry, values, mode);
 
 const tokens = spec.tokens!.values as Record<string, unknown>;
-/** Valor do token da especialização no modo (cor). */
+/** Value of the specialization token in the mode (color). */
 const tok = (name: string, mode: Mode): string => {
   const value = tokens[name] as string | Record<Mode, string>;
   return typeof value === 'string' ? value : value[mode];
@@ -36,7 +56,7 @@ const named = (d: Drawing, name: string): SceneNode | undefined => {
 };
 const box = (d: Drawing, name: string) => {
   const node = named(d, name);
-  if (node === undefined) throw new Error(`nó ausente: ${name}`);
+  if (node === undefined) throw new Error(`missing node: ${name}`);
   return { node, ...absoluteBoxes(d.root).get(node.id)! };
 };
 const rect = (d: Drawing, name: string): number[] => {
@@ -70,7 +90,7 @@ const fontOf = (node: TextNode | undefined) =>
       ];
 
 const PICKER_24: Values = {
-  title: 'Selecionar horário',
+  title: 'Select time',
   mode: 'picker',
   hour: 14,
   minute: 30,
@@ -78,7 +98,7 @@ const PICKER_24: Values = {
   selection: 'hour',
 };
 const PICKER_12_MINUTE: Values = {
-  title: 'Selecionar horário',
+  title: 'Select time',
   mode: 'picker',
   hour: 9,
   minute: 45,
@@ -86,14 +106,14 @@ const PICKER_12_MINUTE: Values = {
   selection: 'minute',
 };
 const INPUT_12: Values = {
-  title: 'Informe o horário',
+  title: 'Enter time',
   mode: 'input',
   hour: 8,
   minute: 5,
   is24Hour: 'false',
 };
 
-/** Centro da alça do seletor: ângulo em graus a partir do topo, no sentido horário, a `radius` do centro. */
+/** Center of the selector handle: angle in degrees from the top, clockwise, at `radius` from the center. */
 const handleCenter = (degrees: number, radius: number): [number, number] => {
   const a = (degrees * Math.PI) / 180;
   return [128 + radius * Math.sin(a), 128 - radius * Math.cos(a)];
@@ -101,81 +121,81 @@ const handleCenter = (degrees: number, radius: number): [number, number] => {
 const near = (actual: number, expected: number) =>
   expect(Math.abs(actual - expected)).toBeLessThan(0.05);
 
-describe('M5 — time-picker: contêiner e título', () => {
-  it('diálogo em surface-container-high com a forma extra-large (28), padding 24 e título em label-medium', () => {
+describe('M5 — time-picker: container and title', () => {
+  it('dialog in surface-container-high with the extra-large shape (28), padding 24 and title in label-medium', () => {
     for (const mode of MODES) {
       const d = draw(PICKER_24, mode);
       expect(d.root.width).toBe(328);
       expect(fillOf(d, 'time picker')).toBe(tok('surface-container-high', mode));
       expect(radiusOf(d, 'time picker')).toBe(num('corner-extra-large'));
-      // TimePickerDialogDefaults.Title: labelMedium com 20 de padding embaixo
-      expect(rect(d, 'cabeçalho')).toEqual([24, 24, 280, 36]);
-      const title = textIn(d, 'título')!;
-      expect(title.text).toBe('Selecionar horário');
+      // TimePickerDialogDefaults.Title: labelMedium with 20 of padding below
+      expect(rect(d, NAMES.header)).toEqual([24, 24, 280, 36]);
+      const title = textIn(d, NAMES.title)!;
+      expect(title.text).toBe('Select time');
       expect(fontOf(title)).toEqual(scale('label-medium'));
       expect(solid(title.fills)).toBe(tok('on-surface-variant', mode));
       expect(d.warnings).toEqual([]);
     }
   });
 
-  it('sem título o cabeçalho some e o conteúdo sobe 36', () => {
+  it('without a title the header disappears and the content moves up 36', () => {
     const d = draw({ ...PICKER_24, title: '' }, 'light');
-    expect(named(d, 'cabeçalho')).toBeUndefined();
-    expect(box(d, 'hora e minuto').y).toBe(24);
+    expect(named(d, NAMES.header)).toBeUndefined();
+    expect(box(d, NAMES.hourMinute).y).toBe(24);
   });
 });
 
-describe('M5 — time-picker: seletores de hora e minuto', () => {
-  it('hora e minuto de 96 × 80 na forma small (8) e dois pontos de 24, centrados no conteúdo de 280 (24 horas: 216)', () => {
+describe('M5 — time-picker: hour and minute selectors', () => {
+  it('hour and minute of 96 × 80 in the small shape (8) and a 24 colon, centered in the 280 content (24 hours: 216)', () => {
     for (const mode of MODES) {
       const d = draw(PICKER_24, mode);
-      expect(rect(d, 'hora e minuto')).toEqual([24, 60, 280, 80]);
-      expect(rect(d, 'hora')).toEqual([56, 60, 96, 80]);
-      expect(rect(d, 'dois pontos')).toEqual([152, 60, 24, 80]);
-      expect(rect(d, 'minuto')).toEqual([176, 60, 96, 80]);
-      expect(radiusOf(d, 'hora')).toBe(num('corner-small'));
-      expect(radiusOf(d, 'minuto')).toBe(num('corner-small'));
-      expect(named(d, 'AM e PM')).toBeUndefined();
+      expect(rect(d, NAMES.hourMinute)).toEqual([24, 60, 280, 80]);
+      expect(rect(d, NAMES.hour)).toEqual([56, 60, 96, 80]);
+      expect(rect(d, NAMES.colon)).toEqual([152, 60, 24, 80]);
+      expect(rect(d, NAMES.minute)).toEqual([176, 60, 96, 80]);
+      expect(radiusOf(d, NAMES.hour)).toBe(num('corner-small'));
+      expect(radiusOf(d, NAMES.minute)).toBe(num('corner-small'));
+      expect(named(d, NAMES.amPm)).toBeUndefined();
     }
   });
 
-  it('seleção na hora: hora em primary-container / on-primary-container, minuto em surface-container-highest / on-surface, display-large', () => {
+  it('selection on the hour: hour in primary-container / on-primary-container, minute in surface-container-highest / on-surface, display-large', () => {
     for (const mode of MODES) {
       const d = draw(PICKER_24, mode);
-      expect(fillOf(d, 'hora')).toBe(tok('primary-container', mode));
-      expect(colorOf(d, 'hora')).toBe(tok('on-primary-container', mode));
-      expect(fillOf(d, 'minuto')).toBe(tok('surface-container-highest', mode));
-      expect(colorOf(d, 'minuto')).toBe(tok('on-surface', mode));
-      expect(fontOf(textIn(d, 'hora'))).toEqual(scale('display-large'));
-      expect(fontOf(textIn(d, 'minuto'))).toEqual(scale('display-large'));
-      expect(textOf(d, 'hora')).toBe('14');
-      expect(textOf(d, 'minuto')).toBe('30');
+      expect(fillOf(d, NAMES.hour)).toBe(tok('primary-container', mode));
+      expect(colorOf(d, NAMES.hour)).toBe(tok('on-primary-container', mode));
+      expect(fillOf(d, NAMES.minute)).toBe(tok('surface-container-highest', mode));
+      expect(colorOf(d, NAMES.minute)).toBe(tok('on-surface', mode));
+      expect(fontOf(textIn(d, NAMES.hour))).toEqual(scale('display-large'));
+      expect(fontOf(textIn(d, NAMES.minute))).toEqual(scale('display-large'));
+      expect(textOf(d, NAMES.hour)).toBe('14');
+      expect(textOf(d, NAMES.minute)).toBe('30');
       // TimeSelectorSeparatorColor
-      expect(textOf(d, 'dois pontos')).toBe(':');
-      expect(colorOf(d, 'dois pontos')).toBe(tok('on-surface', mode));
-      expect(fontOf(textIn(d, 'dois pontos'))).toEqual(scale('display-large'));
+      expect(textOf(d, NAMES.colon)).toBe(':');
+      expect(colorOf(d, NAMES.colon)).toBe(tok('on-surface', mode));
+      expect(fontOf(textIn(d, NAMES.colon))).toEqual(scale('display-large'));
     }
   });
 
-  it('seleção no minuto troca os papéis; os números levam zero à esquerda (minDigits = 2)', () => {
+  it('selection on the minute swaps the roles; the numbers get a leading zero (minDigits = 2)', () => {
     for (const mode of MODES) {
       const d = draw(PICKER_12_MINUTE, mode);
-      expect(fillOf(d, 'minuto')).toBe(tok('primary-container', mode));
-      expect(colorOf(d, 'minuto')).toBe(tok('on-primary-container', mode));
-      expect(fillOf(d, 'hora')).toBe(tok('surface-container-highest', mode));
-      expect(colorOf(d, 'hora')).toBe(tok('on-surface', mode));
-      expect(textOf(d, 'hora')).toBe('09');
-      expect(textOf(d, 'minuto')).toBe('45');
+      expect(fillOf(d, NAMES.minute)).toBe(tok('primary-container', mode));
+      expect(colorOf(d, NAMES.minute)).toBe(tok('on-primary-container', mode));
+      expect(fillOf(d, NAMES.hour)).toBe(tok('surface-container-highest', mode));
+      expect(colorOf(d, NAMES.hour)).toBe(tok('on-surface', mode));
+      expect(textOf(d, NAMES.hour)).toBe('09');
+      expect(textOf(d, NAMES.minute)).toBe('45');
     }
-    expect(textOf(draw({ ...PICKER_24, hour: 0, minute: 5 }, 'light'), 'hora')).toBe(
+    expect(textOf(draw({ ...PICKER_24, hour: 0, minute: 5 }, 'light'), NAMES.hour)).toBe(
       '00',
     );
-    expect(textOf(draw({ ...PICKER_24, hour: 0, minute: 5 }, 'light'), 'minuto')).toBe(
-      '05',
-    );
+    expect(
+      textOf(draw({ ...PICKER_24, hour: 0, minute: 5 }, 'light'), NAMES.minute),
+    ).toBe('05');
   });
 
-  it('12 horas: a hora mostra 1 a 12 e o seletor AM/PM de 52 × 80 vem 12 depois do minuto', () => {
+  it('12 hours: the hour shows 1 to 12 and the 52 × 80 AM/PM selector comes 12 after the minute', () => {
     const hours: [number, string][] = [
       [0, '12'],
       [1, '01'],
@@ -185,29 +205,31 @@ describe('M5 — time-picker: seletores de hora e minuto', () => {
       [23, '11'],
     ];
     for (const [hour, label] of hours) {
-      expect(textOf(draw({ ...PICKER_12_MINUTE, hour }, 'light'), 'hora')).toBe(label);
+      expect(textOf(draw({ ...PICKER_12_MINUTE, hour }, 'light'), NAMES.hour)).toBe(
+        label,
+      );
     }
     const d = draw(PICKER_12_MINUTE, 'light');
-    expect(rect(d, 'hora')).toEqual([24, 60, 96, 80]);
-    expect(rect(d, 'minuto')).toEqual([144, 60, 96, 80]);
-    expect(rect(d, 'AM e PM')).toEqual([252, 60, 52, 80]);
+    expect(rect(d, NAMES.hour)).toEqual([24, 60, 96, 80]);
+    expect(rect(d, NAMES.minute)).toEqual([144, 60, 96, 80]);
+    expect(rect(d, NAMES.amPm)).toEqual([252, 60, 52, 80]);
   });
 });
 
-describe('M5 — time-picker: seletor AM/PM', () => {
-  it('forma small (8), contorno de 1 em outline; manhã selecionada em tertiary-container / on-tertiary-container', () => {
+describe('M5 — time-picker: AM/PM selector', () => {
+  it('small shape (8), 1 outline; morning selected in tertiary-container / on-tertiary-container', () => {
     for (const mode of MODES) {
       const d = draw(PICKER_12_MINUTE, mode);
-      const toggle = box(d, 'AM e PM');
-      expect(radiusOf(d, 'AM e PM')).toBe(num('corner-small'));
+      const toggle = box(d, NAMES.amPm);
+      expect(radiusOf(d, NAMES.amPm)).toBe(num('corner-small'));
       expect(toggle.node.stroke?.width).toBe(1);
-      expect(strokeOf(d, 'AM e PM')).toBe(tok('outline', mode));
+      expect(strokeOf(d, NAMES.amPm)).toBe(tok('outline', mode));
       expect(fillOf(d, 'AM')).toBe(tok('tertiary-container', mode));
       expect(colorOf(d, 'AM')).toBe(tok('on-tertiary-container', mode));
       expect(fillOf(d, 'PM')).toBeUndefined();
       expect(colorOf(d, 'PM')).toBe(tok('on-surface-variant', mode));
-      expect(fillOf(d, 'divisor')).toBe(tok('outline', mode));
-      expect(box(d, 'divisor').height).toBe(1);
+      expect(fillOf(d, NAMES.divider)).toBe(tok('outline', mode));
+      expect(box(d, NAMES.divider).height).toBe(1);
       // PeriodSelectorLabelTextFont = TitleMedium
       expect(fontOf(textIn(d, 'AM'))).toEqual(scale('title-medium'));
       expect(textOf(d, 'AM')).toBe('AM');
@@ -215,7 +237,7 @@ describe('M5 — time-picker: seletor AM/PM', () => {
     }
   });
 
-  it('tarde (12 a 23) seleciona o PM', () => {
+  it('afternoon (12 to 23) selects PM', () => {
     for (const hour of [12, 13, 17, 23]) {
       const d = draw({ ...PICKER_12_MINUTE, hour }, 'dark');
       expect(fillOf(d, 'PM'), String(hour)).toBe(tok('tertiary-container', 'dark'));
@@ -232,14 +254,14 @@ describe('M5 — time-picker: seletor AM/PM', () => {
 });
 
 /**
- * O número que a alça cobre: a cópia em on-primary (`números sob a alça`, dentro da `alça`, que recorta) cujo
- * centro cai no centro da alça (a ±1 px). Sem número na posição (minuto fora da grade de 5), nenhuma.
+ * The number the handle covers: the on-primary copy (`números sob a alça`, inside the `alça`, which clips) whose
+ * center falls on the center of the handle (within ±1 px). Without a number at the position (minute off the 5 grid), none.
  */
 const underHandle = (d: Drawing): TextNode | undefined => {
-  const handle = box(d, 'alça');
+  const handle = box(d, NAMES.handle);
   const boxes = absoluteBoxes(d.root);
   return [...walk(handle.node)].find((n): n is TextNode => {
-    if (n.type !== 'text' || n.name !== 'número sob a alça') return false;
+    if (n.type !== 'text' || n.name !== NAMES.numberUnderHandle) return false;
     const b = boxes.get(n.id)!;
     return (
       Math.abs(b.x + b.width / 2 - (handle.x + handle.width / 2)) <= 1 &&
@@ -248,69 +270,71 @@ const underHandle = (d: Drawing): TextNode | undefined => {
   });
 };
 
-/** Os números do mostrador, na ordem em que o `repeat` os desenha (o anel externo e, em 24 horas, o interno). */
+/** The dial numbers, in the order the `repeat` draws them (the outer ring and, in 24 hours, the inner one). */
 const clockNumbers = (d: Drawing) =>
   [...walk(d.root)]
-    .filter((n): n is TextNode => n.type === 'text' && n.name === 'número' && n.visible)
+    .filter(
+      (n): n is TextNode => n.type === 'text' && n.name === NAMES.number && n.visible,
+    )
     .map((node) => {
       const { x, y, width, height } = absoluteBoxes(d.root).get(node.id)!;
       return { node, rect: [x, y, width, height] };
     });
 
-describe('M5 — time-picker: mostrador (relógio)', () => {
-  it('relógio de 256 (ClockDialContainerSize) em surface-container-highest, forma full, a 36 dos seletores', () => {
+describe('M5 — time-picker: dial (clock)', () => {
+  it('256 clock (ClockDialContainerSize) in surface-container-highest, full shape, 36 from the selectors', () => {
     for (const mode of MODES) {
       const d = draw(PICKER_24, mode);
-      // (280 - 256) / 2 de folga, depois de 24 + 36 + 80 + 36
-      expect(rect(d, 'relógio')).toEqual([36, 176, 256, 256]);
-      expect(fillOf(d, 'relógio')).toBe(tok('surface-container-highest', mode));
-      expect(Number(radiusOf(d, 'relógio'))).toBeGreaterThanOrEqual(128);
-      expect(radiusOf(d, 'relógio')).toBe(num('corner-full'));
+      // (280 - 256) / 2 of slack, after 24 + 36 + 80 + 36
+      expect(rect(d, NAMES.face)).toEqual([36, 176, 256, 256]);
+      expect(fillOf(d, NAMES.face)).toBe(tok('surface-container-highest', mode));
+      expect(Number(radiusOf(d, NAMES.face))).toBeGreaterThanOrEqual(128);
+      expect(radiusOf(d, NAMES.face)).toBe(num('corner-full'));
     }
   });
 
-  it('alça de 48 em primary, trilho de 2 em primary e centro de 8 no meio do relógio', () => {
+  it('48 handle in primary, 2 track in primary and 8 center in the middle of the clock', () => {
     for (const mode of MODES) {
       const d = draw(PICKER_24, mode);
-      const face = box(d, 'relógio');
-      const handle = box(d, 'alça');
+      const face = box(d, NAMES.face);
+      const handle = box(d, NAMES.handle);
       expect([handle.width, handle.height]).toEqual([48, 48]);
-      expect(fillOf(d, 'alça')).toBe(tok('primary', mode));
-      expect(radiusOf(d, 'alça')).toBe(num('corner-full'));
-      const dot = box(d, 'centro');
+      expect(fillOf(d, NAMES.handle)).toBe(tok('primary', mode));
+      expect(radiusOf(d, NAMES.handle)).toBe(num('corner-full'));
+      const dot = box(d, NAMES.center);
       expect([dot.width, dot.height]).toEqual([8, 8]);
       expect([dot.x - face.x, dot.y - face.y]).toEqual([124, 124]);
-      expect(fillOf(d, 'centro')).toBe(tok('primary', mode));
-      const track = named(d, 'trilho')!;
+      expect(fillOf(d, NAMES.center)).toBe(tok('primary', mode));
+      const track = named(d, NAMES.track)!;
       expect(track.type).toBe('path');
       expect(track.stroke?.width).toBe(2);
       expect(solid(track.stroke?.paints ?? [])).toBe(tok('primary', mode));
     }
   });
 
-  it('hora 14 em 24 horas: alça no anel interno (raio 69), a 60° do topo, com "14" em on-primary', () => {
+  it('hour 14 in 24 hours: handle on the inner ring (radius 69), 60° from the top, with "14" in on-primary', () => {
     for (const mode of MODES) {
       const d = draw(PICKER_24, mode);
-      const face = box(d, 'relógio');
-      const handle = box(d, 'alça');
+      const face = box(d, NAMES.face);
+      const handle = box(d, NAMES.handle);
       const [cx, cy] = handleCenter(60, 69);
       near(handle.x - face.x + 24, cx);
       near(handle.y - face.y + 24, cy);
-      // o número escolhido é a cópia dos números em on-primary que aparece dentro da alça
+      // the chosen number is the on-primary copy of the numbers that appears inside the handle
       expect(underHandle(d)?.text).toBe('14');
       expect(solid(underHandle(d)?.fills ?? [])).toBe(tok('on-primary', mode));
       expect(fontOf(underHandle(d))).toEqual(scale('body-large'));
-      const track = named(d, 'trilho') as PathNode;
+      const track = named(d, NAMES.track) as PathNode;
       const end = /L\s*([-\d.]+)[ ,]([-\d.]+)/.exec(track.d)!;
       near(Number(end[1]), cx);
       near(Number(end[2]), cy);
     }
   });
 
-  it('minuto 45 em 12 horas: alça no anel externo (raio 101), a 270°, com "45"; minuto fora da grade não leva número', () => {
+  it('minute 45 in 12 hours: handle on the outer ring (radius 101), at 270°, with "45"; a minute off the grid carries no number', () => {
     const d = draw(PICKER_12_MINUTE, 'light');
-    const face = box(d, 'relógio');
-    const handle = box(d, 'alça');
+    const face = box(d, NAMES.face);
+    const handle = box(d, NAMES.handle);
     const [cx, cy] = handleCenter(270, 101);
     near(handle.x - face.x + 24, cx);
     near(handle.y - face.y + 24, cy);
@@ -318,32 +342,32 @@ describe('M5 — time-picker: mostrador (relógio)', () => {
     for (const minute of [7, 59]) {
       const off = draw({ ...PICKER_12_MINUTE, minute }, 'light');
       const [ox, oy] = handleCenter(minute * 6, 101);
-      const h = box(off, 'alça');
-      near(h.x - box(off, 'relógio').x + 24, ox);
-      near(h.y - box(off, 'relógio').y + 24, oy);
+      const h = box(off, NAMES.handle);
+      near(h.x - box(off, NAMES.face).x + 24, ox);
+      near(h.y - box(off, NAMES.face).y + 24, oy);
       expect(underHandle(off)).toBeUndefined();
     }
   });
 
-  it('12 horas: hora 14 cai no anel externo, a 60°, com "2"; 24 horas: hora 3 no externo a 90°, com "3"', () => {
+  it('12 hours: hour 14 falls on the outer ring, at 60°, with "2"; 24 hours: hour 3 on the outer ring at 90°, with "3"', () => {
     const twelve = draw({ ...PICKER_24, is24Hour: 'false' }, 'light');
     const [cx, cy] = handleCenter(60, 101);
-    const h = box(twelve, 'alça');
-    near(h.x - box(twelve, 'relógio').x + 24, cx);
-    near(h.y - box(twelve, 'relógio').y + 24, cy);
+    const h = box(twelve, NAMES.handle);
+    near(h.x - box(twelve, NAMES.face).x + 24, cx);
+    near(h.y - box(twelve, NAMES.face).y + 24, cy);
     expect(underHandle(twelve)?.text).toBe('2');
     const day = draw({ ...PICKER_24, hour: 3 }, 'light');
     const [dx, dy] = handleCenter(90, 101);
-    const g = box(day, 'alça');
-    near(g.x - box(day, 'relógio').x + 24, dx);
-    near(g.y - box(day, 'relógio').y + 24, dy);
+    const g = box(day, NAMES.handle);
+    near(g.x - box(day, NAMES.face).x + 24, dx);
+    near(g.y - box(day, NAMES.face).y + 24, dy);
     expect(underHandle(day)?.text).toBe('3');
   });
 
-  it('números em body-large, on-surface, 12 no anel externo (raio 101) e 12 no interno (raio 69, só 24 horas)', () => {
+  it('numbers in body-large, on-surface, 12 on the outer ring (radius 101) and 12 on the inner one (radius 69, 24 hours only)', () => {
     for (const mode of MODES) {
       const d = draw(PICKER_24, mode);
-      const face = box(d, 'relógio');
+      const face = box(d, NAMES.face);
       const numbers = clockNumbers(d);
       expect(numbers).toHaveLength(24);
       for (let k = 0; k < 12; k += 1) {
@@ -365,7 +389,7 @@ describe('M5 — time-picker: mostrador (relógio)', () => {
     }
   });
 
-  it('12 horas mostra 12, 1 a 11 no anel externo e nenhum interno; minutos mostram 0, 5 a 55', () => {
+  it('12 hours shows 12, 1 to 11 on the outer ring and no inner one; minutes show 0, 5 to 55', () => {
     const hours = clockNumbers(draw({ ...PICKER_24, is24Hour: 'false' }, 'light'));
     expect(hours.map((n) => n.node.text)).toEqual([
       '12',
@@ -396,57 +420,61 @@ describe('M5 — time-picker: mostrador (relógio)', () => {
       '50',
       '55',
     ]);
-    // em 24 horas, escolhendo o minuto, também só o anel externo
+    // in 24 hours, choosing the minute, also only the outer ring
     expect(
       clockNumbers(draw({ ...PICKER_24, selection: 'minute' }, 'light')),
     ).toHaveLength(12);
   });
 });
 
-describe('M5 — time-picker: modo input (campos)', () => {
-  it('campos de 96 × 72 (TimeFieldContainer) na forma small, rótulo de apoio em body-small a 7 de baixo', () => {
+describe('M5 — time-picker: input mode (fields)', () => {
+  it('96 × 72 fields (TimeFieldContainer) in the small shape, supporting label in body-small 7 below', () => {
     for (const mode of MODES) {
       const d = draw(INPUT_12, mode);
-      expect(named(d, 'relógio')).toBeUndefined();
-      expect(rect(d, 'hora')).toEqual([24, 60, 96, 72]);
-      expect(radiusOf(d, 'hora')).toBe(num('corner-small'));
-      expect(rect(d, 'minuto')).toEqual([144, 60, 96, 72]);
-      expect(rect(d, 'dois pontos')).toEqual([120, 60, 24, 72]);
-      expect(textOf(d, 'hora')).toBe('08');
-      expect(textOf(d, 'minuto')).toBe('05');
+      expect(named(d, NAMES.face)).toBeUndefined();
+      expect(rect(d, NAMES.hour)).toEqual([24, 60, 96, 72]);
+      expect(radiusOf(d, NAMES.hour)).toBe(num('corner-small'));
+      expect(rect(d, NAMES.minute)).toEqual([144, 60, 96, 72]);
+      expect(rect(d, NAMES.colon)).toEqual([120, 60, 24, 72]);
+      expect(textOf(d, NAMES.hour)).toBe('08');
+      expect(textOf(d, NAMES.minute)).toBe('05');
       // TimeFieldLabelTextFont = DisplayMedium
-      expect(fontOf(textIn(d, 'hora'))).toEqual(scale('display-medium'));
-      const label = textIn(d, 'rótulo da hora')!;
+      expect(fontOf(textIn(d, NAMES.hour))).toEqual(scale('display-medium'));
+      const label = textIn(d, NAMES.hourLabel)!;
+      // pt-BR kept: the library's default support label is Portuguese data
       expect(label.text).toBe('Hora');
       expect(fontOf(label)).toEqual(scale('body-small'));
       expect(solid(label.fills)).toBe(tok('on-surface-variant', mode));
-      // 72 do campo + 7 (SupportLabelTop)
-      expect(box(d, 'rótulo da hora').y).toBe(60 + 72 + 7);
-      expect(textOf(d, 'rótulo do minuto')).toBe('Minuto');
+      // 72 of the field + 7 (SupportLabelTop)
+      expect(box(d, NAMES.hourLabel).y).toBe(60 + 72 + 7);
+      // pt-BR kept: the library's default support label is Portuguese data
+      expect(textOf(d, NAMES.minuteLabel)).toBe('Minuto');
     }
   });
 
-  it('campo em foco: primary-container, contorno de 2 em primary e on-primary-container; o outro em surface-container-highest sem contorno', () => {
+  it('focused field: primary-container, 2 outline in primary and on-primary-container; the other in surface-container-highest without an outline', () => {
     for (const mode of MODES) {
       const hourFocus = draw(INPUT_12, mode);
-      expect(fillOf(hourFocus, 'hora')).toBe(tok('primary-container', mode));
-      expect(box(hourFocus, 'hora').node.stroke?.width).toBe(2);
-      expect(strokeOf(hourFocus, 'hora')).toBe(tok('primary', mode));
-      expect(colorOf(hourFocus, 'hora')).toBe(tok('on-primary-container', mode));
-      expect(fillOf(hourFocus, 'minuto')).toBe(tok('surface-container-highest', mode));
-      expect(strokeOf(hourFocus, 'minuto')).toBeUndefined();
-      expect(colorOf(hourFocus, 'minuto')).toBe(tok('on-surface', mode));
+      expect(fillOf(hourFocus, NAMES.hour)).toBe(tok('primary-container', mode));
+      expect(box(hourFocus, NAMES.hour).node.stroke?.width).toBe(2);
+      expect(strokeOf(hourFocus, NAMES.hour)).toBe(tok('primary', mode));
+      expect(colorOf(hourFocus, NAMES.hour)).toBe(tok('on-primary-container', mode));
+      expect(fillOf(hourFocus, NAMES.minute)).toBe(
+        tok('surface-container-highest', mode),
+      );
+      expect(strokeOf(hourFocus, NAMES.minute)).toBeUndefined();
+      expect(colorOf(hourFocus, NAMES.minute)).toBe(tok('on-surface', mode));
       const minuteFocus = draw({ ...INPUT_12, selection: 'minute' }, mode);
-      expect(fillOf(minuteFocus, 'minuto')).toBe(tok('primary-container', mode));
-      expect(strokeOf(minuteFocus, 'minuto')).toBe(tok('primary', mode));
-      expect(strokeOf(minuteFocus, 'hora')).toBeUndefined();
+      expect(fillOf(minuteFocus, NAMES.minute)).toBe(tok('primary-container', mode));
+      expect(strokeOf(minuteFocus, NAMES.minute)).toBe(tok('primary', mode));
+      expect(strokeOf(minuteFocus, NAMES.hour)).toBeUndefined();
     }
   });
 
-  it('12 horas: seletor AM/PM de 52 × 72 (TimeInputTokens) 12 depois do campo do minuto; 24 horas não o mostra', () => {
+  it('12 hours: 52 × 72 AM/PM selector (TimeInputTokens) 12 after the minute field; 24 hours does not show it', () => {
     const d = draw(INPUT_12, 'light');
-    expect(rect(d, 'AM e PM')).toEqual([252, 60, 52, 72]);
-    expect(strokeOf(d, 'AM e PM')).toBe(tok('outline', 'light'));
+    expect(rect(d, NAMES.amPm)).toEqual([252, 60, 52, 72]);
+    expect(strokeOf(d, NAMES.amPm)).toBe(tok('outline', 'light'));
     expect(fillOf(d, 'AM')).toBe(tok('tertiary-container', 'light'));
     expect(colorOf(d, 'AM')).toBe(tok('on-tertiary-container', 'light'));
     expect(colorOf(d, 'PM')).toBe(tok('on-surface-variant', 'light'));
@@ -454,18 +482,18 @@ describe('M5 — time-picker: modo input (campos)', () => {
     expect(fillOf(pm, 'PM')).toBe(tok('tertiary-container', 'dark'));
     expect(fillOf(pm, 'AM')).toBeUndefined();
     const day = draw({ ...INPUT_12, is24Hour: 'true', hour: 20 }, 'light');
-    expect(named(day, 'AM e PM')).toBeUndefined();
-    expect(textOf(day, 'hora')).toBe('20');
+    expect(named(day, NAMES.amPm)).toBeUndefined();
+    expect(textOf(day, NAMES.hour)).toBe('20');
   });
 });
 
-describe('M5 — time-picker: modos e avisos', () => {
-  it('os exemplos desenham sem aviso nos dois modos e o modo escuro muda a cor do relógio', () => {
+describe('M5 — time-picker: modes and warnings', () => {
+  it('the examples draw without a warning in both modes and the dark mode changes the clock color', () => {
     const light = draw(PICKER_24, 'light');
     const dark = draw(PICKER_24, 'dark');
-    expect(fillOf(light, 'relógio')).not.toBe(fillOf(dark, 'relógio'));
-    expect(fillOf(light, 'alça')).toBe('#6750A4');
-    expect(fillOf(dark, 'alça')).toBe('#D0BCFF');
+    expect(fillOf(light, NAMES.face)).not.toBe(fillOf(dark, NAMES.face));
+    expect(fillOf(light, NAMES.handle)).toBe('#6750A4');
+    expect(fillOf(dark, NAMES.handle)).toBe('#D0BCFF');
     for (const mode of MODES) {
       for (const values of [PICKER_24, PICKER_12_MINUTE, INPUT_12]) {
         expect(draw(values, mode).warnings).toEqual([]);

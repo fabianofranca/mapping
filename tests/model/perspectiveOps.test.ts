@@ -27,8 +27,8 @@ import {
 import { emptyProject } from './fixtures';
 import { multiProject } from './multiSelectionFixtures';
 
-// Operações das perspectivas (v16, decisões 6, 10 e 11). `multiProject`: raízes D (7000,0),
-// E (9000,0), G (-100,-100), N (100,1300) e H (400,1300).
+// Perspective operations (v16, decisions 6, 10 and 11). `multiProject`: roots D (7000,0),
+// E (9000,0), G (-100,-100), N (100,1300) and H (400,1300).
 
 function persp(
   id: string,
@@ -51,39 +51,39 @@ function code(run: () => unknown): ModelErrorCode | null {
 
 const base = (): Project => ({
   ...multiProject(),
-  perspectives: [persp('P', 'Fluxo', [['D', 1, 2]]), persp('Q', 'Telas')],
+  perspectives: [persp('P', 'Flow', [['D', 1, 2]]), persp('Q', 'Screens')],
 });
 
-describe('nome da perspectiva', () => {
-  it('vazio, repetido (sem caixa, com espaços) ou livre', () => {
-    const names = ['Fluxo', 'Telas'];
+describe('perspective name', () => {
+  it('empty, repeated (case-insensitive, with spaces) or free', () => {
+    const names = ['Flow', 'Screens'];
     expect(perspectiveNameIssue(names, '   ')).toBe('empty');
     expect(perspectiveNameIssue(names, ' fluxo ')).toBe('taken');
     expect(perspectiveNameIssue(names, 'Novo')).toBeNull();
   });
 
-  it('renomear a si mesma só com outra caixa não é repetido', () => {
-    expect(perspectiveNameIssue(['Fluxo'], 'FLUXO', 'Fluxo')).toBeNull();
-    expect(perspectiveNameIssue(['Fluxo', 'Telas'], 'telas', 'Fluxo')).toBe('taken');
+  it('renaming itself with only a different case is not a repeat', () => {
+    expect(perspectiveNameIssue(['Flow'], 'FLOW', 'Flow')).toBeNull();
+    expect(perspectiveNameIssue(['Flow', 'Screens'], 'screens', 'Flow')).toBe('taken');
   });
 
-  it('a versão do projeto também confere os nomes extras (as "Só eu")', () => {
+  it('the project version also checks the extra names (the "Only me" ones)', () => {
     const p = base();
-    expect(projectPerspectiveNameIssue(p, 'telas')).toBe('taken');
+    expect(projectPerspectiveNameIssue(p, 'screens')).toBe('taken');
     expect(projectPerspectiveNameIssue(p, 'Meu', undefined, ['meu'])).toBe('taken');
-    expect(projectPerspectiveNameIssue(p, 'Telas', 'Telas')).toBeNull();
+    expect(projectPerspectiveNameIssue(p, 'Screens', 'Screens')).toBeNull();
     expect(projectPerspectiveNameIssue(p, 'Novo', undefined, ['Meu'])).toBeNull();
   });
 });
 
-describe('buildPerspective: Começar de', () => {
+describe('buildPerspective: Start from', () => {
   const p = base();
 
-  it('Principal: todas as raízes nas posições delas', () => {
-    const built = buildPerspective(p, { id: 'N1', name: ' Nova ', startFrom: null });
+  it('Main: all the roots at their positions', () => {
+    const built = buildPerspective(p, { id: 'N1', name: ' New ', startFrom: null });
     expect(built).toEqual({
       id: 'N1',
-      name: 'Nova',
+      name: 'New',
       hiddenLayers: [],
       items: [
         { root: 'D', x: 7000, y: 0 },
@@ -95,7 +95,7 @@ describe('buildPerspective: Começar de', () => {
     });
   });
 
-  it('Vazia: sem raízes; o argumento hiddenLayers vale em todas', () => {
+  it('Empty: no roots; the hiddenLayers argument applies to all', () => {
     expect(
       buildPerspective(p, { id: 'N1', name: 'V', startFrom: 'empty' }).items,
     ).toEqual([]);
@@ -113,7 +113,7 @@ describe('buildPerspective: Começar de', () => {
     ).toEqual(['L1']);
   });
 
-  it('uma perspectiva: copia raízes, posições e camadas escondidas', () => {
+  it('a perspective: copies roots, positions and hidden layers', () => {
     const from = persp(
       'X',
       'Origem',
@@ -123,17 +123,17 @@ describe('buildPerspective: Começar de', () => {
       ],
       ['L1'],
     );
-    const built = buildPerspective(p, { id: 'N1', name: 'Cópia', startFrom: from });
+    const built = buildPerspective(p, { id: 'N1', name: 'Copy', startFrom: from });
     expect(built.items).toEqual(from.items);
     expect(built.hiddenLayers).toEqual(['L1']);
     expect(built.items).not.toBe(from.items);
     expect(
-      buildPerspective(p, { id: 'N1', name: 'Cópia', startFrom: from, hiddenLayers: [] })
+      buildPerspective(p, { id: 'N1', name: 'Copy', startFrom: from, hiddenLayers: [] })
         .hiddenLayers,
     ).toEqual([]);
   });
 
-  it('só leva camadas que existem', () => {
+  it('only takes layers that exist', () => {
     const built = buildPerspective(p, {
       id: 'N1',
       name: 'V',
@@ -144,10 +144,10 @@ describe('buildPerspective: Começar de', () => {
   });
 });
 
-describe('perspectivas do projeto: acrescentar, renomear, duplicar, apagar', () => {
+describe('project perspectives: add, rename, duplicate, delete', () => {
   it('addPerspective acrescenta no fim e confere nome e id', () => {
     const p = base();
-    const next = addPerspective(p, persp('R', 'Nova'));
+    const next = addPerspective(p, persp('R', 'New'));
     expect(next.perspectives.map((x) => x.id)).toEqual(['P', 'Q', 'R']);
     expect(code(() => addPerspective(p, persp('R', '  ')))).toBe(
       'perspective-name-empty',
@@ -161,23 +161,23 @@ describe('perspectivas do projeto: acrescentar, renomear, duplicar, apagar', () 
     expect(code(() => addPerspective(p, persp('P', 'Outro')))).toBe('duplicate-id');
   });
 
-  it('renomear: aceita a mesma com outra caixa, recusa repetido e id inexistente', () => {
+  it('rename: accepts the same one with a different case, refuses a repeat and a nonexistent id', () => {
     const p = base();
-    expect(renamePerspective(p, 'P', 'FLUXO').perspectives[0]?.name).toBe('FLUXO');
-    expect(code(() => renamePerspective(p, 'P', 'telas'))).toBe('perspective-name-taken');
+    expect(renamePerspective(p, 'P', 'FLOW').perspectives[0]?.name).toBe('FLOW');
+    expect(code(() => renamePerspective(p, 'P', 'screens'))).toBe('perspective-name-taken');
     expect(code(() => renamePerspective(p, 'P', ' '))).toBe('perspective-name-empty');
     expect(code(() => renamePerspective(p, 'zzz', 'X'))).toBe('not-found');
   });
 
-  it('duplicar copia as raízes e as camadas com id e nome novos', () => {
+  it('duplicate copies the roots and layers with a new id and name', () => {
     const p = {
       ...base(),
-      perspectives: [persp('P', 'Fluxo', [['D', 1, 2]], ['L1'])],
+      perspectives: [persp('P', 'Flow', [['D', 1, 2]], ['L1'])],
     };
-    const next = duplicatePerspective(p, 'P', 'P2', 'Fluxo (cópia)');
+    const next = duplicatePerspective(p, 'P', 'P2', 'Flow (copy)');
     expect(next.perspectives[1]).toEqual({
       id: 'P2',
-      name: 'Fluxo (cópia)',
+      name: 'Flow (copy)',
       hiddenLayers: ['L1'],
       items: [{ root: 'D', x: 1, y: 2 }],
     });
@@ -187,10 +187,10 @@ describe('perspectivas do projeto: acrescentar, renomear, duplicar, apagar', () 
     expect(code(() => duplicatePerspective(p, 'zzz', 'P2', 'X'))).toBe('not-found');
   });
 
-  it('apagar não muda nada fora de perspectives (as marcas ficam com fromName)', () => {
+  it('deleting changes nothing outside perspectives (the marks keep fromName)', () => {
     const p: Project = {
       ...base(),
-      arrivals: [{ root: 'H', from: 'P', fromName: 'Fluxo' }],
+      arrivals: [{ root: 'H', from: 'P', fromName: 'Flow' }],
     };
     const next = removePerspective(p, 'P');
     expect(next.perspectives.map((x) => x.id)).toEqual(['Q']);
@@ -199,7 +199,7 @@ describe('perspectivas do projeto: acrescentar, renomear, duplicar, apagar', () 
   });
 });
 
-/** Principal com S2 (600,0), a marcação m2 nele, e um container X longe com seta de Xm para m2. */
+/** Main with S2 (600,0), the marking m2 in it, and a container X far away with an arrow from Xm to m2. */
 function linked(): Project {
   let p = emptyProject();
   for (const [id, x, y] of [
@@ -216,13 +216,13 @@ function linked(): Project {
 }
 
 describe('enviar para a perspectiva', () => {
-  it('entra pela mesma regra da chegada: perto da referência, sem marca', () => {
+  it('enters by the same rule as the arrival: near the reference, with no mark', () => {
     const p: Project = {
       ...linked(),
-      perspectives: [persp('Q', 'Telas', [['S2', 100, 100]])],
+      perspectives: [persp('Q', 'Screens', [['S2', 100, 100]])],
     };
     const next = sendRootsToPerspective(p, 'Q', ['X'], null);
-    // X estava em (9000, 9000) e S2 em (600, 0): na perspectiva, S2 está em (100, 100).
+    // X was at (9000, 9000) and S2 at (600, 0): in the perspective, S2 is at (100, 100).
     expect(next.perspectives[0]?.items).toEqual([
       { root: 'S2', x: 100, y: 100 },
       { root: 'X', x: 8500, y: 9100 },
@@ -230,7 +230,7 @@ describe('enviar para a perspectiva', () => {
     expect(next.arrivals).toEqual([]);
   });
 
-  it('uma de cada vez: a segunda já vê a primeira', () => {
+  it('one at a time: the second already sees the first', () => {
     const p: Project = { ...multiProject(), perspectives: [persp('Q', 'Vazia')] };
     const next = sendRootsToPerspective(p, 'Q', ['D', 'E'], null);
     expect(next.perspectives[0]?.items).toEqual([
@@ -239,7 +239,7 @@ describe('enviar para a perspectiva', () => {
     ]);
   });
 
-  it('a raiz que já está continua onde está; a versão valor devolve a perspectiva', () => {
+  it('a root that is already there stays where it is; the value version returns the perspective', () => {
     const p = { ...multiProject(), perspectives: [persp('Q', 'Q', [['D', 5, 6]])] };
     const target = p.perspectives[0] as Perspective;
     expect(sendRoots(p, target, ['D'], null)).toBe(target);
@@ -249,18 +249,18 @@ describe('enviar para a perspectiva', () => {
     ]);
   });
 
-  it('recusa quem não é raiz e a perspectiva inexistente', () => {
+  it('refuses what is not a root and the nonexistent perspective', () => {
     const p = base();
     expect(code(() => sendRootsToPerspective(p, 'Q', ['a1'], null))).toBe('not-root');
     expect(code(() => sendRootsToPerspective(p, 'Q', ['zzz'], null))).toBe('not-root');
     expect(code(() => sendRootsToPerspective(p, 'zzz', ['D'], null))).toBe('not-found');
   });
 
-  it('a origem pode ser uma perspectiva: a distância é a que a raiz tem lá', () => {
+  it('the source can be a perspective: the distance is the one the root has there', () => {
     const p: Project = {
       ...linked(),
       perspectives: [
-        persp('Q', 'Telas', [['S2', 100, 100]]),
+        persp('Q', 'Screens', [['S2', 100, 100]]),
         persp('O', 'Origem', [
           ['S2', 0, 0],
           ['X', 0, 700],
@@ -274,11 +274,11 @@ describe('enviar para a perspectiva', () => {
 });
 
 describe('tirar da perspectiva', () => {
-  it('tira a raiz da perspectiva e não apaga nada do projeto', () => {
+  it('removes the root from the perspective and deletes nothing from the project', () => {
     const p = {
       ...base(),
       perspectives: [
-        persp('P', 'Fluxo', [
+        persp('P', 'Flow', [
           ['D', 1, 2],
           ['H', 3, 4],
         ]),
@@ -290,8 +290,8 @@ describe('tirar da perspectiva', () => {
     expect(code(() => removeRootsFromPerspective(p, 'zzz', ['D']))).toBe('not-found');
   });
 
-  it('sem nada a tirar devolve a mesma perspectiva', () => {
-    const target = persp('P', 'Fluxo', [['D', 1, 2]]);
+  it('with nothing to remove returns the same perspective', () => {
+    const target = persp('P', 'Flow', [['D', 1, 2]]);
     expect(removeRoots(target, ['E'])).toBe(target);
   });
 });
@@ -300,14 +300,14 @@ describe('mover na perspectiva', () => {
   const p = {
     ...base(),
     perspectives: [
-      persp('P', 'Fluxo', [
+      persp('P', 'Flow', [
         ['D', 10, 20],
         ['H', 30, 40],
       ]),
     ],
   };
 
-  it('muda só a posição na perspectiva', () => {
+  it('changes only the position in the perspective', () => {
     const next = moveRootsInPerspective(p, 'P', [
       { root: 'D', dx: 5.5, dy: -20 },
       { root: 'H', dx: 1, dy: 2 },
@@ -319,7 +319,7 @@ describe('mover na perspectiva', () => {
     expect({ ...next, perspectives: p.perspectives }).toEqual(p);
   });
 
-  it('marcação: deslocamento inteiro, senão rect-not-integer; raiz fora da perspectiva falha', () => {
+  it('marking: integer offset, otherwise rect-not-integer; a root outside the perspective fails', () => {
     expect(
       code(() => moveRootsInPerspective(p, 'P', [{ root: 'H', dx: 0.5, dy: 0 }])),
     ).toBe('rect-not-integer');
@@ -329,23 +329,23 @@ describe('mover na perspectiva', () => {
     expect(code(() => moveRootsInPerspective(p, 'zzz', []))).toBe('not-found');
   });
 
-  it('a posição gravada tem no máximo 6 casas (o y do gesto, sem cauda de ponto flutuante)', () => {
+  it('the stored position has at most 6 decimal places (the gesture's y, with no floating-point tail)', () => {
     const next = moveRootsInPerspective(p, 'P', [
       { root: 'D', dx: 0.1 + 0.2, dy: 250.2979740000001 },
     ]);
     expect(next.perspectives[0]?.items[0]).toEqual({ root: 'D', x: 10.3, y: 270.297974 });
   });
 
-  it('deslocamento zero devolve a mesma perspectiva; a versão valor também', () => {
+  it('a zero offset returns the same perspective; the value version too', () => {
     const target = p.perspectives[0] as Perspective;
     expect(moveRoots(p, target, [{ root: 'D', dx: 0, dy: 0 }])).toBe(target);
   });
 });
 
 describe('camadas escondidas', () => {
-  it('só camadas que existem, sem repetir, na ordem das camadas do projeto', () => {
+  it('only layers that exist, without repeating, in the project's layer order', () => {
     const p = {
-      ...addLayer(base(), { id: 'L2', name: 'Dois', color: '#1E88E5' }),
+      ...addLayer(base(), { id: 'L2', name: 'Two', color: '#1E88E5' }),
     };
     const next = setPerspectiveHiddenLayers(p, 'P', ['L2', 'fantasma', 'L1', 'L2']);
     expect(next.perspectives[0]?.hiddenLayers).toEqual(['L1', 'L2']);

@@ -37,7 +37,7 @@ const M2 = [
   'image',
 ];
 const BAD_WARNING =
-  // pt-BR kept: matches the pt-BR text-too-big warning message
+  // pt-BR kept: 'não cabe' is the pt-BR text of the warning emitted by src/model
   /não cabe|text larger than the box|unknown icon|stretched icon|does not exist in the specialization tokens/i;
 
 type Rec = Record<string, unknown>;

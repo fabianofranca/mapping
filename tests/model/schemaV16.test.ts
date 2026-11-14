@@ -1,5 +1,5 @@
-// Schema v16 (perspectivas): `project.id`, `perspectives` e `arrivals`. Migração v15 → v16 cria o
-// id e as listas vazias; as invariantes novas têm o código certo e reparo mecânico.
+// Schema v16 (perspectives): `project.id`, `perspectives` and `arrivals`. The v15 → v16 migration creates the
+// id and the empty lists; the new invariants have the right code and a mechanical repair.
 import { describe, expect, it } from 'vitest';
 import {
   SCHEMA_VERSION,
@@ -25,7 +25,7 @@ function load(text: string) {
   return result;
 }
 
-/** O projeto como um mapping.json v15: sem `project.id`, `perspectives` nem `arrivals`. */
+/** The project as a v15 mapping.json: without `project.id`, `perspectives` or `arrivals`. */
 const v15Raw = (): Raw => {
   const raw = JSON.parse(serialize(sampleProject())) as Raw;
   raw.schemaVersion = 15;
@@ -48,7 +48,7 @@ const canvasMarking = (id: string, extra: Partial<Marking> = {}): Marking => ({
   ...extra,
 });
 
-/** O sampleProject com raízes dos três tipos e duas perspectivas válidas. */
+/** The sampleProject with roots of the three kinds and two valid perspectives. */
 function withPerspectives(): Project {
   const p = sampleProject();
   return {
@@ -70,7 +70,7 @@ function withPerspectives(): Project {
       },
       {
         id: 'P2',
-        name: 'Outra',
+        name: 'Other',
         hiddenLayers: [],
         items: [
           { root: 'I2', x: 5, y: 5 },
@@ -83,12 +83,12 @@ function withPerspectives(): Project {
 }
 
 describe('schema v16', () => {
-  it('o registro tem a migração v15 → v16', () => {
+  it('the registry has the v15 → v16 migration', () => {
     expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(16);
     expect(migrations.get(15)).toBe(migrateFrom15To16);
   });
 
-  it('a migração cria o id do projeto e as listas vazias', () => {
+  it('the migration creates the project id and the empty lists', () => {
     const out = migrateFrom15To16({ project: { name: 'X' }, extra: 1 });
     expect((out.project as Raw).id).toMatch(UUID);
     expect((out.project as Raw).name).toBe('X');
@@ -97,16 +97,16 @@ describe('schema v16', () => {
     expect(out.extra).toBe(1);
   });
 
-  it('a migração preserva valores já presentes', () => {
+  it('the migration preserves existing values', () => {
     const present = {
-      project: { id: 'fixo', name: 'X' },
+      project: { id: 'fixed', name: 'X' },
       perspectives: [{ id: 'P1' }],
       arrivals: [{ root: 'M1' }],
     };
     expect(migrateFrom15To16(present)).toEqual(present);
   });
 
-  it('o v15 abre, migra (migratedFrom 15) e grava v16 sem perder nada', () => {
+  it('the v15 opens, migrates (migratedFrom 15) and writes v16 without losing anything', () => {
     const result = load(JSON.stringify(v15Raw(), null, 2));
     expect(result.migratedFrom).toBe(15);
     expect(result.readOnly).toBe(false);
@@ -125,13 +125,13 @@ describe('schema v16', () => {
     expect(saved.project.id).toBe(result.project.project.id);
     expect(saved.perspectives).toEqual([]);
     expect(saved.arrivals).toEqual([]);
-    // Estável: o id criado na migração é gravado e relido igual.
+    // Stable: the id created in the migration is written and re-read the same.
     expect(serialize(load(serialize(result.project)).project)).toBe(
       serialize(result.project),
     );
   });
 
-  it('um v16 com perspectivas e chegadas faz round-trip exato, na ordem das chaves', () => {
+  it('a v16 with perspectives and arrivals does an exact round-trip, in key order', () => {
     const p = withPerspectives();
     expect(validateProject(p)).toEqual([]);
     const text = serialize(p);
@@ -159,7 +159,7 @@ describe('schema v16', () => {
     expect(Object.keys(raw.arrivals[0])).toEqual(['root', 'from', 'fromName']);
   });
 
-  it('um v16 sem perspectives nem arrivals abre com listas vazias', () => {
+  it('a v16 without perspectives or arrivals opens with empty lists', () => {
     const raw = JSON.parse(serialize(sampleProject())) as Raw;
     delete raw.perspectives;
     delete raw.arrivals;
@@ -168,7 +168,7 @@ describe('schema v16', () => {
     expect(loaded.project.arrivals).toEqual([]);
   });
 
-  it('project.id vazio ou ausente no v16 é recusado', () => {
+  it('an empty or missing project.id in v16 is refused', () => {
     const raw = JSON.parse(serialize(sampleProject())) as Raw;
     raw.project.id = '';
     expect(deserialize(JSON.stringify(raw), migrations).ok).toBe(false);
@@ -176,13 +176,13 @@ describe('schema v16', () => {
     expect(deserialize(JSON.stringify(raw), migrations).ok).toBe(false);
   });
 
-  it('x e y precisam ser números finitos', () => {
+  it('x and y must be finite numbers', () => {
     const raw = JSON.parse(serialize(withPerspectives())) as Raw;
     raw.perspectives[0].items[0].x = 'a';
     expect(deserialize(JSON.stringify(raw), migrations).ok).toBe(false);
   });
 
-  it('o v21 abre só para leitura ("versão mais nova")', () => {
+  it('the v21 opens read-only ("newer version")', () => {
     const p = withPerspectives();
     const newer = JSON.stringify({ ...JSON.parse(serialize(p)), schemaVersion: 21 });
     const loaded = load(newer);
@@ -217,7 +217,7 @@ const CASES: readonly (readonly [string, InvalidCase])[] = (
     [
       'perspective-root-not-root',
       'perspective',
-      // M1 é marcação de container; MN não existe como raiz de nada.
+      // M1 is a container marking; MN does not exist as a root of anything.
       withFirstPerspective((x) => ({
         ...x,
         items: [...x.items, { root: 'M1', x: 0, y: 0 }],
@@ -275,31 +275,31 @@ const CASES: readonly (readonly [string, InvalidCase])[] = (
       'arrival',
       (p: Project) => ({
         ...p,
-        arrivals: [...p.arrivals, { root: 'MC', from: 'P2', fromName: 'Outra' }],
+        arrivals: [...p.arrivals, { root: 'MC', from: 'P2', fromName: 'Other' }],
       }),
     ],
   ] as const
 ).map(([code, entity, build]) => [code, { code, entity, build }] as const);
 
-describe('invariantes das perspectivas', () => {
-  it.each(CASES)('%s: recusa com o código certo e o reparo resolve', (_, c) => {
+describe('perspective invariants', () => {
+  it.each(CASES)('%s: refuses with the right code and the repair fixes it', (_, c) => {
     const broken = c.build(withPerspectives());
     const issues = validateProject(broken);
     expect(issues.map((i) => i.code)).toContain(c.code);
     expect(issues.find((i) => i.code === c.code)?.entity).toBe(c.entity);
 
     const result = deserialize(serialize(broken), migrations);
-    if (result.ok) throw new Error('deveria ser recusado');
+    if (result.ok) throw new Error('should have been refused');
     expect(result.error.code).toBe('invariant-violation');
     const repair = result.repair;
-    if (!repair) throw new Error('sem reparo');
+    if (!repair) throw new Error('no repair');
     expect(repair.unrepaired).toEqual([]);
     expect(repair.repaired.length).toBeGreaterThan(0);
     expect(validateProject(repair.project)).toEqual([]);
     expect(deserialize(serialize(repair.project), migrations).ok).toBe(true);
   });
 
-  it('o reparo tira só o que está errado e mantém o resto', () => {
+  it('the repair removes only what is wrong and keeps the rest', () => {
     const base = withPerspectives();
     const broken: Project = {
       ...base,
@@ -318,7 +318,7 @@ describe('invariantes das perspectivas', () => {
     expect(result.project.perspectives).toEqual(base.perspectives);
   });
 
-  it('nome repetido ganha um número; o primeiro fica', () => {
+  it('a repeated name gets a number; the first one stays', () => {
     const base = withPerspectives();
     const broken: Project = {
       ...base,
@@ -334,7 +334,7 @@ describe('invariantes das perspectivas', () => {
     ]);
   });
 
-  it('id repetido de perspectiva: a segunda ganha id novo; a chegada segue na primeira', () => {
+  it('repeated perspective id: the second gets a new id; the arrival stays on the first', () => {
     const base = withPerspectives();
     const broken: Project = {
       ...base,

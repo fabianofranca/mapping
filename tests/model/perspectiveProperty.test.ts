@@ -36,11 +36,11 @@ import {
 import { emptyProject } from './fixtures';
 import { int, pick, rng, type Rand } from './proposalFuzzSupport';
 
-// Propriedade (v16, checklist da #661): sequências de operações reais do modelo sobre um projeto
-// com containers, marcações do canvas, flutuantes, setas e perspectivas. Depois de cada uma o
-// projeto é válido (`validateProject`, que inclui as invariantes das perspectivas e das chegadas),
-// as perspectivas estão limpas (a reconciliação é idempotente), a vista de cada uma se monta, e
-// o assentar não muda mais nada. Semente fixa; operação recusada pelo modelo é pulada.
+// Property (v16, checklist of #661): sequences of real model operations over a project
+// with containers, canvas markings, floating ones, arrows and perspectives. After each one the
+// project is valid (`validateProject`, which includes the invariants of the perspectives and arrivals),
+// the perspectives are clean (the reconciliation is idempotent), each one's view builds, and
+// the settle changes nothing more. Fixed seed; an operation refused by the model is skipped.
 
 const SEED = 659_001;
 const STEPS = 600;
@@ -60,7 +60,7 @@ function placed(p: Project, id: string, x: number, y: number, size: number): Pro
 }
 
 function initial(): Project {
-  let p = addLayer(emptyProject(), { id: 'L2', name: 'Dois', color: '#1E88E5' });
+  let p = addLayer(emptyProject(), { id: 'L2', name: 'Two', color: '#1E88E5' });
   p = placed(p, 'C1', 0, 0, 400);
   p = placed(p, 'C2', 600, 0, 400);
   p = placed(p, 'C3', 1200, 0, 400);
@@ -96,11 +96,11 @@ function initial(): Project {
   ] as const) {
     p = createArrow(p, { id, from, to });
   }
-  const all = buildPerspective(p, { id: 'P1', name: 'Tudo', startFrom: null });
+  const all = buildPerspective(p, { id: 'P1', name: 'Everything', startFrom: null });
   p = addPerspective(p, all);
   const few = buildPerspective(p, {
     id: 'P2',
-    name: 'Poucas',
+    name: 'Few',
     startFrom: 'empty',
     hiddenLayers: ['L2'],
   });
@@ -124,7 +124,7 @@ function pickItems(r: Rand, p: Project, count: number): ItemRef[] {
   return all.length === 0 ? [] : Array.from({ length: count }, () => pick(r, all));
 }
 
-/** Uma raiz criada "numa perspectiva" e levada à Principal pela chegada. */
+/** A root created "in a perspective" and taken to the Main one by the arrival. */
 function arrival(r: Rand, p: Project, id: string): Project {
   const from = pickPerspective(r, p);
   if (!from) return p;
@@ -216,7 +216,7 @@ const OPS: readonly Op[] = [
           p,
           buildPerspective(p, {
             id,
-            name: `Vista ${id}`,
+            name: `View ${id}`,
             startFrom: pickPerspective(r, p),
           }),
         )
@@ -228,28 +228,28 @@ const OPS: readonly Op[] = [
   (r, p) => (int(r, 8) === 0 ? removeLayer(p, 'L2') : p),
 ];
 
-/** Invariantes próprias das perspectivas, além do `validateProject`. */
+/** Invariants specific to the perspectives, besides `validateProject`. */
 function problems(p: Project): string[] {
   const out: string[] = [];
   const index = projectIndex(p);
   const names = new Set<string>();
   for (const x of p.perspectives) {
     const key = x.name.trim().toLowerCase();
-    if (names.has(key)) out.push(`nome repetido ${x.name}`);
+    if (names.has(key)) out.push(`repeated name ${x.name}`);
     names.add(key);
     const seen = new Set<string>();
     for (const item of x.items) {
       if (index.rootOf.get(item.root) !== item.root)
-        out.push(`${x.id}: ${item.root} não é raiz`);
+        out.push(`${x.id}: ${item.root} is not a root`);
       if (seen.has(item.root)) out.push(`${x.id}: ${item.root} repetida`);
       seen.add(item.root);
       if (!Number.isFinite(item.x) || !Number.isFinite(item.y))
-        out.push('posição inválida');
+        out.push('invalid position');
       if (
         index.markings.has(item.root) &&
         !(Number.isInteger(item.x) && Number.isInteger(item.y))
       ) {
-        out.push(`${x.id}: ${item.root} é marcação com posição fracionária`);
+        out.push(`${x.id}: ${item.root} is a marking with a fractional position`);
       }
     }
     for (const layer of x.hiddenLayers) {
@@ -259,7 +259,7 @@ function problems(p: Project): string[] {
   }
   const arrived = new Set<string>();
   for (const a of p.arrivals) {
-    if (index.rootOf.get(a.root) !== a.root) out.push(`chegada ${a.root} não é raiz`);
+    if (index.rootOf.get(a.root) !== a.root) out.push(`arrival ${a.root} is not a root`);
     if (arrived.has(a.root)) out.push(`chegada ${a.root} repetida`);
     arrived.add(a.root);
   }
@@ -281,14 +281,14 @@ function viewProblems(p: Project, x: Perspective): string[] {
   }
   for (const m of view.markings) {
     if (m.containerId === null && !Object.values(m.rect).every(Number.isInteger)) {
-      out.push(`vista: ${m.id} com rect fracionário`);
+      out.push(`view: ${m.id} with a fractional rect`);
     }
   }
   return out;
 }
 
-describe('perspectivas: propriedade sobre sequências de operações', () => {
-  it(`${STEPS} operações reais deixam o projeto válido, limpo e assentado`, () => {
+describe('perspectives: property over sequences of operations', () => {
+  it(`${STEPS} real operations leave the project valid, clean and settled`, () => {
     const r = rng(SEED);
     let p = initial();
     expect(validateProject(p)).toEqual([]);
@@ -319,7 +319,7 @@ describe('perspectivas: propriedade sobre sequências de operações', () => {
       expect(settleHierarchy(p)).toBe(p);
     }
     const elapsed = performance.now() - started;
-    // Quantas operações de fato mudaram o projeto: a sequência precisa exercitar o modelo.
+    // How many operations actually changed the project: the sequence must exercise the model.
     expect(applied).toBeGreaterThanOrEqual(300);
     expect(elapsed).toBeLessThan(3000);
   });

@@ -1,5 +1,5 @@
-// Schema v18 (modo do desenho): `drawingMode` no projeto e no container. A migração v17 → v18 só
-// muda a versão; o modo ausente é o primeiro modo de cada especialização.
+// Schema v18 (drawing mode): `drawingMode` on the project and on the container. The v17 → v18 migration only
+// changes the version; the missing mode is the first mode of each specialization.
 import { describe, expect, it } from 'vitest';
 import {
   SCHEMA_VERSION,
@@ -28,17 +28,17 @@ function open(raw: Raw): Project {
 }
 
 describe('schema v18', () => {
-  it('a versão atual é 18 e o registro tem a migração v17 → v18', () => {
+  it('the current version is 18 and the registry has the v17 → v18 migration', () => {
     expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(18);
     expect(migrations.get(17)).toBe(migrateFrom17To18);
   });
 
-  it('a migração v17 → v18 não muda os dados', () => {
-    const data = { project: { id: 'fixo', name: 'X' }, extra: 1 };
+  it('the v17 → v18 migration does not change the data', () => {
+    const data = { project: { id: 'fixed', name: 'X' }, extra: 1 };
     expect(migrateFrom17To18(data)).toEqual(data);
   });
 
-  it('um mapping.json v17 migra para v18 sem alterar nada além da versão', () => {
+  it('a v17 mapping.json migrates to v18 without changing anything but the version', () => {
     const result = deserialize(JSON.stringify(v17Raw()), migrations);
     if (!result.ok) throw new Error(JSON.stringify(result.error));
     expect(result.migratedFrom).toBe(17);
@@ -50,7 +50,7 @@ describe('schema v18', () => {
     expect((saved.containers as Raw[]).every((c) => !('drawingMode' in c))).toBe(true);
   });
 
-  it('projeto com drawingMode "dark" e container com null são válidos e fazem round-trip', () => {
+  it('a project with drawingMode "dark" and a container with null are valid and round-trip', () => {
     const raw = v17Raw();
     raw.schemaVersion = 18;
     raw.drawingMode = 'dark';
@@ -60,11 +60,11 @@ describe('schema v18', () => {
     const text = serialize(project);
     const saved = JSON.parse(text) as Raw;
     expect(saved.drawingMode).toBe('dark');
-    // `null` é o mesmo que ausente: segue o projeto, e o arquivo não guarda a chave.
+    // `null` is the same as missing: it follows the project, and the file does not store the key.
     expect('drawingMode' in (saved.containers as Raw[])[0]!).toBe(false);
   });
 
-  it('container com drawingMode fixado é gravado', () => {
+  it('a container with a pinned drawingMode is written', () => {
     const raw = v17Raw();
     raw.schemaVersion = 18;
     (raw.containers as Raw[])[0] = {
@@ -75,7 +75,7 @@ describe('schema v18', () => {
     expect((saved.containers as Raw[])[0]!.drawingMode).toBe('light');
   });
 
-  it('drawingMode que não é texto falha', () => {
+  it('a drawingMode that is not text fails', () => {
     const raw = v17Raw();
     raw.schemaVersion = 18;
     raw.drawingMode = 3;

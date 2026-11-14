@@ -20,7 +20,7 @@ import { AT, changeOf, decided, propose } from './proposalFixtures';
 
 type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-/** Proposta com criação, alteração e remoção, decisões, nota e uma aplicada, como JSON. */
+/** Proposal with creation, change and removal, decisions, a note and an applied one, as JSON. */
 function sample(): Json {
   const base = sampleProject();
   let after = createMarking(base, {
@@ -28,11 +28,11 @@ function sample(): Json {
     containerId: 'I2',
     rect: { x: 300, y: 300, width: 100, height: 100 },
   });
-  after = renameMarking(after, 'M4', 'Farol');
+  after = renameMarking(after, 'M4', 'Lighthouse');
   after = removeMarking(after, 'M3');
   let p = propose(base, after);
-  // Mudanças: c1 altera M4, c2 cria M9, c3 remove M3. No JSON, na ordem criação,
-  // alteração e remoção; c2 aceita e aplicada, c1 rejeitada com uma nota.
+  // Changes: c1 changes M4, c2 creates M9, c3 removes M3. In the JSON, in the order creation,
+  // change and removal; c2 accepted and applied, c1 rejected with a note.
   p = decided(p, base, { level: 'change', id: 'c2' }, 'accepted');
   p = decided(p, base, { level: 'change', id: 'c1' }, 'rejected');
   const json = JSON.parse(serializeProposal(p)) as Json;
@@ -40,19 +40,19 @@ function sample(): Json {
   json.changes = [byId('c2'), byId('c1'), byId('c3')];
   json.applied = { c2: { at: AT } };
   json.notes = [
-    { id: 'n1', target: { level: 'change', id: 'c1' }, text: 'Não.', at: AT },
+    { id: 'n1', target: { level: 'change', id: 'c1' }, text: 'No.', at: AT },
   ];
   return json;
 }
 
 function errorsOf(data: unknown): string[] {
   const result = parseProposal(data);
-  if (result.ok) throw new Error('era para falhar');
+  if (result.ok) throw new Error('expected to fail');
   return result.errors;
 }
 
 describe('formato da proposta', () => {
-  it('lê a formatVersion 1, 2 e 3', () => {
+  it('reads formatVersion 1, 2 and 3', () => {
     for (const formatVersion of [1, 2, 3]) {
       const result = parseProposal({ ...sample(), formatVersion });
       if (!result.ok) throw new Error(result.errors.join('\n'));
@@ -60,7 +60,7 @@ describe('formato da proposta', () => {
     }
   });
 
-  it('o exemplo é válido e volta igual', () => {
+  it('the example is valid and comes back the same', () => {
     const json = sample();
     const result = parseProposal(json);
     if (!result.ok) throw new Error(result.errors.join('\n'));
@@ -72,7 +72,7 @@ describe('formato da proposta', () => {
     ]);
   });
 
-  it('caminhos de arquivo da proposta', () => {
+  it('proposal file paths', () => {
     expect(proposalFilePath('8c1f')).toBe('proposals/8c1f/proposal.json');
     expect(proposalImagePath('8c1f', 'images/tela.webp')).toBe(
       'proposals/8c1f/images/tela.webp',
@@ -90,52 +90,52 @@ describe('formato da proposta', () => {
       (p) => (p.formatVersion = 10),
       'formatVersion: must be 1, 2, 3, 4, 5, 6, 7, 8 or 9',
     ],
-    ['id com barra', (p) => (p.id = '../fora'), 'id: invalid id'],
-    ['título vazio', (p) => (p.title = '  '), 'title: cannot be empty'],
-    ['data inválida', (p) => (p.createdAt = 'ontem'), 'createdAt: invalid date'],
+    ['id with a slash', (p) => (p.id = '../outside'), 'id: invalid id'],
+    ['empty title', (p) => (p.title = '  '), 'title: cannot be empty'],
+    ['invalid date', (p) => (p.createdAt = 'yesterday'), 'createdAt: invalid date'],
     ['status desconhecido', (p) => (p.status = 'draft'), 'status: must be "open"'],
     ['substitui a si mesma', (p) => (p.supersedes = p.id), 'supersedes: a proposal'],
-    ['tipo de mudança inválido', (p) => (p.changes[0].kind = 'move'), 'changes[0].kind:'],
-    ['entidade inválida', (p) => (p.changes[0].entity = 'tela'), 'changes[0].entity:'],
+    ['invalid change kind', (p) => (p.changes[0].kind = 'move'), 'changes[0].kind:'],
+    ['invalid entity', (p) => (p.changes[0].entity = 'screen'), 'changes[0].entity:'],
     [
-      'rect fracionado na criação',
+      'fractional rect on creation',
       (p) => (p.changes[0].to.rect.width = 10.5),
       'changes[0].to.rect.width:',
     ],
     [
-      'criação com from',
+      'creation with from',
       (p) => (p.changes[0].from = {}),
       'changes[0].from: must be null',
     ],
-    ['id da entidade diferente', (p) => (p.changes[0].to.id = 'M8'), 'changes[0].to.id:'],
+    ['different entity id', (p) => (p.changes[0].to.id = 'M8'), 'changes[0].to.id:'],
     [
       'campo desconhecido',
       (p) => (p.changes[1].field = 'cor'),
       'changes[1].field: "cor" is not a field of marking',
     ],
     [
-      'alteração sem campo',
+      'change with no field',
       (p) => (p.changes[1].field = null),
       'changes[1].field: required',
     ],
-    ['valor do campo com tipo errado', (p) => (p.changes[1].to = 3), 'changes[1].to:'],
-    ['remoção com to', (p) => (p.changes[2].to = {}), 'changes[2].to: must be null'],
+    ['field value with the wrong type', (p) => (p.changes[1].to = 3), 'changes[1].to:'],
+    ['removal with to', (p) => (p.changes[2].to = {}), 'changes[2].to: must be null'],
     [
-      'marcação sem markingId',
+      'marking with no markingId',
       (p) => (p.changes[2].markingId = null),
       'changes[2].markingId:',
     ],
     [
-      'id de mudança repetido',
+      'repeated change id',
       (p) => (p.changes[1].id = 'c2'),
       'changes[1].id: duplicate id "c2"',
     ],
     [
-      'decisão de mudança inexistente',
+      'decision on a nonexistent change',
       (p) => (p.decisions.c9 = { state: 'accepted', at: AT }),
       'decisions.c9: nonexistent change',
     ],
-    ['decisão inválida', (p) => (p.decisions.c1.state = 'maybe'), 'decisions.c1.state:'],
+    ['invalid decision', (p) => (p.decisions.c1.state = 'maybe'), 'decisions.c1.state:'],
     [
       'aplicada sem aceitar',
       (p) => (p.applied.c1 = { at: AT }),
@@ -147,12 +147,12 @@ describe('formato da proposta', () => {
       'notes[0].target.id: must be null',
     ],
     [
-      'nota de mudança inexistente',
+      'note on a nonexistent change',
       (p) => (p.notes[0].target.id = 'c9'),
       'notes[0].target.id: nonexistent change',
     ],
     [
-      'nota de item sem id',
+      'note on an item with no id',
       (p) => (p.notes[0].target = { level: 'item', id: null }),
       'notes[0].target.id: required',
     ],
@@ -166,7 +166,7 @@ describe('formato da proposta', () => {
     ).toBe(true);
   });
 
-  it('valores de especialização e repositório também são validados por caminho', () => {
+  it('specialization and repository values are also validated by path', () => {
     const json = sample();
     json.changes.push({
       id: 'c4',
@@ -205,7 +205,7 @@ describe('formato da proposta', () => {
     expect(errors.some((e) => e.startsWith('changes[4].to.localPath:'))).toBe(true);
   });
 
-  it('proposta anterior ao schema 11: o urlTemplate de platformRepo é ignorado na leitura', () => {
+  it('a proposal predating schema 11: the platformRepo urlTemplate is ignored on read', () => {
     const json = sample();
     const change = (id: string, kind: string, from: unknown, to: unknown) => ({
       id,
@@ -223,7 +223,7 @@ describe('formato da proposta', () => {
         urlTemplate: 'https://git.example.com/ios/{path}',
         localPath: '../ios',
       }),
-      // A mudança era só do endereço: fica uma atualização sem efeito (from igual a to).
+      // The change was only to the address: it becomes a no-op update (from equal to to).
       change(
         'c6',
         'update',
@@ -240,21 +240,21 @@ describe('formato da proposta', () => {
       ['c6', { localPath: null }, { localPath: null }],
       ['c7', { localPath: '..' }, null],
     ]);
-    // Gravada de novo, a proposta já sai no formato novo.
+    // Saved again, the proposal already comes out in the new format.
     expect(serializeProposal(result.proposal)).not.toContain('urlTemplate');
   });
 
-  it('JSON malformado vira um erro legível', () => {
+  it('malformed JSON becomes a readable error', () => {
     const result = parseProposalText('{ "format": ');
     expect(result.ok).toBe(false);
     expect(!result.ok && result.errors[0]?.startsWith('invalid JSON')).toBe(true);
   });
 });
 
-describe('comparação com a proposta que substitui', () => {
+describe('comparison with the proposal that replaces it', () => {
   function rounds(): { base: Project; first: Proposal; second: Proposal } {
     const base = sampleProject();
-    let a = renameMarking(base, 'M4', 'Farol');
+    let a = renameMarking(base, 'M4', 'Lighthouse');
     a = setMarkingRect(a, 'M2', { x: 1200, y: 1200, width: 400, height: 300 });
     a = renameMarking(a, 'M1', 'Porta dianteira');
     a = addContainer(a, { id: 'T1', file: 'images/t.png', width: 500, height: 500 });
@@ -271,10 +271,10 @@ describe('comparação com a proposta que substitui', () => {
     });
     const first = propose(base, a, { id: 'P1' });
 
-    let b = renameMarking(base, 'M4', 'Farol');
+    let b = renameMarking(base, 'M4', 'Lighthouse');
     b = setMarkingRect(b, 'M2', { x: 1200, y: 1200, width: 400, height: 250 });
     b = addContainer(b, { id: 'T1', file: 'images/t.png', width: 500, height: 500 });
-    // A mesma marcação de origem, recriada com outro id.
+    // The same source marking, recreated with another id.
     b = createMarking(b, {
       id: 'Z1',
       containerId: 'T1',
@@ -285,7 +285,7 @@ describe('comparação com a proposta que substitui', () => {
     return { base, first, second };
   }
 
-  it('cada mudança da antiga é igual, diferente ou não consta na nova', () => {
+  it('each change of the old one is equal, different or absent from the new one', () => {
     const { first, second } = rounds();
     const result = compareProposals(first, second);
     const of = (entity: 'image' | 'marking', id: string, field?: string) =>
@@ -294,15 +294,15 @@ describe('comparação com a proposta que substitui', () => {
     expect(of('marking', 'M2', 'rect')).toBe('different');
     expect(of('marking', 'M1', 'name')).toBe('missing');
     expect(of('image', 'T1')).toBe('same');
-    // Casada pela origem, apesar do id novo.
+    // Matched by source, despite the new id.
     expect(of('marking', 'X1')).toBe('same');
     expect(of('marking', 'X2')).toBe('missing');
     expect(result.size).toBe(first.changes.length);
   });
 
-  it('mexer de outro jeito na mesma entidade conta como diferente', () => {
+  it('changing the same entity in another way counts as different', () => {
     const base = sampleProject();
-    const first = propose(base, renameMarking(base, 'M4', 'Farol'));
+    const first = propose(base, renameMarking(base, 'M4', 'Lighthouse'));
     const second = propose(base, removeMarking(base, 'M4'), { id: 'P2' });
     expect([...compareProposals(first, second).values()]).toEqual(['different']);
   });

@@ -344,7 +344,10 @@ const structural: [string, (s: Json) => void][] = [
     'invalid field type',
     (s) => (s.layers[0].annotationTypes[1].fields[2].type = 'bogus'),
   ],
-  ['enum without options', (s) => delete s.layers[0].annotationTypes[0].fields[2].options],
+  [
+    'enum without options',
+    (s) => delete s.layers[0].annotationTypes[0].fields[2].options,
+  ],
   [
     'column ref without accepts',
     (s) =>
@@ -353,7 +356,10 @@ const structural: [string, (s: Json) => void][] = [
         type: 'ref',
       }),
   ],
-  ['table without columns', (s) => delete s.layers[1].annotationTypes[0].fields[2].columns],
+  [
+    'table without columns',
+    (s) => delete s.layers[1].annotationTypes[0].fields[2].columns,
+  ],
   [
     'empty accepts',
     (s) => (s.layers[0].annotationTypes[1].fields[5].accepts = { tags: [] }),
@@ -455,7 +461,11 @@ const platformCases: [string, (s: Json) => void, string][] = [
     (s) => (s.platforms[0].id = 'Android'),
     'platforms[0].id:',
   ],
-  ['platforms[].id with a space', (s) => (s.platforms[1].id = 'i os'), 'platforms[1].id:'],
+  [
+    'platforms[].id with a space',
+    (s) => (s.platforms[1].id = 'i os'),
+    'platforms[1].id:',
+  ],
   ['platforms[].id empty', (s) => (s.platforms[2].id = ''), 'platforms[2].id:'],
   ['platforms[].id missing', (s) => delete s.platforms[0].id, 'platforms[0].id:'],
   [
@@ -711,7 +721,10 @@ const structuralV2: [string, (s: Json) => void][] = [
   ['platforms[].id outside the format', (s) => (s.platforms[0].id = 'Android')],
   ['platforms[].name missing', (s) => delete s.platforms[0].name],
   ['platforms[] with an unknown property', (s) => (s.platforms[0].extra = 1)],
-  ['code without symbol', (s) => delete s.layers[0].annotationTypes[0].code.android.symbol],
+  [
+    'code without symbol',
+    (s) => delete s.layers[0].annotationTypes[0].code.android.symbol,
+  ],
   [
     'code with a platform id outside the format',
     (s) => (s.layers[0].annotationTypes[0].code.Web = { symbol: 'X' }),

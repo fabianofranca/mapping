@@ -1,6 +1,6 @@
-// Etapa Material 3 com estados de interação (#869), fase ME1 (#912): tokens de estado, últimos literais
-// como token, o campo `interaction` do `button` (padrão das fases seguintes) e a atualização aditiva da
-// biblioteca. Referência: Compose `material3` 1.4.0, commit 5113b82a… (`tokens/StateTokens.kt`).
+// Material 3 with interaction states stage (#869), phase ME1 (#912): state tokens, last literals
+// as a token, the `interaction` field of the `button` (the pattern of the following phases) and the additive update of the
+// library. Reference: Compose `material3` 1.4.0, commit 5113b82a… (`tokens/StateTokens.kt`).
 import { describe, expect, it } from 'vitest';
 import { validateLibrary } from '../../src/model/library';
 import type { Spec } from '../../src/model/spec';
@@ -20,7 +20,7 @@ import { join } from 'node:path';
 
 const tokenValues = (spec.tokens?.values ?? {}) as Record<string, unknown>;
 
-/** Opções do `interaction` por tipo que já o recebeu (decisão 2 da #869); cresce a cada fase. */
+/** The `interaction` options per type that already received it (decision 2 of #869); grows with each phase. */
 const INTERACTION_OPTIONS: Record<string, string[]> = {
   button: ['none', 'hovered', 'focused', 'pressed'],
   fab: ['none', 'hovered', 'focused', 'pressed'],
@@ -44,13 +44,13 @@ const INTERACTION_OPTIONS: Record<string, string[]> = {
   'short-navigation-bar': ['none', 'hovered', 'focused', 'pressed'],
   'navigation-rail': ['none', 'hovered', 'focused', 'pressed'],
   'navigation-drawer': ['none', 'hovered', 'focused', 'pressed'],
-  // EX4 da etapa de expressões (#897)
+  // EX4 of the expressions stage (#897)
   'date-picker': ['none', 'hovered', 'focused', 'pressed'],
   'time-picker': ['none', 'hovered', 'focused', 'pressed'],
 };
 
-describe('tokens de estado (StateTokens.kt)', () => {
-  it('tem state-hover, state-focus, state-pressed e state-dragged com os valores do commit', () => {
+describe('state tokens (StateTokens.kt)', () => {
+  it('has state-hover, state-focus, state-pressed and state-dragged with the values of the commit', () => {
     expect(tokenValues['state-hover']).toBe(0.08);
     expect(tokenValues['state-focus']).toBe(0.1);
     expect(tokenValues['state-pressed']).toBe(0.1);
@@ -87,19 +87,19 @@ const templates = readdirSync(componentsDir)
     ).template,
   }));
 
-/** Literais que ficam como estão, com o motivo (decisão 8 da #869 só cobre o checkbox e o desabilitado). */
+/** Literals that stay as they are, with the reason (decision 8 of #869 only covers the checkbox and the disabled state). */
 const OPACITY_ALLOWED: Record<string, string> = {
-  surface: 'tabela da elevação tonal do Surface.kt (um valor por nível)',
-  carousel: 'véu de 55% sobre a imagem (sem token de estado no Compose)',
+  surface: 'tonal elevation table of Surface.kt (one value per level)',
+  carousel: '55% veil over the image (no state token in Compose)',
 };
 const RADIUS_ALLOWED: Record<string, string> = {
-  'bottom-sheet': 'quatro raios por lista: a lista não aceita token por item',
-  'navigation-drawer': 'quatro raios por lista (o modal arredonda só o lado de fora)',
-  slider: 'trilho com raios internos de 2 e externos de 8 (lista de quatro raios)',
+  'bottom-sheet': 'four radii per list: the list does not accept a token per item',
+  'navigation-drawer': 'four radii per list (the modal rounds only the outer side)',
+  slider: 'track with inner radii of 2 and outer radii of 8 (list of four radii)',
 };
 
-describe('nenhum literal que o Material 3 nomeie', () => {
-  it.each(templates)('$id: opacity literal só 0 ou 1', ({ id, template }) => {
+describe('no literal that Material 3 names', () => {
+  it.each(templates)('$id: literal opacity only 0 or 1', ({ id, template }) => {
     if (id in OPACITY_ALLOWED) return;
     const bad = collect(template, 'opacity').flatMap((v) =>
       numbers(v).filter((n) => n !== 0 && n !== 1),
@@ -108,7 +108,7 @@ describe('nenhum literal que o Material 3 nomeie', () => {
   });
 
   it.each(templates)(
-    '$id: cornerRadius literal não repete um corner-* nomeado',
+    '$id: literal cornerRadius does not repeat a named corner-*',
     ({ id, template }) => {
       if (id in RADIUS_ALLOWED) return;
       const named = new Set(
@@ -121,36 +121,38 @@ describe('nenhum literal que o Material 3 nomeie', () => {
       );
       const literal = collect(template, 'cornerRadius').flatMap((v) => numbers(v));
       const bad = literal.filter((n) => n > 0 && n < 1000);
-      // O raio de 2 do checkbox e o de 3 do indicador do tabs não têm nome no conjunto de formas, mas o
-      // checkbox ganha token próprio (CheckboxTokens.ContainerShape): nenhum raio literal positivo sobra.
+      // The 2 radius of the checkbox and the 3 one of the tabs indicator have no name in the shape set, but the
+      // checkbox gets its own token (CheckboxTokens.ContainerShape): no positive literal radius is left.
       expect(bad.filter((n) => named.has(n) || id === 'checkbox')).toEqual([]);
     },
   );
 
-  it('o checkbox usa o token corner-checkbox (2) no lugar do literal', () => {
+  it('the checkbox uses the corner-checkbox token (2) in place of the literal', () => {
     expect(tokenValues['corner-checkbox']).toBe(2);
   });
 });
 
-describe('button: campo interaction', () => {
+describe('button: interaction field', () => {
   const button = typeOf('button');
   const field = button.fields.find((f) => f.key === 'interaction');
 
-  it('é um enum opcional com as opções do Compose, padrão none, fora do code', () => {
+  it('is an optional enum with the Compose options, default none, outside the code', () => {
     expect(field).toMatchObject({
       key: 'interaction',
+      // pt-BR kept: shared library data (field label of libraries/material3-compose)
       label: 'Interação',
       type: 'enum',
       default: 'none',
       options: INTERACTION_OPTIONS.button,
     });
     expect(field?.required).not.toBe(true);
-    // `interactionSource` é o parâmetro do Compose que o `ignore` deixa de fora (importação, #1079 S5): não é o campo.
+    // `interactionSource` is the Compose parameter that the `ignore` leaves out (import, #1079 S5): it is not the field.
     const code = JSON.stringify(button.code ?? {}).replaceAll('interactionSource', '');
     expect(code).not.toContain('interaction');
   });
 
-  it('a descrição diz que o desabilitado vence', () => {
+  it('the description says the disabled state wins', () => {
+    // pt-BR kept: shared library data (field description of libraries/material3-compose)
     expect(field?.description).toMatch(/habilitado|enabled/i);
     expect(field?.description).toMatch(/desabilitad|false/i);
   });
@@ -159,13 +161,13 @@ describe('button: campo interaction', () => {
   const entry = findEntry(catalog, 'button')!;
   const STYLES = ['filled', 'tonal', 'outlined', 'text', 'elevated'];
   const draw = (values: Record<string, string>, mode: 'light' | 'dark') =>
-    drawIn(catalog, entry, { label: 'Salvar', ...values }, mode);
+    drawIn(catalog, entry, { label: 'Save', ...values }, mode);
 
   it.each(['hovered', 'focused', 'pressed'])(
-    'tem um exemplo para %s que desenha sem aviso nos dois modos',
+    'has an example for %s that draws without a warning in both modes',
     (state) => {
       const example = entry.examples.find((e) => e.values?.interaction === state);
-      expect(example, `exemplo de ${state}`).toBeDefined();
+      expect(example, `example of ${state}`).toBeDefined();
       for (const mode of ['light', 'dark'] as const) {
         const drawing = drawIn(catalog, entry, example?.values ?? {}, mode);
         expect(drawing.warnings, `${state} ${mode}`).toEqual([]);
@@ -176,7 +178,7 @@ describe('button: campo interaction', () => {
   it.each(
     STYLES.flatMap((s) => (['light', 'dark'] as const).map((m) => [s, m] as const)),
   )(
-    '%s (%s): hovered, focused e pressed diferem de none (a camada existe)',
+    '%s (%s): hovered, focused and pressed differ from none (the layer exists)',
     (style, mode) => {
       const base = JSON.stringify(draw({ style, interaction: 'none' }, mode).root);
       for (const interaction of ['hovered', 'focused', 'pressed']) {
@@ -187,7 +189,7 @@ describe('button: campo interaction', () => {
     },
   );
 
-  it.each(STYLES)('%s: com enabled false o interaction não desenha nada', (style) => {
+  it.each(STYLES)('%s: with enabled false the interaction draws nothing', (style) => {
     for (const mode of ['light', 'dark'] as const) {
       const off = JSON.stringify(
         draw({ style, enabled: 'false', interaction: 'none' }, mode).root,
@@ -201,7 +203,7 @@ describe('button: campo interaction', () => {
     }
   });
 
-  it('pressed e hovered diferem entre si no elevated (a elevação muda por estado)', () => {
+  it('pressed and hovered differ from each other in elevated (the elevation changes per state)', () => {
     const a = JSON.stringify(
       draw({ style: 'elevated', interaction: 'hovered' }, 'light').root,
     );
@@ -212,11 +214,11 @@ describe('button: campo interaction', () => {
   });
 });
 
-describe('teste final: os tipos com o interaction (ME1 a ME5)', () => {
+describe('final test: the types with the interaction (ME1 to ME5)', () => {
   const types = spec.layers.flatMap((l) => l.annotationTypes);
   const withField = types.filter((t) => t.fields.some((f) => f.key === 'interaction'));
 
-  it('são os 22 tipos da etapa e os 2 seletores da #897, cada um com as opções e o padrão', () => {
+  it('are the 22 types of the stage and the 2 pickers of #897, each with the options and the default', () => {
     expect(withField.map((t) => t.id).sort()).toEqual(
       Object.keys(INTERACTION_OPTIONS).sort(),
     );
@@ -232,25 +234,27 @@ describe('teste final: os tipos com o interaction (ME1 a ME5)', () => {
     }
   });
 
-  it('nenhum docs/<tipo>.md de quem tem o interaction diz que o desenho é estático', () => {
+  it('no docs/<type>.md of a type with the interaction says the drawing is static', () => {
     for (const t of withField) {
       const doc = readFileSync(join(ROOT, 'docs', `${t.id}.md`), 'utf8');
+      // pt-BR kept: shared library data (the docs/*.md of libraries/material3-compose are Portuguese)
       expect(doc, t.id).not.toMatch(/o desenho é estático/i);
+      // pt-BR kept: shared library data (the docs/*.md of libraries/material3-compose are Portuguese)
       expect(doc, t.id).not.toMatch(
         /Sem estados? de pressionado, foco e passar o mouse/i,
       );
     }
   });
 
-  it('a biblioteca valida com 0 erros e só os avisos conhecidos (provisório, #1774)', () => {
+  it('the library validates with 0 errors and only the known warnings (provisional, #1774)', () => {
     const report = validateLibrary({ files, specPath: SPEC_FILE });
     expect(report.errors).toEqual([]);
     expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
   }, 30_000);
 });
 
-describe('atualização da versão anterior da biblioteca para a nova', () => {
-  it('é aditiva: nenhum campo muda de chave, tipo ou opções, sem passos de migração', () => {
+describe('update from the previous library version to the new one', () => {
+  it('is additive: no field changes key, type or options, with no migration steps', () => {
     const previous = JSON.parse(JSON.stringify(spec)) as Spec;
     (previous as { version: number }).version = 3;
     for (const layer of previous.layers)
@@ -258,11 +262,11 @@ describe('atualização da versão anterior da biblioteca para a nova', () => {
         if (type.id in INTERACTION_OPTIONS)
           type.fields = type.fields.filter((f) => f.key !== 'interaction');
       }
-    // 7 depois da MF4 da #899 (a 6 foi a EX4 da #897; 11 depois da VL2 da #1504; 12 depois da S5 da #1120; 13 depois da RC1 da #1743; 14 depois da R5 da #1110)
+    // 7 after MF4 of #899 (6 was EX4 of #897; 11 after VL2 of #1504; 12 after S5 of #1120; 13 after RC1 of #1743; 14 after R5 of #1110)
     expect(spec.version).toBe(14);
     expect(missingMigrations(previous, spec)).toEqual([]);
-    // só a EX6 (#897) tem migração: o slider passou de enum a number (`fill-field`), e os campos
-    // que estes testes comparam não mudam
+    // only EX6 (#897) has a migration: the slider went from enum to number (`fill-field`), and the fields
+    // these tests compare do not change
     expect(
       (spec.migrations ?? []).flatMap((m) =>
         m.steps.map((s) => `${s.op}:${'type' in s ? s.type : ''}`),

@@ -1,7 +1,7 @@
-// M5 da etapa "Material 3 fiel", grupo B: tooltip, carousel, pull-to-refresh e swipe-to-dismiss contra o
-// que `Tooltip.kt`, `Carousel.kt`, `PullToRefresh.kt`, `SwipeToDismissBox.kt`, `ListItem.kt` e os arquivos
-// de tokens fixam no commit 5113b82a. As cores esperadas saem dos tokens da especialização (light e dark);
-// a geometria, das constantes do Compose (dp = px do componente).
+// M5 of the "faithful Material 3" stage, group B: tooltip, carousel, pull-to-refresh and swipe-to-dismiss against
+// what `Tooltip.kt`, `Carousel.kt`, `PullToRefresh.kt`, `SwipeToDismissBox.kt`, `ListItem.kt` and the token files
+// fix at commit 5113b82a. The expected colors come from the specialization tokens (light and dark);
+// the geometry, from the Compose constants (dp = component px).
 import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import { approximateMeasurer, instantiate } from '../../src/model/components/instantiate';
@@ -16,6 +16,23 @@ import type {
 } from '../../src/model/components/scene';
 import { drawIn, files, solid, spec, text } from '../support/material3Library';
 
+// pt-BR kept: shared library data, the node names of libraries/material3-compose are in Portuguese
+const NAMES = {
+  title: 'título',
+  text: 'texto',
+  actionButton: 'botão da ação',
+  refreshingIndicator: 'indicador atualizando',
+  pullingIndicator: 'indicador puxando',
+  ring: 'anel',
+  arrow: 'seta',
+  restingItem: 'item em repouso',
+  support: 'apoio',
+  itemSlidStart: 'item deslizado para o início',
+  itemSlidEnd: 'item deslizado para o fim',
+  image: 'imagem',
+  veil: 'véu',
+} as const;
+
 const catalog = buildCatalog(files);
 const entryOf = (id: string) => findEntry(catalog, id)!;
 type Values = Parameters<typeof drawIn>[2];
@@ -27,7 +44,7 @@ const both = (id: string, values: Values) => ({
   dark: drawIn(catalog, entryOf(id), values, 'dark'),
 });
 
-/** Desenha numa caixa que não é a do `size` (a marcação tem o retângulo que a pessoa desenhou). */
+/** Draws in a box that is not the `size` one (the marking has the rectangle the person drew). */
 function drawBox(
   id: string,
   values: Values,
@@ -50,13 +67,13 @@ function drawBox(
 }
 
 const tokens = spec.tokens!.values as Record<string, unknown>;
-/** Valor do token da especialização no modo (cor). */
+/** Value of the specialization token in the mode (color). */
 const tok = (name: string, mode: Mode): string => {
   const value = tokens[name] as string | Record<Mode, string>;
   return typeof value === 'string' ? value : value[mode];
 };
 const num = (name: string): number => tokens[name] as number;
-/** Confere as duas sombras do nível de elevação (ponto e ambiente): y, blur, spread e cor dos tokens. */
+/** Checks the two shadows of the elevation level (point and ambient): y, blur, spread and color of the tokens. */
 const expectElevation = (
   effects: readonly Shadow[],
   level: number,
@@ -76,7 +93,7 @@ const expectElevation = (
     expect(shadow?.color, `${where} ${kind}`).toBe(tok(`elevation-${kind}-shadow`, mode));
   }
 };
-/** O alfa de uma cor `#rrggbbaa` (sem o sufixo, 1), arredondado ao centésimo. */
+/** The alpha of a `#rrggbbaa` color (without the suffix, 1), rounded to the hundredth. */
 const alphaOf = (color: string): number =>
   color.length === 9 ? Math.round((parseInt(color.slice(7), 16) / 255) * 100) / 100 : 1;
 
@@ -87,7 +104,7 @@ const named = (d: Drawing, name: string): SceneNode | undefined => {
 const absOf = (d: Drawing, node: SceneNode) => absoluteBoxes(d.root).get(node.id)!;
 const box = (d: Drawing, name: string) => {
   const node = named(d, name);
-  if (node === undefined) throw new Error(`nó ausente: ${name}`);
+  if (node === undefined) throw new Error(`missing node: ${name}`);
   return { node, ...absOf(d, node) };
 };
 const fillOf = (d: Drawing, name: string): string | undefined =>
@@ -117,15 +134,13 @@ const scale = (name: string): number[] => [
 const numbers = (d: string): number[] =>
   [...d.matchAll(/-?\d+(?:\.\d+)?/g)].map((m) => Number(m[0]));
 
-describe('M5 grupo B — tooltip', () => {
+describe('M5 group B — tooltip', () => {
   const rich = (extra: Record<string, unknown> = {}): Values =>
-    ({ style: 'rich', text: 'Desliga o Wi-Fi.', ...extra }) as unknown as Values;
+    ({ style: 'rich', text: 'Turns off Wi-Fi.', ...extra }) as unknown as Values;
 
-  it('plain: pílula de 24 em inverse-surface com forma extra-small, padding 8 × 4 e texto body-small em inverse-on-surface', () => {
+  it('plain: 24 pill in inverse-surface with extra-small shape, 8 × 4 padding and body-small text in inverse-on-surface', () => {
     for (const mode of MODES) {
-      const d = both('tooltip', { style: 'plain', text: 'Adicionar aos favoritos' })[
-        mode
-      ];
+      const d = both('tooltip', { style: 'plain', text: 'Add to favorites' })[mode];
       const plain = box(d, 'plain');
       expect([plain.x, plain.y, plain.height]).toEqual([0, 0, 24]);
       expect(radiusOf(plain.node)).toBe(num('corner-extra-small'));
@@ -140,7 +155,7 @@ describe('M5 grupo B — tooltip', () => {
     }
   });
 
-  it('plain: largura mínima 40 (TooltipMinWidth) e máxima 200 (plainTooltipMaxWidth), com o texto quebrando em linhas de 16', () => {
+  it('plain: minimum width 40 (TooltipMinWidth) and maximum 200 (plainTooltipMaxWidth), with the text wrapping in lines of 16', () => {
     const short = drawBox('tooltip', { style: 'plain', text: 'Ok' }, 400, 100);
     expect(box(short, 'plain').width).toBe(40);
     expect(box(short, 'plain').height).toBe(24);
@@ -148,7 +163,7 @@ describe('M5 grupo B — tooltip', () => {
       'tooltip',
       {
         style: 'plain',
-        text: 'Um texto de dica bem comprido que precisa quebrar em mais de uma linha dentro do tooltip',
+        text: 'A very long hint text that needs to wrap onto more than one line inside the tooltip',
       },
       400,
       100,
@@ -160,7 +175,7 @@ describe('M5 grupo B — tooltip', () => {
     expect(textIn(long, 'plain')!.width).toBe(200 - 16);
   });
 
-  it('rich: surface-container, forma medium (12), sombra do nível 2 e largura máxima 320 (richTooltipMaxWidth)', () => {
+  it('rich: surface-container, medium shape (12), level 2 shadow and maximum width 320 (richTooltipMaxWidth)', () => {
     for (const mode of MODES) {
       const d = drawBox('tooltip', rich(), 400, 200, mode);
       const card = box(d, 'rich');
@@ -173,48 +188,48 @@ describe('M5 grupo B — tooltip', () => {
     expect(box(drawBox('tooltip', rich(), 240, 200), 'rich').width).toBe(240);
   });
 
-  it('rich só com texto: padding vertical 4 e horizontal 16, body-medium em on-surface-variant', () => {
+  it('rich with text only: vertical padding 4 and horizontal 16, body-medium in on-surface-variant', () => {
     for (const mode of MODES) {
       const d = drawBox('tooltip', rich(), 240, 200, mode);
       expect(box(d, 'rich').height).toBe(4 + 20 + 4);
-      const body = textIn(d, 'texto')!;
+      const body = textIn(d, NAMES.text)!;
       expect(fontOf(body)).toEqual(scale('body-medium'));
       expect(solid(body.fills)).toBe(tok('on-surface-variant', mode));
       expect([absOf(d, body).x, absOf(d, body).y]).toEqual([16, 4]);
     }
   });
 
-  it('rich com título: primeira linha de base a 28 do topo (HeightToSubheadFirstLine), base do texto 24 abaixo do fim da caixa do título (29 da base do título) e 16 de fundo', () => {
+  it('rich with title: first baseline 28 from the top (HeightToSubheadFirstLine), text baseline 24 below the end of the title box (29 from the title baseline) and 16 of bottom', () => {
     for (const mode of MODES) {
-      const d = drawBox('tooltip', rich({ title: 'Modo avião' }), 240, 200, mode);
-      const title = textIn(d, 'título')!;
+      const d = drawBox('tooltip', rich({ title: 'Airplane mode' }), 240, 200, mode);
+      const title = textIn(d, NAMES.title)!;
       expect(fontOf(title)).toEqual(scale('title-small'));
       expect(solid(title.fills)).toBe(tok('on-surface-variant', mode));
-      // MC5 (#1033): a caixa do título começa no topo e a primeira linha de base fica a 28 (baselinePadding)
+      // MC5 (#1033): the title box starts at the top and the first baseline stays at 28 (baselinePadding)
       expect([absOf(d, title).x, absOf(d, title).y, title.style.baselineTop]).toEqual([
         16, 0, 28,
       ]);
-      // o Compose põe a base do texto 24 abaixo do FIM da caixa do título (TooltipTest.kt linha 260,
-      // `subheadBound.bottom + 24`), e não 24 abaixo da base do título: 33 + 24 = 57
-      const body = textIn(d, 'texto')!;
+      // Compose puts the text baseline 24 below the END of the title box (TooltipTest.kt line 260,
+      // `subheadBound.bottom + 24`), not 24 below the title baseline: 33 + 24 = 57
+      const body = textIn(d, NAMES.text)!;
       expect(absOf(d, body).y + body.style.baselineTop!).toBeCloseTo(33 + 24, 6);
-      // 13 + 20 + 9 + 20 + 16 (TextBottomPadding): 78, e não os 73 de antes
+      // 13 + 20 + 9 + 20 + 16 (TextBottomPadding): 78, not the earlier 73
       expect(box(d, 'rich').height).toBe(78);
     }
   });
 
-  it('rich com ação: TextButton de 40 com label-large em primary, 12 de respiro, a 16 do texto e 8 do fundo', () => {
+  it('rich with action: 40 TextButton with label-large in primary, 12 of room, 16 from the text and 8 from the bottom', () => {
     for (const mode of MODES) {
       const d = drawBox(
         'tooltip',
-        rich({ title: 'Sincronização', action: 'Saiba mais' }),
+        rich({ title: 'Sync', action: 'Learn more' }),
         240,
         200,
         mode,
       );
-      const button = box(d, 'botão da ação');
+      const button = box(d, NAMES.actionButton);
       expect([button.x, button.y, button.height]).toEqual([16, 78, 40]);
-      const label = textIn(d, 'botão da ação')!;
+      const label = textIn(d, NAMES.actionButton)!;
       expect(fontOf(label)).toEqual(scale('label-large'));
       expect(solid(label.fills)).toBe(tok('primary', mode));
       expect(absOf(d, label).x).toBe(16 + 12);
@@ -224,16 +239,16 @@ describe('M5 grupo B — tooltip', () => {
     }
   });
 
-  it('rich com ação e sem título: texto com a base a 24 do topo (9) e a ação 16 abaixo', () => {
-    const d = drawBox('tooltip', rich({ action: 'Saiba mais' }), 240, 200);
-    // MC5 (#1033): a caixa do texto leva baselinePadding 24 e 21 (16 mais os 5 da linha de base ao fim)
-    const body = textIn(d, 'texto')!;
+  it('rich with action and without title: text with the baseline 24 from the top (9) and the action 16 below', () => {
+    const d = drawBox('tooltip', rich({ action: 'Learn more' }), 240, 200);
+    // MC5 (#1033): the text box carries baselinePadding 24 and 21 (16 plus the 5 from the baseline to the end)
+    const body = textIn(d, NAMES.text)!;
     expect([absOf(d, body).y, body.style.baselineTop]).toEqual([0, 24]);
-    expect(box(d, 'botão da ação').y).toBe(9 + 20 + 16);
+    expect(box(d, NAMES.actionButton).y).toBe(9 + 20 + 16);
     expect(box(d, 'rich').height).toBe(9 + 20 + 16 + 40 + 8);
   });
 
-  it('o padrão e os exemplos mantêm o minSize 40 × 24 e desenham sem aviso de corte', () => {
+  it('the default and the examples keep the minSize 40 × 24 and draw without a clipping warning', () => {
     expect(entryOf('tooltip').component!.minSize).toEqual({ width: 40, height: 24 });
     for (const mode of MODES) {
       const d = both('tooltip', {})[mode];
@@ -242,8 +257,8 @@ describe('M5 grupo B — tooltip', () => {
   });
 });
 
-describe('M5 grupo B — pull-to-refresh', () => {
-  /** Ponto do círculo de raio 6,75 (ArcRadius 5,5 + StrokeWidth 2,5 / 2) no ângulo do Compose (0 = 3h, horário). */
+describe('M5 group B — pull-to-refresh', () => {
+  /** Point of the circle of radius 6.75 (ArcRadius 5.5 + StrokeWidth 2.5 / 2) at the Compose angle (0 = 3 o'clock, clockwise). */
   const R = 6.75;
   const at = (deg: number, c: number) => [
     c + R * Math.cos((deg * Math.PI) / 180),
@@ -252,14 +267,14 @@ describe('M5 grupo B — pull-to-refresh', () => {
   const close = (got: number[], want: number[]) =>
     want.forEach((v, i) => expect(got[i]!).toBeCloseTo(v, 1));
 
-  it('indicador de 40 (SpinnerContainerSize), círculo em surface-container-high com sombra do nível 2, centrado no topo e a 40 (80 do limiar - 40)', () => {
+  it('40 indicator (SpinnerContainerSize), circle in surface-container-high with a level 2 shadow, centered at the top and at 40 (80 of the threshold - 40)', () => {
     for (const mode of MODES) {
       for (const isRefreshing of ['true', 'false']) {
         const d = both('pull-to-refresh', { isRefreshing })[mode];
         const name =
-          isRefreshing === 'true' ? 'indicador atualizando' : 'indicador puxando';
+          isRefreshing === 'true' ? NAMES.refreshingIndicator : NAMES.pullingIndicator;
         const other =
-          isRefreshing === 'true' ? 'indicador puxando' : 'indicador atualizando';
+          isRefreshing === 'true' ? NAMES.pullingIndicator : NAMES.refreshingIndicator;
         const ind = box(d, name);
         expect([ind.x, ind.y, ind.width, ind.height]).toEqual([
           (360 - 40) / 2,
@@ -275,42 +290,42 @@ describe('M5 grupo B — pull-to-refresh', () => {
     }
   });
 
-  it('atualizando: spinner de 16 com traço de 2,5 de ponta redonda em on-surface-variant, raio 6,75 e arco das 12h até a metade do curso', () => {
+  it('refreshing: 16 spinner with a 2.5 round-capped stroke in on-surface-variant, radius 6.75 and an arc from the 12 position to half the travel', () => {
     for (const mode of MODES) {
       const d = both('pull-to-refresh', { isRefreshing: 'true' })[mode];
-      const ring = named(d, 'anel') as PathNode;
+      const ring = named(d, NAMES.ring) as PathNode;
       expect(ring.stroke).toMatchObject({ width: 2.5, cap: 'round' });
       expect(solid(ring.stroke!.paints)).toBe(tok('on-surface-variant', mode));
       expect(ring.fills).toEqual([]);
-      const holder = box(d, 'indicador atualizando');
+      const holder = box(d, NAMES.refreshingIndicator);
       const at24 = absOf(d, ring);
-      // 24 de caixa com o círculo de 16 no meio: o desenho cobre os 16 do SpinnerSize
+      // 24 box with the 16 circle in the middle: the drawing covers the 16 of SpinnerSize
       expect([at24.width, at24.height]).toEqual([24, 24]);
       expect([at24.x - holder.x, at24.y - holder.y]).toEqual([8, 8]);
       const n = numbers(ring.d);
-      // M12 5.25 A6.75 6.75 0 0 1 x y: das 12h (270°) com o raio 6,75 do centro (12, 12)
+      // M12 5.25 A6.75 6.75 0 0 1 x y: from 12 o'clock (270°) with the 6.75 radius from the center (12, 12)
       close([n[0]!, n[1]!], at(270, 12));
       expect([n[2], n[3]]).toEqual([R, R]);
-      // (0,1 + 0,87) / 2 de volta: CircularIndeterminateMinProgress e MaxProgress
+      // (0.1 + 0.87) / 2 of a turn: CircularIndeterminateMinProgress and MaxProgress
       const sweep = ((0.1 + 0.87) / 2) * 360;
       close([n[7]!, n[8]!], at(270 + sweep, 12));
       expect([n[5], n[6]]).toEqual([0, 1]);
     }
   });
 
-  it('puxando: arco de 27° a 315° com ponta reta e a seta de 10 × 5 em traço de 2,5, no raio 6,75 e em on-surface-variant', () => {
+  it('pulling: arc from 27° to 315° with a butt cap and the 10 × 5 arrow in a 2.5 stroke, at radius 6.75 and in on-surface-variant', () => {
     for (const mode of MODES) {
       const d = both('pull-to-refresh', { isRefreshing: 'false' })[mode];
-      const ring = named(d, 'anel') as PathNode;
-      const arrow = named(d, 'seta') as PathNode;
+      const ring = named(d, NAMES.ring) as PathNode;
+      const arrow = named(d, NAMES.arrow) as PathNode;
       for (const part of [ring, arrow]) {
         expect(part.stroke).toMatchObject({ width: 2.5, cap: 'butt' });
         expect(solid(part.stroke!.paints)).toBe(tok('on-surface-variant', mode));
         expect(part.fills).toEqual([]);
       }
       expect(arrow.stroke).toMatchObject({ join: 'miter' });
-      // progress = 1: adjustedPercent 1, endTrim 0,8, rotation 0,075 volta: start 27°, end 315° (288° de varredura)
-      // (EX6: o `d` é o arco canônico, do 3 horas, e a `rotation` do nó o leva a 27°)
+      // progress = 1: adjustedPercent 1, endTrim 0.8, rotation 0.075 turn: start 27°, end 315° (288° sweep)
+      // (EX6: the `d` is the canonical arc, from 3 o'clock, and the node `rotation` takes it to 27°)
       const n = numbers(ring.d);
       const turned = (x: number, y: number, node: PathNode) => {
         const a = ((node.rotation ?? 0) * Math.PI) / 180;
@@ -322,7 +337,7 @@ describe('M5 grupo B — pull-to-refresh', () => {
       close(turned(n[0]!, n[1]!, ring), at(27, 12));
       expect([n[2], n[3], n[5], n[6]]).toEqual([R, R, 1, 1]);
       close(turned(n[7]!, n[8]!, ring), at(315, 12));
-      // seta: (0,0) (5,5) (10,0) levada ao fim do arco e girada em endAngle - strokeWidth (312,5°) em torno do centro
+      // arrow: (0,0) (5,5) (10,0) carried to the end of the arc and rotated by endAngle - strokeWidth (312.5°) around the center
       const raw = numbers(arrow.d);
       expect(raw).toHaveLength(6);
       const pts = [
@@ -344,7 +359,7 @@ describe('M5 grupo B — pull-to-refresh', () => {
     }
   });
 
-  it('o conteúdo continua sendo o slot e o fundo é surface', () => {
+  it('the content is still the slot and the background is surface', () => {
     for (const mode of MODES) {
       const d = both('pull-to-refresh', {})[mode];
       expect(d.root.fills[0]).toMatchObject({ color: tok('surface', mode) });
@@ -353,8 +368,8 @@ describe('M5 grupo B — pull-to-refresh', () => {
   });
 });
 
-describe('M5 grupo B — swipe-to-dismiss', () => {
-  /** O ícone do fundo: o nó `icon` não tem nome de nó, então é o único caminho visível do desenho. */
+describe('M5 group B — swipe-to-dismiss', () => {
+  /** The backdrop icon: the `icon` node has no node name, so it is the only visible path of the drawing. */
   const backdropIcon = (d: Drawing) => {
     const paths = [...walk(d.root)].filter(
       (n): n is PathNode => n.type === 'path' && n.visible,
@@ -365,26 +380,26 @@ describe('M5 grupo B — swipe-to-dismiss', () => {
   };
   const item = (extra: Record<string, unknown> = {}): Values =>
     ({
-      title: 'Reunião de equipe',
-      supportingText: 'Hoje, 14:00',
+      title: 'Team meeting',
+      supportingText: 'Today, 2:00 PM',
       icon: 'Delete',
       ...extra,
     }) as unknown as Values;
 
-  it('em repouso: item de ListItem em surface, título body-large em on-surface e apoio body-medium em on-surface-variant, com 16 de respiro', () => {
+  it('at rest: ListItem item in surface, body-large title in on-surface and body-medium supporting text in on-surface-variant, with 16 of room', () => {
     for (const mode of MODES) {
       const d = both('swipe-to-dismiss', item({ direction: 'Settled' }))[mode];
-      const row = box(d, 'item em repouso');
+      const row = box(d, NAMES.restingItem);
       expect([row.x, row.y, row.width, row.height]).toEqual([0, 0, 360, 72]);
-      expect(fillOf(d, 'item em repouso')).toBe(tok('surface', mode));
-      const title = textIn(d, 'título')!;
-      const support = textIn(d, 'apoio')!;
+      expect(fillOf(d, NAMES.restingItem)).toBe(tok('surface', mode));
+      const title = textIn(d, NAMES.title)!;
+      const support = textIn(d, NAMES.support)!;
       expect(fontOf(title)).toEqual(scale('body-large'));
       expect(fontOf(support)).toEqual(scale('body-medium'));
       expect(solid(title.fills)).toBe(tok('on-surface', mode));
       expect(solid(support.fills)).toBe(tok('on-surface-variant', mode));
       expect(absOf(d, title).x).toBe(16);
-      // 24 + 20 centrados em 72
+      // 24 + 20 centered in 72
       expect(absOf(d, title).y).toBe(14);
       expect(title.style).toMatchObject({ maxLines: 1, ellipsis: true });
       expect(support.style).toMatchObject({ maxLines: 1, ellipsis: true });
@@ -392,28 +407,28 @@ describe('M5 grupo B — swipe-to-dismiss', () => {
     }
   });
 
-  it('EndToStart: o item sai 56 (positionalThreshold) para o início e revela error-container com o ícone de 24 a 24 do fim em on-error-container', () => {
+  it('EndToStart: the item moves out 56 (positionalThreshold) toward the start and reveals error-container with the 24 icon 24 from the end in on-error-container', () => {
     for (const mode of MODES) {
       const d = both('swipe-to-dismiss', item({ direction: 'EndToStart' }))[mode];
       expect(d.root.fills[0]).toMatchObject({ color: tok('error-container', mode) });
-      const moved = box(d, 'item deslizado para o início');
+      const moved = box(d, NAMES.itemSlidStart);
       expect([moved.x, moved.width]).toEqual([-56, 360]);
-      expect(fillOf(d, 'item deslizado para o início')).toBe(tok('surface', mode));
+      expect(fillOf(d, NAMES.itemSlidStart)).toBe(tok('surface', mode));
       const icon = backdropIcon(d)!;
       expect(icon.color).toBe(tok('on-error-container', mode));
       expect([icon.box.width, icon.box.height]).toEqual([24, 24]);
       expect([360 - (icon.box.x + icon.box.width), icon.box.y]).toEqual([24, 24]);
-      expect(named(d, 'item em repouso')).toBeUndefined();
+      expect(named(d, NAMES.restingItem)).toBeUndefined();
     }
   });
 
-  it('StartToEnd: o item sai 56 para o fim e revela primary-container com o ícone a 24 do início em on-primary-container', () => {
+  it('StartToEnd: the item moves out 56 toward the end and reveals primary-container with the icon 24 from the start in on-primary-container', () => {
     for (const mode of MODES) {
       const d = both('swipe-to-dismiss', item({ direction: 'StartToEnd', icon: 'Done' }))[
         mode
       ];
       expect(d.root.fills[0]).toMatchObject({ color: tok('primary-container', mode) });
-      const moved = box(d, 'item deslizado para o fim');
+      const moved = box(d, NAMES.itemSlidEnd);
       expect([moved.x, moved.width]).toEqual([56, 360]);
       const icon = backdropIcon(d)!;
       expect(icon.color).toBe(tok('on-primary-container', mode));
@@ -421,19 +436,19 @@ describe('M5 grupo B — swipe-to-dismiss', () => {
     }
   });
 
-  it('sentido desligado volta ao repouso, sobre surface', () => {
+  it('a disabled direction goes back to rest, over surface', () => {
     for (const mode of MODES) {
       const d = both(
         'swipe-to-dismiss',
         item({ direction: 'EndToStart', enableDismissFromEndToStart: 'false' }),
       )[mode];
-      expect(named(d, 'item em repouso')).toBeDefined();
-      expect(named(d, 'item deslizado para o início')).toBeUndefined();
+      expect(named(d, NAMES.restingItem)).toBeDefined();
+      expect(named(d, NAMES.itemSlidStart)).toBeUndefined();
       expect(d.root.fills[0]).toMatchObject({ color: tok('surface', mode) });
     }
   });
 
-  it('ícone do conjunto: Delete é o padrão do campo vazio, cada nome desenha o seu e o desconhecido avisa', () => {
+  it('icon from the set: Delete is the default of the empty field, each name draws its own and an unknown one warns', () => {
     const base = item({ direction: 'EndToStart' });
     const del = backdropIcon(both('swipe-to-dismiss', base).light)!.path.d;
     const empty = both(
@@ -449,12 +464,12 @@ describe('M5 grupo B — swipe-to-dismiss', () => {
     expect(backdropIcon(star)!.path.d).not.toBe(del);
     const bad = both(
       'swipe-to-dismiss',
-      item({ direction: 'EndToStart', icon: 'Nao-existe' }),
+      item({ direction: 'EndToStart', icon: 'Does-not-exist' }),
     ).light;
     expect(bad.warnings.some((w) => /unknown icon/.test(w))).toBe(true);
   });
 
-  it('o recorte da caixa esconde o que sai dela', () => {
+  it('the box clip hides what leaves it', () => {
     expect(
       (
         both('swipe-to-dismiss', item({ direction: 'EndToStart' })).light.root as {
@@ -465,7 +480,7 @@ describe('M5 grupo B — swipe-to-dismiss', () => {
   });
 });
 
-describe('M5 grupo B — carousel', () => {
+describe('M5 group B — carousel', () => {
   const items = (n: number, label = true) =>
     Array.from({ length: n }, (_, i) => ({
       image: `https://example.com/${i}.jpg`,
@@ -476,18 +491,18 @@ describe('M5 grupo B — carousel', () => {
   const itemsOf = (d: Drawing): SceneNode[] =>
     [...walk(d.root)].filter((n) => n.name === 'item' && n.visible);
 
-  it('itens com canto 28 (MaterialTheme.shapes.extraLarge, maskClip), recortados, com o reservado da imagem em surface-container-highest', () => {
+  it('items with a 28 corner (MaterialTheme.shapes.extraLarge, maskClip), clipped, with the image placeholder in surface-container-highest', () => {
     for (const mode of MODES) {
       const d = both('carousel', withItems({ style: 'multi-browse' }))[mode];
       const [first] = itemsOf(d);
       expect(radiusOf(first)).toBe(num('corner-extra-large'));
       expect((first as { clip: boolean }).clip).toBe(true);
-      const image = named(d, 'imagem')!;
+      const image = named(d, NAMES.image)!;
       expect(solid(image.fills)).toBe(tok('surface-container-highest', mode));
     }
   });
 
-  it('multi-browse: a largura do item vem da estratégia do Compose (EX6: dois grandes de 148 e o pequeno de 40 em 360, com 150 preferidos), com itemSpacing entre eles', () => {
+  it('multi-browse: the item width comes from the Compose strategy (EX6: two large ones of 148 and the small one of 40 in 360, with 150 preferred), with itemSpacing between them', () => {
     for (const mode of MODES) {
       const d = both(
         'carousel',
@@ -500,18 +515,18 @@ describe('M5 grupo B — carousel', () => {
     }
   });
 
-  it('uncontained: largura do item é o itemWidth, a partir da borda', () => {
+  it('uncontained: the item width is the itemWidth, from the edge', () => {
     const d = both(
       'carousel',
       withItems({ style: 'uncontained', itemWidth: 140, itemSpacing: 12 }),
     ).light;
     expect(itemsOf(d).map((n) => absOf(d, n).x)).toEqual([0, 152, 304]);
-    // L2 (#1078): o terceiro item cruza a borda direita (304 + 140 > 360) e ganha só a largura que sobra
+    // L2 (#1078): the third item crosses the right edge (304 + 140 > 360) and gets only the width that is left
     expect(itemsOf(d).map((n) => absOf(d, n).width)).toEqual([140, 140, 360 - 304]);
   });
 
-  it('centered-hero: item grande de 264 (360 - 2 x 40 de itens pequenos - 2 x 8) com o espaço do item pequeno antes do primeiro (40 + 8), como o Compose sem maxItemWidth', () => {
-    // #1504: o fit do Arrangement (Arrangement.kt, 198 a 206) encolhe os pequenos até o mínimo de 40
+  it('centered-hero: 264 large item (360 - 2 x 40 of small items - 2 x 8) with the small item space before the first (40 + 8), like Compose without maxItemWidth', () => {
+    // #1504: the Arrangement fit (Arrangement.kt, 198 to 206) shrinks the small ones down to the minimum of 40
     const d = both(
       'carousel',
       withItems({ style: 'centered-hero', itemSpacing: 8 }),
@@ -522,7 +537,7 @@ describe('M5 grupo B — carousel', () => {
     expect(boxes[1]!.x).toBe(40 + 8 + 264 + 8);
   });
 
-  it('rótulo sobre o item: label-large em cor fixa nos dois modos, sobre o véu em degradê de baixo para cima, de scrim com alpha 0,55 (sólido até 75%) a 0 no topo (escolha da biblioteca para o contraste de 4,5:1, ver material3CarouselRotulo.test.ts)', () => {
+  it('label over the item: label-large in a fixed color in both modes, over the veil in a bottom-to-top gradient, from scrim with alpha 0.55 (solid up to 75%) to 0 at the top (library choice for the 4.5:1 contrast, see material3CarouselRotulo.test.ts)', () => {
     const light = both('carousel', withItems({ style: 'multi-browse' })).light;
     const dark = both('carousel', withItems({ style: 'multi-browse' })).dark;
     for (const [mode, d] of [
@@ -534,12 +549,12 @@ describe('M5 grupo B — carousel', () => {
       expect(fontOf(label)).toEqual(scale('label-large'));
       expect(solid(label.fills)).toBe(tok('secondary-fixed', mode));
       expect(label.style).toMatchObject({ maxLines: 1, ellipsis: true });
-      const veil = named(d, 'véu')!;
+      const veil = named(d, NAMES.veil)!;
       const paint = veil.fills[0];
       const scrim = tok('scrim', mode).slice(0, 7);
       expect(paint?.type).toBe('linear');
       const stops = paint?.type === 'linear' ? paint.stops : [];
-      // 270°: o offset 0 é o fundo do véu e o 1, o topo (de baixo para cima).
+      // 270°: offset 0 is the bottom of the veil and 1 the top (bottom to top).
       expect(stops.map((x) => x.offset)).toEqual([0, 0.75, 1]);
       expect(stops.map((x) => x.color.slice(0, 7).toLowerCase())).toEqual([
         scrim.toLowerCase(),
@@ -555,6 +570,6 @@ describe('M5 grupo B — carousel', () => {
       items: items(2, false),
       style: 'multi-browse',
     } as Values).light;
-    expect(named(bare, 'véu')).toBeUndefined();
+    expect(named(bare, NAMES.veil)).toBeUndefined();
   });
 });

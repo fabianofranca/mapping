@@ -1,7 +1,8 @@
-// CL1 (1.4): segmented-button com rótulos de larguras diferentes: nenhum rótulo passa da trilha, nem
-// quando o ajuste (`fit_marking`) tem um limite de largura menor que a soma das trilhas. O limite só
-// aperta o que quebra: o rótulo é `wrap: none`, então a trilha não encolhe abaixo da maior palavra
-// inquebrável (o min-content) e o componente passa do limite em vez de invadir o vizinho.
+// CL1 (1.4): segmented-button with labels of different widths: no label goes past the track, not even
+// when the fit (`fit_marking`) has a width limit smaller than the sum of the tracks. The limit only
+// tightens what breaks: the label is `wrap: none`, so the track does not shrink below the longest
+// unbreakable word (the min-content) and the component exceeds the limit instead of invading its neighbor.
+// pt-BR kept: shared fixture data (sdui example fields/layers, Material 3 node names) asserted by other dirs
 import { describe, expect, it } from 'vitest';
 import { fitComponentSize } from '../../src/model/components/sizing';
 import { absoluteBoxes, walk } from '../../src/model/components/scene';
@@ -12,9 +13,9 @@ import { instantiateOptions } from '../support/material3Library';
 const options = (...labels: string[]) =>
   labels.map((label, i) => ({ label, icon: '', selected: i === 1 ? 'true' : 'false' }));
 
-const VALUES = { options: options('A', 'Semana inteira', 'Mes') };
+const VALUES = { options: options('A', 'Whole week', 'Mon') };
 
-/** Cada segmento com o retângulo do rótulo dentro dele, desenhado na largura dada. */
+/** Each segment with the label rectangle inside it, drawn at the given width. */
 function segments(width: number, height: number) {
   const { drawing } = drawFitted('segmented-button', VALUES, 'light', { width, height });
   const boxes = absoluteBoxes(drawing.root);
@@ -34,8 +35,8 @@ const expectInside = (rows: ReturnType<typeof segments>) =>
     expect(text.x + text.width).toBeLessThanOrEqual(cell.x + cell.width + 0.5);
   });
 
-describe('segmented-button hug: a trilha cobre o rótulo mais largo', () => {
-  it('sem limite: três trilhas iguais pelo maior segmento e cada rótulo dentro da sua', () => {
+describe('segmented-button hug: the track covers the widest label', () => {
+  it('without a limit: three equal tracks by the largest segment and each label inside its own', () => {
     const fitted = fittedSize('segmented-button', VALUES);
     const rows = segments(fitted.width, fitted.height);
     expect(rows).toHaveLength(3);
@@ -45,7 +46,7 @@ describe('segmented-button hug: a trilha cobre o rótulo mais largo', () => {
     expect(widths.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(fitted.width + 1);
   });
 
-  it('com o limite de 340 do ajuste: a largura não encolhe abaixo do rótulo mais largo', () => {
+  it('with the fit limit of 340: the width does not shrink below the widest label', () => {
     const entry = entryOf('segmented-button');
     const all = { ...defaultValues(entry.type), ...VALUES } as never;
     const fit = fitComponentSize(

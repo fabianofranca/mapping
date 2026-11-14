@@ -2,19 +2,19 @@ import { describe, expect, it } from 'vitest';
 import { projectIndex, type Perspective, type Project } from '../../src/model';
 import { multiProject } from './multiSelectionFixtures';
 
-// Raízes no índice do projeto (v16, perspectivas). Geometria do `multiProject` (ver
-// tests/model/multiSelectionFixtures.ts): pertencimento A › G2 › G, B e C › G; D e E sem pai.
-// Raízes: D, E (containers), G, N (flutuante) e H (marcações do canvas).
+// Roots in the project index (v16, perspectives). Geometry of `multiProject` (see
+// tests/model/multiSelectionFixtures.ts): containment A › G2 › G, B and C › G; D and E with no parent.
+// Roots: D, E (containers), G, N (floating) and H (canvas markings).
 
-describe('projectIndex: raízes', () => {
+describe('projectIndex: roots', () => {
   const p = multiProject();
   const index = projectIndex(p);
 
-  it('roots: containers sem pai e depois as marcações do canvas sem pai, na ordem dos arrays', () => {
+  it('roots: containers with no parent and then canvas markings with no parent, in array order', () => {
     expect(index.roots).toEqual(['D', 'E', 'G', 'N', 'H']);
   });
 
-  it('rootOf: a raiz de cada container e marcação', () => {
+  it('rootOf: the root of each container and marking', () => {
     const expected: Record<string, string> = {
       A: 'G',
       B: 'G',
@@ -35,7 +35,7 @@ describe('projectIndex: raízes', () => {
     expect(Object.fromEntries(index.rootOf)).toEqual(expected);
   });
 
-  it('rootMembers: tudo o que tem a raiz, ela inclusive, na ordem dos arrays', () => {
+  it('rootMembers: everything that has the root, itself included, in array order', () => {
     const group = index.rootMembers.get('G');
     expect(group?.containers.map((c) => c.id)).toEqual(['A', 'B', 'C']);
     expect(group?.markings.map((m) => m.id)).toEqual([
@@ -59,17 +59,17 @@ describe('projectIndex: raízes', () => {
     expect([...index.rootMembers.keys()].sort()).toEqual(['D', 'E', 'G', 'H', 'N']);
   });
 
-  it('perspectivesByRoot: as perspectivas que têm cada raiz, na ordem', () => {
+  it('perspectivesByRoot: the perspectives that have each root, in order', () => {
     const one: Perspective = {
       id: 'P1',
-      name: 'Um',
+      name: 'One',
       hiddenLayers: [],
       items: [
         { root: 'D', x: 0, y: 0 },
         { root: 'H', x: 0, y: 0 },
       ],
     };
-    const two: Perspective = { ...one, id: 'P2', name: 'Dois', items: [one.items[0]!] };
+    const two: Perspective = { ...one, id: 'P2', name: 'Two', items: [one.items[0]!] };
     const q: Project = { ...p, perspectives: [one, two] };
     const byRoot = projectIndex(q).perspectivesByRoot;
     expect(byRoot.get('D')?.map((x) => x.id)).toEqual(['P1', 'P2']);
@@ -77,7 +77,7 @@ describe('projectIndex: raízes', () => {
     expect(byRoot.get('E')).toBeUndefined();
   });
 
-  it('ciclo de pais (projeto inválido) não trava: todos ficam com o nó em que fecha', () => {
+  it('a parent cycle (invalid project) does not hang: all get the node where it closes', () => {
     const cyclic: Project = {
       ...p,
       markings: p.markings.map((m) =>
@@ -93,7 +93,7 @@ describe('projectIndex: raízes', () => {
     expect(rootOf.get('a1')).toBe(rootOf.get('G'));
   });
 
-  it('pai inexistente (projeto inválido): o nó é a própria raiz', () => {
+  it('nonexistent parent (invalid project): the node is the root itself', () => {
     const broken: Project = {
       ...p,
       markings: p.markings.map((m) => (m.id === 'H' ? { ...m, parentId: 'zzz' } : m)),

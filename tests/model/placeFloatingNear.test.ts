@@ -9,7 +9,7 @@ import {
 } from '../../src/model';
 import { arrowBase } from './arrowFixtures';
 
-// `placeFloatingNear` (ME4): lugar livre na margem do alvo. Geometria do `arrowBase`
+// `placeFloatingNear` (ME4): free spot at the target's margin. Geometry of `arrowBase`
 // (tests/model/arrowFixtures.ts): A (0,0,1000), B (2000,0,1000), C (4000,0,1000).
 
 const size = { width: 200, height: 100 };
@@ -19,7 +19,7 @@ function withFloating(p: Project, id: string, rect: Rect): Project {
 }
 
 describe('placeFloatingNear', () => {
-  it('container: à direita, no topo, com o vão', () => {
+  it('container: to the right, at the top, with the gap', () => {
     expect(placeFloatingNear(arrowBase(), { kind: 'container', id: 'A' }, size)).toEqual({
       x: 1000 + FLOATING_GAP,
       y: 0,
@@ -27,7 +27,7 @@ describe('placeFloatingNear', () => {
     });
   });
 
-  it('marcação de container: na margem do container, na altura dela', () => {
+  it('container marking: at the container's margin, at its height', () => {
     expect(placeFloatingNear(arrowBase(), { kind: 'marking', id: 'a1' }, size)).toEqual({
       x: 1000 + FLOATING_GAP,
       y: 100,
@@ -35,7 +35,7 @@ describe('placeFloatingNear', () => {
     });
   });
 
-  it('empilha de cima para baixo sem sobrepor outras flutuantes', () => {
+  it('stacks from top to bottom without overlapping other floating ones', () => {
     let p = arrowBase();
     const first = placeFloatingNear(p, { kind: 'container', id: 'A' }, size);
     p = withFloating(p, 'f1', first);
@@ -45,7 +45,7 @@ describe('placeFloatingNear', () => {
     expect(rectsOverlap(first, second)).toBe(false);
   });
 
-  it('é determinístico', () => {
+  it('is deterministic', () => {
     const p = arrowBase();
     const target = { kind: 'marking', id: 'a3' } as const;
     expect(placeFloatingNear(p, target, size)).toEqual(
@@ -53,7 +53,7 @@ describe('placeFloatingNear', () => {
     );
   });
 
-  it('não sobrepõe containers: se a direita não cabe, vai para outro lado', () => {
+  it('does not overlap containers: if the right side does not fit, it goes to another side', () => {
     const big = { width: 1200, height: 100 };
     const p = arrowBase();
     const rect = placeFloatingNear(p, { kind: 'container', id: 'B' }, big);
@@ -75,8 +75,8 @@ describe('placeFloatingNear', () => {
     ).toThrow();
   });
 
-  describe('container com placement fracionário (scale 10/3, y 166,666…)', () => {
-    // 300×200 com escala 10/3: ocupa 1000×666,67 no canvas, a partir de y 166,67.
+  describe('container with a fractional placement (scale 10/3, y 166.666…)', () => {
+    // 300×200 at scale 10/3: occupies 1000×666.67 on the canvas, from y 166.67.
     function fractional(): Project {
       const p = arrowBase();
       return {
@@ -118,7 +118,7 @@ describe('placeFloatingNear', () => {
       }
     }
 
-    it('direita: inteiro, com o vão', () => {
+    it('right: integer, with the gap', () => {
       const p = fractional();
       const rect = placeFloatingNear(p, target, fractionalSize);
       expectFree(p, rect);
@@ -126,15 +126,15 @@ describe('placeFloatingNear', () => {
       expect(rect.y).toBe(Math.ceil(anchor.y));
     });
 
-    it('marcação do container: inteiro', () => {
+    it('container marking: integer', () => {
       const p = fractional();
       const rect = placeFloatingNear(p, { kind: 'marking', id: 'a1' }, size);
       expectFree(p, rect);
     });
 
-    it('esquerda, embaixo e em cima: inteiros, sem sobrepor e com o vão', () => {
+    it('left, bottom and top: integers, with no overlap and with the gap', () => {
       let p = fractional();
-      // Obstáculos altos/largos empurram o empilhamento para os outros lados.
+      // Tall/wide obstacles push the stacking to the other sides.
       p = withFloating(p, 'wallR', { x: 1024, y: 0, width: 300, height: 5000 });
       const left = placeFloatingNear(p, target, fractionalSize);
       expectFree(p, left);

@@ -564,9 +564,9 @@ describe('M4 group C — list-item', () => {
         options,
       ).height;
     expect(height({ headlineContent: 'Wi-Fi', leadingIcon: 'Settings' })).toBe(H1);
-    expect(height({ headlineContent: 'Ana', supportingContent: "Let's have lunch?" })).toBe(
-      H2,
-    );
+    expect(
+      height({ headlineContent: 'Ana', supportingContent: "Let's have lunch?" }),
+    ).toBe(H2);
     expect(height({ overlineContent: 'Today', headlineContent: 'Ana' })).toBe(H2);
     expect(
       height({
