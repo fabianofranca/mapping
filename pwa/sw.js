@@ -37,15 +37,11 @@ const isAppPage = (pathname) => {
   const scope = new URL(self.registration.scope).pathname;
   return pathname === scope || pathname === `${scope}index.html`;
 };
-// The guide lives in `guide/`: navigation to it (with or without `index.html`) is served from the cache.
-const isGuidePage = (pathname) => {
-  const guide = new URL('./guide/', self.registration.scope).pathname;
-  return pathname === guide || pathname === `${guide}index.html`;
-};
-// The old `guia/` address is also cached: it serves the redirect page to `guide/`.
-const isOldGuidePage = (pathname) => {
-  const guide = new URL('./guia/', self.registration.scope).pathname;
-  return pathname === guide || pathname === `${guide}index.html`;
+// A page published in `<folder>/`: navigation to it (with or without `index.html`) is served
+// from the cache. The guide lives in `guide/`; the old `guia/` address is a redirect page to it.
+const isFolderPage = (folder, pathname) => {
+  const page = new URL(`./${folder}/`, self.registration.scope).pathname;
+  return pathname === page || pathname === `${page}index.html`;
 };
 const isPreviewPath = (pathname) => {
   const preview = new URL('./preview', self.registration.scope).pathname;
@@ -92,8 +88,8 @@ self.addEventListener('fetch', (event) => {
   // main version contains it, but it must not answer for it (nor for `/preview`
   // without the slash, which GitHub Pages redirects to `/preview/`).
   if (!PREVIEW && isPreviewPath(requested.pathname)) return;
-  const guide = isGuidePage(requested.pathname);
-  const oldGuide = isOldGuidePage(requested.pathname);
+  const guide = isFolderPage('guide', requested.pathname);
+  const oldGuide = isFolderPage('guia', requested.pathname);
   if (
     request.mode === 'navigate' &&
     !isAppPage(requested.pathname) &&

@@ -2,7 +2,7 @@
 <html lang="en" data-locale="en-US">
   <head>
     <meta charset="utf-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-Ry3y3FHV5bSKM4If/z6SJ9HQa/mOcuobErbNscxUWXU=' 'sha256-WT4BBVAb545fCTCNbkFOhZHjRrTaIYYcuUC6u/QLoO0=' 'sha256-SbGL7thZKyYTeXxw4uK/vaCAb8TXIvU7OioAILvURhQ='; style-src 'sha256-dCLDWUpRI7K6Be9I4+DBC3Kuaks8ODjpzYWznTe9vck='; img-src 'self' data: blob:; connect-src 'none'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-Ry3y3FHV5bSKM4If/z6SJ9HQa/mOcuobErbNscxUWXU=' 'sha256-WT4BBVAb545fCTCNbkFOhZHjRrTaIYYcuUC6u/QLoO0=' 'sha256-VCU8pNEG4jYPvKIvVuhwfLkgfs2SRCEzUzYhp3s9UBA='; style-src 'sha256-dCLDWUpRI7K6Be9I4+DBC3Kuaks8ODjpzYWznTe9vck='; img-src 'self' data: blob:; connect-src 'none'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Mapping guide</title>
     <link rel="icon" type="image/svg+xml" href="../icons/icon.svg" />
@@ -1210,7 +1210,7 @@
               y: r.y + 14,
             });
             if (c) k.style.color = c;
-            k.textContent = 'trancada';
+            k.textContent = T.locked;
             svg.appendChild(k);
           }
         });

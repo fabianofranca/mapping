@@ -186,7 +186,7 @@ const APP_ORIGIN = 'http://localhost:8080';
 
 /**
  * Escolhe a aba da app entre `pages` (`{ url, title? }`): a da origem cujo caminho não começa por
- * `/guia/`. Com zero ou mais de uma, lança com as URLs e os títulos achados em vez de escolher em
+ * `/guide/` (ou `/guia/`). Com zero ou mais de uma, lança com as URLs e os títulos achados em vez de escolher em
  * silêncio. Pura.
  */
 export function pickAppPage(pages, { origin = APP_ORIGIN } = {}) {
@@ -208,7 +208,7 @@ export function pickAppPage(pages, { origin = APP_ORIGIN } = {}) {
     throw new Error(
       pages.length === 0
         ? `Nenhuma aba encontrada no Chrome conectado por CDP (esperava a app em ${wanted}).`
-        : `Nenhuma aba da app (${wanted}, fora de /guia/) encontrada. Abas achadas:\n${list(pages)}`,
+        : `Nenhuma aba da app (${wanted}, fora de /guide/) encontrada. Abas achadas:\n${list(pages)}`,
     );
   }
   throw new Error(
@@ -218,7 +218,7 @@ export function pickAppPage(pages, { origin = APP_ORIGIN } = {}) {
 
 /**
  * Escolhe a aba do guia entre `pages` (`{ url, title? }`): a da origem cujo caminho começa por
- * `/guia/`. Com zero ou mais de uma, lança com as URLs e os títulos achados. Pura.
+ * `/guide/` (ou `/guia/`). Com zero ou mais de uma, lança com as URLs e os títulos achados. Pura.
  */
 function pickGuidePage(pages, { origin = APP_ORIGIN } = {}) {
   const wanted = new URL(origin).origin;
@@ -237,7 +237,7 @@ function pickGuidePage(pages, { origin = APP_ORIGIN } = {}) {
       .join('\n');
   throw new Error(
     matches.length === 0
-      ? `Nenhuma aba do guia (${wanted}/guia/) encontrada. Abas achadas:\n${list(pages)}`
+      ? `Nenhuma aba do guia (${wanted}/guide/) encontrada. Abas achadas:\n${list(pages)}`
       : `${matches.length} abas do guia abertas:\n${list(matches)}\nDica: feche as abas a mais (receita 3).`,
   );
 }
@@ -296,7 +296,7 @@ export async function connect(apoioDir, cdpUrl = 'http://localhost:9222', option
 }
 
 /**
- * Como o `connect()`, mas escolhe a aba do guia (`/guia/`) em vez da da app (etapa #482, GT1):
+ * Como o `connect()`, mas escolhe a aba do guia (`/guide/`) em vez da da app (etapa #482, GT1):
  * os mesmos 5 s e 15 s e o mesmo registro de console. Devolve `{ browser, page }`.
  */
 export async function connectGuide(
@@ -2517,7 +2517,7 @@ export const HELP = {
   },
   connectGuide: {
     sig: 'connectGuide(apoioDir, cdpUrl?, options?)',
-    desc: 'como o connect, mas na aba do guia (/guia/)',
+    desc: 'como o connect, mas na aba do guia (/guide/)',
   },
   clickNoWait: {
     sig: 'clickNoWait(page, nome, { scope?, exact? })',

@@ -91,6 +91,11 @@ test.describe('interactive guide', () => {
     // The shortcut table shows only the English rows.
     await expect(page.locator('tr[data-locale="en-US"]').first()).toBeVisible();
     await expect(page.locator('tr[data-locale="pt-BR"]').first()).toBeHidden();
+    // The lock tag drawn on the canvas follows the locale too (not only the inspector flag).
+    await page
+      .locator('#steps button', { hasText: 'Locked and position to review' })
+      .click();
+    await expect(page.locator('.lock-tag').first()).toHaveText('locked');
     await context.close();
   });
 
@@ -108,6 +113,10 @@ test.describe('interactive guide', () => {
     );
     await expect(page.locator('tr[data-locale="pt-BR"]').first()).toBeVisible();
     await expect(page.locator('tr[data-locale="en-US"]').first()).toBeHidden();
+    await page
+      .locator('#steps button', { hasText: 'Trancada e posição a revisar' })
+      .click();
+    await expect(page.locator('.lock-tag').first()).toHaveText('trancada');
   });
 
   test('a Portuguese browser locale opens it in pt-BR, and the saved language wins', async ({

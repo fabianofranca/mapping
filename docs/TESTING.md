@@ -3051,11 +3051,11 @@ GTK_A11Y=atspi ACCESSIBILITY_ENABLED=1 nohup /opt/pw-browsers/chromium --no-sand
 - **Receita 3 (nuvem), continuação.** O auxiliar faz isto: `cloud-up.sh <pasta> --restart-chrome`.
 - **Receita 4 (nuvem), a página pelo Playwright por CDP.** O auxiliar faz isto: `connect(apoioDir)`, `connectGuide(apoioDir)` (a aba do guia, ver abaixo), `clickNoWait(page, nome)` e `state(page, apoioDir, { projectDir })` de `scripts/testing/cloud.mjs`.
 - **Receita 4 (nuvem), o script de passo pelo `run`.** Mande o corpo pela entrada padrão: `node scripts/testing/cloud.mjs run [<pasta>] [--prazo=<s>] <<'JS' … JS`. Ele conecta, deixa `page`, `browser`, `apoioDir`, `projectDir` e os exports do `cloud.mjs` em escopo, imprime o `state()` no fim e sai com 0, 1 (erro) ou 124 (prazo de 90 s). `cloud.mjs help` lista tudo.
-- **Receita 4 (nuvem), o que o `connect()` faz.** Ele carrega o `apoio/env.sh` (`DISPLAY`, D-Bus), escolhe a aba da app (`http://localhost:8080`, fora de `/guia/`; com duas abas falha com as URLs) e usa timeout de 5 s nas ações e 15 s nas navegações: localizador errado falha em 5 s, e espera longa passa `{ timeout }` na própria chamada.
+- **Receita 4 (nuvem), o que o `connect()` faz.** Ele carrega o `apoio/env.sh` (`DISPLAY`, D-Bus), escolhe a aba da app (`http://localhost:8080`, fora de `/guide/`; com duas abas falha com as URLs) e usa timeout de 5 s nas ações e 15 s nas navegações: localizador errado falha em 5 s, e espera longa passa `{ timeout }` na própria chamada.
 
 <!-- roteiros: R11 -->
 
-- **Receita 4 (nuvem), `connectGuide()`.** Para ler o guia interativo (R11.2, R11.5, R11.9, R11.10), abra a segunda aba por CDP (`app.context().newPage()` e `goto('http://localhost:8080/guia/')`) e conecte com `const { page } = await connectGuide(apoioDir)`: ele escolhe a aba cujo caminho começa por `/guia/` (o `connect()` a ignora), com os mesmos 5 s nas ações e 15 s nas navegações e o mesmo registro de console; sem a aba, ou com duas, falha com as URLs achadas. Feche a aba do guia ao terminar.
+- **Receita 4 (nuvem), `connectGuide()`.** Para ler o guia interativo (R11.2, R11.5, R11.9, R11.10), abra a segunda aba por CDP (`app.context().newPage()` e `goto('http://localhost:8080/guide/')`) e conecte com `const { page } = await connectGuide(apoioDir)`: ele escolhe a aba cujo caminho começa por `/guide/` (ou `/guia/`) (o `connect()` a ignora), com os mesmos 5 s nas ações e 15 s nas navegações e o mesmo registro de console; sem a aba, ou com duas, falha com as URLs achadas. Feche a aba do guia ao terminar.
 
 <!-- /roteiros -->
 
