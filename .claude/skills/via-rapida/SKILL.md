@@ -39,13 +39,13 @@ The check comes from the `painel.py` calculation, never from a comparison by han
 1. Find the panel as in "Reading the sources" of [`supervisionar-fila`](../supervisionar-fila/SKILL.md) ("Finding the panel" and "Panel": read only, blobs in the scratchpad).
 2. List the open `in-progress` issues that are not in the panel, except the issue of this very fast track (#n), and read the "Toca em:" of their open sub-issues (another fast track's issue has no sub-issue: the "Toca em:" is in its `Via rápida:` comment).
 3. Run `python3 .claude/skills/implementar-fila/painel/painel.py conflito "<toca>" --pasta <folder> --com "#N=<toca>"…`, with the fast track's `<toca>` (the citations in the `painel.py` format, checked with `painel.py toca`) and one `--com` per stage outside the panel. With no panel found, only the `--com`.
-4. With `conflito:`, do not start: comment on the issue `Via rápida: espera #N (<citation>)` and finish, without touching the label.
+4. With `conflito:`, do not start: comment on the issue `Via rápida: espera #N (<citation>)`, add the `via-rapida` label (full list) and finish.
 
 Before the merge, repeat with the diff's "Toca em:". A new conflict **does not hold the merge** (whoever merges second brings in `main`): merge and comment on the other stage's issue "Fast track #<n> changed <citation> on `main`; bring `main` into the epic before the closing (merge, never rebase).".
 
 ## Label and comment
 
-Once eligibility and the conflict check have passed, swap the `roadmap` label for `in-progress` (on a `bug`, add `in-progress`), always with the full list of labels: `bug`, `severity:`, `impact:`, `code-review` and `observador-da-fila` stay. The issue never goes through `ready`: `implementar-fila` takes every open `ready`, and `detalhar-backlog` already ignores `in-progress`.
+Once eligibility and the conflict check have passed, swap the `roadmap` label for `in-progress` (on a `bug`, add `in-progress`) and remove `via-rapida`, always with the full list of labels: `bug`, `severity:`, `impact:`, `code-review` and `observador-da-fila` stay. The issue never goes through `ready`: `implementar-fila` takes every open `ready`, and `detalhar-backlog` already ignores `in-progress`.
 
 Comment on the issue a text that starts with `Via rápida:` with the objective, the "Toca em:" (citations in the `painel.py` format, checked with `painel.py toca`) and the acceptance criterion.
 

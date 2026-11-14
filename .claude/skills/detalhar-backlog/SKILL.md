@@ -58,7 +58,7 @@ Everything else runs at `effort: medium`. When in doubt, recommend high (`docs/P
 ## 1. Candidates
 
 1. `list_issues` (`state: OPEN`, `fields: [number, title, labels]`, no `body`, because the body of all of them exceeds the limit) once with `labels: [roadmap]` and once with `labels: [bug]`.
-2. Keep only those that have **neither** `ready`, `in-progress` nor `step`, and leave out the issues whose title starts with "Teto do dist/index.html acima dos limites" (the `bug` of the ceiling raise, stage #1802: it is a review request for the owner, not a defect to plan, and stays with their review in the supervisor's chat; say so when listing what was left out). With the `#n ...` list, use its intersection with the candidates and say which numbers were left out and why.
+2. Keep only those that have **neither** `ready`, `in-progress`, `via-rapida` nor `step`, and leave out the issues whose title starts with "Teto do dist/index.html acima dos limites" (the `bug` of the ceiling raise, stage #1802: it is a review request for the owner, not a defect to plan, and stays with their review in the supervisor's chat; say so when listing what was left out). With the `#n ...` list, use its intersection with the candidates and say which numbers were left out and why.
 3. Order: `severity: high` and `impact: high` first, then `medium`, then `low`; on a tie, the lower number comes first. The order of the Project "Mapping - Backlog" is the owner's, and the tools cannot reach the Project.
 4. With no candidates, say so and finish.
 
