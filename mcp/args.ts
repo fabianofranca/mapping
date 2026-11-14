@@ -1,11 +1,11 @@
-/** Argumentos da linha de comando do servidor: `mapping-mcp.js --root <pasta> [--root <pasta>…]`. */
+/** Command-line arguments of the server: `mapping-mcp.js --root <folder> [--root <folder>…]`. */
 
 export interface CliOptions {
-  /** Raízes como informadas (relativas ao diretório de trabalho do cliente MCP). */
+  /** Roots as given (relative to the working directory of the MCP client). */
   readonly roots: readonly string[];
   readonly help: boolean;
   readonly version: boolean;
-  /** Servidor HTTP local de imagens (padrão: ligado; `--no-http` desliga). */
+  /** Local HTTP image server (default: on; `--no-http` turns it off). */
   readonly http: boolean;
 }
 
@@ -16,14 +16,14 @@ export class UsageError extends Error {
   }
 }
 
-export const USAGE = `Uso: node mapping-mcp.js --root <pasta> [--root <pasta>...]
+export const USAGE = `Usage: node mapping-mcp.js --root <folder> [--root <folder>...]
 
-Servidor MCP do Mapping (stdio). Lê e grava projetos em pasta dentro das raízes.
+Mapping MCP server (stdio). Reads and writes projects in folders inside the roots.
 
-  --root <pasta>  pasta que contém projetos (repita para mais de uma)
-  --no-http       não sobe o servidor HTTP local (127.0.0.1) que entrega as imagens das tools por URL
-  --version       mostra a versão
-  --help          mostra esta ajuda
+  --root <folder>  folder that contains projects (repeat for more than one)
+  --no-http        do not start the local HTTP server (127.0.0.1) that delivers the tools' images by URL
+  --version        show the version
+  --help           show this help
 `;
 
 export function parseArgs(argv: readonly string[]): CliOptions {
@@ -39,19 +39,19 @@ export function parseArgs(argv: readonly string[]): CliOptions {
     else if (arg === '--root') {
       const value = argv[++i];
       if (value === undefined || value === '' || value.startsWith('--')) {
-        throw new UsageError('--root precisa de uma pasta');
+        throw new UsageError('--root needs a folder');
       }
       roots.push(value);
     } else if (arg.startsWith('--root=')) {
       const value = arg.slice('--root='.length);
-      if (value === '') throw new UsageError('--root precisa de uma pasta');
+      if (value === '') throw new UsageError('--root needs a folder');
       roots.push(value);
     } else {
-      throw new UsageError(`argumento desconhecido: ${arg}`);
+      throw new UsageError(`unknown argument: ${arg}`);
     }
   }
   if (!help && !version && roots.length === 0) {
-    throw new UsageError('informe ao menos uma raiz com --root <pasta>');
+    throw new UsageError('provide at least one root with --root <folder>');
   }
   return { roots, help, version, http };
 }

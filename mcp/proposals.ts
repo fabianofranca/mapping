@@ -49,14 +49,14 @@ import {
   type ChangeState,
 } from './proposalViews';
 
-// Propostas de alteração (etapa 4.2): o agente nunca grava o projeto; `propose_changes` aplica
-// o lote a uma cópia (o mesmo `batch.ts` do `plan_changes`), calcula as mudanças com
-// `buildProposal` e grava `proposals/<id>/proposal.json`. A revisão é da app; aqui o agente só
-// lê o resultado (`get_proposal`, `get_proposal_review`) e retira ou substitui a proposta.
+// Change proposals (stage 4.2): the agent never writes the project; `propose_changes` applies
+// the batch to a copy (the same `batch.ts` as `plan_changes`), computes the changes with
+// `buildProposal` and writes `proposals/<id>/proposal.json`. The review belongs to the app; here the agent only
+// reads the result (`get_proposal`, `get_proposal_review`) and withdraws or supersedes the proposal.
 
 type Json = Record<string, unknown>;
 
-/** Mudanças por página de `get_proposal`. */
+/** Changes per page of `get_proposal`. */
 const DEFAULT_LIMIT = 200;
 
 export interface ProposeArgs {
@@ -66,7 +66,7 @@ export interface ProposeArgs {
   readonly origin?: string | undefined;
   readonly author?: string | undefined;
   readonly supersedes?: string | undefined;
-  /** Conversa à qual a proposta se liga (referência `c/…`): vira uma mensagem do agente com `proposal`. */
+  /** Conversation the proposal links to (reference `c/…`): becomes an agent message with `proposal`. */
   readonly thread?: string | undefined;
   readonly operations: readonly Operation[];
 }
@@ -89,11 +89,11 @@ export class Proposals {
   async propose(args: ProposeArgs): Promise<Json> {
     const title = args.title.trim();
     if (title === '') {
-      throw new ToolError('invalid-title', 'a proposta precisa de um título');
+      throw new ToolError('invalid-title', 'the proposal needs a title');
     }
     const location = await findProject(this.roots, args.project);
-    // A conversa é conferida ANTES de qualquer gravação: se não existe ou está resolvida, a
-    // recusa não deixa nada no disco.
+    // The conversation is checked BEFORE any write: if it does not exist or is resolved, the
+    // refusal leaves nothing on disk.
     const linked =
       args.thread === undefined
         ? null
@@ -102,9 +102,9 @@ export class Proposals {
     const previous =
       args.supersedes === undefined ? null : lookupStored(all, location, args.supersedes);
 
-    // Arquivos de `images/` que outras propostas ainda podem aplicar: não reutilizar o nome. A
-    // anterior aberta conta como `superseded` (o estado que terá): as aceitas dela continuam
-    // reservadas, as pendentes são liberadas. Uma anterior aplicada ou retirada não muda.
+    // Files in `images/` that other proposals can still apply: do not reuse the name. The
+    // open previous one counts as `superseded` (the state it will have): its accepted ones stay
+    // reserved, the pending ones are released. An applied or withdrawn previous one does not change.
     const reserved = new Set<string>();
     for (const stored of all.proposals) {
       const becomesSuperseded =
@@ -122,7 +122,7 @@ export class Proposals {
       return {
         ...report,
         proposed: false,
-        hint: 'nada foi gravado: corrija as operações com erro e chame propose_changes de novo com o lote inteiro',
+        hint: 'nothing was written: fix the operations with errors and call propose_changes again with the whole batch',
       };
     }
 
@@ -139,7 +139,7 @@ export class Proposals {
     if (proposal.changes.length === 0) {
       throw new ToolError(
         'no-changes',
-        'as operações não alteram nada no projeto: não há o que propor (a reexportação coincide com o projeto atual)',
+        'the operations change nothing in the project: there is nothing to propose (the re-export matches the current project)',
       );
     }
 
@@ -147,21 +147,21 @@ export class Proposals {
     for (const file of reservedImages(proposal)) {
       const data = result.imageFiles.get(file);
       if (data === undefined) {
-        throw new Error(`imagem da proposta sem conteúdo: ${file}`);
+        throw new Error(`proposal image without content: ${file}`);
       }
       images.set(file, data);
     }
 
-    // O cálculo vale para o `mapping.json` lido: se ele mudou nesse meio-tempo, recusa.
+    // The calculation holds for the `mapping.json` that was read: if it changed in the meantime, refuse.
     const text = await readMapping(this.roots, location.dir);
     if (text === null || sha256(text) !== prepared.baseHash) {
       throw new ToolError(
         'revision-conflict',
-        'o projeto foi alterado por outro processo enquanto a proposta era calculada; releia e envie de novo',
+        'the project was changed by another process while the proposal was being computed; reread and send again',
         { baseRevision: loaded.project.revision },
       );
     }
-    // Os pacotes de biblioteca das mudanças de especialização (só as que ficaram na proposta).
+    // The library packages of the specialization changes (only those that stayed in the proposal).
     const packageFiles = new Map<string, Uint8Array>();
     const packaged = new Set(
       proposal.changes
@@ -206,15 +206,15 @@ export class Proposals {
         thread = await this.threads.linkProposal(
           linked,
           proposal.id,
-          `Proposta: ${formatCitation(title, refs.ref(proposal.id))}`,
+          `Proposal: ${formatCitation(title, refs.ref(proposal.id))}`,
           args.author,
         );
       } catch (error) {
-        // A proposta já está gravada: reenviá-la a duplicaria. O aviso diz o que fazer.
+        // The proposal is already written: resending it would duplicate it. The warning says what to do.
         warnings.push({
           code: 'thread-not-linked',
-          message: `a proposta foi gravada, mas a mensagem na conversa não: ${error instanceof Error ? error.message : String(error)}`,
-          hint: 'avise na conversa com post_message citando a proposta: [título](mapping://<projeto>/p/<código>)',
+          message: `the proposal was written, but the message in the conversation was not: ${error instanceof Error ? error.message : String(error)}`,
+          hint: 'tell the conversation with post_message citing the proposal: [title](mapping://<project>/p/<code>)',
         });
       }
     }
@@ -245,13 +245,13 @@ export class Proposals {
             warnings: [...(Array.isArray(repoWarnings) ? repoWarnings : []), ...warnings],
           }
         : {}),
-      hint: 'a proposta aguarda a revisão do usuário na app (janela Propostas); avise-o e não grave mais nada. As referências `created` só passam a existir depois que o usuário aceitar e aplicar. Quando a revisão terminar (get_proposal: nada pendente nem aceito sem aplicar), leia get_proposal_review.',
+      hint: 'the proposal awaits review by the user in the app (Proposals window); tell them and write nothing more. The `created` references only start to exist after the user accepts and applies. When the review ends (get_proposal: nothing pending or accepted without being applied), read get_proposal_review.',
     };
   }
 
   /**
-   * Marca a proposta anterior como substituída e avisa se a revisão dela não tinha terminado.
-   * Uma anterior já aplicada fica como está, e a resposta explica.
+   * Marks the previous proposal as superseded and warns if its review had not finished.
+   * An already applied previous one stays as it is, and the response explains.
    */
   private async supersede(
     location: ProjectLocation,
@@ -271,10 +271,10 @@ export class Proposals {
         ref: refs.ref(previous.id),
         status: updated.status,
         revision: updated.revision,
-        // A aplicada é histórico: não vira `superseded` (o `supersedes` da nova é o vínculo).
+        // The applied one is history: it does not become `superseded` (the new one's `supersedes` is the link).
         ...(updated.status === 'applied'
           ? {
-              note: `a proposta anterior já estava aplicada e continua \`applied\` (é histórico e não muda de status); a app mostra nela "Aplicada · substituída por ${next.title}", com o link Abrir a nova`,
+              note: `the previous proposal was already applied and stays \`applied\` (it is history and does not change status); the app shows on it "Applied · superseded by ${next.title}", with the link Open the new one`,
             }
           : {}),
       };
@@ -297,13 +297,13 @@ export class Proposals {
           acceptedNotApplied: progress.acceptedPending,
           inNewProposal: counts,
           message:
-            'a proposta substituída ainda tinha mudanças sem decisão ou aceitas sem aplicar; as pendentes não poderão mais ser aplicadas. Da próxima vez, espere a revisão terminar (get_proposal) antes de substituir',
+            'the superseded proposal still had changes without a decision or accepted without being applied; the pending ones can no longer be applied. Next time, wait for the review to finish (get_proposal) before superseding',
         },
       };
     } catch (error) {
-      // A nova proposta já está gravada: qualquer falha aqui (inclusive de disco) é só um aviso.
-      // Um `internal-error` levaria o agente a reenviar e duplicar a proposta. O inesperado
-      // deixa a pilha no stderr, como `failure` (tools.ts).
+      // The new proposal is already written: any failure here (disk included) is only a warning.
+      // An `internal-error` would lead the agent to resend and duplicate the proposal. The unexpected
+      // leaves the stack on stderr, like `failure` (tools.ts).
       if (!(error instanceof ToolError)) {
         process.stderr.write(
           `mapping-mcp: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}\n`,
@@ -315,7 +315,7 @@ export class Proposals {
         warning: {
           code: 'supersede-failed',
           proposal: refs.ref(previous.id),
-          message: `a nova proposta foi gravada, mas a anterior não pôde ser marcada como substituída (${reason})`,
+          message: `the new proposal was written, but the previous one could not be marked as superseded (${reason})`,
         },
       };
     }
@@ -467,8 +467,8 @@ export class Proposals {
     const rejected = p.changes
       .filter((c) => p.decisions[c.id]?.state === 'rejected')
       .map((c: Change) => {
-        // Rejeitada junto com a criação de que depende ("rejeitar a criação rejeita o que
-        // depende dela"): `via` aponta a criação, para o agente não tratá-la como decisão própria.
+        // Rejected together with the creation it depends on ("rejecting the creation rejects what
+        // depends on it"): `via` points to the creation, so the agent does not treat it as its own decision.
         const via = (index.requires.get(c.id) ?? []).find(
           (id) =>
             p.decisions[id]?.state === 'rejected' &&
@@ -499,11 +499,11 @@ export class Proposals {
         to: c.to,
         ...(conflictView(statuses.get(c.id)!) ?? {}),
       }));
-    // Notas gerais: tudo o que não é de uma mudança (as dela vão junto da rejeição).
+    // General notes: everything that is not on a change (the change's own go with the rejection).
     const notes = p.notes
       .filter((n) => n.target.level !== 'change')
       .map((n) => ({ ...noteView(p, n, labels), ...droppedFrom(p, n.id, labels) }));
-    // Notas de mudanças que não estão rejeitadas (ex: o usuário comentou numa aceita).
+    // Notes of changes that are not rejected (e.g. the user commented on an accepted one).
     const otherChangeNotes = p.notes
       .filter(
         (n) =>
@@ -549,7 +549,7 @@ export class Proposals {
   }
 
   // -------------------------------------------------------------------------
-  // revise_proposal (etapa #644): ver `proposalRevise.ts`
+  // revise_proposal (stage #644): see `proposalRevise.ts`
 
   async revise(refText: string, projectArg: string | undefined, args: ReviseArgs) {
     const resolved = await resolveProposal(this.roots, refText, projectArg);
@@ -574,7 +574,7 @@ export class Proposals {
     if (before === null || updated.status !== 'withdrawn' || before.status !== 'open') {
       throw new ToolError(
         'not-open',
-        `só uma proposta aberta pode ser retirada (estado atual: ${(before ?? stored.proposal).status})`,
+        `only an open proposal can be withdrawn (current state: ${(before ?? stored.proposal).status})`,
         { proposal: refs.ref(stored.id), status: (before ?? stored.proposal).status },
       );
     }
@@ -593,18 +593,18 @@ export class Proposals {
         acceptedNotApplied: progress.acceptedPending,
         applied: progress.applied,
       },
-      hint: 'a proposta foi retirada: nada mais dela será aplicado (o que já foi aplicado continua no projeto). Os arquivos em proposals/ ficam para o histórico.',
+      hint: 'the proposal was withdrawn: nothing more of it will be applied (what was already applied stays in the project). The files in proposals/ stay for the history.',
     };
   }
 }
 
-/** `lastRevisedAt` de `list_proposals`: a data da última revisão do agente (ausente se nunca). */
+/** `lastRevisedAt` of `list_proposals`: the date of the agent's last revision (absent if never). */
 function lastRevisedView(p: Proposal): Json {
   const at = p.revisions?.[p.revisions.length - 1]?.at;
   return at === undefined ? {} : { lastRevisedAt: at };
 }
 
-/** Pastas de pacote gravadas na proposta, com a contagem de arquivos de cada uma. */
+/** Package folders written in the proposal, with the file count of each one. */
 function packageFolders(
   proposalId: string,
   written: readonly string[],
@@ -618,7 +618,7 @@ function packageFolders(
   return [...counts].map(([dir, files]) => ({ dir: `${prefix}${dir}`, files }));
 }
 
-/** Referência de uma proposta citada por outra (a pasta pode já não existir). */
+/** Reference of a proposal cited by another (the folder may no longer exist). */
 function refTo(all: StoredProposals, refs: ProposalRefs, id: string): string {
   return all.proposals.some((s) => s.id === id) ? refs.ref(id) : id;
 }

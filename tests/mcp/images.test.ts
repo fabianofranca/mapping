@@ -448,7 +448,7 @@ describe('container (sem arquivo)', () => {
     );
     expect(errorCode(r)).toBe('container-without-file');
     expect(r.data.error.message).toBe(
-      'O container não tem arquivo de imagem (só cor de fundo): use get_marking_image para ver o desenho.',
+      'The container has no image file (background color only): use get_marking_image to see the drawing.',
     );
   });
 

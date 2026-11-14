@@ -39,7 +39,7 @@ describe('lote: rótulo da marcação criada', () => {
       expect(result.steps[n + 0]!.description).toContain(`"${refs.label('m', id)}"`);
     }
     expect(result.steps[0]!.description).toContain(
-      `Marcação ${shortCode(result.project, 'm', ids[0]!)}`,
+      `Marking ${shortCode(result.project, 'm', ids[0]!)}`,
     );
   });
 
@@ -60,9 +60,9 @@ describe('lote: rótulo da marcação criada', () => {
       second,
     ]);
     // A primeira nasceu sozinha (8 caracteres); a segunda divide o prefixo com ela (12).
-    expect(result.steps[0]!.description).toContain('Marcação aaaaaaaa"');
+    expect(result.steps[0]!.description).toContain('Marking aaaaaaaa"');
     const code = shortCode(result.project, 'm', second);
     expect(code).toBe('aaaaaaaa1111');
-    expect(result.steps[1]!.description).toContain(`Marcação ${code}`);
+    expect(result.steps[1]!.description).toContain(`Marking ${code}`);
   });
 });

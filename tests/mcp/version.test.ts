@@ -30,7 +30,7 @@ describe('versão do servidor nos docs', () => {
     expect(text).toContain(`mcp-v${SERVER_VERSION}`);
     const tags = [...text.matchAll(TAG)].map((m) => m[1]);
     expect(new Set(tags)).toEqual(new Set([SERVER_VERSION]));
-    const publish = section(text, '## Publicar uma versão');
+    const publish = section(text, '## Publishing a version');
     expect(publish).not.toBe('');
     expect(new Set(publish.match(VERSION))).toEqual(new Set([SERVER_VERSION]));
   });

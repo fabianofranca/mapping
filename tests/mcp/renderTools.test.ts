@@ -393,7 +393,7 @@ describe('arquivo com dimensões diferentes do projeto e EXIF (achados 25 e 26 d
     const { refs, project } = await setup([SCREEN]);
     const small = project.containers.find((c) => c.id === SMALL)!;
     const marking = project.markings.find((m) => m.id === SMALL_MARKING)!;
-    const expected = expect.stringContaining('100×50, mas o projeto registra 200×100');
+    const expected = expect.stringContaining('100×50, but the project records 200×100');
     const whole = await renderContainer(roots, refs, small, {});
     expect(whole.json.warning).toEqual(expected);
     const part = await renderMarking(roots, refs, marking, {});

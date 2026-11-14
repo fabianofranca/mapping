@@ -228,7 +228,7 @@ describe('nota quando o tipo declara componente e o lote não o acha', () => {
     expect(result.errors).toEqual([]);
     const note = result.deprecations.find((d) => d.index === 0);
     expect(note?.message).toMatch(
-      /^o tipo material3\/m3-button declara componente, mas missing file \(.*m3-button\.json\): a anotação foi criada sem o preview e sem o tamanho mínimo$/,
+      /^type material3\/m3-button declares a component, but missing file \(.*m3-button\.json\): the annotation was created without the preview and without the minimum size$/,
     );
     // A anotação existe, só com os default.
     expect(buttonOf(result).annotation.values).not.toHaveProperty('label', 'Label');

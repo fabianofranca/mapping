@@ -1,5 +1,5 @@
-// Importar `?raw` devolve o texto do arquivo: o Vite faz isso nos testes e o plugin do
-// esbuild (mcp/build.mjs) faz no build. No app, o tipo vem de `vite/client`.
+// Importing `?raw` returns the file's text: Vite does this in the tests and the esbuild
+// plugin (mcp/build.mjs) does it in the build. In the app, the type comes from `vite/client`.
 declare module '*?raw' {
   const text: string;
   export default text;

@@ -419,7 +419,7 @@ describe('validate_library', () => {
     const missing = result.errors.find((e) => e.message.includes('m3-button.json'));
     expect(missing).toMatchObject({ file: 'material3.spec.json', severity: 'error' });
     expect(missing?.path).toMatch(/^layers\[\d+\]\.annotationTypes\[\d+\]\.component$/);
-    expect(result.hint).toMatch(/corrija/);
+    expect(result.hint).toMatch(/fix the errors/);
   });
 
   it('contrato de versão: previous liga a checagem (a mesma versão não é nova)', async () => {
@@ -479,7 +479,7 @@ describe('validate_specialization com a v4', () => {
       migrations: 0,
     });
     expect(result.hint).toMatch(/validate_library/);
-    expect(result.hint).toMatch(/ARQUIVO/);
+    expect(result.hint).toMatch(/FILE/);
   });
 });
 
@@ -584,7 +584,7 @@ describe('list_components e get_component', () => {
     expect(got.hasComponent).toBe(false);
     expect(got.doc).toBeNull();
     expect(got.component).toBeNull();
-    expect(got.hint).toMatch(/não tem componente/);
+    expect(got.hint).toMatch(/has no component/);
     const list = ok(
       await mcp.call<Listed>('list_components', { path: 'sem-componente' }),
     );

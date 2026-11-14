@@ -133,7 +133,7 @@ async function startWatcher(env: Record<string, string> = {}): Promise<void> {
   });
   h.child = child;
   await waitFor(
-    () => h.stderr.includes('watch-comments: observando'),
+    () => h.stderr.includes('watch-comments: observing'),
     'o watcher observar',
   );
 }
@@ -253,7 +253,7 @@ describe('examples/workspace/watch-comments.mjs', { timeout: 20000 }, () => {
     );
     expect(code).toBe(2);
     expect(err).toContain('watch-comments:');
-    expect(err).toContain('uso');
+    expect(err).toContain('usage');
   });
 
   it('encerra limpo em SIGTERM', async () => {

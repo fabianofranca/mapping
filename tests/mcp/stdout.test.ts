@@ -221,7 +221,7 @@ describe('mensagens grandes no stdin', () => {
     });
 
     expect(run.lines.filter((line) => !isJsonRpc(line))).toEqual([]);
-    expect(run.stderr).toMatch(/mapping-mcp: mensagem maior que \d+ bytes/);
+    expect(run.stderr).toMatch(/mapping-mcp: message larger than \d+ bytes/);
     expect(run.code).toBe(1);
   }, 60_000);
 });

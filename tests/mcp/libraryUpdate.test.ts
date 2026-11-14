@@ -355,7 +355,7 @@ describe('plan_library_update', () => {
     expect(result.changes?.map((c) => c.code)).toEqual(
       expect.arrayContaining(['added-type', 'added-field']),
     );
-    expect(result.hint).toMatch(/aditiva/);
+    expect(result.hint).toMatch(/additive/);
     expect(result.hint).toMatch(/update_specialization/);
   });
 
@@ -364,9 +364,9 @@ describe('plan_library_update', () => {
     expect(result).toMatchObject({ decision: 'update', additive: false, refused: false });
     expect(result.validation.valid).toBe(true);
     expect(result.freedLayers?.length).toBe(1);
-    expect(result.hint).not.toMatch(/sem diálogo de impacto/);
-    expect(result.hint).toMatch(/camadas viram livres/);
-    expect(result.hint).toMatch(/confirme com a pessoa/);
+    expect(result.hint).not.toMatch(/without an impact dialog/);
+    expect(result.hint).toMatch(/layers become free-form/);
+    expect(result.hint).toMatch(/confirm with the person/);
     expect(result.hint).toMatch(/update_specialization/);
   });
 
@@ -401,8 +401,8 @@ describe('plan_library_update', () => {
       lossCount: 0,
       losses: [],
     });
-    expect(result.hint).toMatch(/cobrem as quebras/);
-    expect(result.hint).not.toMatch(/perde dados/);
+    expect(result.hint).toMatch(/cover the breaks/);
+    expect(result.hint).not.toMatch(/loses data/);
   });
 
   it('quebra sem migração: refused com a lista do que falta', async () => {
@@ -434,13 +434,13 @@ describe('plan_library_update', () => {
     expect(result.losses?.[0]?.annotation).toMatch(/^mapping:\/\/telas\/a\//);
     expect(result.losses?.[0]?.markingLabel).toMatch(/Campo/);
     expect(result.steps?.[0]?.lossCount).toBe(1);
-    expect(result.hint).toMatch(/confirme com a pessoa/);
+    expect(result.hint).toMatch(/confirm with the person/);
   });
 
   it('versão que não cresceu e biblioteca ainda não aplicada', async () => {
     const same = await plan('lib/material3');
     expect(same).toMatchObject({ decision: 'not-newer', from: 1, to: 1 });
-    expect(same.hint).toMatch(/não é maior/);
+    expect(same.hint).toMatch(/is not greater than/);
     const fresh = await plan('lib/material3', 'vazio');
     expect(fresh).toMatchObject({ decision: 'apply', from: null, to: 1 });
     expect(fresh.validation.valid).toBe(true);
@@ -480,7 +480,7 @@ describe('propose_changes com a pasta do pacote', () => {
       { op: 'apply_specialization', file: 'lib/material3' },
     ]);
     expect(result.proposed).toBe(true);
-    expect(result.summary[0]).toMatch(/Aplicar a especialização.*material3.*v1/);
+    expect(result.summary[0]).toMatch(/Apply the specialization.*material3.*v1/);
     const id = result.proposal.id;
     const packaged = join(dir, 'proposals', id, 'specs', 'material3');
     expect(readdirSync(packaged).sort()).toEqual(readdirSync(MATERIAL3).sort());
@@ -530,7 +530,7 @@ describe('propose_changes com a pasta do pacote', () => {
     ]);
     expect(result.proposed).toBe(true);
     expect(result.summary[0]).toMatch(
-      /Atualizar a especialização "material3" para a v2 \(migração em 1 passo, 1 valor alterado/,
+      /Update the specialization "material3" to v2 \(migration in 1 step, 1 value changed/,
     );
     const id = result.proposal.id;
     const packaged = join(dir, 'proposals', id, 'specs', 'material3');
@@ -583,7 +583,7 @@ describe('propose_changes com a pasta do pacote', () => {
     const result = await propose(mcp, 'telas', [
       { op: 'update_specialization', file: 'v2-remove/material3' },
     ]);
-    expect(result.summary[0]).toMatch(/1 valor perdido/);
+    expect(result.summary[0]).toMatch(/1 value lost/);
   });
 
   it('update sem migração é recusado com spec-missing-migrations e a lista do que falta', async () => {
@@ -664,7 +664,7 @@ describe('propose_changes com a pasta do pacote', () => {
       }),
     );
     expect(result.valid).toBe(true);
-    expect(result.summary[0]).toMatch(/Aplicar a especialização/);
+    expect(result.summary[0]).toMatch(/Apply the specialization/);
   });
 
   it('v4 e v5 sem arquivo do pacote valem como arquivo isolado', async () => {
@@ -676,7 +676,7 @@ describe('propose_changes com a pasta do pacote', () => {
         }),
       );
       expect(result.valid).toBe(true);
-      expect(result.summary[0]).toMatch(/Aplicar a especialização/);
+      expect(result.summary[0]).toMatch(/Apply the specialization/);
     }
   });
 });

@@ -1,3 +1,3 @@
 # projetos/
 
-Um projeto Mapping por pasta (`<nome>/mapping.json`, `images/`, `specs/`, `proposals/`). Crie o projeto na app como **pasta**, escolhendo uma subpasta daqui, ou peça ao agente `create_project` com `root: "projetos"`. Esta pasta é uma raiz do servidor MCP, que procura `mapping.json` em qualquer profundidade.
+One Mapping project per folder (`<name>/mapping.json`, `images/`, `specs/`, `proposals/`). Create the project in the app as a **folder**, choosing a subfolder of this one, or ask the agent for `create_project` with `root: "projetos"`. This folder is a root of the MCP server, which looks for `mapping.json` at any depth.

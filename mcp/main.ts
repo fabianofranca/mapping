@@ -7,7 +7,7 @@ import { ImageServer } from './imageServer';
 import { createServer } from './server';
 import { BUILD_VERSION } from './version';
 
-/** Erro sem tratamento: uma linha com o prefixo do servidor no stderr e, abaixo, a pilha. */
+/** Unhandled error: one line with the server prefix on stderr and, below it, the stack. */
 function report(error: unknown): void {
   const message = error instanceof Error ? error.message : String(error);
   const stack = error instanceof Error && error.stack ? `${error.stack}\n` : '';
@@ -15,9 +15,9 @@ function report(error: unknown): void {
 }
 
 /**
- * O stdout é do protocolo: `console.log/info/debug` passam a escrever no stderr (os codecs
- * Emscripten imprimem avisos com `Module.print || console.log`, capturado ao instanciar o
- * codec, sob demanda, depois daqui). `console.error/warn` já escrevem no stderr.
+ * Stdout belongs to the protocol: `console.log/info/debug` now write to stderr (the Emscripten
+ * codecs print warnings with `Module.print || console.log`, captured when the codec is
+ * instantiated, on demand, after this point). `console.error/warn` already write to stderr.
  */
 function keepStdoutForProtocol(): void {
   const toStderr = (...args: unknown[]) => {
@@ -28,7 +28,7 @@ function keepStdoutForProtocol(): void {
   console.debug = toStderr;
 }
 
-// O protocolo usa o stdout: qualquer mensagem humana vai para o stderr.
+// The protocol uses stdout: any human-readable message goes to stderr.
 async function main(): Promise<void> {
   const options = parseArgs(process.argv.slice(2));
   if (options.help) {
@@ -52,22 +52,22 @@ async function main(): Promise<void> {
     roots: options.roots.map((root) => resolve(root)),
     images: options.http ? new ImageServer() : null,
   });
-  // O teto de leitura acompanha o do `base64` no schema. Acima dele, o transporte do SDK avisa
-  // por `onerror` e fecha sem responder (o processo sairia com 0, em silêncio): sai com erro.
+  // The read ceiling follows the `base64` one in the schema. Above it, the SDK transport warns
+  // through `onerror` and closes without responding (the process would exit with 0, silently): exit with an error.
   const transport = new StdioServerTransport(process.stdin, process.stdout, {
     maxBufferSize: MAX_MESSAGE_BYTES,
   });
   let failure: string | null = null;
   transport.onerror = (error) => {
     if (/exceeded maximum size/i.test(error.message)) {
-      failure = `mensagem maior que ${MAX_MESSAGE_BYTES} bytes (imagens grandes vão por \`file\`, não por \`base64\`)`;
+      failure = `message larger than ${MAX_MESSAGE_BYTES} bytes (large images go through \`file\`, not \`base64\`)`;
     } else {
       report(error);
     }
   };
-  // O servidor nunca fecha o transporte por conta própria: fechar é sempre falha.
+  // The server never closes the transport on its own: closing is always a failure.
   transport.onclose = () => {
-    process.stderr.write(`mapping-mcp: ${failure ?? 'transporte stdio fechado'}\n`);
+    process.stderr.write(`mapping-mcp: ${failure ?? 'stdio transport closed'}\n`);
     process.exit(1);
   };
   await server.connect(transport);

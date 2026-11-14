@@ -115,7 +115,7 @@ describe('plan_library_update: quebras de papel sem passo', () => {
     expect(result.missingMigrations[0]!.message).toContain('"click"');
     expect(result.missingMigrations[0]!.path).toContain('childRoles');
     expect(result.hint).toMatch(
-      /rename-type, remove-type, rename-field, remove-field, map-values, fill-field, rename-role, remove-role ou set-role/,
+      /rename-type, remove-type, rename-field, remove-field, map-values, fill-field, rename-role, remove-role or set-role/,
     );
   });
 
@@ -146,7 +146,7 @@ describe('plan_library_update: com os passos', () => {
     expect(result.losses[0]).toMatchObject({ reason: 'cleared-role', role: 'click' });
     expect(result.lossesTotal).toBe(1);
     expect(result.pending.map((p) => p.code)).toContain('missing-role');
-    expect(result.hint).toMatch(/perde dados/);
+    expect(result.hint).toMatch(/loses data/);
   });
 
   it('remove-role com unlink: unlinked no passo e no relatório, perda unlinked com o papel', async () => {
@@ -171,7 +171,7 @@ describe('plan_library_update: com os passos', () => {
       lossCount: 0,
     });
     expect(result.lossesTotal).toBe(0);
-    expect(result.hint).toMatch(/cobrem as quebras/);
+    expect(result.hint).toMatch(/cover the breaks/);
   });
 
   it('set-role: o passo com childType alcança só o filho do tipo, sem perda nem pendência nova', async () => {
@@ -218,7 +218,7 @@ describe('update_specialization grava os vínculos migrados', () => {
         const dir = join(other.root, other.project);
         const proposed = await propose(conn, other.project, [updateOp]);
         expect(proposed.proposed).toBe(true);
-        expect(proposed.summary.join(' ')).toMatch(/1 valor perdido/);
+        expect(proposed.summary.join(' ')).toMatch(/1 value lost/);
         const proposal = readProposal(dir, proposed.proposal.id);
         expect(proposal.changes.find((c) => c.field === 'parentRole')).toMatchObject({
           entity: 'annotation',
@@ -242,7 +242,7 @@ describe('update_specialization grava os vínculos migrados', () => {
         const dir = join(other.root, other.project);
         const proposed = await propose(conn, other.project, [updateOp]);
         expect(proposed.proposed).toBe(true);
-        expect(proposed.summary.join(' ')).toMatch(/1 vínculo desfeito/);
+        expect(proposed.summary.join(' ')).toMatch(/1 link undone/);
         const proposal = readProposal(dir, proposed.proposal.id);
         expect(proposal.formatVersion).toBe(4);
         const changes = proposal.changes.filter((c) => c.entity === 'annotation');
@@ -290,7 +290,7 @@ describe('update_specialization grava os vínculos migrados', () => {
         );
         expect(planned.valid).toBe(true);
         expect(planned.changes.annotations?.updated).toBe(1);
-        expect(planned.summary.join(' ')).toMatch(/migração em 1 passo/);
+        expect(planned.summary.join(' ')).toMatch(/migration in 1 step/);
       },
     );
   });

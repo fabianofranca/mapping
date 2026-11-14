@@ -30,21 +30,21 @@ import type { FontBook } from './textMeasurer';
 
 export { textBars, type TextBar };
 
-// Desenho simplificado de uma cena de componente, em pixels, para `get_marking_image` numa tela
-// em branco. O servidor não tem fontes nem canvas: formas viram polígonos preenchidos por
-// varredura com cobertura (suavizada), o gradiente vira a cor do primeiro stop, a imagem vira
-// um reservado cinza. Com `view.fonts` o texto é desenhado com os glifos da fonte (quebra, `…`
-// e trechos); sem ela vira barras (uma por linha, na cor do texto). Traço com `align`, tracejado,
-// `cap`/`join` e `sides`, e sombra desfocada. Puro: sem disco.
+// Simplified drawing of a component scene, in pixels, for `get_marking_image` on a blank
+// screen. The server has no fonts or canvas: shapes become polygons filled by
+// scanline with (smoothed) coverage, the gradient becomes the color of the first stop, the image becomes
+// a gray placeholder. With `view.fonts` the text is drawn with the font's glyphs (wrapping, `…`
+// and runs); without it, it becomes bars (one per line, in the text color). Stroke with `align`, dashes,
+// `cap`/`join` and `sides`, and blurred shadow. Pure: no disk.
 
-/** Janela de desenho: escala da imagem para o raster e a região (em pixels do raster) a pintar. */
+/** Drawing window: scale from the image to the raster and the region (in raster pixels) to paint. */
 export interface SceneView {
   readonly scaleX: number;
   readonly scaleY: number;
   readonly clip: PixelRect;
-  /** Fontes do desenho do texto; ausente = o texto vira barras (o desenho simplificado). */
+  /** Fonts for drawing the text; absent = the text becomes bars (the simplified drawing). */
   readonly fonts?: FontBook;
-  /** Onde fica a origem da imagem (0, 0) no raster, em pixels do raster (padrão 0, 0). */
+  /** Where the image's origin (0, 0) sits in the raster, in raster pixels (default 0, 0). */
   readonly originX?: number;
   readonly originY?: number;
 }
@@ -63,9 +63,9 @@ interface Subpath {
   readonly closed: boolean;
 }
 
-/** Cor do reservado de imagem (sem os dados do arquivo no servidor). */
+/** Color of the image placeholder (without the file's data on the server). */
 const IMAGE_PLACEHOLDER: Color = { rgb: [158, 158, 158], alpha: 0.5 };
-/** Subamostras verticais por pixel na cobertura. */
+/** Vertical subsamples per pixel in the coverage. */
 const SUBSAMPLES = 4;
 const CURVE_STEPS = 16;
 const CORNER_STEPS = 10;
@@ -77,7 +77,7 @@ const FUNC = /^rgba?\(\s*([^)]*)\)$/i;
 // ---------------------------------------------------------------------------
 // Cores
 
-/** `#rgb`, `#rrggbb`, `#rrggbbaa`, `rgb()` e `rgba()`; qualquer outra coisa vira `null`. */
+/** `#rgb`, `#rrggbb`, `#rrggbbaa`, `rgb()` and `rgba()`; anything else becomes `null`. */
 export function parseColor(text: string): Color | null {
   const value = text.trim();
   if (value === 'transparent') return { rgb: [0, 0, 0], alpha: 0 };
@@ -114,7 +114,7 @@ function clamp255(value: number): number {
   return Math.min(255, Math.max(0, Math.round(value)));
 }
 
-/** A cor sólida em que o preenchimento vira (gradiente: o primeiro stop; imagem: reservado). */
+/** The solid color the fill becomes (gradient: the first stop; image: placeholder). */
 function paintColor(paint: Paint): Color | null {
   let base: Color | null;
   switch (paint.type) {
@@ -150,7 +150,7 @@ function signedArea(poly: Polygon): number {
   return sum / 2;
 }
 
-/** Orientação positiva, para os pedaços de um traço somarem no preenchimento não-zero. */
+/** Positive orientation, so the pieces of a stroke add up in the non-zero fill. */
 function oriented(poly: Polygon): Polygon {
   return signedArea(poly) < 0 ? [...poly].reverse() : poly;
 }
@@ -167,7 +167,7 @@ function radii(cornerRadius: CornerRadius, width: number, height: number): numbe
   return list.map((r) => Math.min(Math.max(0, r), limit));
 }
 
-/** Retângulo (com cantos arredondados) como polígono no espaço local. */
+/** Rectangle (with rounded corners) as a polygon in local space. */
 function roundedRect(width: number, height: number, cornerRadius: CornerRadius): Point[] {
   const [tl, tr, br, bl] = radii(cornerRadius, width, height) as [
     number,
@@ -215,14 +215,14 @@ function ellipse(width: number, height: number): Point[] {
 
 const NUMBER = /[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?/y;
 
-/** Lê um número SVG em `at`; devolve-o e a posição seguinte, ou `null` se não há número. */
+/** Reads an SVG number at `at`; returns it and the next position, or `null` if there is no number. */
 function readNumber(d: string, at: number): [number, number] | null {
   NUMBER.lastIndex = at;
   const found = NUMBER.exec(d);
   return found ? [Number(found[0]), NUMBER.lastIndex] : null;
 }
 
-/** Os argumentos 4 e 5 (índices 3 e 4) de `A` são flags de um dígito, sem separador obrigatório. */
+/** Arguments 4 and 5 (indices 3 and 4) of `A` are single-digit flags, with no mandatory separator. */
 function isArcFlag(command: string, argIndex: number): boolean {
   return command.toUpperCase() === 'A' && (argIndex % 7 === 3 || argIndex % 7 === 4);
 }
@@ -271,8 +271,8 @@ const ARITY: Readonly<Record<string, number>> = {
 };
 
 /**
- * Acha o `d` SVG em subcaminhos de pontos: curvas em segmentos e arcos como linha reta até o
- * ponto final. Comando inválido ou truncado encerra a leitura com o que já foi lido.
+ * Parses the SVG `d` into subpaths of points: curves into segments and arcs as a straight line to the
+ * end point. An invalid or truncated command ends the reading with what was already read.
  */
 export function flattenPath(d: string): Subpath[] {
   const tokens = tokenize(d);
@@ -313,7 +313,7 @@ export function flattenPath(d: string): Subpath[] {
         }
         lastCubic = null;
         lastQuad = null;
-        // Número solto depois de Z não tem comando: termina o caminho.
+        // A loose number after Z has no command: it ends the path.
         command = '';
         continue;
       }
@@ -337,7 +337,7 @@ export function flattenPath(d: string): Subpath[] {
         pos = { x: ox + n[0]!, y: oy + n[1]! };
         start = pos;
         current = [pos];
-        // Pares seguintes de um M são L.
+        // Following pairs of an M are L.
         command = relative ? 'l' : 'L';
         break;
       }
@@ -410,7 +410,7 @@ function cubicTo(lineTo: LineTo, p0: Point, c1: Point, c2: Point, p1: Point): vo
   }
 }
 
-/** Passos por quarto de volta ao achatar um arco. */
+/** Steps per quarter turn when flattening an arc. */
 const ARC_STEPS_PER_QUARTER = 8;
 
 interface ArcCenter {
@@ -423,13 +423,13 @@ interface ArcCenter {
   readonly delta: number;
 }
 
-/** Ângulo orientado do vetor (ux, uy) ao (vx, vy). */
+/** Oriented angle from vector (ux, uy) to (vx, vy). */
 const vectorAngle = (ux: number, uy: number, vx: number, vy: number): number =>
   Math.atan2(ux * vy - uy * vx, ux * vx + uy * vy);
 
 /**
- * Pontos extremos do arco elíptico do SVG (`A rx ry rot large sweep x y`) em centro e ângulos
- * (SVG 1.1, F.6.5). Raio pequeno demais cresce até caber nos dois pontos.
+ * Extreme points of the SVG elliptical arc (`A rx ry rot large sweep x y`) as center and angles
+ * (SVG 1.1, F.6.5). A radius that is too small grows until it fits both points.
  */
 function arcCenter(p0: Point, args: readonly number[], end: Point): ArcCenter {
   let rx = Math.abs(args[0]!);
@@ -471,8 +471,8 @@ function arcCenter(p0: Point, args: readonly number[], end: Point): ArcCenter {
 }
 
 /**
- * Arco elíptico do SVG em segmentos. `args` traz `[rx, ry, rotação, large-arc, sweep, x, y]`
- * (`end` é o ponto final já absoluto). Raio nulo ou pontos iguais viram linha reta.
+ * SVG elliptical arc as segments. `args` carries `[rx, ry, rotation, large-arc, sweep, x, y]`
+ * (`end` is the already-absolute end point). A zero radius or equal points become a straight line.
  */
 function arcTo(lineTo: LineTo, p0: Point, args: readonly number[], end: Point): void {
   const flat = args[0] === 0 || args[1] === 0 || (p0.x === end.x && p0.y === end.y);
@@ -510,14 +510,14 @@ function quadTo(lineTo: LineTo, p0: Point, c: Point, p1: Point): void {
 }
 
 // ---------------------------------------------------------------------------
-// Traço: união de retângulos por segmento e círculos nos vértices (pontas e junções redondas)
+// Stroke: union of rectangles per segment and circles at the vertices (round caps and joins)
 
 interface StrokeStyle {
   readonly cap: 'butt' | 'round' | 'square';
   readonly join: 'miter' | 'round' | 'bevel';
 }
 
-/** Limite do canto `miter` (como o padrão do canvas 2D): acima dele o canto vira `bevel`. */
+/** Limit of the `miter` corner (like the 2D canvas default): above it the corner becomes `bevel`. */
 const MITER_LIMIT = 10;
 
 function circlePolygon(center: Point, radius: number): Polygon {
@@ -530,7 +530,7 @@ function circlePolygon(center: Point, radius: number): Polygon {
   });
 }
 
-/** O retângulo de um segmento, com a ponta `square` empurrada para fora quando pedida. */
+/** The rectangle of a segment, with the `square` cap pushed outward when requested. */
 function segmentPolygon(
   a: Point,
   b: Point,
@@ -556,7 +556,7 @@ function segmentPolygon(
   ]);
 }
 
-/** O canto entre dois segmentos consecutivos (a→b, b→c): círculo, chanfro ou ponta de esquadro. */
+/** The corner between two consecutive segments (a→b, b→c): circle, bevel or square cap. */
 function joinPolygon(
   a: Point,
   b: Point,
@@ -573,7 +573,7 @@ function joinPolygon(
   const dot = d1.x * d2.x + d1.y * d2.y;
   if (Math.abs(cross) < 1e-9 && dot > 0) return null;
   if (join === 'round') return circlePolygon(b, half);
-  // A volta aponta para o lado da normal esquerda quando `cross` > 0; o canto de fora é o oposto.
+  // The turn points to the side of the left normal when `cross` > 0; the outer corner is the opposite.
   const side = cross > 0 ? -1 : 1;
   const p1 = { x: b.x + side * -d1.y * half, y: b.y + side * d1.x * half };
   const p2 = { x: b.x + side * -d2.y * half, y: b.y + side * d2.x * half };
@@ -608,7 +608,7 @@ function segmentPolygons(sub: Subpath, half: number, cap: StrokeStyle['cap']): P
   return out;
 }
 
-/** Caminho fechado cujo último ponto repete o primeiro: o ponto repetido sai (o fechamento já liga os dois). */
+/** Closed path whose last point repeats the first: the repeated point is dropped (the closing already links the two). */
 function withoutClosingDuplicate(sub: Subpath): Subpath {
   const { points } = sub;
   const last = points[points.length - 1];
@@ -665,7 +665,7 @@ function strokePolygons(
 }
 
 // ---------------------------------------------------------------------------
-// Preenchimento por varredura com cobertura
+// Scanline fill with coverage
 
 interface Edge {
   readonly x0: number;
@@ -690,9 +690,9 @@ function blend(raster: Raster, index: number, color: Color, coverage: number): v
 }
 
 /**
- * Preenche os polígonos (em pixels do raster) com a regra par-ímpar ou não-zero, dentro de
- * `clip`. A cobertura de cada pixel vem de `SUBSAMPLES` amostras verticais com cobertura
- * horizontal exata.
+ * Fills the polygons (in raster pixels) with the even-odd or non-zero rule, within
+ * `clip`. The coverage of each pixel comes from `SUBSAMPLES` vertical samples with exact
+ * horizontal coverage.
  */
 export function fillPolygons(
   raster: Raster,
@@ -730,7 +730,7 @@ export function fillPolygons(
   const by1 = Math.min(raster.height, Math.ceil(clip.y + clip.height), Math.ceil(maxY));
   if (bx1 <= bx0 || by1 <= by0) return;
 
-  // Arestas por linha de pixels que elas tocam.
+  // Edges per row of pixels they touch.
   const buckets: Edge[][] = Array.from({ length: by1 - by0 }, () => []);
   for (const edge of edges) {
     const first = Math.max(by0, Math.floor(edge.y0));
@@ -782,7 +782,7 @@ export function fillPolygons(
   }
 }
 
-/** O raio do canto movido `d` px para dentro (negativo = para fora), sem passar de 0. */
+/** The corner radius moved `d` px inward (negative = outward), not going below 0. */
 function shiftRadius(radius: CornerRadius, d: number): CornerRadius {
   const shift = (r: number) => Math.max(0, r - d);
   return typeof radius === 'number'
@@ -791,10 +791,10 @@ function shiftRadius(radius: CornerRadius, d: number): CornerRadius {
 }
 
 /**
- * O contorno que o traço percorre: `center` é o próprio contorno; `inside`/`outside` movem a
- * linha de centro meia largura para dentro/fora, em quadros, retângulos e elipses (a faixa do
- * traço cobre então só um lado do contorno). O `offset` afasta o contorno da forma, de cada
- * lado, e soma ao raio de cada canto arredondado. Caminhos e linhas ficam ao centro.
+ * The outline the stroke traces: `center` is the outline itself; `inside`/`outside` move the
+ * center line half a width inward/outward, on frames, rectangles and ellipses (the stroke's
+ * band then covers only one side of the outline). The `offset` moves the outline away from the shape, on each
+ * side, and adds to the radius of each rounded corner. Paths and lines stay centered.
  */
 function alignedShapes(node: SceneNode, shapes: Subpath[]): Subpath[] {
   const stroke = node.stroke;
@@ -818,16 +818,16 @@ function alignedShapes(node: SceneNode, shapes: Subpath[]): Subpath[] {
   return [{ points: points.map((p) => ({ x: p.x + d, y: p.y + d })), closed: true }];
 }
 
-/** As sombras que o nó desenha: a lista em frame, rect e ellipse; nos outros tipos, a primeira externa (como a app). */
+/** The shadows the node draws: the list on frame, rect and ellipse; on other types, the first outer one (like the app). */
 function castingEffects(node: SceneNode): readonly Shadow[] {
   const boxed = node.type === 'frame' || node.type === 'rect' || node.type === 'ellipse';
   return boxed ? node.effects : node.effects.filter((e) => !e.inner).slice(0, 1);
 }
 
 /**
- * A forma que a sombra desenha: a do nó crescida (ou encolhida) de `spread` em cada lado, com os
- * raios mais `spread`, num `frame`, `rect` ou `ellipse`; nos outros nós o `spread` não vale.
- * Vazia quando a forma encolhida some.
+ * The shape the shadow draws: the node's, grown (or shrunk) by `spread` on each side, with the
+ * radii plus `spread`, on a `frame`, `rect` or `ellipse`; on other nodes `spread` does not apply.
+ * Empty when the shrunk shape disappears.
  */
 function spreadShapes(node: SceneNode, shapes: Subpath[], spread: number): Subpath[] {
   if (spread === 0) return shapes;
@@ -852,7 +852,7 @@ function spreadShapes(node: SceneNode, shapes: Subpath[], spread: number): Subpa
 // ---------------------------------------------------------------------------
 // Cena
 
-/** A faixa do texto cortado: a largura da caixa, na horizontal; na vertical nada se corta. */
+/** The band of the cut text: the box's width, horizontally; vertically nothing is cut. */
 function cutStrip(node: TextNode): Polygon {
   return [
     { x: 0, y: -CUT_REACH },
@@ -879,7 +879,7 @@ class Painter {
     const shapes = this.shapes(node);
     this.shadows(node, shapes, matrix, alpha, clip);
     const rule = node.type === 'path' ? node.fillRule : 'nonzero';
-    // Linha aberta não tem interior: só o traço.
+    // An open line has no interior: only the stroke.
     const fillable = node.type !== 'line' || node.closed;
     if (fillable && node.type !== 'text') {
       for (const paint of node.fills) {
@@ -901,7 +901,7 @@ class Painter {
     if (node.type === 'frame' || node.type === 'group') {
       let childClip = clip;
       if (node.type === 'frame' && node.clip) {
-        // Com raio, o recorte ampliado (sombra, traço) vale só ao quadro: os filhos saem pela forma.
+        // With a radius, the enlarged clip (shadow, stroke) applies only to the frame: the children come out by the shape.
         const box = hasRadius(node.cornerRadius) ? undefined : node.clipBox;
         const rect = box
           ? [
@@ -913,7 +913,7 @@ class Painter {
           : roundedRect(node.width, node.height, node.cornerRadius);
         const corners = this.toRaster(rect, matrix);
         childClip = intersect(clip, bounds(corners));
-        // O recorte reto só serve a quadro reto e sem raio: com raio, recorta-se pela forma (como a app).
+        // The straight clip only serves a straight frame without a radius: with a radius, it clips by the shape (like the app).
         if (!isAxisAligned(matrix) || (!box && hasRadius(node.cornerRadius))) {
           this.paintTurned(node, matrix, alpha, childClip, corners);
           return;
@@ -924,8 +924,8 @@ class Painter {
   }
 
   /**
-   * Os filhos de um quadro com `clip` girado: pintados numa camada à parte e compostos pela
-   * cobertura do retângulo girado (o recorte reto só serve a quadros alinhados aos eixos).
+   * The children of a frame with a rotated `clip`: painted on a separate layer and composed by the
+   * coverage of the rotated rectangle (the straight clip only serves axis-aligned frames).
    */
   private paintTurned(
     node: FrameNode | GroupNode,
@@ -941,10 +941,10 @@ class Painter {
   }
 
   /**
-   * Pinta com `draw` numa camada do tamanho da região (`clip` ∩ caixa de `mask`) e compõe o
-   * resultado pela cobertura do polígono `mask`: um recorte que não é reto. `draw` recebe o
-   * pintor da camada, a translação que leva o raster à camada (multiplique-a às matrizes) e a
-   * região em coordenadas da camada.
+   * Paints with `draw` on a layer the size of the region (`clip` ∩ box of `mask`) and composes the
+   * result by the coverage of the `mask` polygon: a clip that is not straight. `draw` receives the
+   * layer's painter, the translation that takes the raster to the layer (multiply it into the matrices) and the
+   * region in layer coordinates.
    */
   private masked(
     mask: Polygon,
@@ -982,7 +982,7 @@ class Painter {
     }
   }
 
-  /** O traço do nó: contorno com `align`, tracejado, `cap`/`join` ou os `sides` pedidos. */
+  /** The node's stroke: outline with `align`, dashes, `cap`/`join` or the requested `sides`. */
   private strokeNode(
     node: SceneNode,
     shapes: Subpath[],
@@ -1005,7 +1005,7 @@ class Painter {
     this.fill(strokePolygons(lines, width, style), matrix, 'nonzero', color, alpha, clip);
   }
 
-  /** Sombra (`effects`, sem a interna): a forma do nó desfocada e deslocada, por baixo do nó. */
+  /** Shadow (`effects`, not the inner one): the node's shape blurred and shifted, beneath the node. */
   private shadows(
     node: SceneNode,
     shapes: Subpath[],
@@ -1014,7 +1014,7 @@ class Painter {
     clip: PixelRect,
   ): void {
     if (node.type === 'text' || shapes.length === 0) return;
-    // A primeira sombra da lista fica por cima: a última é pintada primeiro.
+    // The first shadow in the list stays on top: the last one is painted first.
     const effects = castingEffects(node);
     for (const shadow of [...effects].reverse()) {
       const color = parseColor(shadow.color);
@@ -1026,7 +1026,7 @@ class Painter {
     }
   }
 
-  /** Uma sombra: a máscara da forma (`casting`), desfocada e deslocada, composta sobre o raster. */
+  /** One shadow: the shape's mask (`casting`), blurred and shifted, composed onto the raster. */
   private shadow(
     casting: Subpath[],
     shadow: Shadow,
@@ -1065,7 +1065,7 @@ class Painter {
     );
   }
 
-  /** `stroke.gap` num `frame`/`rect`: o contorno com o raio dos cantos, interrompido nos vãos. */
+  /** `stroke.gap` on a `frame`/`rect`: the outline with the corner radius, interrupted at the gaps. */
   private gapLines(node: SceneNode): Subpath[] | null {
     if ((node.type !== 'frame' && node.type !== 'rect') || !node.stroke?.gaps?.length)
       return null;
@@ -1073,10 +1073,10 @@ class Painter {
     return lines.length > 0 ? lines.map((points) => ({ points, closed: false })) : null;
   }
 
-  /** `stroke.sides` num `frame`/`rect`: os lados pedidos como linhas retas (sem os cantos). */
+  /** `stroke.sides` on a `frame`/`rect`: the requested sides as straight lines (without the corners). */
   private sideLines(node: SceneNode): Subpath[] | null {
     if ((node.type !== 'frame' && node.type !== 'rect') || !node.stroke) return null;
-    // Sem `stroke.sides` (ou com os quatro, que a cena não traz) o traço é o contorno inteiro.
+    // Without `stroke.sides` (or with all four, which the scene does not carry) the stroke is the whole outline.
     if (!node.stroke.sides) return null;
     return sideSegments(node.stroke, node.width, node.height).map((seg) => ({
       points: [
@@ -1091,7 +1091,7 @@ class Painter {
     return points.map((p) => apply(matrix, p));
   }
 
-  /** Contornos do nó no espaço local (a base do preenchimento e do traço). */
+  /** The node's outlines in local space (the base of the fill and the stroke). */
   private shapes(node: SceneNode): Subpath[] {
     switch (node.type) {
       case 'frame':
@@ -1136,7 +1136,7 @@ class Painter {
     );
   }
 
-  /** Texto: glifos da fonte (com `fonts`) ou barras, uma por linha, na cor do texto. */
+  /** Text: the font's glyphs (with `fonts`) or bars, one per line, in the text color. */
   private text(node: TextNode, matrix: Matrix, opacity: number, clip: PixelRect): void {
     if (node.text === '') return;
     if (this.fonts) {
@@ -1153,7 +1153,7 @@ class Painter {
     this.fill(bars.map(barPolygon), matrix, 'nonzero', color, opacity, clip);
   }
 
-  /** Os glifos do texto (e o fundo dos chips), cada trecho na sua cor. */
+  /** The text's glyphs (and the chips' background), each run in its own color. */
   private glyphText(
     node: TextNode,
     matrix: Matrix,
@@ -1163,18 +1163,18 @@ class Painter {
   ): void {
     const ink = textInk(node, this.measure, fonts);
     const own = firstColor(node.fills);
-    // `wrap: none` sem `ellipsis` numa caixa fixa: o glifo que passa da caixa sai cortado por pixel.
+    // `wrap: none` without `ellipsis` in a fixed box: the glyph that goes past the box is cut per pixel.
     if (!cutsText(node)) return this.drawInk(ink, own, matrix, opacity, clip);
     const strip = this.toRaster(cutStrip(node), matrix);
     if (isAxisAligned(matrix))
       return this.drawInk(ink, own, matrix, opacity, intersect(clip, bounds(strip)));
-    // Texto girado: a faixa do corte é um retângulo girado, que só uma máscara recorta.
+    // Rotated text: the cut band is a rotated rectangle, which only a mask clips.
     this.masked(strip, clip, (inner, shift, area) =>
       inner.drawInk(ink, own, multiply(shift, matrix), opacity, area),
     );
   }
 
-  /** Os polígonos de tinta (fundo dos chips e glifos), cada um na sua cor, dentro de `area`. */
+  /** The ink polygons (chip background and glyphs), each in its own color, within `area`. */
   private drawInk(
     ink: ReturnType<typeof textInk>,
     own: Color | null,
@@ -1198,7 +1198,7 @@ class Painter {
     }
   }
 
-  /** Texto rico: o fundo de cada chip e uma barra por pedaço de texto, em ordem, cada um na sua cor. */
+  /** Rich text: each chip's background and one bar per piece of text, in order, each in its own color. */
   private richText(
     node: TextNode,
     matrix: Matrix,
@@ -1223,8 +1223,8 @@ function barPolygon(b: PixelRect): Polygon {
 }
 
 /**
- * Largura do traço no espaço local, com o mínimo de 1 px de saída. `scale: false` fixa a largura
- * em pixels de saída (como `strokeScaleEnabled(false)` na app), em qualquer escala ou transformação.
+ * Stroke width in local space, with a minimum of 1 output px. `scale: false` fixes the width
+ * in output pixels (like `strokeScaleEnabled(false)` in the app), at any scale or transformation.
  */
 function strokeWidth(
   stroke: NonNullable<SceneNode['stroke']>,
@@ -1244,7 +1244,7 @@ function firstColor(paints: readonly Paint[]): Color | null {
   return null;
 }
 
-/** Caixa que contém os pontos; laço simples, porque `Math.min(...xs)` estoura a pilha com muitos pontos. */
+/** Box containing the points; a simple loop, because `Math.min(...xs)` overflows the stack with many points. */
 export function bounds(points: readonly Point[]): PixelRect {
   let minX = Infinity;
   let minY = Infinity;
@@ -1259,7 +1259,7 @@ export function bounds(points: readonly Point[]): PixelRect {
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 }
 
-/** A matriz só escala e translada (ou gira de 90 em 90°): um retângulo continua alinhado aos eixos. */
+/** The matrix only scales and translates (or rotates in 90° steps): a rectangle stays axis-aligned. */
 function isAxisAligned(m: Matrix): boolean {
   const flat = (a: number, b: number) => Math.abs(a) < 1e-9 * (Math.abs(b) + 1);
   return (flat(m[1], m[0]) && flat(m[2], m[3])) || (flat(m[0], m[1]) && flat(m[3], m[2]));
@@ -1273,7 +1273,7 @@ function intersect(a: PixelRect, b: PixelRect): PixelRect {
   return { x: x0, y: y0, width: Math.max(0, x1 - x0), height: Math.max(0, y1 - y0) };
 }
 
-/** Fração (da largura e da altura) do ponto de cada âncora do desenho em pixels de tela. */
+/** Fraction (of the width and height) of each anchor's point of the drawing in screen pixels. */
 const ANCHOR_FRACTION: Record<ScreenAnchor, readonly [number, number]> = {
   'top-left': [0, 0],
   top: [0.5, 0],
@@ -1286,26 +1286,26 @@ const ANCHOR_FRACTION: Record<ScreenAnchor, readonly [number, number]> = {
   'bottom-right': [1, 1],
 };
 
-/** Desenho (a cena instanciada de uma marcação) para `paintScene`. */
+/** Drawing (the instantiated scene of a marking) for `paintScene`. */
 export interface SceneDrawing {
   readonly root: SceneNode;
   /**
-   * Desenho em pixels de tela (`screen` do componente): `root` mede o `size` na origem e é
-   * ancorado em `anchor` no `rect` da marcação (pixels da imagem). Na imagem do servidor um pixel
-   * de design é um pixel da saída, em qualquer zoom.
+   * Drawing in screen pixels (the component's `screen`): `root` measures the `size` at the origin and is
+   * anchored at `anchor` in the marking's `rect` (image pixels). In the server's image one design pixel
+   * is one output pixel, at any zoom.
    */
   readonly screen?: {
     readonly anchor: ScreenAnchor;
     readonly rect: { x: number; y: number; width: number; height: number };
   };
   /**
-   * Filha de um slot com `clip` (v4): a caixa do slot da mãe, nos pixels da imagem (o espaço de
-   * `root.transform`). Só aparece o que cai dentro dela; o desenho `screen` ignora o recorte.
+   * Child of a slot with `clip` (v4): the parent's slot box, in image pixels (the space of
+   * `root.transform`). Only what falls inside it shows up; the `screen` drawing ignores the clip.
    */
   readonly clip?: { x: number; y: number; width: number; height: number };
 }
 
-/** A matriz do desenho no raster: a da imagem, ou só a translação do âncora num desenho de tela. */
+/** The drawing's matrix on the raster: the image's, or only the anchor's translation in a screen drawing. */
 function drawingBase(drawing: SceneDrawing, view: SceneView): Matrix {
   const ox = view.originX ?? 0;
   const oy = view.originY ?? 0;
@@ -1327,8 +1327,8 @@ function drawingBase(drawing: SceneDrawing, view: SceneView): Matrix {
 }
 
 /**
- * Pinta as cenas sobre `raster`, em ordem (as últimas ficam por cima), só dentro de
- * `view.clip`. Uma cena cuja caixa não toca a região é ignorada.
+ * Paints the scenes onto `raster`, in order (the last ones end up on top), only within
+ * `view.clip`. A scene whose box does not touch the region is ignored.
  */
 export function paintScene(
   raster: Raster,
@@ -1339,7 +1339,7 @@ export function paintScene(
   const scale = Math.sqrt(view.scaleX * view.scaleY);
   const painter = new Painter(raster, measure, scale, view.fonts);
   const screenPainter = new Painter(raster, measure, 1, view.fonts);
-  // Um pintor por escala de raiz (a densidade do container), não um por desenho.
+  // One painter per root scale (the container's density), not one per drawing.
   const scaled = new Map<number, Painter>();
   const clip = intersect(view.clip, {
     x: 0,
@@ -1358,7 +1358,7 @@ export function paintScene(
         { x: 0, y: root.height },
       ].map((p) => apply(multiply(base, root.transform), p)),
     );
-    // Fora da região (encostar conta: uma caixa sem altura ainda pode ter traço).
+    // Outside the region (touching counts: a box with no height may still have a stroke).
     if (
       box.x > clip.x + clip.width ||
       box.x + box.width < clip.x ||
@@ -1371,8 +1371,8 @@ export function paintScene(
       screenPainter.paint(root, base, 1, clip);
       continue;
     }
-    // A densidade (escala da raiz da cena) entra na escala do pintor: a sombra e o traço mínimo
-    // são medidos em pixels de saída, não em unidades do componente.
+    // The density (the scene root's scale) goes into the painter's scale: the shadow and the minimum stroke
+    // are measured in output pixels, not in component units.
     const [a, b, c, d] = root.transform;
     const rootScale = Math.sqrt(Math.abs(a * d - b * c));
     let drawer = painter;
@@ -1386,7 +1386,7 @@ export function paintScene(
   }
 }
 
-/** A região de pintura da filha de um slot com `clip`: a da janela reduzida pela caixa do slot. */
+/** The painting region of a slot child with `clip`: the reduced window's, cut by the slot's box. */
 function slotClip(
   slot: SceneDrawing['clip'],
   base: Matrix,

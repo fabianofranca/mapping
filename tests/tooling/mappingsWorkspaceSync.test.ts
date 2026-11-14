@@ -1,7 +1,7 @@
 // @vitest-environment node
-// Etapa #1803, fase WS1: `mappings-workspace/` é a cópia usada pelas sessões deste repositório do
-// que `examples/workspace/` publica na release do MCP. O `serve.mjs` roda o `setup.sh` sem
-// autoatualização (a cópia versionada é a fonte), então este teste confere que a cópia não derivou.
+// Stage #1803, phase WS1: `mappings-workspace/` is the copy, used by this repository's sessions, of
+// what `examples/workspace/` publishes in the MCP release. `serve.mjs` runs `setup.sh` without
+// self-update (the versioned copy is the source), so this test checks that the copy has not drifted.
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -11,7 +11,7 @@ import { extractBlock } from '../../scripts/release/workspaceAssets.mjs';
 const ROOT = resolve(__dirname, '../..');
 const read = (path: string) => readFileSync(resolve(ROOT, path), 'utf8');
 
-/** Modo no índice do git (`100755`, `100644`), ou `null` se o arquivo não está versionado. */
+/** Mode in the git index (`100755`, `100644`), or `null` if the file is not versioned. */
 function gitMode(path: string): string | null {
   const out = spawnSync('git', ['ls-files', '-s', '--', path], {
     cwd: ROOT,
@@ -21,31 +21,31 @@ function gitMode(path: string): string | null {
 }
 
 const fix = (file: string) =>
-  `copie examples/workspace/${file} para mappings-workspace/${file} (conteúdo e modo)`;
+  `copy examples/workspace/${file} to mappings-workspace/${file} (content and mode)`;
 
-describe('mappings-workspace igual ao examples/workspace', () => {
+describe('mappings-workspace equal to examples/workspace', () => {
   for (const file of ['setup.sh', 'watch-comments.mjs']) {
-    it(`${file}: mesmo conteúdo`, () => {
+    it(`${file}: same content`, () => {
       const copy = read(`mappings-workspace/${file}`);
       expect(copy === read(`examples/workspace/${file}`), fix(file)).toBe(true);
     });
 
-    it(`${file}: mesmo modo no índice do git`, () => {
+    it(`${file}: same mode in the git index`, () => {
       const mode = gitMode(`mappings-workspace/${file}`);
       expect(mode, fix(file)).toBe(gitMode(`examples/workspace/${file}`));
     });
   }
 
-  it('AGENTS.md: o bloco gerenciado é igual', () => {
+  it('AGENTS.md: the managed block is equal', () => {
     const copy = extractBlock(read('mappings-workspace/AGENTS.md'));
     const source = extractBlock(read('examples/workspace/AGENTS.md'));
     expect(
       copy === source,
-      'copie o bloco entre mapping:begin e mapping:end de examples/workspace/AGENTS.md para mappings-workspace/AGENTS.md',
+      'copy the block between mapping:begin and mapping:end of examples/workspace/AGENTS.md to mappings-workspace/AGENTS.md',
     ).toBe(true);
   });
 
-  it('serve.mjs roda o setup.sh sem autoatualização', () => {
+  it('serve.mjs runs setup.sh without self-update', () => {
     expect(read('mappings-workspace/serve.mjs')).toMatch(
       /\[\s*'\.\/setup\.sh'\s*,\s*'--no-self-update'\s*\]/,
     );

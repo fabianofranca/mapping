@@ -1,4 +1,4 @@
-// O opentype.js 2 não traz tipos: só o que o medidor e o rasterizador do servidor usam.
+// opentype.js 2 ships no types: only what the server's measurer and rasterizer use.
 declare module 'opentype.js' {
   export interface PathCommand {
     readonly type: 'M' | 'L' | 'C' | 'Q' | 'Z';
@@ -17,7 +17,7 @@ declare module 'opentype.js' {
     readonly letterSpacing?: number;
   }
   export interface Glyph {
-    /** 0 = `.notdef` (a fonte não tem o caractere). */
+    /** 0 = `.notdef` (the font does not have the character). */
     readonly index: number;
     getBoundingBox(): { x1: number; y1: number; x2: number; y2: number };
   }
@@ -25,7 +25,7 @@ declare module 'opentype.js' {
     readonly unitsPerEm: number;
     readonly ascender: number;
     readonly descender: number;
-    /** Tabelas lidas; `os2.sCapHeight` só existe na versão 2 ou mais da tabela. */
+    /** Tables read; `os2.sCapHeight` only exists in version 2 or later of the table. */
     readonly tables?: { readonly os2?: { readonly sCapHeight?: number } };
     charToGlyph(char: string): Glyph;
     getAdvanceWidth(text: string, fontSize: number, options?: GlyphOptions): number;

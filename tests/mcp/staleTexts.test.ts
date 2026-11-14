@@ -26,7 +26,7 @@ describe('textos desatualizados', () => {
 
   it('a descrição do SPEC-FORMAT.md cita a faixa de formatVersion atual', () => {
     const doc = DOC_RESOURCES.find((d) => d.name === 'spec-format');
-    expect(doc?.description).toContain(`formatVersion 1 a ${SPEC_FORMAT_VERSION}`);
+    expect(doc?.description).toContain(`formatVersion 1 to ${SPEC_FORMAT_VERSION}`);
   });
 
   it('validate_specialization cita todos os códigos de aviso de specWarnings.ts', async () => {

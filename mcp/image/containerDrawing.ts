@@ -9,8 +9,8 @@ import type { Raster } from './raster';
 import { paintScene, type SceneView } from './sceneRaster';
 import { builtinFontBook, measurerFor, type FontBook } from './textMeasurer';
 
-// O desenho dos componentes de um container sobre um raster: o mesmo para `get_marking_image`
-// (container sem arquivo), `render_marking` e `render_container`.
+// The drawing of a container's components onto a raster: the same for `get_marking_image`
+// (container without a file), `render_marking` and `render_container`.
 
 export interface DrawingSource {
   readonly project: Project;
@@ -19,17 +19,17 @@ export interface DrawingSource {
 }
 
 export interface PaintOptions {
-  /** Só estas marcações (e mais nenhuma); ausente = todas as do container. */
+  /** Only these markings (and no others); absent = all those of the container. */
   readonly markingIds?: ReadonlySet<string>;
-  /** Fixa o modo do desenho em todo o container; ausente = o efetivo de cada um. */
+  /** Pins the drawing mode across the whole container; absent = each one's effective mode. */
   readonly drawingMode?: string;
-  /** Fixa a direção de leitura em todo o container; ausente = a efetiva de cada um. */
+  /** Pins the reading direction across the whole container; absent = each one's effective direction. */
   readonly direction?: ReadingDirection;
 }
 
 const caches = new WeakMap<FontBook, ReturnType<typeof createDrawingCache>>();
 
-/** O projeto com `mode` em todo lugar (o do projeto e o dos containers que fixam o seu). */
+/** The project with `mode` everywhere (the project's and that of the containers that pin their own). */
 export function withDrawingMode(p: Project, mode: string): Project {
   return {
     ...p,
@@ -40,7 +40,7 @@ export function withDrawingMode(p: Project, mode: string): Project {
   };
 }
 
-/** O projeto com `direction` em todo lugar (a do projeto e a dos containers que fixam a sua). */
+/** The project with `direction` everywhere (the project's and that of the containers that pin their own). */
 export function withDirection(p: Project, direction: ReadingDirection): Project {
   return {
     ...p,
@@ -49,12 +49,12 @@ export function withDirection(p: Project, direction: ReadingDirection): Project 
   };
 }
 
-/** Os modos do desenho que as especializações aplicadas declaram. */
+/** The drawing modes that the applied specializations declare. */
 export function declaredModes(p: Project): string[] {
   return drawingModesOf(p.specializations.map((s) => s.spec?.tokens));
 }
 
-/** Pinta no `raster` o desenho dos componentes das marcações de `containerId`, na ordem do desenho. */
+/** Paints onto `raster` the drawing of the components of the markings of `containerId`, in drawing order. */
 export function paintContainerDrawings(
   raster: Raster,
   source: DrawingSource,

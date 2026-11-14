@@ -2,26 +2,26 @@ import { realpath, stat } from 'node:fs/promises';
 import { relative, resolve, sep } from 'node:path';
 import { isWithin } from './paths';
 
-// Conferência de arquivos de código (etapa 3b.4): o servidor só diz SE o arquivo existe.
+// Code file check (stage 3b.4): the server only says WHETHER the file exists.
 //
-// Regra (docs/ARCHITECTURE.md, "mcp/"): o servidor NUNCA lê nem grava arquivo de código. Este é o único
-// módulo do `mcp/` que toca o disco por caminho de código, e ele importa apenas `realpath` e
-// `stat` (metadados). Um teste estático (tests/mcp/noCodeRead.test.ts) garante isso.
+// Rule (docs/ARCHITECTURE.md, "mcp/"): the server NEVER reads or writes a code file. This is the only
+// `mcp/` module that touches the disk by a code path, and it imports only `realpath` and
+// `stat` (metadata). A static test (tests/mcp/noCodeRead.test.ts) guarantees this.
 //
-// Segurança: o `localPath` do projeto pode ter `..` (o repositório do app costuma ficar acima
-// da pasta do projeto, e portanto acima das raízes) e o `path` vem de um arquivo que terceiros
-// podem editar. Por isso a conferência fica confinada ao diretório de trabalho do cliente
-// (`Roots.workDir`): o caminho resolvido, e o real depois de seguir links simbólicos, precisa
-// estar dentro dele. O que escapa recebe `exists: null` (sem tocar no disco) ou `false`
-// (link simbólico que sai), sem revelar nada sobre o que existe fora.
+// Security: the project's `localPath` may have `..` (the app's repository usually sits above
+// the project folder, and therefore above the roots) and the `path` comes from a file that third parties
+// can edit. That is why the check stays confined to the client's working directory
+// (`Roots.workDir`): the resolved path, and the real one after following symbolic links, must be
+// inside it. Whatever escapes gets `exists: null` (without touching the disk) or `false`
+// (a symbolic link that leaves), without revealing anything about what exists outside.
 
-/** Onde o arquivo do `path` de um tipo está na máquina de quem roda o servidor. */
+/** Where the file of a type's `path` is on the machine of whoever runs the server. */
 export interface LocalFile {
-  /** Caminho relativo ao diretório de trabalho do cliente, com `/`; `null` se não dá para calcular. */
+  /** Path relative to the client's working directory, with `/`; `null` if it cannot be computed. */
   readonly localFile: string | null;
-  /** O arquivo existe? `null` = não conferido (sem `localPath`, ou o caminho sai do diretório de trabalho). */
+  /** Does the file exist? `null` = not checked (no `localPath`, or the path leaves the working directory). */
   readonly exists: boolean | null;
-  /** Presente quando o caminho calculado sai do diretório de trabalho do cliente. */
+  /** Present when the computed path leaves the client's working directory. */
   readonly problem?: 'outside-workdir';
 }
 
@@ -39,8 +39,8 @@ export class LocalFileChecker {
   }
 
   /**
-   * `relativeToProject` é `codeLocalPath(...)` (relativo à pasta do projeto) ou `null`.
-   * `projectDir` é o caminho real da pasta do projeto.
+   * `relativeToProject` is `codeLocalPath(...)` (relative to the project folder) or `null`.
+   * `projectDir` is the real path of the project folder.
    */
   check(projectDir: string, relativeToProject: string | null): Promise<LocalFile> {
     if (relativeToProject === null) return Promise.resolve(UNKNOWN);
@@ -63,7 +63,7 @@ export class LocalFileChecker {
   }
 }
 
-/** Só metadados: `realpath` (segue links) e `stat`. Qualquer falha ou fuga vale `false`. */
+/** Metadata only: `realpath` (follows links) and `stat`. Any failure or escape counts as `false`. */
 async function isFileInside(workDir: string, absolute: string): Promise<boolean> {
   try {
     const real = await realpath(absolute);

@@ -19,7 +19,7 @@ describe('parseArgs', () => {
 
   it('exige ao menos uma raiz e recusa argumentos desconhecidos', () => {
     expect(() => parseArgs([])).toThrow(UsageError);
-    expect(() => parseArgs(['--foo'])).toThrow('desconhecido');
+    expect(() => parseArgs(['--foo'])).toThrow('unknown argument');
   });
 
   it('recusa --root sem valor', () => {

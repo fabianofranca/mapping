@@ -1,6 +1,6 @@
-// Gera dist-mcp/mapping-mcp.js: um arquivo só, com as dependências embutidas.
-// CommonJS de propósito: o `.js` roda com `node` em qualquer repositório, a menos que
-// ele declare `"type": "module"` (nesse caso, ponha um package.json `{"type":"commonjs"}` em tools/).
+// Generates dist-mcp/mapping-mcp.js: a single file, with the dependencies embedded.
+// CommonJS on purpose: the `.js` runs with `node` in any repository, unless
+// it declares `"type": "module"` (in that case, put a package.json `{"type":"commonjs"}` in tools/).
 import { appendFile, readFile, readdir, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { join, resolve } from 'node:path';
@@ -8,9 +8,9 @@ import { build } from 'esbuild';
 import { fontFiles } from './fontFiles.mjs';
 import { wasmFiles } from './wasmFiles.mjs';
 
-// `import bytes from 'wasm:<codec>'` embute os bytes do módulo WebAssembly do codec de imagem
-// (@jsquash). Os pacotes têm um `.d.ts` ao lado de cada `.wasm`, então o import passa por este
-// nome virtual (tipado em mcp/image/wasm.d.ts).
+// `import bytes from 'wasm:<codec>'` embeds the bytes of the image codec's WebAssembly module
+// (@jsquash). The packages have a `.d.ts` next to each `.wasm`, so the import goes through this
+// virtual name (typed in mcp/image/wasm.d.ts).
 const require = createRequire(import.meta.url);
 const wasmModules = {
   name: 'wasm-modules',
@@ -18,7 +18,7 @@ const wasmModules = {
     esbuild.onResolve({ filter: /^wasm:/ }, (args) => {
       const file = wasmFiles[args.path];
       if (!file)
-        return { errors: [{ text: `módulo WebAssembly desconhecido: ${args.path}` }] };
+        return { errors: [{ text: `unknown WebAssembly module: ${args.path}` }] };
       return { path: require.resolve(file), namespace: 'wasm-bytes' };
     });
     esbuild.onLoad({ filter: /.*/, namespace: 'wasm-bytes' }, async (args) => ({
@@ -29,13 +29,13 @@ const wasmModules = {
   },
 };
 
-// `import bytes from 'font:sans'` embute os bytes do TTF livre (mcp/fonts/), como os wasm.
+// `import bytes from 'font:sans'` embeds the bytes of the free TTF (mcp/fonts/), like the wasm ones.
 const fontModules = {
   name: 'font-modules',
   setup(esbuild) {
     esbuild.onResolve({ filter: /^font:/ }, (args) => {
       const file = fontFiles[args.path];
-      if (!file) return { errors: [{ text: `fonte desconhecida: ${args.path}` }] };
+      if (!file) return { errors: [{ text: `unknown font: ${args.path}` }] };
       return { path: resolve(import.meta.dirname, file), namespace: 'font-bytes' };
     });
     esbuild.onLoad({ filter: /.*/, namespace: 'font-bytes' }, async (args) => ({
@@ -46,7 +46,7 @@ const fontModules = {
   },
 };
 
-// `import texto from './arquivo.md?raw'` embute o texto do arquivo (a documentação servida como recurso).
+// `import text from './file.md?raw'` embeds the file's text (the documentation served as a resource).
 const rawText = {
   name: 'raw-text',
   setup(esbuild) {
@@ -62,27 +62,27 @@ const rawText = {
   },
 };
 
-// Sufixo do canal de publicação (snapshot de PR ou release candidate), posto pelo workflow
-// `mcp-prerelease.yml`; vazio na estável. Vira `BUILD_VERSION` em mcp/version.ts.
+// Suffix of the publishing channel (PR snapshot or release candidate), set by the workflow
+// `mcp-prerelease.yml`; empty on the stable one. Becomes `BUILD_VERSION` in mcp/version.ts.
 const suffix = process.env.MCP_BUILD_SUFFIX ?? '';
 if (suffix !== '' && !/^-(snapshot\.pr\d+\+[0-9a-f]{7,}|rc\.\d+)$/.test(suffix)) {
   throw new Error(
-    `MCP_BUILD_SUFFIX inválido: "${suffix}" (esperado vazio, "-rc.<n>" ou "-snapshot.pr<N>+<sha>").`,
+    `invalid MCP_BUILD_SUFFIX: "${suffix}" (expected empty, "-rc.<n>" or "-snapshot.pr<N>+<sha>").`,
   );
 }
 
 const result = await build({
   entryPoints: ['mcp/main.ts'],
   plugins: [rawText, wasmModules, fontModules],
-  // A versão minificada do opentype.js (245 kB em vez de 495 kB): o limite do servidor é +500 kB.
+  // The minified version of opentype.js (245 kB instead of 495 kB): the server's limit is +500 kB.
   alias: { 'opentype.js': 'opentype.js/dist/opentype.min.mjs' },
   outfile: 'dist-mcp/mapping-mcp.js',
   bundle: true,
   platform: 'node',
   format: 'cjs',
   target: 'node20',
-  // Os comentários legais que as dependências já trazem vão para o fim do arquivo; os avisos
-  // das que não os trazem (a maioria) são acrescentados abaixo, a partir dos arquivos LICENSE.
+  // The legal comments that the dependencies already carry go to the end of the file; the notices
+  // of the ones that do not (most of them) are appended below, from the LICENSE files.
   legalComments: 'eof',
   metafile: true,
   banner: { js: '#!/usr/bin/env node' },
@@ -90,18 +90,18 @@ const result = await build({
   logLevel: 'info',
 });
 
-/** Pasta de cada pacote de `node_modules` que entrou no bundle (inclusive os escopados). */
+/** Folder of each `node_modules` package that went into the bundle (scoped ones included). */
 function bundledPackages(inputs) {
   const dirs = new Set();
   for (const input of Object.keys(inputs)) {
-    // Os arquivos dos plugins levam o nome do namespace na frente (`wasm-bytes:<caminho>`).
+    // The plugins' files carry the namespace name in front (`wasm-bytes:<path>`).
     const match = /^(?:[a-z-]+:)?(.*?node_modules\/(?:@[^/]+\/)?[^/]+)\//.exec(input);
     if (match) dirs.add(resolve(match[1]));
   }
   return [...dirs].sort();
 }
 
-/** Textos de licença de um pacote: `LICENSE*` na raiz e o `LICENSE.codec.md` dos codecs. */
+/** License texts of a package: `LICENSE*` at the root and the codecs' `LICENSE.codec.md`. */
 async function licenseTexts(dir) {
   const names = (await readdir(dir)).filter((n) => /^licen[cs]e(\.|$)/i.test(n)).sort();
   const files = names.map((n) => join(dir, n));
@@ -113,13 +113,13 @@ async function licenseTexts(dir) {
     try {
       texts.push((await readFile(file, 'utf8')).trim());
     } catch {
-      // Sem esse arquivo (só a pasta `codec` existe): o pacote fica com os que há.
+      // Without this file (only the `codec` folder exists): the package keeps the ones that exist.
     }
   }
   return texts;
 }
 
-// Os avisos de licença (Apache-2.0, BSD, MIT) dos pacotes embutidos vão no fim do bundle.
+// The license notices (Apache-2.0, BSD, MIT) of the embedded packages go at the end of the bundle.
 const notices = [];
 for (const dir of bundledPackages(result.metafile.inputs)) {
   const name = dir.slice(dir.lastIndexOf('node_modules/') + 'node_modules/'.length);
@@ -132,5 +132,5 @@ if (notices.length > 0) {
   await appendFile('dist-mcp/mapping-mcp.js', `\n/*!\n${body}\n*/\n`);
 }
 
-// Este repositório declara "type": "module": sem isto, o `node` leria o bundle como ESM.
+// This repository declares "type": "module": without this, `node` would read the bundle as ESM.
 await writeFile('dist-mcp/package.json', '{ "type": "commonjs" }\n');

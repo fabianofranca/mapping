@@ -309,7 +309,7 @@ describe('importação inteira', () => {
     // Cada item criado traz a referência definitiva, com o apelido.
     const aliases = first.created.filter((c) => c.alias).map((c) => c.alias);
     expect(aliases).toEqual(['$t1', '$t2', '$titulo', '$botao', '$cartao', '$btn']);
-    expect(first.hint).toContain('janela Propostas');
+    expect(first.hint).toContain('Proposals window');
   });
 
   it('list_proposals e get_proposal mostram tudo pendente', async () => {
@@ -336,7 +336,7 @@ describe('importação inteira', () => {
     expect(got.changes[0]).toMatchObject({
       kind: 'create',
       entity: 'specialization',
-      target: 'especialização sdui',
+      target: 'specialization sdui',
     });
     // A especialização inteira não entra na resposta.
     expect(JSON.stringify(got.changes[0])).not.toContain('"layers"');
@@ -364,8 +364,8 @@ describe('importação inteira', () => {
         }
       ).error;
       expect(error.code).toBe('invalid-ref');
-      expect(error.hint).toContain('copie de novo na app');
-      expect(error.accepted).toContain('mapping://projeto/p/3f2a9c1e');
+      expect(error.hint).toContain('copy again from the app');
+      expect(error.accepted).toContain('mapping://project/p/3f2a9c1e');
     }
   });
 
@@ -412,7 +412,7 @@ describe('importação inteira', () => {
       notes: [],
       conflicts: [],
     });
-    expect(review.hint).toContain('13 sem decisão');
+    expect(review.hint).toContain('13 undecided');
   });
 });
 
@@ -475,7 +475,7 @@ describe('revisão simulada (decisões e notas gravadas no arquivo, como a app)'
       await mcp.call<Reviewed>('get_proposal_review', { ref: first.proposal.ref }),
     );
     expect(review.ready).toBe(false);
-    expect(review.hint).toContain('0 sem decisão, 11 aceita(s) sem aplicar');
+    expect(review.hint).toContain('0 undecided, 11 accepted without being applied');
 
     // "Aplicar aceitas": o modelo que a app usa aplica a proposta que o MCP gerou.
     const project = applyAcceptedOnDisk(dir(), first.proposal.id);
@@ -498,7 +498,7 @@ describe('revisão simulada (decisões e notas gravadas no arquivo, como a app)'
       rejected: 2,
       applied: 11,
     });
-    expect(review.hint).toContain('corrija só o que foi rejeitado');
+    expect(review.hint).toContain('correct only what was rejected');
   });
 
   it('get_proposal_review traz só a rejeição, a anotação rejeitada junto e as notas', async () => {
@@ -611,7 +611,7 @@ describe('nova proposta com supersedes (só as correções)', () => {
       ref: first.proposal.ref,
       status: 'applied',
       revision: firstBefore.revision,
-      note: expect.stringMatching(/aplicada.*substituída por/s),
+      note: expect.stringMatching(/applied.*superseded by/s),
     });
     expect(readProposal(dir(), first.proposal.id)).toEqual(firstBefore);
     expect(readProposal(dir(), first.proposal.id).decisions).toEqual(firstDecisions());
@@ -1103,9 +1103,9 @@ describe('source nas operações de imagens e marcações', () => {
       }),
     );
     expect(plan.valid).toBe(true);
-    expect(plan.summary[0]).toContain('sem origem');
-    expect(plan.summary[1]).toContain('origem figma:1:10-v2');
-    expect(plan.summary[2]).toContain('origem sketch:abc');
+    expect(plan.summary[0]).toContain('no source');
+    expect(plan.summary[1]).toContain('source figma:1:10-v2');
+    expect(plan.summary[2]).toContain('source sketch:abc');
 
     const proposed = await propose(mcp, 'loja', operations, { title: 'Origens' });
     const proposal = readProposal(dir(), proposed.proposal.id);
@@ -1211,6 +1211,6 @@ describe('projeto com propostas ilegíveis', () => {
     expect(listed.total).toBeGreaterThan(3);
     expect(listed.broken?.map((b) => b.id)).toEqual(['quebrada', 'vazia']);
     expect(listed.broken![0]!.error).toContain('invalid JSON');
-    expect(listed.broken![1]!.error).toBe('sem proposal.json');
+    expect(listed.broken![1]!.error).toBe('no proposal.json');
   });
 });

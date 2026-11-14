@@ -1,7 +1,7 @@
 import type { Point } from '../../src/model/components/scene';
 import type { PixelRect, Raster } from './raster';
 
-// Efeitos do rasterizador: tracejado do traço e a máscara desfocada da sombra.
+// Rasterizer effects: stroke dashing and the blurred shadow mask.
 
 export interface Path2 {
   readonly points: Point[];
@@ -16,7 +16,7 @@ interface Walk {
   readonly out: Path2[];
 }
 
-/** Chega a uma fronteira do padrão em `p`: fecha o trecho ligado, ou abre um novo, e troca de estado. */
+/** Reaches a pattern boundary at `p`: closes the on segment, or opens a new one, and toggles state. */
 function advance(walk: Walk, cycle: readonly number[], p: Point): void {
   if (walk.on) {
     walk.current.push(p);
@@ -30,7 +30,7 @@ function advance(walk: Walk, cycle: readonly number[], p: Point): void {
   walk.left = cycle[walk.index]!;
 }
 
-/** Tracejado de uma polilinha (aberta; o fechamento já vem como último ponto repetido). */
+/** Dashing of a polyline (open; the closing already comes as a repeated last point). */
 function dashLine(points: readonly Point[], cycle: readonly number[]): Path2[] {
   const walk: Walk = {
     index: 0,
@@ -58,7 +58,7 @@ function dashLine(points: readonly Point[], cycle: readonly number[]): Path2[] {
   return walk.out;
 }
 
-/** Corta as polilinhas nos trechos "ligados" do padrão `dash` (liga, vão, liga, vão…), em unidades locais. */
+/** Cuts the polylines into the "on" segments of the `dash` pattern (on, gap, on, gap…), in local units. */
 export function dashPaths(subpaths: readonly Path2[], dash: readonly number[]): Path2[] {
   const pattern = dash.map((d) => Math.max(0, d));
   if (!pattern.some((d) => d > 0)) return [...subpaths];
@@ -68,7 +68,7 @@ export function dashPaths(subpaths: readonly Path2[], dash: readonly number[]): 
   );
 }
 
-/** Desfoque por três passagens de caixa (aproxima o gaussiano), no canal `alpha` (0..1). */
+/** Blur by three box passes (approximates the Gaussian), on the `alpha` channel (0..1). */
 export function blurAlpha(
   alpha: Float32Array,
   width: number,
@@ -111,12 +111,12 @@ function boxPass(
   }
 }
 
-/** Tamanho máximo (pixels) da máscara temporária de uma sombra. */
+/** Maximum size (pixels) of a shadow's temporary mask. */
 export const MAX_SHADOW_PIXELS = 4096 * 4096;
 
 /**
- * Pinta a sombra: `mask` é a cobertura (0..1) do contorno em `box` (pixels do raster); ela é
- * desfocada (`sigma`), deslocada por (`dx`, `dy`) e misturada na `cor` sobre `raster`, dentro de `clip`.
+ * Paints the shadow: `mask` is the coverage (0..1) of the outline in `box` (raster pixels); it is
+ * blurred (`sigma`), shifted by `offset` (`dx`, `dy`) and blended in `color` over `raster`, within `clip`.
  */
 export function compositeShadow(
   raster: Raster,

@@ -269,7 +269,7 @@ describe('célula ref com o valor do campo ref', () => {
 describe('o exemplo do AGENT-GUIDE', () => {
   it('o lote do guia (célula ref com linha por apelido) é válido e grava o formato esperado', async () => {
     const guide = readFileSync('docs/AGENT-GUIDE.md', 'utf8');
-    const block = /mesmo valor, célula a célula[^]*?```json\n([^]*?)```/.exec(guide);
+    const block = /same value applies, cell by cell[^]*?```json\n([^]*?)```/.exec(guide);
     expect(block, 'bloco json do guia').not.toBeNull();
     const operations = JSON.parse(block![1]!) as unknown[];
     const p = await apply(operations);

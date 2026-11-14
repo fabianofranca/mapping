@@ -76,7 +76,7 @@ describe('nome da marcação sem nome no MCP', () => {
     const plain = ok(
       await mcp.call<MarkingData>('get_marking', { project, ref: plainId }),
     );
-    expect(plain.path.at(-1)?.name).toMatch(/^Marcação [0-9a-f]{8}$/);
+    expect(plain.path.at(-1)?.name).toMatch(/^Marking [0-9a-f]{8}$/);
   });
 
   it('a seta que sai da instância sem nome mostra "<Tipo> <código>" na ponta', async () => {
