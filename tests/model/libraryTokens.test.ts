@@ -103,7 +103,7 @@ describe('validateLibrary com $token', () => {
     expect(messages(r)).toContainEqual([
       'components/tk.json',
       'template.children[0].fill',
-      'só é permitido com formatVersion 4',
+      'only allowed with formatVersion 4',
     ]);
   });
 });

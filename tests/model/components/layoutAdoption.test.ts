@@ -156,7 +156,7 @@ describe('validação: mais de uma trilha só quando todas são expressão', () 
   });
   it('várias trilhas só da mesma orientação: columns com rows é erro', () => {
     const message =
-      'template.layout: layout: informe exatamente uma entre columns, minColumnWidth, rows e minRowHeight';
+      'template.layout: layout: give exactly one of columns, minColumnWidth, rows and minRowHeight';
     expect(
       validateComponent(gridComponent({ type: 'grid', columns: E('a'), rows: E('b') })),
     ).toEqual([message]);
@@ -168,7 +168,7 @@ describe('validação: mais de uma trilha só quando todas são expressão', () 
   });
   it('uma trilha literal com outra: continua erro', () => {
     const message =
-      'template.layout: layout: informe exatamente uma entre columns, minColumnWidth, rows e minRowHeight';
+      'template.layout: layout: give exactly one of columns, minColumnWidth, rows and minRowHeight';
     expect(
       validateComponent(
         gridComponent({ type: 'grid', columns: 2, minColumnWidth: E('b') }),

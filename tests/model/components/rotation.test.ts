@@ -28,7 +28,7 @@ import {
 
 type Raw = Record<string, unknown>;
 
-const V4 = 'só é permitido com formatVersion 4';
+const V4 = 'only allowed with formatVersion 4';
 
 function file(template: unknown, version = 4): unknown {
   return {
@@ -90,7 +90,7 @@ describe('rotation no validador', () => {
 
   it('na raiz é erro', () => {
     expect(validateComponent(file(root([], { rotation: 10 })))).toEqual([
-      'template.rotation: não vale na raiz',
+      'template.rotation: not valid on the root',
     ]);
   });
 
@@ -102,7 +102,7 @@ describe('rotation no validador', () => {
 
   it('literal que não é número falha no caminho da chave', () => {
     expect(validateComponent(file(root([bar({ rotation: 'x' })])))).toEqual([
-      'template.children[0].rotation: esperava número',
+      'template.children[0].rotation: expected a number',
     ]);
   });
 

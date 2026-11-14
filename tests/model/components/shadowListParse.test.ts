@@ -6,7 +6,7 @@ import {
   validateComponent,
 } from '../../../src/model/components/parseComponent';
 
-const V4 = 'só é permitido com formatVersion 4';
+const V4 = 'only allowed with formatVersion 4';
 const t = (name: string) => ({ $token: name });
 const shadow = (extra: Record<string, unknown> = {}) => ({ color: '#000', ...extra });
 
@@ -44,7 +44,7 @@ describe('shadow como lista (decisão 3)', () => {
   });
 
   it('lista vazia ou com 5 sombras é erro', () => {
-    const msg = 'template.children[0].shadow: esperava de 1 a 4 sombras';
+    const msg = 'template.children[0].shadow: expected 1 to 4 shadows';
     expect(validateComponent(withChild(rect({ shadow: [] })))).toEqual([msg]);
     const five = Array.from({ length: 5 }, () => shadow());
     expect(validateComponent(withChild(rect({ shadow: five })))).toEqual([msg]);
@@ -53,9 +53,9 @@ describe('shadow como lista (decisão 3)', () => {
   it('cada item é validado no caminho dele', () => {
     const list = [shadow(), { x: 1 }, shadow({ blur: -1 }), shadow({ cor: 1 })];
     expect(validateComponent(withChild(rect({ shadow: list })))).toEqual([
-      'template.children[0].shadow[1].color: campo obrigatório',
-      'template.children[0].shadow[2].blur: esperava número maior ou igual a 0',
-      'template.children[0].shadow[3].cor: chave desconhecida: cor',
+      'template.children[0].shadow[1].color: required field',
+      'template.children[0].shadow[2].blur: expected a number greater than or equal to 0',
+      'template.children[0].shadow[3].cor: unknown key: cor',
     ]);
   });
 
@@ -97,7 +97,7 @@ describe('shadow.spread (decisão 4)', () => {
   it('texto não vale', () => {
     expect(
       validateComponent(withChild(rect({ shadow: shadow({ spread: 'x' }) }))),
-    ).toEqual(['template.children[0].shadow.spread: esperava número']);
+    ).toEqual(['template.children[0].shadow.spread: expected a number']);
   });
 
   it('nas versões 1 a 3 dá o erro de versão, no caminho da chave', () => {
@@ -152,7 +152,7 @@ describe('stroke.gap (decisão 7)', () => {
 
   it('um nome que nenhum nó tem é erro de validação', () => {
     expect(validateComponent(labelled({ gap: { node: 'nada' } }))).toEqual([
-      'template.children[0].stroke.gap.node: nó não encontrado: nada',
+      'template.children[0].stroke.gap.node: node not found: nada',
     ]);
   });
 
@@ -163,7 +163,7 @@ describe('stroke.gap (decisão 7)', () => {
     };
     own.template.children[0]!.name = 'self';
     expect(validateComponent(own)).toEqual([
-      'template.children[0].stroke.gap.node: stroke.gap.node não pode citar o próprio nó: self',
+      'template.children[0].stroke.gap.node: stroke.gap.node cannot name the node itself: self',
     ]);
   });
 
@@ -182,7 +182,7 @@ describe('stroke.gap (decisão 7)', () => {
       },
     };
     expect(validateComponent(doc)).toEqual([
-      'template.children[0].stroke.gap.node: stroke.gap.node não pode citar um nó dentro de um repeat: label',
+      'template.children[0].stroke.gap.node: stroke.gap.node cannot name a node inside a repeat: label',
     ]);
   });
 
@@ -193,31 +193,31 @@ describe('stroke.gap (decisão 7)', () => {
     const [frame, text] = doc.template.children;
     doc.template.children = [{ type: 'repeat', count: 2, template: frame }, text];
     expect(validateComponent(doc)).toEqual([
-      'template.children[0].template.stroke.gap.node: stroke.gap não pode ser usado dentro de um repeat',
+      'template.children[0].template.stroke.gap.node: stroke.gap cannot be used inside a repeat',
     ]);
   });
 
   it('gap junto com sides é erro', () => {
     expect(
       validateComponent(labelled({ gap: { node: 'label' }, sides: ['top', 'left'] })),
-    ).toEqual(['template.children[0].stroke.gap: gap não vale com sides']);
+    ).toEqual(['template.children[0].stroke.gap: gap is not valid with sides']);
   });
 
   it('só vale em frame e rect', () => {
     expect(validateComponent(labelled({ gap: { node: 'label' } }, 4, 'ellipse'))).toEqual(
-      ['template.children[0].stroke.gap: só vale em frame e rect (este é ellipse)'],
+      ['template.children[0].stroke.gap: only valid in frame and rect (this is ellipse)'],
     );
   });
 
   it('forma errada: node é obrigatório, chave desconhecida, padding numérico', () => {
     expect(validateComponent(labelled({ gap: {} }))).toEqual([
-      'template.children[0].stroke.gap.node: campo obrigatório',
+      'template.children[0].stroke.gap.node: required field',
     ]);
     expect(validateComponent(labelled({ gap: { node: 'label', foo: 1 } }))).toEqual([
-      'template.children[0].stroke.gap.foo: chave desconhecida: foo',
+      'template.children[0].stroke.gap.foo: unknown key: foo',
     ]);
     expect(validateComponent(labelled({ gap: { node: 'label', padding: 'x' } }))).toEqual(
-      ['template.children[0].stroke.gap.padding: esperava número'],
+      ['template.children[0].stroke.gap.padding: expected a number'],
     );
   });
 

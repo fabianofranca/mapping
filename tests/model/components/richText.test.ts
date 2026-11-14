@@ -29,7 +29,7 @@ import {
 import { expandRepeats } from '../../../src/model/components/repeat';
 import { walk, type TextNode } from '../../../src/model/components/scene';
 
-const V4 = 'só é permitido com formatVersion 4';
+const V4 = 'only allowed with formatVersion 4';
 
 // ---------------------------------------------------------------------------------------
 // Validação
@@ -91,31 +91,31 @@ describe('validação de runs', () => {
 
   it('text e runs no mesmo nó falha no caminho do nó', () => {
     expect(validateComponent(component(richNode(RUNS, { text: 'a' })))).toEqual([
-      'template.children[0]: text e runs juntos: use um ou outro',
+      'template.children[0]: text and runs together: use one or the other',
     ]);
   });
 
   it('sem text nem runs mantém o erro de hoje', () => {
     expect(validateComponent(component({ type: 'text' }))).toEqual([
-      'template.children[0].text: campo obrigatório',
+      'template.children[0].text: required field',
     ]);
   });
 
   it.each([[[]], ['texto'], [{ text: 'a' }]])('runs %j não é lista não vazia', (bad) => {
     expect(validateComponent(component(richNode(bad)))).toEqual([
-      'template.children[0].runs: esperava lista não vazia de trechos',
+      'template.children[0].runs: expected a non-empty list of runs',
     ]);
   });
 
   it('chave desconhecida no trecho falha no caminho do trecho', () => {
     expect(
       validateComponent(component(richNode([{ text: 'a' }, { text: 'b', bogus: 1 }]))),
-    ).toEqual(['template.children[0].runs[1].bogus: chave desconhecida: bogus']);
+    ).toEqual(['template.children[0].runs[1].bogus: unknown key: bogus']);
   });
 
   it('trecho sem text falha', () => {
     expect(validateComponent(component(richNode([{ weight: 700 }])))).toEqual([
-      'template.children[0].runs[0].text: campo obrigatório',
+      'template.children[0].runs[0].text: required field',
     ]);
   });
 

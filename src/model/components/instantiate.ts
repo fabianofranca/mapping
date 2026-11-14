@@ -1248,7 +1248,7 @@ function createEngine(
     }
   };
 
-  /** Quanto um filho `fill` pede ao pai que está sendo medido: o que abraçaria, até o limite. */
+  /** What a `fill` child asks of the parent being measured: what it would hug, up to the limit. */
   const fillContribution = (
     node: TemplateNode,
     axis: Axis,
@@ -1271,7 +1271,7 @@ function createEngine(
     anchors.start !== undefined &&
     anchors.end !== undefined;
 
-  /** Âncoras nos dois lados esticam o filho entre elas (com o pai já medido). */
+  /** Anchors on both sides stretch the child between them (with the parent already measured). */
   const anchoredSize = (
     anchors: ResolvedAnchors | undefined,
     content: number | null,
@@ -1280,7 +1280,7 @@ function createEngine(
       ? Math.max(0, content - (anchors?.start ?? 0) - (anchors?.end ?? 0))
       : undefined;
 
-  /** Nó `slot` com `slotContent`: o tamanho dos filhos arrumados (ver o topo do arquivo). */
+  /** A `slot` node with `slotContent`: the size of the arranged children (see the top of the file). */
   const slotSize = (
     node: TemplateNode,
     spec: SizeSpec,
@@ -1297,11 +1297,11 @@ function createEngine(
     return takesContent ? Math.max(0, inner) : undefined;
   };
 
-  /** O eixo das trilhas da grade: a largura na grade vertical, a altura na horizontal. */
+  /** The grid tracks' axis: the width in a vertical grid, the height in a horizontal one. */
   const trackAxisOf = (layout: FrameLayout): Axis =>
     layout.grid?.vertical === false ? 'h' : 'w';
 
-  /** O filho `hug` estica no eixo? Em `row`/`column`, no cruzado; no `none`, sem âncora naquele eixo. */
+  /** Does the `hug` child stretch on the axis? In `row`/`column`, on the cross one; in `none`, with no anchor on that axis. */
   const stretchesKid = (
     layout: FrameLayout,
     axis: Axis,
@@ -1336,7 +1336,7 @@ function createEngine(
   ): number => {
     const edge = (anchors?.start ?? 0) + (anchors?.end ?? 0);
     if (space.content !== null) return Math.max(0, space.content - edge);
-    // Pai hug sem limite: o filho `fill` (ou esticado por âncoras) pede o que abraçaria, não 0.
+    // Hug parent without a limit: the `fill` child (or one stretched by anchors) asks for what it would hug, not 0.
     if (space.bound === null) return Math.max(0, hugSize(node, axis, otherSize, null));
     return fillContribution(node, axis, Math.max(0, space.bound - edge), otherSize);
   };
@@ -1347,17 +1347,18 @@ function createEngine(
     return base === null || !Number.isFinite(percent) ? 0 : (base * percent) / 100;
   };
 
-  // --- medida intrínseca (`min-content` e `max-content`, decisões 17 e 18 da #1078) ------------
+  // --- intrinsic measure (`min-content` and `max-content`, decisions 17 and 18 of #1078) --------
 
   /**
-   * O `min-content` do texto sem `runs`: a palavra mais larga, medida sem `maxWidth` e sem o corte
-   * de `maxLines` e `ellipsis` (que só valem na caixa). Com `wrap: none` o texto não quebra: vale a
-   * linha mais larga. As palavras repetidas voltam do cache do medidor (`withMeasureMemo`).
+   * The `min-content` of text without `runs`: the widest word, measured without `maxWidth` and
+   * without the cut of `maxLines` and `ellipsis` (which only apply in the box). With `wrap: none`
+   * the text does not wrap: it is the widest line. Repeated words come back from the measurer's
+   * cache (`withMeasureMemo`).
    */
   const plainMinContent = (node: TextTemplate): number => {
     const styled = textFont(node);
     if (styled.wrap === 'none') return measureText(node).width;
-    // A fonte sem o corte da caixa (`maxLines`, `ellipsis`): cada palavra se mede inteira.
+    // The font without the box's cut (`maxLines`, `ellipsis`): each word is measured whole.
     const font: MeasureFont = { ...styled, maxLines: undefined, ellipsis: undefined };
     return plainText(node)
       .split(/[ \t\n]+/)
@@ -1368,7 +1369,7 @@ function createEngine(
       );
   };
 
-  /** A largura intrínseca do texto: `max-content` a linha mais larga sem quebra, `min-content` a palavra mais larga. */
+  /** The text's intrinsic width: `max-content` the widest unwrapped line, `min-content` the widest word. */
   const textIntrinsic = (node: TextTemplate, mode: IntrinsicSize): number => {
     if (mode === 'max-content') return measureText(node).width;
     if (node.runs === undefined) return plainMinContent(node);
@@ -1381,9 +1382,10 @@ function createEngine(
   };
 
   /**
-   * Quanto um filho de `layout` contribui à largura intrínseca do pai medido em `mode`: o px, o
-   * `min`/`max-content` próprio, o do pai (`fill`, `hug`) ou 0 (`%`), entre os limites do filho; no
-   * `none`, mais as âncoras (também o filho esticado por elas: como no `hug`, sem pai medido ele vale o natural).
+   * How much a child of `layout` contributes to the intrinsic width of the parent measured in
+   * `mode`: the px, its own `min`/`max-content`, the parent's (`fill`, `hug`) or 0 (`%`), within
+   * the child's limits; in `none`, plus the anchors (also the child stretched by them: as in
+   * `hug`, without a measured parent it takes its natural size).
    */
   const kidIntrinsic = (kid: Kid, layout: FrameLayout, mode: IntrinsicSize): number => {
     const { node } = kid;
@@ -1399,7 +1401,7 @@ function createEngine(
     return (anchors.start ?? 0) + size + (anchors.end ?? 0);
   };
 
-  /** A largura intrínseca de uma grade: `n` trilhas iguais da maior célula, ou as linhas de fluxo somadas (grade horizontal). */
+  /** The intrinsic width of a grid: `n` equal tracks of the largest cell, or the flow lines summed (horizontal grid). */
   const gridIntrinsic = (
     layout: FrameLayout,
     kids: readonly Kid[],
@@ -1410,12 +1412,12 @@ function createEngine(
     const tracks = layout.grid ?? { vertical: true };
     const spans = ordered.map((kid) => spanOf(kid.node));
     if (trackAxisOf(layout) === 'h') {
-      // Grade horizontal: a largura soma as linhas de fluxo (cada uma tem o seu maior filho).
+      // Horizontal grid: the width sums the flow lines (each has its own largest child).
       const placed = placeCells(spans, tracks.count ?? 1);
       const extents = lineExtents(placed.cells, placed.lines, parts);
       return stackLines(extents, layout.lineGap, false).total;
     }
-    // Colunas fixas: `columns`. Adaptativas: uma só no `min-content`, todas numa linha no `max-content`.
+    // Fixed columns: `columns`. Adaptive: a single one in `min-content`, all on one line in `max-content`.
     const count =
       tracks.count ??
       (mode === 'min-content' ? 1 : spans.reduce((sum, span) => sum + span, 0));
@@ -1427,7 +1429,7 @@ function createEngine(
     return Math.max(1, count) * track + layout.gap * Math.max(0, count - 1);
   };
 
-  /** A largura intrínseca de um quadro, padding incluído (ver "Dimensionamento" no `docs/COMPONENT-FORMAT.md`). */
+  /** The intrinsic width of a frame, padding included (see "Sizing" in `docs/COMPONENT-FORMAT.md`). */
   const frameIntrinsic = (frame: FrameTemplate, mode: IntrinsicSize): number => {
     const layout = layoutOf(frame);
     const kids = visibleKids(frame);
@@ -1435,7 +1437,7 @@ function createEngine(
     if (kids.length === 0) return padding;
     if (layout.kind === 'grid') return gridIntrinsic(layout, kids, mode) + padding;
     const parts = kids.map((kid) => kidIntrinsic(kid, layout, mode));
-    // Só a `row` soma; `row` com `wrap` soma no `max-content` (uma linha só) e toma o maior no `min-content`.
+    // Only `row` sums; `row` with `wrap` sums in `max-content` (a single line) and takes the largest in `min-content`.
     const sums =
       layout.kind === 'row' && (layout.wrap === 'none' || mode === 'max-content');
     const total = sums
@@ -1464,9 +1466,9 @@ function createEngine(
   };
 
   /**
-   * A largura de um nó medida em `mode`, sem limite de espaço (o `min`/`max` do próprio nó quem aplica
-   * é o pai). Lembrada por nó e modo (`intrinsicMemo`): a grade e a fileira aninhadas não remedem a
-   * subárvore a cada passagem.
+   * A node's width measured in `mode`, without a space limit (the node's own `min`/`max` is
+   * applied by the parent). Remembered per node and mode (`intrinsicMemo`): the nested grid and
+   * row do not re-measure the subtree on every pass.
    */
   const intrinsicWidth = (node: TemplateNode, mode: IntrinsicSize): number => {
     let perNode = intrinsicMemo.get(node);
@@ -1477,7 +1479,7 @@ function createEngine(
     return (perNode[mode] ??= computeIntrinsicWidth(node, mode));
   };
 
-  /** O tamanho de um filho `min-content`/`max-content`: a largura intrínseca; a altura é a do `hug` na largura já resolvida. */
+  /** The size of a `min-content`/`max-content` child: the intrinsic width; the height is the `hug` one at the already resolved width. */
   const intrinsicKid = (
     node: TemplateNode,
     axis: Axis,
@@ -1515,8 +1517,8 @@ function createEngine(
   };
 
   /**
-   * O peso de um filho `fill` (`weight`, v4): número finito > 0; ausente vale 1 e o inválido
-   * (vindo de expressão) é ignorado com o aviso `valor inválido em weight: <valor>`.
+   * The weight of a `fill` child (`weight`, v4): a finite number > 0; absent counts as 1 and an
+   * invalid one (coming from an expression) is ignored with the warning `invalid value in weight: <value>`.
    */
   const weightMemo = new Map<TemplateNode, number>();
   const weightOf = (node: TemplateNode): number => {
@@ -1531,7 +1533,7 @@ function createEngine(
     return weight;
   };
 
-  /** Os pesos dos filhos que são `fill` (o resto vale 1, sem avaliar o `weight`). */
+  /** The weights of the children that are `fill` (the rest count as 1, without evaluating `weight`). */
   const weightsFor = (
     kids: readonly Kid[],
     sizes: readonly (number | 'fill')[],
@@ -1539,10 +1541,11 @@ function createEngine(
     sizes.map((size, i) => (size === 'fill' && kids[i] ? weightOf(kids[i].node) : 1));
 
   /**
-   * Reparte `free` entre os `fill` (um `SizeLimit` e um peso cada, padrão 1) como o flexbox: cada um
-   * recebe a parte do seu peso, calcula a violação total dos limites; sem violação, está pronto;
-   * com violação positiva congela quem bateu no `min`, com negativa quem bateu no `max`, e repete
-   * com o resto (a diferença é redistribuída na proporção dos pesos).
+   * Splits `free` among the `fill`s (a `SizeLimit` and a weight each, default 1) like flexbox:
+   * each gets the share of its weight, the total limit violation is computed; without a
+   * violation, it is done; with a positive violation it freezes whoever hit the `min`, with a
+   * negative one whoever hit the `max`, and repeats with the rest (the difference is
+   * redistributed in proportion to the weights).
    */
   const distributeFill = (
     limits: readonly SizeLimit[],
@@ -1575,7 +1578,7 @@ function createEngine(
     return sizes;
   };
 
-  /** Tamanhos no eixo principal: os fixos já vêm prontos e os `fill` dividem o que sobra (pelos pesos). */
+  /** Sizes on the main axis: fixed ones come ready and the `fill`s split what is left (by the weights). */
   const resolveMain = (
     frame: FrameTemplate,
     layout: FrameLayout,
@@ -1606,8 +1609,8 @@ function createEngine(
   };
 
   /**
-   * A extensão de cada filho de um quadro `none` num eixo: âncora inicial + tamanho + âncora final
-   * (só o tamanho quando centrado por âncora ou alinhado pelo quadro); devolve a maior.
+   * The extent of each child of a `none` frame on an axis: start anchor + size + end anchor
+   * (only the size when centered by anchor or aligned by the frame); returns the largest.
    */
   const noneExtent = (
     kids: readonly Kid[],
@@ -1622,10 +1625,11 @@ function createEngine(
     }, -Infinity);
 
   /**
-   * O texto `ellipsis` que cabe encolhendo (como o `min-width: 0` de um item flex com `text-overflow`):
-   * na linha de largura conhecida que passa da caixa, ele cede o excesso na proporção do tamanho e
-   * o `…` corta o resto dentro da caixa, em vez de a linha passar do segmento vizinho. Só o texto de
-   * `ellipsis` encolhe; sem ele (ou sem excesso) os tamanhos ficam como estão.
+   * The `ellipsis` text that fits by shrinking (like the `min-width: 0` of a flex item with
+   * `text-overflow`): on a line of known width that exceeds the box, it yields the excess in
+   * proportion to its size and the `…` cuts the rest inside the box, instead of the line running
+   * past the neighboring segment. Only `ellipsis` text shrinks; without it (or without an excess)
+   * the sizes stay as they are.
    */
   const shrinkEllipsis = (
     kids: readonly Kid[],
@@ -1651,7 +1655,7 @@ function createEngine(
     return sizes.map((s, i) => (shrinkable[i] === true ? (s as number) * (1 - cut) : s));
   };
 
-  /** Tamanhos dos filhos num eixo; `space.content` nulo = o pai está sendo medido (hug). */
+  /** Children's sizes on an axis; null `space.content` = the parent is being measured (hug). */
   const resolveAxis = (
     frame: FrameTemplate,
     layout: FrameLayout,
@@ -1694,7 +1698,7 @@ function createEngine(
     return numbers;
   };
 
-  /** Tamanho do quadro num eixo a partir dos filhos (`hug`), com o padding. */
+  /** The frame's size on an axis from the children (`hug`), with the padding. */
   const hugTotal = (
     layout: FrameLayout,
     kids: readonly Kid[],
@@ -1719,7 +1723,7 @@ function createEngine(
     return Math.max(...sizes) + padding;
   };
 
-  /** `start` e `end` trocados quando o eixo horizontal corre da direita para a esquerda. */
+  /** `start` and `end` swapped when the horizontal axis runs right to left. */
   const logicalSide = <T extends LayoutAlign | LayoutJustify>(
     value: T,
     flip: boolean,
@@ -1729,14 +1733,14 @@ function createEngine(
     return value === 'end' ? ('start' as T) : value;
   };
 
-  /** A posição de um filho sem âncora no eixo de um quadro `none` (`start` e `stretch`: 0). */
+  /** The position of a child without an anchor on the axis of a `none` frame (`start` and `stretch`: 0). */
   const alignFree = (
     align: LayoutAlign | LayoutJustify,
     content: number,
     size: number,
   ) => (align === 'center' ? (content - size) / 2 : align === 'end' ? content - size : 0);
 
-  /** Posição (relativa ao pai) de cada filho num eixo. */
+  /** Position (relative to the parent) of each child on an axis. */
   const positionAxis = (
     layout: FrameLayout,
     kids: readonly Kid[],
@@ -1747,7 +1751,7 @@ function createEngine(
     const startPad = axis === 'w' ? layout.pad.left : layout.pad.top;
     const endPad = axis === 'w' ? layout.pad.right : layout.pad.bottom;
     const content = total - startPad - endPad;
-    // No eixo horizontal de um quadro `rtl`, `start`/`end` do alinhamento trocam de lado.
+    // On the horizontal axis of an `rtl` frame, the alignment's `start`/`end` swap sides.
     const flipSide = axis === 'w' && layout.dir === 'rtl';
     if (layout.kind === 'none') {
       return kids.map((kid, i) => {
@@ -1772,7 +1776,7 @@ function createEngine(
       return sizes.map((size) => {
         const position = cursor;
         cursor += size + layout.gap + extra;
-        // `reverse` e a direção `rtl` (no eixo horizontal) espelham; juntos se compensam.
+        // `reverse` and the `rtl` direction (on the horizontal axis) both mirror; together they cancel out.
         return layout.reverse !== flipSide
           ? mirrorMain(position, size, startPad, content)
           : position;
@@ -1786,20 +1790,20 @@ function createEngine(
     });
   };
 
-  // --- quebra de fileira (`layout.wrap`) ----------------------------------------------------
+  // --- row wrapping (`layout.wrap`) ---------------------------------------------------------
 
-  /** Os filhos de um quadro com `wrap`, o eixo principal, o cruzado e o espaço nos dois. */
+  /** The children of a frame with `wrap`, the main axis, the cross axis and the space on both. */
   interface WrapSpace {
     readonly frame: FrameTemplate;
     readonly layout: FrameLayout;
     readonly kids: readonly Kid[];
     readonly main: Axis;
     readonly cross: Axis;
-    /** A área de conteúdo do eixo principal (nulo = `hug`: uma linha só). */
+    /** The main axis content area (null = `hug`: a single line). */
     readonly mainContent: number | null;
-    /** O limite do eixo cruzado quando o quadro é medido (nulo = desconhecido). */
+    /** The cross axis limit when the frame is measured (null = unknown). */
     readonly crossBound: number | null;
-    /** O tamanho conhecido do quadro por eixo (nulo = `hug`). */
+    /** The frame's known size per axis (null = `hug`). */
     readonly known: { readonly w: number | null; readonly h: number | null };
   }
 
@@ -1811,7 +1815,7 @@ function createEngine(
       ? layout.pad.left + layout.pad.right
       : layout.pad.top + layout.pad.bottom;
 
-  /** Tamanho dos filhos no eixo principal antes de dividir os `fill` (`'fill'` fica), na ordem dos `kids`. */
+  /** Children's sizes on the main axis before splitting the `fill`s (`'fill'` stays), in the order of `kids`. */
   const wrapMainSizes = (space: WrapSpace): (number | 'fill')[] => {
     const { frame, layout, kids, main, cross } = space;
     const crossSizes =
@@ -1843,7 +1847,7 @@ function createEngine(
     });
   };
 
-  /** A base de cada filho para decidir as linhas: o `fill` vale o que abraçaria. */
+  /** Each child's basis for deciding the lines: the `fill` counts as what it would hug. */
   const wrapBases = (space: WrapSpace, sizes: readonly (number | 'fill')[]): number[] =>
     sizes.map((size, i) => {
       if (size !== 'fill') return size;
@@ -1852,26 +1856,26 @@ function createEngine(
       return clampTo(limitOf(kid.node, space.main), Math.max(0, natural));
     });
 
-  /** Uma linha já resolvida: filhos, tamanhos e posições nos dois eixos (relativos ao quadro). */
+  /** An already resolved line: children, sizes and positions on both axes (relative to the frame). */
   interface WrappedLine {
     readonly kids: readonly Kid[];
     readonly main: readonly number[];
     readonly mainPos: readonly number[];
     readonly cross: readonly number[];
-    /** A extensão da linha no eixo cruzado. */
+    /** The line's extent on the cross axis. */
     readonly extent: number;
-    /** O deslocamento de cada filho dentro da linha, no eixo cruzado. */
+    /** Each child's offset within the line, on the cross axis. */
     readonly offsets: readonly number[];
   }
 
-  /** O deslocamento de um filho dentro da linha, no eixo cruzado (`center`/`end`; `start` e `stretch` 0). */
+  /** A child's offset within the line, on the cross axis (`center`/`end`; `start` and `stretch` 0). */
   const crossOffset = (align: LayoutAlign, size: number, extent: number): number => {
     if (align === 'center') return (extent - size) / 2;
     if (align === 'end') return extent - size;
     return 0;
   };
 
-  /** A linha com os tamanhos do eixo cruzado e os deslocamentos dentro dela. */
+  /** The line with the cross-axis sizes and the offsets within it. */
   const crossOfLine = (
     space: WrapSpace,
     lineKids: readonly Kid[],
@@ -1909,7 +1913,7 @@ function createEngine(
     };
   };
 
-  /** As linhas do quadro com `wrap`: quebra, divide os `fill` de cada uma, mede o eixo cruzado e posiciona. */
+  /** The lines of the frame with `wrap`: wraps, divides each one's `fill`s, measures the cross axis and positions. */
   const wrapLines = (
     space: WrapSpace,
     mainTotal: (used: number) => number,
@@ -1963,7 +1967,7 @@ function createEngine(
     return { lines, total };
   };
 
-  /** O plano de um quadro `row`/`column` com `wrap` (ver `layout.wrap` no `docs/COMPONENT-FORMAT.md`). */
+  /** The plan of a `row`/`column` frame with `wrap` (see `layout.wrap` in `docs/COMPONENT-FORMAT.md`). */
   const planWrapped = (
     frame: FrameTemplate,
     layout: FrameLayout,
@@ -2008,7 +2012,7 @@ function createEngine(
         const mainPos = line.mainPos[i] ?? 0;
         const crossPos = crossStart + (stacked.tops[k] ?? 0) + (line.offsets[i] ?? 0);
         if (row) return { kid, x: mainPos, y: crossPos, w: m, h: c };
-        // Em `rtl` as colunas empilham da direita para a esquerda (o `align` vai junto).
+        // In `rtl` the columns stack from right to left (the `align` goes along).
         const x =
           layout.dir === 'rtl'
             ? mirrorMain(crossPos, c, layout.pad.left, crossSize - padAxis(layout, cross))
@@ -2021,14 +2025,14 @@ function createEngine(
       : { w: crossSize, h: mainSize, placements };
   };
 
-  // --- grade (`layout.type: "grid"`) -------------------------------------------------------
+  // --- grid (`layout.type: "grid"`) ---------------------------------------------------------
 
-  /** A grade já colocada: os filhos na ordem de colocação (`reverse` aplicado) e suas células. */
+  /** The grid already placed: the children in placement order (`reverse` applied) and their cells. */
   interface GridSpace {
     readonly frame: FrameTemplate;
     readonly layout: FrameLayout;
     readonly kids: readonly Kid[];
-    /** O eixo das trilhas (`w` na grade vertical). */
+    /** The tracks' axis (`w` in a vertical grid). */
     readonly t: Axis;
     readonly known: { readonly w: number | null; readonly h: number | null };
     readonly bounds: Limits;
@@ -2037,7 +2041,7 @@ function createEngine(
     readonly lines: number;
   }
 
-  /** Um eixo da grade resolvido: o tamanho do quadro, o de cada filho e onde ele fica (relativo ao quadro). */
+  /** A resolved grid axis: the frame's size, each child's and where it sits (relative to the frame). */
   interface GridAxis {
     readonly total: number;
     readonly sizes: readonly number[];
@@ -2045,21 +2049,23 @@ function createEngine(
   }
 
   /**
-   * Quantas trilhas a medição `hug` de uma grade adaptativa (`minColumnWidth`/`minRowHeight`) deu, por
-   * tamanho resultante: a passagem final, que já recebe esse tamanho, repete o número em vez de
-   * recalculá-lo do tamanho encolhido (que daria menos trilhas). Dois limites que dão o mesmo total
-   * com contagens diferentes ficam com a mais recente: com um pai `hug` que mede a grade duas vezes
-   * isso dá o desenho certo, nas duas ordens. O pai `max-content`/`min-content` resolve a largura
-   * antes de medir a grade, então ela é medida com um limite só (a largura do pai) e o memo lê a
-   * entrada dessa medida; está provado nas duas ordens em `tests/model/components/huggedCounts.test.ts`
+   * How many tracks the `hug` measurement of an adaptive grid (`minColumnWidth`/`minRowHeight`)
+   * gave, per resulting size: the final pass, which already receives that size, repeats the
+   * number instead of recomputing it from the shrunk size (which would give fewer tracks). Two
+   * limits that give the same total with different counts keep the most recent one: with a `hug`
+   * parent that measures the grid twice this gives the right drawing, in both orders. The
+   * `max-content`/`min-content` parent resolves the width before measuring the grid, so it is
+   * measured with a single limit (the parent's width) and the memo reads the input of that
+   * measurement; this is proven in both orders in `tests/model/components/huggedCounts.test.ts`
    * (#1692, #1749).
    */
   const huggedCounts = new Map<FrameTemplate, Map<number, number>>();
 
   /**
-   * A contagem lembrada da medida `hug` para o tamanho `known`, só para o quadro cujo eixo das trilhas
-   * é `hug`: num quadro `fill`, `%` ou px o tamanho vem do pai e a contagem sai dele (um total igual
-   * ao de outra medida, com outro limite, não empresta a contagem dela).
+   * The count remembered from the `hug` measurement for size `known`, only for a frame whose
+   * tracks' axis is `hug`: in a `fill`, `%` or px frame the size comes from the parent and the
+   * count comes from it (a total equal to another measurement's, with another limit, does not
+   * lend its count).
    */
   const hugMemoOf = (
     frame: FrameTemplate,
@@ -2070,28 +2076,28 @@ function createEngine(
       ? huggedCounts.get(frame)?.get(known)
       : undefined;
 
-  /** A área de conteúdo do eixo quando o quadro tem tamanho conhecido (nulo = `hug`). */
+  /** The axis content area when the frame has a known size (null = `hug`). */
   const gridContent = (space: GridSpace, axis: Axis): number | null => {
     const known = space.known[axis];
     return known === null ? null : Math.max(0, known - padAxis(space.layout, axis));
   };
 
-  /** O limite disponível do eixo na medição (nulo = desconhecido). */
+  /** The axis's available limit in measuring (null = unknown). */
   const gridBound = (space: GridSpace, axis: Axis): number | null => {
     const bound = space.bounds[axis];
     return bound === null ? null : Math.max(0, bound - padAxis(space.layout, axis));
   };
 
   /**
-   * O alinhamento do eixo dentro da célula: `justify` no eixo das trilhas, `align` no das linhas.
-   * O `stretch` já está no tamanho do filho (o `hug` esticado vale a célula; o px fica como está).
+   * The axis alignment within the cell: `justify` on the tracks' axis, `align` on the rows'. The
+   * `stretch` is already in the child's size (the stretched `hug` takes the cell; the px stays as is).
    */
   const gridAlign = (space: GridSpace, axis: Axis): LayoutAlign | LayoutJustify => {
     const value = axis === space.t ? space.layout.justify : space.layout.align;
     return value === 'stretch' ? 'start' : value;
   };
 
-  /** O `span` de um filho: inteiro ≥ 1; outro valor (de expressão) vale 1 com o aviso. */
+  /** A child's `span`: integer ≥ 1; any other value (from an expression) counts as 1 with the warning. */
   const spanOf = (node: TemplateNode): number => {
     const value = ev<unknown>(node.span as Expr<unknown> | undefined, undefined);
     if (value === undefined || value === null) return 1;
@@ -2101,7 +2107,7 @@ function createEngine(
     return 1;
   };
 
-  /** O tamanho do filho `i` no eixo: `content` é a extensão da célula/linha (nulo = medindo o natural). */
+  /** The size of child `i` on the axis: `content` is the cell/line extent (null = measuring the natural one). */
   const gridKidSize = (
     space: GridSpace,
     i: number,
@@ -2118,7 +2124,7 @@ function createEngine(
   const gridTolerance = (space: GridSpace): number =>
     space.kids.some((kid) => kid.node.type === 'text') ? TEXT_TOLERANCE : EPS;
 
-  /** O eixo das trilhas: trilhas iguais, células de `span` trilhas, o filho alinhado dentro da célula. */
+  /** The tracks' axis: equal tracks, cells of `span` tracks, the child aligned within the cell. */
   const solveTracks = (
     space: GridSpace,
     axis: Axis,
@@ -2163,7 +2169,7 @@ function createEngine(
     };
   };
 
-  /** O eixo das linhas de fluxo: cada uma com a extensão do maior filho, empilhadas com o `lineGap`. */
+  /** The flow lines' axis: each with the extent of its largest child, stacked with the `lineGap`. */
   const solveLines = (
     space: GridSpace,
     axis: Axis,
@@ -2192,7 +2198,7 @@ function createEngine(
     };
   };
 
-  /** O plano de um quadro `grid` (ver `layout.type: "grid"` no `docs/COMPONENT-FORMAT.md`). */
+  /** The plan of a `grid` frame (see `layout.type: "grid"` in `docs/COMPONENT-FORMAT.md`). */
   const planGrid = (
     frame: FrameTemplate,
     layout: FrameLayout,
@@ -2227,7 +2233,7 @@ function createEngine(
       axis === t ? solveTracks(space, axis, others) : solveLines(space, axis, others);
     const horizontal = solve('w', null);
     const vertical = solve('h', horizontal.sizes);
-    // Em `rtl` as trilhas (ou as linhas de fluxo) correm da direita para a esquerda.
+    // In `rtl` the tracks (or the flow lines) run from right to left.
     const xOf = (i: number): number => {
       const x = horizontal.offsets[i] ?? 0;
       return layout.dir === 'rtl'
@@ -2258,7 +2264,7 @@ function createEngine(
     };
   };
 
-  /** Guarda o plano do quadro na chave do cache e o devolve. */
+  /** Stores the frame's plan under the cache key and returns it. */
   const remember = (frame: FrameTemplate, key: string, plan: Plan): Plan => {
     let perFrame = planCache.get(frame);
     if (!perFrame) {
@@ -2270,8 +2276,8 @@ function createEngine(
   };
 
   /**
-   * Plano de um quadro: `null` num eixo = `hug` (o quadro abraça os filhos). `limits` é o
-   * limite disponível por eixo hug, para os filhos `fill`/`%` contribuírem na medição.
+   * A frame's plan: `null` on an axis = `hug` (the frame hugs its children). `limits` is the
+   * available limit per hug axis, so the `fill`/`%` children contribute in the measurement.
    */
   const planFrame = (
     frame: FrameTemplate,
@@ -2339,12 +2345,12 @@ function createEngine(
     return remember(frame, key, plan);
   };
 
-  // --- estilo ---------------------------------------------------------------------------
+  // --- style ----------------------------------------------------------------------------
 
   /**
-   * Gradiente linear pela convenção SVG/Figma (não a do CSS `linear-gradient`): o ângulo cresce no
-   * sentido horário com o eixo y para baixo (0° = esquerda→direita, 90° = cima→baixo); a linha
-   * passa pelo centro da caixa, com comprimento que cobre os cantos.
+   * Linear gradient by the SVG/Figma convention (not CSS's `linear-gradient`): the angle grows
+   * clockwise with the y axis pointing down (0° = left→right, 90° = top→bottom); the line passes
+   * through the center of the box, with a length that covers the corners.
    */
   const gradientPaint = (gradient: GradientSpec, w: number, h: number): Paint => {
     const rad = (gradient.angle * Math.PI) / 180;
@@ -2394,7 +2400,7 @@ function createEngine(
     };
   };
 
-  /** `stroke.dash` (lista, ou expressão que devolve a lista): inválido = sem tracejado, com aviso. */
+  /** `stroke.dash` (list, or an expression returning the list): invalid = no dashing, with a warning. */
   const dashOf = (expr: StrokeSpec['dash']): readonly number[] | undefined => {
     if (expr === undefined) return undefined;
     const value = ev<unknown>(expr as Expr<unknown>, undefined);
@@ -2406,7 +2412,7 @@ function createEngine(
     return valid ? (value as readonly number[]) : undefined;
   };
 
-  /** `stroke.offset` em px: negativo (vindo de um token) cai em 0 com aviso. */
+  /** `stroke.offset` in px: negative (coming from a token) falls to 0 with a warning. */
   const offsetOf = (expr: StrokeSpec['offset']): number => {
     if (expr === undefined) return 0;
     const value = num(expr as Expr<number>, 0);
@@ -2414,7 +2420,7 @@ function createEngine(
     return Math.max(0, value);
   };
 
-  /** `cap`, `join` e `sides` (formato 4): só entram na cena quando a chave existe e é válida. */
+  /** `cap`, `join` and `sides` (format 4): only enter the scene when the key exists and is valid. */
   const strokeStyleOf = (
     spec: StrokeSpec,
   ): Pick<Stroke, 'cap' | 'join' | 'sides' | 'scale'> => {
@@ -2445,11 +2451,11 @@ function createEngine(
     const value = ev<unknown>(expr as Expr<unknown>, undefined);
     if (!Array.isArray(value)) return undefined;
     const sides = STROKE_SIDES.filter((side) => value.includes(side));
-    // Os quatro lados são o contorno inteiro, com o raio dos cantos: a cena não traz `sides`.
+    // The four sides are the whole outline, with the corner radius: the scene does not carry `sides`.
     return sides.length > 0 && sides.length < STROKE_SIDES.length ? sides : undefined;
   };
 
-  /** Uma sombra da lista (ou a única): cor `none` não dá sombra; `spread` só entra quando não é 0. */
+  /** One shadow of the list (or the only one): color `none` gives no shadow; `spread` only enters when it is not 0. */
   const shadowOf = (shadow: ShadowSpec, scale: number): Shadow[] => {
     const color = str(shadow.color, 'none');
     if (isNone(color)) return [];
@@ -2469,7 +2475,7 @@ function createEngine(
     ];
   };
 
-  /** As sombras do nó, na ordem da lista (a primeira fica por cima). */
+  /** The node's shadows, in list order (the first stays on top). */
   const effectsOf = (node: TemplateNode, scale: number): Shadow[] => {
     const shadow = node.shadow;
     if (!shadow) return [];
@@ -2479,9 +2485,9 @@ function createEngine(
     return list.flatMap((spec) => shadowOf(spec, scale));
   };
 
-  // --- vão no contorno (`stroke.gap`) --------------------------------------------------------
+  // --- outline gap (`stroke.gap`) ------------------------------------------------------------
 
-  /** Os nós que abrem vão e os nós montados por nó do template: o vão se resolve no fim. */
+  /** The nodes that open a gap and the nodes built per template node: the gap is resolved at the end. */
   const gapNeeds: { id: string; name: string; padding: number }[] = [];
   const builtIds = new Map<TemplateNode, string>();
 
@@ -2496,7 +2502,7 @@ function createEngine(
       gapNeeds.push({ id, name: gap.node, padding: num(gap.padding, 0) });
   };
 
-  /** O primeiro nó do template com esse nome (a ordem do template, em profundidade). */
+  /** The first template node with that name (template order, depth-first). */
   const firstNamed = (node: TemplateNode, name: string): TemplateNode | undefined => {
     if (nodeName(node) === name) return node;
     if (node.type !== 'frame') return undefined;
@@ -2530,9 +2536,9 @@ function createEngine(
     return Number.isFinite(n) ? Math.max(0, n) : 0;
   };
 
-  // --- montagem dos nós -----------------------------------------------------------------
+  // --- node assembly --------------------------------------------------------------------
 
-  /** A `rotation` avaliada (graus); sem valor, 0 ou não finita, o nó não gira. */
+  /** The evaluated `rotation` (degrees); with no value, 0 or non-finite, the node does not rotate. */
   const rotationOf = (node: TemplateNode): { rotation?: number } => {
     const degrees = num(node.rotation, 0);
     return degrees === 0 ? {} : { rotation: degrees };
@@ -2600,7 +2606,7 @@ function createEngine(
     }
     const scale = (Math.abs(sx) + Math.abs(sy)) / 2 || 1;
     const stroke = strokeOf(node.stroke, 'center', scale);
-    // `mirror` em `rtl`: espelha na horizontal dentro da caixa do nó (x + w é a borda direita).
+    // `mirror` in `rtl`: flips horizontally inside the node's box (x + w is the right edge).
     const mirror = dirOf(node) === 'rtl' && bool(node.mirror, false);
     const transform: Matrix = mirror ? [-sx, 0, 0, sy, x + w, y] : [sx, 0, 0, sy, x, y];
     return {
@@ -2616,14 +2622,14 @@ function createEngine(
 
   const icons = options.icons ?? original.resolvedIcons;
 
-  /** O nome do ícone do nó, já avaliado. */
+  /** The node's icon name, already evaluated. */
   const iconName = (node: IconTemplate): string => str(node.name, '');
 
-  /** A caixa do `viewBox` do ícone do nó (a do conjunto quando o nome é desconhecido); sem avisar. */
+  /** The `viewBox` box of the node's icon (the set's when the name is unknown); without warning. */
   const iconBox = (node: IconTemplate): readonly [number, number] =>
     resolveIcon(icons, iconName(node))?.viewBox ?? icons?.viewBox ?? DEFAULT_ICON_VIEWBOX;
 
-  /** Cor do traço ou do preenchimento de um caminho: `true` e ausente valem a cor do nó. */
+  /** Stroke or fill color of a path: `true` and absent take the node's color. */
   const iconPaint = (
     value: boolean | string | undefined,
     nodeColor: string,
@@ -2632,14 +2638,14 @@ function createEngine(
     return typeof value === 'string' ? value : nodeColor;
   };
 
-  /** Preenchimento do caminho: `fill` explícito, senão a cor do nó, a menos que ele só tenha traço. */
+  /** Path fill: explicit `fill`, otherwise the node's color, unless it only has a stroke. */
   const iconFills = (iconPath: IconPath, nodeColor: string): Paint[] => {
     const wanted = iconPath.fill ?? iconPath.stroke === undefined;
     const color = iconPaint(wanted, nodeColor);
     return color === undefined || isNone(color) ? [] : [{ type: 'solid', color }];
   };
 
-  /** Traço do caminho (`stroke`), com a largura do nó quando ele a troca. */
+  /** Path stroke (`stroke`), with the node's width when it overrides it. */
   const iconStroke = (
     iconPath: IconPath,
     nodeColor: string,
@@ -2677,7 +2683,7 @@ function createEngine(
     };
   };
 
-  /** O ícone vira um grupo com um caminho por traçado, escalado do `viewBox` para a caixa do nó. */
+  /** The icon becomes a group with one path per stroke, scaled from the `viewBox` to the node's box. */
   const buildIcon = (
     node: IconTemplate,
     id: string,
@@ -2701,7 +2707,7 @@ function createEngine(
     const color = str(node.color, '#000000');
     const strokeWidth =
       node.strokeWidth === undefined ? undefined : Math.max(0, num(node.strokeWidth, 1));
-    // `mirror` do nó (ou, ausente, o do ícone no conjunto): em `rtl` os caminhos viram dentro da caixa.
+    // The node's `mirror` (or, absent, the icon's in the set): in `rtl` the paths flip inside the box.
     const mirror = dirOf(node) === 'rtl' && bool(node.mirror, found.def.mirror === true);
     const matrix: Matrix = mirror ? [-sx, 0, 0, sy, w, 0] : [sx, 0, 0, sy, 0, 0];
     const children = found.def.paths.map((iconPath, i) => ({
@@ -2711,7 +2717,7 @@ function createEngine(
     return { ...base, type: 'group', children };
   };
 
-  /** A chave do `$lines` que cita este nó: o nome, com o escopo da linha quando está num `repeat`. */
+  /** The `$lines` key that cites this node: the name, with the row scope when inside a `repeat`. */
   const linesKeyOf = (node: TextTemplate): string =>
     node.name === undefined
       ? ''
@@ -2724,11 +2730,11 @@ function createEngine(
   const measuredLines = (m: TextMetrics): number =>
     m.lineCount ?? Math.max(1, m.lines?.length ?? 1);
 
-  /** Vale conferir se o texto passa da altura? Não, se `maxLines`/`ellipsis` o cortam de propósito. */
+  /** Is it worth checking whether the text exceeds the height? No, if `maxLines`/`ellipsis` cut it on purpose. */
   const checksOverflow = (font: MeasureFont, w: number): boolean =>
     font.maxLines === undefined && font.ellipsis !== true && w > EPS;
 
-  /** As linhas quebradas passam da altura do nó e nada as corta (`maxLines`/`ellipsis`)? */
+  /** Do the wrapped lines exceed the node's height with nothing cutting them (`maxLines`/`ellipsis`)? */
   const warnTextTooTall = (
     node: TextTemplate,
     height: (() => number) | number,
@@ -2743,12 +2749,13 @@ function createEngine(
   };
 
   /**
-   * A palavra mais larga que a caixa (decisão 3 da #1631). O texto só quebra entre palavras, então a
-   * que não cabe fica sozinha numa linha; com `wrap: none` a linha é o parágrafo todo. Pulam-se só as
-   * linhas com espaço quebradas por palavra (já cabem) e as que o atalho do `wordSafeWidth` (letras ×
-   * corpo mais espaçamento) prova que cabem, o que só vale para letras estreitas (abaixo de U+2000:
-   * emoji e CJK podem passar de 1em). O resto se mede sem limite. Não usa
-   * `TextMetrics.width`, que o medidor da app prende no limite. Devolve a largura da maior, ou 0.
+   * The word wider than the box (decision 3 of #1631). Text only wraps between words, so the one
+   * that does not fit stays alone on a line; with `wrap: none` the line is the whole paragraph.
+   * Only the lines with a space wrapped by word (which already fit) and those that the
+   * `wordSafeWidth` shortcut (letters × size plus spacing) proves fit are skipped, which only
+   * holds for narrow letters (below U+2000: emoji and CJK can exceed 1em). The rest is measured
+   * without a limit. It does not use `TextMetrics.width`, which the app's measurer clamps to the
+   * limit. Returns the width of the widest, or 0.
    */
   const widestWord = (lines: readonly string[], font: MeasureFont, w: number): number => {
     const advance = font.size + font.letterSpacing;
@@ -2767,7 +2774,7 @@ function createEngine(
     return widest;
   };
 
-  /** Uma palavra (ou um chip) passa da largura do nó e nada corta o texto? */
+  /** Does a word (or a chip) exceed the node's width with nothing cutting the text? */
   const warnTextTooWide = (
     node: TextTemplate,
     widest: (() => number) | number,
@@ -2780,7 +2787,7 @@ function createEngine(
       warnShort('engine.textTooBig', nodeName(node), measured - w);
   };
 
-  /** O texto da cena e, com `runs`, os trechos resolvidos e o layout deles na caixa. */
+  /** The scene's text and, with `runs`, the resolved runs and their layout in the box. */
   const textContent = (
     node: TextTemplate,
     font: MeasureFont,
@@ -2805,7 +2812,7 @@ function createEngine(
     return { text, extra: { runs: rich.scene, runLayout } };
   };
 
-  /** O `align` da cena. O texto rico (`runs`) não justifica: a cena diz `left`, que é o que se arrumou. */
+  /** The scene's `align`. Rich text (`runs`) does not justify: the scene says `left`, which is what was laid out. */
   const styleAlign = (node: TextTemplate): TextStyle['align'] => {
     const value = physicalAlign(node);
     return value === 'justify' && node.runs !== undefined ? 'left' : value;
@@ -2814,20 +2821,20 @@ function createEngine(
   const verticalAlignOf = (node: TextTemplate): TextStyle['verticalAlign'] =>
     oneOf(
       node.font?.verticalAlign,
-      // `cap-middle` só existe na formatVersion 4; antes, vindo de expressão, é valor fora do conjunto.
+      // `cap-middle` only exists in formatVersion 4; before it, coming from an expression, it is a value outside the set.
       original.formatVersion >= 4
         ? ['top', 'middle', 'bottom', 'cap-middle']
         : ['top', 'middle', 'bottom'],
       'top',
     );
 
-  /** `baselinePadding.top` do nó na caixa de largura `w`: nunca menor que a linha de base da fonte. */
+  /** The node's `baselinePadding.top` in a box of width `w`: never less than the font's baseline. */
   const baselineTopOf = (node: TextTemplate, w: number): number | undefined => {
     const top = baselinePaddingOf(node)?.top;
     return top === undefined ? undefined : Math.max(top, baselinesOf(node, w).first);
   };
 
-  /** As chaves do `style` que só entram fora do padrão: decoração, quebra, elipse e limite de linhas. */
+  /** The `style` keys that only enter when off the default: decoration, wrapping, ellipsis and line limit. */
   const textStyleExtras = (node: TextTemplate, font: MeasureFont): Partial<TextStyle> => {
     const font0: FontSpec = node.font ?? {};
     const decoration = oneOf(
@@ -2843,7 +2850,7 @@ function createEngine(
     };
   };
 
-  /** O `style` da cena de um nó de texto: a fonte medida, a direção efetiva e a linha de base. */
+  /** The scene `style` of a text node: the measured font, the effective direction and the baseline. */
   const textStyleOf = (
     node: TextTemplate,
     font: MeasureFont,
@@ -2855,10 +2862,10 @@ function createEngine(
     italic: font.italic,
     lineHeight: font.lineHeight,
     letterSpacing: font.letterSpacing,
-    // `justify` só existe na formatVersion 4; antes, vindo de expressão, é valor fora do conjunto.
+    // `justify` only exists in formatVersion 4; before it, coming from an expression, it is a value outside the set.
     align: styleAlign(node),
     ...(dirOf(node) === 'rtl' ? { direction: 'rtl' as const } : {}),
-    // Com `baselinePadding.top` o `verticalAlign` deixa de valer (a primeira linha de base manda).
+    // With `baselinePadding.top` the `verticalAlign` no longer applies (the first baseline rules).
     verticalAlign: baselineTop === undefined ? verticalAlignOf(node) : 'top',
     ...(baselineTop === undefined ? {} : { baselineTop }),
     ...textStyleExtras(node, font),
@@ -2890,9 +2897,10 @@ function createEngine(
   };
 
   /**
-   * `image` vira um retângulo: o `fill` do nó é o fundo e, por cima, o paint `image` com a URL
-   * (o literal, ou o valor do campo se for texto não vazio). O modelo não baixa a imagem nem
-   * aplica a política de URL (quem desenha decide); o layout não depende dela.
+   * `image` becomes a rectangle: the node's `fill` is the background and, on top, the `image`
+   * paint with the URL (the literal, or the field's value if it is non-empty text). The model
+   * does not download the image or apply the URL policy (whoever draws decides); the layout does
+   * not depend on it.
    */
   const buildImage = (
     node: ImageTemplate,
@@ -2968,12 +2976,12 @@ function createEngine(
       case 'image':
         return buildImage(node, id, x, y, w, h);
       case 'repeat':
-        // `expandRepeats` já trocou todo `repeat` por um quadro: nunca chega aqui.
-        throw new Error('repeat não expandido');
+        // `expandRepeats` already replaced every `repeat` with a frame: it never gets here.
+        throw new Error('repeat not expanded');
     }
   };
 
-  /** O que o slot oferece às filhas: cada `provide` avaliado com os valores desta instância. */
+  /** What the slot offers to its children: each `provide` evaluated with this instance's values. */
   const provides = (): ProvidedValues | undefined => {
     const offered = providingSlot(component)?.provide;
     if (offered === undefined) return undefined;
@@ -2998,7 +3006,7 @@ function createEngine(
     planFrame,
     intrinsicWidth,
     buildRoot,
-    /** A primeira linha de base do componente na caixa `box` (o que o `align: "baseline"` do pai lê). */
+    /** The component's first baseline in box `box` (what the parent's `align: "baseline"` reads). */
     rootBaseline: (box: Box): number | undefined =>
       kidBaseline(component.template, box.width, box.height),
     template: component.template,
@@ -3006,7 +3014,7 @@ function createEngine(
     clampSize,
     citedLines,
     lineCounts,
-    /** O número de linhas de um nó mudou entre as duas passagens: fica o da segunda (decisão 8). */
+    /** A node's line count changed between the two passes: the second's stays (decision 8). */
     warnLinesUnstable: (key: string) =>
       warn('engine.linesUnstable', { name: linesNodeName(key) }),
   };
@@ -3015,10 +3023,11 @@ function createEngine(
 type Engine = ReturnType<typeof createEngine>;
 
 /**
- * Roda `run` no motor e, se o template usa `$lines`, em duas passagens (decisão 8 da #898): a
- * primeira com 1 linha em cada `$lines`, a segunda com as linhas medidas na primeira. `run` monta os
- * nós de um texto citado (é neles que as linhas são medidas, na largura final). Se a segunda medir outro número num nó citado, fica o da segunda e o
- * motor avisa `$lines instável: <nó>` (sem terceira passagem). Sem `$lines`, uma passagem só.
+ * Runs `run` in the engine and, if the template uses `$lines`, in two passes (decision 8 of
+ * #898): the first with 1 line in each `$lines`, the second with the lines measured in the first.
+ * `run` builds the nodes of a cited text (that is where the lines are measured, at the final
+ * width). If the second measures another number on a cited node, the second's stays and the
+ * engine warns `$lines unstable: <node>` (no third pass). Without `$lines`, a single pass.
  */
 function withLinesPasses<R>(
   component: ComponentFile,
@@ -3065,8 +3074,8 @@ export function instantiate(
 }
 
 /**
- * Mede o componente sem montar nós: o plano da raiz do template, com `null` = `hug` naquele
- * eixo (o quadro abraça os filhos; com `slotContent`, o slot vale o tamanho dos filhos).
+ * Measures the component without building nodes: the template root's plan, with `null` = `hug`
+ * on that axis (the frame hugs its children; with `slotContent`, the slot takes the children's size).
  */
 export function measureComponent(
   component: ComponentFile,
@@ -3082,8 +3091,8 @@ export function measureComponent(
   warnings: readonly string[];
   messages: readonly ModelMessage[];
 } {
-  // Só px é tamanho dado; `null` (hug) e `min-content`/`max-content` (decisão 17 da #1078) são medidos.
-  // A altura intrínseca vale o hug: a altura que o conteúdo pede na largura já resolvida.
+  // Only px is a given size; `null` (hug) and `min-content`/`max-content` (decision 17 of #1078) are measured.
+  // The intrinsic height is the hug one: the height the content asks for at the already resolved width.
   const given = {
     width: typeof size.width === 'number' ? size.width : null,
     height: typeof size.height === 'number' ? size.height : null,
@@ -3092,12 +3101,12 @@ export function measureComponent(
     width: given.width ?? component.size.width,
     height: given.height ?? component.size.height,
   };
-  // Eixo hug: o `$size` dele não limita os `min`/`max` por expressão (infinito = ausente).
+  // Hug axis: its `$size` does not limit the `min`/`max` by expression (infinite = absent).
   const open = { width: given.width === null, height: given.height === null };
   const plan = (engine: Engine): { width: number; height: number } => {
     const { template } = engine;
-    // Num eixo hug o `max` da raiz é o limite disponível; depois do plano, o min/max da raiz
-    // se aplica (a largura primeiro: a altura é medida já na largura limitada).
+    // On a hug axis the root's `max` is the available limit; after the plan, the root's min/max
+    // applies (width first: the height is measured already at the limited width).
     const finiteMax = (axis: Axis) => {
       const { max } = engine.limitOf(template, axis);
       return Number.isFinite(max) ? max : null;
@@ -3115,7 +3124,7 @@ export function measureComponent(
       width === first.w ? first : engine.planFrame(template, width, given.height, limits);
     return { width, height: given.height ?? engine.clampSize(template, 'h', planned.h) };
   };
-  // Com `$lines`, as duas passagens também montam os nós (é neles que se medem as linhas de cada texto).
+  // With `$lines`, the two passes also build the nodes (that is where each text's lines are measured).
   const { engine, result } = withLinesPasses(
     component,
     values,

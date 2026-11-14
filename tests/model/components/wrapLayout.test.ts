@@ -22,7 +22,7 @@ const schema: Record<string, unknown> = JSON.parse(
 );
 
 type Json = Record<string, unknown>;
-const V4 = 'só é permitido com formatVersion 4';
+const V4 = 'only allowed with formatVersion 4';
 
 function file(template: Json, formatVersion = 4, extra: Json = {}): Json {
   return {
@@ -363,13 +363,13 @@ describe('wrap: validação', () => {
 
   it('lineGap, maxPerLine e maxLines sem wrap (ausente ou "none") são erro', () => {
     expect(issues(flow({ lineGap: 4 }))).toContain(
-      'template.layout.lineGap: só vale com wrap',
+      'template.layout.lineGap: only valid with wrap',
     );
     expect(issues(flow({ wrap: 'none', maxPerLine: 2 }))).toContain(
-      'template.layout.maxPerLine: só vale com wrap',
+      'template.layout.maxPerLine: only valid with wrap',
     );
     expect(issues(flow({ maxLines: 2 }))).toContain(
-      'template.layout.maxLines: só vale com wrap',
+      'template.layout.maxLines: only valid with wrap',
     );
   });
 
@@ -388,7 +388,7 @@ describe('wrap: validação', () => {
 
   it('layout none não aceita wrap (só type vale)', () => {
     const list = issues(frame({ type: 'none', wrap: 'wrap' }, kids(1)));
-    expect(list.join('\n')).toMatch(/template\.layout\.wrap: chave desconhecida: wrap/);
+    expect(list.join('\n')).toMatch(/template\.layout\.wrap: unknown key: wrap/);
   });
 
   it.each([1, 2, 3])('numa formatVersion %i as chaves novas são erro', (version) => {
@@ -415,7 +415,7 @@ describe('wrap: validação', () => {
       issues(repeat({ wrap: 'wrap', lineGap: 4, maxPerLine: 2, maxLines: 3 })),
     ).toEqual([]);
     expect(issues(repeat({ lineGap: 4 }))).toContain(
-      'template.children[0].lineGap: só vale com wrap',
+      'template.children[0].lineGap: only valid with wrap',
     );
     expect(issues(repeat({ wrap: 'x' })).join('\n')).toMatch(
       /template\.children\[0\]\.wrap/,

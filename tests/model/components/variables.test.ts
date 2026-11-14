@@ -132,7 +132,7 @@ describe('let e $var: a leitura troca e devolve o componente sem eles', () => {
       }),
     );
     expect(validateComponent(raw)).toEqual([
-      'template.children[0].text.$var(n).$field: $index só vale dentro de um repeat',
+      'template.children[0].text.$var(n).$field: $index is only valid inside a repeat',
     ]);
   });
 
@@ -257,7 +257,7 @@ describe('let e $var: a leitura troca e devolve o componente sem eles', () => {
       }),
     );
     expect(validateComponent(raw)).toEqual([
-      'template.children[0].__proto__: chave desconhecida: __proto__',
+      'template.children[0].__proto__: unknown key: __proto__',
     ]);
   });
 
@@ -311,7 +311,7 @@ describe('let e $var: erros', () => {
 
   it('let precisa ser objeto', () => {
     expect(validateComponent(file(frame({ let: [1] })))).toEqual([
-      'template.let: esperava objeto',
+      'template.let: expected an object',
     ]);
   });
 
@@ -372,14 +372,14 @@ describe('let e $var: erros', () => {
       frame({ let: { a: 1 }, children: [rect({ width: { $var: 'a', default: 2 } })] }),
     );
     expect(validateComponent(raw)).toEqual([
-      'template.children[0].width.default: chave desconhecida: default',
+      'template.children[0].width.default: unknown key: default',
     ]);
   });
 
   it('let num rect é uma chave desconhecida', () => {
     const raw = file(frame({ children: [rect({ let: { a: 1 } })] }));
     expect(validateComponent(raw)).toEqual([
-      'template.children[0].let: chave desconhecida: let',
+      'template.children[0].let: unknown key: let',
     ]);
   });
 
@@ -389,8 +389,8 @@ describe('let e $var: erros', () => {
       3,
     );
     expect(validateComponent(raw)).toEqual([
-      'template.let: só é permitido com formatVersion 4',
-      'template.children[0].width: só é permitido com formatVersion 4',
+      'template.let: only allowed with formatVersion 4',
+      'template.children[0].width: only allowed with formatVersion 4',
     ]);
   });
 
@@ -402,7 +402,7 @@ describe('let e $var: erros', () => {
     const errors = validateComponent(raw);
     expect(errors).toEqual([...new Set(errors)]);
     expect(errors).toContain(
-      'template.children[0].width: só é permitido com formatVersion 4',
+      'template.children[0].width: only allowed with formatVersion 4',
     );
   });
 
@@ -414,7 +414,7 @@ describe('let e $var: erros', () => {
       }),
     );
     expect(validateComponent(inner)).toEqual([
-      'template.children[0].width.$var(gap).$add[0]: precisa ser número',
+      'template.children[0].width.$var(gap).$add[0]: must be a number',
     ]);
     const direct = file(
       frame({
@@ -423,7 +423,7 @@ describe('let e $var: erros', () => {
       }),
     );
     expect(validateComponent(direct)).toEqual([
-      'template.children[0].width.$add[0].$var(gap): precisa ser número',
+      'template.children[0].width.$add[0].$var(gap): must be a number',
     ]);
   });
 
@@ -435,7 +435,7 @@ describe('let e $var: erros', () => {
       }),
     );
     expect(validateComponent(raw)).toEqual([
-      'template.children[0].width.$var(outer).$add[0].$var(inner): precisa ser número',
+      'template.children[0].width.$var(outer).$add[0].$var(inner): must be a number',
     ]);
   });
 
@@ -505,7 +505,7 @@ describe('let e $var: erros', () => {
       id: '',
     };
     expect(validateComponent(raw)).toEqual([
-      'id: esperava texto no padrão ^[a-z0-9][a-z0-9-_]*$',
+      'id: expected text matching ^[a-z0-9][a-z0-9-_]*$',
       'template.children[0].width: undefined variable: x',
     ]);
   });

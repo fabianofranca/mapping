@@ -71,18 +71,18 @@ describe('$anchor.* na biblioteca', () => {
 
   it('outro $anchor.* é erro: campo não existe', () => {
     const r = validate([rect({ anchors: { left: { $field: '$anchor.foo' } } })]);
-    expect(messages(r).join('\n')).toContain('campo não existe: $anchor.foo');
+    expect(messages(r).join('\n')).toContain('field does not exist: $anchor.foo');
     expect(messages(r).join('\n')).not.toContain('não declarado');
   });
 
   it('numa versão 1 a 3, só é permitido com formatVersion 4', () => {
     const r = validate([rect({ visible: { $has: '$anchor.x' } })], {}, 3);
-    expect(messages(r).join('\n')).toContain('só é permitido com formatVersion 4');
+    expect(messages(r).join('\n')).toContain('only allowed with formatVersion 4');
   });
 
   it('o anchor da raiz é conferido pela mesma validação do componente', () => {
     const bad = validate([], { anchor: { side: 'left' } });
-    expect(messages(bad).join('\n')).toContain('esperava um de: top, bottom, start, end');
+    expect(messages(bad).join('\n')).toContain('expected one of: top, bottom, start, end');
     expect(
       messages(validate([], { anchor: { side: 'bottom', align: 'start' } })),
     ).toEqual([]);

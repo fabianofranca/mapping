@@ -21,7 +21,7 @@ import {
   visibleLineCount,
 } from '../../../src/model/components/textWrap';
 
-const V4 = 'só é permitido com formatVersion 4';
+const V4 = 'only allowed with formatVersion 4';
 const LONG = 'Texto longo demais para a caixa';
 type MeasureFont = Parameters<TextMeasurer>[1];
 

@@ -61,7 +61,7 @@ describe('justificado.mjs (R25.87 a R25.90)', () => {
     const errors = validateComponent({ ...(card as object), formatVersion: 3 });
     expect(errors.some((e) => e.includes('template.children[0].font.align'))).toBe(true);
     expect(errors.some((e) => e.includes('template.children[2].fill'))).toBe(true);
-    expect(errors.every((e) => e.includes('só é permitido com formatVersion 4'))).toBe(
+    expect(errors.every((e) => e.includes('only allowed with formatVersion 4'))).toBe(
       true,
     );
   });

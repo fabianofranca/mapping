@@ -45,17 +45,17 @@ describe('formato 4 do componente', () => {
     expect(
       validateComponent(withStroke({ color: '#000', cap: 'round', join: 'bevel' }, 3)),
     ).toEqual([
-      'template.children[0].stroke.cap: só é permitido com formatVersion 4',
-      'template.children[0].stroke.join: só é permitido com formatVersion 4',
+      'template.children[0].stroke.cap: only allowed with formatVersion 4',
+      'template.children[0].stroke.join: only allowed with formatVersion 4',
     ]);
   });
 
   it('cap fora da lista falha com os valores aceitos', () => {
     expect(validateComponent(withStroke({ color: '#000', cap: 'pointy' }))).toEqual([
-      'template.children[0].stroke.cap: esperava um de: butt, round, square',
+      'template.children[0].stroke.cap: expected one of: butt, round, square',
     ]);
     expect(validateComponent(withStroke({ color: '#000', join: 'x' }))).toEqual([
-      'template.children[0].stroke.join: esperava um de: miter, round, bevel',
+      'template.children[0].stroke.join: expected one of: miter, round, bevel',
     ]);
   });
 
@@ -77,13 +77,13 @@ describe('formato 4 do componente', () => {
   it('sides vazio, repetido ou com lado inválido falha', () => {
     const at = 'template.children[0].stroke.sides';
     expect(validateComponent(withStroke({ color: '#000', sides: [] }))).toEqual([
-      `${at}: esperava ao menos um lado`,
+      `${at}: expected at least one side`,
     ]);
     expect(
       validateComponent(withStroke({ color: '#000', sides: ['top', 'top'] })),
-    ).toEqual([`${at}[1]: lado repetido: top`]);
+    ).toEqual([`${at}[1]: repeated side: top`]);
     expect(validateComponent(withStroke({ color: '#000', sides: ['middle'] }))).toEqual([
-      `${at}[0]: esperava um de: top, right, bottom, left`,
+      `${at}[0]: expected one of: top, right, bottom, left`,
     ]);
   });
 
@@ -92,7 +92,7 @@ describe('formato 4 do componente', () => {
       expect(
         validateComponent(withStroke({ color: '#000', sides: ['top'] }, 4, type)),
       ).toEqual([
-        `template.children[0].stroke.sides: só vale em frame e rect (este é ${type})`,
+        `template.children[0].stroke.sides: only valid in frame and rect (this is ${type})`,
       ]);
     }
   });
@@ -107,7 +107,7 @@ describe('formato 4 do componente', () => {
 
   it('sides na formatVersion 3 dá o erro de versão', () => {
     expect(validateComponent(withStroke({ color: '#000', sides: ['top'] }, 3))).toEqual([
-      'template.children[0].stroke.sides: só é permitido com formatVersion 4',
+      'template.children[0].stroke.sides: only allowed with formatVersion 4',
     ]);
   });
 
@@ -117,7 +117,7 @@ describe('formato 4 do componente', () => {
     expect(out).toEqual([
       {
         path: 'template.fictional.deep',
-        message: 'só é permitido com formatVersion 4',
+        message: 'only allowed with formatVersion 4',
         code: 'component.v4Only',
       },
     ]);

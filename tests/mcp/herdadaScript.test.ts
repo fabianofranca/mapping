@@ -176,7 +176,7 @@ describe('herdada.mjs (R25.83 a R25.86)', () => {
     const old = validateComponent({ ...card, formatVersion: 3 });
     expect(old.some((e) => e.includes('provide'))).toBe(true);
     const oldText = validateComponent({ ...text, formatVersion: 3 });
-    expect(oldText.some((e) => e.includes('só é permitido com formatVersion 4'))).toBe(
+    expect(oldText.some((e) => e.includes('only allowed with formatVersion 4'))).toBe(
       true,
     );
   });

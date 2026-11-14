@@ -450,7 +450,7 @@ export function playgroundSizeRange(component: ComponentFile): {
   };
 }
 
-/** Limita `size` (arredondado) ao intervalo do playground. */
+/** Clamps `size` (rounded) to the playground range. */
 export function clampPlaygroundSize(component: ComponentFile, size: Size): Size {
   const { min, max } = playgroundSizeRange(component);
   const clamp = (v: number, lo: number, hi: number): number =>

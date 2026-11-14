@@ -186,7 +186,7 @@ describe('validateLibrary com repeat', () => {
         'error',
         'components/tab.json',
         'template.children[1].type',
-        'o nó repeat só existe na formatVersion 2',
+        'the repeat node only exists in formatVersion 2',
       ],
     ]);
   });

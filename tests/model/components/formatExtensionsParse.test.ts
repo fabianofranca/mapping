@@ -7,7 +7,7 @@ import {
   validateComponent,
 } from '../../../src/model/components/parseComponent';
 
-const V4 = 'só é permitido com formatVersion 4';
+const V4 = 'only allowed with formatVersion 4';
 const t = (name: string, extra: Record<string, unknown> = {}) => ({
   $token: name,
   ...extra,
@@ -72,7 +72,7 @@ describe('A1: $token em shadow.x, shadow.y e shadow.blur', () => {
           shadow: { color: '#000', x: { $field: 'dx' } },
         }),
       ),
-    ).toEqual(['template.children[0].shadow.x: esperava número']);
+    ).toEqual(['template.children[0].shadow.x: expected a number']);
   });
 
   it('o literal continua valendo em qualquer versão', () => {
@@ -116,10 +116,10 @@ describe('A2: $token em cada item da lista de cornerRadius', () => {
     const bad = (cornerRadius: unknown) =>
       validateComponent(withChild({ type: 'rect', width: 1, height: 1, cornerRadius }));
     expect(bad([t('a'), 1, 2])).toEqual([
-      'template.children[0].cornerRadius: esperava número maior ou igual a 0 ou lista de 4 números',
+      'template.children[0].cornerRadius: expected a number greater than or equal to 0 or a list of 4 numbers',
     ]);
     expect(bad([t('a'), -1, 0, 0])).toEqual([
-      'template.children[0].cornerRadius: esperava número maior ou igual a 0 ou lista de 4 números',
+      'template.children[0].cornerRadius: expected a number greater than or equal to 0 or a list of 4 numbers',
     ]);
     expect(bad([t('a'), { $field: 'x' }, 0, 0]).length).toBeGreaterThan(0);
   });
@@ -169,7 +169,7 @@ describe('A19: stroke.dash por expressão e $token nos itens', () => {
 
   it('item literal negativo ou que não é número continua erro', () => {
     expect(stroke([4, -1])).toEqual([
-      'template.children[0].stroke.dash[1]: esperava número maior ou igual a 0',
+      'template.children[0].stroke.dash[1]: expected a number greater than or equal to 0',
     ]);
   });
 });
@@ -194,7 +194,7 @@ describe('A4: justify space-around/space-evenly e layout.reverse', () => {
 
   it('valor fora do conjunto é "esperava um de"', () => {
     expect(frame({ type: 'row', justify: 'spread' })).toEqual([
-      'template.layout.justify: esperava um de: start, center, end, space-between, space-around, space-evenly',
+      'template.layout.justify: expected one of: start, center, end, space-between, space-around, space-evenly',
     ]);
   });
 
@@ -202,7 +202,7 @@ describe('A4: justify space-around/space-evenly e layout.reverse', () => {
     expect(frame({ type: 'row', reverse: true })).toEqual([]);
     expect(frame({ type: 'row', reverse: { $field: 'rtl' } })).toEqual([]);
     expect(frame({ type: 'row', reverse: 'sim' })).toEqual([
-      'template.layout.reverse: esperava booleano',
+      'template.layout.reverse: expected a boolean',
     ]);
   });
 
@@ -214,7 +214,7 @@ describe('A4: justify space-around/space-evenly e layout.reverse', () => {
 
   it('reverse com type none é chave desconhecida (como align e justify)', () => {
     expect(frame({ type: 'none', reverse: true })).toEqual([
-      'template.layout.reverse: chave desconhecida: reverse',
+      'template.layout.reverse: unknown key: reverse',
     ]);
   });
 });
@@ -253,13 +253,13 @@ describe('A10: alpha no $token de cor', () => {
 
   it('fora de 0..1 é "esperava número entre 0 e 1"', () => {
     expect(fill(t('scrim', { alpha: 1.5 }))).toEqual([
-      'template.children[0].fill.alpha: esperava número entre 0 e 1',
+      'template.children[0].fill.alpha: expected a number between 0 and 1',
     ]);
     expect(fill(t('scrim', { alpha: -0.1 }))).toEqual([
-      'template.children[0].fill.alpha: esperava número entre 0 e 1',
+      'template.children[0].fill.alpha: expected a number between 0 and 1',
     ]);
     expect(fill(t('scrim', { alpha: 'meio' }))).toEqual([
-      'template.children[0].fill.alpha: esperava número entre 0 e 1',
+      'template.children[0].fill.alpha: expected a number between 0 and 1',
     ]);
   });
 
@@ -274,7 +274,7 @@ describe('A10: alpha no $token de cor', () => {
         }),
       ),
     ).toEqual([
-      'template.children[0].cornerRadius.$token: alpha só vale em $token de cor',
+      'template.children[0].cornerRadius.$token: alpha is only valid on a color $token',
     ]);
   });
 
@@ -323,10 +323,10 @@ describe('A15: stroke.offset', () => {
 
   it('negativo ou que não é número é erro', () => {
     expect(stroke({ offset: -1 })).toEqual([
-      'template.children[0].stroke.offset: esperava número maior ou igual a 0',
+      'template.children[0].stroke.offset: expected a number greater than or equal to 0',
     ]);
     expect(stroke({ offset: 'x' })).toEqual([
-      'template.children[0].stroke.offset: esperava número maior ou igual a 0',
+      'template.children[0].stroke.offset: expected a number greater than or equal to 0',
     ]);
   });
 
@@ -346,7 +346,7 @@ describe('A15: stroke.offset', () => {
       }),
     );
     expect(issues).toEqual([
-      'template.children[0].stroke.offset: só vale em frame, rect e ellipse (este é path)',
+      'template.children[0].stroke.offset: only valid in frame, rect and ellipse (this is path)',
     ]);
   });
 });

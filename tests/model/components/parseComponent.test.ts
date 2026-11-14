@@ -186,7 +186,7 @@ describe('parseComponent: raiz', () => {
     expectProblem(
       problemsAfter((c) => (c.formatVersion = 5)),
       'formatVersion',
-      'esperava 1, 2, 3 ou 4',
+      'expected 1, 2, 3 or 4',
     );
   });
 
@@ -271,13 +271,13 @@ describe('parseComponent: raiz', () => {
     expectProblem(
       problemsAfter((c) => (c.extra = 1)),
       'extra',
-      'chave desconhecida: extra',
+      'unknown key: extra',
     );
   });
 
   it('entrada que não é objeto', () => {
-    expect(validateComponent(null)).toEqual(['componente: esperava objeto']);
-    expect(validateComponent([])).toEqual(['componente: esperava objeto']);
+    expect(validateComponent(null)).toEqual(['componente: expected an object']);
+    expect(validateComponent([])).toEqual(['componente: expected an object']);
   });
 });
 
@@ -289,7 +289,7 @@ describe('parseComponent: nós', () => {
 
   it('chave desconhecida em nó (erro de digitação)', () => {
     const problems = problemsAfter((c) => (c.template.children[0].colour = '#fff'));
-    expectProblem(problems, 'template.children[0].colour', 'chave desconhecida: colour');
+    expectProblem(problems, 'template.children[0].colour', 'unknown key: colour');
   });
 
   it('SizeSpec inválido', () => {
@@ -329,7 +329,7 @@ describe('parseComponent: nós', () => {
     const base = 'template.children[2].children[0].anchors';
     expectProblem(problems, `${base}.left`, 'número');
     expectProblem(problems, `${base}.centerX`, 'booleano');
-    expectProblem(problems, `${base}.middle`, 'chave desconhecida: middle');
+    expectProblem(problems, `${base}.middle`, 'unknown key: middle');
   });
 
   it('gradiente com uma parada só', () => {
@@ -493,7 +493,7 @@ describe('parseComponent: expressões', () => {
     expectProblem(
       problems,
       'template.children[0].visible.defualt',
-      'chave desconhecida: defualt',
+      'unknown key: defualt',
     );
   });
 
@@ -593,7 +593,7 @@ describe('validateComponent e parseComponent', () => {
     expect(result.issues).toHaveLength(3);
     expect(result.issues[0]).toEqual({
       path: 'format',
-      message: 'esperava "mapping-component"',
+      message: 'expected "mapping-component"',
       code: 'component.formatInvalid',
     });
     expect(result.errors).toEqual(validateComponent(input));
@@ -662,7 +662,7 @@ describe('aviso de font.family', () => {
 });
 
 describe('parseComponent: operações numéricas e comparações (formato 4)', () => {
-  const V4 = 'só é permitido com formatVersion 4';
+  const V4 = 'only allowed with formatVersion 4';
   const opsComponent = (extra: Record<string, unknown>, version = 4): unknown => ({
     format: 'mapping-component',
     formatVersion: version,
@@ -740,32 +740,32 @@ describe('parseComponent: operações numéricas e comparações (formato 4)', (
     expectProblem(
       problems({ gap: { $sub: [1, 2, 3] } }),
       'template.layout.gap.$sub',
-      'precisa de 2 operandos',
+      'needs 2 operands',
     );
     expectProblem(
       problems({ gap: { $div: [1] } }),
       'template.layout.gap.$div',
-      'precisa de 2 operandos',
+      'needs 2 operands',
     );
     expectProblem(
       problems({ gap: { $mod: [1, 2, 3] } }),
       'template.layout.gap.$mod',
-      'precisa de 2 operandos',
+      'needs 2 operands',
     );
     expectProblem(
       problems({ gap: { $add: [1] } }),
       'template.layout.gap.$add',
-      'precisa de 2 ou mais operandos',
+      'needs 2 or more operands',
     );
     expectProblem(
       problems({ gap: { $mul: [] } }),
       'template.layout.gap.$mul',
-      'precisa de 2 ou mais operandos',
+      'needs 2 or more operands',
     );
     expectProblem(
       problems({ gap: { $min: [1] } }),
       'template.layout.gap.$min',
-      'precisa de 2 ou mais operandos',
+      'needs 2 or more operands',
     );
     expectProblem(
       problems({ gap: { $max: 3 } }),
@@ -775,22 +775,22 @@ describe('parseComponent: operações numéricas e comparações (formato 4)', (
     expectProblem(
       problems({ gap: { $clamp: [1, 2] } }),
       'template.layout.gap.$clamp',
-      'precisa de 3 operandos',
+      'needs 3 operands',
     );
     expectProblem(
       problems({ gap: { $round: [1, 2] } }),
       'template.layout.gap.$round',
-      'precisa de 1 operando',
+      'needs 1 operand',
     );
     expectProblem(
       problems({ gap: { $sin: [1, 2] } }),
       'template.layout.gap.$sin',
-      'precisa de 1 operando',
+      'needs 1 operand',
     );
     expectProblem(
       problems({ visible: { $gt: [1] } }),
       'template.visible.$gt',
-      'precisa de 2 operandos',
+      'needs 2 operands',
     );
   });
 
@@ -798,27 +798,27 @@ describe('parseComponent: operações numéricas e comparações (formato 4)', (
     expectProblem(
       problems({ gap: { $add: [1, 'x'] } }),
       'template.layout.gap.$add[1]',
-      'precisa ser número',
+      'must be a number',
     );
     expectProblem(
       problems({ gap: { $abs: 'x' } }),
       'template.layout.gap.$abs',
-      'precisa ser número',
+      'must be a number',
     );
     expectProblem(
       problems({ gap: { $clamp: [1, 0, true] } }),
       'template.layout.gap.$clamp[2]',
-      'precisa ser número',
+      'must be a number',
     );
     expectProblem(
       problems({ visible: { $lt: ['a', 1] } }),
       'template.visible.$lt[0]',
-      'precisa ser número',
+      'must be a number',
     );
     expectProblem(
       problems({ gap: { $add: [1, { $mul: [2, 'y'] }] } }),
       'template.layout.gap.$add[1].$mul[1]',
-      'precisa ser número',
+      'must be a number',
     );
   });
 
@@ -854,7 +854,7 @@ describe('parseComponent: operações numéricas e comparações (formato 4)', (
 });
 
 describe('$lines e sizing por expressão (MC2, decisões 8 e 9 da #898)', () => {
-  const V4 = 'só é permitido com formatVersion 4';
+  const V4 = 'only allowed with formatVersion 4';
   const text = (name: string, extra: Record<string, unknown> = {}) => ({
     type: 'text',
     name,
@@ -891,7 +891,7 @@ describe('$lines e sizing por expressão (MC2, decisões 8 e 9 da #898)', () => 
       const errors = validateComponent(file(root(nodes)));
       expect(errors).toHaveLength(1);
       expect(errors[0]).toMatch(
-        /^template\.minHeight\..*\$lines: nó text "msg" não existe$/,
+        /^template\.minHeight\..*\$lines: text node "msg" does not exist$/,
       );
     }
   });
@@ -899,7 +899,7 @@ describe('$lines e sizing por expressão (MC2, decisões 8 e 9 da #898)', () => 
   it('nó repetido', () => {
     const errors = validateComponent(file(root([text('msg'), text('msg')])));
     expect(errors).toHaveLength(1);
-    expect(errors[0]).toMatch(/\$lines: mais de um nó text "msg"$/);
+    expect(errors[0]).toMatch(/\$lines: more than one text node "msg"$/);
   });
 
   it('um nó dentro de repeat só se cita de dentro da mesma linha', () => {
@@ -916,7 +916,7 @@ describe('$lines e sizing por expressão (MC2, decisões 8 e 9 da #898)', () => 
       }),
     );
     expect(outside).toHaveLength(1);
-    expect(outside[0]).toMatch(/\$lines: nó text "cell" está dentro de um repeat/);
+    expect(outside[0]).toMatch(/\$lines: text node "cell" is inside a repeat/);
     // De dentro da mesma linha, e de dentro do repeat para um nó de fora, vale.
     expect(
       validateComponent(
@@ -947,7 +947,7 @@ describe('$lines e sizing por expressão (MC2, decisões 8 e 9 da #898)', () => 
       }),
     );
     expect(errors).toHaveLength(1);
-    expect(errors[0]).toMatch(/\$lines: o nó não pode depender das próprias linhas$/);
+    expect(errors[0]).toMatch(/\$lines: the node cannot depend on its own lines$/);
   });
 
   it('só na v4: a chave nova numa formatVersion 3 pede a 4', () => {
@@ -959,7 +959,7 @@ describe('$lines e sizing por expressão (MC2, decisões 8 e 9 da #898)', () => 
     expect(
       validateComponent(file(root([text('msg')], { minHeight: { $lines: '' } }))),
     ).toEqual([
-      'template.minHeight.$lines: esperava nome de um nó text (texto não vazio)',
+      'template.minHeight.$lines: expected the name of a text node (non-empty text)',
     ]);
   });
 
@@ -992,7 +992,7 @@ describe('$lines e sizing por expressão (MC2, decisões 8 e 9 da #898)', () => 
       validateComponent(
         file({ type: 'frame' }, { sizing: { height: { $size: 'width' } } }),
       ),
-    ).toEqual(['sizing.height: $size não vale em sizing']);
+    ).toEqual(['sizing.height: $size is not valid in sizing']);
     expect(
       validateComponent(
         file(
@@ -1000,7 +1000,7 @@ describe('$lines e sizing por expressão (MC2, decisões 8 e 9 da #898)', () => 
           { sizing: { width: { $add: [{ $size: 'height' }, 4] } } },
         ),
       ),
-    ).toEqual(['sizing.width: $size não vale em sizing']);
+    ).toEqual(['sizing.width: $size is not valid in sizing']);
   });
 
   it('$lines dentro do sizing é erro', () => {
@@ -1010,20 +1010,20 @@ describe('$lines e sizing por expressão (MC2, decisões 8 e 9 da #898)', () => 
           sizing: { height: { $lines: 'msg' } },
         }),
       ),
-    ).toEqual(['sizing.height: $lines não vale em sizing']);
+    ).toEqual(['sizing.height: $lines is not valid in sizing']);
   });
 
   it('o valor literal inválido continua erro', () => {
     expect(
       validateComponent(file({ type: 'frame' }, { sizing: { height: -1 } })),
     ).toEqual([
-      'sizing.height: esperava número maior ou igual a 0, "fill", "hug", "min-content" ou "max-content"',
+      'sizing.height: expected a number greater than or equal to 0, "fill", "hug", "min-content" or "max-content"',
     ]);
   });
 });
 
 describe('parseComponent: none alinhado e clip (L2, formato 4)', () => {
-  const V4 = 'só é permitido com formatVersion 4';
+  const V4 = 'only allowed with formatVersion 4';
   const file = (template: Record<string, unknown>, version = 4): unknown => ({
     format: 'mapping-component',
     formatVersion: version,
@@ -1061,7 +1061,7 @@ describe('parseComponent: none alinhado e clip (L2, formato 4)', () => {
   it('none continua sem gap, padding, reverse e wrap', () => {
     for (const key of ['gap', 'padding', 'reverse', 'wrap'])
       expect(frame({ type: 'none', [key]: 1 })).toEqual([
-        `template.layout.${key}: chave desconhecida: ${key}`,
+        `template.layout.${key}: unknown key: ${key}`,
       ]);
   });
 

@@ -138,7 +138,7 @@ describe('library', () => {
     ).toBe(true);
     expect(
       lib.problems.some((p) =>
-        p.endsWith('card.json: formatVersion: esperava 1, 2, 3 ou 4'),
+        p.endsWith('card.json: formatVersion: expected 1, 2, 3 or 4'),
       ),
     ).toBe(true);
     // um problema por issue, cada um com o caminho do arquivo
@@ -375,8 +375,8 @@ describe('library', () => {
         'card.fields[0].sources[0]: precisa de name ou path',
         'card.fields[0].sources[2]: esperava um objeto',
         'card.sources[0]: precisa de id ou name',
-        'card.sources[1].system: esperava texto não vazio',
-        'card.sources[2].extra: chave desconhecida: extra',
+        'card.sources[1].system: expected non-empty text',
+        'card.sources[2].extra: unknown key: extra',
         'card.sources[3].ignore: esperava uma lista de textos',
       ]);
     });

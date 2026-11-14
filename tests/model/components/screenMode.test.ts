@@ -33,13 +33,13 @@ function file(version: number, extra: Record<string, unknown> = {}, stroke?: unk
 describe('parse: screen e stroke.scale', () => {
   it('numa formatVersion 3, screen é erro de versão no caminho da chave', () => {
     expect(validateComponent(file(3, { screen: { anchor: 'top-left' } }))).toEqual([
-      'screen: só é permitido com formatVersion 4',
+      'screen: only allowed with formatVersion 4',
     ]);
   });
 
   it('numa formatVersion 3, stroke.scale é erro de versão no caminho da chave', () => {
     expect(validateComponent(file(3, {}, { color: '#000', scale: false }))).toEqual([
-      'template.children[0].stroke.scale: só é permitido com formatVersion 4',
+      'template.children[0].stroke.scale: only allowed with formatVersion 4',
     ]);
   });
 

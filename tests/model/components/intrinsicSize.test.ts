@@ -18,7 +18,7 @@ type Json = Record<string, unknown>;
 
 const CHAR = 5.5;
 const LINE_HEIGHT = 12;
-const V4 = 'só é permitido com formatVersion 4';
+const V4 = 'only allowed with formatVersion 4';
 
 /** 16 caracteres: a linha inteira mede 88 e a palavra mais larga ("bbbbbbbb") 44. */
 const SENTENCE = 'aaaa bbbbbbbb cc';

@@ -242,7 +242,7 @@ describe('validate_library com let e $var (servidor real)', () => {
     [
       'tipo',
       'template.children[0].children[0].gap.$var(gap).$mul[0]',
-      'precisa ser número',
+      'must be a number',
     ],
   ])('%s: o erro e o caminho do uso', async (name, path, message) => {
     const result = ok(

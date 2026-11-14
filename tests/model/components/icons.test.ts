@@ -17,7 +17,7 @@ import { modelMessage } from '../../../src/model/modelMessage';
 import { locale } from '../../../src/store/settings';
 import { messageText } from '../../../src/ui/modelMessage';
 
-const V4 = 'só é permitido com formatVersion 4';
+const V4 = 'only allowed with formatVersion 4';
 
 const FILE = {
   format: 'mapping-icons',
@@ -108,7 +108,7 @@ describe('parseIconsFile', () => {
     expect(bad.ok).toBe(false);
     if (!bad.ok)
       expect(bad.errors.join('\n')).toContain(
-        'icons.back.mirror: esperava true ou false',
+        'icons.back.mirror: expected true or false',
       );
   });
 
@@ -133,7 +133,7 @@ describe('parseIconsFile', () => {
     expect(bad.ok).toBe(false);
     if (!bad.ok) {
       const text = bad.errors.join('\n');
-      expect(text).toContain('viewBox: campo obrigatório');
+      expect(text).toContain('viewBox: required field');
       expect(text).toContain('icons.x.paths[0].cap');
       expect(text).toContain('icons.x.paths[0].extra: chave desconhecida');
     }
@@ -189,8 +189,8 @@ describe('nó icon: validação', () => {
     const issues = validateComponent(
       component({ type: 'frame', children: [{ type: 'icon', d: 'M0 0' }] }),
     );
-    expect(issues).toContain('template.children[0].name: campo obrigatório');
-    expect(issues).toContain('template.children[0].d: chave desconhecida: d');
+    expect(issues).toContain('template.children[0].name: required field');
+    expect(issues).toContain('template.children[0].d: unknown key: d');
   });
 
   it('na v3 falha com só é permitido com formatVersion 4, no caminho do nó', () => {

@@ -16,7 +16,7 @@ import {
 } from '../../../src/model/components/parseComponent';
 import { resolveTokens, tokenKind } from '../../../src/model/components/tokens';
 
-const V4 = 'só é permitido com formatVersion 4';
+const V4 = 'only allowed with formatVersion 4';
 
 const TOKENS = {
   modes: ['light', 'dark'],

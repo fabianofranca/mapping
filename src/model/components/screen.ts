@@ -15,7 +15,10 @@ export interface Instance {
   /** Absolute rectangle on the screen (also for children of components with a slot). */
   readonly box: Box;
   readonly values: FieldValues;
-  /** Component with a slot (instance) it belongs to; absent = screen level. Sibling order is the order in the list. */
+  /**
+   * Component with a slot (instance) it belongs to; absent = screen level. Sibling order is the
+   * order in the list.
+   */
   readonly parentId?: string;
 }
 
@@ -27,8 +30,9 @@ export interface Screen {
   /** Background color of the screen (CSS). */
   readonly background: string;
   /**
-   * Reading direction of the screen (R2, #1107). Only appears as `rtl` (absent = `ltr`): `layoutScreen`
-   * already mirrored the boxes and the drawing uses the same direction when instantiating the inside of each component.
+   * Reading direction of the screen (R2, #1107). Only appears as `rtl` (absent = `ltr`):
+   * `layoutScreen` already mirrored the boxes and the drawing uses the same direction when
+   * instantiating the inside of each component.
    */
   readonly direction?: Direction;
   readonly instances: readonly Instance[];
@@ -93,7 +97,7 @@ export function removeSubtree(screen: Screen, id: string): Screen {
   return { ...screen, instances: screen.instances.filter((i) => !gone.has(i.id)) };
 }
 
-/** Children by parent (absent = root), in list order; a single pass, memoized by the (immutable) list. */
+/** Children by parent (absent = root), in list order; a single pass, memoized by the list (immutable). */
 const childIndexCache = new WeakMap<
   readonly Instance[],
   Map<string | undefined, Instance[]>
@@ -170,7 +174,8 @@ export function renderOrder(screen: Screen): Instance[] {
 
 /**
  * Puts the instance inside a component with a slot (or at the screen level, with `undefined`) at
- * a position among the siblings. Refuses cycles (an ancestor cannot become a child of its descendant).
+ * a position among the siblings. Refuses cycles (an ancestor cannot become a child of its
+ * descendant).
  */
 export function setParent(
   screen: Screen,
@@ -202,7 +207,7 @@ export function moveSibling(screen: Screen, id: string, delta: -1 | 1): Screen {
   const index = siblings.findIndex((i) => i.id === id);
   const target = index + delta;
   if (index < 0 || target < 0 || target >= siblings.length) return screen;
-  // `setParent` indexes among the siblings without the instance itself: `target` serves both directions.
+  // `setParent` indexes among the siblings without the instance itself: `target` serves both ways.
   return setParent(screen, id, instance.parentId ?? undefined, target);
 }
 
@@ -274,7 +279,10 @@ function parseRow(raw: object): FieldRow {
   return row;
 }
 
-/** Values of an instance: text, number, `null` or a table (list of objects; an item that is not an object is discarded). */
+/**
+ * Values of an instance: text, number, `null` or a table (list of objects; a non-object item is
+ * discarded).
+ */
 function parseValues(raw: unknown): Record<string, FieldValue> {
   const values: Record<string, FieldValue> = {};
   if (typeof raw !== 'object' || raw === null) return values;
@@ -290,7 +298,7 @@ function parseValues(raw: unknown): Record<string, FieldValue> {
   return values;
 }
 
-/** Refuses a repeated `id`, a `parentId` that is the instance itself, does not exist or closes a cycle. */
+/** Refuses a repeated `id`, a `parentId` that is the instance itself, missing, or closing a cycle. */
 function checkHierarchy(instances: readonly Instance[]): void {
   const byId = new Map<string, Instance>();
   instances.forEach((inst, index) => {
@@ -363,7 +371,7 @@ export function parseScreen(input: unknown): Screen {
     width: num(r.width, 'width'),
     height: num(r.height, 'height'),
     background: typeof r.background === 'string' ? r.background : '#FFFFFF',
-    // Only `rtl` becomes a key (absent = `ltr`); an invalid value is ignored, like `name` and `background`.
+    // Only `rtl` becomes a key (absent = `ltr`); an invalid value is ignored, like `name`/`background`.
     ...(r.direction === 'rtl' ? { direction: 'rtl' as const } : {}),
     instances,
   };

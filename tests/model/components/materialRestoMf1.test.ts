@@ -17,7 +17,7 @@ import {
 import type { FrameNode, SceneNode } from '../../../src/model/components/scene';
 import { applyTokens, resolveTokens } from '../../../src/model/components/tokens';
 
-const V4 = 'só é permitido com formatVersion 4';
+const V4 = 'only allowed with formatVersion 4';
 type Raw = Record<string, unknown>;
 const t = (name: string, extra: Raw = {}) => ({ $token: name, ...extra });
 
@@ -192,13 +192,13 @@ describe('MF1: cor composta (over)', () => {
         }),
       ),
     ).toEqual([
-      'template.children[0].cornerRadius.$token: over só vale em $token de cor',
+      'template.children[0].cornerRadius.$token: over is only valid in a color $token',
     ]);
   });
 
   it('over que não é texto é recusado', () => {
     expect(fill(t('ink', { over: 3 }))).toEqual([
-      'template.children[0].fill.over: esperava nome de token ou cor',
+      'template.children[0].fill.over: expected a token name or a color',
     ]);
   });
 
