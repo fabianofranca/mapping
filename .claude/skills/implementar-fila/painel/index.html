@@ -1,4 +1,4 @@
-<!-- Modelo da página do painel do skill implementar-fila; vai inteiro em files/index.html do dashboard. -->
+<!-- Template of the queue panel page of the implementar-fila skill; it goes whole into files/index.html of the dashboard. -->
 <div id="mp">
   <style>
     #mp {
@@ -523,7 +523,7 @@
       display: block;
       width: 100%;
     }
-    /* Sete tons neutros (um por tipo de sessão), sem reusar ok/warn/bad, que são estados. */
+    /* Seven neutral tones (one per session kind), without reusing ok/warn/bad, which are states. */
     #mp .cor-0 {
       background: var(--color-fg-muted);
     }
@@ -619,16 +619,16 @@
       }
     }
   </style>
-  <h1>Fila de desenvolvimento</h1>
+  <h1>Development queue</h1>
   <p class="sub" id="mp-cur">—</p>
   <div class="tiles">
     <div class="card">
-      <div class="lab">Duração total</div>
+      <div class="lab">Total duration</div>
       <div class="big" id="mp-total">—</div>
       <div class="lab" id="mp-totlab">&nbsp;</div>
     </div>
     <div class="card">
-      <div class="lab">Concluídas</div>
+      <div class="lab">Completed</div>
       <div class="big">
         <span data-source="summary" data-field="done">—</span> /
         <span data-source="summary" data-field="total">—</span>
@@ -636,21 +636,21 @@
       <div class="bar"><i id="mp-bar"></i></div>
     </div>
     <div class="card">
-      <div class="lab">Em andamento</div>
+      <div class="lab">In progress</div>
       <div class="big" data-source="summary" data-field="running">—</div>
     </div>
     <div class="card">
-      <div class="lab">Com falha</div>
+      <div class="lab">Failed</div>
       <div class="big" data-source="summary" data-field="failed">—</div>
     </div>
     <div class="card">
-      <div class="lab">Esperando o dono</div>
+      <div class="lab">Waiting for the owner</div>
       <div class="big" data-source="summary" data-field="waiting">—</div>
     </div>
   </div>
   <div class="gap">
     <div class="card" id="mp-andamento">
-      <h2>Andamento</h2>
+      <h2>Progress</h2>
       <p class="linha" id="mp-grafo-vagas">—</p>
       <p class="linha" id="mp-grafo-ordem" hidden>—</p>
       <ul class="legenda" id="mp-grafo-legenda" hidden></ul>
@@ -658,27 +658,27 @@
       <p class="ajuda" id="mp-grafo-ajuda" hidden></p>
     </div>
     <div class="card" id="mp-concluidas">
-      <h2>Concluídas</h2>
+      <h2>Completed</h2>
       <p class="sub" id="mp-concluidas-resumo">—</p>
       <div id="mp-concluidas-lista">—</div>
     </div>
     <div class="card" id="mp-custo-card">
-      <h2>Custo da fila</h2>
+      <h2>Queue cost</h2>
       <div class="somas">
         <div class="soma">
           <div class="lab">Total</div>
           <div class="val" id="mp-custo-total">—</div>
         </div>
         <div class="soma">
-          <div class="lab">Por etapa concluída</div>
+          <div class="lab">Per completed stage</div>
           <div class="val" id="mp-custo-etapa">—</div>
         </div>
         <div class="soma">
-          <div class="lab">Por hora de fila</div>
+          <div class="lab">Per queue hour</div>
           <div class="val" id="mp-custo-hora">—</div>
         </div>
       </div>
-      <h3>Por dia (horário de Brasília)</h3>
+      <h3>Per day (Brasília time)</h3>
       <div class="scroll">
         <div class="dias" id="mp-custo-dias" data-source="custoDia">—</div>
       </div>
@@ -686,27 +686,27 @@
       <p class="ajuda" id="mp-custo-semdata" hidden></p>
       <div class="duas">
         <div>
-          <h3>Por tipo de sessão</h3>
+          <h3>Per session kind</h3>
           <div class="hbars" id="mp-custo-tipo" data-source="custo">—</div>
         </div>
         <div>
-          <h3>Etapas mais caras</h3>
+          <h3>Most expensive stages</h3>
           <div class="hbars" id="mp-custo-etapas" data-source="custo">—</div>
         </div>
       </div>
       <p class="ajuda" id="mp-custo-dica" aria-live="polite">
-        Toque numa barra ou coluna para ver o valor.
+        Tap a bar or column to see the value.
       </p>
       <details id="mp-custo-tabela">
-        <summary>Ver a tabela de todas as etapas e tipos</summary>
+        <summary>Show the table of all stages and kinds</summary>
         <div class="scroll">
           <table id="mp-custo">
             <thead>
               <tr>
-                <th>Grupo</th>
-                <th>Sessões</th>
+                <th>Group</th>
+                <th>Sessions</th>
                 <th>US$</th>
-                <th>Mediana US$</th>
+                <th>Median US$</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -715,35 +715,35 @@
       </details>
     </div>
     <div class="card">
-      <h2>Pedidos do supervisor</h2>
+      <h2>Supervisor requests</h2>
       <ul id="mp-pedidos"></ul>
     </div>
     <div class="card">
-      <h2>Regras em vigor</h2>
+      <h2>Rules in force</h2>
       <ul id="mp-regras"></ul>
     </div>
     <div class="card">
-      <h2>Issues criadas pela fila</h2>
+      <h2>Issues created by the queue</h2>
       <p class="sub">
-        Os bugs e roadmaps que a fila abre levam a linha <code>Origem: etapa #n</code> no
-        corpo.
+        The bugs and roadmaps that the queue opens carry the line <code>Origem: etapa #n</code> in
+        the body.
         <a
           href="https://github.com/fabianofranca/mapping/issues?q=is%3Aissue+is%3Aopen+%22Origem%3A+etapa%22"
           target="_blank"
           rel="noopener"
-          >Ver as abertas no GitHub</a
+          >Show the open ones on GitHub</a
         >
       </p>
     </div>
     <div class="card">
-      <h2>Registro</h2>
+      <h2>Log</h2>
       <ul id="mp-log"></ul>
     </div>
   </div>
   <script>
     (function () {
-      // O tipo Dashboard entrega a lista aninhada de uma linha como texto JSON: aceita a lista ou o
-      // texto dela; qualquer outro caso (ausente, objeto, texto inválido ou que não é lista) dá null.
+      // The Dashboard type hands the nested list of a row over as JSON text: accepts the list or its
+      // text; any other case (missing, object, invalid text or not a list) gives null.
       const asList = (v) => {
         if (Array.isArray(v)) return v;
         if (typeof v !== 'string') return null;
@@ -756,8 +756,8 @@
       };
       dash.calc('summary', {
         inputs: ['queue'],
-        title: 'Resumo da fila',
-        description: 'Contagem das issues da fila por status.',
+        title: 'Queue summary',
+        description: 'Count of the queue issues by status.',
         fn: (queue) => {
           const q = queue;
           return [
@@ -771,7 +771,7 @@
           ];
         },
       });
-      // Os tipos de sessão do painel.py, na ordem do `custo`, das barras e das cores.
+      // The session kinds of painel.py, in the order of `custo`, the bars and the colors.
       const KINDS = [
         'fase',
         'correção',
@@ -782,11 +782,11 @@
         'supervisor',
       ];
       const kindPos = (k) => KINDS.indexOf(k) + 1 || 99;
-      // Custo da fila: meta.sessions (com `cost`), por tipo e por etapa; sem ele o card mostra "—".
+      // Queue cost: meta.sessions (with `cost`), per kind and per stage; without it the card shows "—".
       dash.calc('custo', {
         inputs: ['meta'],
-        title: 'Custo da fila',
-        description: 'Custo das sessões da fila, por tipo de sessão e por etapa.',
+        title: 'Queue cost',
+        description: 'Cost of the queue sessions, per session kind and per stage.',
         fn: (meta) => {
           const es = (asList((meta[0] || {}).sessions) || []).filter((e) => e && e.cost);
           const med = (v) => {
@@ -826,13 +826,13 @@
             .concat(group('etapa', 'issue'));
         },
       });
-      // Somas do card "Custo da fila" (etapa #1840): o total, as etapas concluídas e a janela da fila
-      // (`inicio` e `fim` em ms; `fim` nulo quer dizer "até agora"); a página divide por hora no tick.
+      // Sums of the "Queue cost" card (stage #1840): the total, the completed stages and the queue window
+      // (`inicio` and `fim` in ms; a null `fim` means "until now"); the page divides per hour on the tick.
       dash.calc('custoResumo', {
         inputs: ['meta', 'queue'],
-        title: 'Somas do custo da fila',
+        title: 'Queue cost sums',
         description:
-          'Total e sessões, custo por etapa concluída e a janela de tempo da fila (para o custo por hora).',
+          'Total and sessions, cost per completed stage and the queue time window (for the cost per hour).',
         fn: (meta, queue) => {
           const m = meta[0] || {};
           const es = (asList(m.sessions) || []).filter((e) => e && e.cost);
@@ -861,13 +861,13 @@
           ];
         },
       });
-      // Custo por dia de Brasília e tipo de sessão: o dia é o do `created` (sem ele, o `cost.at`, como o
-      // `costed` do painel.py); a sessão sem nenhum dos dois sai com `dia` nulo, fora do gráfico.
+      // Cost per Brasília day and session kind: the day is that of `created` (without it, `cost.at`, like
+      // `costed` of painel.py); a session with neither comes out with a null `dia`, outside the chart.
       dash.calc('custoDia', {
         inputs: ['meta'],
-        title: 'Custo por dia e tipo de sessão',
+        title: 'Cost per day and session kind',
         description:
-          'Custo das sessões por dia (horário de Brasília) e por tipo de sessão.',
+          'Cost of the sessions per day (Brasília time) and per session kind.',
         fn: (meta) => {
           const es = (asList((meta[0] || {}).sessions) || []).filter((e) => e && e.cost);
           const m = new Map();
@@ -912,8 +912,8 @@
         return d.status === 'ok' ? d.data : [];
       };
       const REPO_URL = 'https://github.com/fabianofranca/mapping';
-      // Link para a issue ou o PR: o `n` do endereço vem só dos dígitos que o padrão captura; o texto é
-      // o valor ou, com `label`, o que ele devolve para os dígitos.
+      // Link to the issue or the PR: the `n` of the address comes only from the digits the pattern captures; the text is
+      // the value or, with `label`, what it returns for the digits.
       function ghLink(value, pattern, kind, label) {
         const m = pattern.exec(String(value == null ? '' : value).trim());
         if (!m) return null;
@@ -924,23 +924,23 @@
         a.textContent = label ? label(m[1]) : String(value);
         return a;
       }
-      // Andamento (etapa #1840): o painel.py calcula ondas, estados, ordem e setas (meta.grafoNos e
-      // meta.grafoSetas); a página agrupa por onda, junta a linha do queue pelo `issue` e destaca a cadeia.
+      // Progress (stage #1840): painel.py computes waves, states, order and arrows (meta.grafoNos and
+      // meta.grafoSetas); the page groups by wave, joins the queue row by `issue` and highlights the chain.
       const ESTADOS = [
         ['rodando', 'rodando'],
         ['dono', 'esperando o dono'],
-        ['arquivo', 'esperando arquivo'],
-        ['dep', 'esperando dependência'],
+        ['arquivo', 'waiting for file'],
+        ['dep', 'waiting for dependency'],
         ['exclusiva', 'exclusiva'],
         ['segurada', 'segurada'],
-        ['livre', 'livre para entrar'],
+        ['livre', 'free to enter'],
         ['ficha', 'ficha incompleta'],
       ];
       const ESTADO_ROTULO = Object.fromEntries(ESTADOS);
-      const FASE_ESTADO = { ok: 'mesclada', open: 'aberta', todo: 'ainda não aberta' };
-      const ESPERA_TIPO = { dep: 'dependência', arquivo: 'arquivo em comum' };
+      const FASE_ESTADO = { ok: 'merged', open: 'open', todo: 'not opened yet' };
+      const ESPERA_TIPO = { dep: 'dependency', arquivo: 'shared file' };
       const NENHUMA_ELEGIVEL = 'nenhuma ready elegível';
-      const AJUDA = 'Toque num card para ver o que ele espera e quem espera por ele.';
+      const AJUDA = 'Tap a card to see what it waits for and who waits for it.';
       const TZ = 'America/Sao_Paulo';
       const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
       const byId = (id) => document.getElementById(id);
@@ -959,7 +959,7 @@
         return e;
       };
       let grafo = { nos: [], setas: [], sel: null, onda: new Map() };
-      // A mesma onda vale para o trilho e para o "espera": ausente ou não numérica é a 0 ("Agora").
+      // The same wave applies to the track and to "waits for": missing or non-numeric is 0 ("Now").
       const ondaDe = (n) => Number(n.onda) || 0;
       const isObj = (x) => x !== null && typeof x === 'object';
       const rotuloEstado = (e) => (has(ESTADO_ROTULO, e) ? ESTADO_ROTULO[e] : asText(e));
@@ -1036,7 +1036,7 @@
         for (const f of fases) {
           const now = agora && f.st === 'open';
           if (now) agora = false;
-          const rotulo = FASE_ESTADO[f.st] + (now ? ' (agora)' : '');
+          const rotulo = FASE_ESTADO[f.st] + (now ? ' (now)' : '');
           const c = el('span', 'fase ' + f.st + (now ? ' now' : ''));
           c.title = f.cod + ': ' + rotulo;
           c.append(el('span', 'cod', f.cod), el('span', 'sr', rotulo));
@@ -1044,7 +1044,7 @@
         }
         return box;
       }
-      // Fases feitas e total: da linha do queue; sem ela (ou sem fases nela), do nó. Sem total, null.
+      // Phases done and total: from the queue row; without it (or without phases in it), from the node. Without a total, null.
       function progressOf(n, r) {
         const rt = finite(r.phasesTotal);
         const total = rt > 0 ? rt : finite(n.total);
@@ -1061,7 +1061,7 @@
       }
       function buildEspera(into) {
         const box = el('div', 'espera');
-        box.append('espera');
+        box.append('waits for');
         for (const a of into) {
           const tipo = has(ESPERA_TIPO, a.tipo) ? a.tipo : 'dep';
           const w = el('span', 'w ' + tipo);
@@ -1094,7 +1094,7 @@
       function buildFoot(p, r, usd) {
         const foot = el('div', 'rodape');
         if (p) {
-          foot.append(el('span', 'fases-n', p.done + ' de ' + p.total + ' fases'));
+          foot.append(el('span', 'fases-n', p.done + ' of ' + p.total + ' phases'));
         }
         const dur = liveDur(r);
         if (dur) foot.append(dur);
@@ -1121,8 +1121,8 @@
         const k = nos.length;
         parada.append(
           el('i', 'ponto'),
-          el('span', 'rot', w === 0 ? 'Agora' : 'Onda ' + w),
-          el('span', 'qtd', k === 1 ? '1 etapa' : k + ' etapas'),
+          el('span', 'rot', w === 0 ? 'Now' : 'Wave ' + w),
+          el('span', 'qtd', k === 1 ? '1 stage' : k + ' stages'),
         );
         const etapas = el('div', 'etapas');
         for (const n of nos) {
@@ -1133,7 +1133,7 @@
         onda.append(parada, etapas);
         return onda;
       }
-      // Tudo que `start` alcança seguindo as setas de `to` para `from` (com guarda contra ciclo).
+      // Everything `start` reaches following the arrows from `to` to `from` (with a guard against cycles).
       function reach(start, from, to) {
         const seen = new Set([start]);
         const stack = [start];
@@ -1165,9 +1165,9 @@
         if (sel == null) return AJUDA;
         const list = (set) => {
           const ids = grafo.nos.map((n) => n.issue).filter((i) => set.has(i));
-          return ids.length ? ids.join(', ') : 'nada';
+          return ids.length ? ids.join(', ') : 'nothing';
         };
-        return sel + ': espera ' + list(espera) + ' · segura ' + list(segura);
+        return sel + ': waits for ' + list(espera) + ' · holds ' + list(segura);
       }
       function markSelection() {
         const sel = grafo.sel;
@@ -1197,7 +1197,7 @@
         };
       }
       function renderVagas(vagas) {
-        // "Vagas k/N" (o primeiro item) e, se for o último, "nenhuma ready elegível".
+        // "Vagas k/N" (the first item) and, if it is the last one, "nenhuma ready elegível".
         const last = vagas.length > 1 ? vagas[vagas.length - 1] : '';
         byId('mp-grafo-vagas').textContent =
           (vagas[0] || '—') + (last === NENHUMA_ELEGIVEL ? ' · ' + NENHUMA_ELEGIVEL : '');
@@ -1209,7 +1209,7 @@
           .slice(0, 5)
           .map((n) => n.issue);
         const ordem = byId('mp-grafo-ordem');
-        ordem.textContent = 'Ordem prevista: ' + (next.length ? next.join(', ') : '—');
+        ordem.textContent = 'Expected order: ' + (next.length ? next.join(', ') : '—');
         ordem.hidden = false;
       }
       function renderLegenda() {
@@ -1256,17 +1256,17 @@
           );
         }
         markSelection();
-        // Os cards são refeitos a cada leitura: devolve o foco do teclado ao botão que o tinha.
+        // The cards are rebuilt on every read: gives the keyboard focus back to the button that had it.
         const card = Array.from(host.querySelectorAll('article')).find(
           (a) => a.dataset.issue === focused,
         );
         const back = card ? card.querySelector('button') : null;
         if (back) back.focus();
       }
-      // Concluídas (etapa #1840): as linhas `concluída` do queue, por dia do `ended` em Brasília.
+      // Completed (stage #1840): the `concluída` rows of the queue, per day of `ended` in Brasília.
       const diaKey = (ms) => new Date(ms).toLocaleDateString('en-CA', { timeZone: TZ });
       const diaRot = (ms) =>
-        new Date(ms).toLocaleDateString('pt-BR', {
+        new Date(ms).toLocaleDateString('en-GB', {
           weekday: 'short',
           day: '2-digit',
           month: '2-digit',
@@ -1317,7 +1317,7 @@
           const key = Number.isFinite(e) ? diaKey(e) : '';
           if (!groups.has(key)) {
             groups.set(key, {
-              rot: Number.isFinite(e) ? diaRot(e) : 'sem data',
+              rot: Number.isFinite(e) ? diaRot(e) : 'no date',
               rows: [],
             });
           }
@@ -1334,7 +1334,7 @@
       function resumoDone(done, usd) {
         if (!done.length) return '—';
         const sum = done.reduce((acc, r) => acc + (usd.get(asText(r.issue)) || 0), 0);
-        const base = done.length + (done.length === 1 ? ' etapa' : ' etapas');
+        const base = done.length + (done.length === 1 ? ' stage' : ' stages');
         return sum > 0 ? base + ' · US$ ' + brl(sum) : base;
       }
       function renderConcluidas(rows, usd) {
@@ -1353,7 +1353,7 @@
         if (!rest.length) return;
         const det = el('details');
         det.open = wasOpen;
-        det.append(el('summary', '', 'Ver os dias anteriores'));
+        det.append(el('summary', '', 'Show earlier days'));
         for (const g of rest) det.append(buildDay(g, usd));
         list.append(det);
       }
@@ -1364,11 +1364,11 @@
         }
         return usd;
       }
-      // Custo da fila (etapa #1840, PA2): somas, coluna por dia, barras por tipo e das etapas mais caras.
-      // As cores dos tipos vêm de dash.colors (lista ou função); sem elas, as cores de estado em rodízio.
+      // Queue cost (stage #1840, PA2): sums, column per day, bars per kind and of the most expensive stages.
+      // The kind colors come from dash.colors (list or function); without them, the state colors in rotation.
       const money = (x) => 'US$ ' + brl(x);
-      const sessoesTxt = (k) => k + (k === 1 ? ' sessão' : ' sessões');
-      const DICA_PADRAO = 'Toque numa barra ou coluna para ver o valor.';
+      const sessoesTxt = (k) => k + (k === 1 ? ' session' : ' sessions');
+      const DICA_PADRAO = 'Tap a bar or column to see the value.';
       let resumo = null;
       let dica = '';
       function seriesPalette() {
@@ -1528,7 +1528,7 @@
           .reduce((a, r) => a + finite(r.sessoes), 0);
         const nota = byId('mp-custo-semdata');
         nota.hidden = sem === 0;
-        nota.textContent = sem ? sessoesTxt(sem) + ' sem data fora do gráfico' : '';
+        nota.textContent = sem ? sessoesTxt(sem) + ' without a date, outside the chart' : '';
         if (!dated.length) {
           host.textContent = '—';
           renderChaves([], pal);
@@ -1577,10 +1577,10 @@
           const all = rows.length && rows.every((r) => r.status === 'concluída');
           const end = all ? Math.max(...rows.map((r) => t(r.ended))) : now;
           tot.textContent = fmt(end - rs);
-          lab.textContent = all ? 'finalizado' : 'em tempo real';
+          lab.textContent = all ? 'finished' : 'real time';
         } else {
           tot.textContent = fmt(now - t(m.waitingSince));
-          lab.textContent = 'aguardando comando do dono (tempo de espera)';
+          lab.textContent = 'waiting for the owner\'s command (waiting time)';
         }
         byId('mp-custo-hora').textContent = horaText();
         document.querySelectorAll('#mp .dur[data-s]').forEach((d) => {
@@ -1589,14 +1589,14 @@
       }
       dash.onData(() => {
         const m = q('meta')[0] || {};
-        // vagasItens vem pronto do painel.py; o split só atende painel antigo (sem o campo).
+        // vagasItens comes ready from painel.py; the split only serves an old panel (without the field).
         const vagas =
           asList(m.vagasItens) || (m.vagas || '').split(' · ').filter(Boolean);
         document.getElementById('mp-cur').textContent =
           (m.current || '—') +
           (vagas[0] ? ' · ' + vagas[0] : '') +
           (m.updatedAt
-            ? ' · atualizado ' + new Date(m.updatedAt).toLocaleTimeString('pt-BR')
+            ? ' · updated ' + new Date(m.updatedAt).toLocaleTimeString('pt-BR')
             : '');
         const cu = dash.data('custo');
         const crows = cu.status === 'ok' ? cu.data : [];
@@ -1626,12 +1626,12 @@
         const total = crows.find((r) => r.kind === 'total');
         document.getElementById('mp-custo-total').textContent =
           total && total.count
-            ? 'US$ ' + usd(total.usd) + ' em ' + total.count + ' sessões'
+            ? 'US$ ' + usd(total.usd) + ' in ' + total.count + ' sessions'
             : '—';
         for (const r of crows.filter((x) => x.kind !== 'total')) {
           const tr = document.createElement('tr');
           [
-            (r.kind === 'tipo' ? 'Tipo: ' : 'Etapa: ') + r.name,
+            (r.kind === 'tipo' ? 'Type: ' : 'Stage: ') + r.name,
             String(r.count),
             usd(r.usd),
             usd(r.median),
@@ -1643,7 +1643,7 @@
           ctb.appendChild(tr);
         }
         renderCusto(crows);
-        // Pedidos do supervisor e regras em vigor (meta.requests e meta.rules); sem eles os cards mostram "—".
+        // Supervisor requests and rules in force (meta.requests and meta.rules); without them the cards show "—".
         const fillList = (id, items) => {
           const ul = document.getElementById(id);
           ul.replaceChildren();
@@ -1665,13 +1665,13 @@
             .map(
               (r) =>
                 (r.id || '?') +
-                ' (tipo ' +
+                ' (type ' +
                 (r.tipo || '?') +
                 '): ' +
                 (r.pedido || '') +
                 ' — ' +
                 (r.estado || '?') +
-                (isLate(r) ? ' (atrasado)' : '') +
+                (isLate(r) ? ' (late)' : '') +
                 (r.evidencia ? ' · ' + r.evidencia : ''),
             ),
         );
@@ -1686,7 +1686,7 @@
                 (r.origem || '?') +
                 '): ' +
                 (r.texto || '') +
-                (r.saida ? ' [saída: ' + r.saida + ']' : ''),
+                (r.saida ? ' [output: ' + r.saida + ']' : ''),
             ),
         );
         const ul = document.getElementById('mp-log');

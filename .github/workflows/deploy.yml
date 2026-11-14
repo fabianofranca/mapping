@@ -258,7 +258,7 @@ jobs:
       contents: read
       pages: write
       id-token: write
-    # A Deploy in the `deploy` phase is not cancelled by another: the next one waits (GitHub
+    # A Deploy in the `deploy` job is not cancelled by another: the next one waits (GitHub
     # recommends this group, without cancelling, for Pages).
     concurrency:
       group: pages

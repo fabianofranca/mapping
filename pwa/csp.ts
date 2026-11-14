@@ -1,28 +1,28 @@
-// Content Security Policy do `index.html` final (etapa 2.4; usada por vite.config.ts).
+// Content Security Policy of the final `index.html` (stage 2.4; used by vite.config.ts).
 //
-// A política é gerada no build, DEPOIS de o vite-plugin-singlefile embutir o JS e o CSS,
-// porque os hashes são calculados sobre o conteúdo final de cada bloco `<script>` e
-// `<style>`. Não há `'unsafe-inline'` nem `'unsafe-eval'`. Este módulo é puro (só
-// `node:crypto`), para ser testado sem rodar o Vite.
+// The policy is generated at build time, AFTER vite-plugin-singlefile inlines the JS and CSS,
+// because the hashes are computed over the final content of each `<script>` and
+// `<style>` block. There is no `'unsafe-inline'` or `'unsafe-eval'`. This module is pure (only
+// `node:crypto`), so it can be tested without running Vite.
 import { createHash } from 'node:crypto';
 
 /**
- * Perfil da política. `app` é o `index.html` da app: aceita imagem remota (`https:`/`http:`;
- * o interruptor de `http:` é da app, não da CSP) e exige Trusted Types. `static` é o guia e a
- * demo do visualizador: o guia monta o painel com `innerHTML` não vazio e a demo não
- * carrega a política `default`; nenhum dos dois mostra imagem remota, então a imagem para fora
- * continua barrada pela CSP neles.
+ * Policy profile. `app` is the app's `index.html`: it accepts remote images (`https:`/`http:`;
+ * the `http:` switch belongs to the app, not to the CSP) and requires Trusted Types. `static` is the guide and the
+ * viewer demo: the guide builds the panel with non-empty `innerHTML` and the demo does not
+ * load the `default` policy; neither shows a remote image, so an outbound image
+ * stays blocked by the CSP in them.
  */
 export type CspProfile = 'app' | 'static';
 
 type Directive = readonly [name: string, value: string];
 
-/** Diretivas fixas; `script-src` e `style-src` saem dos hashes dos blocos embutidos. */
+/** Fixed directives; `script-src` and `style-src` come from the hashes of the inlined blocks. */
 const STATIC_DIRECTIVES: ReadonlyArray<Directive> = [
   ['default-src', "'none'"],
-  // Imagens do projeto (blob:), ícones e embutidas no CSS (data:), ícones da app ('self').
+  // Project images (blob:), icons and images inlined in the CSS (data:), app icons ('self').
   ['img-src', "'self' data: blob:"],
-  // Nenhuma requisição de rede feita pelo código da página (fetch, XHR, WebSocket, SSE).
+  // No network request made by the page's code (fetch, XHR, WebSocket, SSE).
   ['connect-src', "'none'"],
   ['worker-src', "'self'"],
   ['manifest-src', "'self'"],
@@ -32,9 +32,9 @@ const STATIC_DIRECTIVES: ReadonlyArray<Directive> = [
   ['base-uri', "'none'"],
 ];
 
-/** Imagens remotas (só no perfil `app`). */
+/** Remote images (only in the `app` profile). */
 const APP_IMG_SRC = "'self' data: blob: https: http:";
-/** Trusted Types (só no perfil `app`): a política `default` fica em `src/app/trustedTypes.ts`. */
+/** Trusted Types (only in the `app` profile): the `default` policy lives in `src/app/trustedTypes.ts`. */
 const TRUSTED_TYPES_DIRECTIVES: ReadonlyArray<Directive> = [
   ['require-trusted-types-for', "'script'"],
   ['trusted-types', 'default'],
@@ -42,7 +42,7 @@ const TRUSTED_TYPES_DIRECTIVES: ReadonlyArray<Directive> = [
 const REFERRER_META =
   /<meta\s+name=["']referrer["']\s+content=["']no-referrer["'][^>]*>/i;
 
-/** As diretivas fixas do perfil. */
+/** The profile's fixed directives. */
 function fixedDirectives(profile: CspProfile): Directive[] {
   if (profile === 'static') return [...STATIC_DIRECTIVES];
   return [
@@ -55,7 +55,7 @@ function fixedDirectives(profile: CspProfile): Directive[] {
 }
 
 const CSP_META = /<meta\s+http-equiv=["']Content-Security-Policy["'][^>]*>/i;
-/** A <meta> da CSP com a quebra de linha e o recuo antes dela (para trocá-la sem sobras). */
+/** The CSP <meta> with the line break and indentation before it (to replace it without leftovers). */
 const OLD_CSP_LINE = new RegExp(`\\n?[ \\t]*${CSP_META.source}`, 'i');
 const INLINE_BLOCK = /<(script|style)\b([^>]*)>([\s\S]*?)<\/\1\s*>/gi;
 
@@ -73,7 +73,7 @@ function inlineBlocks(html: string): InlineBlock[] {
   }));
 }
 
-/** O navegador normaliza quebras de linha (CRLF/CR → LF) antes de calcular o hash. */
+/** The browser normalizes line breaks (CRLF/CR → LF) before computing the hash. */
 export function cspHash(content: string): string {
   const text = content.replace(/\r\n?/g, '\n');
   return `'sha256-${createHash('sha256').update(text, 'utf8').digest('base64')}'`;
@@ -86,7 +86,7 @@ function hashesOf(html: string, tag: 'script' | 'style'): string[] {
   return [...new Set(hashes)];
 }
 
-/** A política para este HTML (já com os blocos embutidos). */
+/** The policy for this HTML (already with the inlined blocks). */
 export function buildCsp(html: string, profile: CspProfile): string {
   const scripts = hashesOf(html, 'script');
   const styles = hashesOf(html, 'style');
@@ -102,8 +102,8 @@ export function buildCsp(html: string, profile: CspProfile): string {
 }
 
 /**
- * Coloca a CSP num `<meta>` logo depois do `charset` (a política só vale para o que vem
- * depois dela). Idempotente: uma CSP anterior é substituída.
+ * Puts the CSP in a `<meta>` right after the `charset` (the policy only applies to what comes
+ * after it). Idempotent: a previous CSP is replaced.
  */
 export function injectCsp(html: string, profile: CspProfile): string {
   const withoutOld = html.replace(OLD_CSP_LINE, '');
@@ -129,9 +129,9 @@ function parseDirectives(policy: string): Map<string, string[]> {
 }
 
 /**
- * Confere o `index.html` final e devolve os problemas (lista vazia = ok):
- * CSP ausente, diretivas fixas alteradas (por perfil), referrer ausente no `app`, `unsafe-*`, bloco embutido sem hash,
- * hash sem bloco, recursos externos e `style=""`/handlers inline, que a CSP bloquearia.
+ * Checks the final `index.html` and returns the problems (empty list = ok):
+ * missing CSP, altered fixed directives (per profile), missing referrer in `app`, `unsafe-*`, inlined block without hash,
+ * hash without block, external resources and `style=""`/inline handlers, which the CSP would block.
  */
 export function verifyCsp(html: string, profile: CspProfile): string[] {
   const problems: string[] = [];
@@ -181,7 +181,7 @@ export function verifyCsp(html: string, profile: CspProfile): string[] {
     }
   }
 
-  // Recursos que a política bloquearia.
+  // Resources the policy would block.
   const markup = body.replace(INLINE_BLOCK, (all, tag: string, attrs: string) =>
     /\ssrc\s*=/i.test(attrs) ? all : `<${tag}${attrs}></${tag}>`,
   );
@@ -201,7 +201,7 @@ export function verifyCsp(html: string, profile: CspProfile): string[] {
   return problems;
 }
 
-/** Gera a CSP e confere o resultado; lança (e o build falha) se algo não bater. */
+/** Generates the CSP and checks the result; throws (and the build fails) if anything does not match. */
 export function applyCsp(html: string, profile: CspProfile): string {
   const result = injectCsp(html, profile);
   const problems = verifyCsp(result, profile);

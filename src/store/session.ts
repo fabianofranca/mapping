@@ -745,7 +745,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     libraryIssues.value = next;
   };
 
-  /** Valida a especialização pelo pacote em memória (mais o texto dela); `undefined` sem a cópia. */
+  /** Validates the specialization from the in-memory package (plus its text); `undefined` without the copy. */
   const memoryLibraryIssues = (
     s: { readonly id: string; readonly version: number; readonly file: string },
     specText: string | undefined,
@@ -758,10 +758,10 @@ export function openSession(options: SessionOptions): ProjectSession {
   };
 
   /**
-   * Os pacotes da biblioteca que o projeto traz e a pasta ainda não tem (a versão nova, ou a que
-   * voltou pelo desfazer): guarda a versão antiga em memória (em paralelo com limite) e devolve
-   * uma gravação por arquivo. Cada pacote só entra em `writtenPackages` quando o último arquivo
-   * dele gravou; a versão antiga só é guardada, nada é apagado agora.
+   * The library packages that the project carries and the folder does not have yet (the new version, or the one that
+   * came back through undo): keeps the old version in memory (in parallel with a limit) and returns
+   * one write per file. Each package only enters `writtenPackages` when its last file
+   * was written; the old version is only kept, nothing is deleted now.
    */
   const planPackageWrites = async (p: Project): Promise<Job[]> => {
     const planned: PlannedPackage[] = [];
@@ -785,7 +785,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     );
     const jobs: Job[] = [];
     for (const pkg of planned) {
-      // O arquivo da especialização precisa ser regravado com a versão nova.
+      // The specialization file needs to be rewritten with the new version.
       forgetSpecsUnder(pkg.dir);
       staleDirs.add(pkg.dir);
       let remaining = pkg.files.size;
@@ -809,7 +809,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     return jobs;
   };
 
-  /** Uma gravação por cópia de `specs/` nova ou alterada; registra o texto depois de gravada. */
+  /** One write per new or changed `specs/` copy; records the text after it is written. */
   const planSpecWrites = (specs: ReadonlyMap<string, string>): Job[] =>
     [...specs]
       .filter(([file, text]) => writtenSpecs.get(file) !== text)
@@ -819,22 +819,22 @@ export function openSession(options: SessionOptions): ProjectSession {
       });
 
   /**
-   * Grava o projeto: restaura imagens que voltaram (undo) e grava as cópias de
-   * `specs/` novas ou alteradas, grava o `mapping.json` e só então remove as
-   * imagens, cópias e arquivos de pacote que deixaram de ser usados. Assim o `mapping.json`
-   * em disco nunca aponta para um arquivo já apagado: nada é apagado antes do `mapping.json`
-   * novo (a pasta de um pacote cuja versão muda é regravada por cima, não apagada). Grava o
-   * projeto confirmado: um gesto em andamento só chega ao disco quando confirmado
-   * (`commitGesture` sobe a revisão e agenda).
-   * Gravado o `mapping.json`, a gravação conta como feita: uma falha na limpeza vai para o
-   * Diagnóstico (`session.cleanup`) e a próxima gravação tenta de novo.
+   * Writes the project: restores images that came back (undo) and writes the new or changed
+   * `specs/` copies, writes the `mapping.json` and only then removes the
+   * images, copies and package files that are no longer used. This way the `mapping.json`
+   * on disk never points to an already deleted file: nothing is deleted before the new
+   * `mapping.json` (the folder of a package whose version changes is rewritten over, not deleted). It writes the
+   * committed project: a gesture in progress only reaches the disk once committed
+   * (`commitGesture` bumps the revision and schedules).
+   * Once the `mapping.json` is written, the save counts as done: a cleanup failure goes to
+   * Diagnostics (`session.cleanup`) and the next save tries again.
    */
   const writeProject = async (p: Project) => {
     wrotePackage = false;
     await assertWritable();
     let wrote = false;
     if (pendingBackup) {
-      // Se o backup falhar, o salvamento falha junto: o original não é sobrescrito.
+      // If the backup fails, the save fails with it: the original is not overwritten.
       const date = options.now ? new Date(options.now()) : new Date();
       await storage.writeBackup(
         backupFileName(pendingBackup.version, date),
@@ -852,28 +852,28 @@ export function openSession(options: SessionOptions): ProjectSession {
       trash.delete(file);
       wrote = true;
     }
-    // Pacotes da biblioteca: a versão nova (ou a que voltou pelo desfazer) entra antes do
-    // `mapping.json`, regravada POR CIMA da pasta: a versão antiga é só guardada em memória
-    // (para o desfazer) e nada é apagado agora, nem o arquivo da especialização, que o laço de
-    // `specFiles` abaixo regrava. Os arquivos que só a versão antiga tinha ficam até o
-    // `mapping.json` gravado (`sweepPackages`). Janela que sobra: durante a regravação a pasta
-    // pode ter arquivos da versão nova enquanto o `mapping.json` ainda cita a antiga; nada some.
+    // Library packages: the new version (or the one that came back through undo) goes in before the
+    // `mapping.json`, rewritten OVER the folder: the old version is only kept in memory
+    // (for undo) and nothing is deleted now, not even the specialization file, which the
+    // `specFiles` loop below rewrites. The files that only the old version had stay until the
+    // `mapping.json` is written (`sweepPackages`). Remaining window: during the rewrite the folder
+    // may have files of the new version while the `mapping.json` still cites the old one; nothing disappears.
     const specs = specFiles(p);
-    // Todos os arquivos (do pacote e as cópias de `specs/`) gravam antes do `mapping.json`, em
-    // paralelo com limite; cada um só registra o que gravou depois de gravado, e a falha de
-    // qualquer um aborta a gravação aqui.
+    // All the files (the package's and the `specs/` copies) are written before the `mapping.json`, in
+    // parallel with a limit; each one only records what it wrote after it is written, and the failure of
+    // any one aborts the save here.
     const jobs = [...(await planPackageWrites(p)), ...planSpecWrites(specs)];
     await mapLimit(jobs, FOLDER_CONCURRENCY, (job) => job());
     if (jobs.length > 0 || wrotePackage) wrote = true;
-    // As gravações acima levam tempo: confere de novo antes de sobrescrever o arquivo.
+    // The writes above take time: checks again before overwriting the file.
     if (wrote) await assertWritable();
     const revision = disk.revision + 1;
     const text = serialize({ ...fileOf(p), revision });
     await storage.saveMapping(text);
     disk = { revision, text, lastModified: await statMapping() };
     written = p;
-    // Só o que este `mapping.json` cita deixa de ser pendente: uma imagem posta durante esta
-    // gravação (não citada por `p`) continua pendente até a gravação que a citar.
+    // Only what this `mapping.json` cites stops being pending: an image added during this
+    // save (not cited by `p`) stays pending until the save that cites it.
     for (const file of referenced) pendingFiles.delete(file);
     if (p !== exported) options.onChanged?.();
     await cleanUp(referenced, specs).catch(reportCleanupFailure);
@@ -884,9 +884,9 @@ export function openSession(options: SessionOptions): ProjectSession {
   };
 
   /**
-   * O disco já tem `p`? Pela identidade (o atalho) ou pelo conteúdo a menos do `updatedAt`
-   * do projeto: o desfazer carimba um `updatedAt` novo no snapshot restaurado, e voltar ao que
-   * o disco tem não é mudança a gravar (S5). Só vale com `written` conhecido (ver `sameAsDisk`).
+   * Does the disk already have `p`? By identity (the shortcut) or by content except for the project's `updatedAt`
+   * : undo stamps a new `updatedAt` on the restored snapshot, and going back to what
+   * the disk has is not a change to write (S5). Only valid with `written` known (see `sameAsDisk`).
    */
   const onDisk = (p: Project): boolean => {
     if (p === written) return true;
@@ -900,7 +900,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     );
   };
 
-  /** A gravação do autosave (o `save()` da fila): nada a fazer se o disco já tem o confirmado. */
+  /** The autosave's write (the queue's `save()`): nothing to do if the disk already has the committed one. */
   const persist = async () => {
     const p = store.committed.peek();
     if (!p || onDisk(p)) return;
@@ -915,7 +915,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     }
   };
 
-  /** Remove as imagens e cópias de `specs/` que o `mapping.json` gravado deixou de usar. */
+  /** Removes the images and `specs/` copies that the written `mapping.json` no longer uses. */
   const cleanUp = async (
     referenced: ReadonlySet<string>,
     specs: ReadonlyMap<string, string>,
@@ -925,8 +925,8 @@ export function openSession(options: SessionOptions): ProjectSession {
       if (referenced.has(file)) continue;
       if (inHistory.has(file)) {
         const blob = await storage.readImage(file);
-        // Cópia em memória: numa pasta, o `File` lido deixa de ser legível quando o arquivo
-        // é removido logo abaixo, e o "refazer" precisa regravar a imagem.
+        // In-memory copy: in a folder, the `File` read stops being readable when the file
+        // is removed right below, and "redo" needs to rewrite the image.
         if (blob)
           trash.set(
             file,
@@ -939,14 +939,14 @@ export function openSession(options: SessionOptions): ProjectSession {
       imageStamps.delete(file);
       stored.delete(file);
     }
-    // O histórico encolhe (limite de 100, novo gesto descarta o "refazer"): solta
-    // o conteúdo dos arquivos que nenhum snapshot restauraria mais.
+    // The history shrinks (limit of 100, a new gesture discards "redo"): releases
+    // the content of the files that no snapshot would restore anymore.
     const stillInHistory = store.referencedImageFiles();
     for (const file of [...trash.keys()]) {
       if (!stillInHistory.has(file)) trash.delete(file);
     }
-    // Pastas de pacote que o `mapping.json` gravado deixou de usar: guarda o conteúdo em memória
-    // (o desfazer pode trazê-la de volta) e remove a pasta inteira.
+    // Package folders that the written `mapping.json` no longer uses: keeps the content in memory
+    // (undo may bring it back) and removes the whole folder.
     const usedDirs = new Set([...specs.keys()].map((file) => packageDirOf(file)));
     for (const [dir, written] of [...writtenPackages]) {
       if (usedDirs.has(dir)) continue;
@@ -966,17 +966,17 @@ export function openSession(options: SessionOptions): ProjectSession {
   };
 
   /**
-   * Remove das pastas de pacote regravadas os arquivos que a versão gravada não tem (os da versão
-   * antiga) e que não são o arquivo da especialização. Recalcula pela listagem da pasta, então uma
-   * falha no meio (ou na listagem) não perde nada: a pasta continua em `staleDirs` e a próxima
-   * gravação tenta de novo.
+   * Removes from the rewritten package folders the files that the written version does not have (those of the
+   * old version) and that are not the specialization file. Recomputes from the folder listing, so a
+   * failure midway (or in the listing) loses nothing: the folder stays in `staleDirs` and the next
+   * save tries again.
    */
   const sweepPackages = async () => {
     for (const dir of [...staleDirs]) {
       const have = writtenPackages.get(dir);
       const files = have ? packageCache.get(have.key) : undefined;
       if (!have || !files) {
-        // Pasta que saiu do projeto (o `cleanUp` já a removeu) ou versão sem conteúdo conhecido.
+        // A folder that left the project (`cleanUp` already removed it) or a version without known content.
         staleDirs.delete(dir);
         continue;
       }
@@ -991,9 +991,9 @@ export function openSession(options: SessionOptions): ProjectSession {
 
   const saver = createAutoSaver(persist, options.autosaveDelay);
   /**
-   * Operações caras (imagens e especializações) gravam sem esperar o debounce: o trabalho
-   * de refazê-las é grande demais para ficar só em memória até o fim do debounce. A gravação entra na
-   * mesma fila do autosave, então duas seguidas não correm em paralelo.
+   * Expensive operations (images and specializations) save without waiting for the debounce: the work
+   * of redoing them is too big to stay only in memory until the debounce ends. The save joins the
+   * same queue as the autosave, so two in a row do not run in parallel.
    */
   const saveNow = <R extends { readonly ok: boolean }>(result: R): R => {
     if (result.ok) void saver.flush();
@@ -1002,7 +1002,7 @@ export function openSession(options: SessionOptions): ProjectSession {
   const actions: ProjectActions = {
     ...baseActions,
     removeContainer: (containerId) => saveNow(baseActions.removeContainer(containerId)),
-    // O pacote entra no cache em memória antes da gravação (que começa no `saveNow`).
+    // The package goes into the in-memory cache before the save (which starts in `saveNow`).
     applySpecialization: (spec, packageFiles) => {
       const result = baseActions.applySpecialization(spec, packageFiles);
       if (result.ok && packageFiles) cachePackage(spec, packageFiles);
@@ -1030,8 +1030,8 @@ export function openSession(options: SessionOptions): ProjectSession {
     storage,
     now,
     newId: options.newId ?? (() => crypto.randomUUID()),
-    // A imagem aceita entra no projeto como as da importação: a sessão passa a geri-la
-    // (e o desfazer a remove e restaura pelo mesmo caminho das demais imagens).
+    // The accepted image enters the project like the import ones: the session takes over managing it
+    // (and undo removes and restores it through the same path as the other images).
     takenImageFiles: async () =>
       new Set([...(await listStoredImages()), ...sessionImageFiles()]),
     putProjectImage: async (path, data) => {
@@ -1048,19 +1048,19 @@ export function openSession(options: SessionOptions): ProjectSession {
     ...(folderCalls ? { measure } : {}),
   });
 
-  /** O Quem vê não muda com o projeto travado, em revisão ou com um gesto em andamento. */
+  /** Who sees does not change with the project locked, in review or with a gesture in progress. */
   const localChangeBlocked = (): ActionResult | null => {
     if (store.readOnly.peek()) return { ok: false, error: 'read-only' };
     if (store.reviewing.peek()) return { ok: false, error: 'reviewing' };
     if (store.gestureActive.peek()) return { ok: false, error: 'gesture-active' };
     return null;
   };
-  /** O arquivo muda sem o projeto mudar (a perspectiva trocou de lugar): força a regravação. */
+  /** The file changes without the project changing (the perspective moved place): forces the rewrite. */
   const rewriteFile = () => {
     written = null;
     saver.schedule();
   };
-  /** Só eu: grava no navegador primeiro; o arquivo é regravado depois, sem ela. */
+  /** Only me: writes to the browser first; the file is rewritten afterwards, without it. */
   const makeLocal = async (id: string): Promise<ActionResult> => {
     if (!perspective.localAvailable) return { ok: false, error: 'local-unavailable' };
     if (!(await localSync.persistIncluding(id))) {
@@ -1070,7 +1070,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     rewriteFile();
     return { ok: true, value: undefined };
   };
-  /** Para todos: o arquivo grava com ela e só então o navegador a esquece. */
+  /** For everyone: the file writes with it and only then does the browser forget it. */
   const makeShared = async (id: string): Promise<ActionResult> => {
     localSync.hold(id);
     perspective.setLocal(id, false);
@@ -1109,8 +1109,8 @@ export function openSession(options: SessionOptions): ProjectSession {
     const revision = store.revision.value;
     if (revision === lastRevision) return;
     lastRevision = revision;
-    // Pela identidade (barato, a cada edição); a gravação confere o conteúdo (`onDisk`) e,
-    // se o desfazer voltou ao que o disco tem, só acerta o status, sem ler nem gravar.
+    // By identity (cheap, on every edit); the save checks the content (`onDisk`) and,
+    // if undo went back to what the disk has, it only fixes the status, without reading or writing.
     if (store.committed.peek() !== written) {
       saver.schedule();
     } else if (saver.status.peek() !== 'saved') {
@@ -1119,17 +1119,17 @@ export function openSession(options: SessionOptions): ProjectSession {
   });
 
   /**
-   * Troca o projeto em memória pelo que veio do disco, descartando histórico e pendências. Só
-   * de dentro de um trabalho da fila, logo depois da guarda (`idle()`), sem `await` antes de
-   * trocar o projeto. Apaga os arquivos de imagem que a sessão gravou e nenhum `mapping.json`
-   * gravado cita (`pendingFiles`): sem isso ficariam órfãos na pasta para sempre.
+   * Swaps the in-memory project for the one that came from disk, discarding history and pending changes. Only
+   * from inside a queue job, right after the guard (`idle()`), with no `await` before
+   * swapping the project. Deletes the image files that the session wrote and that no written `mapping.json`
+   * cites (`pendingFiles`): without this they would be orphaned in the folder forever.
    */
   const adopt = async (
     loaded: Extract<LoadProjectResult, { ok: true }>,
     modified: number | null,
   ) => {
     const { project } = loaded;
-    // As "Só eu" da memória seguem com o projeto do disco, reconciliadas com a mudança.
+    // The in-memory "Only me" ones carry over to the project from disk, reconciled with the change.
     const carried = carryLocalPerspectives(
       store.committed.peek(),
       project,
@@ -1140,7 +1140,7 @@ export function openSession(options: SessionOptions): ProjectSession {
       perspective.arrivals.value = [];
       store.load(carried.project, { readOnly: loaded.readOnly });
     });
-    // O `load` zera o contador de revisão do store, o que agendaria uma gravação: descarta.
+    // `load` resets the store's revision counter, which would schedule a save: discards it.
     lastRevision = store.revision.peek();
     saver.reset();
     const referenced = new Set(imageFileNames(project.containers));
@@ -1155,11 +1155,11 @@ export function openSession(options: SessionOptions): ProjectSession {
     libraryDirty.clear();
     staleDirs.clear();
     trackPackages(project);
-    // Os arquivos do pacote podem ter mudado por fora sem mudar a versão: lê de novo.
+    // The package files may have changed from outside without changing the version: reads again.
     components.invalidate();
     catalogs.invalidate();
     libraryIssues.value = loaded.libraryIssues;
-    // Arquivo que já está no schema atual não precisa de backup: zera o que sobrou da abertura.
+    // A file that is already in the current schema needs no backup: clears what was left over from opening.
     pendingBackup =
       loaded.migratedFrom === null
         ? null
@@ -1178,8 +1178,8 @@ export function openSession(options: SessionOptions): ProjectSession {
   };
 
   /**
-   * Compara os arquivos de imagem com o que a sessão conhece e avisa os trocados ou
-   * novos (`all`: depois de recarregar o projeto, em que as imagens novas também contam).
+   * Compares the image files with what the session knows and reports the replaced or
+   * new ones (`all`: after reloading the project, where new images also count).
    */
   const checkImages = async (all: boolean) => {
     const project = store.project.peek();
@@ -1187,7 +1187,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     await initialStamps;
     const changed: string[] = [];
     const current = new Set<string>();
-    // Os carimbos são independentes: lidos juntos, comparados na ordem dos containers.
+    // The stamps are independent: read together, compared in the order of the containers.
     const stamped = await Promise.all(
       imageFileNames(project.containers).map(
         async (file) => [file, await stampOf(file)] as const,
@@ -1206,18 +1206,18 @@ export function openSession(options: SessionOptions): ProjectSession {
   };
 
   let closed = false;
-  /** Sem nada local a perder: nenhuma gravação pendente e nenhum gesto em andamento. */
+  /** Nothing local to lose: no pending save and no gesture in progress. */
   const idle = () => saver.status.peek() === 'saved' && !store.gestureActive.peek();
 
   /**
-   * O trabalho de conferência (na fila: nenhuma gravação corre junto). Edições do usuário
-   * continuam acontecendo entre os `await` (são síncronas), por isso a guarda `idle()` é relida
-   * logo antes de trocar o projeto.
+   * The check job (in the queue: no save runs alongside). User edits
+   * keep happening between the `await`s (they are synchronous), so the `idle()` guard is reread
+   * right before swapping the project.
    */
   const syncProject = async (images: boolean): Promise<SyncResult> => {
     if (closed || !store.project.peek() || conflict.peek()) return 'unchanged';
     if (store.gestureActive.peek()) return 'busy';
-    // Gravação agendada ou na fila: ela mesma confere o arquivo antes de gravar.
+    // A scheduled or queued save: it checks the file itself before saving.
     if (saver.status.peek() === 'saving') return 'busy';
     await initialStat;
     const modified = await statMapping();
@@ -1227,25 +1227,25 @@ export function openSession(options: SessionOptions): ProjectSession {
       if (text !== null && changedExternally(text)) {
         const erroring = saver.status.peek() === 'error';
         if (text.trim() === '' && !erroring) {
-          // Um editor ainda escrevendo; sem pendência, nada a proteger: tenta no próximo ciclo.
+          // An editor still writing; with no pending change, nothing to protect: tries again in the next cycle.
         } else if (erroring) {
-          // A pendência não chega ao disco sozinha: a pessoa decide (um arquivo que ficou vazio
-          // de vez também cai aqui, e "Manter as minhas" é a saída).
+          // The pending change does not reach the disk on its own: the person decides (a file that stayed empty
+          // for good also lands here, and "Keep mine" is the way out).
           conflict.value = { reloadFailed: false };
           result = 'conflict';
         } else {
           const loaded = await loadProject(storage);
-          // Ilegível (um editor ainda escrevendo): tenta de novo no próximo ciclo.
+          // Unreadable (an editor still writing): tries again in the next cycle.
           if (loaded.ok) {
             if (closed) return 'unchanged';
-            // Uma edição entrou durante as leituras: a gravação dela decide.
+            // An edit came in during the reads: its save decides.
             if (!idle()) return 'busy';
             await adopt(loaded, modified);
             result = 'reloaded';
           }
         }
       } else if (text !== null) {
-        // Só a data mudou (um `touch`, a sincronização de uma nuvem): o conteúdo é o mesmo.
+        // Only the date changed (a `touch`, a cloud sync): the content is the same.
         disk = { ...disk, lastModified: modified };
       }
     }
@@ -1253,8 +1253,8 @@ export function openSession(options: SessionOptions): ProjectSession {
     return result;
   };
 
-  // A conferência enfileirada e ainda não iniciada: chamadas concorrentes acumulam `images`
-  // nela e recebem a mesma promessa (uma em curso e no máximo uma esperando).
+  // The check that is queued and not yet started: concurrent calls accumulate `images`
+  // in it and get the same promise (one in progress and at most one waiting).
   let pendingSync: { promise: Promise<SyncResult>; images: boolean } | null = null;
   const sync = (syncOptions: { readonly images?: boolean } = {}): Promise<SyncResult> => {
     if (!watchable || closed || !store.project.peek())
@@ -1267,22 +1267,22 @@ export function openSession(options: SessionOptions): ProjectSession {
       images: syncOptions.images === true,
       promise: Promise.resolve<SyncResult>('unchanged'),
     };
-    // O ciclo inteiro (o arquivo do projeto e as varreduras de propostas e conversas) é uma
-    // medida só.
+    // The whole cycle (the project file and the proposal and conversation scans) is a
+    // single measurement.
     entry.promise = measure('sync', async () => {
       const result = await saver.enqueue(() => {
         pendingSync = null;
         return syncProject(entry.images);
       });
-      // As propostas não esperam o projeto: decisões e notas são gravadas na hora e
-      // refeitas sobre a versão do disco, então não há "alteração local pendente" a proteger.
-      // Fora da fila da sessão: a fila das propostas pode esperar por ela (`flush`), nunca o
-      // contrário.
-      // As conversas também: só `comments/`, pelo carimbo, lendo só o arquivo que mudou.
-      // As duas varreduras não compartilham arquivo, fila nem estado (`proposals/` e
-      // `comments/`, cada uma com a sua fila): rodam juntas.
-      // A conferência completa (foco, volta à página: `images`) olha também as propostas finais;
-      // a de ciclo as pula, já lidas (etapa #1777, decisão 8).
+      // Proposals do not wait for the project: decisions and notes are written right away and
+      // redone on top of the disk version, so there is no "pending local change" to protect.
+      // Outside the session queue: the proposals queue may wait for it (`flush`), never the
+      // other way around.
+      // The conversations too: only `comments/`, by stamp, reading only the file that changed.
+      // The two scans share no file, queue or state (`proposals/` and
+      // `comments/`, each with its own queue): they run together.
+      // The full check (focus, return to the page: `images`) also looks at the final proposals;
+      // the cycle one skips them, already read (stage #1777, decision 8).
       await Promise.all([
         !closed && storage.statProposal
           ? proposals
@@ -1308,8 +1308,8 @@ export function openSession(options: SessionOptions): ProjectSession {
         try {
           text = await readMappingText();
         } catch (e) {
-          // Ilegível (permissão revogada): segue como se o arquivo tivesse sumido; se a
-          // gravação também falhar, o status diz.
+          // Unreadable (permission revoked): goes on as if the file had disappeared; if the
+          // save also fails, the status says so.
           reportError('session.keep', e);
         }
         disk = {
@@ -1317,8 +1317,8 @@ export function openSession(options: SessionOptions): ProjectSession {
           text,
           lastModified: await statMapping(),
         };
-        // O disco passou a ter o arquivo de fora: as minhas vão por cima, mesmo que a pendência
-        // tenha sido desfeita no meio.
+        // The disk now has the outside file: mine go over it, even if the pending change
+        // was undone in the meantime.
         written = null;
         conflict.value = null;
         saver.schedule();
@@ -1381,7 +1381,7 @@ export function openSession(options: SessionOptions): ProjectSession {
       if (store.readOnly.value || store.reviewing.value || !store.project.value) {
         return { added, failed: files.map((f) => f.name) };
       }
-      // Uma por vez: fotos grandes decodificadas em paralelo estouram a memória.
+      // One at a time: large photos decoded in parallel blow up memory.
       for (const file of files) {
         let path: string | null = null;
         try {
@@ -1406,7 +1406,7 @@ export function openSession(options: SessionOptions): ProjectSession {
           if (path) reservedFiles.delete(path);
         }
       }
-      // Operação cara: grava sem esperar o debounce (ver `saveNow`).
+      // Expensive operation: saves without waiting for the debounce (see `saveNow`).
       if (added.length > 0) await saver.flush();
       return { added, failed };
     },
@@ -1415,7 +1415,7 @@ export function openSession(options: SessionOptions): ProjectSession {
       if (store.readOnly.value || store.reviewing.value || !store.project.value) {
         return 'failed';
       }
-      // Container sem arquivo não tem arquivo para trocar.
+      // A container without a file has no file to replace.
       if (
         currentProject(store).containers.some(
           (i) => i.id === containerId && i.file === null,
@@ -1474,7 +1474,7 @@ export function openSession(options: SessionOptions): ProjectSession {
         if (blob) images.set(file, blob);
         else missingImages.push(file);
       }
-      // Os demais arquivos dos pacotes da biblioteca (o da especialização vai em `specs`).
+      // The other files of the library packages (the specialization's goes in `specs`).
       const specAssets = new Map<string, Blob>();
       for (const s of p.specializations) {
         const dir = packageDirOf(s.file);
@@ -1485,9 +1485,9 @@ export function openSession(options: SessionOptions): ProjectSession {
           if (blob) specAssets.set(path, blob);
         }
       }
-      // A cópia citada que a app não lê (`spec: null`: inválida, `formatVersion` maior ou `id`
-      // diferente) não está em `specFiles`: vai no zip como está no armazenamento (texto cru,
-      // sem alteração). Cópia que não existe lá continua fora.
+      // The cited copy that the app does not read (`spec: null`: invalid, higher `formatVersion` or different
+      // `id`) is not in `specFiles`: it goes in the zip as it is in storage (raw text,
+      // unchanged). A copy that does not exist there stays out.
       const specs = specFiles(p);
       for (const s of p.specializations) {
         if (s.spec || specs.has(s.file)) continue;
@@ -1522,7 +1522,7 @@ export function openSession(options: SessionOptions): ProjectSession {
       stopWatching();
       await proposals.settled();
       await threads.settled();
-      // Na fila: espera a conferência ou a recarga em curso e grava o pendente.
+      // In the queue: waits for the check or reload in progress and writes the pending change.
       await saver.flush();
       saver.dispose();
       await localSync.dispose();

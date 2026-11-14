@@ -1,31 +1,31 @@
 name: MCP release
 
-# Estável `mcp-v<versão>` (ex: mcp-v0.3.0): gera o `mapping-mcp.js` e o anexa à Release. A versão
-# da tag precisa ser a de `SERVER_VERSION` em `mcp/version.ts`. Só `x.y.z` dispara a estável: as
-# pre-releases `mcp-v<versão>-rc.<n>` e `mcp-snapshot-pr<N>` (`mcp-prerelease.yml`) nunca a
-# disparam. Ao publicar, apaga as rc (release e tag) da mesma versão.
+# Stable `mcp-v<version>` (e.g. mcp-v0.3.0): builds `mapping-mcp.js` and attaches it to the Release. The tag's
+# version must be the one in `SERVER_VERSION` in `mcp/version.ts`. Only `x.y.z` triggers the stable: the
+# pre-releases `mcp-v<version>-rc.<n>` and `mcp-snapshot-pr<N>` (`mcp-prerelease.yml`) never
+# trigger it. When publishing, it deletes the rcs (release and tag) of the same version.
 #
-# Três origens:
-# - push na `main` (o merge de um épico ou do Dependabot; o ruleset só aceita esses): o job `decide`
-#   confere se a tag da `SERVER_VERSION` existe. Existe: termina verde com um aviso e o `release` é
-#   pulado. Não existe: o `release` cria a tag e a Release juntas (`gh release create --target`),
-#   porque uma tag criada pelo GITHUB_TOKEN não dispara outro workflow (etapa #920).
-# - push de uma tag `mcp-v*` criada à mão (plano B): publica essa tag, como antes. A Release pode
-#   ter sido criada antes pela tela do GitHub (que cria a tag junto): os arquivos são anexados a ela.
-# - `workflow_dispatch`: gera e anexa os arquivos de uma tag que já existe (ex.: uma Release que
-#   ficou sem eles), sem apagar nem recriar nada.
-# Nenhum dado de PR entra em `run:`: só `github.sha`, `github.ref_name` e as saídas do `decide`,
-# passadas por `env:`.
+# Three origins:
+# - push to `main` (the merge of an epic or of Dependabot; the ruleset only accepts those): the `decide` job
+#   checks whether the `SERVER_VERSION` tag exists. It exists: it finishes green with a notice and `release` is
+#   skipped. It does not exist: `release` creates the tag and the Release together (`gh release create --target`),
+#   because a tag created by GITHUB_TOKEN does not trigger another workflow (stage #920).
+# - push of a hand-created `mcp-v*` tag (plan B): publishes that tag, as before. The Release may
+#   have been created earlier through the GitHub UI (which creates the tag along with it): the files are attached to it.
+# - `workflow_dispatch`: builds and attaches the files of a tag that already exists (e.g. a Release that
+#   was left without them), without deleting or recreating anything.
+# No PR data goes into `run:`: only `github.sha`, `github.ref_name` and the outputs of `decide`,
+# passed through `env:`.
 on:
   push:
     branches: [main]
-    # `!mcp-v*-*` deixa as rc (`mcp-v<versão>-rc.<n>`) de fora: uma rc empurrada à mão não
-    # dispara a estável nem deixa uma execução vermelha.
+    # `!mcp-v*-*` leaves the rcs (`mcp-v<version>-rc.<n>`) out: an rc pushed by hand does not
+    # trigger the stable nor leave a red run.
     tags: ['mcp-v*', '!mcp-v*-*']
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag já existente (ex.: mcp-v0.3.2)'
+        description: 'Existing tag (e.g. mcp-v0.3.2)'
         required: true
 
 permissions:
@@ -41,8 +41,8 @@ jobs:
       sha: ${{ steps.main.outputs.sha }}
       publish: ${{ steps.manual.outputs.publish || steps.main.outputs.publish }}
     steps:
-      # Tag manual ou `workflow_dispatch`: publica a tag do evento, como antes.
-      - name: Tag do evento
+      # Manual tag or `workflow_dispatch`: publishes the event's tag, as before.
+      - name: Event tag
         id: manual
         if: github.event_name != 'push' || github.ref != 'refs/heads/main'
         env:
@@ -53,7 +53,7 @@ jobs:
             echo "publish=true"
           } >> "$GITHUB_OUTPUT"
 
-      # Push na main: a tag da versão do commit já existe?
+      # Push to main: does the tag of the commit's version already exist?
       - uses: actions/checkout@v7
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
@@ -61,7 +61,7 @@ jobs:
           sparse-checkout: |
             mcp/version.ts
             scripts/release
-      - name: Decidir se publica
+      - name: Decide whether to publish
         id: main
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
@@ -76,22 +76,22 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    # Dois pushes seguidos na main com a mesma versão nova não publicam duas vezes: o segundo
-    # espera, acha a tag e só anexa (`--clobber`).
+    # Two consecutive pushes to main with the same new version do not publish twice: the second
+    # waits, finds the tag and only attaches (`--clobber`).
     concurrency:
       group: mcp-release-${{ needs.decide.outputs.tag }}
       cancel-in-progress: false
     env:
       TAG: ${{ needs.decide.outputs.tag }}
     steps:
-      - name: Conferir o nome da tag
+      - name: Check the tag name
         run: |
           if ! printf '%s' "$TAG" | grep -Eq '^mcp-v[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "Tag inválida: $TAG (esperado mcp-v<versão>, ex.: mcp-v0.3.2)." >&2
+            echo "Invalid tag: $TAG (expected mcp-v<version>, e.g. mcp-v0.3.2)." >&2
             exit 1
           fi
 
-      # Push na main: o commit do merge (o `sha` do `decide`); nos outros casos, a tag.
+      # Push to main: the merge commit (the `sha` of `decide`); in the other cases, the tag.
       - uses: actions/checkout@v7
         with:
           ref: ${{ needs.decide.outputs.sha || format('refs/tags/{0}', env.TAG) }}
@@ -101,33 +101,33 @@ jobs:
           cache: npm
       - run: npm ci
 
-      - name: Conferir a versão da tag
+      - name: Check the tag version
         run: |
           tag_version="${TAG#mcp-v}"
           code_version="$(node scripts/release/stableRelease.mjs version --version-file mcp/version.ts)"
           if [ "$tag_version" != "$code_version" ]; then
-            echo "A tag $TAG não bate com SERVER_VERSION ($code_version) em mcp/version.ts." >&2
+            echo "The tag $TAG does not match SERVER_VERSION ($code_version) in mcp/version.ts." >&2
             exit 1
           fi
 
       - run: npm run lint
       - run: npm run typecheck
-      # Sem os orçamentos de desempenho: oscilam conforme o runner e não dizem nada do MCP
-      # (o CI e o deploy os medem à parte, com `npm run test:perf`).
+      # Without the performance budgets: they fluctuate with the runner and say nothing about the MCP
+      # (CI and deploy measure them separately, with `npm run test:perf`).
       - run: PERF_BUDGETS=off npm test
       - run: npm run build:mcp
 
-      - name: Testar o arquivo gerado fora do repositório
+      - name: Test the generated file outside the repository
         run: |
           mkdir -p "$RUNNER_TEMP/smoke"
           cp dist-mcp/mapping-mcp.js "$RUNNER_TEMP/smoke/"
           cd "$RUNNER_TEMP/smoke"
           got="$(node mapping-mcp.js --version)"
           if [ "$got" != "${TAG#mcp-v}" ]; then
-            echo "--version imprimiu '$got', esperado '${TAG#mcp-v}' (sem sufixo)." >&2
+            echo "--version printed '$got', expected '${TAG#mcp-v}' (no suffix)." >&2
             exit 1
           fi
-          # O extrator de assinaturas (`.mjs`, sem dependências) também roda fora do repositório.
+          # The signature extractor (`.mjs`, no dependencies) also runs outside the repository.
           cp "$GITHUB_WORKSPACE/dist-mcp/mapping-signature.mjs" .
           node mapping-signature.mjs --help > /dev/null
 
@@ -137,23 +137,23 @@ jobs:
           sha256sum mapping-mcp.js > mapping-mcp.js.sha256
           sha256sum mapping-signature.mjs > mapping-signature.mjs.sha256
 
-      # Os arquivos publicados ficam juntos em `release-assets/`: o servidor, o extrator de assinaturas, os `.sha256` e os do
-      # workspace (o script dos arquivos do workspace roda uma vez).
-      - name: Arquivos da Release
+      # The published files stay together in `release-assets/`: the server, the signature extractor, the `.sha256` files and the
+      # workspace ones (the workspace files script runs once).
+      - name: Release files
         run: |
           mkdir release-assets
           cp dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 release-assets/
           cp dist-mcp/mapping-signature.mjs dist-mcp/mapping-signature.mjs.sha256 release-assets/
           node scripts/release/workspaceAssets.mjs release-assets > /dev/null
 
-      - name: Publicar na Release
+      - name: Publish to the Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           assets=(release-assets/*)
           if gh release view "$TAG" > /dev/null 2>&1; then
-            # Criada pela tela do GitHub, numa execução anterior ou por outra execução que
-            # publicou a mesma tag no meio do caminho: só anexa os arquivos (decisão 3 da #920).
+            # Created through the GitHub UI, in a previous run or by another run that
+            # published the same tag midway: only attach the files (decision 3 of #920).
             gh release upload "$TAG" "${assets[@]}" --clobber
             gh release edit "$TAG" --title "$TAG"
           else
@@ -161,15 +161,15 @@ jobs:
               "${assets[@]}" \
               --title "$TAG" \
               --target "$(git rev-parse HEAD)" \
-              --notes "Servidor MCP do Mapping. Copie \`mapping-mcp.js\` para \`tools/\` do seu repositório e registre-o no \`.mcp.json\`. Traz também o \`setup.sh\`, a skill \`SKILL.md\`, as regras \`AGENTS.mapping.md\` e o watcher \`watch-comments.mjs\` do workspace e o extrator de assinaturas \`mapping-signature.mjs\`, cada um com o \`.sha256\`. Instruções em docs/MCP.md. Atualizar um workspace que ainda tem o \`setup.sh\` antigo, uma vez: \`curl -fsSL https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh\`."
+              --notes "Mapping MCP server. Copy \`mapping-mcp.js\` to \`tools/\` in your repository and register it in \`.mcp.json\`. It also brings the workspace's \`setup.sh\`, the \`SKILL.md\` skill, the \`AGENTS.mapping.md\` rules and the \`watch-comments.mjs\` watcher, and the \`mapping-signature.mjs\` signature extractor, each with its \`.sha256\`. Instructions in docs/MCP.md. To update a workspace that still has the old \`setup.sh\`, once: \`curl -fsSL https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh\`."
           fi
 
-      - name: Apagar as release candidates desta versão
+      - name: Delete this version's release candidates
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           version="${TAG#mcp-v}"
-          # Releases rc (com a tag) e tags rc que ficaram sem release.
+          # rc releases (with the tag) and rc tags left without a release.
           for rc in $(gh release list --limit 200 --json tagName --jq ".[].tagName" |
             grep -E '^mcp-v[0-9.]+-rc\.[0-9]+$' | grep -F "mcp-v${version}-rc." || true); do
             gh release delete "$rc" --cleanup-tag --yes
