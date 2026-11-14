@@ -1,8 +1,8 @@
 // @vitest-environment node
-// Fase CR1 (etapa #1324, decisões 6, 8 e 9), fase TF1 (etapa #1614, decisão 3) e fase TB1 (etapa #1802,
-// decisões 1 a 3): `scripts/ci/distBudget.mjs` sempre sobe o teto do `dist/index.html` em passos de 16 KiB
-// (nunca "chama o dono") e, quando a subida passa de um limite, diz o motivo numa linha `bug:`; com
-// `--write` troca o `indexHtmlMaxBytes` do `scripts/ci/dist-budget.json` e acrescenta a frase ao `history`.
+// Phase CR1 (stage #1324, decisions 6, 8 and 9), phase TF1 (stage #1614, decision 3) and phase TB1 (stage #1802,
+// decisions 1 to 3): `scripts/ci/distBudget.mjs` always raises the `dist/index.html` ceiling in steps of 16 KiB
+// (never "chama o dono") and, when the raise passes a limit, gives the reason on a `bug:` line; with
+// `--write` it replaces the `indexHtmlMaxBytes` of `scripts/ci/dist-budget.json` and appends the sentence to `history`.
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -33,7 +33,7 @@ interface RunResult {
   err: string;
 }
 
-/** Roda o script na pasta `cwd` (o diretório temporário, por padrão) e devolve saída e status. */
+/** Runs the script in the `cwd` folder (the temporary directory, by default) and returns output and status. */
 function run(args: string[], cwd = dir): RunResult {
   try {
     const out = execFileSync('node', [SCRIPT, ...args], {
@@ -88,14 +88,14 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  it('sobe 16 KiB quando excesso, crescimento e subidas cabem nos limites', () => {
+  it('raises 16 KiB when excess, growth and raises fit the limits', () => {
     const out = raise({ size: CEILING + 227, main: CEILING - 100 });
     expect(out).toBe(
       `sobe: ${CEILING} → ${CEILING + KIB16} (excesso 227, crescimento 327, subidas desde a revisão ${CEILING + KIB16 - REVIEW})`,
     );
   });
 
-  it('excesso 14.336 sobe 16 KiB numa linha só, sem bug', () => {
+  it('excess 14,336 raises 16 KiB on a single line, with no bug', () => {
     const out = raise({ size: CEILING + 14336, main: CEILING });
     expect(out.split('\n')).toEqual([
       `sobe: ${CEILING} → ${CEILING + KIB16} (excesso 14336, crescimento 14336, subidas desde a revisão ${CEILING + KIB16 - REVIEW})`,
@@ -103,11 +103,11 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     expect(out).not.toContain('bug:');
   });
 
-  it('excesso 14.337 sobe 32 KiB e diz o bug, com 14 KiB e 32 KiB', () => {
-    const [sobe, bug, ...rest] = raise({ size: CEILING + 14337, main: CEILING }).split(
+  it('excess 14,337 raises 32 KiB and states the bug, with 14 KiB and 32 KiB', () => {
+    const [raised, bug, ...rest] = raise({ size: CEILING + 14337, main: CEILING }).split(
       '\n',
     );
-    expect(sobe).toMatch(new RegExp(`^sobe: ${CEILING} → ${CEILING + 2 * KIB16} \\(`));
+    expect(raised).toMatch(new RegExp(`^sobe: ${CEILING} → ${CEILING + 2 * KIB16} \\(`));
     expect(bug).toMatch(/^bug: /);
     expect(bug).toContain('14 KiB (14336 bytes)');
     expect(bug).toContain('32 KiB');
@@ -116,7 +116,7 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     expect(rest).toEqual([]);
   });
 
-  it('excesso 30.720 sobe 32 KiB; 30.721 sobe 48 KiB', () => {
+  it('excess 30,720 raises 32 KiB; 30,721 raises 48 KiB', () => {
     const next = (excess: number) =>
       raise({ size: CEILING + excess, main: CEILING }).split('\n')[0];
     expect(next(30720)).toMatch(
@@ -130,13 +130,13 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     );
   });
 
-  it('o 48 KiB do excesso 30.721 aparece no motivo do bug', () => {
+  it('the 48 KiB of excess 30,721 appears in the bug reason', () => {
     const bug = raise({ size: CEILING + 30721, main: CEILING }).split('\n')[1];
     expect(bug).toContain('48 KiB');
   });
 
   it.each([1, 14336, 14337, 30720, 30721, 50000])(
-    'excesso %i: a margem depois da subida fica em [2.048, 2.048 + 16.384)',
+    'excess %i: the margin after the raise stays in [2,048, 2,048 + 16,384)',
     (excess) => {
       const first = raise({ size: CEILING + excess, main: CEILING }).split('\n')[0] ?? '';
       const next = Number(/→ (\d+) /.exec(first)?.[1]);
@@ -146,7 +146,7 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     },
   );
 
-  it('crescimento exatamente 32.768 sobe sem bug; 32.769 sobe 16 KiB com bug que cita 32 KiB', () => {
+  it('growth of exactly 32,768 raises with no bug; 32,769 raises 16 KiB with a bug that cites 32 KiB', () => {
     const size = CEILING + 100;
     expect(raise({ size, main: size - 32768 })).not.toContain('bug:');
     const lines = raise({ size, main: size - 32769 }).split('\n');
@@ -155,7 +155,7 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     expect(lines).toHaveLength(2);
   });
 
-  it('subidas desde a revisão: até 65.536 contando com esta sobe sem bug; 65.537 sobe com bug que cita 64 KiB', () => {
+  it('raises since the review: up to 65,536 counting this one raises with no bug; 65,537 raises with a bug that cites 64 KiB', () => {
     const atLimit = CEILING + KIB16 - 65536;
     expect(raise({ size: CEILING + 1, review: atLimit })).not.toContain('bug:');
     const lines = raise({ size: CEILING + 1, review: atLimit - 1 }).split('\n');
@@ -166,7 +166,7 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     expect(lines).toHaveLength(2);
   });
 
-  it('vários limites ao mesmo tempo: uma linha bug só, com os motivos separados por "; "', () => {
+  it('several limits at once: a single bug line, with the reasons separated by "; "', () => {
     const size = CEILING + 20000;
     const lines = raise({ size, main: size - 40000, review: CEILING - 100000 }).split(
       '\n',
@@ -178,13 +178,13 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     expect(reasons[0]).toContain('excesso');
     expect(reasons[1]).toContain('cresceu');
     expect(reasons[2]).toContain('subidas desde');
-    // `since` usa o teto novo (2 passos), não só o primeiro: 2 × 16.384 + 100.000.
+    // `since` uses the new ceiling (2 steps), not just the first: 2 × 16,384 + 100,000.
     expect(reasons[0]).toContain('a subida foi de 32 KiB');
     expect(reasons[2]).toContain(`somam ${2 * KIB16 + 100000} bytes contando com esta`);
     expect(lines[0]).toContain(`subidas desde a revisão ${2 * KIB16 + 100000})`);
   });
 
-  it('nunca chama o dono: saída 0 e nenhuma linha começa por "chama o dono", nem com --write', () => {
+  it('never calls the owner: exit 0 and no line starts with "chama o dono", not even with --write', () => {
     const cases = [
       { size: CEILING + 14337, main: CEILING },
       { size: CEILING + 50000, main: CEILING - 100000, review: CEILING - 200000 },
@@ -201,16 +201,16 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     }
   });
 
-  it('dentro do teto não há o que subir', () => {
+  it('within the ceiling there is nothing to raise', () => {
     expect(raise({ size: CEILING })).toMatch(/^nada a subir/);
   });
 
-  it('sem --write não mexe no arquivo', () => {
+  it('without --write it does not touch the file', () => {
     raise({ size: CEILING + 10 });
     expect(readFileSync(budget, 'utf8')).toBe(fixture());
   });
 
-  it('com --write troca só o indexHtmlMaxBytes e acrescenta a frase como último item do history', () => {
+  it('with --write it replaces only the indexHtmlMaxBytes and appends the sentence as the last item of history', () => {
     raise({ size: CEILING + 227, main: CEILING - 100, write: true });
     const after = JSON.parse(readFileSync(budget, 'utf8')) as {
       indexHtmlMaxBytes: number;
@@ -225,7 +225,7 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     expect(Object.keys(after)).toEqual(['indexHtmlMaxBytes', 'history']);
   });
 
-  it('o JSON gravado sai igual ao que o Prettier deixa (configuração do repositório, parser json)', async () => {
+  it('the written JSON comes out the same as Prettier leaves it (repository config, json parser)', async () => {
     raise({ size: CEILING + 227, main: CEILING - 100, write: true });
     const written = readFileSync(budget, 'utf8');
     const config =
@@ -233,7 +233,7 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     expect(await format(written, { ...config, parser: 'json' })).toBe(written);
   });
 
-  it('com --write acima de um limite grava o teto novo e a frase com "Acima dos limites"', async () => {
+  it('with --write above a limit it writes the new ceiling and the sentence with "Acima dos limites"', async () => {
     const size = CEILING + 20000;
     const out = raise({
       size,
@@ -255,7 +255,7 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     expect(await format(written, { ...config, parser: 'json' })).toBe(written);
   });
 
-  it('com --write acima de um só limite, a frase cita só esse item', () => {
+  it('with --write above a single limit, the sentence cites only that item', () => {
     raise({ size: CEILING + 100, main: CEILING + 100 - 32769, write: true });
     const after = JSON.parse(readFileSync(budget, 'utf8')) as { history: string[] };
     expect(after.history.at(-1)).toMatch(
@@ -263,12 +263,12 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     );
   });
 
-  it('com --write e nada a subir não altera o arquivo', () => {
+  it('with --write and nothing to raise it does not change the file', () => {
     raise({ size: CEILING, write: true });
     expect(readFileSync(budget, 'utf8')).toBe(fixture());
   });
 
-  it('rejeita flag desconhecida e valor ausente ou que começa com --', () => {
+  it('rejects an unknown flag and a missing value or one that starts with --', () => {
     const status = (extra: string[]) =>
       run(raiseArgs({ size: CEILING + 10, extra })).status;
     expect(status(['--mainsize', '5'])).toBe(2);
@@ -276,7 +276,7 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     expect(status(['--epic', '--write'])).toBe(2);
   });
 
-  it('teto que não é múltiplo de 1 KiB não gera número quebrado na frase', () => {
+  it('a ceiling that is not a multiple of 1 KiB produces no broken number in the sentence', () => {
     const odd = CEILING + 512;
     writeFileSync(budget, fixture(odd));
     raise({ size: odd + 10, main: odd, write: true });
@@ -289,7 +289,7 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     expect(after.history.at(-1)).toContain('(1.904,5 KiB)');
   });
 
-  it('--ci sai com 2 e a mensagem que aponta o scripts/ci/dist-budget.json (decisão 3)', () => {
+  it('--ci exits with 2 and the message that points to scripts/ci/dist-budget.json (decision 3)', () => {
     const r = run([
       'raise',
       '--ci',
@@ -301,14 +301,14 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     expect(r.err).toContain('scripts/ci/dist-budget.json');
   });
 
-  it('--ci sem valor também sai com 2 e a mensagem da etapa #1614', () => {
+  it('--ci with no value also exits with 2 and the stage #1614 message', () => {
     const r = run(['raise', '--ci', '--size', '1']);
     expect(r.status).toBe(2);
     expect(r.err).toContain('--ci saiu na etapa #1614');
   });
 
-  it('sem --budget, o raise lê o scripts/ci/dist-budget.json da pasta corrente', () => {
-    const sub = path.join(dir, 'raiz');
+  it('without --budget, raise reads scripts/ci/dist-budget.json from the current folder', () => {
+    const sub = path.join(dir, 'root');
     execFileSync('mkdir', ['-p', path.join(sub, 'scripts/ci')]);
     writeFileSync(path.join(sub, 'scripts/ci/dist-budget.json'), fixture());
     const args = raiseArgs({ size: CEILING + 227, main: CEILING - 100, write: true });
@@ -335,7 +335,7 @@ describe('distBudget.mjs ceiling (TF1)', () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  it('imprime o teto do --budget', () => {
+  it('prints the ceiling of --budget', () => {
     writeFileSync(budget, fixture());
     expect(run(['ceiling', '--budget', budget])).toMatchObject({
       status: 0,
@@ -343,13 +343,13 @@ describe('distBudget.mjs ceiling (TF1)', () => {
     });
   });
 
-  it('sem --budget, lê o scripts/ci/dist-budget.json da pasta corrente', () => {
+  it('without --budget, it reads scripts/ci/dist-budget.json from the current folder', () => {
     execFileSync('mkdir', ['-p', path.join(dir, 'scripts/ci')]);
     writeFileSync(path.join(dir, 'scripts/ci/dist-budget.json'), fixture(1234567));
     expect(run(['ceiling'])).toMatchObject({ status: 0, out: '1234567' });
   });
 
-  it('o arquivo do repositório é válido, com teto positivo e múltiplo de 16 KiB', () => {
+  it('the repository file is valid, with a positive ceiling that is a multiple of 16 KiB', () => {
     const r = run(['ceiling'], REPO);
     expect(r.status).toBe(0);
     const n = Number(r.out);
@@ -358,20 +358,29 @@ describe('distBudget.mjs ceiling (TF1)', () => {
   });
 
   const invalid: [string, string][] = [
-    ['JSON inválido', '{ não é json'],
-    ['sem indexHtmlMaxBytes', JSON.stringify({ history: [] })],
-    ['teto que não é número', JSON.stringify({ indexHtmlMaxBytes: '123', history: [] })],
-    ['teto que não é inteiro', JSON.stringify({ indexHtmlMaxBytes: 1.5, history: [] })],
-    ['teto zero', JSON.stringify({ indexHtmlMaxBytes: 0, history: [] })],
-    ['teto negativo', JSON.stringify({ indexHtmlMaxBytes: -5, history: [] })],
-    ['sem history', JSON.stringify({ indexHtmlMaxBytes: 10 })],
-    ['history que não é lista', JSON.stringify({ indexHtmlMaxBytes: 10, history: 'x' })],
+    ['invalid JSON', '{ not json'],
+    ['without indexHtmlMaxBytes', JSON.stringify({ history: [] })],
     [
-      'history com item que não é string',
+      'a ceiling that is not a number',
+      JSON.stringify({ indexHtmlMaxBytes: '123', history: [] }),
+    ],
+    [
+      'a ceiling that is not an integer',
+      JSON.stringify({ indexHtmlMaxBytes: 1.5, history: [] }),
+    ],
+    ['zero ceiling', JSON.stringify({ indexHtmlMaxBytes: 0, history: [] })],
+    ['negative ceiling', JSON.stringify({ indexHtmlMaxBytes: -5, history: [] })],
+    ['without history', JSON.stringify({ indexHtmlMaxBytes: 10 })],
+    [
+      'history that is not a list',
+      JSON.stringify({ indexHtmlMaxBytes: 10, history: 'x' }),
+    ],
+    [
+      'history with an item that is not a string',
       JSON.stringify({ indexHtmlMaxBytes: 10, history: ['a', 3] }),
     ],
   ];
-  it.each(invalid)('%s: sai com 2 e a mensagem no stderr', (_name, content) => {
+  it.each(invalid)('%s: exits with 2 and the message on stderr', (_name, content) => {
     writeFileSync(budget, content);
     const r = run(['ceiling', '--budget', budget]);
     expect(r.status).toBe(2);
@@ -379,9 +388,9 @@ describe('distBudget.mjs ceiling (TF1)', () => {
     expect(r.out).toBe('');
   });
 
-  it('arquivo inexistente sai com 2', () => {
-    expect(run(['ceiling', '--budget', path.join(dir, 'nao-existe.json')]).status).toBe(
-      2,
-    );
+  it('a missing file exits with 2', () => {
+    expect(
+      run(['ceiling', '--budget', path.join(dir, 'does-not-exist.json')]).status,
+    ).toBe(2);
   });
 });

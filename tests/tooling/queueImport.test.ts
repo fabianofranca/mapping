@@ -584,7 +584,10 @@ describe('SKILL.md — hot switch and importar= (FM7)', () => {
 
   it('step 3 of "Queue" asks for the ficha of all the imported rows', () => {
     const s = section(skill, '## 2. Queue');
-    const step3 = s.slice(s.indexOf('3. Ask **one** subagent'), s.indexOf('4. **Order:**'));
+    const step3 = s.slice(
+      s.indexOf('3. Ask **one** subagent'),
+      s.indexOf('4. **Order:**'),
+    );
     expect(step3).toMatch(/importar=/);
     expect(step3).toMatch(/all the imported rows/);
   });

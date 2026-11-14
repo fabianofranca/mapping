@@ -356,7 +356,7 @@ describe('docs/TESTING-NUVEM.md (modes, scripts and report flow)', () => {
     expect(`${prompt}\n${read('docs/TESTING-NUVEM-CONSULTA.md')}`).toContain(
       'pending decision',
     );
-    expect(read('docs/PROCESS.md')).toContain('pendente de decisão');
+    expect(read('docs/PROCESS.md')).toContain('pending a decision');
   });
 
   it('the report is a comment on the sub-issue, in parts above 65 thousand characters, with no branch nor PR', () => {
@@ -752,7 +752,7 @@ describe('docs/TESTING-NUVEM.md (cloud tester prompt)', () => {
     for (const path of ['README.md', 'CLAUDE.md', 'docs/TESTING.md']) {
       expect(read(path), path).toContain('TESTING-NUVEM.md');
     }
-    expect(read('docs/PROCESS.md')).toContain('Fluxo automatizado');
+    expect(read('docs/PROCESS.md')).toContain('Automated flow');
     expect(read('CLAUDE.md')).toContain('docs/FLOW.md');
   });
 });
@@ -778,14 +778,14 @@ describe('docs/FLOW.md (automated flow messages)', () => {
     expect(flow).toContain('Parte de #');
   });
 
-  it('the "teste primeiro" rule is in docs/PROCESS.md and the phase message points to it', () => {
-    expect(read('docs/PROCESS.md')).toContain('**teste primeiro**');
-    expect(flow).toContain('"teste primeiro" do `docs/PROCESS.md`');
+  it('the "test first" rule is in docs/PROCESS.md and the phase message points to it', () => {
+    expect(read('docs/PROCESS.md')).toContain('**test first**');
+    expect(flow).toContain('`test first` rule of `docs/PROCESS.md`');
   });
 
   it('the tester message follows the TESTING-NUVEM format and the notification cites PushNotification', () => {
     expect(flow).toMatch(
-      /Leia `docs\/TESTING-NUVEM\.md` e execute no modo dirigido: [^\n]+\. Branch `[^`]+`, commit `[^`]+`\. Relato na sub-issue #[^\n]+\. Coordenador: `/,
+      /Read `docs\/TESTING-NUVEM\.md` and run in modo dirigido: [^\n]+\. Branch `[^`]+`, commit `[^`]+`\. Relato na sub-issue #[^\n]+\. Coordenador: `/,
     );
     expect(flow).toContain('PushNotification');
   });
@@ -850,23 +850,23 @@ describe('TR2 — reduced R0 in the retest, visual pass and real time', () => {
   });
 
   it('the two tester messages in docs/FLOW.md have the visual pass line', () => {
-    const testerSection = flow.slice(flow.indexOf('## Para o testador'));
+    const testerSection = flow.slice(flow.indexOf('## For the tester'));
     const occurrences = testerSection.split(/[Pp]assada visual/).length - 1;
     expect(occurrences).toBeGreaterThanOrEqual(2);
   });
 
   it('the FLOW.md retest message cites the R0 reduced to R0.1', () => {
     const retest = flow.slice(
-      flow.indexOf('Reteste, depois da correção'),
-      flow.indexOf('## Rodada completa em 5 blocos'),
+      flow.indexOf('Retest, after the fix'),
+      flow.indexOf('## Full round in 5 blocks'),
     );
     expect(retest).toMatch(/R0\.1/);
     // TR3 (decision 13): the message spells out the R0, so it does not diverge from the guide.
-    expect(retest).toContain('R0 só o R0.1 e os passos de que os achados dependem');
+    expect(retest).toContain('R0 only R0.1 and the steps the findings depend on');
   });
 
   it('docs/PROCESS.md tells the orchestrator to pass the visual pass to the tester and the last phase sub-issue to bring the line', () => {
-    expect(claude).toMatch(/os roteiros e a passada visual/);
+    expect(claude).toMatch(/the scripts and the visual pass/);
     expect(claude).toContain('Passada visual:');
   });
 });
@@ -908,24 +908,24 @@ describe('TR3 — setups that do not overwrite and aligned messages', () => {
     }
   });
 
-  it('the directed message says "R0 inteiro primeiro" and the TESTING-NUVEM one prevails when it diverges from the guide (decision 13)', () => {
+  it('the directed message says "Whole R0 first" and the TESTING-NUVEM one prevails when it diverges from the guide (decision 13)', () => {
     const tester = flow.slice(
-      flow.indexOf('## Para o testador'),
-      flow.indexOf('Reteste, depois da correção'),
+      flow.indexOf('## For the tester'),
+      flow.indexOf('Retest, after the fix'),
     );
-    expect(tester).toContain('R0 inteiro primeiro');
+    expect(tester).toContain('Whole R0 first');
     expect(cloud).toMatch(/message prevails when it diverges/i);
   });
 
   it('every directed, group and block message brings the release tag slot, and the prompt says what to do with "sem R21" (decision 14)', () => {
     const tester = flow.slice(
-      flow.indexOf('## Para o testador'),
-      flow.indexOf('### Rodada avulsa'),
+      flow.indexOf('## For the tester'),
+      flow.indexOf('### Standalone round'),
     );
     const messages = tester.match(/```text\n[\s\S]*?```/g) ?? [];
     expect(messages.length).toBe(4);
     for (const m of messages) {
-      expect(m).toContain('Tag da release: <mcp-v…-rc.n, ou "sem R21">');
+      expect(m).toContain('Tag da release: <mcp-v…-rc.n, or "sem R21">');
     }
     // The rule moved to `consulta.regras` (TE1); the prompt points to it and says the essentials.
     expect(cloud).toContain('cloud.mjs secao consulta.regras');
@@ -1140,34 +1140,34 @@ describe('full round in 5 blocks (stages #424 and #841)', () => {
 
   it('FLOW.md has the tester message per block, the standalone one and the summary template', () => {
     expect(flow).toMatch(
-      /execute o modo completo, bloco <k> de 5\.[^\n]*Branch `[^`]+`, commit `[^`]+`\. Relato na sub-issue #[^\n]+\. Coordenador: `/,
+      /run the modo completo, bloco <k> de 5\.[^\n]*Branch `[^`]+`, commit `[^`]+`\. Relato na sub-issue #[^\n]+\. Coordenador: `/,
     );
-    expect(flow).toContain('Testador — <alvo>, bloco <k> de 5');
+    expect(flow).toContain('Testador — <target>, bloco <k> de 5');
     expect(flow).toContain(
-      'Rode a rodada completa do testador em blocos no branch `<branch>`, commit `<hash>`. Resumo e relatos na issue #<N>.',
+      'Run the full tester round in blocks on branch `<branch>`, commit `<hash>`. Summary and reports in issue #<N>.',
     );
-    expect(flow).toMatch(/## Resumo da rodada em blocos/);
-    for (const parte of [
-      'Rodada completa em blocos — resumo',
-      'não executado',
-      'tempo de parede',
-      'Achados por severidade',
-      'Relatos:',
+    expect(flow).toMatch(/## Summary of the round in blocks/);
+    for (const part of [
+      'Full round in blocks — summary',
+      'not executed',
+      'wall time',
+      'Findings by severity',
+      'Reports:',
     ]) {
-      expect(flow, parte).toContain(parte);
+      expect(flow, part).toContain(part);
     }
-    expect(flow).toMatch(/não reescreve os relatos/i);
+    expect(flow).toMatch(/does not rewrite the reports/i);
   });
 
   it('FLOW.md: 60 min backup check, 5 notices, retest in a single session and the standalone one opens a bug per ❌', () => {
     expect(flow).toMatch(/60 min/);
-    expect(flow).toMatch(/cinco avisos/i);
-    expect(flow).toMatch(/uma sessão só/i);
-    expect(flow).toMatch(/issue `bug`[^\n]*duplicadas/i);
+    expect(flow).toMatch(/five notices/i);
+    expect(flow).toMatch(/a single session/i);
+    expect(flow).toMatch(/`bug` issue[^\n]*duplicate/i);
   });
 
   it('docs/PROCESS.md: the orchestrator creates the 5 sessions when the sub-issue asks for the full round', () => {
-    expect(claude).toMatch(/rodada completa[^\n]*5 sessões/);
+    expect(claude).toMatch(/full round[^\n]*5 sessions/);
     expect(claude).toContain('bloco k de 5');
     expect(claude).toMatch(/\bk\.n\b/);
   });
@@ -1291,34 +1291,34 @@ describe('TR4 — directed round in groups and retest together', () => {
 
   it('FLOW.md has the group message, the title, the 60 min backup and the summary with "Grupo"', () => {
     expect(flow).toMatch(
-      /execute no modo dirigido, grupo <k> de <n>:[^\n]*Branch `[^`]+`, commit `[^`]+`\. Relato na sub-issue #[^\n]+Tag da release:[^\n]+Coordenador: `/,
+      /run in modo dirigido, grupo <k> de <n>:[^\n]*Branch `[^`]+`, commit `[^`]+`\. Relato na sub-issue #[^\n]+Tag da release:[^\n]+Coordenador: `/,
     );
-    expect(flow).toContain('Testador — <alvo>, grupo <k> de <n>');
+    expect(flow).toContain('Testador — <target>, grupo <k> de <n>');
     const section = flow.slice(
-      flow.indexOf('## Rodada dirigida em grupos'),
-      flow.indexOf('## Reteste junto'),
+      flow.indexOf('## Directed round in groups'),
+      flow.indexOf('## Retest together'),
     );
     expect(section).toMatch(/60 min/);
-    expect(section).toMatch(/n avisos/);
-    expect(section).toMatch(/"Grupo" no lugar de "Bloco"/);
+    expect(section).toMatch(/n notices/);
+    expect(section).toMatch(/"Grupo" in place of "Bloco"/);
   });
 
   it('the retest is a single session, with the findings of all groups or blocks, and the merged fix goes in', () => {
-    const section = flow.slice(flow.indexOf('## Reteste junto'));
-    expect(section).toMatch(/uma sessão só/);
-    expect(section).toMatch(/todos\*\* os grupos ou blocos/);
-    expect(section).toMatch(/enquanto o reteste ainda não começou/);
+    const section = flow.slice(flow.indexOf('## Retest together'));
+    expect(section).toMatch(/a single session/);
+    expect(section).toMatch(/\*\*all\*\* the groups or blocks/);
+    expect(section).toMatch(/while the retest has not started yet/);
   });
 
   it('docs/PROCESS.md and the implementar-fila skill cite the round in groups and the retest together', () => {
     expect(claude).toContain('round-guide.mjs --grupos');
     expect(claude).toMatch(
-      /numa sessão só\*\* com os achados de todos os grupos ou blocos/,
+      /in a single session\*\* with the findings of all (?:the )?groups or blocks/,
     );
     expect(claude).toMatch(/grupo k de n/);
     expect(skill).toContain('round-guide.mjs --grupos');
     expect(skill).toMatch(
-      /numa sessão só\*\* com os achados de todos os grupos ou blocos/,
+      /in a single session\*\* with the findings of all (?:the )?groups or blocks/,
     );
   });
 });

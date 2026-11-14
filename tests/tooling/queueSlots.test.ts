@@ -180,6 +180,12 @@ describe('painel.py — vagas (VG1, #1440)', () => {
       expect(reason('docs/TESTING-NUVEM.md#blocos', 'docs/TESTING-NUVEM.md#blocos')).toBe(
         '#2 começa',
       );
+      expect(
+        reason(
+          'docs/TESTING-NUVEM.md#full-round-in-blocks',
+          'docs/TESTING-NUVEM.md#full-round-in-blocks',
+        ),
+      ).toBe('#2 começa');
       expect(reason('mcp/version.ts', 'mcp/version.ts')).toBe('#2 começa');
       expect(reason('changelog/a.md', 'changelog/a.md')).toBe('#2 começa');
       expect(reason('docs/design-system/a.md', 'docs/design-system/a.md')).toBe(
@@ -309,10 +315,10 @@ describe('implementar-fila and detalhar-backlog: slots, context and scripts (VG2
 
   it('"1. Start" and "In the new session" run start --paralelo N (decision 1.1)', () => {
     expect(between(queue, '## 2. Queue', '## 3. Per stage')).toContain(
-      'painel.py start <pasta> --paralelo N',
+      'painel.py start <folder> --paralelo N',
     );
-    expect(between(queue, '**In the new session**', '## End')).toContain(
-      'start <pasta> --paralelo N',
+    expect(between(queue, '**In the new session**', '## End')).toMatch(
+      /start <(folder|pasta)> --paralelo N/,
     );
   });
 
@@ -338,10 +344,10 @@ describe('implementar-fila and detalhar-backlog: slots, context and scripts (VG2
   it('"Panel" lists the new commands and the new lines of the show (decision 10)', () => {
     const panel = section(queue, '## Panel');
     for (const term of [
-      'start <pasta> --paralelo N',
+      'start <folder> --paralelo N',
       'hold=',
-      "merged <pasta> '#N'",
-      'context <pasta> <pct>',
+      "merged <folder> '#N'",
+      'context <folder> <pct>',
       'contexto:',
     ]) {
       expect(panel).toContain(term);
@@ -373,7 +379,7 @@ describe('implementar-fila and detalhar-backlog: slots, context and scripts (VG2
   it('detalhar-backlog compares the Toca em: per script (decision 11)', () => {
     const steps = between(detalhar, '3. Draft the whole plan', '5. Product decision');
     expect(steps).toContain('docs/TESTING.md#R12');
-    expect(steps).toContain('docs/TESTING-NUVEM.md#blocos');
+    expect(steps).toContain('docs/TESTING-NUVEM.md#full-round-in-blocks');
     expect(steps).toContain('file in common');
     expect(detalhar).toContain('mcp/version.ts');
   });
@@ -382,13 +388,13 @@ describe('implementar-fila and detalhar-backlog: slots, context and scripts (VG2
     const detail =
       processDoc.split('\n').find((l) => l.includes('**Detailing a stage:**')) ?? '';
     expect(detail).toContain('docs/TESTING.md#R12');
-    expect(detail).toContain('docs/TESTING-NUVEM.md#blocos');
+    expect(detail).toContain('docs/TESTING-NUVEM.md#full-round-in-blocks');
   });
 
   it('review findings: pause without clearing hold, lineage, context of the new session, closed dep and merged in the check', () => {
     const changes = section(queue, '## Queue changes during the run');
-    expect(changes).toContain('sem `hold`');
-    expect(changes).toContain('só nos `pausada pelo dono`');
+    expect(changes).toContain('has no `hold`');
+    expect(changes).toContain('only on the `pausada pelo dono`');
     const fallback = between(queue, '**Fallback checks:**', '**Red CI');
     expect(fallback).toContain('Lineage limit');
     expect(fallback).toContain('painel.py merged');

@@ -1,7 +1,7 @@
 // @vitest-environment node
-// Fase FC1 (etapa #1285): o painel da fila guarda a ficha de cada etapa (`plan`), as filhas que
-// devem aviso (`child`, `childAt`) e a conferência de reserva (`reserve`), e o `show` resume tudo
-// sem imprimir o JSON inteiro, para o coordenador não encher o contexto.
+// Phase FC1 (stage #1285): the queue panel keeps the ficha of each stage (`plan`), the child sessions
+// that owe a notice (`child`, `childAt`) and the fallback check (`reserve`), and the `show` summarizes
+// everything without printing the whole JSON, so the coordinator does not fill the context.
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -35,8 +35,8 @@ describe('painel.py (FC1)', () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  it('a linha guarda a ficha (plan) e o show de uma linha a imprime', () => {
-    run('row', dir, '#10', 'title=Etapa dez', 'plan=dep=nenhuma; fases=AB1:#11');
+  it('the row keeps the ficha (plan) and the show of one row prints it', () => {
+    run('row', dir, '#10', 'title=Stage ten', 'plan=dep=nenhuma; fases=AB1:#11');
     const queue = json('queue') as Array<Record<string, unknown>>;
     expect(queue[0]?.plan).toBe('dep=nenhuma; fases=AB1:#11');
     const out = run('show', dir, '#10');
@@ -44,7 +44,7 @@ describe('painel.py (FC1)', () => {
     expect(out).toContain('dep=nenhuma; fases=AB1:#11');
   });
 
-  it('child e childAt=now registram a filha; show lista só as atrasadas (mais de 30 min; decisão 5 da #1324)', () => {
+  it('child and childAt=now register the child; show lists only the overdue ones (more than 30 min; decision 5 of #1324)', () => {
     runAt(
       '2026-11-09T10:00:00Z',
       'row',
@@ -68,13 +68,13 @@ describe('painel.py (FC1)', () => {
     expect(out).not.toMatch(/atrasadas:[^\n]*#20/);
   });
 
-  it('atrasada é só a filha com mais de 30 min: 30 não conta, 31 conta (decisão 5 da #1324)', () => {
+  it('overdue is only a child with more than 30 min: 30 does not count, 31 does (decision 5 of #1324)', () => {
     runAt('2026-11-09T10:00:00Z', 'row', dir, '#10', 'child=session_a', 'childAt=now');
     expect(runAt('2026-11-09T10:30:00Z', 'show', dir)).toMatch(/atrasadas: nenhuma/);
     expect(runAt('2026-11-09T10:31:00Z', 'show', dir)).toMatch(/atrasadas:[^\n]*#10/);
   });
 
-  it('child= vazio limpa childAt e a etapa deixa de estar atrasada', () => {
+  it('an empty child= clears childAt and the stage stops being overdue', () => {
     runAt('2026-11-09T10:00:00Z', 'row', dir, '#10', 'child=session_a', 'childAt=now');
     run('row', dir, '#10', 'child=');
     const queue = json('queue') as Array<Record<string, unknown>>;
@@ -83,7 +83,7 @@ describe('painel.py (FC1)', () => {
     expect(out).toMatch(/atrasadas: nenhuma/);
   });
 
-  it('reserve guarda o id da conferência no meta e o show o mostra', () => {
+  it('reserve keeps the check id in the meta and the show displays it', () => {
     const changed = run('reserve', dir, 'trig_abc');
     expect(changed).toContain('meta.json');
     const meta = json('meta') as Array<Record<string, unknown>>;
@@ -91,19 +91,19 @@ describe('painel.py (FC1)', () => {
     expect(run('show', dir)).toContain('reserva: trig_abc');
   });
 
-  it('filha com wait não é atrasada e aparece em "esperando o coordenador" (RS1, decisão 5)', () => {
+  it('a child with wait is not overdue and appears in "esperando o coordenador" (RS1, decision 5)', () => {
     runAt('2026-11-09T10:00:00Z', 'row', dir, '#10', 'child=session_a', 'childAt=now');
-    runAt('2026-11-09T10:01:00Z', 'row', dir, '#10', 'wait=pergunta de produto');
+    runAt('2026-11-09T10:01:00Z', 'row', dir, '#10', 'wait=product question');
     const out = runAt('2026-11-09T12:00:00Z', 'show', dir);
     expect(out).toMatch(/atrasadas: nenhuma/);
-    expect(out).toMatch(/esperando o coordenador: #10 \(pergunta de produto\)/);
+    expect(out).toMatch(/esperando o coordenador: #10 \(product question\)/);
   });
 
-  it('sem filha esperando, o show diz "esperando o coordenador: nenhuma"', () => {
+  it('with no child waiting, the show says "esperando o coordenador: nenhuma"', () => {
     expect(run('show', dir)).toMatch(/esperando o coordenador: nenhuma/);
   });
 
-  it('wait= com childAt=now devolve a filha à contagem', () => {
+  it('wait= with childAt=now puts the child back in the count', () => {
     runAt(
       '2026-11-09T10:00:00Z',
       'row',
@@ -120,7 +120,7 @@ describe('painel.py (FC1)', () => {
     expect(out).toMatch(/esperando o coordenador: nenhuma/);
   });
 
-  it('trocar a filha (sessão recriada) sem passar wait também limpa o wait', () => {
+  it('switching the child (recreated session) without passing wait also clears the wait', () => {
     runAt(
       '2026-11-09T10:00:00Z',
       'row',
@@ -128,7 +128,7 @@ describe('painel.py (FC1)', () => {
       '#10',
       'child=session_a',
       'childAt=now',
-      'wait=pergunta',
+      'wait=question',
     );
     runAt('2026-11-09T10:05:00Z', 'row', dir, '#10', 'child=session_b', 'childAt=now');
     const queue = json('queue') as Array<Record<string, unknown>>;
@@ -136,7 +136,7 @@ describe('painel.py (FC1)', () => {
     expect(runAt('2026-11-09T10:40:00Z', 'show', dir)).toMatch(/atrasadas:[^\n]*#10/);
   });
 
-  it('child= vazio limpa o wait', () => {
+  it('an empty child= clears the wait', () => {
     runAt(
       '2026-11-09T10:00:00Z',
       'row',
@@ -144,7 +144,7 @@ describe('painel.py (FC1)', () => {
       '#10',
       'child=session_a',
       'childAt=now',
-      'wait=chama o dono',
+      'wait=call the owner',
     );
     run('row', dir, '#10', 'child=');
     const queue = json('queue') as Array<Record<string, unknown>>;
@@ -152,133 +152,133 @@ describe('painel.py (FC1)', () => {
     expect(run('show', dir)).toMatch(/esperando o coordenador: nenhuma/);
   });
 
-  it('childAt inválido é recusado', () => {
-    expect(() => run('row', dir, '#10', 'childAt=ontem')).toThrow();
+  it('an invalid childAt is refused', () => {
+    expect(() => run('row', dir, '#10', 'childAt=yesterday')).toThrow();
   });
 });
 
-// Etapa #1298 (FT1) e #1315 (FC2); a decisão 11 da #1322 (FS1) troca só o critério: skill grande troca de sessão.
-describe('implementar-fila: skill novo na main e troca de sessão (FT1, FC2)', () => {
+// Stage #1298 (FT1) and #1315 (FC2); decision 11 of #1322 (FS1) only changes the criterion: a large skill switches the session.
+describe('implementar-fila: new skill on main and session switch (FT1, FC2)', () => {
   const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
-  const troca = section(skill, '## Troca de sessão');
+  const switching = section(skill, '## Session switch');
   const CHECK =
     'git fetch -q origin main && git diff --quiet HEAD origin/main -- .claude/skills/implementar-fila/SKILL.md';
 
-  it('"Troca de sessão" manda dar pull e reler o SKILL.md inteiro (decisão 5; decisão 11 da #1322)', () => {
-    expect(troca).toContain(CHECK);
-    expect(troca).toContain('git pull -q --ff-only origin main');
-    expect(troca).toMatch(/releia o `SKILL.md` inteiro/);
-    expect(troca).not.toContain('mesmo abaixo de 60%');
-    expect(troca).not.toContain('skill atualizado na main');
+  it('"Session switch" says to pull and reread the whole SKILL.md (decision 5; decision 11 of #1322)', () => {
+    expect(switching).toContain(CHECK);
+    expect(switching).toContain('git pull -q --ff-only origin main');
+    expect(switching).toMatch(/reread the whole `SKILL.md`/);
+    expect(switching).not.toContain('even below 60%');
+    expect(switching).not.toContain('skill updated on main');
   });
 
-  it('a troca é por contexto acima de 35% ou por skill grande (decisão 6; decisão 11 da #1322)', () => {
-    expect(troca).toMatch(/Troca de sessão por contexto ou por skill grande/);
-    expect(troca).toMatch(/Acima de 35%/);
+  it('the switch is by context above 35% or by a large skill (decision 6; decision 11 of #1322)', () => {
+    expect(switching).toMatch(/Session switch for context or for a large skill/);
+    expect(switching).toMatch(/Above 35%/);
   });
 
-  it('antes de criar o sucessor confere lineage.depth + 2 > limit (decisão 7)', () => {
-    expect(troca).toContain('lineage.depth');
-    expect(troca).toContain('lineage.limit');
-    expect(troca).toContain('depth + 2 > limit');
-    expect(troca).toMatch(/aguardando o dono abrir a sessão nova da fila/);
+  it('before creating the successor it checks lineage.depth + 2 > limit (decision 7)', () => {
+    expect(switching).toContain('lineage.depth');
+    expect(switching).toContain('lineage.limit');
+    expect(switching).toContain('depth + 2 > limit');
+    expect(switching).toMatch(/aguardando o dono abrir a sessão nova da fila/);
   });
 
-  it('a conferência de reserva e o passo "Entre etapas" fazem a mesma conferência', () => {
-    const entre = between(skill, '7. **Entre etapas:**', '**Conferências de reserva:**');
-    expect(entre).toMatch(/skill mudou na `main`/);
-    const conferencia = between(skill, '**Conferências de reserva:**', '**CI vermelho');
-    expect(conferencia).toMatch(/skill mudou na `main`/);
+  it('the fallback check and the "Between stages" step do the same check', () => {
+    const between7 = between(skill, '7. **Between stages:**', '**Fallback checks:**');
+    expect(between7).toMatch(/skill changed on `main`/);
+    const check = between(skill, '**Fallback checks:**', '**Red CI');
+    expect(check).toMatch(/skill changed on `main`/);
   });
 });
 
-// Etapa #1315 (FC2): ajustes finos de contexto, arquivamento das sessões e espera por workflow.
-describe('implementar-fila: ajustes finos do coordenador (FC2)', () => {
+// Stage #1315 (FC2): context fine-tuning, archiving of the sessions and waiting for a workflow.
+describe('implementar-fila: coordinator fine-tuning (FC2)', () => {
   const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
   const flow = readFileSync('docs/FLOW.md', 'utf8');
   const detalhar = readFileSync('.claude/skills/detalhar-backlog/SKILL.md', 'utf8');
   const TITLES = [
-    'Para a sessão da fase',
-    'Fase de correção',
-    'Para o testador',
-    'Rodada dirigida em grupos',
-    'Reteste junto',
-    'Rodada completa em 5 blocos',
+    'For the phase session',
+    'Fix phase',
+    'For the tester',
+    'Directed round in groups',
+    'Retest together',
+    'Full round in 5 blocks',
   ];
 
-  it('lista os títulos exatos das mensagens do FLOW.md e o comando de leitura (decisão 2)', () => {
+  it('lists the exact titles of the FLOW.md messages and the read command (decision 2)', () => {
     for (const title of TITLES) {
       expect(skill).toContain(`"${title}"`);
       expect(flow).toMatch(new RegExp(`^## ${title}$`, 'm'));
     }
     expect(skill).toContain(
-      "awk '/^## <título>$/{f=1;print;next} /^## /{f=0} f' docs/FLOW.md",
+      "awk '/^## <title>$/{f=1;print;next} /^## /{f=0} f' docs/FLOW.md",
     );
-    expect(skill).toMatch(/nunca por `grep`/);
+    expect(skill).toMatch(/never by `grep`/);
   });
 
-  it('o painel é publicado uma vez por turno que gravou, mesmo com o subagente rodando (decisão 3 da #1532)', () => {
-    expect(skill).toMatch(/uma vez por turno, no fim/);
-    expect(skill).toMatch(/mesmo com o subagente do ciclo ainda rodando/);
-    expect(skill).toMatch(/só com os arquivos alterados/);
+  it('the panel is published once per turn that wrote, even with the subagent running (decision 3 of #1532)', () => {
+    expect(skill).toMatch(/once per turn, at the end/);
+    expect(skill).toMatch(/even with the cycle's subagent still running/);
+    expect(skill).toMatch(/only with the changed files/);
     expect(skill).toMatch(
-      /conferência de hora em hora sem atrasadas e sem arquivo não publicado não publica/i,
+      /The hourly check with no overdue ones and no unpublished file does not publish/i,
     );
-    expect(skill).not.toMatch(/Nunca há duas publicações no mesmo ciclo/);
+    expect(skill).not.toMatch(/There are never two publications in the same cycle/);
   });
 
-  it('o chat fica quase mudo (decisão 3)', () => {
-    expect(skill).toMatch(/O chat fica quase mudo/);
-    expect(skill).toMatch(/não escreve resumo/);
+  it('the chat stays almost silent (decision 3)', () => {
+    expect(skill).toMatch(/The chat stays almost silent/);
+    expect(skill).toMatch(/writes no summary/);
   });
 
-  it('um subagente por ciclo para as tarefas de GitHub (decisão 4)', () => {
-    expect(skill).toMatch(/Um subagente por ciclo/);
-    expect(skill).toMatch(/uma linha por tarefa/);
+  it('one subagent per cycle for the GitHub tasks (decision 4)', () => {
+    expect(skill).toMatch(/One subagent per cycle/);
+    expect(skill).toMatch(/one line per task/);
   });
 
-  it('arquiva cada filha ao terminar, registra as sessões e arquiva a anterior (decisão 8)', () => {
+  it('archives each child when it finishes, registers the sessions and archives the previous one (decision 8)', () => {
     expect(skill).toContain('archive_session');
-    expect(skill).toContain("painel.py session <pasta> '#n' <id>");
+    expect(skill).toContain("painel.py session <folder> '#n' <id>");
     expect(skill).toMatch(/<código> arquivada/);
-    expect(skill).toMatch(/não se arquiva/i);
+    expect(skill).toMatch(/not archived/i);
     expect(skill).toMatch(/arquiva a `anterior`/);
-    expect(skill).toMatch(/não arquiva a si mesmo/);
+    expect(skill).toMatch(/does not archive itself/);
   });
 
-  it('a espera por workflow segue a duração medida (decisão 10)', () => {
-    expect(skill).toMatch(/no mesmo ciclo do merge/);
-    expect(skill).toMatch(/job `release` pulado/);
-    expect(skill).toMatch(/5 min depois do merge/);
-    expect(skill).toMatch(/a cada 1 min/);
-    expect(skill).toMatch(/Não segure o merge de outro épico/);
+  it('the wait for a workflow follows the measured duration (decision 10)', () => {
+    expect(skill).toMatch(/in the same cycle as the merge/);
+    expect(skill).toMatch(/`release` job skipped/);
+    expect(skill).toMatch(/5 min after the merge/);
+    expect(skill).toMatch(/every 1 min/);
+    expect(skill).toMatch(/does not hold the next epic's merge/);
   });
 
-  it('a troca de rótulo manda a lista completa (decisão 11), no skill e no detalhar-backlog', () => {
+  it('the label swap sends the complete list (decision 11), in the skill and in detalhar-backlog', () => {
     for (const text of [skill, detalhar]) {
-      expect(text).toMatch(/substitui todos os rótulos/);
-      expect(text).toMatch(/lista completa/);
+      expect(text).toMatch(/replaces all the (issue's )?labels/);
+      expect(text).toMatch(/(complete|full) list/);
       expect(text).toMatch(/`severity:`/);
     }
   });
 
-  it('o detalhar-backlog arquiva cada subagente de detalhamento ou agrupamento (decisão 9)', () => {
+  it('detalhar-backlog archives each detailing or grouping subagent (decision 9)', () => {
     expect(detalhar).toContain('archive_session');
     expect(detalhar).toMatch(/arquiva/i);
-    expect(detalhar).toMatch(/resumo final/);
+    expect(detalhar).toMatch(/final summary/);
   });
 
-  it('o FLOW.md diz como fica a troca e o arquivamento', () => {
-    const linha = flow
+  it('FLOW.md says how the switch and the archiving work', () => {
+    const line = flow
       .split('\n')
-      .find((l) => l.startsWith('Para implementar em sequência'));
-    expect(linha).toMatch(/por contexto/);
-    expect(linha).toMatch(/limite de linhagem/);
-    expect(linha).toMatch(/arquivadas/);
+      .find((l) => l.startsWith('To implement all the `ready` ones in sequence'));
+    expect(line).toMatch(/by context/);
+    expect(line).toMatch(/lineage limit/);
+    expect(line).toMatch(/archived/);
   });
 });
 
-describe('painel.py: sessions por etapa (FC2, decisão 8)', () => {
+describe('painel.py: sessions per stage (FC2, decision 8)', () => {
   beforeEach(() => {
     dir = mkdtempSync(path.join(tmpdir(), 'painel-'));
     runAt('2026-11-09T10:00:00Z', 'init', dir);
@@ -288,8 +288,8 @@ describe('painel.py: sessions por etapa (FC2, decisão 8)', () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  it('session acrescenta o id em sessions sem repetir, e show da etapa o mostra', () => {
-    run('row', dir, '#10', 'title=Etapa dez');
+  it('session appends the id to sessions without repeating, and the stage show displays it', () => {
+    run('row', dir, '#10', 'title=Stage ten');
     run('session', dir, '#10', 'session_a');
     run('session', dir, '#10', 'session_b');
     const out = run('session', dir, '#10', 'session_a');
@@ -299,7 +299,7 @@ describe('painel.py: sessions por etapa (FC2, decisão 8)', () => {
     expect(run('show', dir, '#10')).toContain('sessions: session_a session_b');
   });
 
-  it('session numa etapa fora da fila é recusado', () => {
+  it('session on a stage outside the queue is refused', () => {
     expect(() => run('session', dir, '#99', 'session_a')).toThrow();
   });
 });

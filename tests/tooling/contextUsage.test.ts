@@ -393,8 +393,8 @@ describe('CM1 — flow texts that use the measure (decisions 5 to 10)', () => {
       '- Then check whether the skill',
     );
     expect(check).toContain('`node scripts/ci/contextUsage.mjs --max <max_tokens>`');
-    expect(check).toContain('`painel.py context <pasta> --medir --max <max_tokens>`');
-    expect(check).toContain('`painel.py context <pasta> <pct> --fonte get_session`');
+    expect(check).toContain('`painel.py context <folder> --medir --max <max_tokens>`');
+    expect(check).toContain('`painel.py context <folder> <pct> --fonte get_session`');
     expect(check).toContain('`pct`');
     expect(check).toContain('`used_tokens`');
   });

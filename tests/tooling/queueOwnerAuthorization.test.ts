@@ -1,10 +1,11 @@
 // @vitest-environment node
-// Fase AF1 (etapa #1602, decisões 1 a 4 e 11): a autorização do dono é perguntada no chat da fase,
-// com o aviso ao coordenador antes da pergunta, e todo aviso ao coordenador vai pelo `send_message`
-// do `claude-code-remote`. Teste só de texto (leitura do `docs/FLOW.md`).
-// Fase AF2 (decisões 4 a 9 e 14): o coordenador não repassa autorização, confere a pergunta da fase
-// parada contra a lista fechada e o painel separa "esperando o dono no chat da fase" de "esperando
-// o coordenador" (texto do skill `implementar-fila` e saída do `painel.py show`).
+// Phase AF1 (stage #1602, decisions 1 to 4 and 11): the owner's authorization is asked in the phase
+// chat, with the notice to the coordinator before the question, and every notice to the coordinator
+// goes through the `send_message` of `claude-code-remote`. Text-only test (reads `docs/FLOW.md`).
+// Phase AF2 (decisions 4 to 9 and 14): the coordinator does not relay authorization, checks the
+// stopped phase's question against the closed list, and the panel separates "esperando o dono no
+// chat da fase" from "esperando o coordenador" (text of the `implementar-fila` skill and output of
+// `painel.py show`).
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -13,29 +14,29 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { between, section } from '../support/textSlice';
 
 const flow = readFileSync('docs/FLOW.md', 'utf8');
-const fase = section(flow, '## Para a sessão da fase');
-const item6 = between(fase, '\n6. ', '\n7. ');
-const item7 = between(fase, '\n7. ', '\n8. ');
-const item8 = between(fase, '\n8. ', '\n9. ');
+const phase = section(flow, '## For the phase session');
+const item6 = between(phase, '\n6. ', '\n7. ');
+const item7 = between(phase, '\n7. ', '\n8. ');
+const item8 = between(phase, '\n8. ', '\n9. ');
 
-/** Texto de `start` (inclusive) até o fim de `text`; falta de âncora lança erro. */
+/** Text from `start` (inclusive) to the end of `text`; a missing anchor throws. */
 function tail(text: string, start: string): string {
   const from = text.indexOf(start);
-  if (from < 0) throw new Error(`âncora não achada: ${start}`);
+  if (from < 0) throw new Error(`anchor not found: ${start}`);
   return text.slice(from);
 }
 
-const autorizacaoDoDono = (): string => tail(item8, '   - **Autorização do dono:**');
+const ownerAuthorization = (): string => tail(item8, '   - **Owner authorization:**');
 
-describe('AF1 — autorização do dono no chat da fase (#1602)', () => {
-  it('a primeira linha do bloco abre a exceção do item 8', () => {
-    const primeira = between(fase, 'Você é o agente da fase', '\n');
-    expect(primeira).toContain('salvo a autorização do item 8');
+describe('AF1 — owner authorization in the phase chat (#1602)', () => {
+  it('the first line of the block opens the item 8 exception', () => {
+    const first = between(phase, 'Você é o agente da fase', '\n');
+    expect(first).toContain('except the item 8 authorization');
   });
 
-  it('o item 8 é uma lista com "Decisão de produto" e "Autorização do dono"', () => {
-    expect(item8).toContain('\n   - **Decisão de produto:**');
-    expect(item8).toContain('\n   - **Autorização do dono:**');
+  it('item 8 is a list with "Product decision" and "Owner authorization"', () => {
+    expect(item8).toContain('\n   - **Product decision:**');
+    expect(item8).toContain('\n   - **Owner authorization:**');
   });
 
   it('a lista fechada tem dois casos e manda o resto ao sub-item "Decisão de produto" (#1802, decisão 7)', () => {
