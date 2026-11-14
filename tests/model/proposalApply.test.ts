@@ -153,15 +153,15 @@ const scenarios: [string, () => [Project, Project]][] = [
       }),
     ],
   ],
-  ['imagem removida', () => [sampleProject(), removeContainer(sampleProject(), 'I1')]],
+  ['image removed', () => [sampleProject(), removeContainer(sampleProject(), 'I1')]],
   [
     'annotations: name, owner, pairs and removal with the linked ones',
     () => {
       const base = setAnnotationParent(sampleProject(), 'A2', 'A1');
       let after = renameAnnotation(base, 'A3', 'Latch');
       after = setAnnotationParent(after, 'A2', null);
-      after = addEntry(after, 'A2', { id: 'E7', key: 'lado', value: 'esquerdo' });
-      after = updateEntry(after, 'A2', 'E3', { key: 'tipo', value: 'risco' });
+      after = addEntry(after, 'A2', { id: 'E7', key: 'side', value: 'left' });
+      after = updateEntry(after, 'A2', 'E3', { key: 'kind', value: 'risk' });
       after = removeEntry(after, 'A2', 'E3');
       after = removeAnnotation(after, 'A4');
       return [base, after];
@@ -171,6 +171,7 @@ const scenarios: [string, () => [Project, Project]][] = [
     'typed annotation: values, table and reference',
     () => {
       const base = cadastroProject();
+      // pt-BR kept: shared fixture field keys and spec id (specFixtures.ts, other phase)
       let after = setFieldValue(base, 'AB', 'estilo', 'secondary');
       after = setFieldValue(after, 'AIN', 'dado', { annotationId: 'AU', entryId: 'EA' });
       after = setFieldValue(after, 'AT', 'conteudo', null);
@@ -304,7 +305,7 @@ describe('applying only the accepted ones', () => {
     });
     after = addAnnotation(after, { id: 'Y1', markingId: 'X1', layerId: 'L1' });
     after = addAnnotation(after, { id: 'Y2', markingId: 'X2', layerId: 'L1' });
-    after = renameMarking(after, 'M1', 'Porta dianteira');
+    after = renameMarking(after, 'M1', 'Front door');
     return [base, after];
   }
 
@@ -485,7 +486,7 @@ describe('applying only the accepted ones', () => {
     const after = renameMarking(
       renameMarking(base, 'M4', 'Lighthouse'),
       'M1',
-      'Porta dianteira',
+      'Front door',
     );
     let p = propose(base, after);
     p = decided(p, base, { level: 'image', id: 'I2' }, 'accepted');
@@ -504,7 +505,7 @@ describe('applying only the accepted ones', () => {
     p = decided(p, base, { level: 'image', id: 'T2' }, 'rejected');
     const preview = previewProject(base, p).project;
     expect(preview.containers.map((i) => i.id)).toEqual(['I1', 'I2', 'T1']);
-    expect(preview.markings.find((m) => m.id === 'M1')?.name).toBe('Porta dianteira');
+    expect(preview.markings.find((m) => m.id === 'M1')?.name).toBe('Front door');
   });
 });
 
@@ -532,6 +533,7 @@ describe('old proposal with a change on the removed code field (stage 9)', () =>
       entry,
       { _id: 'C2', platform: 'ios', path: 'B.swift' },
     ]);
+    // pt-BR kept: shared fixture field keys (codeProject in specFixtures.ts, other phase)
     after = setFieldValue(after, 'AS', 'rota', '/signup/new');
     const p = propose(v8, after);
     return { p, current: codeProject() };
@@ -540,10 +542,10 @@ describe('old proposal with a change on the removed code field (stage 9)', () =>
   it('the removed field\'s change shows up as a conflict and, when accepted, blocks as "does not fit"', () => {
     const { p, current } = oldProposal();
     const legacy = changeOf(p, 'annotation', 'AS', 'values.implementacao');
-    const rota = changeOf(p, 'annotation', 'AS', 'values.rota');
+    const route = changeOf(p, 'annotation', 'AS', 'values.rota');
     // The review builds the tree and the status of each change with no error.
     expect(reviewTree(p, current).changeIdsOf({ level: 'proposal', id: null })).toEqual(
-      expect.arrayContaining([legacy.id, rota.id]),
+      expect.arrayContaining([legacy.id, route.id]),
     );
     expect(changeStatus(p, legacy, current)).toMatchObject({
       conflict: true,

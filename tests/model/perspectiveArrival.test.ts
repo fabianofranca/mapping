@@ -252,7 +252,7 @@ describe('arriveInPrincipal', () => {
     expect(validateProject(third.project)).toEqual([]);
   });
 
-  it('a flutuante vai por rect, inteiro', () => {
+  it('a floating one goes by rect, integer', () => {
     let p = world();
     p = createMarking(p, {
       id: 'F',
@@ -291,7 +291,7 @@ describe('arriveInPrincipal', () => {
   });
 });
 
-describe('marca de chegada', () => {
+describe('arrival mark', () => {
   const from = perspective([['Y', 0, 0]]);
   const arrived = () =>
     arriveInPrincipal(withLinkedContainer(world(), 'Y', null), 'Y', from).project;

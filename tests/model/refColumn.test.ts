@@ -1,6 +1,6 @@
-// Coluna `ref` em `table` (ME4, decisão (e)): a lista de referências como dado. A célula guarda
-// uma referência, com o mesmo `accepts` de um campo `ref`; as pendências, a resolução, as
-// migrações da biblioteca e o texto das exibições tratam a célula como tratam o campo.
+// `ref` column in `table` (ME4, decision (e)): the list of references as data. The cell holds
+// a reference, with the same `accepts` as a `ref` field; the pending items, the resolution, the
+// library migrations and the text of the displays treat the cell as they treat the field.
 import { describe, expect, it } from 'vitest';
 import {
   addTableRow,
@@ -37,11 +37,11 @@ function expectCode(fn: () => unknown, code: string): void {
     expect((e as ModelError).code).toBe(code);
     return;
   }
-  throw new Error(`esperava o erro ${code}`);
+  throw new Error(`expected the error ${code}`);
 }
 
-describe('definir a célula', () => {
-  it('grava uma linha de tabela e uma tupla livre aceitas; null limpa', () => {
+describe('setting the cell', () => {
+  it('writes an accepted table row and free tuple; null clears', () => {
     let p = build();
     p = setTableCell(p, 'AL', 'alvos', 'L1', 'alvo', R1);
     expect(cell(p)).toEqual(R1);
@@ -54,23 +54,23 @@ describe('definir a célula', () => {
     expect(cell(p)).toBeNull();
   });
 
-  it('recusa valor que não é referência, alvo inexistente, alvo não aceito e a própria anotação', () => {
+  it('refuses a value that is not a reference, a nonexistent target, a target not accepted and the annotation itself', () => {
     const p = build();
     const set = (value: JsonValue) => () =>
       setTableCell(p, 'AL', 'alvos', 'L1', 'alvo', value);
-    expectCode(set('texto'), 'invalid-value');
-    // `{ annotationId }` é o quarto formato (anotação inteira): válido, mas a coluna não a aceita.
+    expectCode(set('text'), 'invalid-value');
+    // `{ annotationId }` is the fourth format (whole annotation): valid, but the column does not accept it.
     expectCode(set({ annotationId: 'AM' }), 'ref-not-accepted');
-    expectCode(set({ annotationId: 'NADA', key: 'x' }), 'ref-not-accepted');
-    // A tabela inteira não é um alvo (só as linhas dela).
+    expectCode(set({ annotationId: 'NONE', key: 'x' }), 'ref-not-accepted');
+    // The whole table is not a target (only its rows).
     expectCode(set({ annotationId: 'AM', key: 'campos' }), 'ref-not-accepted');
-    // Campo simples sem a etiqueta aceita.
+    // A plain field without the accepted tag.
     expectCode(set({ annotationId: 'AM', key: 'solto' }), 'ref-not-accepted');
-    // A própria anotação.
+    // The annotation itself.
     expectCode(set({ annotationId: 'AL', key: 'titulo' }), 'self-ref');
   });
 
-  it('as outras colunas continuam simples; ref numa linha nova começa vazia', () => {
+  it('the other columns stay simple; a ref in a new row starts empty', () => {
     let p = build();
     p = addTableRow(p, 'AL', 'alvos', 'L2');
     const row = (
@@ -82,15 +82,15 @@ describe('definir a célula', () => {
   });
 });
 
-describe('pendências', () => {
-  it('coluna ref obrigatória vazia é required-empty, com linha e coluna', () => {
+describe('pending items', () => {
+  it('an empty required ref column is required-empty, with row and column', () => {
     const p = build();
     expect(getAnnotationIssues(p, 'AL')).toEqual([
       { code: 'required-empty', key: 'alvos', rowId: 'L1', column: 'alvo' },
     ]);
   });
 
-  it('alvo que some é broken-ref; célula com formato errado é invalid-value', () => {
+  it('a target that vanishes is broken-ref; a cell with the wrong format is invalid-value', () => {
     let p = build();
     p = setTableCell(p, 'AL', 'alvos', 'L1', 'alvo', R1);
     expect(getAnnotationIssues(p, 'AL')).toEqual([]);
@@ -102,7 +102,7 @@ describe('pendências', () => {
       ...p,
       annotations: p.annotations.map((a) =>
         a.id === 'AL'
-          ? { ...a, values: { ...a.values, alvos: [{ _id: 'L1', alvo: 'texto' }] } }
+          ? { ...a, values: { ...a.values, alvos: [{ _id: 'L1', alvo: 'text' }] } }
           : a,
       ),
     };
@@ -111,19 +111,19 @@ describe('pendências', () => {
     ]);
   });
 
-  it('alvo que perdeu a etiqueta deixa de ser aceito (ref-not-accepted)', () => {
+  it('a target that lost the tag stops being accepted (ref-not-accepted)', () => {
     let p = build();
     p = setTableCell(p, 'AL', 'alvos', 'L1', 'alvo', R1);
-    // A coluna passa a aceitar só tuplas livres: a linha de tabela deixa de valer.
-    const lista = spec(1);
-    const col = lista.layers[1]!.annotationTypes[0]!.fields[1];
-    if (col?.type !== 'table') throw new Error('esperava table');
+    // The column now accepts only free tuples: the table row no longer holds.
+    const listSpec = spec(1);
+    const col = listSpec.layers[1]!.annotationTypes[0]!.fields[1];
+    if (col?.type !== 'table') throw new Error('expected table');
     const ref = col.columns[1];
-    if (ref?.type !== 'ref') throw new Error('esperava ref');
+    if (ref?.type !== 'ref') throw new Error('expected ref');
     ref.accepts = { free: true };
     const changed: Project = {
       ...p,
-      specializations: p.specializations.map((s) => ({ ...s, spec: lista })),
+      specializations: p.specializations.map((s) => ({ ...s, spec: listSpec })),
     };
     expect(getAnnotationIssues(changed, 'AL')).toEqual([
       { code: 'ref-not-accepted', key: 'alvos', rowId: 'L1', column: 'alvo' },
@@ -131,9 +131,10 @@ describe('pendências', () => {
   });
 });
 
-describe('resolução e alvos', () => {
-  it('o texto do alvo e a resolução são os de sempre', () => {
+describe('resolution and targets', () => {
+  it('the target text and the resolution are the usual ones', () => {
     const p = build();
+    // pt-BR kept: shared fixture data (refColumnFixtures) asserted by tests/components and tests/store
     expect(refLabel(p, R1)).toBe('Cliente.cpf');
     expect(resolveRef(p, R1)?.kind).toBe('row');
     expect(
@@ -141,7 +142,7 @@ describe('resolução e alvos', () => {
     ).toBe(true);
   });
 
-  it('refColumnOf acha a coluna ref e nega o resto', () => {
+  it('refColumnOf finds the ref column and denies the rest', () => {
     const p = build();
     expect(refColumnOf(p, 'AL', 'alvos', 'alvo')).toMatchObject({
       type: 'ref',
@@ -152,9 +153,10 @@ describe('resolução e alvos', () => {
     expect(refColumnOf(p, 'AM', 'campos', 'nome')).toBeNull();
   });
 
-  it('findCellRefTargets lista as linhas com a etiqueta e as tuplas livres, nunca a própria anotação', () => {
+  it('findCellRefTargets lists the rows with the tag and the free tuples, never the annotation itself', () => {
     const p = build();
     expect(findCellRefTargets(p, 'AL', 'alvos', 'alvo').map((t) => t.label)).toEqual([
+      // pt-BR kept: shared fixture data (refColumnFixtures) asserted by tests/components and tests/store
       'Cliente.cpf',
       'Cliente.nome',
       'Glossário.termo',
@@ -164,8 +166,8 @@ describe('resolução e alvos', () => {
   });
 });
 
-describe('refsOf, backlinks e referências quebradas', () => {
-  it('refsOf inclui a célula com a linha, a coluna e a posição; o campo ref segue como estava', () => {
+describe('refsOf, backlinks and broken references', () => {
+  it('refsOf includes the cell with the row, the column and the position; the ref field stays as it was', () => {
     let p = build();
     p = addTableRow(p, 'AL', 'alvos', 'L2');
     p = setTableCell(p, 'AL', 'alvos', 'L1', 'alvo', R1);
@@ -185,7 +187,7 @@ describe('refsOf, backlinks e referências quebradas', () => {
     expect(refPathText(refs[2]!)).toBe('principal');
   });
 
-  it('o alvo recebe o backlink da célula', () => {
+  it('the target receives the cell's backlink', () => {
     let p = build();
     p = setTableCell(p, 'AL', 'alvos', 'L1', 'alvo', R1);
     const links = getBacklinks(p, 'AM');
@@ -194,7 +196,7 @@ describe('refsOf, backlinks e referências quebradas', () => {
     expect(links[0]?.source.id).toBe('AL');
   });
 
-  it('apagar a linha alvo quebra a célula (contada para o diálogo)', () => {
+  it('deleting the target row breaks the cell (counted for the dialog)', () => {
     let p = build();
     p = setTableCell(p, 'AL', 'alvos', 'L1', 'alvo', R1);
     expect(refsBrokenBy(p, (x) => removeTableRow(x, 'AM', 'campos', 'R1'))).toBe(1);
@@ -202,7 +204,7 @@ describe('refsOf, backlinks e referências quebradas', () => {
     expect(countBrokenRefs(p, removeTableRow(p, 'AM', 'campos', 'R1'))).toBe(1);
   });
 
-  it('sem tipo, uma célula no formato de referência ainda conta', () => {
+  it('without a type, a cell in the reference format still counts', () => {
     let p = build();
     p = setTableCell(p, 'AL', 'alvos', 'L1', 'alvo', R1);
     const orphan: Project = {
@@ -220,8 +222,8 @@ describe('refsOf, backlinks e referências quebradas', () => {
   });
 });
 
-describe('exibição, conversão em texto e blueprint', () => {
-  it('a tabela mostra a célula como "→ alvo"; quebrada vira "→ (broken reference)" e alerta', () => {
+describe('display, conversion to text and blueprint', () => {
+  it('the table shows the cell as "→ target"; broken becomes "→ (broken reference)" and alerts', () => {
     let p = build();
     p = setTableCell(p, 'AL', 'alvos', 'L1', 'alvo', R1);
     const lines = typedDisplayLines(
@@ -238,6 +240,7 @@ describe('exibição, conversão em texto e blueprint', () => {
       alert: false,
       columns: [
         { key: 'nota', label: 'nota' },
+        // pt-BR kept: shared fixture data (refColumnFixtures) asserted by tests/components and tests/store
         { key: 'alvo', label: 'Alvo' },
       ],
       rows: [{ id: 'L1', cells: ['', '→ Cliente.cpf'] }],
@@ -256,81 +259,83 @@ describe('exibição, conversão em texto e blueprint', () => {
     });
   });
 
-  it('a conversão em anotação livre escreve a célula como "→ alvo"', () => {
+  it('the conversion to a free annotation writes the cell as "→ target"', () => {
     let p = build();
     p = setTableCell(p, 'AL', 'alvos', 'L1', 'alvo', E1);
-    p = setTableCell(p, 'AL', 'alvos', 'L1', 'nota', 'primeira');
+    p = setTableCell(p, 'AL', 'alvos', 'L1', 'nota', 'first');
     const pairs = typedValuesToPairs(
       p,
       p.annotations.find((a) => a.id === 'AL')!,
     );
-    expect(pairs).toContainEqual({ key: 'alvos[1].nota', value: 'primeira' });
+    expect(pairs).toContainEqual({ key: 'alvos[1].nota', value: 'first' });
+    // pt-BR kept: shared fixture data (refColumnFixtures) asserted by tests/components and tests/store
     expect(pairs).toContainEqual({ key: 'alvos[1].alvo', value: '→ Glossário.termo' });
   });
 
-  it('o blueprint do código entrega o rótulo do alvo na célula (quebrada: null)', () => {
+  it('the code blueprint delivers the target label in the cell (broken: null)', () => {
     let p = build();
     p = setTableCell(p, 'AL', 'alvos', 'L1', 'alvo', R1);
-    p = setTableCell(p, 'AL', 'alvos', 'L1', 'nota', 'primeira');
+    p = setTableCell(p, 'AL', 'alvos', 'L1', 'nota', 'first');
     const param = (project: Project) => {
       const node = codeBlueprint(project, 'M2', 'web').root;
       return node.annotations[0]?.params.find((x) => x.key === 'alvos');
     };
+    // pt-BR kept: shared fixture data (refColumnFixtures) asserted by tests/components and tests/store
     expect(param(p)).toMatchObject({
       name: 'destinos',
-      value: [{ nota: 'primeira', alvo: 'Cliente.cpf' }],
+      value: [{ nota: 'first', alvo: 'Cliente.cpf' }],
     });
     const broken = removeTableRow(p, 'AM', 'campos', 'R1');
-    expect(param(broken)?.value).toEqual([{ nota: 'primeira', alvo: null }]);
+    expect(param(broken)?.value).toEqual([{ nota: 'first', alvo: null }]);
   });
 });
 
-describe('migrações da biblioteca com a célula ref', () => {
-  const modeloFields = (raw: Raw) => raw.layers[0].annotationTypes[0].fields;
-  const alvosColumns = (raw: Raw) => raw.layers[1].annotationTypes[0].fields[1].columns;
+describe('library migrations with the ref cell', () => {
+  const modelFields = (raw: Raw) => raw.layers[0].annotationTypes[0].fields;
+  const targetsColumns = (raw: Raw) => raw.layers[1].annotationTypes[0].fields[1].columns;
   const migrations = (steps: Raw[]) => ({ migrations: [{ from: 1, to: 2, steps }] });
 
-  it('rename-field de uma tabela reescreve a chave nas referências de linha que estão em células', () => {
+  it('rename-field of a table rewrites the key in the row references that are in cells', () => {
     let p = build();
     p = setTableCell(p, 'AL', 'alvos', 'L1', 'alvo', R1);
     p = setFieldValue(p, 'AL', 'principal', R2);
     const next = spec(
       2,
       migrations([
-        { op: 'rename-field', type: 'modelo', from: 'campos', to: 'atributos' },
+        { op: 'rename-field', type: 'modelo', from: 'campos', to: 'attributes' },
       ]),
       (raw) => {
-        modeloFields(raw)[1].key = 'atributos';
+        modelFields(raw)[1].key = 'attributes';
       },
     );
     const run = runLibraryMigrations(p, next, 1);
     expect(run.steps[0]).toMatchObject({ refs: 2 });
-    const lista = run.project.annotations.find((a) => a.id === 'AL')!;
+    const listAnnotation = run.project.annotations.find((a) => a.id === 'AL')!;
     expect(cell(run.project)).toEqual({
       annotationId: 'AM',
-      key: 'atributos',
+      key: 'attributes',
       rowId: 'R1',
     });
-    expect(lista.values?.principal).toEqual({
+    expect(listAnnotation.values?.principal).toEqual({
       annotationId: 'AM',
-      key: 'atributos',
+      key: 'attributes',
       rowId: 'R2',
     });
-    // A outra coluna da mesma linha não muda.
-    const row = (lista.values?.alvos as Record<string, JsonValue>[])[0];
+    // The other column of the same row does not change.
+    const row = (listAnnotation.values?.alvos as Record<string, JsonValue>[])[0];
     expect(row?.nota).toBeNull();
   });
 
-  it('rename-field da coluna ref (alvos.alvo para alvos.destino) leva a referência junto, sem perda', () => {
+  it('rename-field of the ref column (alvos.alvo to alvos.destination) carries the reference along, without loss', () => {
     let p = build();
     p = setTableCell(p, 'AL', 'alvos', 'L1', 'alvo', R1);
     const next = spec(
       2,
       migrations([
-        { op: 'rename-field', type: 'lista', from: 'alvos.alvo', to: 'alvos.destino' },
+        { op: 'rename-field', type: 'lista', from: 'alvos.alvo', to: 'alvos.destination' },
       ]),
       (raw) => {
-        alvosColumns(raw)[1].key = 'destino';
+        targetsColumns(raw)[1].key = 'destination';
       },
     );
     const run = runLibraryMigrations(p, next, 1);
@@ -341,18 +346,18 @@ describe('migrações da biblioteca com a célula ref', () => {
         JsonValue
       >[]
     )[0];
-    expect(row?.destino).toEqual(R1);
+    expect(row?.destination).toEqual(R1);
     expect(row).not.toHaveProperty('alvo');
   });
 
-  it('remove-field da coluna ref perde a referência preenchida (e a conta)', () => {
+  it('remove-field of the ref column loses the filled reference (and counts it)', () => {
     let p = build();
     p = setTableCell(p, 'AL', 'alvos', 'L1', 'alvo', R1);
     const next = spec(
       2,
       migrations([{ op: 'remove-field', type: 'lista', field: 'alvos.alvo' }]),
       (raw) => {
-        alvosColumns(raw).splice(1, 1);
+        targetsColumns(raw).splice(1, 1);
       },
     );
     const run = runLibraryMigrations(p, next, 1);
@@ -367,7 +372,7 @@ describe('migrações da biblioteca com a célula ref', () => {
     ]);
   });
 
-  it('fill-field em coluna ref não é válido na especialização (a coluna ref não tem default)', () => {
+  it('fill-field on a ref column is not valid in the specialization (the ref column has no default)', () => {
     expect(() =>
       spec(
         2,
@@ -379,13 +384,13 @@ describe('migrações da biblioteca com a célula ref', () => {
   });
 });
 
-describe('valores do desenho (motor de componentes)', () => {
-  const lista = () => {
+describe('drawing values (component engine)', () => {
+  const listType = () => {
     const type = spec(1).layers[1]!.annotationTypes[0]!;
     return type;
   };
 
-  it('a tabela chega ao motor como linhas e a célula ref como o valor do alvo (a linha pelo rowLabel, a tupla livre pelo value)', () => {
+  it('the table reaches the engine as rows and the ref cell as the target's value (the row by rowLabel, the free tuple by value)', () => {
     let p = build();
     p = addTableRow(p, 'AL', 'alvos', 'L2');
     p = addTableRow(p, 'AL', 'alvos', 'L3');
@@ -395,7 +400,7 @@ describe('valores do desenho (motor de componentes)', () => {
     const { values, warnings } = drawingValues(
       p,
       p.annotations.find((a) => a.id === 'AL')!,
-      lista(),
+      listType(),
     );
     expect(values.alvos).toEqual([
       { nota: 'primeira', alvo: 'cpf' },
@@ -405,7 +410,7 @@ describe('valores do desenho (motor de componentes)', () => {
     expect(warnings).toEqual([]);
   });
 
-  it('célula quebrada vira null com o aviso "tabela[n].coluna"; o resto da tabela segue', () => {
+  it('a broken cell becomes null with the warning "table[n].column"; the rest of the table goes on', () => {
     let p = build();
     p = addTableRow(p, 'AL', 'alvos', 'L2');
     p = setTableCell(p, 'AL', 'alvos', 'L1', 'alvo', R1);
@@ -414,7 +419,7 @@ describe('valores do desenho (motor de componentes)', () => {
     const { values, warnings } = drawingValues(
       broken,
       broken.annotations.find((a) => a.id === 'AL')!,
-      lista(),
+      listType(),
     );
     expect(values.alvos).toEqual([
       { nota: null, alvo: null },

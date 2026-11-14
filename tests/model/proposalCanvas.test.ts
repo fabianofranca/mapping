@@ -75,7 +75,7 @@ describe('space change', () => {
     const p = propose(base, after);
     const accepted = decided(p, base, { level: 'item', id: 'M4' }, 'accepted');
     const result = applyAccepted(base, accepted, AT);
-    if (!result.ok) throw new Error('bloqueada');
+    if (!result.ok) throw new Error('blocked');
     const m4 = result.project.markings.find((m) => m.id === 'M4')!;
     expect(m4.containerId).toBeNull();
     expect(m4.parentId).toBeNull();
@@ -92,7 +92,7 @@ describe('space change', () => {
       'rejected',
     );
     const result = applyAccepted(base, p, AT);
-    if (!result.ok) throw new Error('bloqueada');
+    if (!result.ok) throw new Error('blocked');
     expect(result.project).toBe(base);
     expect(result.applied).toEqual([]);
   });
@@ -117,12 +117,12 @@ describe('space change', () => {
       'accepted',
     );
     const result = applyAccepted(base, accepted, AT);
-    if (!result.ok) throw new Error('bloqueada');
+    if (!result.ok) throw new Error('blocked');
     expect(result.project.markings.find((m) => m.id === 'M3')?.parentId).toBe('M1');
   });
 });
 
-describe('floating comparado', () => {
+describe('floating compared', () => {
   it('changing the floating state together with the space: `space` and `floating`', () => {
     const base = withCanvasMarking();
     const after = settleHierarchy({
@@ -139,7 +139,7 @@ describe('floating comparado', () => {
       decided(p, base, { level: 'item', id: 'C1' }, 'accepted'),
       AT,
     );
-    if (!result.ok) throw new Error('bloqueada');
+    if (!result.ok) throw new Error('blocked');
     expect(result.project.markings.find((m) => m.id === 'C1')?.floating).toBe(true);
     // A floating marking is nobody's parent.
     expect(result.project.containers.find((c) => c.id === 'I2')?.parentId).toBeNull();
@@ -283,7 +283,7 @@ describe('readable path in the proposal comparison', () => {
   });
 });
 
-describe('proposta antiga com `parentId`', () => {
+describe('old proposal with `parentId`', () => {
   it('the `parentId` change is discarded on read, with a warning', () => {
     const base = sampleProject();
     const p = propose(base, moveMarking(base, 'M4', 10, 10));

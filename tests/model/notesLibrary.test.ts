@@ -67,7 +67,7 @@ const project = () =>
     firstLayer: { id: 'L1', name: 'Layer 1', color: '#336699' },
   });
 
-describe('pacote libraries/notas', () => {
+describe('package libraries/notas', () => {
   it('index.ts lists every file in the folder except index.ts itself', () => {
     const onDisk = listDisk(ROOT)
       .filter((p) => p !== 'index.ts')

@@ -57,7 +57,7 @@ function shown(p: Project, id: string, perspectiveId = 'P') {
 }
 
 describe('reconciliation: root that leaves the project', () => {
-  it('a raiz apagada sai da perspectiva', () => {
+  it('the deleted root leaves the perspective', () => {
     const p = withPerspectives(
       multiProject(),
       persp([
@@ -76,7 +76,7 @@ describe('reconciliation: root that leaves the project', () => {
     expect(removeMarking(p, 'H').arrivals).toEqual([]);
   });
 
-  it('os filhos que viram raiz entram onde estavam na tela', () => {
+  it('the children that become roots enter where they were on screen', () => {
     // G (which surrounds A, B and C) leaves: A, B and C are left with no parent. G appears shifted by (1000, 500).
     const p = withPerspectives(
       multiProject(),
@@ -176,7 +176,7 @@ describe('reconciliation: arrival mark', () => {
   const arrival: Arrival = { root: 'H', from: 'P', fromName: 'Vista P' };
   const withMark = (): Project => ({ ...multiProject(), arrivals: [arrival] });
 
-  it('mover a raiz na Principal tira a marca', () => {
+  it('moving the root in the Main one removes the mark', () => {
     expect(moveMarking(withMark(), 'H', 10, 0).arrivals).toEqual([]);
     expect(moveItems(withMark(), [{ kind: 'marking', id: 'H' }], 0, 20).arrivals).toEqual(
       [],
@@ -255,7 +255,7 @@ describe('reconciliation: idempotence and cleanup', () => {
         ['D', 9, 9],
         ['H', 400.4, 1300],
       ],
-      ['L1', 'fantasma'],
+      ['L1', 'ghost'],
     );
     const clean = reconcilePerspective(p, p, dirty);
     expect(clean.items.map((i) => [i.root, i.x, i.y])).toEqual([

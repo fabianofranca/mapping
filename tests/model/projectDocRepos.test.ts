@@ -1,4 +1,4 @@
-// `projectDocRepos` (etapa #559, PD5): the document repositories of the applied specializations.
+// `projectDocRepos` (stage #559, PD5): the document repositories of the applied specializations.
 import { describe, expect, it } from 'vitest';
 import { applySpecialization, parseSpec, projectDocRepos } from '../../src/model';
 import { emptyProject } from './fixtures';

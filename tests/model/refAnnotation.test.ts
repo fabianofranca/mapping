@@ -1,5 +1,5 @@
-// `ref` para a anotação inteira (etapa #679, CF1): o quarto formato `{ annotationId }`, o alvo
-// aceito por `accepts.annotations`, o rótulo, as pendências e os leitores do valor.
+// `ref` to the whole annotation (stage #679, CF1): the fourth format `{ annotationId }`, the target
+// accepted by `accepts.annotations`, the label, the pending items and the value readers.
 import { describe, expect, it } from 'vitest';
 import {
   addAnnotation,
@@ -38,8 +38,8 @@ function code(fn: () => unknown): string {
   return 'ok';
 }
 
-describe('parseRefValue com a anotação inteira', () => {
-  it('{ annotationId } é o quarto formato; os três de hoje continuam; chave a mais é null', () => {
+describe('parseRefValue with the whole annotation', () => {
+  it('{ annotationId } is the fourth format; the three current ones stay; an extra key is null', () => {
     expect(parseRefValue({ annotationId: 'A' })).toEqual({ annotationId: 'A' });
     expect(parseRefValue({ annotationId: 'A', entryId: 'E' })).toEqual({
       annotationId: 'A',
@@ -61,8 +61,8 @@ describe('parseRefValue com a anotação inteira', () => {
   });
 });
 
-describe('resolveRef da anotação inteira', () => {
-  it('a anotação existe → alvo; sumiu → quebrada', () => {
+describe('resolveRef of the whole annotation', () => {
+  it('the annotation exists → target; vanished → broken', () => {
     const p = world();
     const target = resolveRef(p, ann('AM'));
     expect(target?.kind).toBe('annotation');
@@ -71,26 +71,27 @@ describe('resolveRef da anotação inteira', () => {
   });
 });
 
-describe('rótulo da instância', () => {
-  it('name; senão labelField; senão o nome do tipo; refTargetText dá o mesmo', () => {
+describe('instance label', () => {
+  it('name; otherwise labelField; otherwise the type name; refTargetText gives the same', () => {
     let p = world();
+    // pt-BR kept: shared fixture data (refAnnotationFixtures) asserted by tests/components and tests/ui
     expect(refLabel(p, ann('AM'))).toBe('Cliente'); // labelField
-    expect(refLabel(p, ann('AM2'))).toBe('Modelo'); // nome do tipo
-    expect(refLabel(p, ann('AV'))).toBe('Avulso'); // tipo sem labelField
+    expect(refLabel(p, ann('AM2'))).toBe('Modelo'); // type name
+    expect(refLabel(p, ann('AV'))).toBe('Avulso'); // type without labelField
     expect(refTargetText(p, ann('AM'))).toBe('Cliente');
     expect(refTargetText(p, ann('AM2'))).toBe('Modelo');
     expect(refTargetText(p, ann('AF'))).toBe('Glossário');
     p = {
       ...p,
-      annotations: p.annotations.map((a) => (a.id === 'AM' ? { ...a, name: 'Dono' } : a)),
+      annotations: p.annotations.map((a) => (a.id === 'AM' ? { ...a, name: 'Owner' } : a)),
     };
-    expect(refLabel(p, ann('AM'))).toBe('Dono');
-    expect(refTargetText(p, ann('AM'))).toBe('Dono');
+    expect(refLabel(p, ann('AM'))).toBe('Owner');
+    expect(refTargetText(p, ann('AM'))).toBe('Owner');
     expect(refLabel(removeAnnotation(p, 'AM'), ann('AM'))).toBe('(broken reference)');
     expect(refTargetText(removeAnnotation(p, 'AM'), ann('AM'))).toBeNull();
   });
 
-  it('anotação livre sem nome não tem texto de alvo', () => {
+  it('a free annotation without a name has no target text', () => {
     let p = world();
     p = addAnnotation(p, {
       id: 'AN',
@@ -103,37 +104,37 @@ describe('rótulo da instância', () => {
   });
 });
 
-describe('isRefAccepted com accepts.annotations', () => {
+describe('isRefAccepted with accepts.annotations', () => {
   const accepts = (p: Project, key: string) => {
-    const lista = p.specializations
+    const listType = p.specializations
       .find((s) => s.id === 'rc')!
       .spec!.layers.flatMap((l) => l.annotationTypes)
       .find((t) => t.id === 'lista')!;
-    const f = lista.fields.find((x) => x.key === key);
+    const f = listType.fields.find((x) => x.key === key);
     if (f?.type !== 'ref') throw new Error(key);
     return f.accepts;
   };
 
-  it('aceita o tipo coberto da mesma especialização', () => {
+  it('accepts the covered type of the same specialization', () => {
     const p = world();
     expect(isRefAccepted(p, 'AL', accepts(p, 'item'), ann('AM'))).toBe(true);
     expect(isRefAccepted(p, 'AL', accepts(p, 'item'), ann('AV'))).toBe(true);
     expect(isRefAccepted(p, 'AL', accepts(p, 'soAvulso'), ann('AV'))).toBe(true);
   });
 
-  it('recusa outro tipo, outra especialização, anotação livre e a própria origem', () => {
+  it('refuses another type, another specialization, a free annotation and the source itself', () => {
     const p = world();
     expect(isRefAccepted(p, 'AL', accepts(p, 'soAvulso'), ann('AM'))).toBe(false);
     expect(isRefAccepted(p, 'AL', accepts(p, 'item'), ann('AL2'))).toBe(false);
     expect(isRefAccepted(p, 'AL', accepts(p, 'item'), ann('AX'))).toBe(false);
     expect(isRefAccepted(p, 'AL', accepts(p, 'item'), ann('AF'))).toBe(false);
     expect(isRefAccepted(p, 'AL', accepts(p, 'item'), ann('AL'))).toBe(false);
-    expect(isRefAccepted(p, 'AL', accepts(p, 'item'), ann('NADA'))).toBe(false);
-    // Sem accepts.annotations, a anotação inteira não é alvo.
+    expect(isRefAccepted(p, 'AL', accepts(p, 'item'), ann('NONE'))).toBe(false);
+    // Without accepts.annotations, the whole annotation is not a target.
     expect(isRefAccepted(p, 'AL', { tags: ['data-field'] }, ann('AM'))).toBe(false);
   });
 
-  it('setFieldValue e setTableCell gravam o aceito e recusam o resto', () => {
+  it('setFieldValue and setTableCell write the accepted one and refuse the rest', () => {
     let p = world();
     p = setFieldValue(p, 'AL', 'item', ann('AM'));
     expect(p.annotations.find((a) => a.id === 'AL')?.values?.item).toEqual(ann('AM'));
@@ -149,11 +150,12 @@ describe('isRefAccepted com accepts.annotations', () => {
   });
 });
 
-describe('alvos do seletor', () => {
-  it('findRefTargets e findCellRefTargets listam as anotações aceitas, na ordem do projeto', () => {
+describe('picker targets', () => {
+  it('findRefTargets and findCellRefTargets list the accepted annotations, in project order', () => {
     const p = world();
     const targets = findRefTargets(p, 'AL', 'item');
     expect(targets.map((t) => [t.ref, t.label, t.annotation.id, t.tags])).toEqual([
+      // pt-BR kept: shared fixture data (refAnnotationFixtures) asserted by tests/components and tests/ui
       [ann('AM'), 'Cliente', 'AM', []],
       [ann('AM2'), 'Modelo', 'AM2', []],
       [ann('AV'), 'Avulso', 'AV', []],
@@ -162,7 +164,7 @@ describe('alvos do seletor', () => {
     expect(cells.map((t) => t.ref)).toEqual([ann('AM'), ann('AM2'), ann('AV')]);
   });
 
-  it('um campo com tags e annotations lista os dois tipos de alvo; a anotação sai uma vez', () => {
+  it('a field with tags and annotations lists both kinds of target; the annotation appears once', () => {
     const p = world();
     const refs = findRefTargets(p, 'AL', 'mix').map((t) => t.ref);
     expect(refs).toEqual([
@@ -176,26 +178,26 @@ describe('alvos do seletor', () => {
   });
 });
 
-/** As pendências de referência da anotação (o resto, como `required-empty`, não interessa). */
+/** The reference issues of the annotation (the rest, such as `required-empty`, does not matter). */
 const refIssues = (p: Project, id: string) =>
   getAnnotationIssues(p, id).filter(
     (i) => i.code === 'broken-ref' || i.code === 'ref-not-accepted',
   );
 
-describe('pendências', () => {
-  it('alvo apagado → broken-ref; tipo que deixou de ser aceito → ref-not-accepted', () => {
+describe('pending items', () => {
+  it('deleted target → broken-ref; type that stopped being accepted → ref-not-accepted', () => {
     let p = world();
     p = setFieldValue(p, 'AL', 'item', ann('AM'));
     expect(refIssues(p, 'AL')).toEqual([]);
     expect(refIssues(removeAnnotation(p, 'AM'), 'AL')).toEqual([
       { code: 'broken-ref', key: 'item' },
     ]);
-    // O campo passa a aceitar só `avulso`: o `modelo` apontado deixou de ser aceito.
+    // The field now accepts only `avulso`: the `modelo` it points to is no longer accepted.
     const narrowed = structuredClone(annotationSpec()) as unknown as Mutable;
-    const lista = narrowed.layers
+    const listType = narrowed.layers
       .find((l) => l.id === 'telas')!
       .annotationTypes.find((t) => t.id === 'lista')!;
-    const item = (lista.fields as { key: string; accepts?: unknown }[]).find(
+    const item = (listType.fields as { key: string; accepts?: unknown }[]).find(
       (f) => f.key === 'item',
     )!;
     item.accepts = { annotations: ['avulso'] };
@@ -208,7 +210,7 @@ describe('pendências', () => {
     expect(refIssues(q, 'AL')).toEqual([{ code: 'ref-not-accepted', key: 'item' }]);
   });
 
-  it('a célula também: apagar o alvo → broken-ref com a linha e a coluna', () => {
+  it('the cell too: deleting the target → broken-ref with the row and the column', () => {
     let p = world();
     p = addTableRow(p, 'AL', 'itens', 'I1');
     p = setTableCell(p, 'AL', 'itens', 'I1', 'alvo', ann('AV'));
@@ -219,8 +221,8 @@ describe('pendências', () => {
   });
 });
 
-describe('refsOf e getBacklinks', () => {
-  it('a origem lista o ref; a anotação-alvo lista a origem; entry/row/field não se confundem', () => {
+describe('refsOf and getBacklinks', () => {
+  it('the source lists the ref; the target annotation lists the source; entry/row/field are not confused', () => {
     let p = world();
     p = setFieldValue(p, 'AL', 'item', ann('AM'));
     p = setFieldValue(p, 'AL', 'mix', { annotationId: 'AM', key: 'campos', rowId: 'R1' });
@@ -245,8 +247,8 @@ describe('refsOf e getBacklinks', () => {
   });
 });
 
-describe('rótulos nas exibições e no repeat do componente', () => {
-  it('a célula resolvida pelo rótulo da instância; a quebrada vira null com aviso', () => {
+describe('labels in the displays and in the component's repeat', () => {
+  it('the cell resolved by the instance label; the broken one becomes null with a warning', () => {
     let p = world();
     p = addTableRow(p, 'AL', 'itens', 'I1');
     p = setTableCell(p, 'AL', 'itens', 'I1', 'alvo', ann('AM'));
@@ -257,6 +259,7 @@ describe('rótulos nas exibições e no repeat do componente', () => {
       .spec!.layers.flatMap((l) => l.annotationTypes)
       .find((t) => t.id === 'lista')!;
     const al = p.annotations.find((a) => a.id === 'AL')!;
+    // pt-BR kept: shared fixture data (refAnnotationFixtures) asserted by tests/components and tests/ui
     expect(drawingValues(p, al, type).values.itens).toEqual([
       { alvo: 'Cliente' },
       { alvo: 'Avulso' },
@@ -272,7 +275,7 @@ describe('rótulos nas exibições e no repeat do componente', () => {
   });
 });
 
-describe('migrações da biblioteca (decisão 9)', () => {
+describe('library migrations (decision 9)', () => {
   const withWholeRef = (): Project => {
     const p = world();
     return {
@@ -289,11 +292,11 @@ describe('migrações da biblioteca (decisão 9)', () => {
     return s as unknown as Spec;
   };
 
-  it('rename-field não mexe no { annotationId }', () => {
+  it('rename-field does not touch the { annotationId }', () => {
     const p = withWholeRef();
     const run = runLibraryMigrations(
       p,
-      next([{ op: 'rename-field', type: 'modelo', from: 'campos', to: 'atributos' }]),
+      next([{ op: 'rename-field', type: 'modelo', from: 'campos', to: 'attributes' }]),
       1,
     );
     expect(run.steps[0]).toMatchObject({ refs: 0 });
@@ -302,7 +305,7 @@ describe('migrações da biblioteca (decisão 9)', () => {
     );
   });
 
-  it('apagar o tipo do alvo apaga as anotações e o ref conta como quebrado', () => {
+  it('deleting the target's type deletes the annotations and the ref counts as broken', () => {
     const p = withWholeRef();
     const run = runLibraryMigrations(
       p,

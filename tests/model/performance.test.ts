@@ -139,7 +139,7 @@ describe('large project (20 images, 500 markings)', () => {
     expect(moved.ms).toBeLessThan(BUDGET_MS);
     const annotated = time(() =>
       addAnnotation(project, {
-        id: 'novo',
+        id: 'new',
         markingId: parent.id,
         layerId: 'L2',
         name: null,
@@ -352,8 +352,8 @@ describe('editing: growth and budget', () => {
   budgetIt('one edit with 10,000 markings in under 16 ms', BUDGET_OPTIONS, () => {
     const project = largeOf(10000);
     expect(project.markings).toHaveLength(10000);
-    expectBelow(medianEditMs(project, create), 16, 'criar');
-    expectBelow(medianEditMs(project, move), 16, 'mover');
+    expectBelow(medianEditMs(project, create), 16, 'create');
+    expectBelow(medianEditMs(project, move), 16, 'move');
   });
 
   // With perspectives the reconciliation runs on every edit: it looks only at what the edit touched (decision 6),
@@ -372,8 +372,8 @@ describe('editing: growth and budget', () => {
         buildPerspective(project, { id: 'P2', name: 'Empty', startFrom: 'empty' }),
       );
       expect(project.perspectives[0]?.items.length).toBeGreaterThan(100);
-      expectBelow(medianEditMs(project, create), 16, 'criar');
-      expectBelow(medianEditMs(project, move), 16, 'mover');
+      expectBelow(medianEditMs(project, create), 16, 'create');
+      expectBelow(medianEditMs(project, move), 16, 'move');
     },
   );
 });

@@ -58,8 +58,8 @@ describe('perspective name', () => {
   it('empty, repeated (case-insensitive, with spaces) or free', () => {
     const names = ['Flow', 'Screens'];
     expect(perspectiveNameIssue(names, '   ')).toBe('empty');
-    expect(perspectiveNameIssue(names, ' fluxo ')).toBe('taken');
-    expect(perspectiveNameIssue(names, 'Novo')).toBeNull();
+    expect(perspectiveNameIssue(names, ' flow ')).toBe('taken');
+    expect(perspectiveNameIssue(names, 'Fresh')).toBeNull();
   });
 
   it('renaming itself with only a different case is not a repeat', () => {
@@ -70,9 +70,9 @@ describe('perspective name', () => {
   it('the project version also checks the extra names (the "Only me" ones)', () => {
     const p = base();
     expect(projectPerspectiveNameIssue(p, 'screens')).toBe('taken');
-    expect(projectPerspectiveNameIssue(p, 'Meu', undefined, ['meu'])).toBe('taken');
+    expect(projectPerspectiveNameIssue(p, 'Mine', undefined, ['mine'])).toBe('taken');
     expect(projectPerspectiveNameIssue(p, 'Screens', 'Screens')).toBeNull();
-    expect(projectPerspectiveNameIssue(p, 'Novo', undefined, ['Meu'])).toBeNull();
+    expect(projectPerspectiveNameIssue(p, 'Fresh', undefined, ['Mine'])).toBeNull();
   });
 });
 
@@ -138,24 +138,24 @@ describe('buildPerspective: Start from', () => {
       id: 'N1',
       name: 'V',
       startFrom: null,
-      hiddenLayers: ['L1', 'fantasma'],
+      hiddenLayers: ['L1', 'ghost'],
     });
     expect(built.hiddenLayers).toEqual(['L1']);
   });
 });
 
 describe('project perspectives: add, rename, duplicate, delete', () => {
-  it('addPerspective acrescenta no fim e confere nome e id', () => {
+  it('addPerspective appends at the end and checks name and id', () => {
     const p = base();
     const next = addPerspective(p, persp('R', 'New'));
     expect(next.perspectives.map((x) => x.id)).toEqual(['P', 'Q', 'R']);
     expect(code(() => addPerspective(p, persp('R', '  ')))).toBe(
       'perspective-name-empty',
     );
-    expect(code(() => addPerspective(p, persp('R', 'fluxo')))).toBe(
+    expect(code(() => addPerspective(p, persp('R', 'flow')))).toBe(
       'perspective-name-taken',
     );
-    expect(code(() => addPerspective(p, persp('R', 'Meu'), ['MEU']))).toBe(
+    expect(code(() => addPerspective(p, persp('R', 'Mine'), ['MINE']))).toBe(
       'perspective-name-taken',
     );
     expect(code(() => addPerspective(p, persp('P', 'Outro')))).toBe('duplicate-id');
@@ -183,7 +183,7 @@ describe('project perspectives: add, rename, duplicate, delete', () => {
       hiddenLayers: ['L1'],
       items: [{ root: 'D', x: 1, y: 2 }],
     });
-    expect(code(() => duplicatePerspective(p, 'P', 'P2', 'fluxo'))).toBe(
+    expect(code(() => duplicatePerspective(p, 'P', 'P2', 'flow'))).toBe(
       'perspective-name-taken',
     );
     expect(code(() => duplicatePerspective(p, 'zzz', 'P2', 'X'))).toBe('not-found');
@@ -217,7 +217,7 @@ function linked(): Project {
   return createArrow(p, { id: 'ar', from: 'Xm', to: 'm2' });
 }
 
-describe('enviar para a perspectiva', () => {
+describe('send to the perspective', () => {
   it('enters by the same rule as the arrival: near the reference, with no mark', () => {
     const p: Project = {
       ...linked(),
@@ -275,7 +275,7 @@ describe('enviar para a perspectiva', () => {
   });
 });
 
-describe('tirar da perspectiva', () => {
+describe('remove from the perspective', () => {
   it('removes the root from the perspective and deletes nothing from the project', () => {
     const p = {
       ...base(),
@@ -298,7 +298,7 @@ describe('tirar da perspectiva', () => {
   });
 });
 
-describe('mover na perspectiva', () => {
+describe('move in the perspective', () => {
   const p = {
     ...base(),
     perspectives: [
@@ -344,12 +344,12 @@ describe('mover na perspectiva', () => {
   });
 });
 
-describe('camadas escondidas', () => {
+describe('hidden layers', () => {
   it("only layers that exist, without repeating, in the project's layer order", () => {
     const p = {
       ...addLayer(base(), { id: 'L2', name: 'Two', color: '#1E88E5' }),
     };
-    const next = setPerspectiveHiddenLayers(p, 'P', ['L2', 'fantasma', 'L1', 'L2']);
+    const next = setPerspectiveHiddenLayers(p, 'P', ['L2', 'ghost', 'L1', 'L2']);
     expect(next.perspectives[0]?.hiddenLayers).toEqual(['L1', 'L2']);
     expect(code(() => setPerspectiveHiddenLayers(p, 'zzz', []))).toBe('not-found');
   });

@@ -69,7 +69,7 @@ describe('placeFloatingNear', () => {
     }
   });
 
-  it('alvo inexistente falha', () => {
+  it('a nonexistent target fails', () => {
     expect(() =>
       placeFloatingNear(arrowBase(), { kind: 'container', id: 'zz' }, size),
     ).toThrow();

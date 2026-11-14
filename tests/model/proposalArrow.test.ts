@@ -153,7 +153,7 @@ describe('create-arrow and delete-arrow: the change computation', () => {
   });
 });
 
-describe('create-arrow e delete-arrow: a leitura', () => {
+describe('create-arrow and delete-arrow: reading', () => {
   const base = sampleProject();
   const created = () => propose(base, withArrows());
 
@@ -288,7 +288,7 @@ describe('create-arrow and delete-arrow: the review tree', () => {
     ]);
   });
 
-  it('o tipo do item seta: criada, removida', () => {
+  it('the arrow item's kind: created, removed', () => {
     const base = sampleProject();
     const created = propose(base, withArrows());
     expect(
@@ -365,7 +365,7 @@ describe('create-arrow and delete-arrow: dependencies between the changes', () =
   });
 });
 
-describe('create-arrow e delete-arrow: aplicar', () => {
+describe('create-arrow and delete-arrow: applying', () => {
   const allAccepted = (p: Proposal): Proposal => ({
     ...p,
     decisions: Object.fromEntries(

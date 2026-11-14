@@ -34,7 +34,7 @@ function withArrows(): Project {
   return p;
 }
 
-describe('rootPosition e rootFootprint', () => {
+describe('rootPosition and rootFootprint', () => {
   const p = arrowBase();
 
   it('container: the placement; canvas marking: the rect; container marking: placement + rect × scale', () => {
@@ -174,11 +174,11 @@ describe('perspectiveView: arrows (decision 7)', () => {
     expect(arrowShownIn(p, only, 'r1')).toBe(true);
     expect(arrowShownIn(p, only, 'r4')).toBe(false);
     expect(arrowShownIn(p, perspective(['G', 0, 0], ['H', 0, 0]), 'r4')).toBe(true);
-    expect(arrowShownIn(p, only, 'inexistente')).toBe(false);
+    expect(arrowShownIn(p, only, 'nonexistent')).toBe(false);
   });
 });
 
-describe('raiz de um item e contagem', () => {
+describe('root of an item and count', () => {
   const p = multiProjectAnnotated();
 
   it('perspectiveRootOf: the root of the container or marking; nonexistent is null', () => {

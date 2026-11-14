@@ -45,7 +45,7 @@ describe('projectIndex', () => {
     expect(index.specLayers.get(typeKey('sdui', 'componentes'))?.id).toBe('componentes');
   });
 
-  it('indexa as setas por id e sob a origem e o destino, na ordem do array', () => {
+  it('indexes the arrows by id and under the source and target, in array order', () => {
     let q = createArrow(p, { id: 'R1', from: 'MT', to: 'MN' });
     q = createArrow(q, { id: 'R2', from: 'MN', to: 'MT' });
     q = createArrow(q, { id: 'R3', from: 'MN', to: 'MF' });
@@ -64,7 +64,7 @@ describe('projectIndex', () => {
     expect(projectIndex(self).arrowsByMarking.get('MT')?.length).toBe(1);
   });
 
-  it('com ids repetidos, vale o primeiro (como find)', () => {
+  it('with repeated ids, the first one counts (like find)', () => {
     const [first, second] = p.markings;
     if (!first || !second) throw new Error('fixture');
     const dup: Project = { ...p, markings: [first, { ...second, id: first.id }] };

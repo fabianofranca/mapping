@@ -49,7 +49,7 @@ function errorsOf(data: unknown): string[] {
   return result.errors;
 }
 
-describe('formato da proposta', () => {
+describe('proposal format', () => {
   it('reads formatVersion 1, 2 and 3', () => {
     for (const formatVersion of [1, 2, 3]) {
       const result = parseProposal({ ...sample(), formatVersion });
@@ -72,27 +72,27 @@ describe('formato da proposta', () => {
 
   it('proposal file paths', () => {
     expect(proposalFilePath('8c1f')).toBe('proposals/8c1f/proposal.json');
-    expect(proposalImagePath('8c1f', 'images/tela.webp')).toBe(
-      'proposals/8c1f/images/tela.webp',
+    expect(proposalImagePath('8c1f', 'images/screen.webp')).toBe(
+      'proposals/8c1f/images/screen.webp',
     );
   });
 
   it.each<[string, (p: Json) => void, string]>([
     [
-      'format errado',
+      'wrong format',
       (p) => (p.format = 'mapping-spec'),
       'format: must be "mapping-proposal"',
     ],
     [
-      'formatVersion errado',
+      'wrong formatVersion',
       (p) => (p.formatVersion = 10),
       'formatVersion: must be 1, 2, 3, 4, 5, 6, 7, 8 or 9',
     ],
     ['id with a slash', (p) => (p.id = '../outside'), 'id: invalid id'],
     ['empty title', (p) => (p.title = '  '), 'title: cannot be empty'],
     ['invalid date', (p) => (p.createdAt = 'yesterday'), 'createdAt: invalid date'],
-    ['status desconhecido', (p) => (p.status = 'draft'), 'status: must be "open"'],
-    ['substitui a si mesma', (p) => (p.supersedes = p.id), 'supersedes: a proposal'],
+    ['unknown status', (p) => (p.status = 'draft'), 'status: must be "open"'],
+    ['supersedes itself', (p) => (p.supersedes = p.id), 'supersedes: a proposal'],
     ['invalid change kind', (p) => (p.changes[0].kind = 'move'), 'changes[0].kind:'],
     ['invalid entity', (p) => (p.changes[0].entity = 'screen'), 'changes[0].entity:'],
     [
@@ -107,9 +107,9 @@ describe('formato da proposta', () => {
     ],
     ['different entity id', (p) => (p.changes[0].to.id = 'M8'), 'changes[0].to.id:'],
     [
-      'campo desconhecido',
-      (p) => (p.changes[1].field = 'cor'),
-      'changes[1].field: "cor" is not a field of marking',
+      'unknown field',
+      (p) => (p.changes[1].field = 'color'),
+      'changes[1].field: "color" is not a field of marking',
     ],
     [
       'change with no field',
@@ -135,12 +135,12 @@ describe('formato da proposta', () => {
     ],
     ['invalid decision', (p) => (p.decisions.c1.state = 'maybe'), 'decisions.c1.state:'],
     [
-      'aplicada sem aceitar',
+      'applied without accepting',
       (p) => (p.applied.c1 = { at: AT }),
       'applied.c1: only an accepted change',
     ],
     [
-      'nota com id em proposta',
+      'note with an id on a proposal',
       (p) => (p.notes[0].target = { level: 'proposal', id: 'x' }),
       'notes[0].target.id: must be null',
     ],
@@ -254,7 +254,7 @@ describe('comparison with the proposal that replaces it', () => {
     const base = sampleProject();
     let a = renameMarking(base, 'M4', 'Lighthouse');
     a = setMarkingRect(a, 'M2', { x: 1200, y: 1200, width: 400, height: 300 });
-    a = renameMarking(a, 'M1', 'Porta dianteira');
+    a = renameMarking(a, 'M1', 'Front door');
     a = addContainer(a, { id: 'T1', file: 'images/t.png', width: 500, height: 500 });
     a = createMarking(a, {
       id: 'X1',

@@ -410,10 +410,10 @@ describe('M3 group B — secure-text-field', () => {
       { label: 'Password', style: 'outlined', supportingText: 'Help' },
       { width: 280, height: 84 },
     );
-    const outline = named(empty.light.root, 'contorno');
-    expect(outline?.height).toBe(56);
-    expect(outline?.type === 'rect' && outline.cornerRadius).toBe(4);
-    expect(strokeColor(outline)).toBe('#79747E');
+    const emptyOutline = named(empty.light.root, 'contorno');
+    expect(emptyOutline?.height).toBe(56);
+    expect(emptyOutline?.type === 'rect' && emptyOutline.cornerRadius).toBe(4);
+    expect(strokeColor(emptyOutline)).toBe('#79747E');
     expect(strokeColor(named(empty.dark.root, 'contorno'))).toBe('#938F99');
     const off = draw('secure-text-field', {
       label: 'Password',

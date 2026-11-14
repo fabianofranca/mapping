@@ -52,7 +52,7 @@ describe('projectIndex: roots', () => {
     expect(container?.markings.map((m) => m.id)).toEqual(['e1']);
   });
 
-  it('toda raiz tem grupo, inclusive a sozinha', () => {
+  it('every root has a group, including a lone one', () => {
     expect(index.rootMembers.get('D')?.containers.map((c) => c.id)).toEqual(['D']);
     expect(index.rootMembers.get('D')?.markings).toEqual([]);
     expect(index.rootMembers.get('N')?.markings.map((m) => m.id)).toEqual(['N']);

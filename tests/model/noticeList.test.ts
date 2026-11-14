@@ -51,7 +51,7 @@ describe('buildNoticeList', () => {
     expect(groups[2]!.rows[0]?.value).toEqual(['onTap']);
   });
 
-  it('filtra por kind', () => {
+  it('filters by kind', () => {
     const groups = buildNoticeList(noticeProject(), { kind: 'deprecated' });
     expect(groups.map((g) => g.usage.notice.kind)).toEqual(['deprecated']);
   });
@@ -79,6 +79,7 @@ describe('buildNoticeList', () => {
     const p = addTypedAnnotation(noticeProject(), {
       id: 'AA2',
       markingId: 'M1',
+      // pt-BR kept: shared fixture data (noticeFixtures) asserted by tests/components
       layerId: layerOf(noticeProject(), 'avisos', 'componentes'),
       type: { specId: 'avisos', typeId: 'alert' },
       parentAnnotationId: null,

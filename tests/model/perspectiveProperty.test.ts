@@ -241,7 +241,7 @@ function problems(p: Project): string[] {
     for (const item of x.items) {
       if (index.rootOf.get(item.root) !== item.root)
         out.push(`${x.id}: ${item.root} is not a root`);
-      if (seen.has(item.root)) out.push(`${x.id}: ${item.root} repetida`);
+      if (seen.has(item.root)) out.push(`${x.id}: ${item.root} repeated`);
       seen.add(item.root);
       if (!Number.isFinite(item.x) || !Number.isFinite(item.y))
         out.push('invalid position');
@@ -253,14 +253,14 @@ function problems(p: Project): string[] {
       }
     }
     for (const layer of x.hiddenLayers) {
-      if (!index.layers.has(layer)) out.push(`${x.id}: camada ${layer} inexistente`);
+      if (!index.layers.has(layer)) out.push(`${x.id}: layer ${layer} does not exist`);
     }
     out.push(...viewProblems(p, x));
   }
   const arrived = new Set<string>();
   for (const a of p.arrivals) {
     if (index.rootOf.get(a.root) !== a.root) out.push(`arrival ${a.root} is not a root`);
-    if (arrived.has(a.root)) out.push(`chegada ${a.root} repetida`);
+    if (arrived.has(a.root)) out.push(`arrival ${a.root} repeated`);
     arrived.add(a.root);
   }
   return out;
@@ -273,11 +273,11 @@ function viewProblems(p: Project, x: Perspective): string[] {
   const markings = new Set(view.markings.map((m) => m.id));
   for (const item of x.items) {
     if (!containers.has(item.root) && !markings.has(item.root))
-      out.push(`vista sem ${item.root}`);
+      out.push(`view without ${item.root}`);
   }
   for (const a of view.arrows) {
     if (!markings.has(a.from) || !markings.has(a.to))
-      out.push(`seta ${a.id} sem ponta na vista`);
+      out.push(`arrow ${a.id} with no end in the view`);
   }
   for (const m of view.markings) {
     if (m.containerId === null && !Object.values(m.rect).every(Number.isInteger)) {
@@ -312,7 +312,7 @@ describe('perspectives: property over sequences of operations', () => {
       const issues = validateProject(p);
       if (issues.length > 0 || problems(p).length > 0) {
         throw new Error(
-          `passo ${step}: ${JSON.stringify(issues.slice(0, 3))} ${problems(p).slice(0, 3).join('; ')}`,
+          `step ${step}: ${JSON.stringify(issues.slice(0, 3))} ${problems(p).slice(0, 3).join('; ')}`,
         );
       }
       expect(reconcilePerspectives(p, p)).toBe(p);

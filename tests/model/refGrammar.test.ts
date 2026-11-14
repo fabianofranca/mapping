@@ -20,23 +20,23 @@ const item = (kind: 'm' | 'i' | 'a' | 'p' | 'l' | 'c', code: string): AnyRef => 
   code,
 });
 
-describe('gramática da referência: item', () => {
-  it.each(['m', 'i', 'a', 'p', 'l', 'c'] as const)('formata e lê %s', (kind) => {
-    const url = formatAnyRef('Meu projeto', item(kind, '3f2a9c1e'));
-    expect(url).toBe(`mapping://Meu%20projeto/${kind}/3f2a9c1e`);
+describe('reference grammar: item', () => {
+  it.each(['m', 'i', 'a', 'p', 'l', 'c'] as const)('formats and reads %s', (kind) => {
+    const url = formatAnyRef('My project', item(kind, '3f2a9c1e'));
+    expect(url).toBe(`mapping://My%20project/${kind}/3f2a9c1e`);
     expect(parseAnyRef(url)).toEqual({
-      project: 'Meu projeto',
+      project: 'My project',
       ref: item(kind, '3f2a9c1e'),
     });
   });
 
-  it('o formato de m/i/a é o mesmo de formatRef', () => {
+  it('the format of m/i/a is the same as formatRef', () => {
     expect(formatAnyRef('proj', item('a', 'abc123'))).toBe(
       formatRef({ project: 'proj', kind: 'a', code: 'abc123' }),
     );
   });
 
-  it('forma curta: projeto nulo', () => {
+  it('short form: null project', () => {
     expect(parseAnyRef('l/abcd1234')).toEqual({
       project: null,
       ref: item('l', 'abcd1234'),
@@ -51,7 +51,7 @@ describe('gramática da referência: item', () => {
     });
   });
 
-  it('p, l e c aceitam ponto e sublinhado no código, sem alterá-lo', () => {
+  it('p, l and c accept dot and underscore in the code, without altering it', () => {
     expect(parseAnyRef('mapping://proj/p/Prop_1.v2-x')).toEqual({
       project: 'proj',
       ref: item('p', 'Prop_1.v2-x'),
@@ -59,13 +59,13 @@ describe('gramática da referência: item', () => {
     expect(parseAnyRef('c/A.b_c')?.ref).toEqual(item('c', 'A.b_c'));
   });
 
-  it('m, i e a normalizam o código como parseRef e não aceitam ponto', () => {
+  it('m, i and a normalize the code like parseRef and do not accept a dot', () => {
     expect(parseAnyRef('mapping://proj/m/3F2A-9C1E')?.ref).toEqual(item('m', '3f2a9c1e'));
     expect(parseAnyRef('m/ab.cd')).toBeNull();
     expect(parseAnyRef('mapping://proj/i/ab_cd')).toBeNull();
   });
 
-  it('m, i e a leem igual a parseRef', () => {
+  it('m, i and a read the same as parseRef', () => {
     for (const text of [
       'mapping://proj/m/3f2a9c1e',
       'i/ABCD-1234',
@@ -78,20 +78,21 @@ describe('gramática da referência: item', () => {
     }
   });
 
-  it('projeto com acento e símbolos faz o round-trip', () => {
+  it('a project with accents and symbols round-trips', () => {
+    // pt-BR kept: accented characters are the object of the round-trip test
     const name = "Café (v2)! a/b 100%'";
     const url = formatAnyRef(name, item('c', 'abc'));
     expect(url).not.toMatch(/[ ()!'%](?![0-9A-F]{2})/);
     expect(parseAnyRef(url)?.project).toBe(name);
   });
 
-  it('aceita espaço nas pontas do texto colado', () => {
+  it('accepts whitespace at the ends of the pasted text', () => {
     expect(parseAnyRef('  c/abc  ')?.ref).toEqual(item('c', 'abc'));
   });
 });
 
-describe('gramática da referência: campo, par e linha', () => {
-  it('campo tipado: a key é codificada e decodificada', () => {
+describe('reference grammar: field, pair and row', () => {
+  it('typed field: the key is encoded and decoded', () => {
     const key = 'a b/c%d';
     const url = formatSubRef('proj', { type: 'field', annotation: '3f2a9c1e', key });
     expect(url).toBe('mapping://proj/a/3f2a9c1e/f/a%20b%2Fc%25d');
@@ -101,41 +102,42 @@ describe('gramática da referência: campo, par e linha', () => {
     });
   });
 
-  it('campo com acentos e símbolos', () => {
+  it('field with accents and symbols', () => {
+    // pt-BR kept: accented characters are the object of the round-trip test
     const key = "variação (útil)! 'x' *";
     const ref: AnyRef = { type: 'field', annotation: 'abc123', key };
-    const url = formatAnyRef('Mapeamento ç', ref);
+    const url = formatAnyRef('Mapping ç', ref);
     expect(url).toMatch(
-      /^mapping:\/\/Mapeamento%20%C3%A7\/a\/abc123\/f\/[A-Za-z0-9%._~-]+$/,
+      /^mapping:\/\/Mapping%20%C3%A7\/a\/abc123\/f\/[A-Za-z0-9%._~-]+$/,
     );
-    expect(parseAnyRef(url)).toEqual({ project: 'Mapeamento ç', ref });
+    expect(parseAnyRef(url)).toEqual({ project: 'Mapping ç', ref });
   });
 
-  it('par da anotação livre', () => {
+  it('pair of a free annotation', () => {
     const ref: AnyRef = { type: 'entry', annotation: 'abc123', entry: 'e5f6a7b8' };
     const url = formatAnyRef('proj', ref);
     expect(url).toBe('mapping://proj/a/abc123/e/e5f6a7b8');
     expect(parseAnyRef(url)).toEqual({ project: 'proj', ref });
   });
 
-  it('linha de table', () => {
+  it('table row', () => {
     const ref: AnyRef = {
       type: 'row',
       annotation: 'abc123',
-      key: 'Colunas 1',
+      key: 'Columns 1',
       row: 'r0ab12',
     };
     const url = formatAnyRef('proj', ref);
-    expect(url).toBe('mapping://proj/a/abc123/f/Colunas%201/r/r0ab12');
+    expect(url).toBe('mapping://proj/a/abc123/f/Columns%201/r/r0ab12');
     expect(parseAnyRef(url)).toEqual({ project: 'proj', ref });
   });
 
-  it('formatSubRef e formatAnyRef dão o mesmo texto', () => {
+  it('formatSubRef and formatAnyRef give the same text', () => {
     const ref = { type: 'row', annotation: 'a1', key: 'k', row: 'r1' } as const;
     expect(formatSubRef('p', ref)).toBe(formatAnyRef('p', ref));
   });
 
-  it('formas curtas, com projeto nulo', () => {
+  it('short forms, with a null project', () => {
     expect(parseAnyRef('a/abc/f/x%20y')).toEqual({
       project: null,
       ref: { type: 'field', annotation: 'abc', key: 'x y' },
@@ -150,7 +152,7 @@ describe('gramática da referência: campo, par e linha', () => {
     });
   });
 
-  it('o código da anotação é normalizado como o de parseRef', () => {
+  it('the annotation code is normalized like the one of parseRef', () => {
     expect(parseAnyRef('a/AB-CD/f/k')?.ref).toEqual({
       type: 'field',
       annotation: 'abcd',
@@ -159,7 +161,7 @@ describe('gramática da referência: campo, par e linha', () => {
   });
 });
 
-describe('gramática da referência: leitura estrita', () => {
+describe('reference grammar: strict reading', () => {
   const invalid = [
     '',
     '   ',
@@ -168,26 +170,26 @@ describe('gramática da referência: leitura estrita', () => {
     'mapping://proj/',
     'mapping://proj/m',
     'mapping://proj/m/',
-    'mapping://proj/m/abc/x', // sufixo
+    'mapping://proj/m/abc/x', // suffix
     'mapping://proj/m/abc/',
     'mapping://proj/m/abc?q=1',
     'mapping://proj/m/abc#h',
     'mapping://proj/m/ab c',
     'mapping://proj/m/abc d',
     'mapping://pr oj/m/abc',
-    'mapping://proj/x/abc', // letra desconhecida
+    'mapping://proj/x/abc', // unknown letter
     'mapping://proj/M/abc',
-    'mapping://proj//m/abc', // segmento vazio
+    'mapping://proj//m/abc', // empty segment
     'mapping://proj/m//abc',
     'mapping:///m/abc',
-    'mapping://proj/c/abc/f/k', // f só depois de a
-    'mapping://proj/a/abc/f', // campo vazio
+    'mapping://proj/c/abc/f/k', // f only after a
+    'mapping://proj/a/abc/f', // empty field
     'mapping://proj/a/abc/f/',
     'mapping://proj/a/abc/e',
     'mapping://proj/a/abc/e/',
-    'mapping://proj/a/abc/f/k/r', // linha vazia
+    'mapping://proj/a/abc/f/k/r', // empty row
     'mapping://proj/a/abc/f/k/r/',
-    'mapping://proj/a/abc/e/x/r/y', // r só depois de f
+    'mapping://proj/a/abc/e/x/r/y', // r only after f
     'mapping://proj/a/abc/e/x/extra',
     'mapping://proj/a/abc/f/k/r/x/extra',
     'mapping://proj/a/abc/f/k/q/x',
@@ -195,9 +197,9 @@ describe('gramática da referência: leitura estrita', () => {
     'mapping://proj/a/abc/f/k?x',
     'mapping://proj/a/abc/f/k#x',
     'mapping://proj/a/abc/f/a b',
-    'mapping://proj/a/abc/f/a%ZZ', // % inválido
+    'mapping://proj/a/abc/f/a%ZZ', // invalid %
     'mapping://proj/a/abc/f/%',
-    'mapping://proj/a/abc/f/%C3', // UTF-8 truncado
+    'mapping://proj/a/abc/f/%C3', // truncated UTF-8
     'mapping://%ZZ/a/abc',
     'mapping://proj/a/abc/e/a b',
     'a/abc/f/k/x',
@@ -210,27 +212,28 @@ describe('gramática da referência: leitura estrita', () => {
     'x/abc',
     'p/ab c',
     'p/ab/c',
-    'abc', // código solto não é referência desta gramática
-    'mapping://proj/m/abc\nmais',
+    'abc', // a loose code is not a reference of this grammar
+    'mapping://proj/m/abc
+more',
   ];
-  it.each(invalid)('recusa %j', (text) => {
+  it.each(invalid)('refuses %j', (text) => {
     expect(parseAnyRef(text)).toBeNull();
   });
 });
 
-describe('gramática da referência: links da biblioteca', () => {
-  it('mapping://<typeId>, mapping://<specId>/<typeId> e afins não casam', () => {
+describe('reference grammar: library links', () => {
+  it('mapping://<typeId>, mapping://<specId>/<typeId> and the like do not match', () => {
     expect(parseAnyRef('mapping://typeId')).toBeNull();
     expect(parseAnyRef('mapping://spec/type')).toBeNull();
     expect(parseAnyRef('mapping://spec/Button')).toBeNull();
-    expect(parseAnyRef('mapping://projeto/x/abc')).toBeNull();
-    expect(parseAnyRef('mapping://spec/a')).toBeNull(); // typeId de uma letra, sem código
+    expect(parseAnyRef('mapping://project/x/abc')).toBeNull();
+    expect(parseAnyRef('mapping://spec/a')).toBeNull(); // one-letter typeId, without a code
     expect(parseAnyRef('mapping://spec/type/extra')).toBeNull();
   });
 });
 
-describe('códigos curtos de camada e conversa', () => {
-  it('layerShortCodes usa shortCodesFor sobre os ids das camadas', () => {
+describe('short codes of layer and thread', () => {
+  it('layerShortCodes uses shortCodesFor over the layer ids', () => {
     const p = {
       ...emptyProject(),
       layers: [
@@ -250,15 +253,15 @@ describe('códigos curtos de camada e conversa', () => {
     };
     const codes = layerShortCodes(p);
     expect(codes).toEqual(shortCodesFor(p.layers.map((l) => l.id)));
-    expect(layerShortCodes(p)).toBe(codes); // memoizado por projeto
+    expect(layerShortCodes(p)).toBe(codes); // memoized per project
     expect(layerShortCode(p, p.layers[0]!.id)).toBe('3f2a9c1e');
-    expect(() => layerShortCode(p, 'nada')).toThrow();
+    expect(() => layerShortCode(p, 'nothing')).toThrow();
     expect(matchLayerCode(p, '9a8b')).toEqual([p.layers[1]!.id]);
     expect(matchLayerCode(p, '')).toEqual([]);
     expect(matchLayerCode(p, 'zzzz')).toEqual([]);
   });
 
-  it('threadShortCodes é único entre as conversas', () => {
+  it('threadShortCodes is unique among the threads', () => {
     const a = '3f2a9c1e-aaaa-4000-8000-000000000001';
     const b = '3f2a9c1e-aaaa-4000-8000-000000000002';
     const codes = threadShortCodes([a, b, 'zzz-0000-1111']);
