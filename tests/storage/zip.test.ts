@@ -18,8 +18,8 @@ async function blobText(blob: Blob | undefined): Promise<string | undefined> {
   return blob?.text();
 }
 
-describe('zip do projeto', () => {
-  it('round-trip: mapping idêntico e imagens preservadas', async () => {
+describe('project zip', () => {
+  it('round-trip: identical mapping and preserved images', async () => {
     const mapping = serialize(sampleProject());
     const images = new Map([
       ['images/lateral.jpg', new Blob(['LATERAL'], { type: 'image/jpeg' })],
@@ -47,7 +47,7 @@ describe('zip do projeto', () => {
     expect(read.files.specs).toEqual(specs);
   });
 
-  it('round-trip v16: SDUI v5 (com repo) e Modelo de dados v1 juntos, com platformRepos', async () => {
+  it('round-trip v16: SDUI v5 (with repo) and Data model v1 together, with platformRepos', async () => {
     const project = codeProject();
     const mapping = serialize(project);
     const images = new Map([
@@ -82,9 +82,9 @@ describe('zip do projeto', () => {
 
     const data = JSON.parse(read.files.mapping);
     expect(data.schemaVersion).toBe(20);
-    // O projeto só guarda o clone local; o endereço está no `repo` da especialização.
+    // The project only keeps the local clone; the address is in the `repo` of the specialization.
     expect(data.platformRepos).toEqual({ android: { localPath: '../../..' } });
-    // O projeto lido do zip responde igual: busca pelo arquivo do tipo, link e pendências.
+    // The project read from the zip answers the same: search by the type file, link and pending items.
     const [found] = findByCode(loaded.project, { path: 'DSButton.kt' });
     expect(found?.typeId).toBe('button');
     const android = found?.code.find((c) => c.platform === 'android');
@@ -101,15 +101,15 @@ describe('zip do projeto', () => {
     expect([...projectIssues(loaded.project).keys()]).toEqual(['AT']);
   });
 
-  it('aceita o projeto dentro de uma pasta no zip', async () => {
+  it('accepts the project inside a folder in the zip', async () => {
     const zip = new JSZip();
-    zip.file('meu-projeto/mapping.json', '{"x":1}');
-    zip.file('meu-projeto/images/a.png', 'PNG');
-    zip.file('meu-projeto/images/notas.txt', 'ignorar');
-    zip.file('meu-projeto/specs/sdui.json', '{}');
-    zip.file('meu-projeto/specs/sub/outra.json', '{}');
-    zip.file('meu-projeto/specs/notas.txt', 'ignorar');
-    zip.file('__MACOSX/meu-projeto/mapping.json', 'lixo');
+    zip.file('my-project/mapping.json', '{"x":1}');
+    zip.file('my-project/images/a.png', 'PNG');
+    zip.file('my-project/images/notes.txt', 'ignore');
+    zip.file('my-project/specs/sdui.json', '{}');
+    zip.file('my-project/specs/sub/other.json', '{}');
+    zip.file('my-project/specs/notes.txt', 'ignore');
+    zip.file('__MACOSX/my-project/mapping.json', 'junk');
     const blob = new Blob([await zip.generateAsync({ type: 'arraybuffer' })]);
 
     const read = await readProjectZip(blob);
@@ -117,16 +117,16 @@ describe('zip do projeto', () => {
     expect(read.files.mapping).toBe('{"x":1}');
     expect([...read.files.images.keys()]).toEqual(['images/a.png']);
     expect(read.files.images.get('images/a.png')?.type).toBe('image/png');
-    // `specs/sub/outra.json` é de uma pasta de pacote: texto em `specs` e bytes em `specAssets`.
+    // `specs/sub/other.json` belongs to a package folder: text in `specs` and bytes in `specAssets`.
     expect([...read.files.specs.keys()].sort()).toEqual([
       'specs/sdui.json',
-      'specs/sub/outra.json',
+      'specs/sub/other.json',
     ]);
-    expect([...(read.files.specAssets?.keys() ?? [])]).toEqual(['specs/sub/outra.json']);
+    expect([...(read.files.specAssets?.keys() ?? [])]).toEqual(['specs/sub/other.json']);
   });
 
-  it('erros: arquivo que não é zip e zip sem mapping.json', async () => {
-    expect(await readProjectZip(new Blob(['não sou zip']))).toEqual({
+  it('errors: a file that is not a zip and a zip without mapping.json', async () => {
+    expect(await readProjectZip(new Blob(['not a zip']))).toEqual({
       ok: false,
       error: 'invalid-zip',
     });
@@ -136,14 +136,14 @@ describe('zip do projeto', () => {
     expect(await readProjectZip(blob)).toEqual({ ok: false, error: 'missing-mapping' });
   });
 
-  it('gera um nome de arquivo seguro', () => {
-    expect(zipFileName('Vistoria Carro A', 'projeto')).toBe('Vistoria Carro A.zip');
-    expect(zipFileName('a/b:c*?', 'projeto')).toBe('a-b-c--.zip');
-    expect(zipFileName('   ', 'projeto')).toBe('projeto.zip');
+  it('generates a safe file name', () => {
+    expect(zipFileName('Car Inspection A', 'untitled')).toBe('Car Inspection A.zip');
+    expect(zipFileName('a/b:c*?', 'untitled')).toBe('a-b-c--.zip');
+    expect(zipFileName('   ', 'untitled')).toBe('untitled.zip');
     expect(zipFileName('   ', 'project')).toBe('project.zip');
   });
 
-  it('round-trip do pacote da biblioteca: arquivos e bytes preservados', async () => {
+  it('round-trip of the library package: files and bytes preserved', async () => {
     const font = new Uint8Array([0, 1, 2, 250, 251, 255]);
     const specAssets = new Map([
       ['specs/m3/components/a.json', new Blob(['{"a":1}'])],
@@ -171,7 +171,7 @@ describe('zip do projeto', () => {
     expect(read.files.specs.get('specs/m3/m3.spec.json')).toBe('{"id":"m3"}\n');
   });
 
-  it('ignora caminhos de pacote com ..', async () => {
+  it('ignores package paths with ..', async () => {
     const zip = new JSZip();
     zip.file('mapping.json', '{}');
     zip.file('specs/m3/../fora.bin', 'x');

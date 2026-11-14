@@ -28,7 +28,7 @@ import {
 import { richScenario } from '../store/proposalHarness';
 
 const pickDirectory = vi.fn<() => Promise<DirectoryHandleLike | null>>();
-/** `isOriginPrivate` controlável; sem implementação (`undefined`), vale a original. */
+/** Controllable `isOriginPrivate`; without an implementation (`undefined`), the original applies. */
 const originPrivate =
   vi.fn<(handle: DirectoryHandleLike) => Promise<boolean> | undefined>();
 
@@ -47,7 +47,7 @@ const v1 = readFileSync('tests/fixtures/mapping-v1.json', 'utf8');
 type Controller = typeof import('../../src/app/controller');
 type Local = typeof import('../../src/storage/local');
 
-/** O controller guarda estado no módulo: cada teste carrega uma cópia nova e limpa o IndexedDB. */
+/** The controller keeps state in the module: each test loads a fresh copy and clears IndexedDB. */
 async function load(): Promise<{ app: Controller; local: Local }> {
   vi.resetModules();
   const app = await import('../../src/app/controller');
@@ -58,12 +58,12 @@ async function load(): Promise<{ app: Controller; local: Local }> {
 
 async function openedOf(app: Controller) {
   const current = app.openProject.value;
-  if (!current) throw new Error('nenhum projeto aberto');
+  if (!current) throw new Error('no project open');
   return current;
 }
 
 function folderWith(files: Record<string, string>): MemoryDirectory {
-  const root = new MemoryDirectory('pasta');
+  const root = new MemoryDirectory('folder');
   for (const [name, text] of Object.entries(files))
     root.files.set(name, new Blob([text]));
   return root;
@@ -92,8 +92,8 @@ afterEach(async () => {
   clearReportedErrors();
 });
 
-describe('detecção de recursos', () => {
-  it('IndexedDB disponível habilita o modo local; jsdom não tem showDirectoryPicker', () => {
+describe('feature detection', () => {
+  it('IndexedDB available enables local mode; jsdom has no showDirectoryPicker', () => {
     expect(app.features.value).toEqual({
       folder: false,
       local: true,
@@ -102,12 +102,12 @@ describe('detecção de recursos', () => {
   });
 });
 
-describe('projeto local', () => {
-  it('cria, lista, abre e exclui', async () => {
-    expect((await app.createLocalProject('  Meu projeto ')).ok).toBe(true);
+describe('local project', () => {
+  it('creates, lists, opens and deletes', async () => {
+    expect((await app.createLocalProject('  My project ')).ok).toBe(true);
     const current = await openedOf(app);
     expect(current.kind).toBe('local');
-    expect(current.session.store.project.value?.project.name).toBe('Meu projeto');
+    expect(current.session.store.project.value?.project.name).toBe('My project');
     const id = current.localId ?? '';
     await app.closeProject();
     expect(app.openProject.value).toBeNull();
@@ -119,9 +119,9 @@ describe('projeto local', () => {
     expect(app.localProjects.value).toEqual([]);
   });
 
-  // Etapa 8 (8.4): a cópia do projeto local é o id dele (chave do retomar da revisão, 8.2).
-  it('copyId do projeto local é o id: criar, abrir e importar zip', async () => {
-    await app.createLocalProject('Cópia');
+  // Stage 8 (8.4): the copy of the local project is its id (key of the review resume, 8.2).
+  it('copyId of the local project is the id: create, open and import zip', async () => {
+    await app.createLocalProject('Copy');
     const created = await openedOf(app);
     expect(created.session.storage.copyId).toBe(created.localId);
     const id = created.localId ?? '';
@@ -142,27 +142,27 @@ describe('projeto local', () => {
     expect(imported.session.storage.copyId).toBe(imported.localId);
   });
 
-  it('nome vazio usa o nome padrão', async () => {
+  it('an empty name uses the default name', async () => {
     await app.createLocalProject('   ');
     const name = (await openedOf(app)).session.store.project.value?.project.name;
     expect(name).toBeTruthy();
   });
 
-  it('abrir um id que não existe devolve not-found', async () => {
-    expect(await app.openLocalProject('nao-existe')).toEqual({
+  it('opening an id that does not exist returns not-found', async () => {
+    expect(await app.openLocalProject('does-not-exist')).toEqual({
       ok: false,
       error: 'not-found',
     });
     expect(app.openProject.value).toBeNull();
   });
 
-  it('reabrir uma pasta com pacote de biblioteca: o Diagnóstico recebe os problemas do pacote (R3.11)', async () => {
-    // Monta a pasta como a app a grava: aplica o pacote do Material 3 numa sessão e fecha.
-    const root = new MemoryDirectory('pasta');
+  it('reopening a folder with a library package: Diagnostics receives the package problems (R3.11)', async () => {
+    // Builds the folder as the app writes it: applies the Material 3 package in a session and closes.
+    const root = new MemoryDirectory('folder');
     const writer = openSession({
       storage: createFolderStorage(root),
       project: sampleProject(),
-      prepareImage: () => Promise.reject(new Error('sem imagens')),
+      prepareImage: () => Promise.reject(new Error('no images')),
     });
     expect(
       writer.actions.applySpecialization(material3Spec(), material3Package()).ok,
@@ -178,7 +178,7 @@ describe('projeto local', () => {
     expect(issues?.some((i) => i.severity === 'warning')).toBe(true);
   });
 
-  it('projeto v1: grava o backup antes do primeiro salvamento', async () => {
+  it('v1 project: writes the backup before the first save', async () => {
     const library = await local.openLocalLibrary();
     await library?.create('v1', {
       mapping: v1,
@@ -191,11 +191,11 @@ describe('projeto local', () => {
 
     expect((await app.openLocalProject('v1')).ok).toBe(true);
     const { session } = await openedOf(app);
-    // Abrir não grava nada: o original continua intacto até a primeira alteração.
+    // Opening writes nothing: the original stays intact until the first change.
     expect(await library?.listBackups('v1')).toEqual([]);
     expect(await library?.open('v1').loadMapping()).toBe(v1);
 
-    session.actions.renameProject('Renomeado');
+    session.actions.renameProject('Renamed');
     await session.flush();
 
     const backups = (await library?.listBackups('v1')) ?? [];
@@ -207,25 +207,25 @@ describe('projeto local', () => {
   });
 });
 
-describe('projeto em pasta', () => {
-  it('cancelar o seletor não faz nada', async () => {
+describe('folder project', () => {
+  it('cancelling the picker does nothing', async () => {
     pickDirectory.mockResolvedValue(null);
     expect(await app.openFolder()).toEqual({ ok: true, value: { kind: 'cancelled' } });
     expect(app.openProject.value).toBeNull();
   });
 
-  it('pasta sem mapping.json pede configuração e lista as imagens existentes', async () => {
-    const root = folderWith({ 'foto.jpg': 'x', 'nota.txt': 'y' });
+  it('a folder without mapping.json asks for setup and lists the existing images', async () => {
+    const root = folderWith({ 'photo.jpg': 'x', 'note.txt': 'y' });
     pickDirectory.mockResolvedValue(root);
     const result = await app.openFolder();
     expect(result.ok && result.value.kind).toBe('needs-setup');
     if (result.ok && result.value.kind === 'needs-setup') {
-      expect(result.value.images.map((i) => i.name)).toEqual(['foto.jpg']);
+      expect(result.value.images.map((i) => i.name)).toEqual(['photo.jpg']);
     }
     expect(app.openProject.value).toBeNull();
   });
 
-  it('o contador de chamadas da pasta mede a abertura e a gravação; fora de pasta não há contador', async () => {
+  it('the folder call counter measures opening and saving; outside a folder there is no counter', async () => {
     const root = folderWith({ 'mapping.json': v1 });
     pickDirectory.mockResolvedValue(root);
     expect((await app.openFolder()).ok).toBe(true);
@@ -238,20 +238,20 @@ describe('projeto em pasta', () => {
       false,
     );
 
-    session.actions.renameProject('Medido');
+    session.actions.renameProject('Measured');
     await session.flush();
-    // O v1 migrado ganha a biblioteca de notas: a primeira gravação leva um pacote (`library`).
+    // The migrated v1 gets the notes library: the first save carries a package (`library`).
     const saved = calls?.snapshot().find((m) => m.op === 'library');
     expect(saved?.calls).toBeGreaterThan(0);
-    // O contador não muda o que foi gravado.
-    expect(await root.files.get('mapping.json')?.text()).toContain('Medido');
+    // The counter does not change what was written.
+    expect(await root.files.get('mapping.json')?.text()).toContain('Measured');
     await app.closeProject();
 
     expect((await app.createLocalProject('Local')).ok).toBe(true);
     expect((await openedOf(app)).session.folderCalls).toBeNull();
   });
 
-  it('projeto v1: grava o backup antes do primeiro salvamento', async () => {
+  it('v1 project: writes the backup before the first save', async () => {
     const root = folderWith({ 'mapping.json': v1 });
     pickDirectory.mockResolvedValue(root);
     expect(await app.openFolder()).toEqual({ ok: true, value: { kind: 'opened' } });
@@ -259,7 +259,7 @@ describe('projeto em pasta', () => {
     expect(kind).toBe('folder');
     expect(await backupsOf(root)).toEqual([]);
 
-    session.actions.renameProject('Renomeado');
+    session.actions.renameProject('Renamed');
     await session.flush();
 
     const [backup, ...rest] = await backupsOf(root);
@@ -271,10 +271,10 @@ describe('projeto em pasta', () => {
         ?.files.get(backup ?? '')
         ?.text(),
     ).toBe(v1);
-    expect(await root.files.get('mapping.json')?.text()).toContain('Renomeado');
+    expect(await root.files.get('mapping.json')?.text()).toContain('Renamed');
   });
 
-  it('projeto v10 com urlTemplate: abre migrado, registra o descartado no Diagnóstico e grava o backup', async () => {
+  it('v10 project with urlTemplate: opens migrated, records the discarded one in Diagnostics and writes the backup', async () => {
     const project = emptyProject();
     const data = legacyJson(project);
     data.platformRepos = {
@@ -290,13 +290,13 @@ describe('projeto em pasta', () => {
       android: { localPath: '../..' },
     });
 
-    // Uma entrada no Diagnóstico, com a orientação (o registro é o da cópia carregada).
+    // One entry in Diagnostics, with the guidance (the record is the one of the loaded copy).
     const report = await import('../../src/utils/report');
     const entries = report.reportedErrors.value.filter(
       (e) => e.context === 'open.migration',
     );
     expect(entries).toHaveLength(1);
-    // Língua da interface à parte: o texto leva as plataformas, os modelos e a orientação.
+    // Interface language aside: the text carries the platforms, the templates and the guidance.
     const message = entries[0]?.message ?? '';
     expect(message).toContain('Schema 11');
     expect(message).toContain('android, ios');
@@ -305,9 +305,9 @@ describe('projeto em pasta', () => {
     );
     expect(message).toContain('repo (formatVersion 5)');
 
-    // O original vai para backups/ na primeira gravação, como em toda migração.
+    // The original goes to backups/ on the first save, as in every migration.
     expect(await backupsOf(root)).toEqual([]);
-    session.actions.renameProject('Migrado');
+    session.actions.renameProject('Migrated');
     await session.flush();
     const [backup, ...rest] = await backupsOf(root);
     expect(rest).toEqual([]);
@@ -320,7 +320,7 @@ describe('projeto em pasta', () => {
     ).toBe(v10);
   });
 
-  it('projeto v10 só com localPath migra sem registrar nada no Diagnóstico', async () => {
+  it('v10 project with only localPath migrates without recording anything in Diagnostics', async () => {
     const data = legacyJson(emptyProject());
     data.platformRepos = { android: { urlTemplate: null, localPath: '..' } };
     pickDirectory.mockResolvedValue(
@@ -333,37 +333,37 @@ describe('projeto em pasta', () => {
     );
   });
 
-  it('mapping.json inválido devolve o erro do modelo', async () => {
-    pickDirectory.mockResolvedValue(folderWith({ 'mapping.json': '{ não é json' }));
+  it('an invalid mapping.json returns the model error', async () => {
+    pickDirectory.mockResolvedValue(folderWith({ 'mapping.json': '{ not json' }));
     const result = await app.openFolder();
     expect(result.ok).toBe(false);
     expect(app.openProject.value).toBeNull();
   });
 
-  it('erro do seletor vira storage-failed', async () => {
+  it('a picker error becomes storage-failed', async () => {
     pickDirectory.mockRejectedValue(new Error('boom'));
     expect(await app.openFolder()).toEqual({ ok: false, error: 'storage-failed' });
   });
 
-  it('ao criar o projeto na pasta, grava um .gitignore com backups/', async () => {
-    const root = new MemoryDirectory('minha-pasta');
+  it('when creating the project in the folder, writes a .gitignore with backups/', async () => {
+    const root = new MemoryDirectory('my-folder');
     await app.createFolderProject(root, 'P', []);
     expect(await root.files.get('.gitignore')?.text()).toBe('backups/\n');
   });
 
-  it('o .gitignore que já existe na pasta é preservado, só ganha a linha', async () => {
-    const root = new MemoryDirectory('minha-pasta');
+  it('the .gitignore that already exists in the folder is preserved, it only gets the line', async () => {
+    const root = new MemoryDirectory('my-folder');
     root.files.set('.gitignore', new Blob(['dist/\n']));
     await app.createFolderProject(root, 'P', []);
     expect(await root.files.get('.gitignore')?.text()).toBe('dist/\nbackups/\n');
   });
 
-  it('falha ao gravar o .gitignore não impede a criação do projeto', async () => {
-    const root = new MemoryDirectory('minha-pasta');
-    // A pasta aceita o mapping.json, mas não o .gitignore.
+  it('failing to write the .gitignore does not prevent creating the project', async () => {
+    const root = new MemoryDirectory('my-folder');
+    // The folder accepts mapping.json, but not .gitignore.
     const getFileHandle = root.getFileHandle.bind(root);
     vi.spyOn(root, 'getFileHandle').mockImplementation(async (name, options) => {
-      if (name === '.gitignore' && options?.create) throw new Error('sem permissão');
+      if (name === '.gitignore' && options?.create) throw new Error('no permission');
       return getFileHandle(name, options);
     });
     const result = await app.createFolderProject(root, 'P', []);
@@ -372,8 +372,8 @@ describe('projeto em pasta', () => {
     expect((await openedOf(app)).kind).toBe('folder');
   });
 
-  it('abrir uma pasta que já tem projeto não cria .gitignore', async () => {
-    const root = new MemoryDirectory('minha-pasta');
+  it('opening a folder that already has a project does not create .gitignore', async () => {
+    const root = new MemoryDirectory('my-folder');
     await app.createFolderProject(root, 'P', []);
     root.files.delete('.gitignore');
     await app.closeProject();
@@ -382,24 +382,25 @@ describe('projeto em pasta', () => {
     expect(root.files.has('.gitignore')).toBe(false);
   });
 
-  it('pasta que ganhou um mapping.json depois do diálogo: não grava e abre o existente', async () => {
+  it('a folder that got a mapping.json after the dialog: does not write and opens the existing one', async () => {
     const existing = serialize(emptyProject());
-    const root = folderWith({ 'mapping.json': existing, 'foto.jpg': 'x' });
-    const result = await app.createFolderProject(root, 'Novo', [
-      { path: 'foto.jpg', name: 'foto.jpg' },
+    const root = folderWith({ 'mapping.json': existing, 'photo.jpg': 'x' });
+    const result = await app.createFolderProject(root, 'New', [
+      { path: 'photo.jpg', name: 'photo.jpg' },
     ]);
     expect(result).toEqual({ ok: true, value: { skipped: [], existing: true } });
     expect(await root.files.get('mapping.json')?.text()).toBe(existing);
-    expect(root.files.has('foto.jpg')).toBe(true);
+    expect(root.files.has('photo.jpg')).toBe(true);
     expect(root.files.has('.gitignore')).toBe(false);
     const opened = await openedOf(app);
     expect(opened.kind).toBe('folder');
+    // pt-BR kept: shared fixture data (emptyProject name `Teste`) asserted by tests/model, tests/mcp, tests/examples
     expect(opened.session.store.project.value?.project.name).toBe('Teste');
   });
 
-  it('mapping.json que aparece entre a importação e a gravação não é sobrescrito', async () => {
+  it('a mapping.json that appears between the import and the save is not overwritten', async () => {
     const existing = serialize(emptyProject());
-    const root = new MemoryDirectory('minha-pasta');
+    const root = new MemoryDirectory('my-folder');
     const getFileHandle = root.getFileHandle.bind(root);
     let reads = 0;
     vi.spyOn(root, 'getFileHandle').mockImplementation(async (name, options) => {
@@ -408,49 +409,50 @@ describe('projeto em pasta', () => {
       }
       return getFileHandle(name, options);
     });
-    const result = await app.createFolderProject(root, 'Novo', []);
+    const result = await app.createFolderProject(root, 'New', []);
     expect(result).toEqual({ ok: true, value: { skipped: [], existing: true } });
     expect(await root.files.get('mapping.json')?.text()).toBe(existing);
+    // pt-BR kept: shared fixture data (emptyProject name `Teste`) asserted by tests/model, tests/mcp, tests/examples
     expect((await openedOf(app)).session.store.project.value?.project.name).toBe('Teste');
   });
 
-  it('cria o projeto na pasta usando o nome da pasta quando o nome vem vazio', async () => {
-    const root = new MemoryDirectory('minha-pasta');
+  it('creates the project in the folder using the folder name when the name comes empty', async () => {
+    const root = new MemoryDirectory('my-folder');
     const result = await app.createFolderProject(root, ' ', []);
     expect(result).toEqual({ ok: true, value: { skipped: [] } });
     const text = await root.files.get('mapping.json')?.text();
-    expect(text).toContain('minha-pasta');
+    expect(text).toContain('my-folder');
     expect((await openedOf(app)).kind).toBe('folder');
   });
 });
 
-describe('importar zip', () => {
+describe('import zip', () => {
   const zipOf = async (entries: Record<string, string>) => {
     const zip = new JSZip();
     for (const [name, text] of Object.entries(entries)) zip.file(name, text);
     return new Blob([await zip.generateAsync({ type: 'arraybuffer' })]);
   };
 
-  it('zip inválido devolve invalid-zip', async () => {
-    const result = await app.importZip(new Blob(['isto não é um zip']));
+  it('an invalid zip returns invalid-zip', async () => {
+    const result = await app.importZip(new Blob(['this is not a zip']));
     expect(result).toEqual({ ok: false, error: 'invalid-zip' });
     expect(app.openProject.value).toBeNull();
     expect(app.localProjects.value).toEqual([]);
   });
 
-  it('zip sem mapping.json devolve missing-mapping', async () => {
+  it('a zip without mapping.json returns missing-mapping', async () => {
     const result = await app.importZip(await zipOf({ 'images/a.jpg': 'x' }));
     expect(result).toEqual({ ok: false, error: 'missing-mapping' });
     expect(app.openProject.value).toBeNull();
   });
 
-  it('mapping.json inválido dentro do zip não cria projeto local', async () => {
+  it('an invalid mapping.json inside the zip does not create a local project', async () => {
     const result = await app.importZip(await zipOf({ 'mapping.json': '{}' }));
     expect(result.ok).toBe(false);
     expect(app.localProjects.value).toEqual([]);
   });
 
-  it('zip válido vira um projeto local aberto e já exportado', async () => {
+  it('a valid zip becomes an open local project, already exported', async () => {
     const blob = await writeProjectZip({
       mapping: serialize(emptyProject()),
       images: new Map(),
@@ -464,13 +466,13 @@ describe('importar zip', () => {
     expect(current.unexported.value).toBe(false);
   });
 
-  it('importar conta como uso: o projeto vai para o topo dos recentes com a data de agora (G2)', async () => {
+  it('importing counts as use: the project goes to the top of the recents with the current date (G2)', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     try {
       vi.setSystemTime(new Date('2026-10-10T10:00:00.000Z'));
       await app.createLocalProject('Local');
       await app.closeProject();
-      // O zip traz a data da última alteração, anterior ao projeto local.
+      // The zip carries the last change date, earlier than the local project.
       const p = emptyProject();
       const old = {
         ...p,
@@ -490,7 +492,7 @@ describe('importar zip', () => {
       const [first] = app.recentProjects.value;
       expect(first?.id).toBe(importedId);
       expect(first?.usedAt).toBe('2026-10-12T10:00:00.000Z');
-      // A última alteração continua sendo a de dentro do zip.
+      // The last change is still the one inside the zip.
       const meta = app.localProjects.value.find((m) => m.id === importedId);
       expect(meta?.updatedAt).toBe('2026-10-09T09:00:00.000Z');
       expect(meta?.openedAt).toBe('2026-10-12T10:00:00.000Z');
@@ -499,17 +501,17 @@ describe('importar zip', () => {
     }
   });
 
-  it('zip de projeto v1 abre migrando e faz backup ao salvar', async () => {
+  it('a v1 project zip opens migrating and makes a backup on save', async () => {
     expect((await app.importZip(await zipOf({ 'mapping.json': v1 }))).ok).toBe(true);
     const { session, localId } = await openedOf(app);
-    session.actions.renameProject('Outro');
+    session.actions.renameProject('Other');
     await session.flush();
     const library = await local.openLocalLibrary();
     expect(await library?.listBackups(localId ?? '')).toHaveLength(1);
     library?.close();
   });
 
-  it('o projeto de exemplo (zip do repositório) abre pelo importZip, só como projeto local', async () => {
+  it('the example project (repository zip) opens through importZip, only as a local project', async () => {
     const zip = new Blob([readFileSync('examples/exemplo-completo.zip')]);
     expect((await app.importZip(zip)).ok).toBe(true);
     const current = await openedOf(app);
@@ -520,13 +522,13 @@ describe('importar zip', () => {
     expect(project?.markings).toHaveLength(32);
     expect(project?.annotations).toHaveLength(42);
     expect(current.session.proposals.list.value).toHaveLength(1);
-    // Nenhum rastro além do que o "Abrir zip" deixa: um projeto local, nenhuma pasta lembrada.
+    // No trace beyond what "Open zip" leaves: one local project, no remembered folder.
     await app.closeProject();
     expect(app.recentProjects.value.map((r) => r.kind)).toEqual(['local']);
   });
 });
 
-describe('exportar', () => {
+describe('export', () => {
   async function openCadastro() {
     const project = cadastroProject();
     const library = await local.openLocalLibrary();
@@ -541,13 +543,13 @@ describe('exportar', () => {
       },
       { unexported: false },
     );
-    // Um backup existente no armazenamento não pode ir para o zip.
+    // An existing backup in storage must not go into the zip.
     await library?.open('cad').writeBackup('mapping.v1.20260101-000000.json', v1);
     library?.close();
     await app.openLocalProject('cad');
   }
 
-  it('o zip tem mapping.json, images/ e specs/, e não tem backups/', async () => {
+  it('the zip has mapping.json, images/ and specs/, and does not have backups/', async () => {
     await openCadastro();
     const result = await app.buildExport();
     if (!result.ok) throw new Error(result.error);
@@ -562,8 +564,8 @@ describe('exportar', () => {
     expect(names.some((n) => n.startsWith('backups'))).toBe(false);
   });
 
-  // Etapa 8 (8.7), resíduo 1 (S8): `collectFiles().saved` chega ao diálogo Exportar.
-  it('com a gravação em erro, o zip sai com saved: false', async () => {
+  // Stage 8 (8.7), residue 1 (S8): `collectFiles().saved` reaches the Export dialog.
+  it('with the save in error, the zip comes out with saved: false', async () => {
     const root = new MemoryDirectory('p');
     await app.createFolderProject(root, 'P', []);
     const { session } = await openedOf(app);
@@ -577,11 +579,11 @@ describe('exportar', () => {
     root.failWrites = null;
   });
 
-  it('sem projeto aberto devolve not-found', async () => {
+  it('without an open project returns not-found', async () => {
     expect(await app.buildExport()).toEqual({ ok: false, error: 'not-found' });
   });
 
-  it('markExported limpa o indicador de não exportado e persiste', async () => {
+  it('markExported clears the not-exported indicator and persists', async () => {
     await app.createLocalProject('P');
     const { session, unexported, localId } = await openedOf(app);
     session.actions.renameProject('Q');
@@ -594,14 +596,14 @@ describe('exportar', () => {
     library?.close();
   });
 
-  it('markExported numa pasta (sem localId) não faz nada', async () => {
+  it('markExported in a folder (without localId) does nothing', async () => {
     await app.createFolderProject(new MemoryDirectory('p'), 'P', []);
     await expect(app.markExported()).resolves.toBeUndefined();
   });
 });
 
-describe('fechar', () => {
-  it('grava o que estava pendente antes de liberar o projeto', async () => {
+describe('close', () => {
+  it('writes what was pending before releasing the project', async () => {
     const root = new MemoryDirectory('p');
     await app.createFolderProject(root, 'Original', []);
     const { session, display } = await openedOf(app);
@@ -611,36 +613,36 @@ describe('fechar', () => {
       order.push('close');
       await close();
       order.push(
-        `saved:${(await root.files.get('mapping.json')?.text())?.includes('Editado')}`,
+        `saved:${(await root.files.get('mapping.json')?.text())?.includes('Edited')}`,
       );
     });
     vi.spyOn(display, 'dispose').mockImplementation(() => order.push('dispose'));
 
-    session.actions.renameProject('Editado');
+    session.actions.renameProject('Edited');
     await app.closeProject();
 
     expect(app.openProject.value).toBeNull();
     expect(order).toEqual(['dispose', 'close', 'saved:true']);
-    expect(await root.files.get('mapping.json')?.text()).toContain('Editado');
+    expect(await root.files.get('mapping.json')?.text()).toContain('Edited');
   });
 
-  it('fechar sem projeto aberto não faz nada', async () => {
+  it('closing without an open project does nothing', async () => {
     await expect(app.closeProject()).resolves.toBeUndefined();
   });
 
-  it('atualiza a lista de projetos locais ao fechar', async () => {
-    await app.createLocalProject('Lista');
+  it('updates the list of local projects on close', async () => {
+    await app.createLocalProject('List');
     const { session } = await openedOf(app);
-    session.actions.renameProject('Lista 2');
+    session.actions.renameProject('List 2');
     await app.closeProject();
-    expect(app.localProjects.value.map((p) => p.name)).toEqual(['Lista 2']);
+    expect(app.localProjects.value.map((p) => p.name)).toEqual(['List 2']);
   });
 });
 
-describe('sair da página (fase 5.5)', () => {
+describe('leaving the page (phase 5.5)', () => {
   /**
-   * A gravação imediata é provada pelo `flush()` chamado no próprio evento (o debounce não
-   * chama `flush` antes do timer); depois, só confere que ela chegou ao disco.
+   * The immediate save is proven by the `flush()` called in the event itself (the debounce
+   * does not call `flush` before the timer); afterwards, it only checks that it reached the disk.
    */
   const soon = { timeout: 1000, interval: 10 };
 
@@ -653,36 +655,36 @@ describe('sair da página (fase 5.5)', () => {
 
   afterEach(() => setVisibility('visible'));
 
-  it('pagehide grava na hora, sem esperar o debounce', async () => {
+  it('pagehide saves right away, without waiting for the debounce', async () => {
     const root = new MemoryDirectory('p');
     await app.createFolderProject(root, 'Original', []);
     const { session } = await openedOf(app);
     const flush = vi.spyOn(session, 'flush');
-    session.actions.renameProject('Saindo');
+    session.actions.renameProject('Leaving');
     window.dispatchEvent(new Event('pagehide'));
     expect(flush).toHaveBeenCalledTimes(1);
     await vi.waitFor(async () => {
-      expect(await root.files.get('mapping.json')?.text()).toContain('Saindo');
+      expect(await root.files.get('mapping.json')?.text()).toContain('Leaving');
     }, soon);
   });
 
-  it('visibilitychange para hidden grava na hora', async () => {
+  it('visibilitychange to hidden saves right away', async () => {
     await app.createLocalProject('Local');
     const { session, localId } = await openedOf(app);
     const flush = vi.spyOn(session, 'flush');
-    session.actions.renameProject('Escondido');
+    session.actions.renameProject('Hidden');
     setVisibility('hidden');
     document.dispatchEvent(new Event('visibilitychange'));
     expect(flush).toHaveBeenCalledTimes(1);
     await vi.waitFor(async () => {
       await app.refreshLocalProjects();
       expect(app.localProjects.value.find((p) => p.id === localId)?.name).toBe(
-        'Escondido',
+        'Hidden',
       );
     }, soon);
   });
 
-  it('beforeunload com pendência pede confirmação; sem pendência, não', async () => {
+  it('beforeunload with pending changes asks for confirmation; without, it does not', async () => {
     const root = new MemoryDirectory('p');
     await app.createFolderProject(root, 'Original', []);
     const { session } = await openedOf(app);
@@ -691,29 +693,29 @@ describe('sair da página (fase 5.5)', () => {
     window.dispatchEvent(clean);
     expect(clean.defaultPrevented).toBe(false);
 
-    session.actions.renameProject('Pendente');
+    session.actions.renameProject('Pending');
     const pending = new Event('beforeunload', { cancelable: true });
     window.dispatchEvent(pending);
     expect(pending.defaultPrevented).toBe(true);
   });
 
-  it('beforeunload com pendência agenda a gravação e pede confirmação', async () => {
+  it('beforeunload with pending changes schedules the save and asks for confirmation', async () => {
     const root = new MemoryDirectory('p');
     await app.createFolderProject(root, 'Original', []);
     const { session } = await openedOf(app);
     const flush = vi.spyOn(session, 'flush');
-    session.actions.renameProject('Fechando');
+    session.actions.renameProject('Closing');
     const event = new Event('beforeunload', { cancelable: true });
     window.dispatchEvent(event);
     expect(event.defaultPrevented).toBe(true);
     expect(flush).toHaveBeenCalledTimes(1);
     await vi.waitFor(async () => {
-      expect(await root.files.get('mapping.json')?.text()).toContain('Fechando');
+      expect(await root.files.get('mapping.json')?.text()).toContain('Closing');
     }, soon);
   });
 });
 
-describe('propostas de alteração (etapa 4)', () => {
+describe('change proposals (stage 4)', () => {
   const proposalZip = async () => {
     const { proposal } = richScenario();
     const zip = new JSZip();
@@ -726,7 +728,7 @@ describe('propostas de alteração (etapa 4)', () => {
     };
   };
 
-  it('decidir numa proposta marca "não exportadas" no indicador sem reabrir o projeto (S4, fase 8.1)', async () => {
+  it('deciding on a proposal marks "not exported" in the indicator without reopening the project (S4, phase 8.1)', async () => {
     const { proposal, blob } = await proposalZip();
     expect((await app.importZip(blob)).ok).toBe(true);
     const current = await openedOf(app);
@@ -740,7 +742,7 @@ describe('propostas de alteração (etapa 4)', () => {
     expect(current.unexported.value).toBe(true);
   });
 
-  it('zip importado mostra as propostas; decidir, exportar e reimportar preserva a revisão', async () => {
+  it('an imported zip shows the proposals; deciding, exporting and reimporting preserves the review', async () => {
     const { proposal, blob } = await proposalZip();
     expect((await app.importZip(blob)).ok).toBe(true);
     const first = await openedOf(app);
@@ -754,12 +756,12 @@ describe('propostas de alteração (etapa 4)', () => {
     );
     expect(decided.ok).toBe(true);
     await app.closeProject();
-    // Decidir é trabalho a exportar, como editar o projeto.
+    // Deciding is work to export, like editing the project.
     const library = await local.openLocalLibrary();
     expect((await library?.get(first.localId ?? ''))?.unexported).toBe(true);
     library?.close();
 
-    // Reabre o projeto local: a decisão veio do IndexedDB.
+    // Reopens the local project: the decision came from IndexedDB.
     await app.openLocalProject(first.localId ?? '');
     const second = await openedOf(app);
     expect(second.session.proposals.get('P1')?.decisions[accepted]?.state).toBe(
@@ -783,7 +785,7 @@ describe('propostas de alteração (etapa 4)', () => {
     expect(third.session.proposals.get('P1')).toEqual(reviewed);
   });
 
-  it('projeto em pasta abre com as propostas da pasta e aplica uma delas', async () => {
+  it('a folder project opens with the folder proposals and applies one of them', async () => {
     const { proposal } = richScenario();
     const root = folderWith({ 'mapping.json': serialize(sampleProject()) });
     root.put('proposals/P1/proposal.json', serializeProposal(proposal));
@@ -807,8 +809,8 @@ describe('propostas de alteração (etapa 4)', () => {
   });
 });
 
-describe('conversas ancoradas (etapa Comentários)', () => {
-  const ME = { name: 'Marina Alves', email: 'marina@exemplo.com' };
+describe('anchored conversations (stage Comments)', () => {
+  const ME = { name: 'Mary Allen', email: 'mary@example.com' };
   const open = sampleThread({ id: 'T1' });
   const resolved = sampleThread({ id: 'T2', resolved: { by: ME, at: T3 } });
   const threadZip = async (extra: Record<string, string> = {}) => {
@@ -824,7 +826,7 @@ describe('conversas ancoradas (etapa Comentários)', () => {
     expect(identity.setIdentity(ME.name, ME.email)).toBe('ok');
   };
 
-  it('o zip importado vai para o IndexedDB e a sessão mostra as abertas e as resolvidas', async () => {
+  it('the imported zip goes to IndexedDB and the session shows the open and the resolved ones', async () => {
     expect((await app.importZip(await threadZip())).ok).toBe(true);
     const current = await openedOf(app);
     expect(current.session.threads.list.value.map((t) => t.id).sort()).toEqual([
@@ -838,15 +840,15 @@ describe('conversas ancoradas (etapa Comentários)', () => {
     library?.close();
   });
 
-  it('conversar marca não exportado; exportar e reimportar leva e traz comments/ (texto inválido idêntico)', async () => {
+  it('conversing marks not exported; exporting and reimporting carries comments/ there and back (identical invalid text)', async () => {
     await withIdentity();
     expect(
-      (await app.importZip(await threadZip({ 'comments/quebrada.json': '{ não é json' })))
+      (await app.importZip(await threadZip({ 'comments/broken.json': '{ not json' })))
         .ok,
     ).toBe(true);
     const first = await openedOf(app);
     expect(first.unexported.value).toBe(false);
-    const posted = await first.session.threadActions.post('T1', 'uma resposta');
+    const posted = await first.session.threadActions.post('T1', 'a reply');
     expect(posted.ok).toBe(true);
     expect(first.unexported.value).toBe(true);
     const resolvedNow = await first.session.threadActions.resolve('T1');
@@ -859,23 +861,23 @@ describe('conversas ancoradas (etapa Comentários)', () => {
       (p) => p.startsWith('comments/') && !zip.files[p]?.dir,
     );
     expect(paths.sort()).toEqual([
-      'comments/quebrada.json',
+      'comments/broken.json',
       'comments/resolved/T1.json',
       'comments/resolved/T2.json',
     ]);
-    expect(await zip.file('comments/quebrada.json')?.async('string')).toBe(
-      '{ não é json',
+    expect(await zip.file('comments/broken.json')?.async('string')).toBe(
+      '{ not json',
     );
 
     await app.closeProject();
     expect((await app.importZip(exported.value.file)).ok).toBe(true);
     const second = await openedOf(app);
-    expect(second.session.threads.get('T1')?.messages.at(-1)?.text).toBe('uma resposta');
+    expect(second.session.threads.get('T1')?.messages.at(-1)?.text).toBe('a reply');
     expect(second.session.threads.get('T1')?.resolved?.by.email).toBe(ME.email);
-    expect(second.session.threads.problems.value.map((p) => p.id)).toEqual(['quebrada']);
+    expect(second.session.threads.problems.value.map((p) => p.id)).toEqual(['broken']);
   });
 
-  it('projeto em pasta abre com as conversas da pasta e grava onde o arquivo está', async () => {
+  it('a folder project opens with the folder conversations and writes where the file is', async () => {
     await withIdentity();
     const root = folderWith({ 'mapping.json': serialize(sampleProject()) });
     root.put('comments/T1.json', serializeThread(open));
@@ -888,8 +890,8 @@ describe('conversas ancoradas (etapa Comentários)', () => {
     expect(await root.read('comments/T1.json')).toBeNull();
   });
 
-  it('um projeto novo exporta sem comments/', async () => {
-    await app.createLocalProject('Novo');
+  it('a new project exports without comments/', async () => {
+    await app.createLocalProject('New');
     const exported = await app.buildExport();
     if (!exported.ok) throw new Error(exported.error);
     const zip = await JSZip.loadAsync(await exported.value.file.arrayBuffer());
@@ -897,19 +899,20 @@ describe('conversas ancoradas (etapa Comentários)', () => {
   });
 });
 
-describe('projeto com dados inconsistentes', () => {
+describe('project with inconsistent data', () => {
   const repairable = readInvalidFixture('missing-parent');
   const unrepairable = readInvalidFixture('duplicate-id');
 
-  it('pasta: recusa com a lista e oferece reparar; o backup sai na primeira gravação', async () => {
+  it('folder: refuses with the list and offers to repair; the backup goes out on the first save', async () => {
     const root = folderWith({ 'mapping.json': repairable });
     pickDirectory.mockResolvedValue(root);
     const result = await app.openFolder();
-    if (result.ok) throw new Error('deveria pedir o reparo');
+    if (result.ok) throw new Error('should ask for the repair');
     expect(result.error).toBe('invariant-violation');
     expect(app.openProject.value).toBeNull();
     const inconsistent = result.inconsistent;
-    if (!inconsistent?.repair) throw new Error('deveria oferecer o reparo');
+    if (!inconsistent?.repair) throw new Error('should offer the repair');
+    // pt-BR kept: shared fixture data (invalid fixture `missing-parent`, marking name `Nome`) asserted by tests/model
     expect(inconsistent.issues).toContainEqual({
       code: 'missing-parent',
       entity: 'marking',
@@ -918,6 +921,7 @@ describe('projeto com dados inconsistentes', () => {
       otherId: 'M9',
     });
     expect(inconsistent.unrepaired).toEqual([]);
+    // pt-BR kept: shared fixture data (invalid fixture `missing-parent`, marking name `Nome`) asserted by tests/model
     expect(inconsistent.repaired).toEqual([
       {
         action: 'made-root',
@@ -934,15 +938,15 @@ describe('projeto com dados inconsistentes', () => {
     expect(
       session.store.project.value?.markings.find((m) => m.id === 'MN')?.parentId,
     ).toBeNull();
-    // Ler nunca grava: nada muda na pasta até a primeira gravação.
+    // Reading never writes: nothing changes in the folder until the first save.
     expect(await backupsOf(root)).toEqual([]);
     expect(await root.files.get('mapping.json')?.text()).toBe(repairable);
-    // O resumo do reparo vai para o Diagnóstico.
-    // (o controller foi carregado de novo em `load()`: o registro é o da cópia dele)
+    // The repair summary goes to Diagnostics.
+    // (the controller was loaded again in `load()`: the record is the one of its copy)
     const report = await import('../../src/utils/report');
     expect(report.reportedErrors.value.map((e) => e.context)).toContain('open.repair');
 
-    session.actions.renameProject('Reparado');
+    session.actions.renameProject('Repaired');
     await session.flush();
 
     const [backup, ...rest] = await backupsOf(root);
@@ -958,10 +962,10 @@ describe('projeto com dados inconsistentes', () => {
     expect(deserialize(saved).ok).toBe(true);
   });
 
-  it('pasta: com problema sem reparo, só a lista', async () => {
+  it('folder: with a problem without repair, only the list', async () => {
     pickDirectory.mockResolvedValue(folderWith({ 'mapping.json': unrepairable }));
     const result = await app.openFolder();
-    if (result.ok) throw new Error('deveria recusar');
+    if (result.ok) throw new Error('should refuse');
     expect(result.inconsistent?.repair).toBeNull();
     expect(result.inconsistent?.unrepaired.map((i) => `${i.code}:${i.id}`)).toEqual([
       'duplicate-id:MT',
@@ -969,7 +973,7 @@ describe('projeto com dados inconsistentes', () => {
     expect(app.openProject.value).toBeNull();
   });
 
-  it('projeto local: reparar e abrir grava o backup no IndexedDB', async () => {
+  it('local project: repairing and opening writes the backup in IndexedDB', async () => {
     const library = await local.openLocalLibrary();
     await library?.create('inc', {
       mapping: repairable,
@@ -980,17 +984,17 @@ describe('projeto com dados inconsistentes', () => {
     });
     const result = await app.openLocalProject('inc');
     if (result.ok || !result.inconsistent?.repair)
-      throw new Error('deveria pedir o reparo');
+      throw new Error('should ask for the repair');
     expect((await result.inconsistent.repair()).ok).toBe(true);
     const { session } = await openedOf(app);
-    session.actions.renameProject('Reparado');
+    session.actions.renameProject('Repaired');
     await session.flush();
     expect(await library?.listBackups('inc')).toHaveLength(1);
     library?.close();
   });
 
-  // Etapa 8 (8.4), R4: o reparado passa pelo mesmo vínculo que a abertura normal.
-  it('projeto local: reparar e abrir conta como uso (openedAt) e tem copyId', async () => {
+  // Stage 8 (8.4), R4: the repaired one goes through the same binding as a normal opening.
+  it('local project: repairing and opening counts as use (openedAt) and has copyId', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     try {
       vi.setSystemTime(new Date('2026-10-01T10:00:00.000Z'));
@@ -1005,7 +1009,7 @@ describe('projeto com dados inconsistentes', () => {
       vi.setSystemTime(new Date('2026-10-05T10:00:00.000Z'));
       const result = await app.openLocalProject('inc');
       if (result.ok || !result.inconsistent?.repair)
-        throw new Error('deveria pedir o reparo');
+        throw new Error('should ask for the repair');
       expect((await result.inconsistent.repair()).ok).toBe(true);
       expect((await openedOf(app)).session.storage.copyId).toBe('inc');
       expect((await library?.get('inc'))?.openedAt).toBe('2026-10-05T10:00:00.000Z');
@@ -1015,13 +1019,13 @@ describe('projeto com dados inconsistentes', () => {
     }
   });
 
-  it('zip: só vira projeto local depois de aceitar o reparo', async () => {
+  it('zip: only becomes a local project after accepting the repair', async () => {
     const zip = new JSZip();
     zip.file('mapping.json', repairable);
     const blob = new Blob([await zip.generateAsync({ type: 'arraybuffer' })]);
     const result = await app.importZip(blob);
     if (result.ok || !result.inconsistent?.repair)
-      throw new Error('deveria pedir o reparo');
+      throw new Error('should ask for the repair');
     const before = await local.openLocalLibrary();
     expect(await before?.list()).toEqual([]);
     before?.close();
@@ -1032,7 +1036,7 @@ describe('projeto com dados inconsistentes', () => {
     library?.close();
   });
 
-  it('o projeto do roteiro 13.9 íntegro abre direto', async () => {
+  it('the intact project of script 13.9 opens directly', async () => {
     pickDirectory.mockResolvedValue(
       folderWith({ 'mapping.json': serialize(cadastroProject()) }),
     );
@@ -1041,9 +1045,9 @@ describe('projeto com dados inconsistentes', () => {
   });
 });
 
-describe('recentes de pasta (fase 6.6)', () => {
-  /** Pasta com um projeto: `mapping.json` com o nome dado. */
-  const projectFolder = (folder = 'pasta', name = 'Projeto da pasta') => {
+describe('folder recents (phase 6.6)', () => {
+  /** Folder with a project: `mapping.json` with the given name. */
+  const projectFolder = (folder = 'folder', name = 'Folder project') => {
     const root = new PermissionDirectory(folder);
     const project = emptyProject();
     root.put(
@@ -1062,9 +1066,9 @@ describe('recentes de pasta (fase 6.6)', () => {
   };
 
   beforeEach(async () => {
-    // O handle de verdade é serializável; a pasta em memória fica por referência.
+    // The real handle is serializable; the in-memory folder stays by reference.
     vi.stubGlobal('structuredClone', keepDirectoriesInClone());
-    // O modo pasta depende de `showDirectoryPicker` (o seletor em si é o `pickDirectory`).
+    // Folder mode depends on `showDirectoryPicker` (the picker itself is `pickDirectory`).
     vi.stubGlobal('showDirectoryPicker', vi.fn());
     const library = await local.openFolderLibrary();
     for (const f of (await library?.list()) ?? []) await library?.remove(f.id);
@@ -1078,43 +1082,43 @@ describe('recentes de pasta (fase 6.6)', () => {
     vi.unstubAllGlobals();
   });
 
-  it('abrir uma pasta e fechar o projeto: a lista da tela inicial traz a pasta', async () => {
+  it('opening a folder and closing the project: the home screen list brings the folder', async () => {
     await openViaPicker(projectFolder());
     expect(folders()).toEqual([
       expect.objectContaining({
         kind: 'folder',
-        name: 'Projeto da pasta',
-        folderName: 'pasta',
+        name: 'Folder project',
+        folderName: 'folder',
       }),
     ]);
-    // Fica no IndexedDB: a próxima visita também a traz.
+    // It stays in IndexedDB: the next visit brings it too.
     ({ app, local } = await load());
-    expect(folders().map((p) => p.name)).toEqual(['Projeto da pasta']);
+    expect(folders().map((p) => p.name)).toEqual(['Folder project']);
   });
 
-  it('criar o projeto numa pasta também a guarda; abrir de novo não duplica', async () => {
-    const root = new PermissionDirectory('nova');
-    expect((await app.createFolderProject(root, 'Novo', [])).ok).toBe(true);
+  it('creating the project in a folder also stores it; opening again does not duplicate', async () => {
+    const root = new PermissionDirectory('fresh');
+    expect((await app.createFolderProject(root, 'New', [])).ok).toBe(true);
     await app.closeProject();
     expect(folders().map((p) => p.name)).toEqual(['Novo']);
     await openViaPicker(root);
     expect(folders()).toHaveLength(1);
-    // Outra pasta com o mesmo nome é outra entrada (`isSameEntry`, não o nome).
-    await openViaPicker(projectFolder('nova', 'Outro'));
+    // Another folder with the same name is another entry (`isSameEntry`, not the name).
+    await openViaPicker(projectFolder('nova', 'Other'));
     expect(folders()).toHaveLength(2);
   });
 
-  it('o nome da lista acompanha o projeto renomeado', async () => {
+  it('the list name follows the renamed project', async () => {
     const root = projectFolder();
     pickDirectory.mockResolvedValue(root);
     await app.openFolder();
     const { session } = await openedOf(app);
-    session.actions.renameProject('Renomeado');
+    session.actions.renameProject('Renamed');
     await app.closeProject();
-    expect(folders().map((p) => p.name)).toEqual(['Renomeado']);
+    expect(folders().map((p) => p.name)).toEqual(['Renamed']);
   });
 
-  it('lista única com pastas e projetos deste dispositivo, por último uso', async () => {
+  it('single list with folders and projects of this device, by last use', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-10-01T10:00:00.000Z'));
     await app.createLocalProject('Local');
@@ -1123,10 +1127,10 @@ describe('recentes de pasta (fase 6.6)', () => {
     vi.setSystemTime(new Date('2026-10-02T10:00:00.000Z'));
     await openViaPicker(projectFolder());
     expect(app.recentProjects.value.map((p) => [p.kind, p.name])).toEqual([
-      ['folder', 'Projeto da pasta'],
+      ['folder', 'Folder project'],
       ['local', 'Local'],
     ]);
-    // Abrir (sem alterar) o projeto local conta como uso.
+    // Opening (without changing) the local project counts as use.
     vi.setSystemTime(new Date('2026-10-03T10:00:00.000Z'));
     expect((await app.openLocalProject(localId)).ok).toBe(true);
     await app.closeProject();
@@ -1134,9 +1138,9 @@ describe('recentes de pasta (fase 6.6)', () => {
     expect(app.recentProjects.value[0]?.usedAt).toBe('2026-10-03T10:00:00.000Z');
   });
 
-  // Etapa 8 (8.4), R1: fechar enquanto a pasta é guardada não deixa o id da entrada para o
-  // projeto seguinte (que, ao fechar, daria o nome dele à linha da pasta).
-  it('fechar durante o guardar da pasta não vaza a entrada para o próximo projeto', async () => {
+  // Stage 8 (8.4), R1: closing while the folder is being stored does not leave the entry id
+  // for the next project (which, on closing, would give its name to the folder row).
+  it('closing while the folder is being stored does not leak the entry to the next project', async () => {
     let release: () => void = () => undefined;
     const gate = new Promise<void>((resolve) => {
       release = resolve;
@@ -1148,7 +1152,7 @@ describe('recentes de pasta (fase 6.6)', () => {
     pickDirectory.mockResolvedValue(projectFolder());
     const opening = app.openFolder();
     await vi.waitFor(() => expect(originPrivate).toHaveBeenCalled());
-    // O editor só aparece com a pasta já guardada: não há projeto para fechar no meio.
+    // The editor only shows with the folder already stored: there is no project to close in the middle.
     expect(app.openProject.value).toBeNull();
     await app.closeProject();
     release();
@@ -1156,29 +1160,29 @@ describe('recentes de pasta (fase 6.6)', () => {
     await app.closeProject();
     await app.createLocalProject('Local');
     await app.closeProject();
-    expect(folders().map((p) => p.name)).toEqual(['Projeto da pasta']);
+    expect(folders().map((p) => p.name)).toEqual(['Folder project']);
   });
 
-  // Etapa 8 (8.4), R2: como no projeto local, o nome acompanha a cada gravação.
-  it('renomear o projeto em pasta reflete nos recentes sem Fechar', async () => {
+  // Stage 8 (8.4), R2: as in the local project, the name follows on every save.
+  it('renaming the folder project shows in the recents without Close', async () => {
     pickDirectory.mockResolvedValue(projectFolder());
     await app.openFolder();
     const { session } = await openedOf(app);
-    session.actions.renameProject('Renomeado');
+    session.actions.renameProject('Renamed');
     expect((await session.flush()).ok).toBe(true);
-    // O toque na entrada é posterior à gravação (fora da fila da sessão).
+    // The touch on the entry comes after the save (outside the session queue).
     const library = await local.openFolderLibrary();
     await vi.waitFor(async () =>
-      expect((await library?.list())?.map((f) => f.name)).toEqual(['Renomeado']),
+      expect((await library?.list())?.map((f) => f.name)).toEqual(['Renamed']),
     );
     library?.close();
   });
 
-  // Etapa 8 (8.7), decisão do dono: gerar o zip não é exportar. Com a gravação em erro, a
-  // pessoa gera o zip e cancela o "Salvar como" (sem `markExported`); quando a gravação volta
-  // com exatamente aquele conteúdo, é mudança a exportar: `unexported` sobe e a entrada dos
-  // recentes anda (`touchFolder`), como em qualquer gravação.
-  it('zip gerado e download cancelado: a gravação seguinte conta como mudança', async () => {
+  // Stage 8 (8.7), owner decision: generating the zip is not exporting. With the save in
+  // error, the person generates the zip and cancels the "Save as" (without `markExported`);
+  // when the save comes back with exactly that content, it is a change to export: `unexported`
+  // goes up and the recents entry moves (`touchFolder`), as in any save.
+  it('zip generated and download cancelled: the next save counts as a change', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-10-01T10:00:00.000Z'));
     const root = projectFolder();
@@ -1186,14 +1190,14 @@ describe('recentes de pasta (fase 6.6)', () => {
     await app.openFolder();
     const { session, unexported } = await openedOf(app);
     root.failWrites = new Error('NoModificationAllowedError');
-    session.actions.renameProject('Cancelado');
+    session.actions.renameProject('Cancelled');
     await session.flush();
     expect(session.saveStatus.value).toBe('error');
     expect(unexported.value).toBe(false);
 
     const built = await app.buildExport();
     expect(built.ok && built.value.saved).toBe(false);
-    // Sem markExported: a pessoa cancelou o "Salvar como".
+    // Without markExported: the person cancelled the "Save as".
     vi.setSystemTime(new Date('2026-10-02T10:00:00.000Z'));
     root.failWrites = null;
     expect(await session.flush()).toEqual({ ok: true });
@@ -1201,19 +1205,19 @@ describe('recentes de pasta (fase 6.6)', () => {
     const library = await local.openFolderLibrary();
     await vi.waitFor(async () =>
       expect((await library?.list())?.map((f) => [f.name, f.usedAt])).toEqual([
-        ['Cancelado', '2026-10-02T10:00:00.000Z'],
+        ['Cancelled', '2026-10-02T10:00:00.000Z'],
       ]),
     );
     library?.close();
   });
 
-  it('zip baixado (markExported): a gravação do mesmo conteúdo não é mudança', async () => {
+  it('zip downloaded (markExported): saving the same content is not a change', async () => {
     const root = projectFolder();
     pickDirectory.mockResolvedValue(root);
     await app.openFolder();
     const { session, unexported } = await openedOf(app);
     root.failWrites = new Error('NoModificationAllowedError');
-    session.actions.renameProject('Baixado');
+    session.actions.renameProject('Downloaded');
     await session.flush();
     expect((await app.buildExport()).ok).toBe(true);
     await app.markExported();
@@ -1222,16 +1226,16 @@ describe('recentes de pasta (fase 6.6)', () => {
     expect(unexported.value).toBe(false);
   });
 
-  // Etapa 8 (8.4), R5: uma falha da permissão (ativação expirada, volume desmontado) dá o
-  // aviso com Localizar/Remover, não só "Não foi possível acessar os arquivos".
-  it('SecurityError no requestPermission: aviso de permissão, com o erro no Diagnóstico', async () => {
+  // Stage 8 (8.4), R5: a permission failure (expired activation, unmounted volume) gives the
+  // notice with Locate/Remove, not just "Could not access the files".
+  it('SecurityError in requestPermission: permission notice, with the error in Diagnostics', async () => {
     const root = projectFolder();
     await openViaPicker(root);
     root.permission = 'prompt';
     vi.spyOn(root, 'requestPermission').mockRejectedValue(
-      new DOMException('ativação expirada', 'SecurityError'),
+      new DOMException('activation expired', 'SecurityError'),
     );
-    expect(await app.openRecentFolder(idOf('pasta'))).toEqual({
+    expect(await app.openRecentFolder(idOf('folder'))).toEqual({
       ok: true,
       value: { kind: 'unavailable', reason: 'denied' },
     });
@@ -1242,8 +1246,8 @@ describe('recentes de pasta (fase 6.6)', () => {
     );
   });
 
-  // Etapa 8 (8.4), R6: o banco dos handles também pede armazenamento persistente.
-  it('guardar a pasta pede armazenamento persistente', async () => {
+  // Stage 8 (8.4), R6: the handles database also requests persistent storage.
+  it('storing the folder requests persistent storage', async () => {
     const persist = vi.fn(async () => true);
     Object.defineProperty(navigator, 'storage', {
       configurable: true,
@@ -1258,38 +1262,38 @@ describe('recentes de pasta (fase 6.6)', () => {
     }
   });
 
-  // Etapa 8 (8.4): a cópia da pasta é o id da entrada dos recentes (chave do retomar, 8.2).
-  it('copyId da pasta é o id da entrada: pelo seletor, pelo recente e depois do Localizar', async () => {
+  // Stage 8 (8.4): the folder copy is the id of the recents entry (resume key, 8.2).
+  it('folder copyId is the entry id: through the picker, through the recent and after Locate', async () => {
     const root = projectFolder();
     pickDirectory.mockResolvedValue(root);
     await app.openFolder();
     const first = (await openedOf(app)).session.storage.copyId;
     await app.closeProject();
-    const id = idOf('pasta');
+    const id = idOf('folder');
     expect(first).toBe(id);
     await app.openRecentFolder(id);
     expect((await openedOf(app)).session.storage.copyId).toBe(id);
     await app.closeProject();
     root.gone = true;
-    pickDirectory.mockResolvedValue(projectFolder('pasta-movida'));
+    pickDirectory.mockResolvedValue(projectFolder('moved-folder'));
     expect(await app.relocateFolder(id)).toEqual({ ok: true, value: { kind: 'opened' } });
     expect((await openedOf(app)).session.storage.copyId).toBe(id);
   });
 
-  it('copyId da pasta reparada é o id da entrada', async () => {
-    const root = new PermissionDirectory('reparo');
+  it('repaired folder copyId is the entry id', async () => {
+    const root = new PermissionDirectory('repair');
     root.put('mapping.json', readInvalidFixture('missing-parent'));
     pickDirectory.mockResolvedValue(root);
     const result = await app.openFolder();
     if (result.ok || !result.inconsistent?.repair)
-      throw new Error('deveria pedir o reparo');
+      throw new Error('should ask for the repair');
     expect((await result.inconsistent.repair()).ok).toBe(true);
     const copyId = (await openedOf(app)).session.storage.copyId;
     await app.closeProject();
-    expect(copyId).toBe(idOf('reparo'));
+    expect(copyId).toBe(idOf('repair'));
   });
 
-  it('copyId da pasta sem recentes: um id por aba, o mesmo ao reabrir a mesma pasta', async () => {
+  it('copyId of a folder without recents: one id per tab, the same when reopening the same folder', async () => {
     const plain = (name: string) => {
       const dir = new MemoryDirectory(name);
       dir.put('mapping.json', serialize(emptyProject()));
@@ -1302,18 +1306,18 @@ describe('recentes de pasta (fase 6.6)', () => {
       await app.closeProject();
       return copyId;
     };
-    const first = await copyOf(plain('simples'));
+    const first = await copyOf(plain('plain'));
     expect(first).toEqual(expect.any(String));
     expect(first).not.toBe('');
-    expect(await copyOf(plain('simples'))).toBe(first);
-    expect(await copyOf(plain('outra'))).not.toBe(first);
+    expect(await copyOf(plain('plain'))).toBe(first);
+    expect(await copyOf(plain('other'))).not.toBe(first);
     expect(folders()).toEqual([]);
   });
 
-  // Etapa 8 (8.4), R7: duas linhas iguais na lista ficam distinguíveis pelo nome da pasta.
-  it('nomes repetidos na lista mostram o nome da pasta', async () => {
-    await openViaPicker(projectFolder('a', 'Loja'));
-    await openViaPicker(projectFolder('b', 'Loja'));
+  // Stage 8 (8.4), R7: two equal rows in the list become distinguishable by the folder name.
+  it('repeated names in the list show the folder name', async () => {
+    await openViaPicker(projectFolder('a', 'Shop'));
+    await openViaPicker(projectFolder('b', 'Shop'));
     await openViaPicker(projectFolder('c', 'c'));
     const show = Object.fromEntries(
       folders().map((p) =>
@@ -1323,14 +1327,14 @@ describe('recentes de pasta (fase 6.6)', () => {
     expect(show).toEqual({ a: true, b: true, c: false });
   });
 
-  it('permissão já concedida: um clique abre e atualiza a data, sem mudar o mapping.json', async () => {
+  it('permission already granted: one click opens and updates the date, without changing mapping.json', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-10-01T10:00:00.000Z'));
     const root = projectFolder();
     const before = await root.read('mapping.json');
     await openViaPicker(root);
     vi.setSystemTime(new Date('2026-10-05T10:00:00.000Z'));
-    expect(await app.openRecentFolder(idOf('pasta'))).toEqual({
+    expect(await app.openRecentFolder(idOf('folder'))).toEqual({
       ok: true,
       value: { kind: 'opened' },
     });
@@ -1341,24 +1345,24 @@ describe('recentes de pasta (fase 6.6)', () => {
     expect(await root.read('mapping.json')).toBe(before);
   });
 
-  it('permissão a pedir: pede dentro do clique e abre', async () => {
+  it('permission to ask: asks within the click and opens', async () => {
     const root = projectFolder();
     await openViaPicker(root);
     root.permission = 'prompt';
     const query = vi.spyOn(root, 'queryPermission');
-    const opening = app.openRecentFolder(idOf('pasta'));
-    // A consulta começa no próprio clique, antes de qualquer outra espera.
+    const opening = app.openRecentFolder(idOf('folder'));
+    // The query starts in the click itself, before any other wait.
     expect(query).toHaveBeenCalledWith({ mode: 'readwrite' });
     expect(await opening).toEqual({ ok: true, value: { kind: 'opened' } });
     expect(root.requests).toBe(1);
   });
 
-  it('permissão negada: aviso, nada aberto', async () => {
+  it('permission denied: notice, nothing opened', async () => {
     const root = projectFolder();
     await openViaPicker(root);
     root.permission = 'prompt';
     root.answer = 'denied';
-    expect(await app.openRecentFolder(idOf('pasta'))).toEqual({
+    expect(await app.openRecentFolder(idOf('folder'))).toEqual({
       ok: true,
       value: { kind: 'unavailable', reason: 'denied' },
     });
@@ -1366,25 +1370,25 @@ describe('recentes de pasta (fase 6.6)', () => {
     expect(folders()).toHaveLength(1);
   });
 
-  it('pasta movida ou apagada (NotFoundError): aviso, nada aberto', async () => {
+  it('folder moved or deleted (NotFoundError): notice, nothing opened', async () => {
     const root = projectFolder();
     await openViaPicker(root);
     root.gone = true;
-    expect(await app.openRecentFolder(idOf('pasta'))).toEqual({
+    expect(await app.openRecentFolder(idOf('folder'))).toEqual({
       ok: true,
       value: { kind: 'unavailable', reason: 'missing' },
     });
     expect(app.openProject.value).toBeNull();
   });
 
-  it('Localizar pasta: substitui o handle, conferindo o mapping.json', async () => {
+  it('Locate folder: replaces the handle, checking mapping.json', async () => {
     const root = projectFolder();
     await openViaPicker(root);
-    const id = idOf('pasta');
+    const id = idOf('folder');
     root.gone = true;
 
-    // Pasta sem mapping.json: não é o projeto; a entrada fica como estava.
-    pickDirectory.mockResolvedValue(new PermissionDirectory('vazia'));
+    // Folder without mapping.json: it is not the project; the entry stays as it was.
+    pickDirectory.mockResolvedValue(new PermissionDirectory('empty'));
     expect(await app.relocateFolder(id)).toEqual({
       ok: true,
       value: { kind: 'no-project' },
@@ -1398,18 +1402,18 @@ describe('recentes de pasta (fase 6.6)', () => {
       value: { kind: 'cancelled' },
     });
 
-    const moved = projectFolder('pasta-movida');
+    const moved = projectFolder('moved-folder');
     pickDirectory.mockResolvedValue(moved);
     expect(await app.relocateFolder(id)).toEqual({ ok: true, value: { kind: 'opened' } });
     await app.closeProject();
-    expect(folders().map((p) => [p.id, p.folderName])).toEqual([[id, 'pasta-movida']]);
+    expect(folders().map((p) => [p.id, p.folderName])).toEqual([[id, 'moved-folder']]);
     expect(await app.openRecentFolder(id)).toEqual({
       ok: true,
       value: { kind: 'opened' },
     });
   });
 
-  it('Localizar uma pasta que já está na lista junta as duas entradas', async () => {
+  it('Locating a folder that is already in the list merges the two entries', async () => {
     const a = projectFolder('a', 'A');
     const b = projectFolder('b', 'B');
     await openViaPicker(a);
@@ -1421,36 +1425,36 @@ describe('recentes de pasta (fase 6.6)', () => {
     expect(folders().map((p) => p.folderName)).toEqual(['b']);
   });
 
-  it('Remover da lista não apaga nada do disco', async () => {
+  it('Removing from the list does not delete anything from disk', async () => {
     const root = projectFolder();
     await openViaPicker(root);
     const before = await root.read('mapping.json');
-    expect((await app.forgetFolder(idOf('pasta'))).ok).toBe(true);
+    expect((await app.forgetFolder(idOf('folder'))).ok).toBe(true);
     expect(folders()).toEqual([]);
     expect(await root.read('mapping.json')).toBe(before);
     ({ app, local } = await load());
     expect(folders()).toEqual([]);
   });
 
-  // Etapa 8 (8.4), R8: numa visita nova, a leitura do handle no IndexedDB (`handleOf`) vem
-  // ANTES do `queryPermission`. O `requestPermission` só abre o pedido dentro da ativação do
-  // gesto (alguns segundos): essa leitura precisa continuar curta e ser a única espera antes
-  // da consulta. Não ponha outra espera (rede, outra leitura, `remember`) nesse caminho.
-  it('numa visita nova, o handle vem do IndexedDB e a permissão é pedida', async () => {
+  // Stage 8 (8.4), R8: on a new visit, reading the handle in IndexedDB (`handleOf`) comes
+  // BEFORE `queryPermission`. `requestPermission` only opens the request within the gesture
+  // activation (a few seconds): that read must stay short and be the only wait before the
+  // query. Do not put another wait (network, another read, `remember`) on that path.
+  it('on a new visit, the handle comes from IndexedDB and the permission is requested', async () => {
     const root = projectFolder();
     await openViaPicker(root);
     ({ app, local } = await load());
     root.permission = 'prompt';
-    expect(await app.openRecentFolder(idOf('pasta'))).toEqual({
+    expect(await app.openRecentFolder(idOf('folder'))).toEqual({
       ok: true,
       value: { kind: 'opened' },
     });
     expect(root.requests).toBe(1);
   });
 
-  it('pasta do armazenamento privado da origem (OPFS) não entra na lista', async () => {
+  it('a folder in the origin private storage (OPFS) does not enter the list', async () => {
     const root = projectFolder('opfs');
-    // A raiz do OPFS reconhece a pasta como sua (`resolve` devolve o caminho).
+    // The OPFS root recognizes the folder as its own (`resolve` returns the path).
     const opfs = {
       isSameEntry: async () => false,
       resolve: async (h: unknown) => (h === root ? ['opfs'] : null),
@@ -1462,21 +1466,21 @@ describe('recentes de pasta (fase 6.6)', () => {
     try {
       await openViaPicker(root);
       expect(folders()).toEqual([]);
-      await openViaPicker(projectFolder('fora'));
-      expect(folders().map((p) => p.folderName)).toEqual(['fora']);
+      await openViaPicker(projectFolder('outside'));
+      expect(folders().map((p) => p.folderName)).toEqual(['outside']);
     } finally {
       Reflect.deleteProperty(navigator, 'storage');
     }
   });
 
-  it('navegador sem queryPermission/isSameEntry: a lista fica só com os locais', async () => {
-    const plain = new MemoryDirectory('simples');
+  it('browser without queryPermission/isSameEntry: the list keeps only the local ones', async () => {
+    const plain = new MemoryDirectory('plain');
     plain.put('mapping.json', serialize(emptyProject()));
     await openViaPicker(plain);
     expect(folders()).toEqual([]);
   });
 
-  it('sem o modo pasta, as pastas guardadas não aparecem', async () => {
+  it('without folder mode, the stored folders do not show', async () => {
     await openViaPicker(projectFolder());
     vi.stubGlobal('showDirectoryPicker', undefined);
     ({ app, local } = await load());
@@ -1484,22 +1488,22 @@ describe('recentes de pasta (fase 6.6)', () => {
     expect(folders()).toEqual([]);
   });
 
-  // Devolução do portão da 8.4 (achado 1): o Abrir grava no rastro o caminho que tomou, para o
-  // Diagnóstico (`folders.reopen`). O rastro aqui é um objeto simples com `step`.
-  describe('rastro do Abrir', () => {
+  // Return from the 8.4 gate (finding 1): Open records in the trace the path it took, for
+  // Diagnostics (`folders.reopen`). The trace here is a plain object with `step`.
+  describe('Open trace', () => {
     const recorder = () => {
       const steps: string[] = [];
       return { steps, step: (label: string) => void steps.push(label) };
     };
 
-    it('o caso do relato: pedido concedido e a pasta renomeada', async () => {
+    it('the reported case: request granted and the folder renamed', async () => {
       const root = projectFolder();
       await openViaPicker(root);
       ({ app, local } = await load());
       root.permission = 'prompt';
       root.gone = true;
       const trace = recorder();
-      expect(await app.openRecentFolder(idOf('pasta'), trace)).toEqual({
+      expect(await app.openRecentFolder(idOf('folder'), trace)).toEqual({
         ok: true,
         value: { kind: 'unavailable', reason: 'missing' },
       });
@@ -1511,20 +1515,20 @@ describe('recentes de pasta (fase 6.6)', () => {
       ]);
     });
 
-    it('permissão já valendo e projeto aberto', async () => {
+    it('permission already valid and project opened', async () => {
       await openViaPicker(projectFolder());
       const trace = recorder();
-      await app.openRecentFolder(idOf('pasta'), trace);
+      await app.openRecentFolder(idOf('folder'), trace);
       expect(trace.steps).toEqual(['handle=memory', 'query=granted', 'branch=opened']);
     });
 
-    it('permissão negada', async () => {
+    it('permission denied', async () => {
       const root = projectFolder();
       await openViaPicker(root);
       root.permission = 'prompt';
       root.answer = 'denied';
       const trace = recorder();
-      await app.openRecentFolder(idOf('pasta'), trace);
+      await app.openRecentFolder(idOf('folder'), trace);
       expect(trace.steps).toEqual([
         'handle=memory',
         'query=prompt',
@@ -1533,61 +1537,61 @@ describe('recentes de pasta (fase 6.6)', () => {
       ]);
     });
 
-    it('exceção no pedido: SecurityError e NotFoundError', async () => {
+    it('exception in the request: SecurityError and NotFoundError', async () => {
       const root = projectFolder();
       await openViaPicker(root);
       root.permission = 'prompt';
       const request = vi
         .spyOn(root, 'requestPermission')
-        .mockRejectedValue(new DOMException('ativação expirada', 'SecurityError'));
+        .mockRejectedValue(new DOMException('activation expired', 'SecurityError'));
       const trace = recorder();
-      await app.openRecentFolder(idOf('pasta'), trace);
+      await app.openRecentFolder(idOf('folder'), trace);
       expect(trace.steps.at(-1)).toBe('branch=permission-error:SecurityError');
-      request.mockRejectedValue(new DOMException('sumiu', 'NotFoundError'));
+      request.mockRejectedValue(new DOMException('gone', 'NotFoundError'));
       const again = recorder();
-      await app.openRecentFolder(idOf('pasta'), again);
+      await app.openRecentFolder(idOf('folder'), again);
       expect(again.steps.at(-1)).toBe('branch=permission-missing');
     });
 
-    it('sem handle utilizável numa visita nova', async () => {
+    it('without a usable handle on a new visit', async () => {
       const root = projectFolder();
       await openViaPicker(root);
       ({ app, local } = await load());
       Object.defineProperty(root, 'requestPermission', { value: undefined });
       const trace = recorder();
-      expect(await app.openRecentFolder(idOf('pasta'), trace)).toEqual({
+      expect(await app.openRecentFolder(idOf('folder'), trace)).toEqual({
         ok: true,
         value: { kind: 'unavailable', reason: 'missing' },
       });
       expect(trace.steps).toEqual(['handle=idb', 'branch=no-handle']);
     });
 
-    it('entrada que saiu da lista', async () => {
+    it('entry that left the list', async () => {
       const trace = recorder();
-      expect((await app.openRecentFolder('nao-existe', trace)).ok).toBe(false);
+      expect((await app.openRecentFolder('does-not-exist', trace)).ok).toBe(false);
       expect(trace.steps).toEqual(['branch=no-entry']);
     });
 
-    it('o projeto não abre: o código do erro', async () => {
+    it('the project does not open: the error code', async () => {
       const root = projectFolder();
       await openViaPicker(root);
       root.put('mapping.json', '{');
       const trace = recorder();
-      const result = await app.openRecentFolder(idOf('pasta'), trace);
+      const result = await app.openRecentFolder(idOf('folder'), trace);
       expect(result.ok).toBe(false);
       expect(trace.steps.at(-1)).toBe(
         `branch=open-failed:${result.ok ? '' : result.error}`,
       );
     });
 
-    it('exceção fora da permissão: o nome dela', async () => {
+    it('exception outside the permission: its name', async () => {
       const root = projectFolder();
       await openViaPicker(root);
       vi.spyOn(root, 'getFileHandle').mockRejectedValue(
-        new DOMException('travado', 'InvalidStateError'),
+        new DOMException('locked', 'InvalidStateError'),
       );
       const trace = recorder();
-      expect(await app.openRecentFolder(idOf('pasta'), trace)).toEqual({
+      expect(await app.openRecentFolder(idOf('folder'), trace)).toEqual({
         ok: false,
         error: 'storage-failed',
       });

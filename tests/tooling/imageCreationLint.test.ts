@@ -1,15 +1,15 @@
 // @vitest-environment node
-// Um só criador de imagem (docs/ARCHITECTURE.md, "Imagens remotas"). A regra ESLint
-// (`imageCreationSyntaxRules` em eslint.config.js) proíbe criar imagem a partir de URL em
-// `src/**` e `viewer/**`, salvo no carregador (`src/canvas/components/imageLoader.ts`) e em
-// `src/storage/**`. Como `no-restricted-syntax` de um bloco posterior substitui o anterior, este
-// teste também prova que as regras antigas continuam valendo onde a nova foi juntada.
+// A single image creator (docs/ARCHITECTURE.md, "Remote images"). The ESLint rule
+// (`imageCreationSyntaxRules` in eslint.config.js) forbids creating an image from a URL in
+// `src/**` and `viewer/**`, except in the loader (`src/canvas/components/imageLoader.ts`) and in
+// `src/storage/**`. Since a `no-restricted-syntax` of a later block replaces the earlier one, this
+// test also proves that the old rules still apply where the new one was joined.
 import { ESLint } from 'eslint';
 import { describe, expect, it } from 'vitest';
 
 const eslint = new ESLint({ cwd: process.cwd() });
 
-/** Mensagens de `no-restricted-syntax` ao lintar `code` como se fosse o arquivo `filePath`. */
+/** Messages of `no-restricted-syntax` when linting `code` as if it were the file `filePath`. */
 async function restricted(code: string, filePath: string): Promise<string[]> {
   const [result] = await eslint.lintText(code, { filePath });
   return (result?.messages ?? [])
@@ -26,8 +26,8 @@ const forbidden: Record<string, string> = {
   'new Image(w, h)': `export const a = new Image(10, 10);\n`,
   "createElement('img')": `export const a = document.createElement('img');\n`,
   "createElementNS(…, 'image')": `export const a = document.createElementNS('http://www.w3.org/2000/svg', 'image');\n`,
-  'atribuição a .src': `export function f(el: HTMLImageElement) {\n  el.src = 'https://x/y.png';\n}\n`,
-  'atribuição a .srcset': `export function f(el: HTMLImageElement) {\n  el.srcset = 'a 1x';\n}\n`,
+  'assignment to .src': `export function f(el: HTMLImageElement) {\n  el.src = 'https://x/y.png';\n}\n`,
+  'assignment to .srcset': `export function f(el: HTMLImageElement) {\n  el.srcset = 'a 1x';\n}\n`,
   'x.src += …': `export function f(el: HTMLImageElement) {\n  el.src += '?d=1';\n}\n`,
   "x['src'] = …": `export function f(el: HTMLImageElement) {\n  el['src'] = 'u';\n}\n`,
   "setAttribute('src', …)": `export function f(el: Element) {\n  el.setAttribute('src', 'u');\n}\n`,
@@ -49,23 +49,23 @@ const restrictedFiles = [
 ];
 const allowedFiles = ['src/canvas/components/imageLoader.ts', 'src/storage/images.ts'];
 
-describe('criador de imagem único (decisão 14)', () => {
+describe('single image creator (decision 14)', () => {
   for (const [name, code] of Object.entries(forbidden)) {
-    it(`${name} é erro fora do carregador`, async () => {
+    it(`${name} is an error outside the loader`, async () => {
       for (const file of restrictedFiles) {
         const messages = await imageErrors(code, file);
         expect(messages.length, `${file}: ${name}`).toBeGreaterThan(0);
       }
     });
 
-    it(`${name} é livre no carregador e em src/storage/`, async () => {
+    it(`${name} is free in the loader and in src/storage/`, async () => {
       for (const file of allowedFiles) {
         expect(await imageErrors(code, file), `${file}: ${name}`).toEqual([]);
       }
     });
   }
 
-  it('só ler .src e usar src num objeto literal não é erro', async () => {
+  it('only reading .src and using src in an object literal is not an error', async () => {
     const code = `export function f(el: HTMLImageElement) {
   const s = el.src;
   const o = { src: s, srcset: 'a' };
@@ -78,13 +78,13 @@ describe('criador de imagem único (decisão 14)', () => {
     }
   });
 
-  it('createElement de outro elemento não é erro', async () => {
+  it('createElement of another element is not an error', async () => {
     const code = `export const a = document.createElement('canvas');\n`;
     expect(await restricted(code, 'src/ui/Foo.tsx')).toEqual([]);
   });
 });
 
-describe('as regras antigas continuam valendo onde a de imagem foi juntada', () => {
+describe('the old rules still apply where the image one was joined', () => {
   const write = `export async function x(storage: { saveMapping(text: string): Promise<void> }) {
   await storage.saveMapping('{}');
 }
@@ -92,37 +92,37 @@ describe('as regras antigas continuam valendo onde a de imagem foi juntada', () 
   const globalQuery = `export const a = document.querySelector('[data-x]');\n`;
   const classQuery = `export function f(el: HTMLElement) {\n  return el.querySelector('.x');\n}\n`;
 
-  it('saveMapping em src/ui/ ainda é erro', async () => {
+  it('saveMapping in src/ui/ is still an error', async () => {
     expect(await restricted(write, 'src/ui/StatusBar.tsx')).toHaveLength(1);
   });
 
-  it('saveMapping em src/storage/ (fora das implementações) ainda é erro', async () => {
+  it('saveMapping in src/storage/ (outside the implementations) is still an error', async () => {
     expect(await restricted(write, 'src/storage/share.ts')).toHaveLength(1);
   });
 
-  it('saveMapping no carregador de imagem também é erro (recebe as regras da sessão)', async () => {
+  it('saveMapping in the image loader is also an error (it gets the session rules)', async () => {
     expect(await restricted(write, 'src/canvas/components/imageLoader.ts')).toHaveLength(
       1,
     );
   });
 
-  it('o seletor global de foco ainda é erro em src/ui/ e src/app/', async () => {
+  it('the global focus selector is still an error in src/ui/ and src/app/', async () => {
     expect(await restricted(globalQuery, 'src/ui/Foo.tsx')).toHaveLength(1);
     expect(await restricted(globalQuery, 'src/app/controller.ts')).toHaveLength(1);
   });
 
-  it('o seletor por classe ainda é erro nas exceções de foco', async () => {
+  it('the class selector is still an error in the focus exceptions', async () => {
     expect(await restricted(classQuery, 'src/ui/focus.ts')).toHaveLength(1);
   });
 
-  it('em session.ts, saveMapping fora de writeProject ainda é erro', async () => {
+  it('in session.ts, saveMapping outside writeProject is still an error', async () => {
     const outside = `declare const storage: { saveMapping(t: string): Promise<void> };
 export const other = () => storage.saveMapping('{}');
 `;
     expect(await restricted(outside, 'src/store/session.ts')).toHaveLength(1);
   });
 
-  it('o controller ainda proíbe loadMapping', async () => {
+  it('the controller still forbids loadMapping', async () => {
     const code = `declare const storage: { loadMapping(): Promise<string | null> };
 export const other = () => storage.loadMapping();
 `;
