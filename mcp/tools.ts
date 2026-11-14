@@ -259,7 +259,7 @@ export function registerTools(
     'create_project',
     {
       description:
-        'Creates an empty Mapping project (mapping.json and .gitignore; images/ is created with the first image applied) in a folder inside a root, already with the notes library applied (the `Notas` layer and specs/notas/; `notes: false` skips it). The folder name becomes the <project> of the references.',
+        'Creates an empty Mapping project (mapping.json and .gitignore; images/ is created with the first image applied) in a folder inside a root, already with the notes library applied (the `Notes` layer and specs/notas/; `notes: false` skips it). The folder name becomes the <project> of the references.',
       inputSchema: {
         path: z
           .string()
@@ -281,7 +281,7 @@ export function registerTools(
           .boolean()
           .optional()
           .describe(
-            'Applies the bundled notes library (floating post-its: the `Notas` layer and the specs/notas/ folder). Default: true; false creates the project without it.',
+            'Applies the bundled notes library (floating post-its: the `Notes` layer and the specs/notas/ folder). Default: true; false creates the project without it.',
           ),
       },
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },

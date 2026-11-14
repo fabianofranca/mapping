@@ -34,7 +34,6 @@ async function fielZip(): Promise<Buffer> {
   return zip.generateAsync({ type: 'nodebuffer' });
 }
 
-// pt-BR kept: library data (m3-fiel/material3-compose field label 'Rótulo') asserted by tests/examples
 async function stubFolderPicker(page: Page): Promise<void> {
   await page.addInitScript((name) => {
     Reflect.set(window, 'showDirectoryPicker', async () => {
@@ -286,7 +285,7 @@ test('R25.3 to R25.12: no marking moves without a request', async ({ page }) => 
   await selectInTree(page, 'Navigation bar');
   for (const letter of ['A', 'B', 'C']) {
     await page.getByRole('button', { name: '+ Row' }).click();
-    const cell = page.getByRole('textbox', { name: /^Rótulo \(Row \d\)$/ }).last();
+    const cell = page.getByRole('textbox', { name: /^Label \(Row \d\)$/ }).last();
     await cell.fill(letter);
     await cell.press('Enter');
   }

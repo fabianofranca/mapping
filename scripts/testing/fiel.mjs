@@ -540,6 +540,6 @@ for (const layer of spec.layers)
       const before = (type.examples ?? []).length;
       type.examples = (type.examples ?? []).filter((e) => e.name !== 'Long label');
       if (type.examples.length === before)
-        throw new Error('exemplo "Long label" do button não achado');
+        throw new Error('example "Long label" of the button not found');
     }
 fs.writeFileSync(specFile, JSON.stringify(spec, null, 2));
