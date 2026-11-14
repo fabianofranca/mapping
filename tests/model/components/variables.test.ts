@@ -345,9 +345,7 @@ describe('let e $var: erros', () => {
         children: [rect({ width: { $var: 'a' } })],
       }),
     );
-    expect(validateComponent(raw)).toEqual([
-      'template.let.a: variable cycle: a → b → a',
-    ]);
+    expect(validateComponent(raw)).toEqual(['template.let.a: variable cycle: a → b → a']);
   });
 
   it('a variável que usa a si mesma é um ciclo, mesmo escondendo a de fora', () => {

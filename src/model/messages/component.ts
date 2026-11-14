@@ -14,7 +14,8 @@ export const componentMessages = {
   'component.expectedTextOrNumber': 'expected text or a number',
   'component.expectedColor': 'expected a color (non-empty text)',
   'component.expectedOneOf': 'expected one of: {options}',
-  'component.expectedRadius': 'expected a number greater than or equal to 0 or a list of 4 numbers',
+  'component.expectedRadius':
+    'expected a number greater than or equal to 0 or a list of 4 numbers',
   'component.expectedFill': 'expected a color or gradient',
   'component.expectedLinear': 'expected "linear"',
   'component.expectedStops': 'expected a list of stops',
@@ -56,7 +57,8 @@ export const componentMessages = {
   'component.repeatedSide': 'repeated side: {side}',
   'component.expectedNumbers': 'expected a list of numbers',
   'component.sidesOnlyFrameRect': 'only valid in frame and rect (this is {nodeType})',
-  'component.offsetOnlyShapes': 'only valid in frame, rect and ellipse (this is {nodeType})',
+  'component.offsetOnlyShapes':
+    'only valid in frame, rect and ellipse (this is {nodeType})',
   'component.expectedInteger1': 'expected an integer greater than or equal to 1',
   'component.expectedPadding':
     'expected a number, a list of 2 or a list of 4 numbers (greater than or equal to 0)',
@@ -71,7 +73,8 @@ export const componentMessages = {
   'component.expectedNodeObject': 'expected an object (node)',
   'component.nodeTypeUnknown': 'unknown node type: {type} (expected {types})',
   'component.onlyFrameAccepts': 'only nodes of type frame accept {key} (this is {type})',
-  'component.notInRepeat': 'not valid in a repeat; the drawing belongs to the template ({key})',
+  'component.notInRepeat':
+    'not valid in a repeat; the drawing belongs to the template ({key})',
   'component.expectedNodes': 'expected a list of nodes',
   'component.expectedHttps': 'expected an absolute https:// URL ({reason})',
   'component.srcOnlyLiteral': 'src only accepts literal text or { "$field": "<field>" }',
@@ -86,7 +89,8 @@ export const componentMessages = {
     'expected a token name ([a-z0-9][a-z0-9-]*) or a color',
   'component.emptyName': 'empty name',
   'component.providedOnlyColor': '$provided is only valid where a color is expected',
-  'component.expectedProvidedName': 'expected the name of the provided color (non-empty text)',
+  'component.expectedProvidedName':
+    'expected the name of the provided color (non-empty text)',
   'component.gapNotWithSides': 'gap is not valid with sides',
   'component.expectedShadowCount': 'expected 1 to {max} shadows',
   'component.gapNodeNotFound': 'node not found: {name}',
@@ -117,7 +121,8 @@ export const componentMessages = {
   'component.anchorEndRight': 'does not combine with right',
   'component.weightOnlyFill':
     'weight: only valid on a fill child on the main axis of a row or column',
-  'component.repeatLayoutConflict': 'repeat.layout: does not combine with direction or gap',
+  'component.repeatLayoutConflict':
+    'repeat.layout: does not combine with direction or gap',
   'component.distributeNotGrid': 'distribute: not valid with a grid layout',
   'component.repeatLayoutUseKey': 'repeat.layout: the key goes inside layout ({key})',
   'component.repeatLayoutNotNone': 'repeat.layout: use row, column or grid',

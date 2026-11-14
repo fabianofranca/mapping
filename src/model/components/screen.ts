@@ -303,7 +303,9 @@ function checkHierarchy(instances: readonly Instance[]): void {
   const byId = new Map<string, Instance>();
   instances.forEach((inst, index) => {
     if (byId.has(inst.id))
-      throw new Error(`Invalid screen: instances[${index}].id is duplicated (${inst.id})`);
+      throw new Error(
+        `Invalid screen: instances[${index}].id is duplicated (${inst.id})`,
+      );
     byId.set(inst.id, inst);
   });
   instances.forEach((inst, index) => {

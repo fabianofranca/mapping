@@ -188,11 +188,7 @@ function count(st: State): void {
 function tooBig(st: State): void {
   if (st.over) return;
   st.over = true;
-  report(
-    st,
-    '',
-    `variable expansion too large (more than ${MAX_EXPANDED_NODES} nodes)`,
-  );
+  report(st, '', `variable expansion too large (more than ${MAX_EXPANDED_NODES} nodes)`);
 }
 
 /** A value (expression, condition, literal or style object) with the `$var`s replaced. */

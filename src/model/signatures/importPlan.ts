@@ -394,7 +394,10 @@ class Importer {
       matched.add(option);
       if (option !== text) this.mapOption(field, option, text);
     } else if (this.design) {
-      this.note(field, `the option \`${text}\` of the source does not exist in the field`);
+      this.note(
+        field,
+        `the option \`${text}\` of the source does not exist in the field`,
+      );
     } else {
       field.options.push(text);
     }

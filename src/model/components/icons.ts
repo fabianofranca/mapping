@@ -114,8 +114,7 @@ function checkUnknownKeys(
   out: IconsIssue[],
 ): void {
   for (const key of Object.keys(value))
-    if (!allowed.includes(key))
-      out.push(issue(join(path, key), `unknown key: ${key}`));
+    if (!allowed.includes(key)) out.push(issue(join(path, key), `unknown key: ${key}`));
 }
 
 /** `fill`, `stroke`, `width`, `cap` and `join` of a path (all optional). */

@@ -370,7 +370,9 @@ describe('repeat.layout', () => {
   it('distribute fill não vale com layout grid', () => {
     expect(
       issues(repeat({ layout: { type: 'grid', columns: 2 }, distribute: 'fill' })),
-    ).toEqual(['template.children[0].distribute: distribute: not valid with a grid layout']);
+    ).toEqual([
+      'template.children[0].distribute: distribute: not valid with a grid layout',
+    ]);
     expect(issues(repeat({ layout: { type: 'row' }, distribute: 'fill' }))).toEqual([]);
     expect(
       issues(repeat({ layout: { type: 'grid', columns: 2 }, distribute: 'none' })),

@@ -232,11 +232,7 @@ describe('validate_library com let e $var (servidor real)', () => {
   });
 
   it.each([
-    [
-      'indefinida',
-      'template.children[0].children[0].gap',
-      'undefined variable: space',
-    ],
+    ['indefinida', 'template.children[0].children[0].gap', 'undefined variable: space'],
     ['ciclo', 'template.let.a', 'variable cycle: a → b → a'],
     ['nome', 'template.let.Gap', 'expected a variable name ([a-z][a-zA-Z0-9]*)'],
     [

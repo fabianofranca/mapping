@@ -145,7 +145,8 @@ describe('expressão em width e height', () => {
       src: { $field: 'foto' },
       ...extra,
     });
-    const hug = 'the image node does not accept hug: the layout does not depend on the downloaded image';
+    const hug =
+      'the image node does not accept hug: the layout does not depend on the downloaded image';
     expect(validateComponent(withChild(image({ width: 'hug' }), 3))).toEqual([
       `template.children[0].width: ${hug}`,
     ]);

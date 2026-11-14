@@ -91,7 +91,10 @@ function checkValue(value: unknown, path: string, c: Collector): void {
   const kind = value.kind;
   if (kind === undefined) c.add(`${path}.kind`, 'required');
   else if (!oneOfSet(kind, SIGNATURE_VALUE_KINDS)) {
-    c.add(`${path}.kind`, `"${String(kind)}" is invalid; ${oneOf(SIGNATURE_VALUE_KINDS)}`);
+    c.add(
+      `${path}.kind`,
+      `"${String(kind)}" is invalid; ${oneOf(SIGNATURE_VALUE_KINDS)}`,
+    );
   }
   c.literal(value, 'default', path);
   checkOptions(value.options, kind, path, c);

@@ -219,11 +219,13 @@ const checkNumber = tokenCheck('number', (v, p, out) => {
 });
 
 const checkNonNegative = tokenCheck('number', (v, p, out) => {
-  if (!isFiniteNumber(v) || v < 0) add(out, p, 'expected a number greater than or equal to 0');
+  if (!isFiniteNumber(v) || v < 0)
+    add(out, p, 'expected a number greater than or equal to 0');
 });
 
 const checkUnit = tokenCheck('number', (v, p, out) => {
-  if (!isFiniteNumber(v) || v < 0 || v > 1) add(out, p, 'expected a number between 0 and 1');
+  if (!isFiniteNumber(v) || v < 0 || v > 1)
+    add(out, p, 'expected a number between 0 and 1');
 });
 
 const checkWeight = tokenCheck('number', (v, p, out) => {
@@ -422,7 +424,11 @@ function checkTokenExpr(value: Rec, path: string, check: Check, out: Ctx): void 
   const at = join(path, '$token');
   const kind = check.tokenKind;
   if (kind === undefined)
-    add(out, path, '$token is only valid where a color, a number or a font family is expected');
+    add(
+      out,
+      path,
+      '$token is only valid where a color, a number or a font family is expected',
+    );
   const name = value.$token;
   if (typeof name !== 'string' || !TOKEN_NAME_PATTERN.test(name))
     add(out, at, 'expected a token name ([a-z0-9][a-z0-9-]*)');
@@ -576,7 +582,11 @@ const checkSize = tokenCheck('number', (value, path, out) => {
 /** Like `checkSize`, but without `hug` or the intrinsic measure: the `image` node does not depend on the downloaded image. */
 const checkSizeNoHug = tokenCheck('number', (v, p, out) => {
   if (v === 'hug')
-    add(out, p, 'the image node does not accept hug: the layout does not depend on the downloaded image');
+    add(
+      out,
+      p,
+      'the image node does not accept hug: the layout does not depend on the downloaded image',
+    );
   else if (isIntrinsicSize(v))
     add(
       out,
@@ -1056,7 +1066,8 @@ function acceptsLayout(type: string): boolean {
   return type === 'slot' || type === 'repeat';
 }
 
-const WEIGHT_MESSAGE = 'weight: only valid on a fill child on the main axis of a row or column';
+const WEIGHT_MESSAGE =
+  'weight: only valid on a fill child on the main axis of a row or column';
 
 /** The literal `weight` is valid: `row`/`column` parent (or uncertain) and a `fill` child on the main axis. */
 function weightApplies(value: Rec, type: string, parent: ParentKind): boolean {
@@ -1133,13 +1144,21 @@ function checkNode(
   for (const key of ['children', 'layout']) {
     if (acceptsLayout(type) && key === 'layout') continue;
     if (type !== 'frame' && key in value)
-      add(out, join(path, key), `only nodes of type frame accept ${key} (this is ${type})`);
+      add(
+        out,
+        join(path, key),
+        `only nodes of type frame accept ${key} (this is ${type})`,
+      );
   }
   for (const key of Object.keys(value)) {
     if (acceptsLayout(type) && key === 'layout') continue;
     if (type !== 'frame' && (key === 'children' || key === 'layout')) continue;
     if (type === 'repeat' && REPEAT_REJECTED_KEYS.includes(key)) {
-      add(out, join(path, key), `not valid in a repeat; the drawing belongs to the template (${key})`);
+      add(
+        out,
+        join(path, key),
+        `not valid in a repeat; the drawing belongs to the template (${key})`,
+      );
       continue;
     }
     if (!BASE_KEYS.includes(key) && !extra[type]?.includes(key))
@@ -1169,7 +1188,8 @@ function checkNode(
       if ('layout' in value) checkLayout(value.layout, join(path, 'layout'), out);
       if ('children' in value) {
         const children = join(path, 'children');
-        if (!Array.isArray(value.children)) add(out, children, 'expected a list of nodes');
+        if (!Array.isArray(value.children))
+          add(out, children, 'expected a list of nodes');
         else
           value.children.forEach((c: unknown, i) =>
             checkNode(c, `${children}[${i}]`, out, layoutParent(value.layout)),

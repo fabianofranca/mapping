@@ -343,7 +343,11 @@ describe('parseComponent: nós', () => {
     const problems = problemsAfter(
       (c) => (c.template.fill.cases.danger.stops[1].offset = 3),
     );
-    expectProblem(problems, 'template.fill.cases.danger.stops[1].offset', 'between 0 and 1');
+    expectProblem(
+      problems,
+      'template.fill.cases.danger.stops[1].offset',
+      'between 0 and 1',
+    );
   });
 
   it('borda sem cor', () => {
@@ -554,11 +558,7 @@ describe('parseComponent: expressões', () => {
       c.template.children[1].text.$concat[0] = { $field: '' };
       c.template.children[0].visible = { $field: 'icon', default: 'sim' };
     });
-    expectProblem(
-      problems,
-      'template.children[1].text.$concat[0].$field',
-      'field key',
-    );
+    expectProblem(problems, 'template.children[1].text.$concat[0].$field', 'field key');
     expectProblem(problems, 'template.children[0].visible.default', 'boolean');
   });
 });

@@ -82,7 +82,9 @@ describe('$anchor.* na biblioteca', () => {
 
   it('o anchor da raiz é conferido pela mesma validação do componente', () => {
     const bad = validate([], { anchor: { side: 'left' } });
-    expect(messages(bad).join('\n')).toContain('expected one of: top, bottom, start, end');
+    expect(messages(bad).join('\n')).toContain(
+      'expected one of: top, bottom, start, end',
+    );
     expect(
       messages(validate([], { anchor: { side: 'bottom', align: 'start' } })),
     ).toEqual([]);

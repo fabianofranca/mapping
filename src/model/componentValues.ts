@@ -68,9 +68,7 @@ function refValue(
   const ref = parseRefValue(value);
   const target = ref === null ? null : resolveRef(p, ref);
   if (target === null) {
-    warnings.push(
-      modelMessage('value.refBroken', { key }, `broken reference: ${key}`),
-    );
+    warnings.push(modelMessage('value.refBroken', { key }, `broken reference: ${key}`));
     return null;
   }
   if (target.annotation.id === annotation.id) {

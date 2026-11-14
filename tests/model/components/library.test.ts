@@ -146,9 +146,7 @@ describe('library', () => {
       1,
     );
     expect(
-      lib.problems.some(
-        (p) => p.includes('quebrado.json') && p.includes('invalid JSON'),
-      ),
+      lib.problems.some((p) => p.includes('quebrado.json') && p.includes('invalid JSON')),
     ).toBe(true);
     expect(lib.types.find((t) => t.id === 'button')?.component).toBeDefined();
     expect(lib.types.find((t) => t.id === 'avatar')?.component).toBeUndefined();

@@ -692,7 +692,10 @@ const changeSchema = z
       add(['entityId'], 'invalid platform id; use [a-z0-9-]+');
     }
     if (c.entity === 'project' && (c.entityId !== 'project' || c.kind !== 'update')) {
-      add(['entityId'], 'the project entity can only be updated, with entityId "project"');
+      add(
+        ['entityId'],
+        'the project entity can only be updated, with entityId "project"',
+      );
     }
     if (c.entity === 'docRepo' && !PLATFORM_ID_RE.test(c.entityId)) {
       add(['entityId'], 'invalid repository id; use [a-z0-9-]+');
