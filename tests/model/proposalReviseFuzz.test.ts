@@ -241,7 +241,8 @@ describe('proposal revision: fuzz (#644)', () => {
         if (json(after) === json(prep.proposed)) after = undefined;
       } else if (prep.error.code === 'change-frozen') {
         const closure = [...drop, ...dependentChanges(p, drop)];
-        if (!closure.some(accepted)) failures.push(`${n}: frozen on drop without an accepted one`);
+        if (!closure.some(accepted))
+          failures.push(`${n}: frozen on drop without an accepted one`);
       }
 
       const res = reviseProposal(base, p, { drop, ...(after ? { after } : {}), at: AT });
@@ -308,7 +309,8 @@ describe('proposal revision: fuzz (#644)', () => {
       }
 
       const parsed = parseProposal(JSON.parse(serializeProposal(q)));
-      if (!parsed.ok) failures.push(`${n}: does not read back: ${parsed.errors[0] ?? ''}`);
+      if (!parsed.ok)
+        failures.push(`${n}: does not read back: ${parsed.errors[0] ?? ''}`);
     }
 
     expect(failures.slice(0, 15)).toEqual([]);

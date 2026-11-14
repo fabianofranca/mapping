@@ -80,10 +80,13 @@ describe('instance label', () => {
     expect(refLabel(p, ann('AV'))).toBe('Avulso'); // type without labelField
     expect(refTargetText(p, ann('AM'))).toBe('Cliente');
     expect(refTargetText(p, ann('AM2'))).toBe('Modelo');
+    // pt-BR kept: shared fixture data (refAnnotationFixtures) asserted by tests/components and tests/ui
     expect(refTargetText(p, ann('AF'))).toBe('Glossário');
     p = {
       ...p,
-      annotations: p.annotations.map((a) => (a.id === 'AM' ? { ...a, name: 'Owner' } : a)),
+      annotations: p.annotations.map((a) =>
+        a.id === 'AM' ? { ...a, name: 'Owner' } : a,
+      ),
     };
     expect(refLabel(p, ann('AM'))).toBe('Owner');
     expect(refTargetText(p, ann('AM'))).toBe('Owner');
@@ -247,7 +250,7 @@ describe('refsOf and getBacklinks', () => {
   });
 });
 
-describe('labels in the displays and in the component's repeat', () => {
+describe("labels in the displays and in the component's repeat", () => {
   it('the cell resolved by the instance label; the broken one becomes null with a warning', () => {
     let p = world();
     p = addTableRow(p, 'AL', 'itens', 'I1');
@@ -305,7 +308,7 @@ describe('library migrations (decision 9)', () => {
     );
   });
 
-  it('deleting the target's type deletes the annotations and the ref counts as broken', () => {
+  it("deleting the target's type deletes the annotations and the ref counts as broken", () => {
     const p = withWholeRef();
     const run = runLibraryMigrations(
       p,

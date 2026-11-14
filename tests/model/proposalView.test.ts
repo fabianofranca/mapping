@@ -102,7 +102,7 @@ describe('type and target of the changes', () => {
     expect(reviewKey({ level: 'project', id: null })).toBe('project:');
   });
 
-  it('a change's layer comes from the annotation (new, current or removed)', () => {
+  it("a change's layer comes from the annotation (new, current or removed)", () => {
     const { base, proposal } = scenario();
     expect(changeLayerId(changeOf(proposal, 'annotation', 'A9'), base)).toBe('L1');
     expect(changeLayerId(changeOf(proposal, 'annotation', 'A4'), base)).toBe('L2');

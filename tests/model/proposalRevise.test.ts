@@ -199,7 +199,10 @@ describe('reviseProposal: classification of the changes', () => {
     const p = propose(base, renameMarking(base, 'M1', 'Portal'));
     const old = changeOf(p, 'marking', 'M1', 'name');
 
-    const { result } = revise(base, p, [], (x) => // pt-BR kept: shared fixture data (sampleProject marking name) asserted by other tests\n      renameMarking(x, 'M1', 'Porta'));
+    const { result } = revise(base, p, [], (x) =>
+      // pt-BR kept: shared fixture data (sampleProject marking name) asserted by other tests
+      renameMarking(x, 'M1', 'Porta'),
+    );
     const r = okOf(result);
 
     expect(r.proposal.changes).toEqual([]);

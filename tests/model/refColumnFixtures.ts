@@ -137,6 +137,7 @@ export function build(version = 1, edit: (raw: Raw) => void = () => undefined): 
     id: 'AF',
     markingId: 'M3',
     layerId: p.layers[0]!.id,
+    // pt-BR kept: shared fixture data (refColumnFixtures) asserted by tests/components and tests/store
     name: 'Glossário',
     entries: [{ id: 'E1', key: 'termo', value: 'valor' }],
   });

@@ -36,7 +36,7 @@ describe('proposal with the container density', () => {
     expect(usesDensity(proposal.changes)).toBe(false);
   });
 
-  it('density is the container's density field; the proposal writes 7; round trip', () => {
+  it("density is the container's density field; the proposal writes 7; round trip", () => {
     const proposal = build(setContainerDensity(base, 'c1', 3));
     expect(proposal.formatVersion).toBe(PROPOSAL_DENSITY_FORMAT_VERSION);
     expect(proposal.changes).toMatchObject([

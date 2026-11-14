@@ -288,7 +288,7 @@ describe('create-arrow and delete-arrow: the review tree', () => {
     ]);
   });
 
-  it('the arrow item's kind: created, removed', () => {
+  it("the arrow item's kind: created, removed", () => {
     const base = sampleProject();
     const created = propose(base, withArrows());
     expect(

@@ -146,7 +146,7 @@ describe('proposal: container', () => {
     );
   });
 
-  it('`size` and `background` on a photo are refused on apply; the photo's file replacement stays the same', () => {
+  it("`size` and `background` on a photo are refused on apply; the photo's file replacement stays the same", () => {
     const base = sampleProject();
     const swapped = replaceContainer(base, 'I2', {
       file: 'images/f2.jpg',

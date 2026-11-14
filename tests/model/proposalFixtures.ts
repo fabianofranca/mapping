@@ -20,7 +20,8 @@ export function propose(
   after: Project,
   args: Partial<NewProposalArgs> = {},
 ): Proposal {
-  // pt-BR kept: shared fixture data (title 'Teste') asserted by tests/store and tests/app\n  return buildProposal(base, after, { id: 'P1', title: 'Teste', createdAt: AT, ...args });
+  // pt-BR kept: shared fixture data (title 'Teste') asserted by tests/store and tests/app
+  return buildProposal(base, after, { id: 'P1', title: 'Teste', createdAt: AT, ...args });
 }
 
 /** The only change of the entity (and of the field, if given); fails if there are zero or more than one. */

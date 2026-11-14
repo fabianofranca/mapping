@@ -469,12 +469,21 @@ describe('progress, notes and proposal state', () => {
   it('notes at any level; editing with empty text removes', () => {
     const { p } = creations();
     let next = addNote(p, { level: 'item', id: 'N1' }, 'The name is wrong.', AT, 'n1');
-    next = addNote(next, { level: 'proposal', id: null }, 'Screen 3 is missing.', AT, 'n2');
+    next = addNote(
+      next,
+      { level: 'proposal', id: null },
+      'Screen 3 is missing.',
+      AT,
+      'n2',
+    );
     expect(notesOf(next, { level: 'item', id: 'N1' }).map((n) => n.text)).toEqual([
       'The name is wrong.',
     ]);
     next = editNote(next, 'n1', 'The name and the position.', LATER);
-    expect(next.notes[0]).toMatchObject({ text: 'The name and the position.', at: LATER });
+    expect(next.notes[0]).toMatchObject({
+      text: 'The name and the position.',
+      at: LATER,
+    });
     expect(editNote(next, 'n1', '  ', LATER).notes.map((n) => n.id)).toEqual(['n2']);
     expect(removeNote(next, 'n2').notes.map((n) => n.id)).toEqual(['n1']);
   });

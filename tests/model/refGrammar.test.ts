@@ -106,10 +106,12 @@ describe('reference grammar: field, pair and row', () => {
     // pt-BR kept: accented characters are the object of the round-trip test
     const key = "variação (útil)! 'x' *";
     const ref: AnyRef = { type: 'field', annotation: 'abc123', key };
+    // pt-BR kept: accented characters are the object of the round-trip test
     const url = formatAnyRef('Mapping ç', ref);
     expect(url).toMatch(
       /^mapping:\/\/Mapping%20%C3%A7\/a\/abc123\/f\/[A-Za-z0-9%._~-]+$/,
     );
+    // pt-BR kept: accented characters are the object of the round-trip test
     expect(parseAnyRef(url)).toEqual({ project: 'Mapping ç', ref });
   });
 
@@ -213,8 +215,7 @@ describe('reference grammar: strict reading', () => {
     'p/ab c',
     'p/ab/c',
     'abc', // a loose code is not a reference of this grammar
-    'mapping://proj/m/abc
-more',
+    'mapping://proj/m/abc\nmore',
   ];
   it.each(invalid)('refuses %j', (text) => {
     expect(parseAnyRef(text)).toBeNull();

@@ -333,7 +333,7 @@ describe('proposal v4: reading and writing', () => {
     }
   });
 
-  it('the app rewrites the decisions keeping the file's version (a v3)', () => {
+  it("the app rewrites the decisions keeping the file's version (a v3)", () => {
     const { base, data } = build();
     const v3 = JSON.parse(JSON.stringify(data)) as Record<string, unknown>;
     v3.formatVersion = 3;

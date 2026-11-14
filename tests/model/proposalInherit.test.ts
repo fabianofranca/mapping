@@ -42,7 +42,7 @@ function legacySample(): Json {
 }
 
 describe('proposal with `inherit` (formatVersion 1 and 2)', () => {
-  it('discards the field's change, its decision and its application, with a warning', () => {
+  it("discards the field's change, its decision and its application, with a warning", () => {
     const result = parseProposal(legacySample());
     if (!result.ok) throw new Error(result.errors.join('\n'));
     expect(result.proposal.formatVersion).toBe(2);

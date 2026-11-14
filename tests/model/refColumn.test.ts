@@ -159,6 +159,7 @@ describe('resolution and targets', () => {
       // pt-BR kept: shared fixture data (refColumnFixtures) asserted by tests/components and tests/store
       'Cliente.cpf',
       'Cliente.nome',
+      // pt-BR kept: shared fixture data (refColumnFixtures) asserted by tests/components and tests/store
       'Glossário.termo',
     ]);
     expect(findCellRefTargets(p, 'AL', 'alvos', 'nota')).toEqual([]);
@@ -187,7 +188,7 @@ describe('refsOf, backlinks and broken references', () => {
     expect(refPathText(refs[2]!)).toBe('principal');
   });
 
-  it('the target receives the cell's backlink', () => {
+  it("the target receives the cell's backlink", () => {
     let p = build();
     p = setTableCell(p, 'AL', 'alvos', 'L1', 'alvo', R1);
     const links = getBacklinks(p, 'AM');
@@ -332,7 +333,12 @@ describe('library migrations with the ref cell', () => {
     const next = spec(
       2,
       migrations([
-        { op: 'rename-field', type: 'lista', from: 'alvos.alvo', to: 'alvos.destination' },
+        {
+          op: 'rename-field',
+          type: 'lista',
+          from: 'alvos.alvo',
+          to: 'alvos.destination',
+        },
       ]),
       (raw) => {
         targetsColumns(raw)[1].key = 'destination';
@@ -390,7 +396,7 @@ describe('drawing values (component engine)', () => {
     return type;
   };
 
-  it('the table reaches the engine as rows and the ref cell as the target's value (the row by rowLabel, the free tuple by value)', () => {
+  it("the table reaches the engine as rows and the ref cell as the target's value (the row by rowLabel, the free tuple by value)", () => {
     let p = build();
     p = addTableRow(p, 'AL', 'alvos', 'L2');
     p = addTableRow(p, 'AL', 'alvos', 'L3');

@@ -290,8 +290,13 @@ describe('change computation: annotations', () => {
     after = removeEntry(after, 'A1', 'E2');
     const p = propose(base, after);
     expect(p.changes.map((c) => [c.field, c.from, c.to])).toEqual([
-      ['entries.E1', { key: 'tipo', value: 'amassado' }, { key: 'tipo', value: 'scratch' }],
+      [
+        'entries.E1',
+        { key: 'tipo', value: 'amassado' },
+        { key: 'tipo', value: 'scratch' },
+      ],
       ['entries.E7', null, { key: 'side', value: 'left' }],
+      // pt-BR kept: shared fixture data (sampleProject entries) asserted by other tests
       ['entries.E2', { key: 'gravidade', value: 'média' }, null],
     ]);
   });
@@ -329,7 +334,11 @@ describe('change computation: annotations', () => {
 
 describe('change computation: Project group', () => {
   it('layers: creation, name, color, removal and position only for those that change relative order', () => {
-    const base = addLayer(sampleProject(), { id: 'L3', name: 'Wheels', color: '#2E7D32' });
+    const base = addLayer(sampleProject(), {
+      id: 'L3',
+      name: 'Wheels',
+      color: '#2E7D32',
+    });
     let after = addLayer(base, { id: 'L4', name: 'Headlights', color: '#E65100' });
     after = renameLayer(after, 'L1', 'Paint');
     after = setLayerColor(after, 'L1', '#000000');
