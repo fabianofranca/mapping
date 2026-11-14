@@ -36,43 +36,43 @@ import { MODEL_ERROR_MESSAGES } from './modelErrors';
 import type { Roots } from './paths';
 import { findProject, loadProject } from './projects';
 
-// Atualização de biblioteca pelo servidor (etapa Biblioteca, B4): o que `apply_specialization` e
-// `update_specialization` precisam para levar um pacote v4 numa proposta (validar, conferir o
-// contrato de versão, descrever a migração) e a tool `plan_library_update`, a prévia somente de
-// leitura do impacto de subir a versão. O servidor nunca grava `specs/` nem o `mapping.json`:
-// os arquivos do pacote esperam em `proposals/<id>/specs/<pasta>/…` até a pessoa aceitar.
+// Library update by the server (Library stage, B4): what `apply_specialization` and
+// `update_specialization` need to carry a v4 package in a proposal (validate, check the
+// version contract, describe the migration) and the `plan_library_update` tool, the read-only
+// preview of the impact of raising the version. The server never writes `specs/` or the `mapping.json`:
+// the package files wait in `proposals/<id>/specs/<folder>/…` until the person accepts.
 
 type Json = Record<string, unknown>;
 
-/** Listas de uma resposta de `plan_library_update` (perdas, pendências, mudanças…). */
+/** Lists in a `plan_library_update` response (losses, pending items, changes…). */
 const MAX_LIST = 100;
-/** Perdas listadas dentro de cada passo (o total fica em `lossCount`). */
+/** Losses listed inside each step (the total stays in `lossCount`). */
 const MAX_STEP_LOSSES = 10;
-/** Erros de validação citados na mensagem de `invalid-library`. */
+/** Validation errors cited in the `invalid-library` message. */
 const MAX_ERRORS_IN_ERROR = 10;
-/** Valor perdido maior que isto vai só como prévia. */
+/** A lost value larger than this goes only as a preview. */
 const MAX_VALUE_PREVIEW = 200;
 
 const plural = (n: number, one: string, many: string): string =>
   `${n} ${n === 1 ? one : many}`;
 
 // ---------------------------------------------------------------------------
-// Validação do pacote lido
+// Validation of the package read
 
-/** O pacote com a especialização lida (nível 1) e o nome do arquivo dela na raiz da pasta. */
+/** The package with the specialization read (level 1) and the name of its file at the folder root. */
 export interface ParsedPackage {
   readonly spec: Spec;
-  /** Nome do arquivo da especialização dentro do pacote (`material3.spec.json`). */
+  /** Name of the specialization file inside the package (`material3.spec.json`). */
   readonly specName: string;
 }
 
-/** Erro de biblioteca inválida: os primeiros erros do validador, cada um com `file` e `path`. */
+/** Invalid-library error: the first validator errors, each with `file` and `path`. */
 function invalidLibrary(report: LibraryReport): ToolError {
   const errors = report.errors.map(issueView);
   const first = report.errors[0];
   return new ToolError(
     'invalid-library',
-    `a biblioteca tem ${plural(report.errors.length, 'erro', 'erros')} e não pode ser usada${
+    `the library has ${plural(report.errors.length, 'error', 'errors')} and cannot be used${
       first ? `: ${first.file === '' ? '' : `${first.file} `}${first.message}` : ''
     }`,
     {
@@ -80,12 +80,12 @@ function invalidLibrary(report: LibraryReport): ToolError {
       ...(errors.length > MAX_ERRORS_IN_ERROR
         ? { moreErrors: errors.length - MAX_ERRORS_IN_ERROR }
         : {}),
-      hint: 'rode validate_library na pasta (com `previous` numa atualização), corrija cada erro pelo `file` e `path` e proponha de novo',
+      hint: 'run validate_library on the folder (with `previous` on an update), fix each error by its `file` and `path` and propose again',
     },
   );
 }
 
-/** Texto dos arquivos do pacote por caminho (para achar o arquivo da especialização). */
+/** Text of the package files by path (to find the specialization file). */
 function textsOf(pkg: ReadPackage): Map<string, string> {
   const texts = new Map<string, string>();
   for (const file of pkg.files) {
@@ -95,8 +95,8 @@ function textsOf(pkg: ReadPackage): Map<string, string> {
 }
 
 /**
- * Nível 1 do validador: lê a especialização do pacote (sem ela, não há como seguir). O resto
- * dos erros fica para `validatePackage`, depois de saber qual é a versão anterior.
+ * Validator level 1: reads the package's specialization (without it, there is no way to go on). The rest
+ * of the errors is left to `validatePackage`, once the previous version is known.
  */
 export function parsePackage(pkg: ReadPackage): ParsedPackage {
   const report = validateLibrary({
@@ -111,7 +111,7 @@ export function parsePackage(pkg: ReadPackage): ParsedPackage {
   };
 }
 
-/** Os três níveis do validador, com `previous` (a cópia aplicada) ligando o contrato de versão. */
+/** The three validator levels, with `previous` (the applied copy) wiring up the version contract. */
 export function validatePackage(pkg: ReadPackage, previous?: Spec): LibraryReport {
   const report = validateLibrary({
     files: pkg.files,
@@ -124,26 +124,26 @@ export function validatePackage(pkg: ReadPackage, previous?: Spec): LibraryRepor
     : { ...report, warnings: [...report.warnings, ...ignored] };
 }
 
-/** Erro do validador impede usar; aviso deixa usar e é devolvido. */
+/** A validator error prevents use; a warning allows it and is returned. */
 export function requireValid(report: LibraryReport): readonly LibraryIssue[] {
   if (!report.ok) throw invalidLibrary(report);
   return report.warnings;
 }
 
 // ---------------------------------------------------------------------------
-// Atualização: o contrato antes de propor
+// Update: the contract before proposing
 
 /**
- * Confere o que `updateSpecialization` exigiria e devolve o impacto: a especialização precisa
- * estar aplicada, a versão precisa crescer, e uma quebra sem migração (v4 com a cópia aplicada
- * disponível) é recusada com a lista do que falta.
+ * Checks what `updateSpecialization` would require and returns the impact: the specialization must
+ * be applied, the version must grow, and a break without a migration (v4 with the applied copy
+ * available) is refused with the list of what is missing.
  */
 export function checkUpdate(p: Project, spec: Spec): SpecUpdateImpact {
   const applied = getSpecialization(p, spec.id);
   if (!applied) {
     throw new ToolError(
       'not-found',
-      `especialização não aplicada: ${spec.id} (use apply_specialization)`,
+      `specialization not applied: ${spec.id} (use apply_specialization)`,
       { specId: spec.id },
     );
   }
@@ -158,7 +158,7 @@ export function checkUpdate(p: Project, spec: Spec): SpecUpdateImpact {
         from: applied.version,
         to: spec.version,
         missingMigrations: missingView(impact.missingMigrations),
-        hint: `declare em \`migrations\` uma entrada from ${applied.version} (até to ${spec.version}) com um passo para cada quebra listada, valide com validate_library (previous = a cópia aplicada) e confira com plan_library_update`,
+        hint: `declare in \`migrations\` an entry with from ${applied.version} (up to to ${spec.version}) with a step for each listed break, validate with validate_library (previous = the applied copy) and check with plan_library_update`,
       },
     );
   }
@@ -169,69 +169,66 @@ function missingView(changes: readonly SpecChange[]): Json[] {
   return changes.slice(0, MAX_LIST).map((c) => ({ message: c.message, path: c.path }));
 }
 
-/** O que a migração faz no projeto, em uma frase curta para a descrição da operação. */
+/** What the migration does to the project, in a short phrase for the operation's description. */
 export function updateSummary(impact: SpecUpdateImpact): string[] {
   const parts: string[] = [];
   if (impact.addedLayers.length > 0) {
-    parts.push(
-      `camadas novas: ${impact.addedLayers.map((l) => `"${l.name}"`).join(', ')}`,
-    );
+    parts.push(`new layers: ${impact.addedLayers.map((l) => `"${l.name}"`).join(', ')}`);
   }
   if (impact.freedLayers.length > 0) {
     parts.push(
-      `camadas que viram livres: ${impact.freedLayers.map((l) => `"${l.name}"`).join(', ')}`,
+      `layers that become free-form: ${impact.freedLayers.map((l) => `"${l.name}"`).join(', ')}`,
     );
   }
   if (impact.steps.length > 0) {
     const values = impact.steps.reduce((n, s) => n + s.values, 0);
     const refs = impact.steps.reduce((n, s) => n + s.refs, 0);
-    const migration = [`migração em ${plural(impact.steps.length, 'passo', 'passos')}`];
+    const migration = [`migration in ${plural(impact.steps.length, 'step', 'steps')}`];
     if (values > 0) {
-      migration.push(plural(values, 'valor alterado', 'valores alterados'));
+      migration.push(plural(values, 'value changed', 'values changed'));
     }
     if (impact.converted > 0) {
       migration.push(
         plural(
           impact.converted,
-          'anotação convertida em livre',
-          'anotações convertidas em livres',
+          'annotation converted to free-form',
+          'annotations converted to free-form',
         ),
       );
     }
     if (impact.deleted > 0) {
-      migration.push(plural(impact.deleted, 'anotação apagada', 'anotações apagadas'));
+      migration.push(plural(impact.deleted, 'annotation deleted', 'annotations deleted'));
     }
     if (refs > 0) {
-      migration.push(plural(refs, 'referência reescrita', 'referências reescritas'));
+      migration.push(plural(refs, 'reference rewritten', 'references rewritten'));
     }
     parts.push(migration.join(', '));
   }
   const unlinked = impact.losses.filter((l) => l.reason === 'unlinked').length;
   const lost = valueLosses(impact.losses) - unlinked;
-  if (lost > 0) parts.push(plural(lost, 'valor perdido', 'valores perdidos'));
-  if (unlinked > 0)
-    parts.push(plural(unlinked, 'vínculo desfeito', 'vínculos desfeitos'));
+  if (lost > 0) parts.push(plural(lost, 'value lost', 'values lost'));
+  if (unlinked > 0) parts.push(plural(unlinked, 'link undone', 'links undone'));
   if (impact.pending.length > 0) {
-    parts.push(plural(impact.pending.length, 'pendência nova', 'pendências novas'));
+    parts.push(plural(impact.pending.length, 'new pending item', 'new pending items'));
   }
   if (impact.brokenRefs > 0) {
-    parts.push(plural(impact.brokenRefs, 'referência quebrada', 'referências quebradas'));
+    parts.push(plural(impact.brokenRefs, 'broken reference', 'broken references'));
   }
   return parts;
 }
 
-/** Perdas de valor, papel limpo e vínculo desfeito (a anotação apagada por `remove-type` já conta em `deleted`). */
+/** Value losses, cleared role and undone link (the annotation deleted by `remove-type` already counts in `deleted`). */
 function valueLosses(losses: readonly MigrationLoss[]): number {
   return losses.filter((l) => l.reason !== 'removed-type').length;
 }
 
 // ---------------------------------------------------------------------------
-// Arquivos do pacote que acompanham a proposta
+// Package files that accompany the proposal
 
 /**
- * Os arquivos da pasta com o caminho definitivo no projeto (`specs/<pasta>/<relativo>`), que
- * é o que a proposta guarda em `proposals/<id>/…`. O arquivo da especialização segue o nome do
- * `file` do projeto (o modelo limpa o nome para arquivo).
+ * The folder's files with the final path in the project (`specs/<folder>/<relative>`), which
+ * is what the proposal keeps in `proposals/<id>/…`. The specialization file follows the name of the
+ * project's `file` (the model cleans the name for a file).
  */
 export function packageFileEntries(
   pkg: ReadPackage,
@@ -240,7 +237,7 @@ export function packageFileEntries(
 ): [string, Uint8Array][] {
   const dir = packageDirOf(entryFile);
   if (dir === null) {
-    throw new Error(`o file da especialização não é de um pacote: ${entryFile}`);
+    throw new Error(`the specialization's file is not from a package: ${entryFile}`);
   }
   const target = entryFile.slice(dir.length + 1);
   const entries: [string, Uint8Array][] = [];
@@ -254,13 +251,14 @@ export function packageFileEntries(
 // plan_library_update
 
 const LOSS_TEXT: Record<MigrationLossReason, (field: string) => string> = {
-  'removed-field': (field) => `o valor do campo "${field}" é apagado`,
-  'removed-type': () => 'a anotação é apagada junto com o tipo removido',
+  'removed-field': (field) => `the value of field "${field}" is deleted`,
+  'removed-type': () => 'the annotation is deleted along with the removed type',
   'replaced-value': (field) =>
-    `o valor de "${field}" não vale mais no tipo do campo e é trocado pelo padrão`,
-  'overwritten-value': (field) => `o campo "${field}" já tinha valor e é sobrescrito`,
-  'cleared-role': () => 'a anotação perde o papel no vínculo e continua vinculada',
-  unlinked: () => 'a anotação sai do vínculo com a dona',
+    `the value of "${field}" no longer holds in the field's type and is replaced by the default`,
+  'overwritten-value': (field) =>
+    `field "${field}" already had a value and is overwritten`,
+  'cleared-role': () => 'the annotation loses its role in the link and stays linked',
+  unlinked: () => 'the annotation leaves the link with its owner',
 };
 
 function previewValue(value: JsonValue): JsonValue {
@@ -299,7 +297,7 @@ function changeView(change: SpecChange): Json {
   };
 }
 
-/** Os passos com as contagens e as perdas de cada um. */
+/** The steps with the counts and the losses of each. */
 function stepViews(refs: Refs, impact: SpecUpdateImpact): Json[] {
   return impact.steps.slice(0, MAX_LIST).map((s) => ({
     from: s.from,
@@ -358,58 +356,58 @@ function issuesView(issues: readonly LibraryIssue[]): {
   };
 }
 
-/** Camadas que viram livres: as anotações tipadas delas viram pares de texto, e a pessoa precisa saber. */
+/** Layers that become free-form: their typed annotations become text pairs, and the person needs to know. */
 function freedLayersSteps(impact: SpecUpdateImpact): string[] {
   if (impact.refused || impact.freedLayers.length === 0) return [];
   return [
-    'camadas viram livres (`freedLayers`): as anotações tipadas delas viram pares de texto; confirme com a pessoa e diga na proposta',
+    'layers become free-form (`freedLayers`): their typed annotations become text pairs; confirm with the person and say so in the proposal',
   ];
 }
 
-/** O que a pessoa e o agente fazem em seguida, conforme o impacto. */
+/** What the person and the agent do next, depending on the impact. */
 function updateHint(impact: SpecUpdateImpact, valid: boolean): string {
   const steps: string[] = [];
   if (!valid) {
     steps.push(
-      'corrija os erros da validação (`file` e `path` apontam o trecho) antes de propor',
+      'fix the validation errors (`file` and `path` point to the spot) before proposing',
     );
   }
   if (!impact.comparable) {
     steps.push(
-      'a cópia aplicada da especialização não está disponível: não dá para comparar as versões nem conferir as quebras; o impacto abaixo só traz as migrações declaradas',
+      'the applied copy of the specialization is not available: the versions cannot be compared nor the breaks checked; the impact below only carries the declared migrations',
     );
   }
   if (impact.refused) {
     steps.push(
-      `declare \`migrations\` para cada quebra em \`missingMigrations\` (um passo por quebra: rename-type, remove-type, rename-field, remove-field, map-values, fill-field, rename-role, remove-role ou set-role) e rode plan_library_update de novo; update_specialization é recusado enquanto faltar`,
+      `declare \`migrations\` for each break in \`missingMigrations\` (one step per break: rename-type, remove-type, rename-field, remove-field, map-values, fill-field, rename-role, remove-role or set-role) and run plan_library_update again; update_specialization is refused while any is missing`,
     );
   } else if (impact.additive) {
     steps.push(
-      'mudança aditiva: proponha update_specialization com `file` desta pasta (propose_changes); a pessoa aplica sem diálogo de impacto',
+      'additive change: propose update_specialization with `file` of this folder (propose_changes); the person applies it without an impact dialog',
     );
   } else {
     steps.push(
-      'as migrações declaradas cobrem as quebras: proponha update_specialization com `file` desta pasta (propose_changes) e descreva o que muda na proposta',
+      'the declared migrations cover the breaks: propose update_specialization with `file` of this folder (propose_changes) and describe what changes in the proposal',
     );
   }
   steps.push(...freedLayersSteps(impact));
   const lost = valueLosses(impact.losses) > 0 || impact.deleted > 0;
   if (!impact.refused && lost) {
     steps.push(
-      'a migração perde dados (`losses`): confirme com a pessoa antes de propor e diga na proposta o que se perde',
+      'the migration loses data (`losses`): confirm with the person before proposing and say in the proposal what is lost',
     );
   }
   if (!impact.refused && impact.pending.length > 0) {
     steps.push(
-      'ficam pendências novas (`pending`): a pessoa as resolve na lista depois de aplicar',
+      'new pending items remain (`pending`): the person resolves them in the list after applying',
     );
   }
   return steps.join('; ');
 }
 
 /**
- * `plan_library_update`: a prévia, somente leitura, de levar o pacote de `path` ao projeto
- * (aplicar, atualizar ou nada). Não grava nada, nem proposta.
+ * `plan_library_update`: the read-only preview of taking the package at `path` to the project
+ * (apply, update or nothing). It writes nothing, not even a proposal.
  */
 export async function planLibraryUpdate(
   roots: Roots,
@@ -432,7 +430,7 @@ export async function planLibraryUpdate(
       spec = parsePackage(input.pkg).spec;
     } catch (error) {
       if (!(error instanceof ToolError) || error.code !== 'invalid-library') throw error;
-      // Sem especialização legível: devolve a validação em vez de um erro.
+      // No readable specialization: returns the validation instead of an error.
       const report = validateLibrary({
         files: input.pkg.files,
         ...(input.pkg.specPath === undefined ? {} : { specPath: input.pkg.specPath }),
@@ -447,7 +445,7 @@ export async function planLibraryUpdate(
           ...(errors.more > 0 ? { moreErrors: errors.more } : {}),
           warnings: [],
         },
-        hint: 'corrija os erros da validação (`file` e `path` apontam o trecho): sem a especialização não há como planejar a atualização',
+        hint: 'fix the validation errors (`file` and `path` point to the spot): without the specialization there is no way to plan the update',
       };
     }
   }
@@ -455,15 +453,15 @@ export async function planLibraryUpdate(
   const decision = checkSpecApply(p, spec);
   const applied = getSpecialization(p, spec.id);
 
-  // Validação: o pacote v4 com os três níveis (e o contrato de versão, quando é uma atualização);
-  // um arquivo v1 a v3 só tem os avisos da especialização.
+  // Validation: the v4 package with the three levels (and the version contract, when it is an update);
+  // a v1 to v3 file only has the specialization's warnings.
   let valid = true;
   let validation: Json;
   if (input.kind === 'package') {
     const previous = decision === 'update' ? (applied?.spec ?? undefined) : undefined;
     const report = validatePackage(input.pkg, previous);
     const errors = issuesView(report.errors);
-    // O documento externo é conferido pelo clone que o projeto já guarda (`docRepos`).
+    // The external document is checked by the clone the project already keeps (`docRepos`).
     const docWarnings = await externalDocWarnings(
       spec,
       input.pkg.specPath ?? '',
@@ -496,14 +494,14 @@ export async function planLibraryUpdate(
     return {
       ...base,
       ...identity,
-      hint: `${valid ? '' : 'corrija os erros da validação antes de propor; '}a biblioteca ainda não está aplicada ao projeto: proponha apply_specialization com \`file\` desta ${input.kind === 'package' ? 'pasta' : 'arquivo'} (propose_changes)`,
+      hint: `${valid ? '' : 'fix the validation errors before proposing; '}the library is not applied to the project yet: propose apply_specialization with \`file\` of this ${input.kind === 'package' ? 'folder' : 'file'} (propose_changes)`,
     };
   }
   if (decision === 'not-newer') {
     return {
       ...base,
       ...identity,
-      hint: `a versão (v${spec.version}) não é maior que a aplicada (v${applied?.version}): suba a \`version\` do pacote para atualizar`,
+      hint: `the version (v${spec.version}) is not greater than the applied one (v${applied?.version}): raise the package's \`version\` to update`,
     };
   }
   const impact = specializationUpdateImpact(p, spec);

@@ -22,15 +22,15 @@ import { Refs } from './items';
 import type { LoadedProject } from './projects';
 import { isRecord } from './shared';
 
-// Visões compactas das propostas para o agente (etapa 4.2): estado de cada mudança, níveis da
-// revisão, progresso e notas. Toda regra (níveis, decisões, conflitos) vem de `src/model/`.
+// Compact views of proposals for the agent (stage 4.2): state of each change, review
+// levels, progress and notes. Every rule (levels, decisions, conflicts) comes from `src/model/`.
 
 type Json = Record<string, unknown>;
 
 /**
- * Rótulos e referências `mapping://` das entidades de uma proposta. Usa o projeto "como
- * ficaria" (com todas as mudanças, para os itens criados) e, na falta dele, o projeto atual
- * (para os itens removidos).
+ * Labels and `mapping://` references of a proposal's entities. Uses the "as it would
+ * be" project (with all the changes, for the created items) and, failing that, the current project
+ * (for the removed items).
  */
 export class ProposalLabels {
   private constructor(
@@ -38,7 +38,7 @@ export class ProposalLabels {
     private readonly current: Refs,
   ) {}
 
-  /** `proposed` é o projeto com todas as mudanças da proposta aplicadas (`patchProject`). */
+  /** `proposed` is the project with all the proposal's changes applied (`patchProject`). */
   static of(loaded: LoadedProject, proposed: Project): ProposalLabels {
     return new ProposalLabels(
       new Refs({ ...loaded, project: proposed }),
@@ -46,12 +46,12 @@ export class ProposalLabels {
     );
   }
 
-  /** Para a prévia de uma proposta nova: o depois é o resultado do lote. */
+  /** For the preview of a new proposal: the after is the result of the batch. */
   static ofRefs(proposed: Refs, current: Refs): ProposalLabels {
     return new ProposalLabels(proposed, current);
   }
 
-  /** Referência da marcação, container ou anotação; `null` se não existir em nenhum dos dois. */
+  /** Reference of the marking, container or annotation; `null` if it exists in neither. */
   ref(kind: ItemKind, id: string): string | null {
     for (const refs of [this.proposed, this.current]) {
       const index = projectIndex(refs.project);
@@ -74,32 +74,32 @@ export class ProposalLabels {
     return id;
   }
 
-  /** O alvo legível de uma mudança. */
+  /** The readable target of a change. */
   target(c: Change): string {
     switch (c.entity) {
       case 'image':
         return this.ref('i', c.entityId) ?? `container ${c.entityId}`;
       case 'marking':
-        return this.ref('m', c.entityId) ?? `marcação ${c.entityId}`;
+        return this.ref('m', c.entityId) ?? `marking ${c.entityId}`;
       case 'arrow':
-        return `seta ${c.entityId}`;
+        return `arrow ${c.entityId}`;
       case 'annotation':
-        return this.ref('a', c.entityId) ?? `anotação ${c.entityId}`;
+        return this.ref('a', c.entityId) ?? `annotation ${c.entityId}`;
       case 'layer':
-        return `camada "${this.layerName(c.entityId)}"`;
+        return `layer "${this.layerName(c.entityId)}"`;
       case 'specialization':
-        return `especialização ${c.entityId}`;
+        return `specialization ${c.entityId}`;
       case 'platformRepo':
-        return `repositório da plataforma ${c.entityId}`;
+        return `platform repository ${c.entityId}`;
       case 'docRepo':
-        return `repositório de documentos ${c.entityId}`;
+        return `documents repository ${c.entityId}`;
       case 'project':
-        return 'modo do desenho e direção do projeto';
+        return 'project drawing mode and direction';
     }
   }
 }
 
-/** A especialização inteira (`spec`) não vai na resposta: o agente a tem no arquivo que enviou. */
+/** The whole specialization (`spec`) is not in the response: the agent has it in the file it sent. */
 function slim(c: Change, value: JsonValue): JsonValue {
   if (c.entity !== 'specialization' || !isRecord(value)) return value;
   return Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'spec'));
@@ -119,7 +119,7 @@ export function conflictView(status: ChangeStatus): Json | null {
     : { current: status.current };
 }
 
-/** A marca de revisão da mudança para o agente (`revised`), ou `null` se nenhuma revisão a cita. */
+/** The change's revision mark for the agent (`revised`), or `null` if no revision cites it. */
 export function revisedView(p: Proposal, c: Change): Json | null {
   const mark = revisionMark(p, c.id);
   if (mark === null) return null;
@@ -132,18 +132,18 @@ export function revisedView(p: Proposal, c: Change): Json | null {
   };
 }
 
-/** Resumo das revisões da proposta (`revisions`): quantas e a data e as contagens da última. */
+/** Summary of the proposal's revisions (`revisions`): how many and the date and counts of the last one. */
 export function revisionsView(p: Proposal): Json {
   const last = latestRevisionSummary(p);
   if (last === null) return {};
   return { revisions: { count: p.revisions!.length, last } };
 }
 
-/** Pode ser revisada pelo agente: aberta e sem nada aplicado. */
+/** Can be revised by the agent: open and with nothing applied. */
 export const isRevisable = (p: Proposal): boolean =>
   p.status === 'open' && Object.keys(p.applied).length === 0;
 
-/** Uma mudança: estado, alvo e valores antes e depois (e conflito/trava, se houver). */
+/** A change: state, target and values before and after (and conflict/lock, if any). */
 export function changeView(
   p: Proposal,
   c: Change,
@@ -151,7 +151,7 @@ export function changeView(
   labels: ProposalLabels,
 ): Json {
   const conflict = conflictView(status);
-  // A marca só vale sem decisão (a mesma regra de `visibleRevisedChanges`).
+  // The mark only applies without a decision (the same rule as `visibleRevisedChanges`).
   const revised = p.decisions[c.id] === undefined ? revisedView(p, c) : null;
   return {
     id: c.id,
@@ -168,7 +168,7 @@ export function changeView(
   };
 }
 
-/** Trocadas e novas que ainda aguardam a decisão do usuário (não são rejeitadas). */
+/** Replaced and new changes still awaiting the user's decision (they are not rejected). */
 export function awaitingView(p: Proposal, labels: ProposalLabels): Json[] {
   const byId = proposalIndex(p).changes;
   return visibleRevisedChanges(p).map((id) => {
@@ -182,7 +182,7 @@ export function awaitingView(p: Proposal, labels: ProposalLabels): Json[] {
   });
 }
 
-/** Nota que subiu ao nível da proposta: de que mudança retirada ela veio. */
+/** Note that rose to the proposal level: which withdrawn change it came from. */
 export function droppedFrom(p: Proposal, noteId: string, labels: ProposalLabels): Json {
   const origin = droppedNoteOrigin(p, noteId);
   if (origin === null) return {};
@@ -195,7 +195,7 @@ export function droppedFrom(p: Proposal, noteId: string, labels: ProposalLabels)
   };
 }
 
-/** Contagens que não se sobrepõem: somam o total de mudanças. */
+/** Non-overlapping counts: they add up to the total of changes. */
 export function progressView(p: Proposal): Json {
   const progress = reviewProgress(p);
   return {
@@ -212,7 +212,7 @@ function countItems(node: ReviewNode): number {
   return node.children.reduce((sum, child) => sum + 1 + countItems(child), 0);
 }
 
-/** O tipo de mudança de cada container, de uma varredura só das mudanças da proposta. */
+/** The kind of change of each container, from a single scan of the proposal's changes. */
 function imageKinds(p: Proposal): Map<string, 'new' | 'removed' | 'changed'> {
   const kinds = new Map<string, 'new' | 'removed' | 'changed'>();
   for (const c of p.changes) {
@@ -225,7 +225,7 @@ function imageKinds(p: Proposal): Map<string, 'new' | 'removed' | 'changed'> {
   return kinds;
 }
 
-/** Resumo por nível: Projeto e cada container (nível `image` no `proposal.json`), com o estado de decisão e as contagens. */
+/** Summary by level: Project and each container (level `image` in `proposal.json`), with the decision state and the counts. */
 export function levelsView(p: Proposal, tree: ReviewTree, labels: ProposalLabels): Json {
   const summarize = (node: ReviewNode) => {
     const summary = summarizeDecisions(
@@ -256,14 +256,14 @@ export function levelsView(p: Proposal, tree: ReviewTree, labels: ProposalLabels
   };
 }
 
-/** Contagens por tipo de mudança, para o resumo de uma proposta nova. */
+/** Counts by kind of change, for the summary of a new proposal. */
 export function kindCounts(p: Proposal): Json {
   const counts = { create: 0, update: 0, remove: 0 };
   for (const c of p.changes) counts[c.kind]++;
   return { total: p.changes.length, ...counts };
 }
 
-/** Nota com o alvo legível (referência do container ou do item; id da mudança). */
+/** Note with the readable target (reference of the container or item; id of the change). */
 export function noteView(p: Proposal, note: ProposalNote, labels: ProposalLabels): Json {
   const { level, id } = note.target;
   let target: string | null = null;
@@ -285,17 +285,17 @@ export function noteView(p: Proposal, note: ProposalNote, labels: ProposalLabels
   };
 }
 
-/** O projeto com todas as mudanças da proposta (para rotular itens criados e removidos). */
+/** The project with all the proposal's changes (to label created and removed items). */
 export function proposedProject(project: Project, p: Proposal): Project {
   return patchProject(project, p.changes).project;
 }
 
 const REVISE_HINT =
-  'a proposta ainda pode ser corrigida na mesma referência: use revise_proposal (troque o valor com `operations` ou retire com `drop`; mudança aceita fica congelada) em vez de enviar outra proposta';
+  'the proposal can still be corrected under the same reference: use revise_proposal (replace the value with `operations` or withdraw it with `drop`; an accepted change is frozen) instead of sending another proposal';
 const SUPERSEDE_HINT =
-  'corrija só o que foi rejeitado (e os conflitos) lendo o projeto atual, e envie com propose_changes e supersedes apontando para esta proposta';
+  'correct only what was rejected (and the conflicts) by reading the current project, and send with propose_changes and supersedes pointing to this proposal';
 
-/** Texto da dica de `get_proposal_review`: revisar na mesma proposta ou substituí-la. */
+/** Text of the `get_proposal_review` hint: revise in the same proposal or supersede it. */
 export function reviewHint(
   p: Proposal,
   progress: { complete: boolean; undecided: number; acceptedPending: number },
@@ -303,13 +303,14 @@ export function reviewHint(
 ): string {
   const revisable = isRevisable(p);
   if (!progress.complete) {
-    const wait = `a revisão ainda não terminou (${progress.undecided} sem decisão, ${progress.acceptedPending} aceita(s) sem aplicar)`;
-    if (revisable && toFix > 0) return `${wait}, mas há o que corrigir: ${REVISE_HINT}`;
-    return `${wait}: avise o usuário e espere antes de ${revisable ? 'corrigir' : 'enviar uma proposta que a substitua (propose_changes com supersedes)'}`;
+    const wait = `the review has not finished yet (${progress.undecided} undecided, ${progress.acceptedPending} accepted without being applied)`;
+    if (revisable && toFix > 0)
+      return `${wait}, but there is something to fix: ${REVISE_HINT}`;
+    return `${wait}: tell the user and wait before ${revisable ? 'correcting' : 'sending a proposal that supersedes it (propose_changes with supersedes)'}`;
   }
   if (toFix === 0)
-    return 'a revisão terminou sem rejeições nem conflitos: não há o que corrigir';
+    return 'the review finished with no rejections or conflicts: there is nothing to fix';
   return revisable
-    ? `a revisão terminou: ${REVISE_HINT}. Se algo foi aplicado ou um pacote de biblioteca é novo, ${SUPERSEDE_HINT}`
-    : `a revisão terminou: ${SUPERSEDE_HINT}`;
+    ? `the review finished: ${REVISE_HINT}. If something was applied or a library package is new, ${SUPERSEDE_HINT}`
+    : `the review finished: ${SUPERSEDE_HINT}`;
 }

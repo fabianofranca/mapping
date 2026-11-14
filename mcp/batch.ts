@@ -157,25 +157,25 @@ import { measuredTree, planMeasured } from './importMeasured';
 import type { Operation } from './operations';
 import type { LoadedProject } from './projects';
 
-// Lote de `plan_changes`: aplica as operações em ordem sobre uma cópia do projeto, sempre pelas
-// funções puras do `src/model/` (que impõem invariantes, travas, especializações e vínculos).
-// Nada é gravado aqui: o resultado (projeto e arquivos novos) vai para `apply_changes`.
+// The `plan_changes` batch: applies the operations in order on a copy of the project, always through
+// the pure functions of `src/model/` (which enforce invariants, locks, specializations and links).
+// Nothing is written here: the result (project and new files) goes to `apply_changes`.
 
-/** Leitura de arquivos citados pelo agente (imagens e especializações), dentro das raízes. */
+/** Reading of files cited by the agent (images and specializations), inside the roots. */
 export interface BatchIo {
   readSource(
     path: string,
   ): Promise<{ readonly bytes: Uint8Array; readonly name: string }>;
   /**
-   * Lê o que uma operação de especialização aponta: o arquivo de uma especialização v1 a v3,
-   * ou a pasta de um pacote v4 (também a partir do arquivo da especialização dentro dela).
+   * Reads what a specialization operation points to: the file of a v1 to v3 specialization,
+   * or the folder of a v4 package (also from the specialization file inside it).
    */
   readSpecInput(path: string): Promise<SpecInput>;
-  /** Arquivos que já existem em `images/` no disco (`images/…`), para não sobrescrever. */
+  /** Files that already exist in `images/` on disk (`images/…`), so they are not overwritten. */
   readonly takenImageFiles: ReadonlySet<string>;
   /**
-   * Projeto lido da pasta, quando o lote parte de outro (a revisão da proposta parte do proposto
-   * inteiro): o aviso das setas compara com ele, não com o que já foi proposto.
+   * Project read from the folder, when the batch starts from another one (the proposal review starts
+   * from the whole proposed project): the arrows warning compares with it, not with what was already proposed.
    */
   readonly diskProject?: Project;
   now(): Date;
@@ -211,36 +211,36 @@ export interface BatchResult {
   readonly before: Project;
   readonly project: Project;
   readonly errors: readonly OperationError[];
-  /** Uma linha legível por operação válida. */
+  /** One readable line per valid operation. */
   readonly steps: readonly { readonly index: number; readonly description: string }[];
   readonly created: readonly CreatedItem[];
   readonly aliases: ReadonlyMap<string, AliasTarget>;
-  /** Conteúdo das imagens novas, por arquivo (`images/…`). */
+  /** Content of the new images, by file (`images/…`). */
   readonly imageFiles: ReadonlyMap<string, Uint8Array>;
   /**
-   * Arquivos dos pacotes de biblioteca aplicados ou atualizados, pelo caminho definitivo no
-   * projeto (`specs/<pasta>/<relativo>`): a proposta os guarda em `proposals/<id>/…`.
+   * Files of the library packages applied or updated, by the final path in the
+   * project (`specs/<folder>/<relative>`): the proposal stores them in `proposals/<id>/…`.
    */
   readonly packageFiles: ReadonlyMap<string, Uint8Array>;
-  /** Avisos da validação dos pacotes (não impedem nada). */
+  /** Warnings from the package validation (they block nothing). */
   readonly libraryWarnings: readonly LibraryWarning[];
-  /** Operações antigas aceitas com aviso (ex: `add_blank_image` → `add_container`). */
+  /** Old operations accepted with a warning (e.g. `add_blank_image` → `add_container`). */
   readonly deprecations: readonly {
     readonly index: number;
     readonly op: string;
     readonly message: string;
-    /** Código do aviso no relatório; ausente = `deprecated-op`. */
+    /** Code of the warning in the report; absent = `deprecated-op`. */
     readonly code?: string;
   }[];
-  /** Papéis que a troca de dono limpou sem o passo pedir (aviso `role-cleared`). */
+  /** Roles that an owner change cleared without the step asking for it (`role-cleared` warning). */
   readonly rolesCleared: readonly RoleCleared[];
-  /** Regras entre coleções violadas pelo resultado (não deveria acontecer). */
+  /** Cross-collection rules violated by the result (should not happen). */
   readonly invariantIssues: readonly string[];
-  /** Catálogo de componentes depois do lote (com as especializações que ele aplicou, atualizou ou removeu). */
+  /** Component catalog after the batch (with the specializations it applied, updated or removed). */
   readonly catalog: ComponentCatalog;
 }
 
-/** Papel limpo pela troca de dono de `update_annotation`: vira o aviso `role-cleared`. */
+/** Role cleared by the owner change in `update_annotation`: becomes the `role-cleared` warning. */
 export interface RoleCleared {
   readonly index: number;
   readonly annotationId: string;
@@ -249,7 +249,7 @@ export interface RoleCleared {
   readonly message: string;
 }
 
-/** Aviso do validador da biblioteca, com a operação e a especialização de origem. */
+/** Warning from the library validator, with the originating operation and specialization. */
 export interface LibraryWarning {
   readonly index: number;
   readonly specId: string;
@@ -258,10 +258,10 @@ export interface LibraryWarning {
   readonly message: string;
 }
 
-/** A especialização lida de uma operação e, se for pacote v4, o pacote já validado. */
+/** The specialization read from an operation and, if it is a v4 package, the already validated package. */
 interface LoadedSpec {
   readonly spec: Spec;
-  /** Só na atualização: o impacto (o contrato já conferido). */
+  /** Only on update: the impact (the contract already checked). */
   readonly impact?: SpecUpdateImpact;
   readonly package?: {
     readonly pkg: ReadPackage;
@@ -272,11 +272,11 @@ interface LoadedSpec {
 
 interface Step {
   readonly project: Project;
-  /** Papel que a troca de dono limpou sem o passo pedir. */
+  /** Role that the owner change cleared without the step asking for it. */
   readonly roleCleared?: Omit<RoleCleared, 'index'>;
-  /** Avisos da operação (argumento ignorado…): vão para `warnings` da resposta. */
+  /** Warnings of the operation (ignored argument…): they go to the response's `warnings`. */
   readonly notes?: readonly string[];
-  /** Pacote da biblioteca levado pela operação: pasta definitiva e arquivos dela. */
+  /** Library package carried by the operation: final folder and its files. */
   readonly packageFiles?: readonly [string, Uint8Array][];
   readonly warnings?: readonly LibraryIssue[];
   readonly specId?: string;
@@ -287,26 +287,26 @@ interface Step {
 }
 
 const KIND_LABEL: Record<CreatedKind, string> = {
-  layer: 'uma camada',
+  layer: 'a layer',
   ...KIND_WITH_ARTICLE,
 };
 
-/** Operações antigas aceitas com aviso por uma versão (MCP 0.8.0), com o que usar no lugar. */
+/** Old operations accepted with a warning for one version (MCP 0.8.0), with what to use instead. */
 const DEPRECATED_OPS: Partial<Record<Operation['op'], string>> = {
-  add_image: 'add_image é antiga: use add_container com `file` (ou `base64`)',
+  add_image: 'add_image is old: use add_container with `file` (or `base64`)',
   add_blank_image:
-    'add_blank_image é antiga: use add_container (mesmos campos: width, height e background)',
+    'add_blank_image is old: use add_container (same fields: width, height and background)',
   update_image:
-    'update_image é antiga: use update_container (o argumento `image` virou `container`)',
+    'update_image is old: use update_container (the `image` argument became `container`)',
   replace_image:
-    'replace_image é antiga: use replace_container (o argumento `image` virou `container`)',
+    'replace_image is old: use replace_container (the `image` argument became `container`)',
   delete_image:
-    'delete_image é antiga: use delete_container (o argumento `image` virou `container`)',
+    'delete_image is old: use delete_container (the `image` argument became `container`)',
 };
 
 /**
- * Os valores simples (texto, número, vazio) de `annotation.values` para medir o tamanho da instância
- * nova (decisão 16 da #898): tabela e referência não entram (ficam no `default`).
+ * The simple values (text, number, empty) of `annotation.values` for measuring the size of the new
+ * instance (decision 16 of #898): table and reference do not count (they stay on the `default`).
  */
 function initialValuesArg(values: Record<string, JsonValue> | undefined): {
   values?: Record<string, JsonValue>;
@@ -319,29 +319,29 @@ function initialValuesArg(values: Record<string, JsonValue> | undefined): {
   return simple.length === 0 ? {} : { values: Object.fromEntries(simple) };
 }
 
-/** Algum valor é uma tabela (lista de linhas): o `initialValuesArg` a deixa de fora da medida. */
+/** Some value is a table (list of rows): `initialValuesArg` leaves it out of the measurement. */
 function hasTableValue(values: Record<string, JsonValue>): boolean {
   return Object.values(values).some((value) => Array.isArray(value));
 }
 
-/** Minúsculas e sem acentos, para achar camadas e tipos pelo nome. */
+/** Lowercase and without accents, to find layers and types by name. */
 function fold(text: string): string {
   return text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
 }
 
-/** O nome entre aspas e um espaço, ou nada (para frases "o container <nome> com …"). */
+/** The name in quotes and a space, or nothing (for sentences like "container <name> with …"). */
 const nameLabel = (name: string | undefined): string =>
   name === undefined ? '' : `${quoted(name)} `;
 
 function quoted(text: string | null): string {
-  return text === null ? '(sem nome)' : `"${text}"`;
+  return text === null ? '(unnamed)' : `"${text}"`;
 }
 
 function isRecord(value: unknown): value is Record<string, JsonValue> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** Nome de arquivo seguro para `images/`: só o nome, sem pastas, controle nem ponto inicial. */
+/** Safe file name for `images/`: just the name, without folders, control characters or a leading dot. */
 function safeFileName(input: string, fallback: string): string {
   const base = input.split(/[\\/]/).pop() ?? '';
   // eslint-disable-next-line no-control-regex
@@ -351,20 +351,20 @@ function safeFileName(input: string, fallback: string): string {
 
 function decodeBase64(text: string): Uint8Array {
   const payload = text.replace(/^data:[^,]*;base64,/, '').replace(/\s+/g, '');
-  // Antes de decodificar: o `Buffer` de um texto enorme já seria o pico de memória.
+  // Before decoding: the `Buffer` of a huge text would already be the memory peak.
   if (payload.length > MAX_BASE64_LENGTH) {
     throw new ToolError(
       'image-too-large',
-      `conteúdo base64 grande demais (${payload.length} caracteres; máximo ${MAX_BASE64_LENGTH}): envie imagens grandes por \`file\``,
+      `base64 content too large (${payload.length} characters; maximum ${MAX_BASE64_LENGTH}): send large images through \`file\``,
     );
   }
   if (payload === '' || !/^[A-Za-z0-9+/_-]*={0,2}$/.test(payload)) {
-    throw new ToolError('invalid-base64', 'conteúdo base64 vazio ou inválido');
+    throw new ToolError('invalid-base64', 'empty or invalid base64 content');
   }
   return new Uint8Array(Buffer.from(payload, 'base64'));
 }
 
-/** `source` da operação → `ExternalSource` do modelo (`url` omitida = sem link). */
+/** The operation's `source` → the model's `ExternalSource` (`url` omitted = no link). */
 function toSource(
   input: { system: string; id: string; url?: string | null | undefined } | null,
 ): ExternalSource | null {
@@ -373,12 +373,12 @@ function toSource(
     : { system: input.system, id: input.id, url: input.url ?? null };
 }
 
-/** Rótulo curto da origem nos resumos: `figma:3f2a` ou `sem origem`. */
+/** Short label of the source in the summaries: `figma:3f2a` or `no source`. */
 function sourceLabel(source: ExternalSource | null): string {
-  return source === null ? 'sem origem' : `origem ${source.system}:${source.id}`;
+  return source === null ? 'no source' : `source ${source.system}:${source.id}`;
 }
 
-/** Catálogo sem a especialização `specId`. */
+/** Catalog without the specialization `specId`. */
 function withoutSpec(catalog: ComponentCatalog, specId: string): ComponentCatalog {
   if (!catalog.has(specId)) return catalog;
   const next = new Map(catalog);
@@ -387,9 +387,9 @@ function withoutSpec(catalog: ComponentCatalog, specId: string): ComponentCatalo
 }
 
 /**
- * Catálogo depois de aplicar ou atualizar uma especialização no lote: a entrada dela é refeita
- * com os arquivos do pacote que a operação levou (`packageFiles`, pelo caminho definitivo).
- * Especialização sem pacote (v1 a v3) não tem componente: a entrada some.
+ * Catalog after applying or updating a specialization in the batch: its entry is rebuilt
+ * with the package files that the operation carried (`packageFiles`, by the final path).
+ * A specialization without a package (v1 to v3) has no component: the entry disappears.
  */
 function catalogAfterSpecStep(
   catalog: ComponentCatalog,
@@ -415,9 +415,9 @@ function catalogAfterSpecStep(
 }
 
 /**
- * Nota do passo quando o tipo declara componente na especialização aplicada e o catálogo do
- * lote não o tem (arquivo ausente, ilegível ou com problema): a anotação nasce sem o preview
- * e sem o tamanho mínimo. `null` se o tipo não declara componente.
+ * Note of the step when the type declares a component in the applied specialization and the batch's
+ * catalog does not have it (missing file, unreadable or with a problem): the annotation is created
+ * without the preview and without the minimum size. `null` if the type does not declare a component.
  */
 function missingComponentNote(
   p: Project,
@@ -432,8 +432,8 @@ function missingComponentNote(
   const reason =
     problem !== undefined
       ? problem.slice(ref.typeId.length + 2)
-      : 'o lote não achou os arquivos de componente dessa especialização';
-  return `o tipo ${label} declara componente, mas ${reason}: a anotação foi criada sem o preview e sem o tamanho mínimo`;
+      : 'the batch did not find the component files of that specialization';
+  return `type ${label} declares a component, but ${reason}: the annotation was created without the preview and without the minimum size`;
 }
 
 type CreateMarkingValues = NonNullable<
@@ -443,7 +443,7 @@ type CreateMarkingValues = NonNullable<
 class Batch {
   private p: Project;
   private readonly aliases = new Map<string, AliasTarget>();
-  /** Contagem dos 8 primeiros caracteres (normalizados) dos ids de marcações e setas, da versão em `project`. */
+  /** Count of the first 8 characters (normalized) of the marking and arrow ids, for the version in `project`. */
   private prefixCounts: { project: Project; counts: Map<string, number> } | null = null;
 
   private componentTypes: {
@@ -452,7 +452,7 @@ class Batch {
     map: ReadonlyMap<string, ComponentType>;
   } | null = null;
 
-  /** Apelidos de operações que falharam: as que dependem delas dizem o porquê. */
+  /** Aliases of operations that failed: the ones that depend on them say why. */
   private readonly failedAliases = new Map<string, number>();
   private readonly imageFiles = new Map<string, Uint8Array>();
   private readonly packageFiles = new Map<string, Uint8Array>();
@@ -468,11 +468,11 @@ class Batch {
   private readonly steps: { index: number; description: string }[] = [];
   private readonly created: CreatedItem[] = [];
   /**
-   * Catálogo de componentes do lote: parte do lido ao carregar o projeto e acompanha as
-   * especializações que o próprio lote aplica, atualiza ou remove.
+   * The batch's component catalog: it starts from what was read when loading the project and follows the
+   * specializations that the batch itself applies, updates or removes.
    */
   private catalog: ComponentCatalog;
-  /** Mede o texto como o desenho do servidor: fonte embutida e, se houver, as `fonts` da biblioteca. */
+  /** Measures text like the server's drawing: embedded font and, if any, the library's `fonts`. */
   private readonly measurer: TextMeasurer;
 
   constructor(
@@ -491,7 +491,7 @@ class Batch {
   async run(operations: readonly Operation[]): Promise<BatchResult> {
     for (const [index, op] of operations.entries()) {
       const alias = 'as' in op ? op.as : undefined;
-      // Apelido da segunda criação da operação (a anotação de create_marking).
+      // Alias of the operation's second creation (the annotation of create_marking).
       const secondAlias = op.op === 'create_marking' ? op.annotationAs : undefined;
       try {
         for (const name of [alias, secondAlias]) {
@@ -499,11 +499,14 @@ class Batch {
             name !== undefined &&
             (this.aliases.has(name) || this.failedAliases.has(name))
           ) {
-            throw new ToolError('duplicate-alias', `apelido repetido no lote: ${name}`);
+            throw new ToolError(
+              'duplicate-alias',
+              `alias repeated in the batch: ${name}`,
+            );
           }
         }
         if (alias !== undefined && alias === secondAlias) {
-          throw new ToolError('duplicate-alias', `apelido repetido no lote: ${alias}`);
+          throw new ToolError('duplicate-alias', `alias repeated in the batch: ${alias}`);
         }
         const step = await this.apply(op);
         this.checkRowAliases(step, [alias, secondAlias]);
@@ -517,7 +520,7 @@ class Batch {
           this.deprecations.push({
             index,
             op: op.op,
-            message: 'o argumento `image` de create_marking é antigo: use `container`',
+            message: 'the `image` argument of create_marking is old: use `container`',
           });
         }
         if (
@@ -529,7 +532,7 @@ class Batch {
             op: op.op,
             code: 'ignored-argument',
             message:
-              'o argumento `parent` foi ignorado: o pai da marcação sai da geometria (a mais interna que a contém)',
+              "the `parent` argument was ignored: the marking's parent comes from the geometry (the innermost one that contains it)",
           });
         }
         if (
@@ -540,7 +543,7 @@ class Batch {
             index,
             op: op.op,
             message:
-              'o argumento `inherit` saiu do formato (v13) e foi ignorado: a anotação vale só para a própria marcação',
+              'the `inherit` argument left the format (v13) and was ignored: the annotation applies only to its own marking',
           });
         }
         if (step.roleCleared) this.rolesCleared.push({ index, ...step.roleCleared });
@@ -558,8 +561,8 @@ class Batch {
         for (const [name, target] of step.rowAliases ?? [])
           this.aliases.set(name, target);
         for (const [n, item] of (step.created ?? []).entries()) {
-          // O apelido da operação vale para o item principal (o primeiro criado); o segundo,
-          // quando a operação cria dois (marcação e anotação), tem o dele.
+          // The operation's alias applies to the main item (the first one created); the second,
+          // when the operation creates two (marking and annotation), has its own.
           const named = n === 0 ? alias : n === 1 ? secondAlias : undefined;
           if (named !== undefined) this.aliases.set(named, item);
           this.created.push({ index, ...item, ...(named ? { alias: named } : {}) });
@@ -593,18 +596,21 @@ class Batch {
     };
   }
 
-  /** O apelido da operação não pode repetir um `_as` de linha da mesma operação. */
+  /** The operation's alias cannot repeat a row `_as` of the same operation. */
   private checkRowAliases(step: Step, names: readonly (string | undefined)[]): void {
     for (const [rowAlias] of step.rowAliases ?? []) {
       if (names.includes(rowAlias)) {
-        throw new ToolError('duplicate-alias', `apelido repetido no lote: ${rowAlias}`);
+        throw new ToolError(
+          'duplicate-alias',
+          `alias repeated in the batch: ${rowAlias}`,
+        );
       }
     }
   }
 
   /**
-   * Refaz a entrada do catálogo da especialização que a operação mexeu, com o pacote que ela
-   * já leu (sem ler o disco de novo): as operações seguintes veem os componentes da versão nova.
+   * Rebuilds the catalog entry of the specialization that the operation touched, with the package it
+   * already read (without reading the disk again): the following operations see the new version's components.
    */
   private refreshCatalog(op: Operation, step: Step): void {
     if (op.op === 'remove_specialization') {
@@ -620,8 +626,8 @@ class Batch {
   }
 
   /**
-   * Guarda os arquivos do pacote da operação. Uma operação seguinte sobre a mesma pasta
-   * (aplicar e depois atualizar no mesmo lote) substitui a anterior inteira, sem sobras.
+   * Stores the operation's package files. A later operation on the same folder
+   * (apply and then update in the same batch) replaces the previous one entirely, with no leftovers.
    */
   private takePackage(index: number, step: Step): void {
     const files = step.packageFiles ?? [];
@@ -664,16 +670,13 @@ class Batch {
   }
 
   // -------------------------------------------------------------------------
-  // Resolução do que o agente informou
+  // Resolution of what the agent provided
 
   private alias(name: string, kind: AliasTarget['kind']): AliasTarget {
     const target = this.aliases.get(name);
     if (target) {
       if (target.kind !== kind) {
-        throw new ToolError(
-          'wrong-kind',
-          `o apelido ${name} não é de ${kindLabel(kind)}`,
-        );
+        throw new ToolError('wrong-kind', `the alias ${name} is not ${kindLabel(kind)}`);
       }
       return target;
     }
@@ -681,20 +684,20 @@ class Batch {
     if (failed !== undefined) {
       throw new ToolError(
         'alias-unavailable',
-        `o apelido ${name} viria da operação ${failed}, que falhou`,
+        `the alias ${name} would come from operation ${failed}, which failed`,
         { alias: name, failedOperation: failed },
       );
     }
     throw new ToolError(
       'unknown-alias',
-      `apelido desconhecido: ${name} (crie o item com "as" numa operação anterior)`,
+      `unknown alias: ${name} (create the item with "as" in an earlier operation)`,
       { alias: name },
     );
   }
 
   /**
-   * Container por referência/id ou, se não achar, pelo nome ou arquivo (como `list_markings`);
-   * nome em mais de um container → `ambiguous-image`.
+   * Container by reference/id or, if not found, by name or file (like `list_markings`);
+   * a name shared by more than one container → `ambiguous-image`.
    */
   private containerItem(text: string, p: Project = this.p): string {
     try {
@@ -712,7 +715,7 @@ class Batch {
       if (named.length > 1) {
         throw new ToolError(
           'ambiguous-image',
-          `mais de um container se chama "${text}": use a referência`,
+          `more than one container is named "${text}": use the reference`,
           { candidates: named.map((c) => this.refs(p).ref('i', c.id)) },
         );
       }
@@ -720,7 +723,7 @@ class Batch {
     }
   }
 
-  /** Id de uma marcação, container ou anotação deste projeto: apelido, referência ou id. */
+  /** Id of a marking, container or annotation of this project: alias, reference or id. */
   private item(text: string, kind: ItemKind, p: Project = this.p): string {
     const wanted = text.trim();
     if (wanted.startsWith('$')) {
@@ -729,20 +732,20 @@ class Batch {
     }
     const parsed = parseRef(wanted);
     if (!parsed) {
-      throw new ToolError('invalid-ref', `referência inválida: ${text}`, {
+      throw new ToolError('invalid-ref', `invalid reference: ${text}`, {
         hint: INVALID_REF_HINT,
       });
     }
     if (parsed.project !== null && parsed.project !== this.loaded.location.name) {
       throw new ToolError(
         'project-mismatch',
-        `a referência é do projeto "${parsed.project}", não de "${this.loaded.location.name}"`,
+        `the reference is to project "${parsed.project}", not "${this.loaded.location.name}"`,
       );
     }
     if (parsed.kind !== null && parsed.kind !== kind) {
       throw new ToolError(
         'wrong-kind',
-        `a referência é de ${KIND_WITH_ARTICLE[parsed.kind]}, não de ${KIND_WITH_ARTICLE[kind]}`,
+        `the reference is to ${KIND_WITH_ARTICLE[parsed.kind]}, not ${KIND_WITH_ARTICLE[kind]}`,
       );
     }
     const found = matchShortCode(p, kind, parsed.code);
@@ -752,7 +755,7 @@ class Batch {
     }
     throw new ToolError(
       'ambiguous-ref',
-      `${found.length} itens começam com esse código: use a referência completa`,
+      `${found.length} items start with that code: use the full reference`,
       { candidates: found.slice(0, 20).map((f) => this.refs(p).ref(f.kind, f.id)) },
     );
   }
@@ -764,7 +767,7 @@ class Batch {
       const target = this.alias(wanted, 'layer');
       const layer = 'id' in target ? index.layers.get(target.id) : undefined;
       if (layer) return layer;
-      throw new ToolError('not-found', `a camada ${wanted} não existe mais`);
+      throw new ToolError('not-found', `the layer ${wanted} no longer exists`);
     }
     const byId = index.layers.get(wanted);
     if (byId) return byId;
@@ -782,8 +785,8 @@ class Batch {
     throw new ToolError(
       byName.length > 1 ? 'ambiguous-layer' : 'not-found',
       byName.length > 1
-        ? `há ${byName.length} camadas chamadas "${text}": use o id`
-        : `camada não encontrada: ${text}`,
+        ? `there are ${byName.length} layers named "${text}": use the id`
+        : `layer not found: ${text}`,
       { layers: p.layers.map((l) => ({ id: l.id, name: l.name })) },
     );
   }
@@ -805,8 +808,8 @@ class Batch {
     throw new ToolError(
       chosen.length > 1 ? 'ambiguous-type' : 'unknown-type',
       chosen.length > 1
-        ? `"${text}" existe em mais de uma especialização: use specId/typeId`
-        : `tipo de anotação não encontrado: ${text} (veja get_project e get_specialization)`,
+        ? `"${text}" exists in more than one specialization: use specId/typeId`
+        : `annotation type not found: ${text} (see get_project and get_specialization)`,
       {
         types: [...projectIndex(p).types.values()]
           .slice(0, 50)
@@ -816,10 +819,10 @@ class Batch {
   }
 
   /**
-   * Lê o que `file` aponta: um arquivo de especialização v1 a v3, ou o pacote v4 (a pasta, ou o
-   * arquivo da especialização dentro dela). O pacote é validado com os mesmos níveis de
-   * `validate_library`: erro impede (`invalid-library`), aviso segue e volta no resultado.
-   * Numa atualização, a cópia aplicada liga o contrato de versão (`previous`).
+   * Reads what `file` points to: a v1 to v3 specialization file, or the v4 package (the folder, or the
+   * specialization file inside it). The package is validated with the same levels as
+   * `validate_library`: an error blocks (`invalid-library`), a warning goes on and comes back in the result.
+   * On an update, the applied copy binds the version contract (`previous`).
    */
   private async loadSpec(
     file: string,
@@ -843,7 +846,7 @@ class Batch {
     };
   }
 
-  /** Arquivos do pacote com o caminho definitivo, depois de o modelo escolher o `file`. */
+  /** Package files with the final path, after the model has chosen the `file`. */
   private packageStep(
     loaded: LoadedSpec,
     project: Project,
@@ -862,12 +865,12 @@ class Batch {
     };
   }
 
-  /** Opções do modelo: o pacote v4 guarda a cópia numa pasta, com o arquivo da especialização dentro. */
+  /** Model options: the v4 package stores the copy in a folder, with the specialization file inside it. */
   private specOptions(loaded: LoadedSpec): { packageSpecName?: string } {
     return loaded.package ? { packageSpecName: loaded.package.specName } : {};
   }
 
-  /** Lê e otimiza a imagem informada e escolhe o nome livre em `images/`. */
+  /** Reads and optimizes the given image and picks the free name in `images/`. */
   private async image(
     source: { file?: string; base64?: string; fileName?: string },
     p: Project,
@@ -881,10 +884,7 @@ class Batch {
     let bytes: Uint8Array;
     let name: string;
     if (source.file !== undefined && source.base64 !== undefined) {
-      throw new ToolError(
-        'invalid-image-source',
-        'informe `file` ou `base64`, não os dois',
-      );
+      throw new ToolError('invalid-image-source', 'provide `file` or `base64`, not both');
     }
     if (source.file !== undefined) {
       const read = await this.io.readSource(source.file);
@@ -895,7 +895,10 @@ class Batch {
       const format = detectFormat(bytes);
       name = pastedFileName(this.io.now(), extensionForMime(format ? MIME[format] : ''));
     } else {
-      throw new ToolError('invalid-image-source', 'informe `file` ou `base64` da imagem');
+      throw new ToolError(
+        'invalid-image-source',
+        "provide the image's `file` or `base64`",
+      );
     }
     const fallback = pastedFileName(this.io.now(), 'png');
     const prepared = await prepareImage(
@@ -907,9 +910,9 @@ class Batch {
     const { original } = prepared;
     const note = prepared.optimized
       ? original.width !== prepared.width
-        ? `otimizada: ${original.width}×${original.height} → ${prepared.width}×${prepared.height}, WebP`
-        : 'otimizada: WebP'
-      : 'arquivo original';
+        ? `optimized: ${original.width}×${original.height} → ${prepared.width}×${prepared.height}, WebP`
+        : 'optimized: WebP'
+      : 'original file';
     return {
       file,
       data: prepared.data,
@@ -919,18 +922,18 @@ class Batch {
     };
   }
 
-  /** Referência de um campo `ref` no formato do agente → `RefValue` do modelo. */
+  /** Reference of a `ref` field in the agent's format → the model's `RefValue`. */
   private refValue(input: JsonValue, key: string, p: Project): JsonValue {
     if (input === null || (typeof input === 'string' && input === '')) return null;
     if (!isRecord(input)) {
       throw new ToolError(
         'invalid-ref-value',
-        `campo ${key}: a referência é um objeto com "annotation" (veja a descrição de values)`,
+        `field ${key}: the reference is an object with "annotation" (see the description of values)`,
       );
     }
     const target = input.annotation ?? input.annotationId;
     if (typeof target !== 'string') {
-      throw new ToolError('invalid-ref-value', `campo ${key}: falta "annotation"`);
+      throw new ToolError('invalid-ref-value', `field ${key}: "annotation" is missing`);
     }
     const annotationId = this.item(target, 'a', p);
     const annotation = projectIndex(p).annotations.get(annotationId)!;
@@ -942,7 +945,7 @@ class Batch {
       if (typeof entry !== 'string') {
         throw new ToolError(
           'invalid-ref-value',
-          `campo ${key}: "entry" é a chave ou o id do par`,
+          `field ${key}: "entry" is the key or the id of the pair`,
         );
       }
       const found =
@@ -951,7 +954,7 @@ class Batch {
       if (!found) {
         throw new ToolError(
           'not-found',
-          `campo ${key}: a anotação não tem o par "${entry}"`,
+          `field ${key}: the annotation has no pair "${entry}"`,
           {
             entries: annotation.entries.map((e) => e.key),
           },
@@ -963,12 +966,12 @@ class Batch {
     } else if (typeof field === 'string') {
       ref = { annotationId, key: field };
     } else if (field === undefined && row === undefined) {
-      // Sem `entry`, `key` nem `row`: a anotação inteira (quarto formato).
+      // Without `entry`, `key` or `row`: the whole annotation (fourth format).
       ref = { annotationId };
     } else {
       throw new ToolError(
         'invalid-ref-value',
-        `campo ${key}: "row" exige "key" (a tabela); sem "entry", "key" nem "row", a referência é a anotação inteira`,
+        `field ${key}: "row" requires "key" (the table); without "entry", "key" or "row", the reference is the whole annotation`,
       );
     }
     return { ...ref };
@@ -986,14 +989,14 @@ class Batch {
       if (!found)
         throw new ToolError(
           'not-found',
-          `campo ${key}: a tabela ${field} não tem a linha ${row}`,
+          `field ${key}: the table ${field} has no row ${row}`,
         );
       return found._id;
     }
     if (typeof row !== 'string') {
       throw new ToolError(
         'invalid-ref-value',
-        `campo ${key}: "row" é o id, o apelido ou o índice da linha`,
+        `field ${key}: "row" is the id, the alias or the index of the row`,
       );
     }
     if (row.startsWith('$')) {
@@ -1002,7 +1005,7 @@ class Batch {
         if (target.annotationId !== annotation.id || target.key !== field) {
           throw new ToolError(
             'invalid-ref-value',
-            `campo ${key}: a linha ${row} é de outra tabela`,
+            `field ${key}: row ${row} belongs to another table`,
           );
         }
         return target.rowId;
@@ -1011,7 +1014,7 @@ class Batch {
     return row;
   }
 
-  /** Define os valores de uma anotação tipada, campo a campo, pelas operações do modelo. */
+  /** Sets the values of a typed annotation, field by field, through the model's operations. */
   private setValues(
     p: Project,
     annotationId: string,
@@ -1020,7 +1023,7 @@ class Batch {
   ): Project {
     const entries = Object.entries(values);
     if (entries.length === 0) return p;
-    // O tipo da anotação não muda ao definir os valores: resolvido uma vez, não por campo.
+    // The annotation's type does not change when setting the values: resolved once, not per field.
     const annotation = projectIndex(p).annotations.get(annotationId)!;
     const resolved = typeOfAnnotation(p, annotation);
     let next = p;
@@ -1031,14 +1034,14 @@ class Batch {
       } else if (field?.type === 'ref') {
         next = setFieldValue(next, annotationId, key, this.refValue(value, key, next));
       } else {
-        // Campos simples; tipo inexistente ou campo desconhecido: o modelo diz o porquê.
+        // Simple fields; a nonexistent type or an unknown field: the model says why.
         next = setFieldValue(next, annotationId, key, value);
       }
     }
     return next;
   }
 
-  /** Substitui as linhas da tabela: `_id` mantém uma linha existente, `_as` dá um apelido. */
+  /** Replaces the table's rows: `_id` keeps an existing row, `_as` gives it an alias. */
   private setTable(
     p: Project,
     annotationId: string,
@@ -1048,17 +1051,11 @@ class Batch {
   ): Project {
     const key = tableField.key;
     if (value !== null && !Array.isArray(value)) {
-      throw new ToolError(
-        'invalid-value',
-        `campo ${key}: uma tabela é uma lista de linhas`,
-      );
+      throw new ToolError('invalid-value', `field ${key}: a table is a list of rows`);
     }
     const input = (value ?? []).map((row, i) => {
       if (!isRecord(row)) {
-        throw new ToolError(
-          'invalid-value',
-          `campo ${key}: a linha ${i} não é um objeto`,
-        );
+        throw new ToolError('invalid-value', `field ${key}: row ${i} is not an object`);
       }
       return row;
     });
@@ -1078,7 +1075,7 @@ class Batch {
       if (given !== undefined && (typeof given !== 'string' || !existing.has(given))) {
         throw new ToolError(
           'not-found',
-          `campo ${key}: a linha ${String(given)} não existe`,
+          `field ${key}: row ${String(given)} does not exist`,
         );
       }
       const rowId = given ?? crypto.randomUUID();
@@ -1086,7 +1083,7 @@ class Batch {
       for (const [column, cell] of Object.entries(row)) {
         if (column === '_id' || column === '_as') continue;
         const isRef = tableField.columns.find((c) => c.key === column)?.type === 'ref';
-        // Célula `ref`: o mesmo valor do campo `ref` (apelidos incluídos) ou o formato gravado.
+        // `ref` cell: the same value as the `ref` field (aliases included) or the stored format.
         const cellValue = isRef ? this.refValue(cell, column, next) : cell;
         next = setTableCell(next, annotationId, key, rowId, column, cellValue);
       }
@@ -1096,11 +1093,11 @@ class Batch {
         if (typeof alias !== 'string' || !/^\$[A-Za-z0-9_-]+$/.test(alias)) {
           throw new ToolError(
             'invalid-alias',
-            `campo ${key}: "_as" é um apelido como "$linha"`,
+            `field ${key}: "_as" is an alias like "$row"`,
           );
         }
         if (this.aliases.has(alias) || rowAliases.some(([name]) => name === alias)) {
-          throw new ToolError('duplicate-alias', `apelido repetido no lote: ${alias}`);
+          throw new ToolError('duplicate-alias', `alias repeated in the batch: ${alias}`);
         }
         rowAliases.push([alias, { kind: 'row', annotationId, key, rowId }]);
       }
@@ -1108,7 +1105,7 @@ class Batch {
     return next;
   }
 
-  /** Pares novos com a mesma chave de um existente mantêm o id (e as referências a ele). */
+  /** New pairs with the same key as an existing one keep the id (and the references to it). */
   private entries(
     p: Project,
     annotationId: string | null,
@@ -1124,17 +1121,17 @@ class Batch {
   }
 
   // -------------------------------------------------------------------------
-  // Rótulos para o resumo
+  // Labels for the summary
 
   private markingLabel(p: Project, id: string): string {
     return this.refs(p).markingPath(id).join(' › ');
   }
 
   /**
-   * Rótulo da marcação recém-criada (`Container › Nome`), igual ao de `markingLabel`, sem montar o
-   * índice nem ordenar os códigos de todo o projeto: o custo não cresce com ele, e um lote de
-   * mil criações fica linear. Só vale para a marcação sem pai e sem outro id começando igual;
-   * nos outros casos cai no `markingLabel` (que decide o nome e o código pelo projeto inteiro).
+   * Label of the newly created marking (`Container › Name`), the same as `markingLabel`'s, without building
+   * the index or sorting the codes of the whole project: the cost does not grow with it, and a batch of
+   * a thousand creations stays linear. It only holds for a marking with no parent and no other id starting
+   * the same; in the other cases it falls back to `markingLabel` (which decides the name and code from the whole project).
    */
   private createdMarkingLabel(
     before: Project,
@@ -1147,13 +1144,13 @@ class Batch {
         ? this.freshCode(before, project, marking.id)
         : null;
     if (fast === null) return this.markingLabel(project, marking.id);
-    const name = marking.name ?? `${typeName ?? 'Marcação'} ${fast}`;
+    const name = marking.name ?? `${typeName ?? 'Marking'} ${fast}`;
     return [this.refs(project).imageLabelNoIndex(marking.containerId), name].join(' › ');
   }
 
   /**
-   * Tipos com componente por `especialização/tipo`, montados uma vez por versão das
-   * especializações e do catálogo (o `import_measured` cria uma marcação por nó).
+   * Types with a component by `specialization/type`, built once per version of the
+   * specializations and the catalog (`import_measured` creates one marking per node).
    */
   private componentTypeMap(
     p: Project,
@@ -1165,7 +1162,7 @@ class Batch {
     }
     const map = new Map<string, ComponentType>();
     for (const t of componentTypes(p, catalog)) {
-      // O primeiro vence, como o `find` por especialização e tipo.
+      // The first one wins, like the `find` by specialization and type.
       const key = `${t.specId}/${t.typeId}`;
       if (!map.has(key)) map.set(key, t);
     }
@@ -1174,9 +1171,9 @@ class Batch {
   }
 
   /**
-   * Código curto do id novo se nenhum outro id de marcação ou seta começa com os mesmos 8
-   * caracteres (o código é então o prefixo de 8, como `shortCode` daria); `null` se houver
-   * colisão ou se o projeto não é o anterior mais uma marcação.
+   * Short code of the new id if no other marking or arrow id starts with the same 8
+   * characters (the code is then the 8-character prefix, as `shortCode` would give); `null` if there is
+   * a collision or if the project is not the previous one plus one marking.
    */
   private freshCode(before: Project, project: Project, id: string): string | null {
     if (project.markings.length !== before.markings.length + 1) {
@@ -1203,12 +1200,12 @@ class Batch {
   private annotationLabel(p: Project, id: string): string {
     const a = projectIndex(p).annotations.get(id);
     return a
-      ? `${annotationShortLabel(p, a)} em "${this.markingLabel(p, a.markingId)}"`
+      ? `${annotationShortLabel(p, a)} on "${this.markingLabel(p, a.markingId)}"`
       : id;
   }
 
   // -------------------------------------------------------------------------
-  // Operações
+  // Operations
 
   private async apply(op: Operation): Promise<Step> {
     const p = this.p;
@@ -1217,13 +1214,13 @@ class Batch {
         if (op.urlTemplate !== undefined) {
           throw new ToolError(
             'unknown-field',
-            'o endereço do repositório vem da especialização (`platforms[].repo`); o projeto só informa `localPath`',
+            'the repository address comes from the specialization (`platforms[].repo`); the project only provides `localPath`',
           );
         }
         if (op.localPath === undefined) {
           throw new ToolError(
             'nothing-to-change',
-            'informe `localPath` (ou use remove_platform_repo)',
+            'provide `localPath` (or use remove_platform_repo)',
           );
         }
         const project = setPlatformRepo(p, op.platform, { localPath: op.localPath });
@@ -1231,20 +1228,20 @@ class Batch {
         return {
           project,
           description: repo?.localPath
-            ? `Informar o clone local da plataforma "${op.platform}": localPath "${repo.localPath}"`
-            : `Informar o clone local da plataforma "${op.platform}": localPath removido`,
+            ? `Set the local clone of platform "${op.platform}": localPath "${repo.localPath}"`
+            : `Set the local clone of platform "${op.platform}": localPath removed`,
         };
       }
       case 'remove_platform_repo':
         return {
           project: removePlatformRepo(p, op.platform),
-          description: `Remover o clone local da plataforma "${op.platform}"`,
+          description: `Remove the local clone of platform "${op.platform}"`,
         };
       case 'set_doc_repo': {
         if (op.localPath === undefined) {
           throw new ToolError(
             'nothing-to-change',
-            'informe `localPath` (ou use remove_doc_repo)',
+            'provide `localPath` (or use remove_doc_repo)',
           );
         }
         const project = setDocRepo(p, op.repo, { localPath: op.localPath });
@@ -1252,14 +1249,14 @@ class Batch {
         return {
           project,
           description: repo?.localPath
-            ? `Informar o clone local do repositório de documentos "${op.repo}": localPath "${repo.localPath}"`
-            : `Informar o clone local do repositório de documentos "${op.repo}": localPath removido`,
+            ? `Set the local clone of the documents repository "${op.repo}": localPath "${repo.localPath}"`
+            : `Set the local clone of the documents repository "${op.repo}": localPath removed`,
         };
       }
       case 'remove_doc_repo':
         return {
           project: removeDocRepo(p, op.repo),
-          description: `Remover o clone local do repositório de documentos "${op.repo}"`,
+          description: `Remove the local clone of the documents repository "${op.repo}"`,
         };
       case 'create_layer': {
         const id = crypto.randomUUID();
@@ -1270,7 +1267,7 @@ class Batch {
         });
         return {
           project,
-          description: `Criar a camada "${op.name.trim()}"`,
+          description: `Create the layer "${op.name.trim()}"`,
           created: [{ kind: 'layer', id }],
         };
       }
@@ -1280,22 +1277,22 @@ class Batch {
         const changes: string[] = [];
         if (op.name !== undefined) {
           project = renameLayer(project, layer.id, op.name);
-          changes.push(`nome "${op.name.trim()}"`);
+          changes.push(`name "${op.name.trim()}"`);
         }
         if (op.color !== undefined) {
           project = setLayerColor(project, layer.id, op.color);
-          changes.push(`cor ${op.color.toUpperCase()}`);
+          changes.push(`color ${op.color.toUpperCase()}`);
         }
         return {
           project,
-          description: `Alterar a camada "${layer.name}": ${changes.join(', ') || 'nada'}`,
+          description: `Change the layer "${layer.name}": ${changes.join(', ') || 'nothing'}`,
         };
       }
       case 'move_layer': {
         const layer = this.layer(op.layer);
         return {
           project: moveLayer(p, layer.id, op.index),
-          description: `Mover a camada "${layer.name}" para a posição ${op.index}`,
+          description: `Move the layer "${layer.name}" to position ${op.index}`,
         };
       }
       case 'delete_layer': {
@@ -1303,10 +1300,8 @@ class Batch {
         const impact = layerDeletionImpact(p, layer.id);
         return {
           project: removeLayer(p, layer.id),
-          description: `Excluir a camada "${layer.name}" (${impact.annotations} anotação(ões)${
-            impact.brokenRefs > 0
-              ? `, ${impact.brokenRefs} referência(s) quebrada(s)`
-              : ''
+          description: `Delete the layer "${layer.name}" (${impact.annotations} annotation(s)${
+            impact.brokenRefs > 0 ? `, ${impact.brokenRefs} broken reference(s)` : ''
           })`,
         };
       }
@@ -1317,7 +1312,7 @@ class Batch {
         if (check === 'update') {
           throw new ToolError(
             'spec-already-applied',
-            `a especialização "${spec.id}" já está aplicada numa versão menor: use update_specialization`,
+            `the specialization "${spec.id}" is already applied in a lower version: use update_specialization`,
           );
         }
         const project = applySpecialization(p, spec, this.specOptions(loaded));
@@ -1325,11 +1320,11 @@ class Batch {
         const warnings = loaded.package?.warnings.length ?? 0;
         return {
           project,
-          description: `Aplicar a especialização "${spec.name}" (${spec.id} v${spec.version}): camadas ${layers
+          description: `Apply the specialization "${spec.name}" (${spec.id} v${spec.version}): layers ${layers
             .map((l) => `"${l.name}"`)
             .join(', ')}${
             loaded.package
-              ? ` (pacote da biblioteca${warnings > 0 ? `, ${warnings} aviso(s) da validação` : ''})`
+              ? ` (library package${warnings > 0 ? `, ${warnings} validation warning(s)` : ''})`
               : ''
           }`,
           created: layers.map((l) => ({ kind: 'layer' as const, id: l.id })),
@@ -1345,10 +1340,10 @@ class Batch {
         const added = project.layers.filter((l) => !before.has(l.id));
         const parts = updateSummary(impact);
         const warnings = loaded.package?.warnings.length ?? 0;
-        if (warnings > 0) parts.push(`${warnings} aviso(s) da validação da biblioteca`);
+        if (warnings > 0) parts.push(`${warnings} library validation warning(s)`);
         return {
           project,
-          description: `Atualizar a especialização "${spec.id}" para a v${spec.version}${
+          description: `Update the specialization "${spec.id}" to v${spec.version}${
             parts.length > 0 ? ` (${parts.join('; ')})` : ''
           }`,
           created: added.map((l) => ({ kind: 'layer' as const, id: l.id })),
@@ -1357,18 +1352,18 @@ class Batch {
       }
       case 'remove_specialization': {
         if (!projectIndex(p).specializations.has(op.specId)) {
-          throw new ToolError('not-found', `especialização não aplicada: ${op.specId}`);
+          throw new ToolError('not-found', `specialization not applied: ${op.specId}`);
         }
         const impact = specializationRemovalImpact(p, op.specId, op.mode);
         const layers = p.layers.filter((l) => l.spec?.specId === op.specId).length;
         const broken =
-          impact.brokenRefs > 0 ? `, ${impact.brokenRefs} referência(s) quebrada(s)` : '';
+          impact.brokenRefs > 0 ? `, ${impact.brokenRefs} broken reference(s)` : '';
         return {
           project: removeSpecialization(p, op.specId, op.mode),
           description:
             op.mode === 'delete'
-              ? `Remover a especialização "${op.specId}": excluir ${layers} camada(s) e ${impact.annotations} anotação(ões)${broken}`
-              : `Remover a especialização "${op.specId}": ${layers} camada(s) e ${impact.annotations} anotação(ões) viram livres${broken}`,
+              ? `Remove the specialization "${op.specId}": delete ${layers} layer(s) and ${impact.annotations} annotation(s)${broken}`
+              : `Remove the specialization "${op.specId}": ${layers} layer(s) and ${impact.annotations} annotation(s) become free-form${broken}`,
         };
       }
       case 'update_project':
@@ -1404,12 +1399,12 @@ class Batch {
         if (before.index === op.index) {
           return {
             project: p,
-            description: `A marcação "${label}" já está na posição ${op.index} entre as ${before.count} irmãs (no estado do lote neste ponto): nada muda`,
+            description: `The marking "${label}" is already at position ${op.index} among its ${before.count} siblings (in the batch state at this point): nothing changes`,
           };
         }
         return {
           project: reorderMarking(p, id, op.index),
-          description: `Mover a marcação "${label}" para a posição ${op.index} entre as ${before.count} irmãs (0 = por baixo)`,
+          description: `Move the marking "${label}" to position ${op.index} among its ${before.count} siblings (0 = at the bottom)`,
         };
       }
       case 'fit_marking':
@@ -1424,11 +1419,11 @@ class Batch {
         const changes: string[] = [];
         if (op.locked === false) {
           project = setMarkingLocked(project, id, false);
-          changes.push('destrancar');
+          changes.push('unlock');
         }
         if (op.name !== undefined) {
           project = renameMarking(project, id, op.name);
-          changes.push(`nome ${quoted(projectIndex(project).markings.get(id)!.name)}`);
+          changes.push(`name ${quoted(projectIndex(project).markings.get(id)!.name)}`);
         }
         if (op.source !== undefined) {
           project = setMarkingSource(project, id, toSource(op.source));
@@ -1436,7 +1431,7 @@ class Batch {
         }
         if (op.move !== undefined) {
           project = moveMarking(project, id, op.move.dx, op.move.dy);
-          changes.push(`mover (${op.move.dx}, ${op.move.dy}) com as filhas`);
+          changes.push(`move (${op.move.dx}, ${op.move.dy}) with the children`);
         }
         if (op.floating !== undefined) {
           const minSize = componentMinSize(project, this.catalog, id);
@@ -1446,13 +1441,13 @@ class Batch {
             op.floating,
             minSize ? { minSize } : undefined,
           );
-          changes.push(op.floating ? 'flutuante' : 'deixar de ser flutuante');
+          changes.push(op.floating ? 'floating' : 'stop being floating');
         }
         if (op.container !== undefined) {
           if (op.rect === undefined) {
             throw new ToolError(
               'invalid-arguments',
-              'trocar de `container` exige o `rect` nos pixels do container novo (no canvas, em unidades do canvas)',
+              'changing `container` requires the `rect` in the pixels of the new container (on the canvas, in canvas units)',
             );
           }
           const target =
@@ -1463,7 +1458,7 @@ class Batch {
             setMarkingSpace(project, id, target, rect, minSize ? { minSize } : undefined),
           );
           changes.push(
-            `${target === null ? 'ir para o canvas' : `ir para o container "${this.refs(project).imageLabel(target)}"`}, retângulo x ${rect.x}, y ${rect.y}, ${rect.width}×${rect.height}`,
+            `${target === null ? 'go to the canvas' : `go to the container "${this.refs(project).imageLabel(target)}"`}, rectangle x ${rect.x}, y ${rect.y}, ${rect.width}×${rect.height}`,
           );
         } else if (op.rect !== undefined) {
           const { rect } = op;
@@ -1472,28 +1467,28 @@ class Batch {
             setMarkingRect(project, id, rect, minSize ? { minSize } : undefined),
           );
           const r = op.rect;
-          changes.push(`retângulo x ${r.x}, y ${r.y}, ${r.width}×${r.height}`);
+          changes.push(`rectangle x ${r.x}, y ${r.y}, ${r.width}×${r.height}`);
         }
         if (op.anchor !== undefined) {
           const anchor = op.anchor === null ? null : this.markingAnchor(op.anchor);
           project = setMarkingAnchor(project, id, anchor);
           changes.push(
             anchor === null
-              ? 'tirar a âncora'
-              : `ancorar em "${this.markingLabel(project, anchor.to)}"`,
+              ? 'remove the anchor'
+              : `anchor to "${this.markingLabel(project, anchor.to)}"`,
           );
         }
         if (op.confirmReview === true) {
           project = confirmMarkingReview(project, id);
-          changes.push('confirmar a posição');
+          changes.push('confirm the position');
         }
         if (op.locked === true) {
           project = setMarkingLocked(project, id, true);
-          changes.push('trancar');
+          changes.push('lock');
         }
         return {
           project,
-          description: `Alterar a marcação "${label}": ${changes.join(', ') || 'nada'}`,
+          description: `Change the marking "${label}": ${changes.join(', ') || 'nothing'}`,
         };
       }
       case 'delete_marking': {
@@ -1502,10 +1497,8 @@ class Batch {
         const impact = markingDeletionImpact(p, id);
         return {
           project: removeMarking(p, id),
-          description: `Excluir a marcação "${this.markingLabel(p, id)}" (${impact.descendants} descendente(s), ${impact.annotations} anotação(ões)${
-            impact.brokenRefs > 0
-              ? `, ${impact.brokenRefs} referência(s) quebrada(s)`
-              : ''
+          description: `Delete the marking "${this.markingLabel(p, id)}" (${impact.descendants} descendant(s), ${impact.annotations} annotation(s)${
+            impact.brokenRefs > 0 ? `, ${impact.brokenRefs} broken reference(s)` : ''
           })`,
         };
       }
@@ -1520,10 +1513,8 @@ class Batch {
         const impact = arrowDeletionImpact(p, id);
         return {
           project: removeArrow(p, id),
-          description: `Excluir a seta "${label}" (${impact.annotations} anotação(ões)${
-            impact.brokenRefs > 0
-              ? `, ${impact.brokenRefs} referência(s) quebrada(s)`
-              : ''
+          description: `Delete the arrow "${label}" (${impact.annotations} annotation(s)${
+            impact.brokenRefs > 0 ? `, ${impact.brokenRefs} broken reference(s)` : ''
           })`,
         };
       }
@@ -1536,15 +1527,15 @@ class Batch {
         const impact = annotationDeletionImpact(p, id);
         return {
           project: removeAnnotation(p, id),
-          description: `Excluir a anotação ${this.annotationLabel(p, id)}${
-            impact.annotations > 1 ? ` (com ${impact.annotations - 1} vinculada(s))` : ''
-          }${impact.brokenRefs > 0 ? `, ${impact.brokenRefs} referência(s) quebrada(s)` : ''}`,
+          description: `Delete the annotation ${this.annotationLabel(p, id)}${
+            impact.annotations > 1 ? ` (with ${impact.annotations - 1} linked)` : ''
+          }${impact.brokenRefs > 0 ? `, ${impact.brokenRefs} broken reference(s)` : ''}`,
         };
       }
     }
   }
 
-  /** Executa `run` e, se o retângulo ficou abaixo do mínimo do componente, diz qual é o mínimo. */
+  /** Runs `run` and, if the rectangle ended up below the component's minimum, says what the minimum is. */
   private checkMinSize<T>(
     minSize: { width: number; height: number } | null,
     what: string,
@@ -1557,7 +1548,7 @@ class Batch {
         const detail = rectTooSmallDetail(error.data);
         throw new ToolError(
           error.code,
-          `retângulo menor que o tamanho mínimo do componente de ${what}: ${minSize.width}×${minSize.height} px`,
+          `rectangle smaller than the minimum size of the component of ${what}: ${minSize.width}×${minSize.height} px`,
           {
             minSize: { width: minSize.width, height: minSize.height },
             ...(detail ? { detail } : {}),
@@ -1570,12 +1561,12 @@ class Batch {
   }
 
   /**
-   * `create_marking`: a marcação e, se pedido, a anotação tipada. Quando o tipo tem componente
-   * (no catálogo lido ao carregar o projeto), o `rect` pode faltar (tamanho inicial do
-   * componente) e vale o `minSize`; a anotação nasce como na paleta da app (`preview`), com os
-   * `values` por cima. O servidor nunca arruma: os retângulos são os que o agente informou.
+   * `create_marking`: the marking and, if requested, the typed annotation. When the type has a component
+   * (in the catalog read when loading the project), the `rect` may be missing (the component's initial
+   * size) and the `minSize` applies; the annotation is created as in the app's palette (`preview`), with the
+   * `values` on top. The server never arranges: the rectangles are the ones the agent provided.
    */
-  /** `update_project`: o modo do desenho e a direção de leitura do projeto. */
+  /** `update_project`: the project's drawing mode and reading direction. */
   private updateProjectOp(
     op: Extract<Operation, { op: 'update_project' }>,
     p: Project,
@@ -1586,23 +1577,23 @@ class Batch {
       project = setProjectDrawingMode(project, op.drawingMode);
       changes.push(
         op.drawingMode === null
-          ? 'modo do desenho removido'
-          : `modo do desenho ${quoted(op.drawingMode)}`,
+          ? 'drawing mode removed'
+          : `drawing mode ${quoted(op.drawingMode)}`,
       );
     }
     if (op.direction !== undefined) {
       project = setProjectDirection(project, op.direction);
       changes.push(
-        op.direction === null ? 'direção removida' : `direção ${quoted(op.direction)}`,
+        op.direction === null ? 'direction removed' : `direction ${quoted(op.direction)}`,
       );
     }
     return {
       project,
-      description: `Alterar o projeto: ${changes.join(', ') || 'nada'}`,
+      description: `Change the project: ${changes.join(', ') || 'nothing'}`,
     };
   }
 
-  /** `add_container` (com arquivo ou só com fundo) e o modo do desenho que ele fixa. */
+  /** `add_container` (with a file or background only) and the drawing mode it pins. */
   private async addContainerOp(
     op: Extract<Operation, { op: 'add_container' }>,
     p: Project,
@@ -1618,27 +1609,27 @@ class Batch {
       result = {
         ...result,
         project: setContainerDrawingMode(result.project, id, op.drawingMode),
-        description: `${result.description}, modo do desenho ${quoted(op.drawingMode)}`,
+        description: `${result.description}, drawing mode ${quoted(op.drawingMode)}`,
       };
     }
     if (op.direction != null) {
       result = {
         ...result,
         project: setContainerDirection(result.project, id, op.direction),
-        description: `${result.description}, direção ${quoted(op.direction)}`,
+        description: `${result.description}, direction ${quoted(op.direction)}`,
       };
     }
     if (op.density != null) {
       result = {
         ...result,
         project: setContainerDensity(result.project, id, op.density),
-        description: `${result.description}, densidade ${op.density}x`,
+        description: `${result.description}, density ${op.density}x`,
       };
     }
     return result;
   }
 
-  /** `beside` do `add_container`: o id do container de referência; com `center` é `invalid-arguments`. */
+  /** `beside` of `add_container`: the id of the reference container; with `center` it is `invalid-arguments`. */
   private besideId(
     op: { readonly beside?: string; readonly center?: unknown },
     p: Project,
@@ -1647,13 +1638,13 @@ class Batch {
     if (op.center !== undefined) {
       throw new ToolError(
         'invalid-arguments',
-        '`beside` e `center` são exclusivos: use `beside` para pôr o container ao lado de outro, ou `center` para um ponto do canvas',
+        '`beside` and `center` are mutually exclusive: use `beside` to place the container next to another one, or `center` for a canvas point',
       );
     }
     return this.containerItem(op.beside, p);
   }
 
-  /** Container com arquivo de imagem: `add_container` com `file`/`base64` e a antiga `add_image`. */
+  /** Container with an image file: `add_container` with `file`/`base64` and the old `add_image`. */
   private async addContainerFromFile(
     op: Extract<Operation, { op: 'add_container' | 'add_image' }>,
     p: Project,
@@ -1664,7 +1655,7 @@ class Batch {
     ) {
       throw new ToolError(
         'invalid-arguments',
-        'add_container ambígua: com `file`/`base64` a largura e a altura vêm do arquivo; informe `file` ou `base64`, ou então `width`, `height` e `background`, nunca os dois grupos',
+        'add_container is ambiguous: with `file`/`base64` the width and height come from the file; provide `file` or `base64`, or else `width`, `height` and `background`, never both groups',
       );
     }
     const beside = this.besideId(op, p);
@@ -1684,7 +1675,7 @@ class Batch {
     }
     return {
       project,
-      description: `Adicionar o container ${nameLabel(op.name)}com a imagem ${image.file} (${image.width}×${image.height} px, ${image.note}${
+      description: `Add the container ${nameLabel(op.name)}with the image ${image.file} (${image.width}×${image.height} px, ${image.note}${
         op.source ? `, ${sourceLabel(toSource(op.source))}` : ''
       })`,
       created: [{ kind: 'i', id }],
@@ -1692,7 +1683,7 @@ class Batch {
     };
   }
 
-  /** Container só com fundo: `add_container` sem arquivo e a antiga `add_blank_image`. */
+  /** Background-only container: `add_container` without a file and the old `add_blank_image`. */
   private addContainerWithBackground(
     op: Extract<Operation, { op: 'add_container' | 'add_blank_image' }>,
     p: Project,
@@ -1706,7 +1697,7 @@ class Batch {
       ].filter((m) => m !== null);
       throw new ToolError(
         'invalid-arguments',
-        `add_container precisa de \`file\` (ou \`base64\`), ou de \`width\`, \`height\` e \`background\`; faltam: ${missing.join(', ')}`,
+        `add_container needs \`file\` (or \`base64\`), or \`width\`, \`height\` and \`background\`; missing: ${missing.join(', ')}`,
       );
     }
     const beside = this.besideId(op, p);
@@ -1725,14 +1716,14 @@ class Batch {
     }
     return {
       project,
-      description: `Adicionar o container "${this.refs(project).imageLabel(id)}" (${width}×${height} px, fundo ${background.toUpperCase()}${
+      description: `Add the container "${this.refs(project).imageLabel(id)}" (${width}×${height} px, background ${background.toUpperCase()}${
         op.source ? `, ${sourceLabel(toSource(op.source))}` : ''
       })`,
       created: [{ kind: 'i', id }],
     };
   }
 
-  /** `update_container` e a antiga `update_image`. */
+  /** `update_container` and the old `update_image`. */
   private updateContainerOp(
     op: Extract<Operation, { op: 'update_container' | 'update_image' }>,
     id: string,
@@ -1742,11 +1733,11 @@ class Batch {
     const changes: string[] = [];
     if (op.locked === false) {
       project = setImageLocked(project, id, false);
-      changes.push('destrancar');
+      changes.push('unlock');
     }
     if (op.name !== undefined) {
       project = renameContainer(project, id, op.name);
-      changes.push(`nome ${quoted(projectIndex(project).containers.get(id)!.name)}`);
+      changes.push(`name ${quoted(projectIndex(project).containers.get(id)!.name)}`);
     }
     if (op.source !== undefined) {
       project = setImageSource(project, id, toSource(op.source));
@@ -1760,20 +1751,18 @@ class Batch {
         scale: op.scale ?? placement.scale,
       };
       project = setContainerPlacement(project, id, next);
-      // O valor gravado, já sem ruído de ponto flutuante.
+      // The stored value, already free of floating-point noise.
       const saved = projectIndex(project).containers.get(id)!.placement;
-      changes.push(`posição (${saved.x}, ${saved.y}) escala ${saved.scale}`);
+      changes.push(`position (${saved.x}, ${saved.y}) scale ${saved.scale}`);
     }
     if (op.markingColor !== undefined) {
       project = setContainerMarkingColor(project, id, op.markingColor);
-      changes.push(`cor das marcações ${op.markingColor ?? 'do tema'}`);
+      changes.push(`marking color ${op.markingColor ?? 'theme'}`);
     }
     if (op.markingsLocked !== undefined) {
       project = setImageMarkingsLocked(project, id, op.markingsLocked);
       changes.push(
-        op.markingsLocked
-          ? 'trancar todas as marcações'
-          : 'destrancar todas as marcações',
+        op.markingsLocked ? 'lock all the markings' : 'unlock all the markings',
       );
     }
     if (
@@ -1781,7 +1770,7 @@ class Batch {
       op.width !== undefined ||
       op.height !== undefined
     ) {
-      // Só o container sem arquivo: com arquivo o modelo recusa com `container-has-file`.
+      // Only a container without a file: with a file the model refuses with `container-has-file`.
       project = setBackgroundContainer(project, id, {
         ...(op.background !== undefined ? { background: op.background } : {}),
         ...(op.width !== undefined ? { width: op.width } : {}),
@@ -1789,38 +1778,38 @@ class Batch {
       });
       const container = projectIndex(project).containers.get(id)!;
       changes.push(
-        `tamanho ${container.width}×${container.height} px, fundo ${container.background}`,
+        `size ${container.width}×${container.height} px, background ${container.background}`,
       );
     }
     if (op.drawingMode !== undefined) {
       project = setContainerDrawingMode(project, id, op.drawingMode);
       changes.push(
         op.drawingMode === null
-          ? 'modo do desenho do projeto'
-          : `modo do desenho ${quoted(op.drawingMode)}`,
+          ? 'project drawing mode'
+          : `drawing mode ${quoted(op.drawingMode)}`,
       );
     }
     if (op.direction !== undefined) {
       project = setContainerDirection(project, id, op.direction);
       changes.push(
-        op.direction === null ? 'direção do projeto' : `direção ${quoted(op.direction)}`,
+        op.direction === null ? 'project direction' : `direction ${quoted(op.direction)}`,
       );
     }
     if (op.density !== undefined) {
       project = setContainerDensity(project, id, op.density);
-      changes.push(op.density === null ? 'densidade 1x' : `densidade ${op.density}x`);
+      changes.push(op.density === null ? 'density 1x' : `density ${op.density}x`);
     }
     if (op.locked === true) {
       project = setImageLocked(project, id, true);
-      changes.push('trancar');
+      changes.push('lock');
     }
     return {
       project,
-      description: `Alterar o container "${this.refs(p).imageLabel(id)}": ${changes.join(', ') || 'nada'}`,
+      description: `Change the container "${this.refs(p).imageLabel(id)}": ${changes.join(', ') || 'nothing'}`,
     };
   }
 
-  /** `replace_container` e a antiga `replace_image`: troca o arquivo de imagem do container. */
+  /** `replace_container` and the old `replace_image`: replaces the container's image file. */
   private async replaceContainerOp(
     op: Extract<Operation, { op: 'replace_container' | 'replace_image' }>,
     id: string,
@@ -1842,16 +1831,16 @@ class Batch {
     const old = projectIndex(p).containers.get(id)!;
     return {
       project,
-      description: `Trocar a imagem do container "${this.refs(p).imageLabel(id)}": ${old.file} → ${image.file} (${image.width}×${image.height} px, ${image.note})`,
+      description: `Replace the image of the container "${this.refs(p).imageLabel(id)}": ${old.file} → ${image.file} (${image.width}×${image.height} px, ${image.note})`,
       imageFiles: [[image.file, image.data]],
     };
   }
 
   /**
-   * Refaz o tamanho de uma instância nova depois de as linhas de tabela do lote entrarem (o tamanho
-   * inicial é medido antes delas, com a tabela vazia): `fitMarking` e, se a marcação nasceu ancorada,
-   * `snapToAnchor` com os padrões do componente. Componente que não se ajusta (slot, sem `sizing`)
-   * fica como está.
+   * Redoes the size of a new instance after the batch's table rows have been entered (the initial size
+   * is measured before them, with the table empty): `fitMarking` and, if the marking was created anchored,
+   * `snapToAnchor` with the component's defaults. A component that does not fit (slot, no `sizing`)
+   * stays as it is.
    */
   private refitToRows(p: Project, markingId: string, anchored: boolean): Project {
     let next = p;
@@ -1876,8 +1865,8 @@ class Batch {
   }
 
   /**
-   * `fit_marking`: o `fitMarking` do modelo (o mesmo Arrumar da app numa marcação sem slot), com os
-   * valores da anotação no estado do lote. O resumo diz o retângulo antes e depois.
+   * `fit_marking`: the model's `fitMarking` (the same as the app's Arrange on a marking without a slot), with the
+   * annotation's values in the batch state. The summary gives the rectangle before and after.
    */
   private fitMarkingOp(op: Extract<Operation, { op: 'fit_marking' }>, p: Project): Step {
     const id = this.item(op.marking, 'm');
@@ -1887,21 +1876,21 @@ class Batch {
     const project = fitMarking(p, this.catalog, id, this.measurer, {
       minSizeOf: (markingId) => componentMinSize(p, this.catalog, markingId),
     });
-    const rectText = (r: Rect): string => `${r.width}×${r.height} px em (${r.x}, ${r.y})`;
+    const rectText = (r: Rect): string => `${r.width}×${r.height} px at (${r.x}, ${r.y})`;
     if (project === p) {
       return {
         project,
-        description: `A marcação "${label}" já está no tamanho do conteúdo (${rectText(before)}): nada muda`,
+        description: `The marking "${label}" is already the size of its content (${rectText(before)}): nothing changes`,
       };
     }
     const after = projectIndex(project).markings.get(id)!.rect;
     return {
       project,
-      description: `Ajustar a marcação "${label}" ao conteúdo: ${rectText(before)} → ${rectText(after)}`,
+      description: `Fit the marking "${label}" to its content: ${rectText(before)} → ${rectText(after)}`,
     };
   }
 
-  /** A âncora do passo: o alvo (referência, id ou apelido) vira id; `side`, `align` e `offset` só entram se vierem. */
+  /** The step's anchor: the target (reference, id or alias) becomes an id; `side`, `align` and `offset` only go in if given. */
   private markingAnchor(
     anchor: NonNullable<Extract<Operation, { op: 'update_marking' }>['anchor']>,
   ): MarkingAnchor {
@@ -1914,9 +1903,9 @@ class Batch {
   }
 
   /**
-   * `snap_to_anchor`: o `snapToAnchor` do modelo (o mesmo Encostar da app), com os padrões do
-   * componente da marcação. O resumo diz o retângulo antes e depois; o aviso de "preso dentro do
-   * container" vai para `warnings`.
+   * `snap_to_anchor`: the model's `snapToAnchor` (the same as the app's Snap), with the
+   * marking's component defaults. The summary gives the rectangle before and after; the "clamped inside the
+   * container" warning goes to `warnings`.
    */
   private snapToAnchorOp(
     op: Extract<Operation, { op: 'snap_to_anchor' }>,
@@ -1931,47 +1920,47 @@ class Batch {
       defaults: markingAnchorDefaults(p, this.catalog),
     });
     const notes = warnings.map((w) => w.text);
-    const rectText = (r: Rect): string => `${r.width}×${r.height} px em (${r.x}, ${r.y})`;
+    const rectText = (r: Rect): string => `${r.width}×${r.height} px at (${r.x}, ${r.y})`;
     if (project === p) {
       return {
         project,
-        description: `A marcação "${label}" já está encostada na âncora (${rectText(before)}): nada muda`,
+        description: `The marking "${label}" is already snapped to the anchor (${rectText(before)}): nothing changes`,
       };
     }
     const after = projectIndex(project).markings.get(id)!.rect;
     return {
       project,
       ...(notes.length > 0 ? { notes } : {}),
-      description: `Encostar a marcação "${label}" na âncora: ${rectText(before)} → ${rectText(after)}`,
+      description: `Snap the marking "${label}" to the anchor: ${rectText(before)} → ${rectText(after)}`,
     };
   }
 
-  /** `delete_container` e a antiga `delete_image`. */
+  /** `delete_container` and the old `delete_image`. */
   private deleteContainerOp(id: string, p: Project): Step {
     const impact = containerDeletionImpact(p, id);
     return {
       project: removeContainer(p, id),
-      description: `Excluir o container "${this.refs(p).imageLabel(id)}" (${impact.markings} marcação(ões), ${impact.annotations} anotação(ões))`,
+      description: `Delete the container "${this.refs(p).imageLabel(id)}" (${impact.markings} marking(s), ${impact.annotations} annotation(s))`,
     };
   }
 
-  /** O id é de uma seta (as setas dividem o espaço de ids das marcações). */
+  /** The id is an arrow's (arrows share the markings' id space). */
   private requireArrow(id: string): void {
     if (!projectIndex(this.p).arrows.has(id)) {
-      throw new ToolError('wrong-kind', 'a referência não é de uma seta', {
-        hint: 'use o id ou a referência de uma seta (`arrows` de get_marking)',
+      throw new ToolError('wrong-kind', 'the reference is not to an arrow', {
+        hint: 'use the id or the reference of an arrow (`arrows` of get_marking)',
       });
     }
   }
 
-  /** O id é de uma seta numa tool de marcação: erro amigável apontando a tool certa. */
+  /** The id is an arrow's in a marking tool: a friendly error pointing to the right tool. */
   private requireNotArrow(id: string, tool: 'update_arrow' | 'delete_arrow'): void {
     if (projectIndex(this.p).arrows.has(id)) {
       throw new ToolError(
         'wrong-kind',
-        'a referência é de uma seta, não de uma marcação',
+        'the reference is to an arrow, not to a marking',
         {
-          hint: `use ${tool} para a seta`,
+          hint: `use ${tool} for the arrow`,
         },
       );
     }
@@ -1981,7 +1970,7 @@ class Batch {
     if (op.points !== undefined) {
       throw new ToolError(
         'invalid-arguments',
-        '`points` não é aceito: a rota da seta é da pessoa (o servidor só informa as pontas e o estilo)',
+        "`points` is not accepted: the arrow's route belongs to the person (the server only provides the endpoints and the style)",
       );
     }
   }
@@ -2000,7 +1989,7 @@ class Batch {
     });
     return {
       project,
-      description: `Criar a seta "${this.markingLabel(project, from)}" → "${this.markingLabel(project, to)}" (${projectIndex(project).arrows.get(id)!.style})`,
+      description: `Create the arrow "${this.markingLabel(project, from)}" → "${this.markingLabel(project, to)}" (${projectIndex(project).arrows.get(id)!.style})`,
       created: [{ kind: 'm', id }],
     };
   }
@@ -2014,32 +2003,32 @@ class Batch {
     const changes: string[] = [];
     if (op.locked === false) {
       project = setArrowLocked(project, id, false);
-      changes.push('destrancar');
+      changes.push('unlock');
     }
     if (op.name !== undefined) {
       project = setArrowName(project, id, op.name);
-      changes.push(`nome ${quoted(projectIndex(project).arrows.get(id)!.name)}`);
+      changes.push(`name ${quoted(projectIndex(project).arrows.get(id)!.name)}`);
     }
     if (op.style !== undefined) {
       project = setArrowStyle(project, id, op.style);
-      changes.push(`estilo ${op.style}`);
+      changes.push(`style ${op.style}`);
     }
     if (op.locked === true) {
       project = setArrowLocked(project, id, true);
-      changes.push('trancar');
+      changes.push('lock');
     }
-    // A proposta só leva a criação e a remoção da seta: nome, estilo e trava de uma seta que já
-    // existe no projeto são da pessoa e não viram mudança.
+    // The proposal only carries the creation and removal of an arrow: the name, style and lock of an arrow that
+    // already exists in the project belong to the person and do not become a change.
     const existing = (this.io.diskProject ?? this.loaded.project).arrows.some(
       (a) => a.id === id,
     );
     return {
       project,
-      description: `Alterar a seta "${label}": ${changes.join(', ') || 'nada'}`,
+      description: `Change the arrow "${label}": ${changes.join(', ') || 'nothing'}`,
       ...(existing && changes.length > 0
         ? {
             notes: [
-              'a proposta só leva a criação e a remoção de setas: a mudança de nome, estilo ou trava de uma seta que já existe não entra na proposta (vale na prévia deste lote e numa seta criada nele)',
+              "the proposal only carries the creation and removal of arrows: a change of name, style or lock of an arrow that already exists is not included in the proposal (it applies in this batch's preview and to an arrow created in it)",
             ],
           }
         : {}),
@@ -2047,19 +2036,19 @@ class Batch {
   }
 
   /**
-   * Alvo do `near`: um container ou uma marcação (nunca uma seta), por apelido, referência ou id.
+   * Target of `near`: a container or a marking (never an arrow), by alias, reference or id.
    */
   private nearTarget(text: string): FloatingNearTarget {
     const target = this.containerOrMarking(text);
     if (target.kind === 'marking' && projectIndex(this.p).arrows.has(target.id)) {
-      throw new ToolError('invalid-arguments', '`near` não aceita uma seta', {
-        hint: 'informe um container ou uma marcação',
+      throw new ToolError('invalid-arguments', '`near` does not accept an arrow', {
+        hint: 'provide a container or a marking',
       });
     }
     return target;
   }
 
-  /** Container ou marcação (ou seta, que é uma marcação para a referência), por apelido, referência ou id. */
+  /** Container or marking (or arrow, which is a marking for the reference), by alias, reference or id. */
   private containerOrMarking(text: string): FloatingNearTarget {
     const wanted = text.trim();
     const index = projectIndex(this.p);
@@ -2079,8 +2068,8 @@ class Batch {
   }
 
   /**
-   * `wrap_items`: o `wrapItems` do modelo (o mesmo Envolver da app), com id novo, nome e origem
-   * opcionais. Notas e setas não entram (aviso); sem nada que entre, `invalid-parent`.
+   * `wrap_items`: the model's `wrapItems` (the same as the app's Wrap), with a new id and an optional
+   * name and source. Notes and arrows do not go in (warning); if nothing goes in, `invalid-parent`.
    */
   private wrapItemsOp(op: Extract<Operation, { op: 'wrap_items' }>): Step {
     const p = this.p;
@@ -2101,7 +2090,7 @@ class Batch {
     if (entering.length === 0) {
       throw new ModelError(
         'invalid-parent',
-        'nada para envolver: notas (flutuantes) e setas não entram; informe ao menos uma marcação não flutuante ou um container',
+        'nothing to wrap: notes (floating) and arrows do not go in; provide at least one non-floating marking or a container',
       );
     }
     const ignored = items.length - entering.length;
@@ -2117,11 +2106,11 @@ class Batch {
       ...(ignored > 0
         ? {
             notes: [
-              `${ignored} item(ns) ignorado(s): notas (flutuantes) e setas não entram numa marcação pai`,
+              `${ignored} item(s) ignored: notes (floating) and arrows do not go into a parent marking`,
             ],
           }
         : {}),
-      description: `Envolver ${entering.length} ${entering.length === 1 ? 'item' : 'itens'} numa marcação nova "${this.markingLabel(project, markingId)}" (x ${rect.x}, y ${rect.y}, ${rect.width}×${rect.height}${
+      description: `Wrap ${entering.length} ${entering.length === 1 ? 'item' : 'items'} in a new marking "${this.markingLabel(project, markingId)}" (x ${rect.x}, y ${rect.y}, ${rect.width}×${rect.height}${
         op.source ? `, ${sourceLabel(toSource(op.source))}` : ''
       })`,
       created: [{ kind: 'm', id: markingId }],
@@ -2129,9 +2118,9 @@ class Batch {
   }
 
   /**
-   * Cria uma marcação por nó com tipo da árvore medida, cada uma por `create_marking` (o pai sai
-   * da geometria, nunca da árvore). Um nó que não cria (tamanho mínimo, por exemplo) vira aviso e
-   * os outros seguem; a prova de desenho da CF10 olha o que o lote criou.
+   * Creates a marking per typed node of the measured tree, each one through `create_marking` (the parent
+   * comes from the geometry, never from the tree). A node that cannot be created (minimum size, for example)
+   * becomes a warning and the others carry on; the CF10 drawing proof looks at what the batch created.
    */
   private async importMeasuredOp(
     op: Extract<Operation, { op: 'import_measured' }>,
@@ -2161,7 +2150,7 @@ class Batch {
         notes.push(...(step.notes ?? []));
       } catch (error) {
         if (!(error instanceof ToolError || error instanceof ModelError)) throw error;
-        notes.push(`${marking.path}: não criada (${error.message})`);
+        notes.push(`${marking.path}: not created (${error.message})`);
       }
     }
     const made = created.filter((c) => c.kind === 'm').length;
@@ -2170,10 +2159,8 @@ class Batch {
       notes,
       created,
       rowAliases,
-      description: `Importar layout medido "${op.system}": ${made} marcação(ões) criada(s)${
-        plan.markings.length > made
-          ? `, ${plan.markings.length - made} não criada(s)`
-          : ''
+      description: `Import measured layout "${op.system}": ${made} marking(s) created${
+        plan.markings.length > made ? `, ${plan.markings.length - made} not created` : ''
       }`,
     };
   }
@@ -2185,19 +2172,19 @@ class Batch {
     if (annotation === undefined && op.annotationAs !== undefined) {
       throw new ToolError(
         'invalid-arguments',
-        '`annotationAs` só vale com `annotation` na mesma operação',
+        '`annotationAs` only applies with `annotation` in the same operation',
       );
     }
     if (op.container !== undefined && op.image !== undefined) {
       throw new ToolError(
         'invalid-arguments',
-        'informe `container` (a antiga `image` também é aceita), não os dois',
+        'provide `container` (the old `image` is also accepted), not both',
       );
     }
     const containerRef = op.container ?? op.image;
-    // `inside`: o alvo (componente com slot) dá o container; o pai gravado continua da geometria.
+    // `inside`: the target (a component with a slot) gives the container; the stored parent still comes from the geometry.
     const inside = op.inside === undefined ? null : this.insideTarget(op, containerRef);
-    // Sem `container`: marcação do canvas (rect em unidades do canvas, podendo ser negativo).
+    // Without `container`: canvas marking (rect in canvas units, possibly negative).
     const containerId = inside
       ? inside.containerId
       : containerRef === undefined
@@ -2213,32 +2200,32 @@ class Batch {
     if (inside !== null && component === null) {
       throw new ToolError(
         'invalid-arguments',
-        '`inside` só vale com `annotation` de um tipo com componente (veja list_components)',
+        '`inside` only applies with `annotation` of a type with a component (see list_components)',
       );
     }
     const anchor = op.anchor === undefined ? null : this.markingAnchor(op.anchor);
-    // A âncora é conferida antes de criar (os erros da invariante); depois do assentar, só o espaço
-    // pode ter mudado e então a nova nasce sem âncora, com um aviso.
+    // The anchor is checked before creating (the invariant's errors); after settling, only the space
+    // may have changed and then the new marking is created without an anchor, with a warning.
     if (anchor !== null) checkAnchorTarget(p, markingId, containerId, anchor);
     if (anchor !== null && (op.near !== undefined || inside !== null)) {
       throw new ToolError(
         'invalid-arguments',
-        '`anchor` e `near`/`inside` são posições diferentes: informe só uma',
+        '`anchor` and `near`/`inside` are different placements: provide only one',
       );
     }
     if (op.rect === undefined && component === null) {
       throw new ToolError(
         'invalid-arguments',
-        '`rect` é obrigatório (só um tipo de anotação com componente dispensa o retângulo: veja list_components)',
+        '`rect` is required (only an annotation type with a component dispenses with the rectangle: see list_components)',
       );
     }
-    // Com componente o mínimo é o `minSize` dele ou 1×1; sem componente, o de qualquer marcação (8).
+    // With a component the minimum is its `minSize` or 1×1; without a component, that of any marking (8).
     const minSize =
       component === null
         ? null
         : componentFileMinSize(component.component, effectiveDensity(p, containerId));
-    // `near` (ME4): só um tipo flutuante; o lugar sai de `placeFloatingNear` e o `rect`, se vier,
-    // dá só o tamanho. Nos outros casos o argumento é ignorado, com aviso.
+    // `near` (ME4): only a floating type; the spot comes from `placeFloatingNear` and the `rect`, if given,
+    // supplies only the size. In the other cases the argument is ignored, with a warning.
     const notes: string[] = [];
     let nearRect: { x: number; y: number; width: number; height: number } | null = null;
     if (op.near !== undefined) {
@@ -2260,7 +2247,7 @@ class Batch {
         nearRect = placeFloatingNear(p, target, size);
       } else {
         notes.push(
-          '`near` só vale para um tipo de anotação flutuante, sem `container`: foi ignorado (para colocar a marcação num container, use `container` e `rect`)',
+          '`near` only applies to a floating annotation type, without `container`: it was ignored (to place the marking in a container, use `container` and `rect`)',
         );
       }
     }
@@ -2275,9 +2262,9 @@ class Batch {
     if (annotation && typeRef !== null && component !== null) {
       const newAnnotationId = crypto.randomUUID();
       annotationId = newAnnotationId;
-      // O pai sai da geometria (o modelo assenta ao criar): sem `rect`, no centro do container.
-      // O tamanho veio do componente (e não do pedido): as linhas de tabela do lote ainda não
-      // existiam quando foi medido, então o `refitToRows` o refaz depois de `setValues`.
+      // The parent comes from the geometry (the model settles on creation): without `rect`, in the center of the container.
+      // The size came from the component (not from the request): the batch's table rows did not
+      // exist yet when it was measured, so `refitToRows` redoes it after `setValues`.
       const rectFromComponent =
         nearRect === null && inside === null && op.rect === undefined;
       const rect =
@@ -2361,7 +2348,7 @@ class Batch {
     if (op.source !== undefined) {
       project = setMarkingSource(project, markingId, toSource(op.source));
     }
-    // A marcação nova está no fim do array (o assentar não reordena): a busca de trás para frente é O(1).
+    // The new marking is at the end of the array (settling does not reorder): the backward search is O(1).
     let created!: Marking;
     for (let i = project.markings.length - 1; i >= 0; i--) {
       if (project.markings[i]!.id === markingId) {
@@ -2372,17 +2359,17 @@ class Batch {
     const { rect } = created;
     if (anchor !== null && created.anchor == null) {
       notes.push(
-        'a âncora foi solta: pela geometria a marcação nasceu em outro espaço que o alvo (o container ou o canvas); ancore-a depois com `update_marking`, no mesmo espaço do alvo',
+        'the anchor was dropped: by geometry the marking was created in a different space than the target (the container or the canvas); anchor it afterwards with `update_marking`, in the same space as the target',
       );
     }
     const label = this.createdMarkingLabel(p, project, created, component?.name ?? null);
     return {
       project,
       ...(notes.length > 0 ? { notes } : {}),
-      description: `Criar a marcação "${label}" (x ${rect.x}, y ${rect.y}, ${rect.width}×${rect.height}${
-        op.rect === undefined ? ', tamanho inicial do componente' : ''
+      description: `Create the marking "${label}" (x ${rect.x}, y ${rect.y}, ${rect.width}×${rect.height}${
+        op.rect === undefined ? ', initial size of the component' : ''
       }${op.source ? `, ${sourceLabel(toSource(op.source))}` : ''})${
-        typeRef ? ` com a anotação ${typeRef.specId}/${typeRef.typeId}` : ''
+        typeRef ? ` with the annotation ${typeRef.specId}/${typeRef.typeId}` : ''
       }`,
       created: [
         { kind: 'm', id: markingId },
@@ -2393,9 +2380,9 @@ class Batch {
   }
 
   /**
-   * O retângulo de uma instância nova com `anchor` e sem `rect`: o tamanho medido encostado no alvo,
-   * com os padrões do componente; `null` quando não há `anchor` ou o `rect` manda. O aviso de "preso
-   * dentro do container" vai para as notas.
+   * The rectangle of a new instance with `anchor` and without `rect`: the measured size snapped to the target,
+   * with the component's defaults; `null` when there is no `anchor` or the `rect` rules. The "clamped
+   * inside the container" warning goes to the notes.
    */
   private anchoredRect(
     p: Project,
@@ -2426,9 +2413,9 @@ class Batch {
   }
 
   /**
-   * Alvo do `inside` de `create_marking`: uma marcação (do lote ou do projeto) que desenha um
-   * componente com slot. Só posiciona: o pai gravado sai da geometria. `container`, se vier,
-   * precisa ser o do alvo.
+   * Target of the `inside` of `create_marking`: a marking (from the batch or the project) that draws a
+   * component with a slot. It only positions: the stored parent comes from the geometry. `container`, if given,
+   * must be the target's.
    */
   private insideTarget(
     op: Extract<Operation, { op: 'create_marking' }>,
@@ -2437,13 +2424,13 @@ class Batch {
     if (op.near !== undefined) {
       throw new ToolError(
         'invalid-arguments',
-        '`inside` e `near` são duas posições: informe só um',
+        '`inside` and `near` are two placements: provide only one',
       );
     }
     if (op.annotation === undefined) {
       throw new ToolError(
         'invalid-arguments',
-        '`inside` só vale com `annotation` de um tipo com componente (veja list_components)',
+        '`inside` only applies with `annotation` of a type with a component (see list_components)',
       );
     }
     const id = this.item(op.inside!, 'm');
@@ -2454,7 +2441,7 @@ class Batch {
     ) {
       throw new ModelError(
         'invalid-parent',
-        '`inside` precisa ser uma marcação que desenha um componente com slot (veja list_components: só o componente com slot, como Column ou Row, recebe filhas)',
+        '`inside` must be a marking that draws a component with a slot (see list_components: only a component with a slot, such as Column or Row, receives children)',
       );
     }
     if (
@@ -2463,13 +2450,13 @@ class Batch {
     ) {
       throw new ModelError(
         'invalid-parent',
-        '`container` não é o container do alvo de `inside`: omita `container` (ele vem do alvo)',
+        '`container` is not the container of the `inside` target: omit `container` (it comes from the target)',
       );
     }
     return { id, containerId: target.containerId };
   }
 
-  /** Retângulo da filha no slot do alvo; o `rect` do passo dá só o tamanho (x e y são ignorados). */
+  /** Rectangle of the child in the target's slot; the step's `rect` supplies only the size (x and y are ignored). */
   private insideRect(
     op: Extract<Operation, { op: 'create_marking' }>,
     targetId: string,
@@ -2508,8 +2495,8 @@ class Batch {
   }
 
   /**
-   * Avisos do `inside`: slot cheio (a filha não coube na área do slot), pai gravado que não é o
-   * alvo (em quem ficou, mesmo quando coube) e `rect` encolhido ao slot.
+   * Warnings of `inside`: full slot (the child did not fit in the slot's area), stored parent that is not the
+   * target (and who it ended up in, even when it fit) and `rect` shrunk to the slot.
    */
   private noteInsideFit(
     notes: string[],
@@ -2522,7 +2509,7 @@ class Batch {
     const { asked, rect } = created;
     if (asked && (asked.width !== rect.width || asked.height !== rect.height)) {
       notes.push(
-        `o tamanho do \`rect\` (${asked.width}×${asked.height}) não cabe no slot de ${target}: a marcação nasceu com ${rect.width}×${rect.height}`,
+        `the size of the \`rect\` (${asked.width}×${asked.height}) does not fit in the slot of ${target}: the marking was created at ${rect.width}×${rect.height}`,
       );
     }
     const parentId = projectIndex(after).markings.get(created.id)?.parentId ?? null;
@@ -2530,20 +2517,20 @@ class Batch {
       parentId === targetId
         ? ''
         : parentId === null
-          ? '; ficou fora dele'
-          : `; ficou dentro de ${this.markingLabel(after, parentId)}`;
+          ? '; it ended up outside it'
+          : `; it ended up inside ${this.markingLabel(after, parentId)}`;
     if (!placementFitsSlot(before, this.catalog, targetId, rect, this.measurer)) {
       notes.push(
-        `a marcação não coube no slot de ${target}: aumente o componente ou use Arrumar na app${where}`,
+        `the marking did not fit in the slot of ${target}: enlarge the component or use Arrange in the app${where}`,
       );
     } else if (where !== '') {
       notes.push(
-        `a marcação nasceu no slot de ${target}, mas o pai gravado não é ele${where}`,
+        `the marking was created in the slot of ${target}, but the stored parent is not it${where}`,
       );
     }
   }
 
-  /** Anotação tipada nova: camada do tipo (ou a informada), dona e valores campo a campo. */
+  /** New typed annotation: the type's layer (or the one given), owner and values field by field. */
   private typedAnnotation(
     p: Project,
     id: string,
@@ -2565,7 +2552,7 @@ class Batch {
         : (projectLayerFor(p, type.specId, typeLayer.id) ??
           fail(
             'not-found',
-            `a camada "${typeLayer.name}" da especialização não está no projeto`,
+            `the specialization's layer "${typeLayer.name}" is not in the project`,
           ));
     let project = addTypedAnnotation(p, {
       id,
@@ -2605,7 +2592,7 @@ class Batch {
       if (op.layer === undefined) {
         throw new ToolError(
           'layer-required',
-          'anotação livre: informe `layer` (ou `type` para uma anotação tipada)',
+          'free-form annotation: provide `layer` (or `type` for a typed annotation)',
         );
       }
       if (op.values !== undefined) throw new ModelError('not-typed');
@@ -2626,8 +2613,8 @@ class Batch {
       ? projectIndex(project).annotations.get(ownerId)
       : undefined;
     const owner = ownerAnnotation
-      ? `, vinculada a ${annotationShortLabel(project, ownerAnnotation)}${
-          op.role ? ` (papel "${roleNameOf(project, ownerAnnotation, op.role)}")` : ''
+      ? `, linked to ${annotationShortLabel(project, ownerAnnotation)}${
+          op.role ? ` (role "${roleNameOf(project, ownerAnnotation, op.role)}")` : ''
         }`
       : '';
     const layerName = projectIndex(project).layers.get(
@@ -2635,13 +2622,13 @@ class Batch {
     )!.name;
     return {
       project,
-      description: `Criar a anotação ${this.annotationLabel(project, id)} na camada "${layerName}"${owner}`,
+      description: `Create the annotation ${this.annotationLabel(project, id)} in the layer "${layerName}"${owner}`,
       created: [{ kind: 'a', id }],
       rowAliases,
     };
   }
 
-  /** Nome do papel que a anotação ocupa no dono, para a descrição do passo. */
+  /** Name of the role the annotation holds in the owner, for the step's description. */
   private roleName(p: Project, id: string): string {
     const a = projectIndex(p).annotations.get(id)!;
     const owner = a.parentAnnotationId
@@ -2659,15 +2646,15 @@ class Batch {
     let project = p;
     if (op.name !== undefined) {
       project = renameAnnotation(project, id, op.name);
-      changes.push(`nome ${quoted(projectIndex(project).annotations.get(id)!.name)}`);
+      changes.push(`name ${quoted(projectIndex(project).annotations.get(id)!.name)}`);
     }
     if (op.entries !== undefined) {
       project = setEntries(project, id, this.entries(project, id, op.entries));
-      changes.push(`${op.entries.length} par(es)`);
+      changes.push(`${op.entries.length} pair(s)`);
     }
     if (op.values !== undefined) {
       project = this.setValues(project, id, op.values, rowAliases);
-      changes.push(`campos ${Object.keys(op.values).join(', ')}`);
+      changes.push(`fields ${Object.keys(op.values).join(', ')}`);
     }
     let roleCleared: Step['roleCleared'];
     if (op.owner !== undefined) {
@@ -2678,21 +2665,19 @@ class Batch {
     }
     if (op.role !== undefined) {
       project = setAnnotationRole(project, id, op.role);
-      changes.push(
-        op.role === null ? 'sem papel' : `papel "${this.roleName(project, id)}"`,
-      );
+      changes.push(op.role === null ? 'no role' : `role "${this.roleName(project, id)}"`);
     }
     return {
       project,
-      description: `Alterar a anotação ${label}: ${changes.join(', ') || 'nada'}`,
+      description: `Change the annotation ${label}: ${changes.join(', ') || 'nothing'}`,
       rowAliases,
       ...(roleCleared ? { roleCleared } : {}),
     };
   }
 
   /**
-   * Troca a dona (ou tira, com `null`). Se o papel da anotação sai junto e o passo não traz
-   * `role` (`roleUnset`), a nota entra no texto do passo e o aviso `role-cleared` é devolvido.
+   * Changes the owner (or removes it, with `null`). If the annotation's role goes with it and the step does not
+   * carry `role` (`roleUnset`), the note goes into the step's text and the `role-cleared` warning is returned.
    */
   private changeOwner(
     p: Project,
@@ -2706,37 +2691,39 @@ class Batch {
     const project = setAnnotationParent(p, id, ownerId);
     const where =
       ownerId === null
-        ? 'sem dona'
-        : `dona ${annotationShortLabel(project, projectIndex(project).annotations.get(ownerId)!)}`;
+        ? 'no owner'
+        : `owner ${annotationShortLabel(project, projectIndex(project).annotations.get(ownerId)!)}`;
     const cleared =
       roleId !== null &&
       roleUnset &&
       projectIndex(project).annotations.get(id)!.parentRole === null;
     if (!cleared) return { project, change: where };
     const reason =
-      ownerId === null ? 'a anotação fica sem dona' : 'a nova dona não o oferece';
+      ownerId === null
+        ? 'the annotation is left without an owner'
+        : 'the new owner does not offer it';
     return {
       project,
-      change: `${where}; papel ${quoted(roleName)} limpo`,
+      change: `${where}; role ${quoted(roleName)} cleared`,
       roleCleared: {
         annotationId: id,
         role: roleId,
         roleName,
-        message: `o papel ${quoted(roleName)} de ${this.annotationLabel(p, id)} é limpo: ${reason}`,
+        message: `the role ${quoted(roleName)} of ${this.annotationLabel(p, id)} is cleared: ${reason}`,
       },
     };
   }
 }
 
 function kindLabel(kind: AliasTarget['kind']): string {
-  return kind === 'row' ? 'uma linha de tabela' : KIND_LABEL[kind];
+  return kind === 'row' ? 'a table row' : KIND_LABEL[kind];
 }
 
 function fail(code: 'not-found', message: string): never {
   throw new ToolError(code, message);
 }
 
-/** Aplica o lote sobre o projeto carregado, sem gravar nada. */
+/** Applies the batch on the loaded project, without writing anything. */
 export function runBatch(
   loaded: LoadedProject,
   operations: readonly Operation[],
@@ -2745,7 +2732,7 @@ export function runBatch(
   return new Batch(loaded, io).run(operations);
 }
 
-/** Itens criados, alterados e excluídos, por coleção (comparando o antes e o depois). */
+/** Items created, changed and deleted, per collection (comparing before and after). */
 export function changeCounts(before: Project, after: Project): Record<string, unknown> {
   const count = <T extends { readonly id: string }>(a: readonly T[], b: readonly T[]) => {
     const old = new Map(a.map((item) => [item.id, JSON.stringify(item)]));
@@ -2778,7 +2765,7 @@ export function changeCounts(before: Project, after: Project): Record<string, un
   };
 }
 
-/** Pendências (anotações incompletas) que o lote cria ou resolve. */
+/** Pending items (incomplete annotations) that the batch creates or resolves. */
 export function issueChanges(refs: Refs, before: Project): Record<string, unknown> {
   const after = refs.project;
   const old = projectIssues(before);
@@ -2794,9 +2781,9 @@ export function issueChanges(refs: Refs, before: Project): Record<string, unknow
 }
 
 /**
- * Os avisos da especialização que as anotações criadas ou alteradas pelo lote passam a ter
- * (etapa #486, decisão 11), pelas mesmas mudanças que a revisão da proposta mostra
- * (`changeNotices`), do mais grave ao menos e, no mesmo `kind`, na ordem em que surgem.
+ * The specialization notices that the annotations created or changed by the batch come to have
+ * (stage #486, decision 11), from the same changes that the proposal review shows
+ * (`changeNotices`), from the most serious to the least and, within the same `kind`, in the order they appear.
  */
 export function noticeChanges(
   refs: Refs,

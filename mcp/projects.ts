@@ -22,40 +22,40 @@ import { ToolError } from './errors';
 import { createFontBook, type FontBook } from './image/textMeasurer';
 import { Roots, resolveProjectFile } from './paths';
 
-/** Quantos níveis de pastas a descoberta percorre abaixo de cada raiz. */
+/** How many folder levels discovery walks below each root. */
 const MAX_DEPTH = 16;
-/** `mapping.json` maior que isto é recusado, para não esgotar a memória. */
+/** A `mapping.json` larger than this is refused, so memory is not exhausted. */
 const MAX_PROJECT_BYTES = 64 * 1024 * 1024;
 const SKIPPED_DIRS: ReadonlySet<string> = new Set(['node_modules']);
 
-/** Onde um projeto em pasta está. */
+/** Where a project in a folder is. */
 export interface ProjectLocation {
-  /** Nome da pasta do projeto: é o `<projeto>` das referências `mapping://`. */
+  /** Name of the project folder: it is the `<project>` of `mapping://` references. */
   readonly name: string;
-  /** Caminho real e absoluto da pasta. */
+  /** Real, absolute path of the folder. */
   readonly dir: string;
-  /** Raiz (como configurada) em que a pasta foi encontrada. */
+  /** Root (as configured) in which the folder was found. */
   readonly root: string;
-  /** Caminho da pasta relativo à raiz, com `/` (`.` se a própria raiz é o projeto). */
+  /** Path of the folder relative to the root, with `/` (`.` if the root itself is the project). */
   readonly path: string;
 }
 
 export interface LoadedProject {
   readonly location: ProjectLocation;
   readonly project: Project;
-  /** Arquivo de uma versão mais nova do que o servidor entende: só leitura. */
+  /** File of a version newer than the server understands: read-only. */
   readonly readOnly: boolean;
   readonly migratedFrom: number | null;
   readonly specWarnings: readonly SpecFileWarning[];
   /**
-   * Componentes das especializações em pasta (`specs/<id>/`, formatVersion 4), lidos uma vez
-   * ao carregar. O servidor só os usa para medir e conferir (`minSize`, `get_marking_image`):
-   * nunca arruma nem grava desenho.
+   * Components of the specializations in a folder (`specs/<id>/`, formatVersion 4), read once
+   * on load. The server only uses them to measure and check (`minSize`, `get_marking_image`):
+   * it never fixes or writes a drawing.
    */
   readonly catalog: ComponentCatalog;
   /**
-   * Fontes que medem e desenham o texto da imagem do desenho: a embutida e as `fonts` das
-   * bibliotecas (arquivos em `specs/<id>/`). Ausente = só a embutida.
+   * Fonts that measure and draw the text of the drawing image: the built-in one and the `fonts` of the
+   * libraries (files in `specs/<id>/`). Absent = only the built-in one.
    */
   readonly fonts?: FontBook;
 }
@@ -89,12 +89,12 @@ async function walk(
   try {
     entries = await readdir(dir, { withFileTypes: true });
   } catch {
-    // Pasta sem permissão de leitura: não é um projeto alcançável, a busca segue nas outras.
+    // Folder without read permission: not a reachable project, the search goes on in the others.
     return;
   }
   entries.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
   for (const entry of entries) {
-    // `isDirectory()` é falso para links simbólicos: a busca nunca os segue.
+    // `isDirectory()` is false for symbolic links: the search never follows them.
     if (
       !entry.isDirectory() ||
       entry.name.startsWith('.') ||
@@ -106,7 +106,7 @@ async function walk(
   }
 }
 
-/** Pastas com `mapping.json` abaixo das raízes (qualquer profundidade, até `MAX_DEPTH`), em ordem de caminho. */
+/** Folders with `mapping.json` below the roots (any depth, up to `MAX_DEPTH`), in path order. */
 export async function discoverProjects(roots: Roots): Promise<ProjectLocation[]> {
   return [...(await roots.perCall('discoverProjects', () => discover(roots)))];
 }
@@ -128,15 +128,15 @@ function looksLikePath(query: string): boolean {
 }
 
 /**
- * Acha o projeto pelo que o agente informou: o nome da pasta (em qualquer profundidade das
- * raízes), o caminho relativo a uma raiz (`apps/cadastro`) ou o caminho absoluto dentro delas.
- * Nome repetido em duas pastas devolve as candidatas e pede o caminho.
+ * Finds the project from what the agent gave: the folder name (at any depth of the
+ * roots), the path relative to a root (`apps/signup`) or the absolute path inside them.
+ * A name repeated in two folders returns the candidates and asks for the path.
  */
 export async function findProject(roots: Roots, query: string): Promise<ProjectLocation> {
   const wanted = query.trim();
-  if (wanted === '') throw new ToolError('invalid-project', 'informe o projeto');
+  if (wanted === '') throw new ToolError('invalid-project', 'give the project');
   if (looksLikePath(wanted)) {
-    // Com várias raízes, vale a primeira em que o caminho é mesmo um projeto.
+    // With several roots, the first one in which the path really is a project applies.
     for (const inside of await roots.resolveExistingAll(wanted)) {
       if (await isProjectDir(inside.real)) {
         return locationOf(inside.real, inside.realRoot, inside.root);
@@ -144,7 +144,7 @@ export async function findProject(roots: Roots, query: string): Promise<ProjectL
     }
     throw new ToolError(
       'project-not-found',
-      `a pasta não é um projeto Mapping (sem ${MAPPING_FILE}): ${wanted}`,
+      `the folder is not a Mapping project (no ${MAPPING_FILE}): ${wanted}`,
       { project: wanted },
     );
   }
@@ -158,35 +158,35 @@ export async function findProject(roots: Roots, query: string): Promise<ProjectL
   if (matches.length > 1) {
     throw new ToolError(
       'ambiguous-project',
-      `há mais de um projeto chamado "${wanted}": informe o caminho`,
+      `there is more than one project named "${wanted}": give the path`,
       { project: wanted, candidates: matches.map((l) => ({ path: l.path, dir: l.dir })) },
     );
   }
-  throw new ToolError('project-not-found', `projeto não encontrado: ${wanted}`, {
+  throw new ToolError('project-not-found', `project not found: ${wanted}`, {
     project: wanted,
     available: all.slice(0, 20).map((l) => l.name),
-    hint: 'use list_projects para ver os projetos das raízes',
+    hint: 'use list_projects to see the projects in the roots',
   });
 }
 
 function describeError(error: DeserializeError): string {
   switch (error.code) {
     case 'invalid-json':
-      return 'o mapping.json não é um JSON válido';
+      return 'the mapping.json is not valid JSON';
     case 'invalid-schema':
-      return `o mapping.json não segue o formato: ${error.details.slice(0, 400)}`;
+      return `the mapping.json does not follow the format: ${error.details.slice(0, 400)}`;
     case 'unsupported-version':
-      return `versão de schema não suportada: ${String(error.version)}`;
+      return `unsupported schema version: ${String(error.version)}`;
     case 'missing-migration':
-      return `não há migração a partir da versão ${error.from}`;
+      return `there is no migration from version ${error.from}`;
     case 'invariant-violation': {
-      // A mesma lista que a app mostra (a completa vai em `reason.issues`).
+      // The same list the app shows (the full one goes in `reason.issues`).
       const shown = error.issues.slice(0, 20).map((i) => {
         const name = i.name === undefined ? '' : ` "${i.name}"`;
         return `${i.code} (${i.entity} ${i.id}${name})`;
       });
       const more = error.issues.length > shown.length ? '; …' : '';
-      return `o mapping.json viola ${error.issues.length} regra(s) do modelo: ${shown.join('; ')}${more}`;
+      return `the mapping.json violates ${error.issues.length} model rule(s): ${shown.join('; ')}${more}`;
     }
   }
 }
@@ -199,15 +199,15 @@ export async function readText(
   const real = await resolveProjectFile(roots, dir, file);
   if (real === null) return null;
   if ((await stat(real)).size > MAX_PROJECT_BYTES) {
-    throw new ToolError('file-too-large', `arquivo grande demais: ${file}`);
+    throw new ToolError('file-too-large', `file too large: ${file}`);
   }
   return readFile(real, 'utf8');
 }
 
 /**
- * Cache do processo (decisão 7 da etapa): o resultado de interpretar arquivos de `specs/` vale
- * enquanto o caminho, o tamanho e o `mtime` de cada um não mudam; um arquivo trocado no disco
- * muda a chave. Guarda no máximo `MAX_CACHED` resultados (o mais antigo sai primeiro).
+ * Process cache (decision 7 of the stage): the result of interpreting `specs/` files holds
+ * while the path, size and `mtime` of each one do not change; a file replaced on disk
+ * changes the key. Keeps at most `MAX_CACHED` results (the oldest leaves first).
  */
 const MAX_CACHED = 32;
 
@@ -230,7 +230,7 @@ class StampCache<T> {
 const catalogCache = new StampCache<SpecComponents>();
 const fontCache = new StampCache<FontBook>();
 
-/** Caminho real, tamanho e `mtime` de um arquivo do projeto; `null` se não existe ou não se lê. */
+/** Real path, size and `mtime` of a project file; `null` if it does not exist or cannot be read. */
 async function fileStamp(
   roots: Roots,
   dir: string,
@@ -242,7 +242,7 @@ async function fileStamp(
     const { size, mtimeMs } = await stat(real);
     return { real, size, stamp: `${real}:${size}:${mtimeMs}` };
   } catch {
-    // Ilegível: sem chave, o cache não vale e a leitura cai no tratamento de sempre.
+    // Unreadable: without a key, the cache does not apply and the read falls into the usual handling.
     return null;
   }
 }
@@ -250,7 +250,7 @@ async function fileStamp(
 const digest = (value: unknown): string =>
   createHash('sha1').update(JSON.stringify(value)).digest('hex');
 
-/** Os componentes de uma especialização em pasta: do cache, ou lidos e interpretados. */
+/** The components of a specialization in a folder: from the cache, or read and interpreted. */
 async function loadSpecCatalog(
   roots: Roots,
   dir: string,
@@ -273,7 +273,7 @@ async function loadSpecCatalog(
       const text = await readText(roots, dir, path);
       if (text !== null) texts.set(path, text);
     } catch {
-      // Arquivo ilegível ou grande demais: o tipo fica sem componente (problema no catálogo).
+      // Unreadable or too-large file: the type is left without a component (a catalog problem).
     }
   }
   const loaded = loadSpecComponents(spec, applied.file, applied.version, (path) =>
@@ -283,7 +283,7 @@ async function loadSpecCatalog(
   return loaded;
 }
 
-/** Lê os arquivos de componente de cada especialização em pasta e monta o catálogo. */
+/** Reads the component files of each specialization in a folder and builds the catalog. */
 async function loadCatalog(
   roots: Roots,
   dir: string,
@@ -298,7 +298,7 @@ async function loadCatalog(
   return catalog.size === 0 ? EMPTY_CATALOG : catalog;
 }
 
-/** Maior arquivo de fonte lido (o resto vale a fonte embutida). */
+/** Largest font file read (the rest falls back to the built-in font). */
 const MAX_FONT_BYTES = 8 * 1024 * 1024;
 
 interface FontFile {
@@ -308,7 +308,7 @@ interface FontFile {
   readonly stamp: string;
 }
 
-/** As fontes declaradas (`fonts`) das especializações aplicadas que existem na cópia do projeto. */
+/** The declared fonts (`fonts`) of the applied specializations that exist in the project's copy. */
 async function fontFiles(
   roots: Roots,
   dir: string,
@@ -326,7 +326,7 @@ async function fontFiles(
   return files;
 }
 
-/** As `fonts` das especializações aplicadas, com os bytes lidos da cópia do projeto. */
+/** The `fonts` of the applied specializations, with the bytes read from the project's copy. */
 async function loadFontBook(
   roots: Roots,
   dir: string,
@@ -351,7 +351,7 @@ async function loadFontBook(
         bytes: new Uint8Array(bytes).buffer as ArrayBuffer,
       });
     } catch {
-      // Fonte ilegível: vale a embutida.
+      // Unreadable font: the built-in one applies.
     }
   }
   const book = createFontBook(loaded);
@@ -360,13 +360,13 @@ async function loadFontBook(
 }
 
 export interface LoadOptions {
-  /** Interpreta as fontes das bibliotecas (padrão). `false` nas tools que só contam (`list_projects`). */
+  /** Interprets the fonts of the libraries (default). `false` in tools that only count (`list_projects`). */
   readonly fonts?: boolean;
 }
 
 /**
- * Interpreta o `mapping.json` uma vez: o JSON serve a achar as cópias de `specs/` a ler e ao
- * modelo (`deserializeParsed`).
+ * Interprets the `mapping.json` once: the JSON serves to find the `specs/` copies to read and the
+ * model (`deserializeParsed`).
  */
 async function parseMapping(
   roots: Roots,
@@ -387,11 +387,11 @@ async function parseMapping(
   return deserializeParsed(raw, undefined, specs);
 }
 
-/** Lê o projeto da pasta: `mapping.json` e as cópias de `specs/`, validados pelo `src/model/`. */
+/** Reads the project from the folder: `mapping.json` and the `specs/` copies, validated by `src/model/`. */
 export async function loadProject(
   roots: Roots,
   location: ProjectLocation,
-  /** O texto do `mapping.json` já lido pelo chamador (não lê de novo). */
+  /** The text of `mapping.json` already read by the caller (does not read again). */
   given?: string,
   options: LoadOptions = {},
 ): Promise<LoadedProject> {
@@ -399,7 +399,7 @@ export async function loadProject(
   if (text === null) {
     throw new ToolError(
       'invalid-project',
-      `não foi possível ler ${MAPPING_FILE} de ${location.name}`,
+      `could not read ${MAPPING_FILE} of ${location.name}`,
       { project: location.name },
     );
   }

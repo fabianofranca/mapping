@@ -27,7 +27,7 @@ async function exists(path: string): Promise<boolean> {
   }
 }
 
-/** Alguma pasta acima de `dir`, até a raiz, já é um projeto? Projetos não se aninham. */
+/** Is some folder above `dir`, up to the root, already a project? Projects do not nest. */
 async function enclosingProject(dir: string, roots: Roots): Promise<string | null> {
   const boundaries = new Set([
     ...roots.roots,
@@ -39,7 +39,7 @@ async function enclosingProject(dir: string, roots: Roots): Promise<string | nul
   }
 }
 
-/** Como a app (`ensureGitignore`): o texto vem de `gitignoreWithBackups`; aqui só o disco. */
+/** Like the app (`ensureGitignore`): the text comes from `gitignoreWithBackups`; here only the disk. */
 async function ensureGitignore(dir: string): Promise<void> {
   const file = join(dir, GITIGNORE_FILE);
   const next = gitignoreWithBackups(
@@ -49,15 +49,15 @@ async function ensureGitignore(dir: string): Promise<void> {
 }
 
 /**
- * Grava o `mapping.json` sem sobrescrever: um que apareceu desde a conferência de `already-exists`
- * (outro processo, a app) fica como está e a tool devolve o mesmo erro da pasta com projeto.
+ * Writes `mapping.json` without overwriting: one that appeared since the `already-exists` check
+ * (another process, the app) stays as it is and the tool returns the same error as for a folder with a project.
  */
 async function writeMappingFile(dir: string, text: string, shown: string): Promise<void> {
   try {
     await writeNewFile(join(dir, MAPPING_FILE), text);
   } catch (error) {
     if (errnoCode(error) !== 'EEXIST') throw error;
-    throw new ToolError('already-exists', `já existe um projeto em ${shown}`, {
+    throw new ToolError('already-exists', `a project already exists at ${shown}`, {
       path: shown,
     });
   }
@@ -69,8 +69,8 @@ export interface CreateProjectArgs {
   readonly root?: string;
   readonly firstLayerName?: string;
   /**
-   * Aplica a biblioteca de notas embutida (camada Notas, `specs/notas/`). Padrão `true`; `false`
-   * cria o projeto sem ela.
+   * Applies the bundled notes library (the `Notas` layer, `specs/notas/`). Default `true`; `false`
+   * creates the project without it.
    */
   readonly notes?: boolean;
 }
@@ -81,18 +81,18 @@ export interface CreatedProject {
   readonly dir: string;
 }
 
-/** Cria a pasta do projeto (`mapping.json` e `.gitignore`) dentro de uma raiz. */
+/** Creates the project folder (`mapping.json` and `.gitignore`) inside a root. */
 export async function createProjectFolder(
   roots: Roots,
   args: CreateProjectArgs,
 ): Promise<CreatedProject> {
   const name = args.name.trim();
   if (name === '')
-    throw new ToolError('invalid-name', 'o nome do projeto não pode ser vazio');
+    throw new ToolError('invalid-name', 'the project name cannot be empty');
   const dir = await roots.resolveNew(args.path, args.root);
 
   if (await exists(join(dir, MAPPING_FILE))) {
-    throw new ToolError('already-exists', `já existe um projeto em ${args.path}`, {
+    throw new ToolError('already-exists', `a project already exists at ${args.path}`, {
       path: args.path,
     });
   }
@@ -100,7 +100,7 @@ export async function createProjectFolder(
   if (enclosing !== null) {
     throw new ToolError(
       'nested-project',
-      `a pasta fica dentro do projeto "${basename(enclosing)}"; projetos não se aninham`,
+      `the folder is inside the project "${basename(enclosing)}"; projects do not nest`,
       { project: enclosing },
     );
   }
@@ -114,18 +114,18 @@ export async function createProjectFolder(
       color: DEFAULT_LAYER_COLOR,
     },
   });
-  // Como a app: a biblioteca de notas entra por padrão, pelo caminho de qualquer biblioteca.
+  // Like the app: the notes library goes in by default, through the path of any library.
   let packageFiles = new Map<string, string>();
   if (args.notes !== false) {
     project = applyBundledLibrary(project, NOTES_LIBRARY, { newId: randomUUID }).project;
     packageFiles = bundledLibraryDiskFiles(project, NOTES_LIBRARY);
   }
-  // Sem `images/`: como a app, a pasta só nasce com a primeira imagem (ao aplicar uma proposta).
+  // No `images/`: like the app, the folder is only created with the first image (when applying a proposal).
   await mkdir(dir, { recursive: true });
-  // Confere de novo com a pasta já criada: um link simbólico no caminho só aparece agora.
+  // Checks again with the folder already created: a symbolic link in the path only shows up now.
   const inside = await roots.assertInside(await realpath(dir), args.path);
   await ensureGitignore(dir);
-  // O pacote antes do `mapping.json` que o cita.
+  // The package before the `mapping.json` that cites it.
   for (const [path, text] of packageFiles) {
     const target = join(dir, ...path.split('/'));
     await mkdir(dirname(target), { recursive: true });

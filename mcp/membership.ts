@@ -1,16 +1,16 @@
 import { membershipChanges, type MembershipChange, type Project } from '../src/model';
 import { Refs } from './items';
 
-// O `membership` do resultado de `plan_changes` e `propose_changes`: quem mudou de pai ou de
-// espaço pela geometria (`settleHierarchy`) entre o projeto antes do lote e o depois. A
-// comparação é do modelo (`membershipChanges`); aqui só se dão nomes e referências.
+// The `membership` of the result of `plan_changes` and `propose_changes`: who changed parent or
+// space through geometry (`settleHierarchy`) between the project before the batch and after it.
+// The comparison belongs to the model (`membershipChanges`); here only names and references are given.
 
 interface Place {
   readonly parent: string | null;
   readonly container?: string | null;
 }
 
-/** Nomes de um lado da mudança: o pai e o espaço (`null` sem pai; o canvas é "Canvas"). */
+/** Names on one side of the change: the parent and the space (`null` without a parent; the canvas is "Canvas"). */
 interface Names {
   readonly parent: string | null;
   readonly space: string | null;
@@ -18,19 +18,19 @@ interface Names {
 
 function parentPhrase(from: Names, to: Names): string {
   if (from.parent !== null && to.parent === null) {
-    return `sai de ${from.parent}; agora direto em ${to.space ?? 'o canvas'}`;
+    return `leaves ${from.parent}; now directly in ${to.space ?? 'the canvas'}`;
   }
-  if (from.parent !== null) return `sai de ${from.parent}; agora dentro de ${to.parent}`;
-  return `entra em ${to.parent}`;
+  if (from.parent !== null) return `leaves ${from.parent}; now inside ${to.parent}`;
+  return `enters ${to.parent}`;
 }
 
-/** Frase curta: "Botão sai de Topo; agora direto em Detalhes". */
+/** Short sentence: "Button leaves Header; now directly in Details". */
 function messageOf(name: string, from: Names, to: Names): string {
   const spaceMoved = from.space !== to.space;
   const parentMoved = from.parent !== to.parent;
   const parts: string[] = [];
   if (parentMoved) parts.push(parentPhrase(from, to));
-  if (spaceMoved) parts.push(`passa de ${from.space} para ${to.space}`);
+  if (spaceMoved) parts.push(`moves from ${from.space} to ${to.space}`);
   return `${name} ${parts.join('; ')}`;
 }
 
@@ -69,8 +69,8 @@ function entryView(
 }
 
 /**
- * A lista `membership`: cada marcação ou container que já existia e cujo pai ou espaço muda
- * no lote. Vazia quando nada muda (o campo não aparece na resposta).
+ * The `membership` list: each marking or container that already existed and whose parent or
+ * space changes in the batch. Empty when nothing changes (the field does not appear in the response).
  */
 export function membershipView(
   base: Project,

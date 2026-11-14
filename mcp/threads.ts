@@ -57,57 +57,57 @@ import {
   type StoredThreads,
 } from './threadStore';
 
-// Conversas ancoradas pelo MCP (etapa Comentários, CM6). O agente lê a caixa de entrada, abre
-// uma conversa onde há ambiguidade e responde com a guarda `after`; nunca resolve, reabre ou
-// apaga (não há tool para isso) e nunca assina como pessoa: o autor é sempre `agent`, com
-// `email: null`. Esta é a ÚNICA montagem de autor do servidor (`tests/tooling/threadAuthors`).
+// Conversations anchored by the MCP (Comments stage, CM6). The agent reads the inbox, opens
+// a conversation where there is ambiguity and replies with the `after` guard; it never resolves, reopens or
+// deletes (there is no tool for that) and never signs as a person: the author is always `agent`, with
+// `email: null`. This is the server's ONLY author assembly (`tests/tooling/threadAuthors`).
 
 type Json = Record<string, unknown>;
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;
-/** Padrão e máximo do `wait_for_comment`, em segundos (o spike da decisão 37: o Claude Code corta a tool em 60 s). */
+/** Default and maximum of `wait_for_comment`, in seconds (the spike of decision 37: Claude Code cuts the tool at 60 s). */
 export const WAIT_DEFAULT_SECONDS = 45;
 export const WAIT_MAX_SECONDS = 50;
 const WAIT_POLL_MS = 1000;
 const WAIT_PROGRESS_MS = 15_000;
 
 const THREAD_REF_ACCEPTED = [
-  'mapping://projeto/c/3f2a9c1e',
-  'c/3f2a9c1e (com o projeto informado à parte)',
-  'o id completo da conversa (com o projeto informado à parte)',
+  'mapping://project/c/3f2a9c1e',
+  'c/3f2a9c1e (with the project given separately)',
+  'the full id of the conversation (with the project given separately)',
 ];
 const ANCHOR_ACCEPTED = [
-  'mapping://projeto/m/3f2a9c1e (marcação ou seta), …/i/… (container), …/a/… (anotação), …/l/… (camada)',
-  'mapping://projeto/a/3f2a9c1e/f/<campo> (campo), …/a/3f2a9c1e/e/<código> (par), …/a/3f2a9c1e/f/<campo>/r/<código> (linha)',
-  '{ point: { container: "mapping://projeto/i/3f2a9c1e" | null, x, y } } (ponto solto, em pixels do container; null = canvas)',
+  'mapping://project/m/3f2a9c1e (marking or arrow), …/i/… (container), …/a/… (annotation), …/l/… (layer)',
+  'mapping://project/a/3f2a9c1e/f/<field> (field), …/a/3f2a9c1e/e/<code> (pair), …/a/3f2a9c1e/f/<field>/r/<code> (row)',
+  '{ point: { container: "mapping://project/i/3f2a9c1e" | null, x, y } } (loose point, in container pixels; null = canvas)',
 ];
 
 // ---------------------------------------------------------------------------
-// Texto e autoria
+// Text and authorship
 
-/** Confere o texto de uma mensagem: não vazio e com até `THREAD_MESSAGE_MAX` caracteres. */
+/** Checks the text of a message: not empty and up to `THREAD_MESSAGE_MAX` characters. */
 export function checkMessageText(text: string): string {
   if (text.trim() === '') {
-    throw new ToolError('empty-message', 'a mensagem não pode ser vazia');
+    throw new ToolError('empty-message', 'the message cannot be empty');
   }
   if (text.length > THREAD_MESSAGE_MAX) {
     throw new ToolError(
       'message-too-long',
-      `a mensagem tem ${text.length} caracteres; o máximo é ${THREAD_MESSAGE_MAX}`,
+      `the message has ${text.length} characters; the maximum is ${THREAD_MESSAGE_MAX}`,
       { max: THREAD_MESSAGE_MAX },
     );
   }
   return text;
 }
 
-/** O autor das mensagens do servidor: sempre agente, sem e-mail (decisão 12). */
+/** The author of the server's messages: always an agent, without an email (decision 12). */
 export function agentAuthor(name: string | undefined, clientName?: string): ThreadAuthor {
   const shown = name?.trim() || clientName?.trim() || 'agente';
   return { kind: 'agent', name: shown, email: null };
 }
 
-/** Os erros do modelo das conversas viram `invalid-thread` (a mensagem ou o arquivo inválido). */
+/** The conversation model's errors become `invalid-thread` (the invalid message or file). */
 function translate<T>(run: () => T): T {
   try {
     return run();
@@ -120,7 +120,7 @@ function translate<T>(run: () => T): T {
 }
 
 // ---------------------------------------------------------------------------
-// Ambiente de uma chamada: projeto, conversas, propostas e referências
+// Environment of a call: project, conversations, proposals and references
 
 interface Env {
   readonly location: ProjectLocation;
@@ -165,7 +165,7 @@ async function buildEnv(roots: Roots, location: ProjectLocation): Promise<Env> {
 
 type Rebuilt = { readonly env: Env } | { readonly env: null; readonly warning: Json };
 
-/** Remonta o ambiente depois de gravar; a falha vira o aviso `reply-incomplete`, não erro. */
+/** Rebuilds the environment after writing; a failure becomes the `reply-incomplete` warning, not an error. */
 async function rebuildEnv(roots: Roots, location: ProjectLocation): Promise<Rebuilt> {
   try {
     return { env: await buildEnv(roots, location) };
@@ -174,8 +174,8 @@ async function rebuildEnv(roots: Roots, location: ProjectLocation): Promise<Rebu
       env: null,
       warning: {
         code: 'reply-incomplete',
-        message: `a mensagem foi gravada, mas o projeto não pôde ser relido para montar a resposta (${error instanceof Error ? error.message : String(error)})`,
-        hint: 'não repita o post_message nem a proposta: confira com get_thread',
+        message: `the message was written, but the project could not be reread to build the response (${error instanceof Error ? error.message : String(error)})`,
+        hint: 'do not repeat the post_message or the proposal: check with get_thread',
       },
     };
   }
@@ -195,7 +195,7 @@ function annotationOf(env: Env, id: string): Annotation | undefined {
   return projectIndex(env.project).annotations.get(id);
 }
 
-/** A referência (`mapping://…`) de um alvo que existe no projeto. */
+/** The reference (`mapping://…`) of a target that exists in the project. */
 function targetRef(env: Env, target: CitationTarget): string {
   const name = env.location.name;
   const project = env.project;
@@ -226,7 +226,7 @@ function partRef(env: Env, target: PartTarget): string {
   return partRefOf(env.location.name, env.project, target);
 }
 
-/** A referência de um campo, par ou linha (`…/a/<código>/f/<campo>`, `/e/<código>`, `/r/<código>`). */
+/** The reference of a field, pair or row (`…/a/<code>/f/<field>`, `/e/<code>`, `/r/<code>`). */
 export function partRefOf(name: string, project: Project, target: PartTarget): string {
   const annotation = shortCode(project, 'a', target.annotationId);
   const owner = projectIndex(project).annotations.get(target.annotationId);
@@ -244,13 +244,13 @@ export function partRefOf(name: string, project: Project, target: PartTarget): s
   return formatAnyRef(name, { type: 'row', annotation, key: target.key, row });
 }
 
-/** O trecho legível do alvo (nome de agora), ou `null` sem nome. */
+/** The readable part of the target (current name), or `null` without a name. */
 function liveName(env: Env, target: CitationTarget): string | null {
   const live = liveLabel(env.ctx, { found: true, target }, '');
   return live.broken ? null : live.label;
 }
 
-/** `Container › Marcação › Anotação › campo`: o caminho legível de um alvo que existe. */
+/** `Container › Marking › Annotation › field`: the readable path of a target that exists. */
 function targetPath(env: Env, target: CitationTarget): string {
   const SEP = ' › ';
   switch (target.kind) {
@@ -283,7 +283,7 @@ function partValue(env: Env, target: CitationTarget): unknown {
   return undefined;
 }
 
-/** Descreve um alvo que existe: tipo, referência, caminho, nome e (campo e par) o valor. */
+/** Describes a target that exists: kind, reference, path, name and (field and pair) the value. */
 function describeTarget(env: Env, target: CitationTarget): Json {
   const value = partValue(env, target);
   return {
@@ -302,7 +302,7 @@ function pointOf(env: Env, anchor: Extract<ThreadAnchor, { kind: 'point' }>): Js
   return { container, x: anchor.x, y: anchor.y };
 }
 
-/** A âncora de uma conversa: o alvo resolvido, o ponto solto ou, órfã, o que está gravado. */
+/** The anchor of a conversation: the resolved target, the loose point or, if orphaned, what is saved. */
 function anchorView(env: Env, anchor: ThreadAnchor): Json {
   const resolved = resolveAnchor(env.project, anchor);
   if (resolved.orphan) {
@@ -321,21 +321,21 @@ function anchorView(env: Env, anchor: ThreadAnchor): Json {
       orphan: false,
       kind: 'point',
       point: pointOf(env, anchor),
-      path: `${where} › ponto (${anchor.x}, ${anchor.y})`,
+      path: `${where} › point (${anchor.x}, ${anchor.y})`,
     };
   }
   const described = describeTarget(env, anchor as CitationTarget);
   return { orphan: false, ...described, name: described.label };
 }
 
-/** O que a lista mostra em `anchor`: a referência, o ponto, ou (órfã) o que está gravado. */
+/** What the list shows in `anchor`: the reference, the point, or (if orphaned) what is saved. */
 function anchorField(view: Json): unknown {
   if (view.orphan === true) return view.anchor;
   return view.ref ?? { point: view.point };
 }
 
 // ---------------------------------------------------------------------------
-// Citações e mensagens
+// Citations and messages
 
 function citesOf(env: Env, text: string): Json[] {
   return extractCitations(text).map((citation) => {
@@ -401,15 +401,15 @@ function brokenCites(env: Env, text: string): Json[] {
       code: 'broken-cite',
       label: c.label,
       url: c.url,
-      message: `a citação "${String(c.label)}" não resolve neste projeto; a mensagem foi gravada assim mesmo`,
+      message: `the citation "${String(c.label)}" does not resolve in this project; the message was written anyway`,
     }));
 }
 
 // ---------------------------------------------------------------------------
-// Referências de entrada
+// Input references
 
 function invalidRef(refText: string): ToolError {
-  return new ToolError('invalid-ref', `referência de conversa inválida: ${refText}`, {
+  return new ToolError('invalid-ref', `invalid conversation reference: ${refText}`, {
     accepted: THREAD_REF_ACCEPTED,
     hint: INVALID_REF_HINT,
   });
@@ -444,7 +444,7 @@ interface FoundThread {
   readonly id: string;
 }
 
-/** Acha a conversa pela referência, só pelos nomes dos arquivos (nada é lido). */
+/** Finds the conversation by the reference, from the file names only (nothing is read). */
 export async function findThread(
   roots: Roots,
   refText: string,
@@ -461,15 +461,15 @@ export async function findThread(
   }
   if (found.length === 1) return found[0] as FoundThread;
   if (found.length === 0) {
-    throw new ToolError('thread-not-found', `nenhuma conversa corresponde a ${refText}`, {
+    throw new ToolError('thread-not-found', `no conversation matches ${refText}`, {
       ref: refText,
       searched: locations.map((l) => l.path),
-      hint: 'use list_threads(project) para ver as conversas do projeto',
+      hint: 'use list_threads(project) to see the conversations of the project',
     });
   }
   throw new ToolError(
     'ambiguous-ref',
-    `${found.length} conversas começam com esse código: use a referência completa de uma delas`,
+    `${found.length} conversations start with that code: use the full reference of one of them`,
     {
       ref: refText,
       candidates: found.slice(0, 20).map((c) => ({
@@ -481,53 +481,53 @@ export async function findThread(
 }
 
 // ---------------------------------------------------------------------------
-// Âncora de entrada
+// Input anchor
 
 type AnchorArg = string | Record<string, unknown>;
 
 function invalidAnchor(why: string, given: unknown): ToolError {
-  return new ToolError('invalid-anchor', `âncora inválida: ${why}`, {
+  return new ToolError('invalid-anchor', `invalid anchor: ${why}`, {
     anchor: given,
     accepted: ANCHOR_ACCEPTED,
   });
 }
 
 function missingAnchor(given: unknown): ToolError {
-  return new ToolError('anchor-not-found', 'a âncora não existe neste projeto', {
+  return new ToolError('anchor-not-found', 'the anchor does not exist in this project', {
     anchor: given,
-    hint: 'confira a referência com list_projects, get_marking, get_annotation ou resolve',
+    hint: 'check the reference with list_projects, get_marking, get_annotation or resolve',
   });
 }
 
-/** Alvo → âncora; conversa e proposta não são âncora. */
+/** Target -> anchor; a conversation and a proposal are not anchors. */
 function anchorOfTarget(target: CitationTarget, given: unknown): ThreadAnchor {
   if (target.kind === 'thread' || target.kind === 'proposal') {
-    throw invalidAnchor('uma conversa ou uma proposta não é âncora', given);
+    throw invalidAnchor('a conversation or a proposal is not an anchor', given);
   }
   return target;
 }
 
 function resolveRefAnchor(env: Env, refText: string, given: unknown): ThreadAnchor {
   const parsed = parseAnyRef(refText);
-  if (!parsed) throw invalidAnchor('referência que não fecha a gramática', given);
+  if (!parsed) throw invalidAnchor('a reference that does not close the grammar', given);
   if (parsed.project !== null && parsed.project !== env.location.name) {
     throw new ToolError(
       'project-mismatch',
-      `a referência é do projeto "${parsed.project}", não de "${env.location.name}"`,
+      `the reference is from project "${parsed.project}", not "${env.location.name}"`,
     );
   }
   if (
     parsed.ref.type === 'item' &&
     (parsed.ref.kind === 'p' || parsed.ref.kind === 'c')
   ) {
-    throw invalidAnchor('uma conversa ou uma proposta não é âncora', given);
+    throw invalidAnchor('a conversation or a proposal is not an anchor', given);
   }
   const resolution = resolveCitation(env.ctx, parsed.ref);
   if (resolution.found) return anchorOfTarget(resolution.target, given);
   if (resolution.reason === 'ambiguous') {
     throw new ToolError(
       'ambiguous-ref',
-      'o código curto serve a mais de um alvo: use um código mais longo',
+      'the short code matches more than one target: use a longer code',
       { ref: refText },
     );
   }
@@ -536,23 +536,23 @@ function resolveRefAnchor(env: Env, refText: string, given: unknown): ThreadAnch
 
 function pointCoordinates(raw: unknown, given: unknown): { x: number; y: number } {
   if (typeof raw !== 'object' || raw === null) {
-    throw invalidAnchor('`point` deve ser { container, x, y }', given);
+    throw invalidAnchor('`point` must be { container, x, y }', given);
   }
   const { x, y } = raw as Record<string, unknown>;
   if (!Number.isFinite(x) || !Number.isFinite(y)) {
-    throw invalidAnchor('`x` e `y` devem ser números', given);
+    throw invalidAnchor('`x` and `y` must be numbers', given);
   }
   return { x: x as number, y: y as number };
 }
 
-/** O id do container de um ponto solto (`null`: o canvas). */
+/** The container id of a loose point (`null`: the canvas). */
 function pointContainer(env: Env, raw: unknown, given: unknown): string | null {
   const { container } = raw as Record<string, unknown>;
   if (container === null || container === undefined) return null;
   const parsed = typeof container === 'string' ? parseAnyRef(container) : null;
   if (!parsed || parsed.ref.type !== 'item' || parsed.ref.kind !== 'i') {
     throw invalidAnchor(
-      '`container` deve ser a referência de um container (`…/i/…`) ou null',
+      '`container` must be the reference of a container (`…/i/…`) or null',
       given,
     );
   }
@@ -564,17 +564,17 @@ function resolvePointAnchor(env: Env, raw: unknown, given: unknown): ThreadAncho
   return { kind: 'point', containerId: pointContainer(env, raw, given), x, y };
 }
 
-/** A âncora dos argumentos de `open_thread` e do filtro `anchor` de `list_threads`. */
+/** The anchor of the arguments of `open_thread` and of the `anchor` filter of `list_threads`. */
 function resolveAnchorArg(env: Env, anchor: AnchorArg): ThreadAnchor {
   if (typeof anchor === 'string') return resolveRefAnchor(env, anchor, anchor);
   if (typeof anchor === 'object' && anchor !== null && 'point' in anchor) {
     return resolvePointAnchor(env, anchor.point, anchor);
   }
-  throw invalidAnchor('use uma referência ou { point: { container, x, y } }', anchor);
+  throw invalidAnchor('use a reference or { point: { container, x, y } }', anchor);
 }
 
 // ---------------------------------------------------------------------------
-// Filtros da lista
+// List filters
 
 export type ThreadStatusArg = 'open' | 'resolved' | 'all';
 export type ThreadAwaitingArg = 'agent' | 'human' | 'any';
@@ -590,8 +590,8 @@ export interface ListThreadsArgs {
 }
 
 /**
- * Sem filtro nenhum (nem `text` nem `anchor`): as abertas que aguardam o agente (a caixa de
- * entrada). Com qualquer filtro, o que faltar é `status: open` e `awaiting: any`.
+ * With no filter at all (neither `text` nor `anchor`): the open ones awaiting the agent (the
+ * inbox). With any filter, what is missing defaults to `status: open` and `awaiting: any`.
  */
 function effectiveFilters(args: ListThreadsArgs): {
   status: ThreadStatusArg;
@@ -606,7 +606,7 @@ function effectiveFilters(args: ListThreadsArgs): {
   return { status: args.status ?? 'open', awaiting: args.awaiting ?? 'any' };
 }
 
-/** A conversa está ancorada no alvo ou numa parte dele. */
+/** The conversation is anchored at the target or at a part of it. */
 function samePoint(a: ThreadAnchor, b: ThreadAnchor): boolean {
   return (
     a.kind === 'point' &&
@@ -654,7 +654,7 @@ function selectThreads(env: Env, args: ListThreadsArgs): readonly Thread[] {
 }
 
 // ---------------------------------------------------------------------------
-// O serviço
+// The service
 
 export interface PostArgs {
   readonly ref: string;
@@ -678,7 +678,7 @@ export interface WaitArgs {
 
 export interface WaitHooks {
   readonly signal?: AbortSignal | undefined;
-  /** Chamado a cada ~15 s de espera (o cliente que mandou `progressToken` recebe o progresso). */
+  /** Called every ~15 s of waiting (the client that sent `progressToken` receives the progress). */
   readonly progress?: ((seconds: number) => Promise<void>) | undefined;
 }
 
@@ -720,9 +720,9 @@ export class Threads {
     const env = await buildEnv(this.roots, location);
     const thread = env.threads.find((t) => t.id === id);
     if (!thread) {
-      // A conversa existe mas o arquivo é ilegível: `readStoredThread` explica.
+      // The conversation exists but the file is unreadable: `readStoredThread` explains.
       await readStoredThread(this.roots, location, id);
-      throw new ToolError('thread-not-found', `conversa não encontrada: ${refText}`);
+      throw new ToolError('thread-not-found', `conversation not found: ${refText}`);
     }
     return this.threadView(env, thread);
   }
@@ -825,8 +825,8 @@ export class Threads {
       posted = newMessage(thread, author, text, this.now());
       return translate(() => appendMessage(thread, posted as ThreadMessage));
     });
-    // A mensagem já está gravada: se o projeto não puder ser relido, a resposta diz isso (sucesso
-    // com aviso), em vez de um erro que levaria o agente a repetir o `post_message`.
+    // The message is already written: if the project cannot be reread, the response says so (success
+    // with a warning), instead of an error that would lead the agent to repeat the `post_message`.
     const rebuilt = await rebuildEnv(this.roots, location);
     const warnings = rebuilt.env ? brokenCites(rebuilt.env, text) : [rebuilt.warning];
     return {
@@ -845,7 +845,7 @@ export class Threads {
   // -------------------------------------------------------------------------
   // propose_changes com `thread`
 
-  /** Confere que a conversa do `propose_changes` existe e está aberta; nada é gravado. */
+  /** Checks that the conversation of `propose_changes` exists and is open; nothing is written. */
   async checkOpen(refText: string, location: ProjectLocation): Promise<FoundThread> {
     const found = await findThread(this.roots, refText, location.path);
     const thread = await readStoredThread(this.roots, found.location, found.id);
@@ -853,7 +853,7 @@ export class Threads {
     return found;
   }
 
-  /** Acrescenta a mensagem do agente com `proposal` (depois de a proposta gravada). */
+  /** Appends the agent's message with `proposal` (after the proposal is written). */
   async linkProposal(
     found: FoundThread,
     proposalId: string,
@@ -895,8 +895,8 @@ export class Threads {
       Math.max(args.timeoutSeconds ?? WAIT_DEFAULT_SECONDS, 1),
       WAIT_MAX_SECONDS,
     );
-    // A assinatura vem antes do baseline: uma mensagem gravada depois do baseline muda a
-    // assinatura em relação a esta e é devolvida na mesma espera.
+    // The signature comes before the baseline: a message written after the baseline changes the
+    // signature relative to this one and is returned in the same wait.
     let signature = await commentsSignature(location);
     const baseline = awaitingMap((await listStoredThreads(this.roots, location)).threads);
     const started = this.now();
@@ -932,7 +932,7 @@ export class Threads {
       changed: true,
       thread: summaryRow(env, first),
       alsoAwaiting: fresh.length - 1,
-      hint: 'leia com get_thread, responda com post_message (after = id da última mensagem lida) e chame wait_for_comment de novo',
+      hint: 'read with get_thread, reply with post_message (after = id of the last message read) and call wait_for_comment again',
     };
   }
 }
@@ -947,7 +947,7 @@ function awaitingMap(threads: readonly { thread: Thread }[]): Map<string, string
 }
 
 function sleep(ms: number, signal: AbortSignal | undefined): Promise<void> {
-  const cancelled = () => new ToolError('cancelled', 'a espera foi cancelada');
+  const cancelled = () => new ToolError('cancelled', 'the wait was cancelled');
   return new Promise((resolve, reject) => {
     if (signal?.aborted) return reject(cancelled());
     const onAbort = () => {
@@ -965,15 +965,15 @@ function sleep(ms: number, signal: AbortSignal | undefined): Promise<void> {
 function resolvedError(refText: string): ToolError {
   return new ToolError(
     'thread-resolved',
-    'a conversa está resolvida: ninguém mais acrescenta mensagens a ela',
+    'the conversation is resolved: no one adds more messages to it',
     {
       ref: refText,
-      hint: 'abra outra conversa com open_thread e cite esta nela: [assunto](mapping://<projeto>/c/<código>)',
+      hint: 'open another conversation with open_thread and cite this one in it: [subject](mapping://<project>/c/<code>)',
     },
   );
 }
 
-/** A guarda `after`: só grava se a última mensagem lida ainda é a última da conversa. */
+/** The `after` guard: only writes if the last message read is still the last of the conversation. */
 function guardAfter(thread: Thread, after: string): void {
   const messages = thread.messages;
   const last = messages[messages.length - 1] as ThreadMessage;
@@ -983,8 +983,8 @@ function guardAfter(thread: Thread, after: string): void {
   throw new ToolError(
     'stale-thread',
     index === -1
-      ? '`after` não é o id de nenhuma mensagem desta conversa: leia a conversa de novo'
-      : 'entraram mensagens depois da última que você leu; nada foi gravado',
+      ? '`after` is not the id of any message of this conversation: read the conversation again'
+      : 'messages came in after the last one you read; nothing was written',
     {
       last: last.id,
       newMessages: newer.map((m) => ({
@@ -993,12 +993,12 @@ function guardAfter(thread: Thread, after: string): void {
         at: m.at,
         text: m.text,
       })),
-      hint: 'leia as mensagens novas, ajuste a resposta se preciso e chame post_message de novo com `after` = o id da última',
+      hint: 'read the new messages, adjust the reply if needed and call post_message again with `after` = the id of the last one',
     },
   );
 }
 
-/** A mensagem nova: nunca antes da última da conversa (a ordem é por `at` e `id`). */
+/** The new message: never before the last of the conversation (the order is by `at` and `id`). */
 function newMessage(
   thread: Thread,
   author: ThreadAuthor,
@@ -1017,7 +1017,7 @@ function newMessage(
 }
 
 // ---------------------------------------------------------------------------
-// `resolve` com a gramática nova
+// `resolve` with the new grammar
 
 type SubBase = {
   id: string;
@@ -1080,7 +1080,7 @@ function rowView(item: ResolvedItem, annotation: Annotation, base: SubBase): Jso
   };
 }
 
-/** `resolve` de campo, par ou linha: o tipo, a referência da parte e a da anotação que a contém. */
+/** `resolve` of a field, pair or row: the kind, the part's reference and that of the annotation that contains it. */
 export function resolveSubView(item: ResolvedItem): Json {
   const sub = item.sub as NonNullable<ResolvedItem['sub']>;
   const { refs } = item;
@@ -1096,7 +1096,7 @@ export function resolveSubView(item: ResolvedItem): Json {
     : rowView(item, annotation, base);
 }
 
-/** `resolve` de camada (`l`) ou conversa (`c`). */
+/** `resolve` of a layer (`l`) or conversation (`c`). */
 export async function resolveLayerOrThread(
   roots: Roots,
   refText: string,
@@ -1114,7 +1114,7 @@ export async function resolveLayerOrThread(
     for (const id of matchLayerCode(loaded.project, code)) found.push({ loaded, id });
   }
   if (found.length === 0) {
-    throw new ToolError('not-found', `nenhuma camada corresponde a ${refText}`, {
+    throw new ToolError('not-found', `no layer matches ${refText}`, {
       ref: refText,
       searched: locations.map((l) => l.path),
     });
@@ -1122,7 +1122,7 @@ export async function resolveLayerOrThread(
   if (found.length > 1) {
     throw new ToolError(
       'ambiguous-ref',
-      `${found.length} camadas começam com esse código: use a referência completa de uma delas`,
+      `${found.length} layers start with that code: use the full reference of one of them`,
       {
         ref: refText,
         candidates: found.slice(0, 20).map((c) => ({
@@ -1176,7 +1176,7 @@ async function resolveThreadView(
   };
 }
 
-/** `resolve` de tudo o que não é marcação, container nem anotação: camada, conversa, campo, par, linha. */
+/** `resolve` of everything that is not a marking, container or annotation: layer, conversation, field, pair, row. */
 export async function resolveExtended(
   roots: Roots,
   refText: string,

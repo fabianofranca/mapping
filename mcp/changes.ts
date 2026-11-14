@@ -32,22 +32,22 @@ import {
   type ProjectLocation,
 } from './projects';
 
-// Operações em lote sobre uma cópia do projeto (etapa 3a.5), agora só para ler: o
-// `plan_changes` valida e resume sem gravar nada, e o `propose_changes` (proposals.ts) calcula
-// as mudanças da proposta. Nenhum caminho do servidor grava o `mapping.json`.
+// Batch operations on a copy of the project (stage 3a.5), now read-only: `plan_changes`
+// validates and summarizes without writing anything, and `propose_changes` (proposals.ts)
+// computes the proposal's changes. No server path writes `mapping.json`.
 
-/** Imagem ou especialização lida pelo lote maior que isto é recusada. */
+/** An image or specialization read by the batch that is larger than this is refused. */
 const MAX_SOURCE_BYTES = 64 * 1024 * 1024;
 
 export const sha256 = (text: string) => createHash('sha256').update(text).digest('hex');
 
-/** Lê o `mapping.json` como está no disco (para a conferência antes de gravar a proposta). */
+/** Reads `mapping.json` as it is on disk (for the check before writing the proposal). */
 export async function readMapping(roots: Roots, dir: string): Promise<string | null> {
-  // Com o limite de tamanho das demais leituras do projeto (`loadProject`).
+  // With the size limit of the project's other reads (`loadProject`).
   return readText(roots, dir, MAPPING_FILE);
 }
 
-/** Lê um arquivo citado numa operação: relativo à pasta do projeto, a uma raiz, ou absoluto. */
+/** Reads a file cited in an operation: relative to the project folder, to a root, or absolute. */
 async function readSource(
   roots: Roots,
   projectDir: string,
@@ -58,17 +58,17 @@ async function readSource(
   if (real === null) real = (await roots.resolveExisting(path)).real;
   const info = await stat(real);
   if (!info.isFile()) {
-    throw new ToolError('not-a-file', `não é um arquivo: ${path}`, { path });
+    throw new ToolError('not-a-file', `not a file: ${path}`, { path });
   }
   if (info.size > MAX_SOURCE_BYTES) {
-    throw new ToolError('file-too-large', `arquivo grande demais: ${path}`, { path });
+    throw new ToolError('file-too-large', `file too large: ${path}`, { path });
   }
   return { bytes: new Uint8Array(await readFile(real)), name: basename(real) };
 }
 
 /**
- * O que uma operação de especialização aponta (arquivo ou pasta do pacote): relativo à pasta
- * do projeto, a uma raiz, ou absoluto, como as demais fontes do lote.
+ * What a specialization operation points to (file or package folder): relative to the project
+ * folder, to a root, or absolute, like the batch's other sources.
  */
 async function readSpec(roots: Roots, projectDir: string, path: string) {
   let real: string | null = null;
@@ -86,7 +86,7 @@ async function takenImageFiles(dir: string): Promise<Set<string>> {
   }
 }
 
-/** Referências dos itens criados, com o apelido de cada um. */
+/** References of the created items, with the alias of each one. */
 export function createdRefs(refs: Refs, result: BatchResult): Record<string, unknown>[] {
   const index = projectIndex(refs.project);
   const byKind = {
@@ -118,35 +118,35 @@ export function createdRefs(refs: Refs, result: BatchResult): Record<string, unk
     });
 }
 
-/** O lote aplicado a uma cópia do projeto lido da pasta. */
+/** The batch applied to a copy of the project read from the folder. */
 export interface PreparedBatch {
   readonly location: ProjectLocation;
   readonly loaded: LoadedProject;
-  /** Hash do `mapping.json` lido: se mudar antes de gravar a proposta, o cálculo ficou velho. */
+  /** Hash of the `mapping.json` that was read: if it changes before the proposal is written, the computation is stale. */
   readonly baseHash: string;
   readonly result: BatchResult;
   readonly operations: readonly Operation[];
-  /** Referências do projeto depois do lote (as definitivas dos itens criados). */
+  /** References of the project after the batch (the final ones of the created items). */
   readonly refs: Refs;
-  /** As mudanças do lote (as da revisão da proposta), calculadas uma vez só. */
+  /** The batch's changes (the proposal review's), computed only once. */
   readonly changes: () => readonly Change[];
   readonly valid: boolean;
 }
 
 export interface PrepareOptions {
   readonly now: () => number;
-  /** Arquivos de `images/` já reservados por outras propostas ainda não aplicadas. */
+  /** Files in `images/` already reserved by other proposals not yet applied. */
   readonly reservedImages?: ReadonlySet<string>;
   /**
-   * Projeto em que o lote começa, a partir do lido da pasta (a revisão da proposta parte do
-   * proposto inteiro). Pode recusar lançando um `ToolError`. Sem ele, o lote parte do projeto.
+   * Project the batch starts from, given the one read from the folder (the proposal review starts
+   * from the whole proposed project). It may refuse by throwing a `ToolError`. Without it, the batch starts from the project.
    */
   readonly startFrom?: (project: Project) => Project;
 }
 
 /**
- * Lê o projeto e aplica o lote (sem gravar nada). O projeto de schema antigo é migrado só
- * em memória; um `mapping.json` de versão mais nova é recusado (`read-only`).
+ * Reads the project and applies the batch (without writing anything). A project with an old
+ * schema is migrated in memory only; a `mapping.json` of a newer version is refused (`read-only`).
  */
 export async function prepareBatch(
   roots: Roots,
@@ -156,14 +156,14 @@ export async function prepareBatch(
 ): Promise<PreparedBatch> {
   const baseText = await readMapping(roots, location.dir);
   if (baseText === null) {
-    throw new ToolError('invalid-project', `não foi possível ler ${MAPPING_FILE}`);
+    throw new ToolError('invalid-project', `could not read ${MAPPING_FILE}`);
   }
-  // Uma leitura só: o hash e o projeto saem do mesmo texto, mesmo que o arquivo mude no meio.
+  // A single read: the hash and the project come from the same text, even if the file changes in between.
   const loaded = await loadProject(roots, location, baseText);
   if (loaded.readOnly) {
     throw new ToolError(
       'read-only',
-      'o mapping.json é de uma versão mais nova do que este servidor entende: atualize o mapping-mcp.js',
+      'the mapping.json is from a newer version than this server understands: update mapping-mcp.js',
     );
   }
   const taken = await takenImageFiles(location.dir);
@@ -190,7 +190,7 @@ export async function prepareBatch(
   };
 }
 
-/** Avisos da validação dos pacotes de biblioteca (`apply_specialization`/`update_specialization`). */
+/** Warnings from the validation of the library packages (`apply_specialization`/`update_specialization`). */
 const MAX_LIBRARY_WARNINGS = 20;
 
 function libraryWarningViews(result: BatchResult): Record<string, unknown>[] {
@@ -208,16 +208,16 @@ function libraryWarningViews(result: BatchResult): Record<string, unknown>[] {
         ...views,
         {
           code: 'library-warning',
-          message: `mais ${more} aviso(s) da validação da biblioteca (rode validate_library para a lista completa)`,
+          message: `${more} more warning(s) from the library validation (run validate_library for the full list)`,
         },
       ]
     : views;
 }
 
-/** Parte comum das respostas de `plan_changes` e `propose_changes`: o resultado do lote. */
+/** Common part of the `plan_changes` and `propose_changes` responses: the batch result. */
 export function batchReport(prepared: PreparedBatch): Record<string, unknown> {
   const { result, location, loaded, refs } = prepared;
-  // Avisos (não impedem nada): os da biblioteca.
+  // Warnings (they block nothing): the library's.
   const warnings: unknown[] = [
     ...libraryWarningViews(result),
     ...result.deprecations.map((d) => ({
@@ -258,7 +258,7 @@ export function batchReport(prepared: PreparedBatch): Record<string, unknown> {
   };
 }
 
-/** `plan_changes`: valida e resume o lote sem gravar nada (nem proposta). */
+/** `plan_changes`: validates and summarizes the batch without writing anything (not even a proposal). */
 export async function planChanges(
   roots: Roots,
   location: ProjectLocation,
@@ -270,7 +270,7 @@ export async function planChanges(
   if (!prepared.valid) {
     return {
       ...report,
-      hint: 'nada foi guardado: corrija as operações com erro e chame plan_changes de novo com o lote inteiro',
+      hint: 'nothing was stored: fix the operations with errors and call plan_changes again with the whole batch',
     };
   }
   const proposed = prepared.changes();
@@ -279,7 +279,7 @@ export async function planChanges(
     reviewChanges: proposed.length,
     hint:
       proposed.length === 0
-        ? 'as operações não alteram nada no projeto: não há o que propor'
-        : 'nada foi gravado; para o usuário revisar e aplicar, envie o mesmo lote com propose_changes',
+        ? 'the operations change nothing in the project: there is nothing to propose'
+        : 'nothing was written; for the user to review and apply it, send the same batch with propose_changes',
   };
 }

@@ -15,21 +15,21 @@ import { CONTAINER_LABEL, type Refs } from './items';
 import { markingRow } from './views';
 
 export interface MarkingFilters {
-  /** Container: referência, id, nome ou nome do arquivo. */
+  /** Container: reference, id, name or file name. */
   readonly container?: string;
-  /** Antigo: use `container` (aceito com aviso). */
+  /** Old: use `container` (accepted with a warning). */
   readonly image?: string;
-  /** Só marcações do canvas (sem container); não combina com `container`. */
+  /** Only canvas markings (no container); does not combine with `container`. */
   readonly canvas?: boolean;
-  /** Só flutuantes (`true`) ou só não flutuantes (`false`). */
+  /** Only floating ones (`true`) or only non-floating ones (`false`). */
   readonly floating?: boolean;
-  /** Camada: id ou nome. */
+  /** Layer: id or name. */
   readonly layer?: string;
-  /** Tipo de anotação: `typeId`, `specId/typeId` ou o nome do tipo. */
+  /** Annotation type: `typeId`, `specId/typeId` or the type's name. */
   readonly annotationType?: string;
-  /** Só marcações com anotação incompleta (com pendências). */
+  /** Only markings with an incomplete annotation (with pending items). */
   readonly incomplete?: boolean;
-  /** Texto livre: nome da marcação, nome, chaves e valores das anotações. */
+  /** Free text: marking name, and the names, keys and values of the annotations. */
   readonly text?: string;
   readonly limit?: number;
   readonly offset?: number;
@@ -38,7 +38,7 @@ export interface MarkingFilters {
 export const DEFAULT_LIMIT = 100;
 export const MAX_LIMIT = 500;
 
-/** Minúsculas e sem acentos: "titulo" acha "Título". */
+/** Lowercase and without accents: "titulo" finds "Título". */
 function fold(text: string): string {
   return text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 }
@@ -51,7 +51,7 @@ function collectText(value: JsonValue | undefined, out: string[]): void {
   else if (Array.isArray(value)) for (const item of value) collectText(item, out);
   else {
     for (const [key, item] of Object.entries(value)) {
-      // `_id` das linhas de tabela é interno; as chaves de referência não dizem nada ao leitor.
+      // `_id` of table rows is internal; reference keys tell the reader nothing.
       if (key !== '_id') collectText(item, out);
     }
   }
@@ -70,7 +70,7 @@ function annotationTexts(p: Project, a: Annotation): string[] {
   return out;
 }
 
-/** Containers cujo nome ou arquivo é `query` (sem acento nem caixa). */
+/** Containers whose name or file is `query` (ignoring accents and case). */
 export function containersNamed(p: Project, query: string): ProjectContainer[] {
   const folded = fold(query);
   return p.containers.filter(
@@ -81,7 +81,7 @@ export function containersNamed(p: Project, query: string): ProjectContainer[] {
   );
 }
 
-/** Código curto ou referência completa (`mapping://projeto/i/código`); a de outro projeto não casa. */
+/** Short code or full reference (`mapping://project/i/code`); one from another project does not match. */
 function matchContainerCode(refs: Refs, query: string) {
   const parsed = parseRef(query);
   if (parsed?.kind !== 'i')
@@ -102,7 +102,7 @@ function findContainer(refs: Refs, query: string): ProjectContainer {
   if (coded.length === 1) return index.containers.get(coded[0]!.id)!;
   throw new ToolError(
     byName.length > 1 || coded.length > 1 ? 'ambiguous-image' : 'not-found',
-    `container não encontrado ou ambíguo: ${query}`,
+    `container not found or ambiguous: ${query}`,
     { containers: p.containers.map((i) => i.name ?? i.file ?? CONTAINER_LABEL) },
   );
 }
@@ -118,7 +118,7 @@ function matchesType(p: Project, a: Annotation, query: string): boolean {
   );
 }
 
-/** Marcações em profundidade (o pai antes das filhas), container por container. */
+/** Markings depth-first (the parent before its children), container by container. */
 function inDisplayOrder(
   p: Project,
   only: ProjectContainer | null,
@@ -154,14 +154,14 @@ export function listMarkings(
   if (filters.container !== undefined && filters.image !== undefined) {
     throw new ToolError(
       'invalid-arguments',
-      'informe `container` (a antiga `image` também é aceita), não os dois',
+      'provide `container` (the old `image` is also accepted), not both',
     );
   }
   const containerQuery = filters.container ?? filters.image;
   if (filters.canvas === true && containerQuery !== undefined) {
     throw new ToolError(
       'invalid-arguments',
-      '`canvas` não combina com `container` (nem com a antiga `image`): escolha um dos dois',
+      '`canvas` does not combine with `container` (nor with the old `image`): choose one of the two',
     );
   }
   const container =
@@ -174,7 +174,7 @@ export function listMarkings(
         l.id === filters.layer || fold(l.name) === wanted || l.spec?.layerId === wanted,
     );
     if (!layer) {
-      throw new ToolError('not-found', `camada não encontrada: ${filters.layer}`, {
+      throw new ToolError('not-found', `layer not found: ${filters.layer}`, {
         layers: p.layers.map((l) => ({ id: l.id, name: l.name })),
       });
     }
@@ -186,7 +186,7 @@ export function listMarkings(
     filters.annotationType !== undefined ||
     filters.incomplete === true;
 
-  // As flutuantes vivem no canvas: pedir só flutuantes, sem container, olha o canvas.
+  // Floating ones live on the canvas: asking only for floating ones, with no container, looks at the canvas.
   const canvasSpace =
     filters.canvas === true || (filters.floating === true && container === null);
   const matching = inDisplayOrder(p, container, canvasSpace).filter((marking) => {
@@ -231,7 +231,7 @@ export function listMarkings(
           warnings: [
             {
               code: 'deprecated-argument',
-              message: 'o filtro `image` de list_markings é antigo: use `container`',
+              message: 'the `image` filter of list_markings is old: use `container`',
             },
           ],
         }

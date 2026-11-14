@@ -29,23 +29,23 @@ import { Roots, hasParentSegment, resolveProjectFile, writeFileAtomic } from './
 import type { ProjectLocation } from './projects';
 import { compareByCreated, failureReason, warnStderr } from './shared';
 
-// Propostas em disco (etapa 4.2): `proposals/<id>/proposal.json` e `proposals/<id>/images/…`.
-// O servidor só grava aqui; o `mapping.json` é da sessão da app. O arquivo da proposta tem
-// `revision` própria, com a mesma conferência do `mapping.json`: quem grava confere o que
-// está no disco imediatamente antes e grava `revision + 1`.
+// Proposals on disk (stage 4.2): `proposals/<id>/proposal.json` and `proposals/<id>/images/…`.
+// The server only writes here; the `mapping.json` belongs to the app's session. The proposal file has
+// its own `revision`, with the same check as the `mapping.json`: whoever writes checks what
+// is on disk immediately before and writes `revision + 1`.
 
-/** `proposal.json` maior que isto é recusado, para não esgotar a memória. */
+/** A `proposal.json` larger than this is refused, so memory is not exhausted. */
 const MAX_PROPOSAL_BYTES = 64 * 1024 * 1024;
-/** Tentativas de uma atualização quando o arquivo muda entre a leitura e a gravação. */
+/** Attempts of an update when the file changes between the read and the write. */
 const MAX_ATTEMPTS = 3;
 
 export interface StoredProposal {
-  /** Nome da pasta (igual ao `proposal.id`). */
+  /** Folder name (equal to `proposal.id`). */
   readonly id: string;
   readonly proposal: Proposal;
-  /** Texto do arquivo como estava no disco. */
+  /** Text of the file as it was on disk. */
   readonly text: string;
-  /** Avisos da leitura (ex.: `inherit` de uma proposta antiga, ignorado). */
+  /** Warnings from the read (e.g. `inherit` of an old proposal, ignored). */
   readonly warnings?: readonly string[];
 }
 
@@ -67,12 +67,12 @@ async function readProposalText(
   const real = await resolveProjectFile(roots, location.dir, proposalFilePath(id));
   if (real === null) return null;
   if ((await stat(real)).size > MAX_PROPOSAL_BYTES) {
-    throw new ToolError('file-too-large', `proposal.json grande demais: ${id}`);
+    throw new ToolError('file-too-large', `proposal.json too large: ${id}`);
   }
   return { real, text: await readFile(real, 'utf8') };
 }
 
-/** O erro de leitura de um item, com o código, para a lista `broken`. */
+/** The read error of an item, with the code, for the `broken` list. */
 function readFailure(error: unknown): string {
   if (error instanceof ToolError) return `${error.code}: ${error.message}`;
   const code = errnoCode(error);
@@ -84,12 +84,12 @@ function parseStored(id: string, text: string): StoredProposal | BrokenProposal 
   if (!parsed.ok) {
     const shown = parsed.errors.slice(0, 5).join('; ');
     const more = parsed.errors.length - 5;
-    return { id, error: more > 0 ? `${shown}; …(+${more} erro(s))` : shown };
+    return { id, error: more > 0 ? `${shown}; …(+${more} error(s))` : shown };
   }
   if (parsed.proposal.id !== id) {
     return {
       id,
-      error: `o id do arquivo ("${parsed.proposal.id}") não bate com o da pasta ("${id}")`,
+      error: `the file's id ("${parsed.proposal.id}") does not match the folder's ("${id}")`,
     };
   }
   return {
@@ -100,7 +100,7 @@ function parseStored(id: string, text: string): StoredProposal | BrokenProposal 
   };
 }
 
-/** Todas as propostas da pasta do projeto, na ordem de criação; as ilegíveis vêm em `broken`. */
+/** All proposals in the project folder, in creation order; the unreadable ones come in `broken`. */
 export async function listStored(
   roots: Roots,
   location: ProjectLocation,
@@ -110,7 +110,7 @@ export async function listStored(
     const entries = await readdir(join(location.dir, PROPOSALS_DIR), {
       withFileTypes: true,
     });
-    // `isDirectory()` é falso para links simbólicos: nunca são seguidos.
+    // `isDirectory()` is false for symbolic links: they are never followed.
     names = entries
       .filter((entry) => entry.isDirectory() && PROPOSAL_ID_RE.test(entry.name))
       .map((entry) => entry.name)
@@ -129,7 +129,7 @@ export async function listStored(
       continue;
     }
     if (read === null) {
-      broken.push({ id, error: `sem ${PROPOSAL_FILE}` });
+      broken.push({ id, error: `no ${PROPOSAL_FILE}` });
       continue;
     }
     const stored = parseStored(id, read.text);
@@ -146,12 +146,12 @@ export async function listStored(
 }
 
 /**
- * Arquivos de `images/` que a proposta ainda reserva: os das mudanças de imagem (criação ou
- * troca do arquivo, `changeImageFile`) que ainda podem ser aplicadas. Numa `open`, as não
- * aplicadas e não rejeitadas; numa `superseded`, só as aceitas e não aplicadas (as pendentes
- * não podem mais ser decididas nem aplicadas: PROPOSAL-FORMAT.md, "Estados"); nas demais,
- * nenhuma. `status` é o estado a considerar: o `propose` passa `superseded` para a anterior de
- * um `supersedes`, que ainda está aberta no disco mas deixa de estar nesta chamada.
+ * Files in `images/` that the proposal still reserves: those of the image changes (creating or
+ * replacing the file, `changeImageFile`) that can still be applied. On an `open` one, those not
+ * applied and not rejected; on a `superseded` one, only those accepted and not applied (the pending ones
+ * can no longer be decided or applied: PROPOSAL-FORMAT.md, "States"); on the others,
+ * none. `status` is the state to consider: `propose` passes `superseded` for the previous one of
+ * a `supersedes`, which is still open on disk but stops being so in this call.
  */
 export function reservedImages(p: Proposal, status: ProposalStatus = p.status): string[] {
   if (status !== 'open' && status !== 'superseded') return [];
@@ -167,8 +167,8 @@ export function reservedImages(p: Proposal, status: ProposalStatus = p.status): 
 }
 
 /**
- * Códigos com que `link` falha num sistema de arquivos sem hard link (exFAT de pendrive ou HD
- * externo, alguns compartilhamentos de rede e pastas sincronizadas).
+ * Codes with which `link` fails on a file system without hard links (exFAT on a USB stick or
+ * external drive, some network shares and synced folders).
  */
 const NO_HARD_LINK: ReadonlySet<string> = new Set([
   'EPERM',
@@ -182,27 +182,27 @@ export const errnoCode = (error: unknown): string | undefined =>
   (error as NodeJS.ErrnoException | null)?.code;
 
 /**
- * Apaga o temporário em melhor esforço: numa pasta montada ou com antivírus (Windows), o
- * sistema pode recusar (`EPERM`, `EBUSY`) depois de o arquivo estar gravado. A limpeza nunca
- * decide o resultado: o erro vira um aviso no stderr e o temporário fica (ninguém o lê; pode
- * ser apagado à mão). Sem isso, o agente recebia `internal-error` com a proposta já gravada e
- * a reenviava, duplicando-a (devolução do portão, 0.3.4).
+ * Deletes the temporary file on a best-effort basis: on a mounted folder or with antivirus (Windows), the
+ * system may refuse (`EPERM`, `EBUSY`) after the file has been written. The cleanup never
+ * decides the result: the error becomes a warning on stderr and the temporary file stays (nobody reads it; it can
+ * be deleted by hand). Without this, the agent received `internal-error` with the proposal already written and
+ * resent it, duplicating it (gate return, 0.3.4).
  */
 async function removeTemp(temp: string): Promise<void> {
   try {
     await rm(temp, { force: true });
   } catch (error) {
     warnStderr(
-      `não foi possível apagar o temporário ${temp} (${failureReason(error)}); ele pode ser apagado à mão`,
+      `could not delete the temporary file ${temp} (${failureReason(error)}); it can be deleted by hand`,
     );
   }
 }
 
 /**
- * Grava um arquivo novo sem nunca sobrescrever: temporário + `link` (falha com `EEXIST` se o
- * destino já existe). Sem hard link, grava direto com `wx`, que também falha se o destino
- * existe; perde só a atomicidade, e a pasta da proposta é removida inteira se algo falha. Nos
- * dois caminhos, o temporário é apagado no fim, em melhor esforço (`removeTemp`).
+ * Writes a new file without ever overwriting: temporary file + `link` (fails with `EEXIST` if the
+ * destination already exists). Without hard links, writes directly with `wx`, which also fails if the destination
+ * exists; it loses only atomicity, and the proposal folder is removed whole if anything fails. On both
+ * paths, the temporary file is deleted at the end, best effort (`removeTemp`).
  */
 export async function writeNewFile(
   path: string,
@@ -226,9 +226,9 @@ export async function writeNewFile(
 }
 
 /**
- * Caminho do arquivo de um pacote de biblioteca na pasta da proposta: o caminho definitivo
- * (`specs/<pasta>/<relativo>`) sob `proposals/<id>/`. Recusa o que não é de uma pasta de pacote
- * ou tenta sair dela.
+ * Path of a library package file in the proposal folder: the final path
+ * (`specs/<folder>/<relative>`) under `proposals/<id>/`. Refuses what is not from a package folder
+ * or tries to leave it.
  */
 function packageFilePath(proposalId: string, file: string): string {
   if (
@@ -237,17 +237,17 @@ function packageFilePath(proposalId: string, file: string): string {
     file.includes('\\') ||
     hasParentSegment(file)
   ) {
-    throw new Error(`arquivo de pacote com caminho inválido: ${file}`);
+    throw new Error(`package file with an invalid path: ${file}`);
   }
   return `${proposalDir(proposalId)}/${file}`;
 }
 
 /**
- * Grava uma proposta nova: a pasta `proposals/<id>/`, as imagens novas ou trocadas em
- * `proposals/<id>/images/`, os arquivos dos pacotes de biblioteca em
- * `proposals/<id>/specs/<pasta>/…` (a mesma regra das imagens: o caminho definitivo sob a
- * pasta da proposta) e, por último, o `proposal.json` (uma pasta sem ele nunca parece uma
- * proposta pronta). Nenhum arquivo é sobrescrito. Se algo falha, a pasta criada é removida.
+ * Writes a new proposal: the `proposals/<id>/` folder, the new or replaced images in
+ * `proposals/<id>/images/`, the library package files in
+ * `proposals/<id>/specs/<folder>/…` (the same rule as images: the final path under the
+ * proposal folder) and, last, the `proposal.json` (a folder without it never looks like a
+ * ready proposal). No file is overwritten. If something fails, the created folder is removed.
  */
 export async function writeNewProposal(
   roots: Roots,
@@ -260,7 +260,7 @@ export async function writeNewProposal(
   await mkdir(parent, { recursive: true });
   await roots.assertInside(await realpath(parent), PROPOSALS_DIR);
   const dir = join(location.dir, proposalDir(proposal.id));
-  // Sem `recursive`: falha se a pasta já existe (o id é novo).
+  // Without `recursive`: fails if the folder already exists (the id is new).
   await mkdir(dir);
   const written: string[] = [];
   const writtenPackage: string[] = [];
@@ -270,7 +270,7 @@ export async function writeNewProposal(
       await writeNewFile(join(location.dir, relative), data);
     } catch (error) {
       if (errnoCode(error) !== 'EEXIST') throw error;
-      throw new ToolError('image-exists', `já existe um arquivo em ${relative}`, {
+      throw new ToolError('image-exists', `a file already exists at ${relative}`, {
         file: relative,
       });
     }
@@ -293,11 +293,11 @@ export async function writeNewProposal(
 }
 
 /**
- * Atualiza uma proposta existente (estado, decisões…): lê o arquivo, aplica `transform` e
- * grava com `revision + 1`, depois de conferir que o arquivo continua como foi lido (a app
- * ou outra pessoa pode estar decidindo ao mesmo tempo). Se mudou, relê e tenta de novo; sem
- * sucesso em `MAX_ATTEMPTS`, recusa com `revision-conflict`. `transform` que devolve a mesma
- * proposta não grava nada.
+ * Updates an existing proposal (state, decisions…): reads the file, applies `transform` and
+ * writes with `revision + 1`, after checking that the file is still as it was read (the app
+ * or another person may be deciding at the same time). If it changed, rereads and tries again; with no
+ * success in `MAX_ATTEMPTS`, refuses with `revision-conflict`. A `transform` that returns the same
+ * proposal writes nothing.
  */
 export async function updateStored(
   roots: Roots,
@@ -308,18 +308,18 @@ export async function updateStored(
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const read = await readProposalText(roots, location, id);
     if (read === null) {
-      throw new ToolError('proposal-not-found', `proposta não encontrada: ${id}`);
+      throw new ToolError('proposal-not-found', `proposal not found: ${id}`);
     }
     const stored = parseStored(id, read.text);
     if (!('proposal' in stored)) {
-      throw new ToolError('invalid-proposal', `proposta ilegível: ${stored.error}`, {
+      throw new ToolError('invalid-proposal', `unreadable proposal: ${stored.error}`, {
         proposal: id,
       });
     }
     const next = transform(stored.proposal);
     if (next === stored.proposal) return next;
     const updated: Proposal = { ...next, revision: stored.proposal.revision + 1 };
-    // Confere de novo imediatamente antes de gravar.
+    // Checks again immediately before writing.
     const again = await readProposalText(roots, location, id);
     if (again === null || again.text !== read.text) continue;
     await writeFileAtomic(read.real, serializeProposal(updated));
@@ -327,32 +327,32 @@ export async function updateStored(
   }
   throw new ToolError(
     'revision-conflict',
-    'a proposta foi alterada por outro processo enquanto era atualizada; releia e tente de novo',
+    'the proposal was changed by another process while it was being updated; reread and try again',
     { proposal: id },
   );
 }
 
 // ---------------------------------------------------------------------------
-// Revisão do agente (etapa #644): troca, retira e acrescenta na proposta aberta
+// Agent revision (stage #644): replace, withdraw and add in the open proposal
 
-/** O que `compute` devolve para gravar: a proposta revisada e as imagens que o lote criou. */
+/** What `compute` returns to be written: the revised proposal and the images the batch created. */
 export interface RevisionPlan<R> {
   readonly proposal: Proposal;
-  /** Conteúdo das imagens novas do lote, por arquivo (`images/…`); só as citadas são gravadas. */
+  /** Content of the batch's new images, by file (`images/…`); only the cited ones are written. */
   readonly images: ReadonlyMap<string, Uint8Array>;
-  /** Confere, imediatamente antes de gravar, que o cálculo ainda vale (ex.: `mapping.json`). */
+  /** Checks, immediately before writing, that the calculation still holds (e.g. `mapping.json`). */
   readonly check: () => Promise<void>;
   readonly result: R;
 }
 
-/** Fim sem gravar (ex.: lote com erro): o resultado volta como está. */
+/** End without writing (e.g. batch with an error): the result is returned as is. */
 export interface RevisionStop<R> {
   readonly stop: R;
 }
 
 /**
- * Confere que a subpasta da proposta (`images`, `specs`), se existe, resolve para dentro de uma
- * raiz: um link simbólico para fora é recusado (`outside-roots`) antes de listar, apagar ou gravar.
+ * Checks that the proposal's subfolder (`images`, `specs`), if it exists, resolves inside a
+ * root: a symbolic link to outside is refused (`outside-roots`) before listing, deleting or writing.
  */
 async function assertSubfolderInside(
   roots: Roots,
@@ -385,7 +385,7 @@ async function listFilesUnder(root: string, relative: string): Promise<string[]>
   return files;
 }
 
-/** Arquivos de `images/` e das pastas de pacote que a proposta guarda, relativos ao projeto. */
+/** Files in `images/` and in the package folders that the proposal keeps, relative to the project. */
 export async function proposalFiles(
   roots: Roots,
   location: ProjectLocation,
@@ -402,7 +402,7 @@ export async function proposalFiles(
   return lists.flat();
 }
 
-/** Os arquivos que as mudanças da proposta ainda citam: imagens e pastas de pacote. */
+/** The files the proposal's changes still cite: images and package folders. */
 function citedFiles(p: Proposal): { files: Set<string>; packageDirs: string[] } {
   const files = new Set<string>();
   const packageDirs: string[] = [];
@@ -418,7 +418,7 @@ function citedFiles(p: Proposal): { files: Set<string>; packageDirs: string[] } 
   return { files, packageDirs };
 }
 
-/** Apaga, em melhor esforço, o que nenhuma mudança cita mais; a falha vira aviso no stderr. */
+/** Deletes, best effort, what no change cites any more; a failure becomes a warning on stderr. */
 async function removeUncited(
   roots: Roots,
   location: ProjectLocation,
@@ -431,7 +431,7 @@ async function removeUncited(
       await rm(join(location.dir, file), { force: true });
     } catch (error) {
       warnStderr(
-        `não foi possível apagar ${file} (${failureReason(error)}); ele pode ser apagado à mão`,
+        `could not delete ${file} (${failureReason(error)}); it can be deleted by hand`,
       );
     }
   }
@@ -457,7 +457,7 @@ async function writeRevisionImages(
         await writeNewFile(join(location.dir, relative), data);
       } catch (error) {
         if (errnoCode(error) !== 'EEXIST') throw error;
-        throw new ToolError('image-exists', `já existe um arquivo em ${relative}`, {
+        throw new ToolError('image-exists', `a file already exists at ${relative}`, {
           file: relative,
         });
       }
@@ -472,14 +472,14 @@ async function writeRevisionImages(
 }
 
 /**
- * Revisão de uma proposta existente: relê o arquivo, deixa `compute` calcular a proposta
- * revisada sobre ele e, imediatamente antes de gravar, confere `plan.check()` e que o arquivo
- * continua como foi lido. Se a app (ou outro processo) mudou o arquivo no meio, **recalcula
- * tudo** sobre a versão nova (uma decisão nunca vale para um conteúdo que a pessoa não viu); sem
- * sucesso em `MAX_ATTEMPTS`, `revision-conflict`. Grava as imagens novas antes do
- * `proposal.json` (sem sobrescrever), com `revision + 1`, e depois apaga o que nenhuma mudança
- * cita mais. Sem `write`, só calcula (`dryRun`): a proposta devolvida já vem com a `revision`
- * que seria gravada.
+ * Revision of an existing proposal: rereads the file, lets `compute` calculate the revised
+ * proposal on it and, immediately before writing, checks `plan.check()` and that the file
+ * is still as it was read. If the app (or another process) changed the file in the meantime, it **recalculates
+ * everything** on the new version (a decision never holds for content the person did not see); with no
+ * success in `MAX_ATTEMPTS`, `revision-conflict`. Writes the new images before the
+ * `proposal.json` (without overwriting), with `revision + 1`, and then deletes what no change
+ * cites any more. Without `write`, it only calculates (`dryRun`): the returned proposal already carries the `revision`
+ * that would be written.
  */
 export async function reviseStored<R>(
   roots: Roots,
@@ -491,11 +491,11 @@ export async function reviseStored<R>(
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const read = await readProposalText(roots, location, id);
     if (read === null) {
-      throw new ToolError('proposal-not-found', `proposta não encontrada: ${id}`);
+      throw new ToolError('proposal-not-found', `proposal not found: ${id}`);
     }
     const stored = parseStored(id, read.text);
     if (!('proposal' in stored)) {
-      throw new ToolError('invalid-proposal', `proposta ilegível: ${stored.error}`, {
+      throw new ToolError('invalid-proposal', `unreadable proposal: ${stored.error}`, {
         proposal: id,
       });
     }
@@ -519,7 +519,7 @@ export async function reviseStored<R>(
   }
   throw new ToolError(
     'revision-conflict',
-    'a proposta foi alterada por outro processo enquanto era revisada; releia e tente de novo',
+    'the proposal was changed by another process while it was being revised; reread and try again',
     { proposal: id },
   );
 }

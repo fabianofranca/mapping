@@ -3,15 +3,15 @@ import type { Refs } from './items';
 import { packageOfProject, type PackageSource } from './library';
 import type { Roots } from './paths';
 
-// A ficha `mapping-signature` que o pacote de uma especialização aplicada traz (`signatures/…`): o
-// servidor lê só esse JSON, nunca o código. Serve ao `unmapped` do `code` (`get_code_hints`,
-// `get_marking`, `get_annotation`, `get_component`, `find_by_code`). Ficha ausente ou inválida vale
-// como sem ficha (quem a valida é o `validate_library`).
+// The `mapping-signature` sheet that the package of an applied specialization carries (`signatures/…`):
+// the server reads only that JSON, never the code. It serves the `unmapped` of `code` (`get_code_hints`,
+// `get_marking`, `get_annotation`, `get_component`, `find_by_code`). A missing or invalid sheet counts
+// as no sheet (`validate_library` is what validates it).
 
-/** A ficha citada (`code.<plataforma>.signature`) da especialização `specId`; `null` se não dá para ler. */
+/** The cited sheet (`code.<platform>.signature`) of the specialization `specId`; `null` if it cannot be read. */
 export type SignatureReader = (specId: string, ref: string) => Promise<Signature | null>;
 
-/** Lê as fichas do pacote aplicado ao projeto (`specs/<pasta>/…`), cada uma uma vez por chamada. */
+/** Reads the sheets of the package applied to the project (`specs/<folder>/…`), each one once per call. */
 export function projectSignatureReader(roots: Roots, refs: Refs): SignatureReader {
   const cache = new Map<string, Promise<Signature | null>>();
   return (specId, ref) => {
@@ -42,7 +42,7 @@ async function readOne(
   return parse(await source.read(source.resolve(ref)));
 }
 
-/** Lê as fichas de um pacote (`get_component`, aplicado ou por `path`). */
+/** Reads the sheets of a package (`get_component`, applied or by `path`). */
 export function packageSignatureReader(
   source: Pick<PackageSource, 'read' | 'resolve'>,
 ): (ref: string) => Promise<Signature | null> {

@@ -50,8 +50,8 @@ interface ToolResult {
 }
 
 /**
- * Resposta em JSON compacto, só no texto: o MCP recomenda repetir o conteúdo estruturado no
- * texto, e clientes que mostram os dois gastariam o dobro do contexto do agente.
+ * Response as compact JSON, in the text only: MCP recommends repeating the structured content in
+ * the text, and clients that show both would spend twice the agent's context.
  */
 async function respondTo(produce: () => Promise<Json>): Promise<ToolResult> {
   try {
@@ -61,7 +61,7 @@ async function respondTo(produce: () => Promise<Json>): Promise<ToolResult> {
   }
 }
 
-/** Como `respondTo`, mas a tool devolve também uma imagem (o texto vem antes: descreve a imagem). */
+/** Like `respondTo`, but the tool also returns an image (the text comes first: it describes the image). */
 async function respondImageTo(produce: () => Promise<ImageResult>): Promise<ToolResult> {
   try {
     const { json, image } = await produce();
@@ -80,27 +80,27 @@ async function respondImageTo(produce: () => Promise<ImageResult>): Promise<Tool
   }
 }
 
-/** Aviso de uma tool antiga (aceita por uma versão): vai em `warnings`, como o `deprecated-op` do lote. */
+/** Warning for an old tool (accepted for one version): goes in `warnings`, like the batch's `deprecated-op`. */
 function deprecatedTool(tool: string, use: string): Json {
   return {
     code: 'deprecated-tool',
     tool,
-    message: `${tool} é antiga: use ${use} (mesmos argumentos)`,
+    message: `${tool} is deprecated: use ${use} (same arguments)`,
   };
 }
 
-/** Acrescenta `warnings` ao JSON de uma resposta. */
+/** Adds `warnings` to a response's JSON. */
 function withWarnings<T extends { json: Json }>(result: T, warnings: Json[]): T {
   return { ...result, json: { ...result.json, warnings } };
 }
 
-/** Erro de uma tool → resposta `isError`; só o inesperado vira `internal-error` (com stack no stderr). */
+/** A tool's error → `isError` response; only the unexpected becomes `internal-error` (with the stack on stderr). */
 export function failure(error: unknown): ToolResult {
   if (error instanceof ModelError) return failure(modelToolError(error));
   if (error instanceof ToolError) {
     return { isError: true, content: [{ type: 'text', text: JSON.stringify(error) }] };
   }
-  // O stdout é do protocolo: o diagnóstico vai para o stderr.
+  // stdout belongs to the protocol: diagnostics go to stderr.
   process.stderr.write(
     `mapping-mcp: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}\n`,
   );
@@ -123,46 +123,46 @@ export function failure(error: unknown): ToolResult {
 const projectArg = z
   .string()
   .describe(
-    'Projeto: nome da pasta (ex: "cadastro"), caminho relativo a uma raiz ou caminho absoluto dentro das raízes. Veja list_projects.',
+    'Project: folder name (e.g. "cadastro"), path relative to a root, or absolute path inside the roots. See list_projects.',
   );
 const optionalProjectArg = projectArg
   .optional()
   .describe(
-    'Projeto, quando a referência não o traz (`m/3f2a9c1e` ou id). Sem ele, procura em todos os projetos das raízes.',
+    'Project, when the reference does not carry it (`m/3f2a9c1e` or id). Without it, searches all projects in the roots.',
   );
 const refArg = z
   .string()
   .describe(
-    'Referência copiada da app (`mapping://projeto/m/3f2a9c1e`, só a URL, com o projeto codificado), `m/3f2a9c1e` (com `project`) ou o id completo.',
+    'Reference copied from the app (`mapping://project/m/3f2a9c1e`, the URL only, with the project encoded), `m/3f2a9c1e` (with `project`) or the full id.',
   );
 
 const proposalRefArg = z
   .string()
   .describe(
-    'Referência da proposta (`mapping://projeto/p/3f2a9c1e`, a que propose_changes e list_proposals devolvem), `p/3f2a9c1e` (com `project`) ou o id completo.',
+    'Proposal reference (`mapping://project/p/3f2a9c1e`, the one propose_changes and list_proposals return), `p/3f2a9c1e` (with `project`) or the full id.',
   );
 
 const operationsArg = z
   .array(operationSchema)
   .min(1)
   .max(1000)
-  .describe('Operações, aplicadas em ordem. Veja o recurso AGENT-GUIDE.md.');
+  .describe('Operations, applied in order. See the AGENT-GUIDE.md resource.');
 
 /**
- * `operations` inline ou `operationsFile` (decisão 28): `plan_changes` e `propose_changes` aceitam
- * um dos dois. Cada um é opcional no schema; `resolveOperations` recusa os dois juntos e nenhum.
+ * Inline `operations` or `operationsFile` (decision 28): `plan_changes` and `propose_changes` accept
+ * one of the two. Each is optional in the schema; `resolveOperations` refuses both together and neither.
  */
 const batchOperationsArgs = {
   operations: operationsArg
     .optional()
     .describe(
-      'Operações, aplicadas em ordem (inline). Veja o recurso AGENT-GUIDE.md. Use `operations` OU `operationsFile`, nunca os dois.',
+      'Operations, applied in order (inline). See the AGENT-GUIDE.md resource. Use `operations` OR `operationsFile`, never both.',
     ),
   operationsFile: z
     .string()
     .optional()
     .describe(
-      'Caminho de um `.json` dentro das raízes com a lista de operações (a mesma de `operations`), para lotes grandes demais para a chamada (uma tela medida tem centenas). Relativo a uma raiz ou absoluto dentro de uma; fora das raízes é `outside-roots`, JSON inválido é `invalid-arguments` com a posição. Os dois juntos, ou nenhum, é `invalid-arguments`.',
+      'Path of a `.json` inside the roots with the list of operations (the same as `operations`), for batches too large for the call (a measured screen has hundreds). Relative to a root or absolute inside one; outside the roots it is `outside-roots`, invalid JSON is `invalid-arguments` with the position. Both together, or neither, is `invalid-arguments`.',
     ),
 };
 
@@ -173,24 +173,24 @@ const maxSizeArg = z
   .max(MAX_MAX_SIZE)
   .optional()
   .describe(
-    `Lado maior máximo da imagem devolvida, em pixels (padrão ${DEFAULT_MAX_SIZE}; nunca amplia). Quanto maior, mais contexto o agente gasta.`,
+    `Longest side of the returned image, in pixels (default ${DEFAULT_MAX_SIZE}; never enlarges). The larger it is, the more context the agent spends.`,
   );
 const formatArg = z
   .enum(['png', 'jpeg', 'webp'])
   .optional()
   .describe(
-    'Formato da imagem devolvida. Padrão: jpeg se o arquivo original é JPEG, senão png (sem perdas, bom para telas e texto).',
+    'Format of the returned image. Default: jpeg if the original file is JPEG, otherwise png (lossless, good for screens and text).',
   );
 
 const platformArg = z
   .string()
   .describe(
-    'Id da plataforma de código (alvo em que você escreve a solução) declarada pelas especializações aplicadas (veja `platforms` em get_project).',
+    'Id of the code platform (the target you write the solution in) declared by the applied specializations (see `platforms` in get_project).',
   );
 
 const READ_ONLY = { readOnlyHint: true, openWorldHint: false } as const;
 
-/** Visões que resolvem o `path` do `code`: o `workDir` do cliente limita a conferência de arquivos locais. */
+/** Views that resolve the `path` of `code`: the client's `workDir` limits the check of local files. */
 function codeContext(roots: Roots, refs: Refs): CodeContext {
   return {
     refs,
@@ -204,8 +204,8 @@ export function registerTools(
   roots: Roots,
   images: ImageServer | null = null,
 ): void {
-  // Cada chamada de tool começa com as raízes zeradas: o `realpath` delas e a descoberta de
-  // projetos são feitos uma vez por chamada (`Roots.beginCall`).
+  // Each tool call starts with the roots reset: their `realpath` and the discovery of projects
+  // are done once per call (`Roots.beginCall`).
   const respond = (produce: () => Promise<Json>) =>
     respondTo(() => {
       roots.beginCall();
@@ -221,7 +221,7 @@ export function registerTools(
     'list_projects',
     {
       description:
-        'Lista os projetos Mapping (pastas com mapping.json) encontrados nas raízes configuradas: nome, caminho, contagens e especializações aplicadas.',
+        'Lists the Mapping projects (folders with mapping.json) found in the configured roots: name, path, counts and applied specializations.',
       annotations: READ_ONLY,
     },
     () =>
@@ -236,7 +236,7 @@ export function registerTools(
               );
             } catch (error) {
               if (!(error instanceof ToolError)) throw error;
-              // Um projeto ilegível não esconde os outros: aparece com o motivo.
+              // An unreadable project does not hide the others: it shows up with the reason.
               return {
                 name: location.name,
                 path: location.path,
@@ -259,29 +259,29 @@ export function registerTools(
     'create_project',
     {
       description:
-        'Cria um projeto Mapping vazio (mapping.json e .gitignore; images/ nasce com a primeira imagem aplicada) numa pasta dentro de uma raiz, já com a biblioteca de notas aplicada (camada Notas e specs/notas/; `notes: false` dispensa). O nome da pasta vira o <projeto> das referências.',
+        'Creates an empty Mapping project (mapping.json and .gitignore; images/ is created with the first image applied) in a folder inside a root, already with the notes library applied (the `Notas` layer and specs/notas/; `notes: false` skips it). The folder name becomes the <project> of the references.',
       inputSchema: {
         path: z
           .string()
           .describe(
-            'Pasta a criar: relativa a uma raiz (ex: "cadastro") ou absoluta dentro dela.',
+            'Folder to create: relative to a root (e.g. "cadastro") or absolute inside one.',
           ),
-        name: z.string().describe('Nome do projeto (aparece na app).'),
+        name: z.string().describe('Name of the project (shown in the app).'),
         root: z
           .string()
           .optional()
           .describe(
-            'Raiz em que criar, quando há mais de uma e `path` é relativo: um dos `roots` de list_projects, o caminho como está no `--root` (relativo ao diretório de trabalho do cliente, ex: "design/mapeamentos") ou o nome da pasta da raiz, se só uma raiz o tiver. Com `path` absoluto, ele precisa ficar dentro desta raiz.',
+            'Root to create in, when there is more than one and `path` is relative: one of the `roots` of list_projects, the path as it is in `--root` (relative to the client\'s working directory, e.g. "design/mapeamentos") or the name of the root folder, if only one root has it. With an absolute `path`, it must be inside this root.',
           ),
         firstLayerName: z
           .string()
           .optional()
-          .describe('Nome da primeira camada (padrão: "Camada 1").'),
+          .describe('Name of the first layer (default: "Camada 1").'),
         notes: z
           .boolean()
           .optional()
           .describe(
-            'Aplica a biblioteca de notas embutida (post-its flutuantes: camada Notas e a pasta specs/notas/). Padrão: true; false cria o projeto sem ela.',
+            'Applies the bundled notes library (floating post-its: the `Notas` layer and the specs/notas/ folder). Default: true; false creates the project without it.',
           ),
       },
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
@@ -298,7 +298,7 @@ export function registerTools(
     'get_project',
     {
       description:
-        'Resumo do projeto: containers (com `file`, `background` e `parent`), camadas, especializações (com a situação da cópia), plataformas de código (`platforms`, cada uma com os `repos` que as especializações declaram e o `localPath` do clone local; com `codeHint`: o `code` dos tipos é o código de instanciação, não o código gerado) o clone local por plataforma (`platformRepos`), os repositórios de documentos das especializações (`docRepos`: `id`, o `repos` que cada especialização declara e o `localPath` do clone do projeto, `null` sem clone), o modo do desenho do projeto (`drawingMode`, `null` sem modo; cada container traz o seu `drawingMode` fixado e o `effectiveDrawingMode`), a direção de leitura do projeto (`direction`: `ltr` ou `rtl`, `ltr` quando nenhuma está gravada; cada container traz a sua `direction` fixada, `null` = segue o projeto, e a `effectiveDirection`), contagens (`counts`: containers, marcações, `canvasMarkings`, `floatingMarkings`, `arrows`, anotações, camadas) e pendências (anotações incompletas).',
+        "Project summary: containers (with `file`, `background` and `parent`), layers, specializations (with the state of the copy), code platforms (`platforms`, each with the `repos` the specializations declare and the `localPath` of the local clone; with `codeHint`: the `code` of the types is the instantiation code, not the generated code), the local clone per platform (`platformRepos`), the specializations' document repositories (`docRepos`: `id`, the `repos` each specialization declares and the `localPath` of the project's clone, `null` without a clone), the project's drawing mode (`drawingMode`, `null` without a mode; each container carries its own pinned `drawingMode` and the `effectiveDrawingMode`), the project's reading direction (`direction`: `ltr` or `rtl`, `ltr` when none is saved; each container carries its own pinned `direction`, `null` = follows the project, and the `effectiveDirection`), counts (`counts`: containers, markings, `canvasMarkings`, `floatingMarkings`, `arrows`, annotations, layers) and pending items (incomplete annotations).",
       inputSchema: { project: projectArg },
       annotations: READ_ONLY,
     },
@@ -313,10 +313,10 @@ export function registerTools(
     'get_perspective',
     {
       description:
-        'Uma perspectiva do projeto (um recorte por público: quais raízes aparecem, onde ficam no canvas e quais camadas ficam escondidas): `roots` (raiz do canvas = container sem pai, marcação do canvas ou flutuante, com `ref`, `kind`, `name` e a posição `x`/`y` do canto de cima à esquerda, em unidades do canvas) e `hiddenLayers`. `id` aceita o id (veja `perspectives` em get_project) ou o nome. Só leitura: o servidor não cria nem altera perspectivas (propor sempre na Principal). A Principal (o projeto inteiro) não é uma perspectiva gravada, e as "Só eu" ficam no navegador.',
+        'A perspective of the project (a crop per audience: which roots appear, where they sit on the canvas and which layers are hidden): `roots` (canvas root = container without a parent, canvas marking or floating one, with `ref`, `kind`, `name` and the top-left `x`/`y` position, in canvas units) and `hiddenLayers`. `id` accepts the id (see `perspectives` in get_project) or the name. Read-only: the server does not create or change perspectives (always propose in the Main one). The Main perspective (the whole project) is not a saved perspective, and the "Only me" ones stay in the browser.',
       inputSchema: {
         project: projectArg,
-        id: z.string().min(1).describe('Id ou nome da perspectiva; veja get_project.'),
+        id: z.string().min(1).describe('Id or name of the perspective; see get_project.'),
       },
       annotations: READ_ONLY,
     },
@@ -332,50 +332,50 @@ export function registerTools(
     'list_markings',
     {
       description:
-        'Lista marcações em linhas compactas (referência, caminho, `space` (`container` ou `canvas`), `floating`, retângulo em pixels do container (no canvas, em unidades do canvas), trava, anotações, `effectiveDrawingMode`: o modo do desenho que vale no espaço da marcação). Sem `container` nem `canvas`, lista as marcações dos containers. Os filtros se combinam; os de camada, tipo e incompletas valem para a mesma anotação própria da marcação (herdadas não contam).',
+        "Lists markings in compact rows (reference, path, `space` (`container` or `canvas`), `floating`, rectangle in container pixels (on the canvas, in canvas units), lock, annotations, `effectiveDrawingMode`: the drawing mode that applies in the marking's space). Without `container` or `canvas`, lists the markings of the containers. The filters combine; those for layer, type and incomplete apply to the same own annotation of the marking (inherited ones do not count).",
       inputSchema: {
         project: projectArg,
         container: z
           .string()
           .optional()
-          .describe('Só deste container: referência, id, nome ou nome do arquivo.'),
+          .describe('Only this container: reference, id, name or file name.'),
         image: z
           .string()
           .optional()
-          .describe('Antigo: use `container`. Aceito com aviso.'),
+          .describe('Old: use `container`. Accepted with a warning.'),
         canvas: z
           .boolean()
           .optional()
           .describe(
-            '`true`: só as marcações do canvas (sem container; `space: "canvas"`), em profundidade. Não combina com `container`.',
+            '`true`: only the canvas markings (no container; `space: "canvas"`), in depth. Does not combine with `container`.',
           ),
         floating: z
           .boolean()
           .optional()
           .describe(
-            'Só as flutuantes (`true`, que vivem no canvas) ou só as não flutuantes (`false`).',
+            'Only the floating ones (`true`, which live on the canvas) or only the non-floating ones (`false`).',
           ),
         layer: z
           .string()
           .optional()
-          .describe('Só marcações com anotação nesta camada (id ou nome).'),
+          .describe('Only markings with an annotation in this layer (id or name).'),
         annotationType: z
           .string()
           .optional()
           .describe(
-            'Só marcações com anotação deste tipo: typeId, specId/typeId ou nome do tipo.',
+            'Only markings with an annotation of this type: typeId, specId/typeId or type name.',
           ),
         incomplete: z
           .boolean()
           .optional()
           .describe(
-            'Só marcações com anotação incompleta (campo obrigatório vazio, referência quebrada…).',
+            'Only markings with an incomplete annotation (empty required field, broken reference…).',
           ),
         text: z
           .string()
           .optional()
           .describe(
-            'Texto no nome da marcação ou no nome, chaves e valores das anotações (sem acento e sem diferenciar maiúsculas).',
+            'Text in the marking name or in the name, keys and values of the annotations (accent- and case-insensitive).',
           ),
         limit: z
           .number()
@@ -383,13 +383,13 @@ export function registerTools(
           .min(1)
           .max(500)
           .optional()
-          .describe('Linhas por página (padrão 100).'),
+          .describe('Rows per page (default 100).'),
         offset: z
           .number()
           .int()
           .min(0)
           .optional()
-          .describe('Quantas linhas pular (paginação).'),
+          .describe('How many rows to skip (pagination).'),
       },
       annotations: READ_ONLY,
     },
@@ -404,15 +404,15 @@ export function registerTools(
     'get_marking',
     {
       description:
-        'Tudo sobre uma marcação (ou uma seta): caminho (numa marcação do canvas começa em "Canvas"), container (`null` no canvas), `space` (`container` ou `canvas`), `floating`, retângulo (pixels do container; no canvas, unidades do canvas), trava, filhas, `members` (as marcações e os containers que têm esta marcação como pai, pela geometria), `arrows` (as setas presas a ela), `anchor` (a marcação a que esta está ancorada, com `to` como referência, `side`, `align` e `offset` quando declarados; `null` sem âncora) e `anchoredBy` (as referências das marcações ancoradas nesta), anotações por camada (próprias e herdadas, com a origem), árvore de vínculos, referências de saída resolvidas (`refs`, cada uma com `row` 0-based e `column` de uma célula, ou `null` de um campo; `field` é o texto 1-based para ler), backlinks (`backlinks`: uma entrada por anotação de origem, com `fields`) e pendências. ' +
-        'Nas anotações tipadas, `code` traz o código de instanciação do tipo por plataforma: `symbol` (o que se chama para criar uma instância), `definition` (o arquivo que define o `symbol`, para ler a assinatura: `path`, `url` e `ref` do `repo` da especialização, `localFile` relativo ao diretório de trabalho do cliente e `exists` pelo clone local do projeto; `null` sem `path`), `params`, `values` e `notes`. O servidor só confere se o arquivo existe: nunca lê código.',
+        'Everything about a marking (or an arrow): path (for a canvas marking it starts with "Canvas"), container (`null` on the canvas), `space` (`container` or `canvas`), `floating`, rectangle (container pixels; on the canvas, canvas units), lock, children, `members` (the markings and containers that have this marking as their parent, by geometry), `arrows` (the arrows attached to it), `anchor` (the marking this one is anchored to, with `to` as a reference, `side`, `align` and `offset` when declared; `null` without an anchor) and `anchoredBy` (the references of the markings anchored to this one), annotations per layer (own and inherited, with the origin), link tree, resolved outgoing references (`refs`, each with a 0-based `row` and the `column` of a cell, or `null` for a field; `field` is the 1-based text to read), backlinks (`backlinks`: one entry per source annotation, with `fields`) and pending items. ' +
+        "On typed annotations, `code` carries the type's instantiation code per platform: `symbol` (what you call to create an instance), `definition` (the file that defines the `symbol`, to read the signature: `path`, `url` and `ref` of the specialization's `repo`, `localFile` relative to the client's working directory and `exists` per the project's local clone; `null` without `path`), `params`, `values` and `notes`. The server only checks whether the file exists: it never reads code.",
       inputSchema: {
         ref: refArg,
         project: optionalProjectArg,
         platform: platformArg
           .optional()
           .describe(
-            'Só o `code` desta plataforma (ex: a em que você vai escrever a solução).',
+            'Only the `code` of this platform (e.g. the one you will write the solution in).',
           ),
       },
       annotations: READ_ONLY,
@@ -423,7 +423,7 @@ export function registerTools(
         const arrow = projectIndex(item.refs.project).arrows.get(item.id);
         if (arrow) return arrowView(codeContext(roots, item.refs), arrow, platform);
         const marking = projectIndex(item.refs.project).markings.get(item.id);
-        if (!marking) throw new ToolError('not-found', `marcação não encontrada: ${ref}`);
+        if (!marking) throw new ToolError('not-found', `marking not found: ${ref}`);
         return markingView(codeContext(roots, item.refs), marking, platform);
       }),
   );
@@ -432,10 +432,10 @@ export function registerTools(
     'get_code_hints',
     {
       description:
-        'As chamadas a escrever numa plataforma a partir de uma marcação, com o código de instanciação de cada tipo. `types` traz, por `specId/typeId`, o `symbol` (o que se chama para criar uma instância), a `definition` (o arquivo que o define, para ler a assinatura: `path`, `url` e `ref` do `repo` da especialização, `localFile` e `exists` pelo clone local), `params`, `values` e `notes`. `repos` traz o repositório da plataforma (`url`, `ref`, `localPath`). `anchor` (`marking`, `side`, `align`: só quando a marcação está ancorada, também no nó da `tree`) diz a marcação-alvo e o lado e o alinhamento efetivos (os declarados ou os do componente), para posicionar o elemento ancorado (tooltip, badge, menu) em relação ao alvo na plataforma. `direction` (`ltr` ou `rtl`) é a direção de leitura efetiva do container da marcação (também em cada nó da `tree`): não há parâmetro no `code`; escreva o envoltório da plataforma (Compose: `CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl)`; web: `dir="rtl"`). A `tree` espelha a marcação e as descendentes e, em cada anotação tipada, traz `type` (a chave de `types`), `label`, `layer`, `args` (os argumentos da chamada, com os valores da instância já traduzidos), `values` (valores de referência resolvidos, ex: `User.name`) e os eventos vinculados sob a dona (`linked`), sem arquivo por anotação. ' +
-        'Especialização 9: `types` traz o `code` cru da base (pode ter `variants`) e, nas anotações de tipo com `variants`, a `tree` traz `code` com o código resolvido da variante (`symbol`, `definition`, `params`, `values`, `notes`, sem `variants`; o `symbol` de um Button `outlined` é o do caso `outlined`): quando a anotação tem `code`, use-o no lugar do de `types`. ' +
-        'Em cada tipo de `types`, `notices` (só quando há) traz os avisos de fidelidade da especialização, do tipo, dos campos e das colunas, por gravidade: `kind`, `message`, `since?`, `ref?` (a origem) e o lugar (`key?`, `column?`). Leia-os antes de escrever e conte ao usuário os `diverges`; ignore os cuja `message` começa com o id de outra plataforma (não há filtro por plataforma). ' +
-        'Tipos em `unmappedTypes` não têm código de instanciação nesta plataforma e não trazem avisos (veja `get_specialization`).',
+        "The calls to write on a platform from a marking, with the instantiation code of each type. `types` carries, per `specId/typeId`, the `symbol` (what you call to create an instance), the `definition` (the file that defines it, to read the signature: `path`, `url` and `ref` of the specialization's `repo`, `localFile` and `exists` per the local clone), `params`, `values` and `notes`. `repos` carries the platform's repository (`url`, `ref`, `localPath`). `anchor` (`marking`, `side`, `align`: only when the marking is anchored, also on the `tree` node) gives the target marking and the effective side and alignment (the declared ones or the component's), to position the anchored element (tooltip, badge, menu) relative to the target on the platform. `direction` (`ltr` or `rtl`) is the effective reading direction of the marking's container (also on each `tree` node): there is no parameter in `code`; write the platform's wrapper (Compose: `CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl)`; web: `dir=\"rtl\"`). The `tree` mirrors the marking and its descendants and, on each typed annotation, carries `type` (the key of `types`), `label`, `layer`, `args` (the call's arguments, with the instance's values already translated), `values` (resolved reference values, e.g. `User.name`) and the linked events under the owner (`linked`), with no file per annotation. " +
+        "Specialization 9: `types` carries the base's raw `code` (it may have `variants`) and, on annotations of types with `variants`, the `tree` carries `code` with the variant's resolved code (`symbol`, `definition`, `params`, `values`, `notes`, without `variants`; the `symbol` of an `outlined` Button is that of the `outlined` case): when the annotation has `code`, use it in place of the one in `types`. " +
+        'On each type in `types`, `notices` (only when there are any) carries the fidelity notices of the specialization, the type, the fields and the columns, by severity: `kind`, `message`, `since?`, `ref?` (the origin) and the place (`key?`, `column?`). Read them before writing and tell the user about the `diverges` ones; ignore those whose `message` starts with the id of another platform (there is no per-platform filter). ' +
+        'Types in `unmappedTypes` have no instantiation code on this platform and carry no notices (see `get_specialization`).',
       inputSchema: { ref: refArg, platform: platformArg, project: optionalProjectArg },
       annotations: READ_ONLY,
     },
@@ -450,21 +450,21 @@ export function registerTools(
     'find_by_code',
     {
       description:
-        'Do código para o mapeamento (que tipos se instanciam com este arquivo ou símbolo, e onde estão marcados): os tipos das especializações aplicadas cujo `code` aponta para um arquivo (`code.<plataforma>.path`) e/ou símbolo (`code.<plataforma>.symbol`), com as anotações desses tipos. `path` casa com o caminho inteiro ou com os últimos segmentos (`DSButton.kt` casa com `app/…/DSButton.kt`; `Button.kt` não); `symbol` casa por igualdade; com os dois, a mesma plataforma precisa casar com ambos. Sem `project`, procura em todos os projetos das raízes. Em especialização 9 (`variants`), a busca compara com o código resolvido de cada anotação: o símbolo da base só traz as anotações da base e o de uma variante só as dela; `path` traz todas as que apontam para o arquivo. Devolve o projeto (`project`, o nome da pasta, e `path`, o caminho dela como em list_projects), o tipo, o `code` cru (`symbol` e `definition`, com `variants`) das plataformas que casaram e as referências `mapping://` da anotação, da marcação e do container. Não abre arquivos de código.',
+        "From code to mapping (which types are instantiated with this file or symbol, and where they are marked): the types of the applied specializations whose `code` points to a file (`code.<platform>.path`) and/or symbol (`code.<platform>.symbol`), with the annotations of those types. `path` matches the whole path or the last segments (`DSButton.kt` matches `app/…/DSButton.kt`; `Button.kt` does not); `symbol` matches by equality; with both, the same platform must match both. Without `project`, searches all projects in the roots. In specialization 9 (`variants`), the search compares against each annotation's resolved code: the base symbol only brings the base annotations and a variant's only its own; `path` brings all those that point to the file. Returns the project (`project`, the folder name, and `path`, its path as in list_projects), the type, the raw `code` (`symbol` and `definition`, with `variants`) of the platforms that matched and the `mapping://` references of the annotation, the marking and the container. Does not open code files.",
       inputSchema: {
         project: projectArg
           .optional()
-          .describe('Projeto onde procurar. Sem ele, procura em todos os das raízes.'),
+          .describe('Project to search in. Without it, searches all those in the roots.'),
         path: z
           .string()
           .optional()
           .describe(
-            'Arquivo: caminho inteiro (relativo à raiz do repositório) ou só o final por segmentos inteiros (ex: "DSButton.kt").',
+            'File: whole path (relative to the repository root) or only the end by whole segments (e.g. "DSButton.kt").',
           ),
         symbol: z
           .string()
           .optional()
-          .describe('Símbolo exato do `code` do tipo (classe, componente ou função).'),
+          .describe("Exact symbol of the type's `code` (class, component or function)."),
       },
       annotations: READ_ONLY,
     },
@@ -475,7 +475,7 @@ export function registerTools(
     'get_annotation',
     {
       description:
-        'Uma anotação (livre ou tipada): conteúdo, camada, marcação, dona e vinculadas, referências de saída resolvidas (`refs`, com `row` 0-based e `column`), backlinks (uma entrada por origem, com `fields`) e pendências. Uma vinculada traz o papel que ocupa na dona (`parentRole` e `roleName`); uma dona cujo tipo declara papéis traz `linkedByRole` (`label`, `roles` com os filhos de cada papel na ordem do tipo e `unassigned`: os sem papel ou com um papel que a dona não oferece, que são pendência `missing-role` / `unknown-role`). Para achar os filhos de uma dona leia `linkedByRole` (ou `linked`), não a lista crua `allowedChildren`.',
+        "An annotation (free-form or typed): content, layer, marking, owner and linked ones, resolved outgoing references (`refs`, with a 0-based `row` and the `column`), backlinks (one entry per source, with `fields`) and pending items. A linked annotation carries the role it holds in the owner (`parentRole` and `roleName`); an owner whose type declares roles carries `linkedByRole` (`label`, `roles` with the children of each role in the type's order and `unassigned`: those without a role or with a role the owner does not offer, which are `missing-role` / `unknown-role` pending items). To find an owner's children read `linkedByRole` (or `linked`), not the raw `allowedChildren` list.",
       inputSchema: { ref: refArg, project: optionalProjectArg },
       annotations: READ_ONLY,
     },
@@ -483,8 +483,7 @@ export function registerTools(
       respond(async () => {
         const item = await resolveItem(roots, ref, project, 'a');
         const annotation = projectIndex(item.refs.project).annotations.get(item.id);
-        if (!annotation)
-          throw new ToolError('not-found', `anotação não encontrada: ${ref}`);
+        if (!annotation) throw new ToolError('not-found', `annotation not found: ${ref}`);
         return annotationDetail(codeContext(roots, item.refs), annotation);
       }),
   );
@@ -492,7 +491,7 @@ export function registerTools(
   const containerOf = async (ref: string, project: string | undefined) => {
     const item = await resolveItem(roots, ref, project, 'i');
     const container = projectIndex(item.refs.project).containers.get(item.id);
-    if (!container) throw new ToolError('not-found', `container não encontrado: ${ref}`);
+    if (!container) throw new ToolError('not-found', `container not found: ${ref}`);
     return { item, container };
   };
 
@@ -500,7 +499,7 @@ export function registerTools(
     'get_container',
     {
       description:
-        'Um container do projeto (a referência `mapping://<projeto>/i/<código>`: a letra `i` é o container): `file` (arquivo de imagem, ou `null`) e `background` (cor, quando não há arquivo), caminho absoluto do arquivo (se existir), dimensões, posição, trava, `drawingMode` (o modo do desenho que o container fixa, `null` = segue o projeto), `effectiveDrawingMode` (o que vale nele), `direction` (a direção de leitura que o container fixa, `ltr` ou `rtl`; `null` = segue o projeto), `effectiveDirection` (a que vale nele), `parent` (a marcação do canvas que contém o container, ou `null`) e as marcações de primeiro nível.',
+        'A container of the project (the reference `mapping://<project>/i/<code>`: the letter `i` is the container): `file` (image file, or `null`) and `background` (color, when there is no file), absolute path of the file (if it exists), dimensions, position, lock, `drawingMode` (the drawing mode the container pins, `null` = follows the project), `effectiveDrawingMode` (the one that applies to it), `direction` (the reading direction the container pins, `ltr` or `rtl`; `null` = follows the project), `effectiveDirection` (the one that applies to it), `parent` (the canvas marking that contains the container, or `null`) and the first-level markings.',
       inputSchema: { ref: refArg, project: optionalProjectArg },
       annotations: READ_ONLY,
     },
@@ -515,7 +514,7 @@ export function registerTools(
     'get_image',
     {
       description:
-        'Antiga (aceita com aviso por uma versão): use get_container, que devolve o mesmo.',
+        'Old (accepted with a warning for one version): use get_container, which returns the same.',
       inputSchema: { ref: refArg, project: optionalProjectArg },
       annotations: READ_ONLY,
     },
@@ -533,7 +532,7 @@ export function registerTools(
     'resolve',
     {
       description:
-        'Descobre o que uma referência designa (marcação, container ou anotação; a letra `i` da referência é o container; também camada `…/l/…`, conversa `…/c/…` e, dentro de uma anotação, campo `…/a/<código>/f/<campo>`, par `…/a/<código>/e/<código>` e linha `…/a/<código>/f/<campo>/r/<código>`) e devolve a referência (só a URL), o tipo (`marking`, `arrow`, `container`, `annotation`, `layer`, `thread`, `field`, `entry` ou `row`) e os campos de identificação (id, project, name, container ou marking/layer, rect; no campo, par e linha, `annotation`, `key` e `value`), sem o caminho legível; para o caminho legível use get_marking, get_container ou get_annotation. Use antes de get_* quando não souber o tipo.',
+        'Finds out what a reference designates (marking, container or annotation; the letter `i` of the reference is the container; also layer `…/l/…`, conversation `…/c/…` and, inside an annotation, field `…/a/<code>/f/<field>`, entry `…/a/<code>/e/<code>` and row `…/a/<code>/f/<field>/r/<code>`) and returns the reference (the URL only), the kind (`marking`, `arrow`, `container`, `annotation`, `layer`, `thread`, `field`, `entry` or `row`) and the identification fields (id, project, name, container or marking/layer, rect; for field, entry and row, `annotation`, `key` and `value`), without the readable path; for the readable path use get_marking, get_container or get_annotation. Use before get_* when you do not know the kind.',
       inputSchema: { ref: refArg, project: optionalProjectArg },
       annotations: READ_ONLY,
     },
@@ -594,12 +593,12 @@ export function registerTools(
     'get_specialization',
     {
       description:
-        'O JSON completo de uma especialização aplicada ao projeto (camadas, tipos, campos, descrições e orientações, e as plataformas de código com o `repo` de cada uma; com plataformas, `codeHint` diz o que é o `code` dos tipos (o código de instanciação: `symbol` é o que se chama para criar uma instância, `path` o arquivo que o define, para ler a assinatura)), para aprender os tipos de anotação antes de ler ou escrever anotações tipadas. Na formatVersion 4 traz também `component`, `doc`, `examples`, `fonts`, `origins` e `migrations` e, quando a cópia é um pacote, `package: { dir, files }` (veja list_components e get_component para ler os componentes). Na formatVersion 10 os tipos, campos e colunas `table` podem trazer `notices` (avisos `{ kind, message, since?, ref? }`, com `kind` `removed`, `deprecated`, `diverges` ou `pending`): leia-os antes de criar anotação ou gravar valor; aviso só informa e não bloqueia nada, mas não use sem dizer ao usuário o que for `removed` ou `deprecated`. Na formatVersion 11 o JSON vem como está: `allowedChildren` pode misturar ids de tipo e CLÁUSULAS `{ layer, groups? }` (a camada inteira, ou só os tipos dos grupos listados; os tipos que um dono aceita são a união, na ordem; o servidor já resolve isso para você nas vistas e na validação, então não monte a lista à mão), as camadas declaram `groups` e os tipos dizem a quais pertencem, `childRoles` (+ `childRolesLabel`) no dono listam os PAPÉIS em que um filho se liga a ele (use `role` em create_annotation/update_annotation) e `docRepos` + o `doc` objeto `{ repo, path }` apontam o documento do tipo num repositório externo (get_component o lê pelo clone do projeto). Na formatVersion 12 `migrations` ganha os passos de papel `rename-role` (`type`, `from`, `to`), `remove-role` (`type`, `role`, `mode`: `clear` ou `unlink`) e `set-role` (`type`, `role`, `childType`?): renomear ou remover um papel de `childRoles`, ou dar papéis a um tipo que não tinha, é uma QUEBRA do contrato de versão e pede o passo; um passo de papel numa versão anterior à 12 é erro (`só é permitido com formatVersion 12`).',
+        "The full JSON of a specialization applied to the project (layers, types, fields, descriptions and guidance, and the code platforms with each one's `repo`; with platforms, `codeHint` says what the `code` of the types is (the instantiation code: `symbol` is what you call to create an instance, `path` the file that defines it, to read the signature)), to learn the annotation types before reading or writing typed annotations. In formatVersion 4 it also carries `component`, `doc`, `examples`, `fonts`, `origins` and `migrations` and, when the copy is a package, `package: { dir, files }` (see list_components and get_component to read the components). In formatVersion 10 the `table` types, fields and columns may carry `notices` (notices `{ kind, message, since?, ref? }`, with `kind` `removed`, `deprecated`, `diverges` or `pending`): read them before creating an annotation or saving a value; a notice only informs and blocks nothing, but do not use anything `removed` or `deprecated` without telling the user. In formatVersion 11 the JSON comes as it is: `allowedChildren` may mix type ids and CLAUSES `{ layer, groups? }` (the whole layer, or only the types of the listed groups; the types an owner accepts are the union, in order; the server already resolves this for you in the views and in validation, so do not build the list by hand), layers declare `groups` and types say which ones they belong to, `childRoles` (+ `childRolesLabel`) on the owner list the ROLES in which a child links to it (use `role` in create_annotation/update_annotation) and `docRepos` + the `doc` object `{ repo, path }` point to the type's document in an external repository (get_component reads it through the project's clone). In formatVersion 12 `migrations` gains the role steps `rename-role` (`type`, `from`, `to`), `remove-role` (`type`, `role`, `mode`: `clear` or `unlink`) and `set-role` (`type`, `role`, `childType`?): renaming or removing a role from `childRoles`, or giving roles to a type that had none, is a BREAKING change of the version contract and requires the step; a role step in a version before 12 is an error (`only allowed with formatVersion 12`).",
       inputSchema: {
         project: projectArg,
         specId: z
           .string()
-          .describe('Id da especialização (ex: "sdui"); veja get_project.'),
+          .describe('Id of the specialization (e.g. "sdui"); see get_project.'),
       },
       annotations: READ_ONLY,
     },
@@ -607,32 +606,32 @@ export function registerTools(
       respond(async () => {
         const loaded = await loadProject(roots, await findProject(roots, project));
         const view = specializationView(new Refs(loaded), specId);
-        // Pacote v4 aplicado: a lista dos arquivos da pasta `specs/<id>/` (cópia da app).
+        // Applied v4 package: the list of the files in the `specs/<id>/` folder (the app's copy).
         const pkg = await listPackageFiles(roots, loaded.location.dir, String(view.file));
         return pkg === null ? view : { ...view, package: pkg };
       }),
   );
 
-  /** A marcação de container de uma referência `m` (a seta e a marcação do canvas não têm imagem). */
+  /** The container marking of an `m` reference (an arrow and a canvas marking have no image). */
   const imageMarkingOf = async (ref: string, project: string | undefined) => {
     const item = await resolveItem(roots, ref, project, 'm');
     if (projectIndex(item.refs.project).arrows.has(item.id)) {
       throw new ToolError(
         'arrow',
-        'a seta não tem imagem: ela é uma linha entre duas marcações',
+        'an arrow has no image: it is a line between two markings',
         {
-          hint: 'peça a imagem da marcação de origem ou de destino (`from`/`to` de get_marking na seta)',
+          hint: 'ask for the image of the source or target marking (`from`/`to` of get_marking on the arrow)',
         },
       );
     }
     const marking = projectIndex(item.refs.project).markings.get(item.id);
-    if (!marking) throw new ToolError('not-found', `marcação não encontrada: ${ref}`);
+    if (!marking) throw new ToolError('not-found', `marking not found: ${ref}`);
     if (marking.containerId === null) {
       throw new ToolError(
         'canvas-marking',
-        'a marcação do canvas não tem imagem: ela não pertence a um container',
+        'a canvas marking has no image: it does not belong to a container',
         {
-          hint: 'use get_container_file dos containers sob ela (`members` de get_marking), ou get_marking_image de uma marcação de dentro de um container',
+          hint: 'use get_container_file of the containers under it (`members` of get_marking), or get_marking_image of a marking inside a container',
         },
       );
     }
@@ -643,7 +642,7 @@ export function registerTools(
     'get_marking_image',
     {
       description:
-        'Devolve, como imagem, o recorte de uma marcação de container (a marcação do canvas e a seta falham com `canvas-marking` e `arrow`; mode "crop", com `padding` opcional em pixels do container) ou o container inteiro com a marcação contornada em magenta (mode "context"). Com `outlineChildren`, contorna as filhas diretas com cores diferentes e a resposta traz a legenda cor → nome → referência. O texto da resposta diz a região mostrada, a escala e onde a marcação ficou na imagem devolvida. Num container sem arquivo (só com fundo), o recorte mostra o desenho dos componentes (`drawing: "rendered"`, o mesmo de render_container: texto real, sombra, tracejado e ícones). A resposta traz `url` (HTTP local, só neste computador, válida enquanto este servidor roda) e `markdown`: cole o `markdown` na resposta quando o cliente não mostra o conteúdo `image` no chat (ex.: Cursor).',
+        'Returns, as an image, the crop of a container marking (a canvas marking and an arrow fail with `canvas-marking` and `arrow`; mode "crop", with optional `padding` in container pixels) or the whole container with the marking outlined in magenta (mode "context"). With `outlineChildren`, outlines the direct children in different colors and the response carries the legend color → name → reference. The response text says the region shown, the scale and where the marking ended up in the returned image. In a container without a file (background only), the crop shows the drawing of the components (`drawing: "rendered"`, the same as render_container: real text, shadow, dashes and icons). The response carries `url` (local HTTP, only on this computer, valid while this server runs) and `markdown`: paste the `markdown` in the reply when the client does not show the `image` content in the chat (e.g. Cursor).',
       inputSchema: {
         ref: refArg,
         project: optionalProjectArg,
@@ -654,19 +653,19 @@ export function registerTools(
           .max(4096)
           .optional()
           .describe(
-            'Margem em volta da marcação, em pixels do container (padrão 0; limitada às bordas dele). Só no modo "crop".',
+            'Margin around the marking, in container pixels (default 0; limited to its edges). Only in "crop" mode.',
           ),
         mode: z
           .enum(['crop', 'context'])
           .optional()
           .describe(
-            '"crop" (padrão): só o recorte. "context": o container inteiro com a marcação destacada.',
+            '"crop" (default): only the crop. "context": the whole container with the marking highlighted.',
           ),
         outlineChildren: z
           .boolean()
           .optional()
           .describe(
-            'Contorna as marcações filhas com cores diferentes e devolve a legenda em texto.',
+            'Outlines the child markings in different colors and returns the legend as text.',
           ),
         maxSize: maxSizeArg,
         format: formatArg,
@@ -684,7 +683,7 @@ export function registerTools(
     'get_container_file',
     {
       description:
-        'Devolve a imagem inteira de um container que tem arquivo, reduzida se o lado maior passar de `maxSize`. Num container só com fundo (sem arquivo) falha com `container-without-file`: use get_marking_image. Para ver só uma marcação, use get_marking_image. A resposta traz `url` (HTTP local, só neste computador, válida enquanto este servidor roda) e `markdown`: cole o `markdown` na resposta quando o cliente não mostra o conteúdo `image` no chat (ex.: Cursor).',
+        'Returns the whole image of a container that has a file, scaled down if the longest side exceeds `maxSize`. On a container with only a background (no file) it fails with `container-without-file`: use get_marking_image. To see just one marking, use get_marking_image. The response carries `url` (local HTTP, only on this computer, valid while this server runs) and `markdown`: paste the `markdown` in the reply when the client does not show the `image` content in the chat (e.g. Cursor).',
       inputSchema: {
         ref: refArg,
         project: optionalProjectArg,
@@ -706,34 +705,34 @@ export function registerTools(
     .max(MAX_ZOOM)
     .optional()
     .describe(
-      `Aumento do desenho (padrão 1 = um pixel do container por pixel da saída; de ${MIN_ZOOM} a ${MAX_ZOOM}). Acima do limite de pixels da imagem a tool falha com \`image-too-large\`, como get_marking_image.`,
+      `Magnification of the drawing (default 1 = one container pixel per output pixel; from ${MIN_ZOOM} to ${MAX_ZOOM}). Above the image pixel limit the tool fails with \`image-too-large\`, like get_marking_image.`,
     );
   const drawingModeArg = z
     .string()
     .optional()
     .describe(
-      'Modo do desenho (um dos `modes` dos `tokens` das especializações aplicadas, como "light" ou "dark") em todo o desenho. Padrão: o modo efetivo de cada container (o que ele fixa, senão o do projeto, senão o primeiro modo).',
+      'Drawing mode (one of the `modes` of the `tokens` of the applied specializations, such as "light" or "dark") across the whole drawing. Default: each container\'s effective mode (the one it pins, otherwise the project\'s, otherwise the first mode).',
     );
   const directionArg = z
     .enum(READING_DIRECTIONS)
     .optional()
     .describe(
-      'Direção de leitura (`ltr` ou `rtl`) em todo o desenho: em `rtl` as fileiras, as grades e as posições `start`/`end` espelham, como no app com o container em Da direita para a esquerda. Padrão: a direção efetiva de cada container (a que ele fixa, senão a do projeto, senão `ltr`). O resultado traz a `direction` usada (`null` = a de cada container).',
+      "Reading direction (`ltr` or `rtl`) across the whole drawing: in `rtl` the rows, grids and `start`/`end` positions mirror, as in the app with the container set to Right to left. Default: each container's effective direction (the one it pins, otherwise the project's, otherwise `ltr`). The result carries the `direction` used (`null` = each container's own).",
     );
   const backgroundArg = z
     .enum(['image', 'none'])
     .optional()
     .describe(
-      '"image" (padrão): pinta o arquivo do container por baixo (sem arquivo, a cor de fundo dele); "none": fundo transparente, só o desenho dos componentes (png ou webp).',
+      '"image" (default): paints the container\'s file underneath (without a file, its background color); "none": transparent background, only the drawing of the components (png or webp).',
     );
   const RENDER_NOTE =
-    'O desenho é o do servidor, com texto de verdade (fonte livre embutida, ou a `fonts` da biblioteca quando declarada), traço com `align`/`cap`/`join`/`sides`/tracejado, sombra desfocada e ícones; o gradiente vale a primeira cor e a imagem remota vira um reservado. Não é uma captura da app. A resposta traz `url` (HTTP local, só neste computador, válida enquanto este servidor roda) e `markdown`: cole o `markdown` na resposta quando o cliente não mostra o conteúdo `image` no chat.';
+    "The drawing is the server's, with real text (bundled free font, or the library's `fonts` when declared), stroke with `align`/`cap`/`join`/`sides`/dashes, blurred shadow and icons; the gradient takes the first color and the remote image becomes a placeholder. It is not a capture of the app. The response carries `url` (local HTTP, only on this computer, valid while this server runs) and `markdown`: paste the `markdown` in the reply when the client does not show the `image` content in the chat.";
 
   server.registerTool(
     'render_marking',
     {
       description:
-        'Desenha, como imagem PNG, o componente de uma marcação de container e o de toda a subárvore dela (as filhas), com `zoom`, `drawingMode`, `direction` e `background`. É como o agente confere o desenho de um componente sem abrir a app. ' +
+        "Draws, as a PNG image, the component of a container marking and that of its whole subtree (the children), with `zoom`, `drawingMode`, `direction` and `background`. This is how the agent checks a component's drawing without opening the app. " +
         RENDER_NOTE,
       inputSchema: {
         ref: refArg,
@@ -748,8 +747,8 @@ export function registerTools(
           .min(0)
           .max(4096)
           .optional()
-          .describe('Margem em volta da marcação, em pixels do container (padrão 0).'),
-        format: z.enum(['png', 'webp', 'jpeg']).optional().describe('Padrão png.'),
+          .describe('Margin around the marking, in container pixels (default 0).'),
+        format: z.enum(['png', 'webp', 'jpeg']).optional().describe('Default png.'),
       },
       annotations: READ_ONLY,
     },
@@ -764,7 +763,7 @@ export function registerTools(
     'render_container',
     {
       description:
-        'Desenha, como imagem PNG, os componentes de todas as marcações de um container (com ou sem arquivo), com `zoom`, `drawingMode`, `direction` e `background`. Num container sem arquivo é o mesmo desenho que get_marking_image mostra. ' +
+        'Draws, as a PNG image, the components of all the markings of a container (with or without a file), with `zoom`, `drawingMode`, `direction` and `background`. On a container without a file it is the same drawing get_marking_image shows. ' +
         RENDER_NOTE,
       inputSchema: {
         ref: refArg,
@@ -773,7 +772,7 @@ export function registerTools(
         drawingMode: drawingModeArg,
         direction: directionArg,
         background: backgroundArg,
-        format: z.enum(['png', 'webp', 'jpeg']).optional().describe('Padrão png.'),
+        format: z.enum(['png', 'webp', 'jpeg']).optional().describe('Default png.'),
       },
       annotations: READ_ONLY,
     },
@@ -788,7 +787,7 @@ export function registerTools(
     'get_image_file',
     {
       description:
-        'Antiga (aceita com aviso por uma versão): use get_container_file, que devolve o mesmo.',
+        'Old (accepted with a warning for one version): use get_container_file, which returns the same.',
       inputSchema: {
         ref: refArg,
         project: optionalProjectArg,
@@ -811,8 +810,8 @@ export function registerTools(
     'plan_changes',
     {
       description:
-        'Prévia de um lote de alterações: valida contra as regras do Mapping e devolve se é válido, os erros por operação, um resumo legível, as contagens, as pendências novas (`issues`), os avisos novos da especialização (`notices.new`: os avisos de tipo, campo ou coluna que as anotações criadas ou alteradas passam a ter; aviso não bloqueia nada), as referências dos itens que serão criados e quantas mudanças o usuário teria de revisar. NÃO grava nada (nem proposta). ' +
-        'As operações são aplicadas em ordem; um item criado pode ser citado nas seguintes pelo apelido de `as` (ex: "$porta"). Itens trancados não podem ser movidos, redimensionados nem excluídos. O retângulo não acompanha sozinho o conteúdo: depois de mudar um valor que o altera (texto, campo que liga ou desliga uma parte) num componente cujo `sizing` é `hug` ou por expressão, inclua `fit_marking` na mesma marcação. Uma marcação com `anchor` (`create_marking`/`update_marking`) só fica ligada ao alvo: para encostá-la (depois de ancorar ou de mudar o tamanho dela) inclua `snap_to_anchor`; mover o alvo já leva as ancoradas junto. Para enviar a alteração ao usuário, use propose_changes (o agente nunca grava o projeto direto).',
+        'Preview of a batch of changes: validates against the Mapping rules and returns whether it is valid, the errors per operation, a readable summary, the counts, the new pending items (`issues`), the new specialization notices (`notices.new`: the type, field or column notices that the created or changed annotations come to have; a notice blocks nothing), the references of the items that will be created and how many changes the user would have to review. It does NOT write anything (not even a proposal). ' +
+        'The operations are applied in order; a created item can be cited in the following ones by its `as` alias (e.g. "$door"). Locked items cannot be moved, resized or deleted. The rectangle does not follow the content on its own: after changing a value that alters it (text, a field that turns a part on or off) in a component whose `sizing` is `hug` or an expression, include `fit_marking` on the same marking. A marking with `anchor` (`create_marking`/`update_marking`) is only linked to the target: to snap it against the target (after anchoring it or changing its size) include `snap_to_anchor`; moving the target already carries the anchored ones along. To send the change to the user, use propose_changes (the agent never writes the project directly).',
       inputSchema: {
         project: projectArg,
         ...batchOperationsArgs,
@@ -844,38 +843,40 @@ export function registerTools(
     'propose_changes',
     {
       description:
-        'Envia uma alteração ao usuário como PROPOSTA para revisão: valida o lote como o plan_changes, calcula as mudanças (criações, alterações campo a campo, remoções) e grava `proposals/<id>/proposal.json` (imagens novas em `proposals/<id>/images/`). O `mapping.json` NÃO é alterado: o usuário revisa na app, aceita ou rejeita em qualquer nível (proposta, container, item, mudança), deixa notas e aplica o que aceitou. ' +
-        'Devolve a referência `mapping://<projeto>/p/<código>`, um resumo por nível e as referências definitivas dos itens criados, com as pendências novas (`issues`) e os avisos novos da especialização (`notices.new`, como no plan_changes; aviso não bloqueia a proposta). Depois, avise o usuário e espere a revisão terminar (get_proposal: nada pendente nem aceito sem aplicar); leia o resultado com get_proposal_review e, para corrigir, use revise_proposal na mesma proposta (enquanto nada foi aplicado) ou, depois, envie outra proposta com `supersedes` só com as correções. Reexportações: use `source` nos containers e marcações e find_by_source para propor só o que mudou.',
+        'Sends a change to the user as a PROPOSAL for review: validates the batch like plan_changes, computes the changes (creations, field-by-field alterations, removals) and writes `proposals/<id>/proposal.json` (new images in `proposals/<id>/images/`). The `mapping.json` is NOT changed: the user reviews in the app, accepts or rejects at any level (proposal, container, item, change), leaves notes and applies what they accepted. ' +
+        'Returns the reference `mapping://<project>/p/<code>`, a summary per level and the final references of the created items, with the new pending items (`issues`) and the new specialization notices (`notices.new`, as in plan_changes; a notice does not block the proposal). Then, tell the user and wait for the review to finish (get_proposal: nothing pending or accepted without being applied); read the result with get_proposal_review and, to correct it, use revise_proposal on the same proposal (while nothing has been applied) or, afterwards, send another proposal with `supersedes` containing only the corrections. Re-exports: use `source` on containers and markings and find_by_source to propose only what changed.',
       inputSchema: {
         project: projectArg,
         title: z
           .string()
-          .describe('Título da proposta (aparece na janela Propostas da app).'),
+          .describe("Title of the proposal (shown in the app's Proposals window)."),
         description: z
           .string()
           .optional()
-          .describe('Descrição: o que a proposta faz e por quê.'),
+          .describe('Description: what the proposal does and why.'),
         origin: z
           .string()
           .optional()
           .describe(
-            'De onde vieram os dados (texto livre, ex: "Figma: Loja v3 › Checkout").',
+            'Where the data came from (free text, e.g. "Figma: Loja v3 › Checkout").',
           ),
         author: z
           .string()
           .optional()
-          .describe('Quem envia (padrão: o nome do cliente MCP, ex: o agente).'),
+          .describe(
+            'Who is sending (default: the name of the MCP client, e.g. the agent).',
+          ),
         supersedes: z
           .string()
           .optional()
           .describe(
-            'Proposta que esta substitui (referência `mapping://projeto/p/código`, `p/código` ou id). A anterior passa a `superseded` (decisões e notas continuam guardadas). Se a revisão dela não tinha terminado, a resposta traz um aviso.',
+            'Proposal that this one replaces (reference `mapping://project/p/code`, `p/code` or id). The previous one becomes `superseded` (decisions and notes stay saved). If its review had not finished, the response carries a warning.',
           ),
         thread: z
           .string()
           .optional()
           .describe(
-            'Conversa à qual ligar a proposta (referência `mapping://projeto/c/código` de list_threads ou open_thread). A tool confere a conversa ANTES de gravar (inexistente ou resolvida: recusa e não grava nada) e, gravada a proposta, acrescenta à conversa uma mensagem sua com a proposta, que a app mostra como cartão com o botão Revisar. O formato da proposta não muda.',
+            'Conversation to link the proposal to (reference `mapping://project/c/code` from list_threads or open_thread). The tool checks the conversation BEFORE writing (nonexistent or resolved: it refuses and writes nothing) and, once the proposal is written, adds to the conversation a message of its own with the proposal, which the app shows as a card with the Review button. The proposal format does not change.',
           ),
         ...batchOperationsArgs,
       },
@@ -897,27 +898,27 @@ export function registerTools(
     'revise_proposal',
     {
       description:
-        'Corrige uma proposta ABERTA na mesma proposta (mesma referência), sem o usuário perder o que já decidiu. Use quando ele rejeitou mudanças (e deixou notas) ou quando você quer acrescentar ou retirar mudanças e NADA da proposta foi aplicado ainda (`revisable: true` em get_proposal_review). Se alguma mudança já foi aplicada, a proposta foi substituída ou retirada, ou o lote traz um pacote de biblioteca, use propose_changes com `supersedes`. ' +
-        '`drop`: ids de mudança (`c3`, como get_proposal mostra) a retirar, com o que depende delas (retirar a criação de um item retira as anotações e filhas dele). `operations`: o vocabulário do propose_changes, aplicado sobre o PROPOSTO INTEIRO (o projeto atual com todas as mudanças da proposta, até as rejeitadas, depois do `drop`); um item que a proposta cria é citado pela referência definitiva e pode ser editado. Cada mudança fica: intocada (idêntica, com a decisão e as notas), trocada (mesmo id, valor novo, volta a sem decisão e ganha a marca "Revisada"), nova (id novo, sem decisão) ou retirada (sai; a nota dela passa à proposta). ' +
-        'CONGELADO: mudança que o usuário aceitou não é trocada nem retirada; se o lote a atingiria, nada é gravado (`change-frozen`). `dryRun: true` devolve o resultado sem gravar. O mapping.json nunca é alterado. Depois, avise o usuário e espere a revisão terminar.',
+        'Corrects an OPEN proposal in place (same reference), without the user losing what they have already decided. Use it when they rejected changes (and left notes) or when you want to add or remove changes and NOTHING in the proposal has been applied yet (`revisable: true` in get_proposal_review). If any change has already been applied, the proposal was superseded or withdrawn, or the batch carries a library package, use propose_changes with `supersedes`. ' +
+        '`drop`: change ids (`c3`, as get_proposal shows) to remove, along with what depends on them (removing the creation of an item removes its annotations and children). `operations`: the propose_changes vocabulary, applied to the WHOLE PROPOSED STATE (the current project with all the proposal\'s changes, even the rejected ones, after the `drop`); an item the proposal creates is cited by its final reference and can be edited. Each change ends up: untouched (identical, with the decision and notes), replaced (same id, new value, goes back to undecided and gets the "Revised" mark), new (new id, undecided) or removed (it leaves; its note moves up to the proposal). ' +
+        'FROZEN: a change the user accepted is neither replaced nor removed; if the batch would hit it, nothing is written (`change-frozen`). `dryRun: true` returns the result without writing. The mapping.json is never changed. Then tell the user and wait for the review to finish.',
       inputSchema: {
         ref: proposalRefArg,
         project: optionalProjectArg,
         drop: z
           .array(z.string())
           .optional()
-          .describe('Ids das mudanças a retirar (`c3`), como get_proposal mostra.'),
+          .describe('Ids of the changes to remove (`c3`), as get_proposal shows.'),
         operations: z
           .array(operationSchema)
           .max(1000)
           .optional()
           .describe(
-            'Lote aplicado ao proposto inteiro, com a validação do propose_changes (apelidos `$nome` valem). Pacote de biblioteca novo ou trocado não cabe aqui.',
+            'Batch applied to the whole proposed state, with propose_changes validation (`$name` aliases work). A new or replaced library package does not fit here.',
           ),
         dryRun: z
           .boolean()
           .optional()
-          .describe('Só calcula e devolve o resultado, sem gravar.'),
+          .describe('Only computes and returns the result, without writing.'),
       },
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
     },
@@ -928,13 +929,13 @@ export function registerTools(
     'list_proposals',
     {
       description:
-        'Lista as propostas do projeto (abertas e fechadas): referência, título, origem, autor, data, estado, progresso da revisão (pendentes, aceitas sem aplicar, rejeitadas, aplicadas), conflitos e a relação de substituição.',
+        "Lists the project's proposals (open and closed): reference, title, origin, author, date, status, review progress (pending, accepted without being applied, rejected, applied), conflicts and the supersede relation.",
       inputSchema: {
         project: projectArg,
         status: z
           .enum(['open', 'applied', 'superseded', 'withdrawn'])
           .optional()
-          .describe('Só as propostas neste estado.'),
+          .describe('Only the proposals in this status.'),
       },
       annotations: READ_ONLY,
     },
@@ -945,7 +946,7 @@ export function registerTools(
     'get_proposal',
     {
       description:
-        'Uma proposta: progresso da revisão (`progress.complete` = nada pendente nem aceito sem aplicar), resumo por nível (Projeto e containers), as mudanças com o estado de cada uma (pending, accepted, rejected, applied), conflitos (o projeto mudou depois da proposta), aviso de item trancado e as notas. Use para saber se a revisão terminou.',
+        'A proposal: review progress (`progress.complete` = nothing pending or accepted without being applied), summary per level (Project and containers), the changes with the state of each one (pending, accepted, rejected, applied), conflicts (the project changed after the proposal), locked-item warning and the notes. Use it to know whether the review has finished.',
       inputSchema: {
         ref: proposalRefArg,
         project: optionalProjectArg,
@@ -953,7 +954,7 @@ export function registerTools(
           .enum(['pending', 'accepted', 'rejected', 'applied', 'conflict'])
           .optional()
           .describe(
-            'Só as mudanças neste estado (`conflict` = valor atual diferente do antes).',
+            'Only the changes in this state (`conflict` = current value differs from the before).',
           ),
         limit: z
           .number()
@@ -961,8 +962,8 @@ export function registerTools(
           .min(1)
           .max(1000)
           .optional()
-          .describe('Mudanças por página (padrão 200).'),
-        offset: z.number().int().min(0).optional().describe('Quantas mudanças pular.'),
+          .describe('Changes per page (default 200).'),
+        offset: z.number().int().min(0).optional().describe('How many changes to skip.'),
       },
       annotations: READ_ONLY,
     },
@@ -973,7 +974,7 @@ export function registerTools(
     'get_proposal_review',
     {
       description:
-        'O resultado da revisão, só o que importa para a próxima rodada: as mudanças rejeitadas (com o alvo, antes/depois e as notas do usuário), as notas gerais (proposta, projeto, container, item), os conflitos e se a revisão terminou (`ready`). Corrija só isso: com `revisable: true`, use revise_proposal na mesma proposta; senão envie propose_changes com `supersedes`. `awaitingUser` são as mudanças que você trocou ou acrescentou e ainda esperam o usuário (não estão rejeitadas).',
+        "The result of the review, only what matters for the next round: the rejected changes (with the target, before/after and the user's notes), the general notes (proposal, project, container, item), the conflicts and whether the review has finished (`ready`). Fix only that: with `revisable: true`, use revise_proposal on the same proposal; otherwise send propose_changes with `supersedes`. `awaitingUser` are the changes you replaced or added that are still waiting for the user (they are not rejected).",
       inputSchema: { ref: proposalRefArg, project: optionalProjectArg },
       annotations: READ_ONLY,
     },
@@ -984,7 +985,7 @@ export function registerTools(
     'withdraw_proposal',
     {
       description:
-        'Retira uma proposta aberta (estado `withdrawn`): nada mais dela será aplicado; o que já foi aplicado continua no projeto. Os arquivos ficam em proposals/ para o histórico.',
+        'Withdraws an open proposal (status `withdrawn`): nothing more from it will be applied; what has already been applied stays in the project. The files stay in proposals/ for history.',
       inputSchema: { ref: proposalRefArg, project: optionalProjectArg },
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: false },
     },
@@ -995,11 +996,11 @@ export function registerTools(
     'find_by_source',
     {
       description:
-        'Acha os containers e marcações cuja origem (`source`) é `system` + `id` (comparação exata), para uma reexportação casar os elementos que já existem em vez de duplicá-los. Sem `project`, procura em todos os projetos das raízes. Também lista (`proposed`) as propostas ainda abertas que criam um elemento com essa origem.',
+        'Finds the containers and markings whose origin (`source`) is `system` + `id` (exact comparison), so a re-export can match the elements that already exist instead of duplicating them. Without `project`, searches all projects in the roots. Also lists (`proposed`) the still-open proposals that create an element with that origin.',
       inputSchema: {
         project: projectArg
           .optional()
-          .describe('Projeto onde procurar. Sem ele, procura em todos os das raízes.'),
+          .describe('Project to search in. Without it, searches all those in the roots.'),
         system: z.string().describe('Sistema de origem (ex: "figma").'),
         id: z.string().describe('Id do elemento no sistema de origem.'),
       },
@@ -1012,7 +1013,7 @@ export function registerTools(
     'find_types_by_source',
     {
       description:
-        'Do elemento de origem para o tipo de anotação: os tipos das especializações aplicadas ao projeto cujo `sources` declara o elemento (ex: o componente `DS/Button` do Figma), pelo `id` (mais forte) e/ou pelo `name`. Cada tipo vem com os campos que têm propriedade de origem do sistema (e como os valores se traduzem), para você preencher `values` sem deduzir pelo nome.',
+        'From the source element to the annotation type: the types of the specializations applied to the project whose `sources` declares the element (e.g. the Figma component `DS/Button`), by `id` (stronger) and/or by `name`. Each type comes with the fields that have a source property of the system (and how the values translate), so you can fill in `values` without deducing from the name.',
       inputSchema: {
         project: projectArg,
         system: z.string().describe('Sistema de origem (ex: "figma").'),
@@ -1034,15 +1035,15 @@ export function registerTools(
     'validate_specialization',
     {
       description:
-        'Valida um arquivo de especialização (`path`, dentro das raízes) ou um texto JSON (`text`), sem aplicar a nenhum projeto (a formatVersion 12 aceita os passos de papel `rename-role`, `remove-role` e `set-role` em `migrations`). Aceita qualquer formatVersion de 1 a 12, mas valida só o ARQUIVO (para o pacote inteiro use validate_library). Devolve os MESMOS erros que a importação da app, cada um com o caminho exato (ex: `layers[0].annotationTypes[2].fields[1].sources[0].values.Primary: …`), e avisos que não impedem a importação (`unused-platform`: plataforma declarada e não usada; `type-without-code`: tipo sem `code`; `path-without-repo`: `path` numa plataforma sem `repo`; `legacy-format`: `format` antigo; `ignored-field`: campo que saiu do formato; `many-children-ids`: `allowedChildren` com muitos ids em texto; `unused-group`: grupo que nenhum tipo da camada usa; `unused-doc-repo`: repositório de `docRepos` que nenhum `doc` usa). É o ciclo gerar, validar, corrigir.',
+        "Validates a specialization file (`path`, inside the roots) or a JSON text (`text`), without applying it to any project (formatVersion 12 accepts the role steps `rename-role`, `remove-role` and `set-role` in `migrations`). Accepts any formatVersion from 1 to 12, but validates only the FILE (for the whole package use validate_library). Returns the SAME errors as the app's import, each with the exact path (e.g. `layers[0].annotationTypes[2].fields[1].sources[0].values.Primary: …`), and warnings that do not prevent the import (`unused-platform`: platform declared and not used; `type-without-code`: type without `code`; `path-without-repo`: `path` on a platform without `repo`; `legacy-format`: old `format`; `ignored-field`: field that left the format; `many-children-ids`: `allowedChildren` with many ids in text; `unused-group`: group that no type of the layer uses; `unused-doc-repo`: `docRepos` repository that no `doc` uses). It is the generate, validate, fix cycle.",
       inputSchema: {
         path: z
           .string()
           .optional()
           .describe(
-            'Arquivo da especialização (JSON), relativo a uma raiz ou absoluto dentro delas.',
+            'Specialization file (JSON), relative to a root or absolute inside them.',
           ),
-        text: z.string().optional().describe('O conteúdo JSON da especialização.'),
+        text: z.string().optional().describe('The JSON content of the specialization.'),
       },
       annotations: READ_ONLY,
     },
@@ -1053,28 +1054,28 @@ export function registerTools(
     'validate_library',
     {
       description:
-        'Valida o PACOTE de uma biblioteca (especialização formatVersion 4 com `components/`, `docs/`, `examples/` e `fonts/`) com os mesmos três níveis da app e da skill: (1) cada arquivo (inclusive o conjunto de ícones apontado por `icons`, formatVersion 15), (2) a coerência entre eles (componente, slot, campos, exemplos, fontes, origens, nome literal de ícone fora do conjunto e, com `previous`, o contrato de versão) e (3) a prova de desenho (instancia cada componente e passa os exemplos de sistema externo pela declaração; avisa o campo `enum` lido pelo `name` de um nó `icon` com opção fora do conjunto de ícones). `path` é a pasta do pacote ou o arquivo da especialização dentro dela, dentro das raízes. Devolve `valid`, `errors` e `warnings` (cada um com `file`, `path`, `message`, `severity`): erro impede usar, aviso deixa usar. Somente leitura: não aplica nada a projeto algum (para aplicar ou atualizar, use apply_specialization/update_specialization em propose_changes; antes, plan_library_update mostra o impacto). O documento de um tipo em repositório externo (`doc` objeto) está fora do pacote: com `docClones` (`{ repositório: pasta dentro das raízes }`) cada documento é conferido no clone e o ausente é AVISO; sem o clone de um repositório, um aviso por repositório conta os documentos não conferidos. Um `doc` cujo `repo` não está em `docRepos` é erro do nível 1. É o ciclo gerar, validar, corrigir.',
+        'Validates the PACKAGE of a library (formatVersion 4 specialization with `components/`, `docs/`, `examples/` and `fonts/`) with the same three levels as the app and the skill: (1) each file (including the icon set pointed to by `icons`, formatVersion 15), (2) the coherence between them (component, slot, fields, examples, fonts, origins, literal icon name outside the set and, with `previous`, the version contract) and (3) the drawing proof (instantiates each component and runs the external-system examples through the declaration; warns about an `enum` field read by the `name` of an `icon` node with an option outside the icon set). `path` is the package folder or the specialization file inside it, inside the roots. Returns `valid`, `errors` and `warnings` (each with `file`, `path`, `message`, `severity`): an error prevents use, a warning allows it. Read-only: it applies nothing to any project (to apply or update, use apply_specialization/update_specialization in propose_changes; beforehand, plan_library_update shows the impact). The document of a type in an external repository (`doc` object) is outside the package: with `docClones` (`{ repository: folder inside the roots }`) each document is checked in the clone and a missing one is a WARNING; without the clone of a repository, one warning per repository counts the unchecked documents. A `doc` whose `repo` is not in `docRepos` is a level 1 error. It is the generate, validate, fix cycle.',
       inputSchema: {
         path: z
           .string()
           .describe(
-            'Pasta do pacote ou arquivo da especialização dentro dela, relativo a uma raiz ou absoluto dentro delas.',
+            'Package folder or specialization file inside it, relative to a root or absolute inside them.',
           ),
         previous: z
           .string()
           .optional()
           .describe(
-            'Arquivo da versão anterior da especialização (liga o contrato de versão: quebra sem `migrations` é erro, inclusive papel removido ou renomeado sem `rename-role`/`remove-role` e dono que ganha papéis sem `set-role`).',
+            'File of the previous version of the specialization (enables the version contract: a break without `migrations` is an error, including a removed or renamed role without `rename-role`/`remove-role` and an owner that gains roles without `set-role`).',
           ),
         level: z
           .union([z.literal(1), z.literal(2), z.literal(3)])
           .optional()
-          .describe('Até que nível validar (padrão 3, a prova de desenho).'),
+          .describe('Up to which level to validate (default 3, the drawing proof).'),
         docClones: z
           .record(z.string(), z.string())
           .optional()
           .describe(
-            'Clones dos repositórios de documentos (`docRepos` da especialização): `{ "<id do repositório>": "<pasta dentro das raízes>" }`. Com o clone, cada documento externo (`doc` objeto) é conferido: o que não está lá é AVISO ("documento não encontrado em <repo>"). Sem o clone de um repositório, um aviso por repositório conta os documentos não conferidos.',
+            'Clones of the document repositories (`docRepos` of the specialization): `{ "<repository id>": "<folder inside the roots>" }`. With the clone, each external document (`doc` object) is checked: one that is not there is a WARNING ("document not found in <repo>"). Without the clone of a repository, one warning per repository counts the unchecked documents.',
           ),
       },
       annotations: READ_ONLY,
@@ -1086,13 +1087,13 @@ export function registerTools(
     'plan_library_update',
     {
       description:
-        'Prévia, SEM gravar nada, de levar uma biblioteca a um projeto: devolve o que `apply_specialization` ou `update_specialization` fariam. `path` é a pasta do pacote novo (ou o arquivo da especialização dentro dela; também aceita um arquivo v1 a v3), dentro das raízes; `project` é o projeto. Devolve `specId`, `from` (versão aplicada, `null` se não está aplicada) e `to`, `decision` (`apply`: ainda não aplicada; `update`: versão maior que a aplicada; `not-newer`), `validation` (`valid`, `errors`, `warnings`: os mesmos níveis de validate_library, com a cópia aplicada como `previous`) e, em `update`: `additive` (só acrescenta, sem quebra e sem `freedLayers`: aplica direto; falso quando alguma camada vira livre), `refused` (quebra sem migração: `update_specialization` falharia com `spec-missing-migrations`) com `missingMigrations`, `changes` (as diferenças entre as versões), `steps` (cada passo de `migrations`, inclusive os de papel `rename-role`, `remove-role` e `set-role`, com as contagens do que faz neste projeto (`unlinked` conta os vínculos desfeitos pelo `remove-role` com `unlink`) e as perdas dele), `losses` (valores que a migração apaga ou sobrescreve, papéis limpos (`cleared-role`) e vínculos desfeitos (`unlinked`), cada um com a anotação, a marcação e, nos de papel, o `role`), `pending` (pendências novas que a migração deixa), `brokenRefs`, `addedLayers`, `freedLayers` e uma `hint` do próximo passo. Listas grandes vêm cortadas em 100, com o total em `…Total`. Rode antes de propor `update_specialization`; se há perdas, confirme com a pessoa.',
+        'Preview, WITHOUT writing anything, of bringing a library to a project: returns what `apply_specialization` or `update_specialization` would do. `path` is the folder of the new package (or the specialization file inside it; it also accepts a v1 to v3 file), inside the roots; `project` is the project. Returns `specId`, `from` (applied version, `null` if not applied) and `to`, `decision` (`apply`: not applied yet; `update`: version greater than the applied one; `not-newer`), `validation` (`valid`, `errors`, `warnings`: the same levels as validate_library, with the applied copy as `previous`) and, in `update`: `additive` (only adds, with no break and no `freedLayers`: applies directly; false when some layer becomes free), `refused` (a break without migration: `update_specialization` would fail with `spec-missing-migrations`) with `missingMigrations`, `changes` (the differences between the versions), `steps` (each step of `migrations`, including the role steps `rename-role`, `remove-role` and `set-role`, with the counts of what it does in this project (`unlinked` counts the links undone by `remove-role` with `unlink`) and its losses), `losses` (values the migration erases or overwrites, cleared roles (`cleared-role`) and undone links (`unlinked`), each with the annotation, the marking and, for the role ones, the `role`), `pending` (new pending items the migration leaves), `brokenRefs`, `addedLayers`, `freedLayers` and a `hint` for the next step. Large lists come cut at 100, with the total in `…Total`. Run it before proposing `update_specialization`; if there are losses, confirm with the person.',
       inputSchema: {
         project: projectArg,
         path: z
           .string()
           .describe(
-            'Pasta do pacote novo ou arquivo da especialização dentro dela, relativo a uma raiz ou absoluto dentro delas.',
+            'Folder of the new package or specialization file inside it, relative to a root or absolute inside them.',
           ),
       },
       annotations: READ_ONLY,
@@ -1104,19 +1105,19 @@ export function registerTools(
     'plan_signature_import',
     {
       description:
-        'Prévia, SEM gravar nada, de importar a assinatura de um componente (a ficha `mapping-signature`, formato em mapping-docs://SIGNATURE-FORMAT.md) como campos de um tipo da biblioteca: devolve os campos novos (`fields`, em JSON pronto), as ligações (`links`: cada parâmetro ligado ao campo que o cita em `params`, ao de nome igual ou a um campo novo), o `code` da plataforma (ou as `sources` do sistema), os avisos que a importação escreve (`notices`, todos com o `ref` da ficha e a `message` começando pela plataforma), o `unmapped` (os parâmetros da ficha sem campo), `changes` (o que entrou, saiu, mudou e o renome provável, em relação à ficha gravada no pacote), `suggestedMigrations` (remove-field, rename-field: só se a pessoa pedir, a importação nunca escreve `migrations`), `versionBump` (o contrato mudou: suba a `version`) e `spec`, a especialização inteira já importada, pronta para gravar. `path` é a pasta do pacote (ou o arquivo da especialização dentro dela), dentro das raízes; `type` é o id do tipo; `platform` (alvo de código: o id declarado em `platforms`) ou `system` (alvo de design, como figma); `variant` é o valor do campo das `variants` quando a ficha é a de um caso. A ficha vem inline em `signature` ou num `.json` dentro das raízes em `signatureFile` (outra extensão é recusada sem ser lida: o servidor nunca lê código; extraia a ficha com o `mapping-signature.mjs` ou escreva-a à mão com `source.extractor: "agent"`). Erros: `signature-invalid` (com o caminho do problema na ficha), `type-not-found`, `platform-not-declared`, `signature-mismatch` (o símbolo, o arquivo ou o sistema da ficha diferem do code ou da source) e `variant-not-found`. A ficha gravada no pacote (o `signature` do code) é a anterior da sincronização. Depois: grave o `spec` e a ficha no pacote e rode validate_library.',
+        "Preview, WITHOUT writing anything, of importing the signature of a component (the `mapping-signature` sheet, format in mapping-docs://SIGNATURE-FORMAT.md) as fields of a library type: returns the new fields (`fields`, as ready JSON), the links (`links`: each parameter linked to the field that cites it in `params`, to the one with the same name or to a new field), the platform's `code` (or the system's `sources`), the notices the import writes (`notices`, all with the sheet's `ref` and the `message` starting with the platform), the `unmapped` (the sheet's parameters with no field), `changes` (what came in, left, changed and the probable rename, relative to the sheet saved in the package), `suggestedMigrations` (remove-field, rename-field: only if the person asks, the import never writes `migrations`), `versionBump` (the contract changed: raise the `version`) and `spec`, the whole specialization already imported, ready to write. `path` is the package folder (or the specialization file inside it), inside the roots; `type` is the type id; `platform` (code target: the id declared in `platforms`) or `system` (design target, such as figma); `variant` is the value of the `variants` field when the sheet is that of a case. The sheet comes inline in `signature` or in a `.json` inside the roots in `signatureFile` (another extension is refused without being read: the server never reads code; extract the sheet with `mapping-signature.mjs` or write it by hand with `source.extractor: \"agent\"`). Errors: `signature-invalid` (with the path of the problem in the sheet), `type-not-found`, `platform-not-declared`, `signature-mismatch` (the sheet's symbol, file or system differ from the code or the source) and `variant-not-found`. The sheet saved in the package (the code's `signature`) is the previous one of the sync. Afterwards: write the `spec` and the sheet to the package and run validate_library.",
       inputSchema: {
         path: z
           .string()
           .describe(
-            'Pasta do pacote da biblioteca ou arquivo da especialização dentro dela, relativo a uma raiz ou absoluto dentro delas.',
+            'Folder of the library package or specialization file inside it, relative to a root or absolute inside them.',
           ),
-        type: z.string().describe('Id do tipo de anotação que recebe os campos.'),
+        type: z.string().describe('Id of the annotation type that receives the fields.'),
         platform: z
           .string()
           .optional()
           .describe(
-            'Alvo de código: o id da plataforma (`platforms`). Use este OU `system`.',
+            'Code target: the id of the platform (`platforms`). Use this OR `system`.',
           ),
         system: z
           .string()
@@ -1128,7 +1129,7 @@ export function registerTools(
           .string()
           .optional()
           .describe(
-            'Valor do campo de `variants` do code quando a ficha é a do caso (só com `platform`).',
+            "Value of the code's `variants` field when the sheet is that of the case (only with `platform`).",
           ),
         signature: z
           .record(z.string(), z.unknown())
@@ -1138,7 +1139,7 @@ export function registerTools(
           .string()
           .optional()
           .describe(
-            'A ficha num arquivo `.json` dentro das raízes (outra extensão é recusada).',
+            'The sheet in a `.json` file inside the roots (another extension is refused).',
           ),
       },
       annotations: READ_ONLY,
@@ -1151,17 +1152,17 @@ export function registerTools(
       .string()
       .optional()
       .describe(
-        'Projeto com a biblioteca aplicada (lê a cópia em `specs/<pasta>/`); use com `specId`.',
+        'Project with the library applied (reads the copy in `specs/<folder>/`); use with `specId`.',
       ),
     specId: z
       .string()
       .optional()
-      .describe('Id da especialização aplicada ao projeto (veja get_project).'),
+      .describe('Id of the specialization applied to the project (see get_project).'),
     path: z
       .string()
       .optional()
       .describe(
-        'Alternativa a project + specId: a pasta do pacote ou o arquivo da especialização dentro dela.',
+        'Alternative to project + specId: the package folder or the specialization file inside it.',
       ),
   };
 
@@ -1169,7 +1170,7 @@ export function registerTools(
     'list_components',
     {
       description:
-        'Os componentes de uma biblioteca (formatVersion 4): por tipo de anotação com componente, `type`, `name`, `layer`, `size` e `minSize` (px), se tem documento (`hasDoc`) e quantos exemplos. Informe `project` + `specId` (a cópia aplicada) ou `path` do pacote. Somente leitura.',
+        'The components of a library (formatVersion 4): per annotation type with a component, `type`, `name`, `layer`, `size` and `minSize` (px), whether it has a document (`hasDoc`) and how many examples. Provide `project` + `specId` (the applied copy) or the package `path`. Read-only.',
       inputSchema: packageArgs,
       annotations: READ_ONLY,
     },
@@ -1180,12 +1181,12 @@ export function registerTools(
     'get_component',
     {
       description:
-        'Tudo de um tipo da biblioteca para montar telas com ele: o documento markdown (`doc`), os campos (chave, rótulo, tipo, obrigatório, opções, padrão, descrição), os exemplos nomeados (valores, ou sistema + arquivo com o JSON do exemplo externo quando pequeno), `code` (o código de instanciação por plataforma: `symbol` e `definition`, com a `url` e a `ref` do `repo` da especialização e, com `project`, o `localFile` pelo clone local), `sources` e o JSON do componente (`component`). `type` é o id (ou o nome) do tipo. Tipo sem componente ou documento: resposta com `hasComponent: false` e `hint`. Informe `project` + `specId` ou `path` do pacote. Documento em repositório externo (`doc` objeto, formatVersion 11): com `project`, o servidor lê o `.md` pelo clone do repositório (`docRepos[<id>].localPath` do projeto, veja set_doc_repo), dentro do diretório de trabalho do cliente, e devolve o texto em `doc`; sem clone, sem o arquivo ou fora do diretório de trabalho, `doc` é `null` e `docExternal` traz `{ repo, path, url, localFile, exists }` (o `url` vem do `urlTemplate` do repositório, ou é `null`) mais uma `hint`. Somente leitura.',
+        "Everything about a library type for building screens with it: the markdown document (`doc`), the fields (key, label, type, required, options, default, description), the named examples (values, or system + file with the JSON of the external example when small), `code` (the instantiation code per platform: `symbol` and `definition`, with the `url` and `ref` of the specialization's `repo` and, with `project`, the `localFile` from the local clone), `sources` and the component JSON (`component`). `type` is the id (or the name) of the type. A type without a component or document: response with `hasComponent: false` and `hint`. Provide `project` + `specId` or the package `path`. A document in an external repository (`doc` object, formatVersion 11): with `project`, the server reads the `.md` from the repository clone (the project's `docRepos[<id>].localPath`, see set_doc_repo), inside the client's working directory, and returns the text in `doc`; without a clone, without the file or outside the working directory, `doc` is `null` and `docExternal` carries `{ repo, path, url, localFile, exists }` (the `url` comes from the repository's `urlTemplate`, or is `null`) plus a `hint`. Read-only.",
       inputSchema: {
         ...packageArgs,
         type: z
           .string()
-          .describe('Id do tipo de anotação (ou o nome), veja list_components.'),
+          .describe('Id of the annotation type (or the name), see list_components.'),
       },
       annotations: READ_ONLY,
     },

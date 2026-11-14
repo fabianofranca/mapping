@@ -18,21 +18,21 @@ import type { ProjectLocation } from './projects';
 import { writeNewFile } from './proposalStore';
 import { compareByCreated } from './shared';
 
-// Conversas em disco (etapa Comentários, CM6): `comments/<id>.json` (aberta) e
-// `comments/resolved/<id>.json` (resolvida). O servidor lê as duas pastas e junta as cópias da
-// mesma conversa (decisão 7); grava só o arquivo novo de `open_thread` e o acréscimo de uma
-// mensagem em `comments/<id>.json`, com `revision + 1`. NUNCA grava em `comments/resolved/` nem
-// resolve, reabre ou apaga: isso é da pessoa, na app. Como a proposta, a gravação confere o
-// texto do arquivo imediatamente antes e, se a app mudou o arquivo no meio, relê e refaz.
+// Conversations on disk (Comments stage, CM6): `comments/<id>.json` (open) and
+// `comments/resolved/<id>.json` (resolved). The server reads both folders and merges the copies of the
+// same conversation (decision 7); it writes only the new file of `open_thread` and the addition of a
+// message in `comments/<id>.json`, with `revision + 1`. It NEVER writes in `comments/resolved/` nor
+// resolves, reopens or deletes: that belongs to the person, in the app. Like the proposal, the write checks the
+// file's text immediately before and, if the app changed the file in the meantime, rereads and redoes it.
 
-/** Arquivo de conversa maior que isto é recusado, para não esgotar a memória. */
+/** A conversation file larger than this is refused, so memory is not exhausted. */
 const MAX_THREAD_BYTES = 16 * 1024 * 1024;
-/** Tentativas de um acréscimo quando o arquivo muda entre a leitura e a gravação. */
+/** Attempts of an addition when the file changes between the read and the write. */
 const MAX_ATTEMPTS = 3;
 
 export interface StoredThread {
   readonly id: string;
-  /** A conversa já com as duas cópias juntadas (`mergeThreadCopies`). */
+  /** The conversation with the two copies already merged (`mergeThreadCopies`). */
   readonly thread: Thread;
 }
 
@@ -56,7 +56,7 @@ interface Copies {
   readonly resolved: Copy | null;
 }
 
-/** Ids (nomes dos arquivos `<id>.json`) de uma das duas pastas. */
+/** Ids (names of the `<id>.json` files) of one of the two folders. */
 async function idsIn(location: ProjectLocation, folder: string): Promise<string[]> {
   let entries;
   try {
@@ -66,14 +66,14 @@ async function idsIn(location: ProjectLocation, folder: string): Promise<string[
   }
   return (
     entries
-      // `isFile()` é falso para links simbólicos: nunca são seguidos.
+      // `isFile()` is false for symbolic links: they are never followed.
       .filter((e) => e.isFile() && e.name.endsWith('.json') && !e.name.startsWith('.'))
       .map((e) => e.name.slice(0, -'.json'.length))
       .filter((id) => THREAD_ID_RE.test(id))
   );
 }
 
-/** Ids de todas as conversas do projeto (abertas e resolvidas), em ordem alfabética, sem ler os arquivos. */
+/** Ids of all the project's conversations (open and resolved), in alphabetical order, without reading the files. */
 export async function listThreadIds(location: ProjectLocation): Promise<string[]> {
   const [open, resolved] = await Promise.all([
     idsIn(location, COMMENTS_DIR),
@@ -95,7 +95,7 @@ async function readCopy(
   );
   if (real === null) return null;
   if ((await stat(real)).size > MAX_THREAD_BYTES) {
-    throw new ToolError('file-too-large', `conversa grande demais: ${id}`);
+    throw new ToolError('file-too-large', `conversation too large: ${id}`);
   }
   return { real, text: await readFile(real, 'utf8') };
 }
@@ -118,11 +118,11 @@ function parseCopy(id: string, copy: Copy | null): Parsed | null {
   if (!parsed.ok) {
     const shown = parsed.errors.slice(0, 5).join('; ');
     const more = parsed.errors.length - 5;
-    return { error: more > 0 ? `${shown}; …(+${more} erro(s))` : shown };
+    return { error: more > 0 ? `${shown}; …(+${more} error(s))` : shown };
   }
   if (parsed.thread.id !== id) {
     return {
-      error: `o id do arquivo ("${parsed.thread.id}") não bate com o do nome ("${id}")`,
+      error: `the file's id ("${parsed.thread.id}") does not match the name's ("${id}")`,
     };
   }
   return parsed.thread;
@@ -131,7 +131,7 @@ function parseCopy(id: string, copy: Copy | null): Parsed | null {
 const isThread = (parsed: Parsed | null): parsed is Thread =>
   parsed !== null && !('error' in parsed);
 
-/** Junta as cópias; se alguma existe e não é legível, o erro dela (a conversa não é regravada). */
+/** Merges the copies; if one exists and is not readable, its error (the conversation is not rewritten). */
 function mergeCopies(id: string, copies: Copies): MergedThread | { error: string } {
   const open = parseCopy(id, copies.open);
   const resolved = parseCopy(id, copies.resolved);
@@ -149,7 +149,7 @@ function mergeCopies(id: string, copies: Copies): MergedThread | { error: string
   }
 }
 
-/** O erro de leitura de um item, com o código, para a lista `broken`. */
+/** The read error of an item, with the code, for the `broken` list. */
 function readFailure(error: unknown): string {
   if (error instanceof ToolError) return `${error.code}: ${error.message}`;
   const code = (error as { code?: unknown } | null)?.code;
@@ -160,7 +160,7 @@ function readFailure(error: unknown): string {
       : String(error);
 }
 
-/** Todas as conversas do projeto; as ilegíveis vêm em `broken`. Ordem de criação. */
+/** All the project's conversations; the unreadable ones come in `broken`. Creation order. */
 export async function listStoredThreads(
   roots: Roots,
   location: ProjectLocation,
@@ -189,7 +189,7 @@ export async function listStoredThreads(
   return { threads, broken };
 }
 
-/** Uma conversa, com as cópias juntadas; `thread-not-found` ou `invalid-thread`. */
+/** A conversation, with the copies merged; `thread-not-found` or `invalid-thread`. */
 export async function readStoredThread(
   roots: Roots,
   location: ProjectLocation,
@@ -201,11 +201,11 @@ export async function readStoredThread(
 
 function mergedOrThrow(id: string, copies: Copies): Thread {
   if (copies.open === null && copies.resolved === null) {
-    throw new ToolError('thread-not-found', `conversa não encontrada: ${id}`);
+    throw new ToolError('thread-not-found', `conversation not found: ${id}`);
   }
   const merged = mergeCopies(id, copies);
   if ('error' in merged) {
-    throw new ToolError('invalid-thread', `conversa ilegível: ${merged.error}`, {
+    throw new ToolError('invalid-thread', `unreadable conversation: ${merged.error}`, {
       thread: id,
     });
   }
@@ -213,8 +213,8 @@ function mergedOrThrow(id: string, copies: Copies): Thread {
 }
 
 /**
- * Grava a conversa nova em `comments/<id>.json`: arquivo temporário + `link`, que nunca
- * sobrescreve (falha com `EEXIST` se o destino já existe).
+ * Writes the new conversation in `comments/<id>.json`: a temporary file + `link`, which never
+ * overwrites (fails with `EEXIST` if the destination already exists).
  */
 export async function writeNewThread(
   roots: Roots,
@@ -232,12 +232,12 @@ export async function writeNewThread(
 const sameText = (a: Copy | null, b: Copy | null): boolean => a?.text === b?.text;
 
 /**
- * Acrescenta à conversa: lê as duas cópias, deixa `transform` calcular a conversa nova sobre a
- * versão do disco (pode recusar com um `ToolError`) e, imediatamente antes de gravar, confere que
- * os arquivos continuam como foram lidos. Se a app (ou outra pessoa) mudou algo no meio, relê e
- * refaz; sem sucesso em `MAX_ATTEMPTS`, `revision-conflict`. A gravação é sempre em
- * `comments/<id>.json` (a app move o arquivo de pasta e apaga a outra cópia na próxima gravação
- * dela). `transform` que devolve a mesma conversa não grava nada.
+ * Appends to the conversation: reads the two copies, lets `transform` compute the new conversation on the
+ * disk version (it may refuse with a `ToolError`) and, immediately before writing, checks that
+ * the files are still as they were read. If the app (or another person) changed something in the meantime, rereads and
+ * redoes it; with no success in `MAX_ATTEMPTS`, `revision-conflict`. The write is always in
+ * `comments/<id>.json` (the app moves the file between folders and deletes the other copy on its next
+ * write). A `transform` that returns the same conversation writes nothing.
  */
 export async function updateStoredThread(
   roots: Roots,
@@ -270,14 +270,14 @@ export async function updateStoredThread(
   }
   throw new ToolError(
     'revision-conflict',
-    'a conversa foi alterada por outro processo enquanto era atualizada; releia e tente de novo',
+    'the conversation was changed by another process while it was being updated; reread and try again',
     { thread: id },
   );
 }
 
 /**
- * Assinatura barata das duas pastas (nome, tamanho e data dos arquivos), para o
- * `wait_for_comment` só reler as conversas quando algo mudou.
+ * Cheap signature of the two folders (name, size and date of the files), so
+ * `wait_for_comment` only rereads the conversations when something changed.
  */
 export async function commentsSignature(location: ProjectLocation): Promise<string> {
   const parts: string[] = [];
@@ -287,7 +287,7 @@ export async function commentsSignature(location: ProjectLocation): Promise<stri
         const info = await stat(join(location.dir, `${folder}/${id}.json`));
         parts.push(`${folder}/${id}:${info.size}:${info.mtimeMs}`);
       } catch {
-        // O arquivo sumiu entre a listagem e o stat: a próxima assinatura já não o traz.
+        // The file vanished between the listing and the stat: the next signature no longer carries it.
       }
     }
   }

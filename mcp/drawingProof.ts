@@ -12,23 +12,23 @@ import {
 import { builtinFontBook, measurerFor, type FontBook } from './image/textMeasurer';
 import type { Refs } from './items';
 
-// Prova de desenho por instância (etapa Componentes fiéis, CF10, decisão 27): o componente de
-// cada marcação criada ou alterada pelo lote é instanciado no retângulo e com os valores reais,
-// no modo efetivo do container, e o "não cabe" do motor vira um item `component-overflow` em
-// `issues.new`. É aviso: não bloqueia o lote. Os avisos e as contas são os do modelo
-// (`ComponentDrawing.shortfalls`); aqui só se escolhe o que provar e como mostrar.
+// Per-instance drawing proof (Faithful components stage, CF10, decision 27): the component of
+// each marking created or changed by the batch is instantiated in the rectangle and with the real values,
+// in the container's effective mode, and the engine's "does not fit" becomes a `component-overflow` item in
+// `issues.new`. It is a warning: it does not block the batch. The warnings and the computations are the model's
+// (`ComponentDrawing.shortfalls`); here we only choose what to prove and how to show it.
 
 export const COMPONENT_OVERFLOW = 'component-overflow';
 
 export interface OverflowItem {
   readonly code: typeof COMPONENT_OVERFLOW;
-  /** `text` (texto que não cabe na altura), `content` (filhos que passam do quadro) ou `slot`. */
+  /** `text` (text that does not fit the height), `content` (children that go past the frame) or `slot`. */
   readonly kind: 'text' | 'content' | 'slot';
-  /** O nó do componente que não cabe (o nome no molde). */
+  /** The component node that does not fit (its name in the template). */
   readonly node: string;
-  /** Quanto falta, em px (uma casa). */
+  /** How much is missing, in px (one decimal place). */
   readonly missing: number;
-  /** Medido sem fonte da biblioteca: a embutida no lugar, só um sinal para olhar. */
+  /** Measured without the library's font: the bundled one in its place, only a signal to take a look. */
   readonly approximate?: true;
   readonly message: string;
 }
@@ -40,13 +40,13 @@ const KIND_OF_PREFIX: readonly [string, OverflowItem['kind']][] = [
 
 const json = (value: unknown) => JSON.stringify(value);
 
-/** Igualdade por referência primeiro: o mais comum é o objeto não ter mudado, e o `stringify` é caro. */
+/** Equality by reference first: the most common case is the object not having changed, and `stringify` is expensive. */
 const differs = (a: unknown, b: unknown) => a !== b && json(a) !== json(b);
 
-/** Um cache de desenhos por leitor de fontes: provas seguidas do mesmo projeto reaproveitam as instâncias. */
+/** One drawing cache per font reader: consecutive proofs of the same project reuse the instances. */
 const drawingCaches = new WeakMap<FontBook, DrawingCache>();
 
-/** O espaço mudou o que vale nele para o desenho: modo, densidade ou direção de leitura efetivos. */
+/** The space changed what applies in it for the drawing: effective mode, density or reading direction. */
 function spaceChanged(before: Project, after: Project, containerId: string | null) {
   return (
     effectiveDrawingMode(before, containerId) !==
@@ -56,7 +56,7 @@ function spaceChanged(before: Project, after: Project, containerId: string | nul
   );
 }
 
-/** Marcações que o lote criou ou alterou (retângulo, anotação, modo, densidade, direção) e as donas delas. */
+/** Markings the batch created or changed (rectangle, annotation, mode, density, direction) and their owners. */
 function touchedMarkings(before: Project, after: Project): Set<string> {
   const old = projectIndex(before);
   const next = projectIndex(after);
@@ -75,9 +75,9 @@ function touchedMarkings(before: Project, after: Project): Set<string> {
 }
 
 /**
- * Quem depende do desenho das marcações tocadas entra na prova: o seguidor (o desenho dele lê o
- * alvo por `$anchor.*`: lado, centro e tamanho) e a dona (a filha que muda pode deixar de caber
- * no slot dela).
+ * Whoever depends on the drawing of the touched markings enters the proof: the follower (its drawing reads
+ * the target through `$anchor.*`: side, center and size) and the owner (the child that changes may stop fitting
+ * in its slot).
  */
 function addDependents(
   next: ReturnType<typeof projectIndex>,
@@ -111,14 +111,14 @@ function itemOf(message: string, missing: number, approximate: boolean): Overflo
   const node = message.includes(': ')
     ? message.slice(message.indexOf(': ') + 2)
     : message;
-  const base = `${message} — falta ${rounded} px`;
+  const base = `${message} — ${rounded} px short`;
   return {
     code: COMPONENT_OVERFLOW,
     kind,
     node,
     missing: rounded,
     ...(approximate ? { approximate: true as const } : {}),
-    message: approximate ? `${base} (aproximado)` : base,
+    message: approximate ? `${base} (approximate)` : base,
   };
 }
 
@@ -128,7 +128,7 @@ function itemsOf(drawing: ComponentDrawing, approximate: boolean): OverflowItem[
   );
 }
 
-/** Os itens `component-overflow` por anotação, das marcações que o lote criou ou alterou. */
+/** The `component-overflow` items per annotation, of the markings the batch created or changed. */
 export function overflowProof(
   refs: Refs,
   before: Project,
@@ -157,7 +157,7 @@ interface IssueEntry {
   readonly issues: readonly object[];
 }
 
-/** `issues` do lote com o "não cabe" das marcações provadas somado a `issues.new`. */
+/** The batch's `issues` with the "does not fit" of the proven markings added to `issues.new`. */
 export function withOverflow(
   issues: Record<string, unknown>,
   refs: Refs,

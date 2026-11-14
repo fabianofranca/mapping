@@ -10,68 +10,68 @@ The outcome of each piece of work is its **implementation**: from the markings a
 
 <!-- mapping:begin (gerenciado pelo setup.sh; não edite entre estas linhas) -->
 
-Esta pasta centraliza os projetos **Mapping**: containers (imagens de telas, protótipos, diagramas, ou áreas sem arquivo) com áreas retangulares marcadas, organizadas em camadas e descritas por anotações, cada projeto numa pasta com `mapping.json`. Ela é agnóstica de ferramenta: tudo o que você precisa está aqui, por caminho relativo.
+This folder centralizes the **Mapping** projects: containers (images of screens, prototypes, diagrams, or areas with no file) with marked rectangular areas, organized into layers and described by annotations, each project in a folder with a `mapping.json`. It is tool-agnostic: everything you need is here, by relative path.
 
-## Estrutura
+## Structure
 
-| Pasta                  | O que é                                                                                                                                               |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `projetos/<nome>/`     | Um projeto Mapping: `mapping.json`, `images/`, `specs/` (cópias das especializações aplicadas), `proposals/`.                                         |
-| `especializacoes/`     | **Fontes** das especializações (`<id>.json`). A cópia em `projetos/*/specs/` é derivada; edite aqui e reaplique.                                      |
-| `tools/mapping-mcp.js` | O servidor MCP do Mapping (autocontido; Node ≥ 20).                                                                                                   |
-| `.agents/skills/`      | Skills no padrão Agent Skills; `.claude/skills/spec-author` é um link para a pasta dela (ou uma cópia, onde link não existe; o `setup.sh` a recopia). |
-| `.mcp.json` e irmãos   | A mesma configuração do servidor para cada cliente (Claude Code, Cursor, Gemini CLI, Copilot, Codex).                                                 |
+| Folder                   | What it is                                                                                                                                               |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `projetos/<name>/`       | A Mapping project: `mapping.json`, `images/`, `specs/` (copies of the applied specializations), `proposals/`.                                            |
+| `especializacoes/`       | The **sources** of the specializations (`<id>.json`). The copy in `projetos/*/specs/` is derived; edit here and reapply.                                 |
+| `tools/mapping-mcp.js`   | The Mapping MCP server (self-contained; Node ≥ 20).                                                                                                      |
+| `.agents/skills/`        | Skills in the Agent Skills standard; `.claude/skills/spec-author` is a link to its folder (or a copy, where links do not exist; `setup.sh` recopies it). |
+| `.mcp.json` and siblings | The same server configuration for each client (Claude Code, Cursor, Gemini CLI, Copilot, Codex).                                                         |
 
-## Servidor MCP `mapping`
+## MCP server `mapping`
 
-As tools aparecem como `mcp__mapping__…` (ou `mapping/…`, conforme o cliente). Se não aparecerem, o cliente não carregou a configuração desta pasta; o comando é:
+The tools appear as `mcp__mapping__…` (or `mapping/…`, depending on the client). If they do not appear, the client did not load this folder's configuration; the command is:
 
 ```
 node tools/mapping-mcp.js --root projetos --root especializacoes
 ```
 
-Comece por `list_projects`. O servidor descreve seu uso nas próprias instruções e no recurso `mapping-docs://AGENT-GUIDE.md`; leia o guia antes da primeira alteração. Itens são citados por referência `mapping://<projeto>/<m|i|a|p>/<código>`, só a URL (sem caminho legível e com o projeto codificado: `Meu%20Projeto`); uma referência no formato antigo dá `invalid-ref` e precisa ser copiada de novo na app.
+Start with `list_projects`. The server describes its usage in its own instructions and in the `mapping-docs://AGENT-GUIDE.md` resource; read the guide before the first change. Items are cited by reference `mapping://<project>/<m|i|a|p>/<code>`, URL only (no readable path and with the project encoded: `My%20Project`); a reference in the old format gives `invalid-ref` and must be copied again from the app.
 
-## Regras
+## Rules
 
-- **Nunca edite `mapping.json`, `specs/` ou `proposals/` à mão.** Toda alteração vai por `plan_changes` (prévia) e `propose_changes` (grava uma proposta); a pessoa revisa e aplica na app. Depois de propor, avise e espere a revisão (`get_proposal`, `get_proposal_review`).
-- **Perspectivas são só leitura.** `get_project` traz `perspectives` e `arrivals`, `get_perspective` as raízes de uma perspectiva, e `get_marking` e `get_container` dizem em que perspectivas o item aparece. Você nunca as cria nem as altera e propõe sempre na Principal (detalhes na seção "Perspectivas" dos conceitos do guia `mapping-docs://AGENT-GUIDE.md`).
-- **Especializações nascem em `especializacoes/`**, com a skill `spec-author` (abaixo), são validadas com `validate_specialization` e aplicadas a um projeto só por proposta (`apply_specialization` dentro de `propose_changes`). Para mudar uma aplicada, edite a fonte, suba a `version` e envie `update_specialization`. **Bibliotecas** (`formatVersion` 4) são **pastas** `especializacoes/<id>/`: valide com `validate_library({ path })` (não só o arquivo) e entregue a pasta validada à pessoa, que a aplica na app (Especializações) ou pede que você a proponha: `apply_specialization` (ou `update_specialization`, para versão maior) num `propose_changes`, com `file` = a pasta (antes, numa atualização, `plan_library_update` mostra o impacto); detalhes em "Escrevendo uma biblioteca" do guia `mapping-docs://AGENT-GUIDE.md`. Para ler os componentes, use `list_components` e `get_component`.
-- **Coordenadas** de marcação são em pixels da imagem original do container (a letra `i` das referências `mapping://…/i/…` é o container). A exceção é a **marcação do canvas** (`space: "canvas"`, `container: null`), que envolve containers e tem `rect` em unidades do canvas, sem imagem para recortar (`get_marking_image` responde `canvas-marking`). Quem está dentro de quem vem **pronto**: `parent` e `members` em `get_marking`, `parent` em `get_container`; leia, não calcule interseções e não escolha o pai (`parent` em `create_marking`/`update_marking` é ignorado com aviso).
-- **Notas, tabelas e setas.** Um tipo `floating` (a biblioteca de notas: `nota` e `tabela`) cria uma marcação **flutuante**, no canvas, que não pertence a nada; ela se liga ao elemento por uma **seta**, que é uma marcação que aponta (`create_arrow`, `from`/`to`; nunca `points`). Para achar a tabela de um botão, leia `arrows` em `get_marking` do botão e siga a ponta flutuante. Para criar uma, use `create_marking` com `near` o botão e `create_arrow`, num só lote. Tipos com `appliesTo: ["arrow"]` anotam a seta. Para criar uma marcação em volta de outras (o **Envolver** da app), use `wrap_items` com os itens, sem calcular o retângulo à mão. Se um item preenche o container, a nova fica com o mesmo retângulo dele e é a **mãe** do item, no plano e no aplicado (leia o `membership` da resposta). Vale também com `move_marking` no lote; a exceção rara é o limite conhecido #625 (um empate novo entre marcações que já existiam, decidido por um passo intermediário do lote): nesse caso, confira com `get_marking` depois de aplicar.
-- **Código**: o servidor só confere se arquivos de código existem, e só dentro do diretório onde o cliente foi aberto. O `code` de um tipo diz como se cria uma instância dele em cada plataforma (o que se chama e o arquivo que o define, no repositório da especialização); o mapeamento não guarda nada sobre a solução. Para escrever a solução a partir das marcações (`get_code_hints`, `find_by_code`), abra o agente no repositório do código, com esta pasta como raiz do servidor por caminho absoluto.
+- **Never edit `mapping.json`, `specs/` or `proposals/` by hand.** Every change goes through `plan_changes` (preview) and `propose_changes` (saves a proposal); the person reviews and applies it in the app. After proposing, notify them and wait for the review (`get_proposal`, `get_proposal_review`).
+- **Perspectives are read-only.** `get_project` returns `perspectives` and `arrivals`, `get_perspective` the roots of a perspective, and `get_marking` and `get_container` say in which perspectives the item appears. You never create or change them and always propose in the Main one (details in the "Perspectives" item of the concepts of the `mapping-docs://AGENT-GUIDE.md` guide).
+- **Specializations start in `especializacoes/`**, with the `spec-author` skill (below), are validated with `validate_specialization` and applied to a project only by proposal (`apply_specialization` inside `propose_changes`). To change an applied one, edit the source, bump the `version` and send `update_specialization`. **Libraries** (`formatVersion` 4) are **folders** `especializacoes/<id>/`: validate with `validate_library({ path })` (not just the file) and hand the validated folder to the person, who applies it in the app (Specializations) or asks you to propose it: `apply_specialization` (or `update_specialization`, for a major version) in a `propose_changes`, with `file` = the folder (before that, on an update, `plan_library_update` shows the impact); details in "Writing a library" in the `mapping-docs://AGENT-GUIDE.md` guide. To read the components, use `list_components` and `get_component`.
+- **Coordinates** of a marking are in pixels of the container's original image (the letter `i` in `mapping://…/i/…` references is the container). The exception is the **canvas marking** (`space: "canvas"`, `container: null`), which wraps containers and has a `rect` in canvas units, with no image to crop (`get_marking_image` answers `canvas-marking`). Who is inside whom comes **ready**: `parent` and `members` in `get_marking`, `parent` in `get_container`; read it, do not compute intersections and do not choose the parent (`parent` in `create_marking`/`update_marking` is ignored with a warning).
+- **Notes, tables and arrows.** A `floating` type (the notes library: `nota` and `tabela`) creates a **floating** marking, on the canvas, that belongs to nothing; it is linked to the element by an **arrow**, which is a marking that points (`create_arrow`, `from`/`to`; never `points`). To find a button's table, read `arrows` in the button's `get_marking` and follow the floating end. To create one, use `create_marking` with `near` the button and `create_arrow`, in a single batch. Types with `appliesTo: ["arrow"]` annotate the arrow. To create a marking around others (the app's **Wrap**), use `wrap_items` with the items, without computing the rectangle by hand. If an item fills the container, the new one gets the same rectangle as it and is the item's **parent**, in the plan and in the applied project (read the response's `membership`). It also holds with `move_marking` in the batch; the rare exception is the known limit #625 (a new tie between markings that already existed, decided by an intermediate step of the batch): in that case, check with `get_marking` after applying.
+- **Code**: the server only checks that code files exist, and only inside the directory where the client was opened. A type's `code` says how to create an instance of it on each platform (what to call and the file that defines it, in the specialization's repository); the mapping stores nothing about the solution. To write the solution from the markings (`get_code_hints`, `find_by_code`), open the agent in the code repository, with this folder as the server root by absolute path.
 
 ## Skill `spec-author`
 
-Para escrever, revisar ou atualizar uma especialização, use a skill `spec-author` (`.agents/skills/spec-author/SKILL.md`): ela traz o método, a leitura obrigatória do formato e a validação; o pedido só precisa dizer `id`, origem, `formatVersion`, plataformas e o que fica fora e, para uma biblioteca, a pasta de saída e a origem dos componentes (modelo no fim da skill). Grave a fonte em `especializacoes/<id>.json` (biblioteca: na pasta `especializacoes/<id>/`).
+To write, review or update a specialization, use the `spec-author` skill (`.agents/skills/spec-author/SKILL.md`): it brings the method, the mandatory reading of the format and the validation; the request only needs to state the `id`, the origin, the `formatVersion`, the platforms and what stays out and, for a library, the output folder and the origin of the components (template at the end of the skill). Save the source in `especializacoes/<id>.json` (library: in the `especializacoes/<id>/` folder).
 
-## Fluxo típico
+## Typical flow
 
-1. `list_projects` → `get_project` → `get_specialization` dos tipos que vai usar.
-2. Leia os containers e marcações que interessam (`list_markings`, `get_marking`, `get_marking_image`). Se o seu cliente não mostra imagens no chat (como o Cursor), cole o `markdown` que `get_marking_image`/`get_container_file` devolvem (URL local do servidor).
-3. Monte o lote, confira com `plan_changes` (leia o `membership` da resposta, que lista quem muda de pai ou de espaço; não calcule interseções), envie com `propose_changes`, avise a pessoa.
-4. Quando a revisão terminar, leia `get_proposal_review` e, se preciso, corrija a mesma proposta com `revise_proposal` (enquanto nada foi aplicado; depois, envie outra com `supersedes`).
+1. `list_projects` → `get_project` → `get_specialization` of the types you will use.
+2. Read the containers and markings that matter (`list_markings`, `get_marking`, `get_marking_image`). If your client does not show images in the chat (like Cursor), paste the `markdown` that `get_marking_image`/`get_container_file` return (local URL of the server).
+3. Build the batch, check it with `plan_changes` (read the response's `membership`, which lists who changes parent or space; do not compute intersections), send it with `propose_changes`, notify the person.
+4. When the review is done, read `get_proposal_review` and, if needed, fix the same proposal with `revise_proposal` (while nothing has been applied; afterwards, send another one with `supersedes`).
 
-## Conversas
+## Conversations
 
-Pessoas e agentes conversam em **conversas ancoradas** num item do mapeamento (marcação, campo, camada, ponto do canvas…), guardadas em `projetos/<projeto>/comments/`. As regras de uso (tools, `after`, citações, propostas ligadas) estão na seção "Conversas" do guia `mapping-docs://AGENT-GUIDE.md`; leia-a antes de abrir ou responder uma. O resumo:
+People and agents talk in **conversations anchored** to an item of the mapping (marking, field, layer, canvas point…), stored in `projetos/<project>/comments/`. The usage rules (tools, `after`, citations, linked proposals) are in the "Conversations" section of the `mapping-docs://AGENT-GUIDE.md` guide; read it before opening or answering one. The summary:
 
-- **Quem acorda você.** Se o `watch-comments.mjs` (na raiz desta pasta, ver o `README.md`) está rodando, ele chama você com um prompt como este: "Há conversas aguardando você em projetos/. Leia com `list_threads` (por padrão: as abertas que aguardam o agente), responda cada uma com `post_message` e siga o resto do trabalho." A variável `MAPPING_AWAITING` traz as conversas que motivaram a execução. O servidor nunca acorda agente.
-- **Abra conversa** (`open_thread`) diante de uma ambiguidade que a especialização não decide, em vez de adivinhar ou largar o trabalho; depois siga com o resto.
-- **Responda onde foi perguntado**, sempre com o `after` (o id da última mensagem que você leu). Se der `stale-thread`, leia as mensagens novas e responda de novo.
-- **Cite, não repita.** Se outra conversa aberta trata do mesmo assunto, cite-a com `[assunto](mapping://<projeto>/c/<código>)` em vez de refazer o trabalho.
-- **Proposta ligada:** em `propose_changes`, passe `thread` para a proposta aparecer na conversa.
-- **Responda só ao que lhe é pedido.** Conversa que aguarda o agente porque a última mensagem é de pessoa não quer dizer que haja pergunta para você; e não responda conversa só entre pessoas sem ser chamado.
-- **Nunca assine como pessoa e nunca resolva uma conversa** (não existe tool para isso): quem resolve é uma pessoa, na app.
+- **Who wakes you up.** If `watch-comments.mjs` (in the root of this folder, see the `README.md`) is running, it calls you with a prompt like this: "There are conversations awaiting you in projetos/. Read them with `list_threads` (by default: the open ones awaiting the agent), reply to each one with `post_message` and continue with the rest of the work." The `MAPPING_AWAITING` variable carries the conversations that triggered the run. The server never wakes an agent.
+- **Open a conversation** (`open_thread`) when faced with an ambiguity the specialization does not decide, instead of guessing or dropping the work; then carry on with the rest.
+- **Answer where you were asked**, always with `after` (the id of the last message you read). If you get `stale-thread`, read the new messages and answer again.
+- **Cite, do not repeat.** If another open conversation deals with the same subject, cite it with `[subject](mapping://<project>/c/<code>)` instead of redoing the work.
+- **Linked proposal:** in `propose_changes`, pass `thread` so the proposal appears in the conversation.
+- **Answer only what is asked of you.** A conversation that awaits the agent because the last message is from a person does not mean there is a question for you; and do not answer a conversation between people only without being called.
+- **Never sign as a person and never resolve a conversation** (there is no tool for it): a person resolves it, in the app.
 
-Referências aceitas em textos e citações (só a URL; projeto codificado como em `Meu%20Projeto`):
+References accepted in texts and citations (URL only; project encoded as in `My%20Project`):
 
-| Referência                                            | Aponta para                   |
-| ----------------------------------------------------- | ----------------------------- |
-| `mapping://<projeto>/l/<código>`                      | camada                        |
-| `mapping://<projeto>/c/<código>`                      | conversa                      |
-| `mapping://<projeto>/a/<código>/f/<campo>`            | campo de uma anotação         |
-| `mapping://<projeto>/a/<código>/e/<código>`           | par (entrada) de uma anotação |
-| `mapping://<projeto>/a/<código>/f/<campo>/r/<código>` | linha de um campo de tabela   |
+| Reference                                         | Points to                     |
+| ------------------------------------------------- | ----------------------------- |
+| `mapping://<project>/l/<code>`                    | layer                         |
+| `mapping://<project>/c/<code>`                    | conversation                  |
+| `mapping://<project>/a/<code>/f/<field>`          | field of an annotation        |
+| `mapping://<project>/a/<code>/e/<code>`           | pair (entry) of an annotation |
+| `mapping://<project>/a/<code>/f/<field>/r/<code>` | row of a table field          |
 
 <!-- mapping:end -->
