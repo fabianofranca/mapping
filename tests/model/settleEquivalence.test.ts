@@ -12,23 +12,23 @@ import {
   referenceSettleHierarchy,
 } from '../support/settleReference';
 
-// Equivalência por sorteio (#882, decisão 1): `settleHierarchy` e `enclosingAmong` têm de dar
-// EXATAMENTE o mesmo resultado que a referência congelada (`tests/support/settleReference.ts`,
-// o assentar de antes do índice espacial), empates e identidade do objeto incluídos. Os projetos
-// vêm de um gerador determinístico (mulberry32) com a semente abaixo; a falha mostra a semente e
-// o índice do caso, e cada caso se reproduz sozinho (`makeRng(SEED + índice * PASSO)`).
+// Equivalence by random draw (#882, decision 1): `settleHierarchy` and `enclosingAmong` must give
+// EXACTLY the same result as the frozen reference (`tests/support/settleReference.ts`,
+// the settle from before the spatial index), ties and object identity included. The projects
+// come from a deterministic generator (mulberry32) with the seed below; a failure shows the seed and
+// the case index, and each case reproduces on its own (`makeRng(SEED + index * STEP)`).
 
 const SEED = 20261108;
 const CASES = 500;
 const SEED_STEP = 7919;
 
 // ---------------------------------------------------------------------------------------------
-// Gerador pseudoaleatório
+// Pseudo-random generator
 // ---------------------------------------------------------------------------------------------
 
 interface Rng {
   float(): number;
-  /** Inteiro em [lo, hi]; `lo` se `hi < lo`. */
+  /** Integer in [lo, hi]; `lo` if `hi < lo`. */
   int(lo: number, hi: number): number;
   chance(p: number): boolean;
   pick<T>(items: readonly T[]): T;
@@ -54,7 +54,7 @@ function makeRng(seed: number): Rng {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Retângulos
+// Rectangles
 // ---------------------------------------------------------------------------------------------
 
 type RectKind = 'nested' | 'equal' | 'swap' | 'random' | 'inside' | 'over' | 'overflow';
@@ -64,7 +64,7 @@ interface SpaceCtx {
   readonly pool: Rect[];
   readonly area: Rect;
   readonly maxSize: number;
-  /** Retângulos de container no canvas (só no espaço do canvas). */
+  /** Container rectangles on the canvas (only in the canvas space). */
   readonly targets: readonly Rect[];
   readonly kinds: readonly RectKind[];
 }
@@ -121,7 +121,7 @@ function swapRect(c: SpaceCtx): Rect {
   return { x: b.x, y: b.y, width: b.height, height: b.width };
 }
 
-/** Um retângulo inteiro dentro de `t` (que pode ter coordenadas decimais). */
+/** A whole-number rectangle inside `t` (which may have decimal coordinates). */
 function insideOf(c: SpaceCtx, t: Rect): Rect {
   const x0 = Math.ceil(t.x);
   const y0 = Math.ceil(t.y);
@@ -155,7 +155,7 @@ function overRect(c: SpaceCtx): Rect {
   };
 }
 
-/** Sai pela borda direita do espaço (marcação de container que deixa o container). */
+/** Leaves through the right edge of the space (a container marking that leaves the container). */
 function overflowRect(c: SpaceCtx): Rect {
   const width = c.rng.int(10, 80);
   const height = c.rng.int(10, 60);
@@ -184,7 +184,7 @@ function nextRect(c: SpaceCtx): Rect {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Containers, espaços e marcações
+// Containers, spaces and markings
 // ---------------------------------------------------------------------------------------------
 
 const MISSING_CONTAINER = 'CX';
@@ -196,7 +196,7 @@ function genContainers(rng: Rng, count: number): ProjectContainer[] {
     file: null,
     width: rng.int(120, 300),
     height: rng.int(100, 240),
-    // Cada container tem 1000 unidades de canvas só para ele: nunca se sobrepõem.
+    // Each container has 1000 canvas units just for itself: they never overlap.
     placement: {
       x: k * 1000 + rng.int(0, 100),
       y: rng.int(0, 200),
@@ -263,7 +263,7 @@ function genMarking(
 const rectKey = (m: Marking): string =>
   `${m.containerId}|${m.rect.x},${m.rect.y},${m.rect.width},${m.rect.height}`;
 
-/** Marcações de retângulo igual no mesmo espaço, em grupos de 2 ou mais. */
+/** Markings with an equal rectangle in the same space, in groups of 2 or more. */
 function equalBuckets(markings: readonly Marking[]): Marking[][] {
   const buckets = new Map<string, Marking[]>();
   for (const m of markings) {
@@ -286,7 +286,7 @@ function randomParent(
   return other.id === self ? null : other.id;
 }
 
-/** `parentId` atuais sorteados: nulos, válidos ou não, de outro espaço, inexistentes. */
+/** Drawn current `parentId`s: null, valid or not, from another space, nonexistent. */
 function assignParents(rng: Rng, markings: readonly Marking[]): Marking[] {
   const parents = new Map<string, string | null>();
   for (const m of markings) parents.set(m.id, randomParent(rng, markings, m.id));
@@ -294,7 +294,7 @@ function assignParents(rng: Rng, markings: readonly Marking[]): Marking[] {
   return markings.map((m) => ({ ...m, parentId: parents.get(m.id) ?? null }));
 }
 
-/** Cadeia (o pai antes) ou ciclo dentro de um grupo de retângulos iguais, ou nada. */
+/** Chain (the parent first) or cycle inside a group of equal rectangles, or nothing. */
 function applyChain(
   rng: Rng,
   bucket: readonly Marking[],
@@ -308,7 +308,7 @@ function applyChain(
     parents.set(m.id, previous ? previous.id : null);
   });
   if (roll >= 0.45) return;
-  // ciclo: o primeiro da cadeia passa a ter como pai o último
+  // cycle: the first of the chain gets the last one as its parent
   const first = order[0] as Marking;
   const last = order[order.length - 1] as Marking;
   parents.set(first.id, last.id);
@@ -357,9 +357,9 @@ function genProject(rng: Rng): Project {
   const markings = assignParents(rng, raw);
   const base = createProject({
     id: 'equivalence',
-    name: 'Equivalência',
+    name: 'Equivalence',
     now: '2026-11-08T00:00:00.000Z',
-    firstLayer: { id: 'L1', name: 'Camada', color: '#E53935' },
+    firstLayer: { id: 'L1', name: 'Layer', color: '#E53935' },
   });
   return {
     ...base,
@@ -373,7 +373,7 @@ function genProject(rng: Rng): Project {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Casos
+// Cases
 // ---------------------------------------------------------------------------------------------
 
 interface Case {
@@ -390,7 +390,7 @@ interface EnclosingQuery {
   readonly current: string | null;
 }
 
-/** Tamanho mínimo sorteado por marcação (`null` = sem mínimo), estável entre as chamadas. */
+/** Drawn minimum size per marking (`null` = no minimum), stable across calls. */
 function genMinSizes(rng: Rng, p: Project): (id: string) => Size | null {
   const sizes = new Map<string, Size | null>();
   for (const m of p.markings) {
@@ -402,7 +402,7 @@ function genMinSizes(rng: Rng, p: Project): (id: string) => Size | null {
   return (id) => sizes.get(id) ?? null;
 }
 
-/** Um `before` diferente do projeto: sem alguns pais e sem algumas marcações. */
+/** A `before` different from the project: without some parents and without some markings. */
 function genBefore(rng: Rng, p: Project): Project {
   return {
     ...p,
@@ -433,7 +433,7 @@ function genEnclosingQuery(rng: Rng, p: Project): EnclosingQuery {
 function buildCase(index: number): Case {
   const rng = makeRng(SEED + index * SEED_STEP);
   let project = genProject(rng);
-  // Parte dos casos já vem assentada: o "nada muda devolve o mesmo objeto" tem de aparecer.
+  // Some of the cases already come settled: the "nothing changes returns the same object" path must show up.
   if (rng.chance(0.15)) project = referenceSettleHierarchy(project);
   return {
     index,
@@ -451,27 +451,27 @@ function allCases(): readonly Case[] {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Conferência
+// Checking
 // ---------------------------------------------------------------------------------------------
 
 function expectSameSettle(p: Project, options: SettleOptions | undefined, label: string) {
   const got = settleHierarchy(p, options);
   const want = referenceSettleHierarchy(p, options);
   expect(got, label).toStrictEqual(want);
-  expect(Object.is(got, p), `${label} (identidade)`).toBe(Object.is(want, p));
-  // Idempotente: assentar o resultado devolve o mesmo objeto.
-  expect(settleHierarchy(got), `${label} (idempotência)`).toBe(got);
+  expect(Object.is(got, p), `${label} (identity)`).toBe(Object.is(want, p));
+  // Idempotent: settling the result returns the same object.
+  expect(settleHierarchy(got), `${label} (idempotence)`).toBe(got);
 }
 
 function expectSameCase(c: Case): void {
-  const label = `semente ${SEED} caso ${c.index}`;
-  expectSameSettle(c.project, undefined, `${label} sem opções`);
-  expectSameSettle(c.project, { minSizeOf: c.minSizeOf }, `${label} com minSizeOf`);
-  expectSameSettle(c.project, { before: c.before }, `${label} com before`);
+  const label = `seed ${SEED} case ${c.index}`;
+  expectSameSettle(c.project, undefined, `${label} without options`);
+  expectSameSettle(c.project, { minSizeOf: c.minSizeOf }, `${label} with minSizeOf`);
+  expectSameSettle(c.project, { before: c.before }, `${label} with before`);
   expectSameSettle(
     c.project,
     { minSizeOf: c.minSizeOf, before: c.before },
-    `${label} com minSizeOf e before`,
+    `${label} with minSizeOf and before`,
   );
   c.enclosing.forEach((q, k) => {
     const got = enclosingAmong(c.project, q.containerId, q.candidates, q.current);
@@ -486,26 +486,26 @@ function expectSameCase(c: Case): void {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Sanidade: o gerador exercita de fato as categorias
+// Sanity: the generator really exercises the categories
 // ---------------------------------------------------------------------------------------------
 
 type Category =
-  | 'mudou'
-  | 'nadaMudou'
-  | 'trocouDeEspaco'
-  | 'rectConvertido'
-  | 'retangulosIguais'
-  | 'cadeiaDeIguais'
-  | 'cicloDeParentId'
-  | 'mesmaAreaOutroRect'
-  | 'flutuante'
-  | 'paiDeContainerDecidido'
-  | 'paiDeMarcacaoMudou'
-  | 'setaLimpa'
-  | 'containerInexistente'
-  | 'paiInexistente'
-  | 'saiDoContainer'
-  | 'enclosingComResposta';
+  | 'changed'
+  | 'unchanged'
+  | 'changedSpace'
+  | 'rectConverted'
+  | 'equalRects'
+  | 'equalChain'
+  | 'parentIdCycle'
+  | 'sameAreaOtherRect'
+  | 'floating'
+  | 'containerParentDecided'
+  | 'markingParentChanged'
+  | 'arrowCleared'
+  | 'missingContainer'
+  | 'missingParent'
+  | 'leavesContainer'
+  | 'enclosingAnswered';
 
 const rectsEqual = (a: Rect, b: Rect): boolean =>
   a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
@@ -540,21 +540,21 @@ function spaceCategories(p: Project, settled: Project): Category[] {
   const ids = new Set(p.markings.map((m) => m.id));
   const containerIds = new Set(p.containers.map((c) => c.id));
   const pairs = p.markings.map((m, i) => [m, settled.markings[i] as Marking] as const);
-  if (pairs.some(([a, b]) => a.containerId !== b.containerId)) out.push('trocouDeEspaco');
+  if (pairs.some(([a, b]) => a.containerId !== b.containerId)) out.push('changedSpace');
   if (
     pairs.some(([a, b]) => a.containerId !== b.containerId && !rectsEqual(a.rect, b.rect))
   ) {
-    out.push('rectConvertido');
+    out.push('rectConverted');
   }
   if (
     p.markings.some((m) => m.containerId !== null && !containerIds.has(m.containerId))
   ) {
-    out.push('containerInexistente');
+    out.push('missingContainer');
   }
   if (p.markings.some((m) => m.parentId !== null && !ids.has(m.parentId))) {
-    out.push('paiInexistente');
+    out.push('missingParent');
   }
-  if (pairs.some(([a, b]) => a.parentId !== b.parentId)) out.push('paiDeMarcacaoMudou');
+  if (pairs.some(([a, b]) => a.parentId !== b.parentId)) out.push('markingParentChanged');
   return out;
 }
 
@@ -562,26 +562,26 @@ function categoriesOf(c: Case): Category[] {
   const p = c.project;
   const settled = settleHierarchy(p);
   const out = spaceCategories(p, settled);
-  out.push(settled === p ? 'nadaMudou' : 'mudou');
+  out.push(settled === p ? 'unchanged' : 'changed');
   const buckets = equalBuckets(p.markings.filter((m) => !m.floating));
-  if (buckets.length > 0) out.push('retangulosIguais');
+  if (buckets.length > 0) out.push('equalRects');
   if (buckets.some((b) => b.some((m) => b.some((o) => o.id === m.parentId)))) {
-    out.push('cadeiaDeIguais');
+    out.push('equalChain');
   }
-  if (hasParentCycle(p)) out.push('cicloDeParentId');
-  if (hasSameAreaDifferentRect(p)) out.push('mesmaAreaOutroRect');
-  if (p.markings.some((m) => m.floating)) out.push('flutuante');
+  if (hasParentCycle(p)) out.push('parentIdCycle');
+  if (hasSameAreaDifferentRect(p)) out.push('sameAreaOtherRect');
+  if (p.markings.some((m) => m.floating)) out.push('floating');
   if (
     p.containers.some(
       (x, i) => x.parentId !== (settled.containers[i] as typeof x).parentId,
     )
   ) {
-    out.push('paiDeContainerDecidido');
+    out.push('containerParentDecided');
   }
   const cleared = p.arrows.some(
     (a, i) => a.points.length > 0 && (settled.arrows[i] as Arrow).points.length === 0,
   );
-  if (cleared) out.push('setaLimpa');
+  if (cleared) out.push('arrowCleared');
   const byId = new Map(p.containers.map((x) => [x.id, x]));
   const leaves = p.markings.some((m) => {
     const own = m.containerId === null ? undefined : byId.get(m.containerId);
@@ -590,11 +590,11 @@ function categoriesOf(c: Case): Category[] {
       (m.rect.x + m.rect.width > own.width || m.rect.y + m.rect.height > own.height)
     );
   });
-  if (leaves) out.push('saiDoContainer');
+  if (leaves) out.push('leavesContainer');
   const answered = c.enclosing.some(
     (q) => enclosingAmong(p, q.containerId, q.candidates, q.current) !== null,
   );
-  if (answered) out.push('enclosingComResposta');
+  if (answered) out.push('enclosingAnswered');
   return out;
 }
 
@@ -607,30 +607,30 @@ function countCategories(): Map<Category, number> {
 }
 
 const REQUIRED: readonly Category[] = [
-  'mudou',
-  'nadaMudou',
-  'trocouDeEspaco',
-  'rectConvertido',
-  'retangulosIguais',
-  'cadeiaDeIguais',
-  'cicloDeParentId',
-  'mesmaAreaOutroRect',
-  'flutuante',
-  'paiDeContainerDecidido',
-  'paiDeMarcacaoMudou',
-  'setaLimpa',
-  'containerInexistente',
-  'paiInexistente',
-  'saiDoContainer',
-  'enclosingComResposta',
+  'changed',
+  'unchanged',
+  'changedSpace',
+  'rectConverted',
+  'equalRects',
+  'equalChain',
+  'parentIdCycle',
+  'sameAreaOtherRect',
+  'floating',
+  'containerParentDecided',
+  'markingParentChanged',
+  'arrowCleared',
+  'missingContainer',
+  'missingParent',
+  'leavesContainer',
+  'enclosingAnswered',
 ];
 
-describe('equivalência do assentar com a referência congelada', () => {
-  it('settleHierarchy e enclosingAmong dão o mesmo resultado em centenas de projetos sorteados', () => {
+describe('settle equivalence with the frozen reference', () => {
+  it('settleHierarchy and enclosingAmong give the same result across hundreds of random projects', () => {
     for (const c of allCases()) expectSameCase(c);
   });
 
-  it('o gerador exercita de fato cada categoria (o teste não passa vazio)', () => {
+  it('the generator really exercises each category (the test does not pass vacuously)', () => {
     const counts = countCategories();
     const summary = Object.fromEntries(
       REQUIRED.map((cat) => [cat, counts.get(cat) ?? 0]),

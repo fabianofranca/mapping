@@ -74,7 +74,7 @@ describe('card (Card.kt, FilledCardTokens, ElevatedCardTokens, OutlinedCardToken
           expect(root.effects, where).toEqual([]);
         }
         // contentColorFor(container) = OnSurface; the supporting text uses OnSurfaceVariant
-// pt-BR kept: node names of the material3-compose library (libraries/*.json, outside this phase)
+        // pt-BR kept: node names of the material3-compose library (libraries/*.json, outside this phase)
         const title = named(root, 'título');
         const support = named(root, 'apoio');
         expect(solid(title?.fills ?? []), where).toBe(ON_SURFACE[mode]);

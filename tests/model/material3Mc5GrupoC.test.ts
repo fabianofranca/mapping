@@ -281,7 +281,11 @@ describe.each(['text-field', 'secure-text-field'])(
     const cases: [string, Values, number][] = [
       ['filled without supporting text', filled, 56],
       ['filled with supporting text (56 + 4 + 16)', { ...filled, ...support }, 76],
-      ['outlined without supporting text (8 + 56)', { label: 'Name', style: 'outlined' }, 64],
+      [
+        'outlined without supporting text (8 + 56)',
+        { label: 'Name', style: 'outlined' },
+        64,
+      ],
       [
         'outlined with supporting text (8 + 56 + 4 + 16)',
         { label: 'Name', style: 'outlined', ...support },
@@ -303,16 +307,13 @@ describe.each(['text-field', 'secure-text-field'])(
       cases.flatMap(([name, values, height]) =>
         MODES.map((mode) => ({ name, values, height, mode })),
       ),
-    )(
-      '$name measures $height high and 280 wide ($mode)',
-      ({ values, height, mode }) => {
-        const size = fittedSize(id, values, mode);
-        expect({ width: size.width, height: size.height }).toEqual({
-          width: 280,
-          height,
-        });
-      },
-    );
+    )('$name measures $height high and 280 wide ($mode)', ({ values, height, mode }) => {
+      const size = fittedSize(id, values, mode);
+      expect({ width: size.width, height: size.height }).toEqual({
+        width: 280,
+        height,
+      });
+    });
 
     it.each(
       cases.flatMap(([name, values, height]) =>
@@ -332,15 +333,18 @@ describe.each(['text-field', 'secure-text-field'])(
       },
     );
 
-    it.each(MODES)('the measured width never falls below the 280 of the root (%s)', (mode) => {
-      const measured = measureComponent(
-        entryOf(id).component!,
-        allValues(id, filled),
-        { width: null, height: null },
-        optionsOf(mode),
-      );
-      expect(measured.width).toBeGreaterThanOrEqual(280);
-    });
+    it.each(MODES)(
+      'the measured width never falls below the 280 of the root (%s)',
+      (mode) => {
+        const measured = measureComponent(
+          entryOf(id).component!,
+          allValues(id, filled),
+          { width: null, height: null },
+          optionsOf(mode),
+        );
+        expect(measured.width).toBeGreaterThanOrEqual(280);
+      },
+    );
   },
 );
 

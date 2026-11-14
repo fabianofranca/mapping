@@ -14,7 +14,7 @@ import {
 import { sampleProject } from './fixtures';
 import { AT, LATER, propose } from './proposalFixtures';
 
-// Leitura da marca "Revisada" (etapa #644, decisão 5): a revisão mais nova que cita a mudança.
+// Reading of the "Revised" mark (stage #644, decision 5): the newest revision that cites the change.
 
 const T1 = '2026-11-07T10:00:00.000Z';
 const T2 = '2026-11-07T11:00:00.000Z';
@@ -31,7 +31,7 @@ function revision(over: Partial<ProposalRevision>): ProposalRevision {
   };
 }
 
-/** Proposta com as mudanças c1 e c2 (renomeia M3 e M4) e as revisões dadas. */
+/** Proposal with changes c1 and c2 (renames M3 and M4) and the given revisions. */
 function revised(revisions: readonly ProposalRevision[] | undefined): Proposal {
   const base = sampleProject();
   const p = propose(base, renameMarking(renameMarking(base, 'M3', 'A'), 'M4', 'B'));
@@ -47,7 +47,7 @@ function droppedChange(): Change {
 }
 
 describe('revisionMark', () => {
-  it('sem revisions não há marca', () => {
+  it('without revisions there is no mark', () => {
     const p = revised(undefined);
     expect(revisionMark(p, 'c1')).toBeNull();
     expect(revisionMarks(p).size).toBe(0);
@@ -56,36 +56,36 @@ describe('revisionMark', () => {
     expect(droppedNoteOrigin(p, 'n1')).toBeNull();
   });
 
-  it('mudança trocada: a marca traz o to e a decisão de antes', () => {
+  it('replaced change: the mark carries the previous to and decision', () => {
     const p = revised([
-      revision({ changed: { c1: { to: 'Antes', state: 'rejected' } } }),
+      revision({ changed: { c1: { to: 'Before', state: 'rejected' } } }),
     ]);
     expect(revisionMark(p, 'c1')).toEqual({
       kind: 'changed',
       at: T1,
-      previous: { to: 'Antes', state: 'rejected' },
+      previous: { to: 'Before', state: 'rejected' },
     });
     expect(revisionMark(p, 'c2')).toBeNull();
   });
 
-  it('mudança nova: a marca é added, sem previous', () => {
+  it('new change: the mark is added, without previous', () => {
     const p = revised([revision({ added: ['c2'] })]);
     expect(revisionMark(p, 'c2')).toEqual({ kind: 'added', at: T1 });
   });
 
-  it('trocada em duas revisões: vale a mais nova', () => {
+  it('replaced in two revisions: the newest wins', () => {
     const p = revised([
-      revision({ changed: { c1: { to: 'Primeiro', state: null } } }),
-      revision({ at: T2, changed: { c1: { to: 'Segundo', state: null } } }),
+      revision({ changed: { c1: { to: 'First', state: null } } }),
+      revision({ at: T2, changed: { c1: { to: 'Second', state: null } } }),
     ]);
     expect(revisionMark(p, 'c1')).toEqual({
       kind: 'changed',
       at: T2,
-      previous: { to: 'Segundo', state: null },
+      previous: { to: 'Second', state: null },
     });
   });
 
-  it('nova numa revisão e trocada depois: vale a troca (a mais nova)', () => {
+  it('new in one revision and replaced later: the replacement wins (the newest)', () => {
     const p = revised([
       revision({ added: ['c2'] }),
       revision({ at: T2, changed: { c2: { to: 'x', state: null } } }),
@@ -94,7 +94,7 @@ describe('revisionMark', () => {
     expect(revisionMark(p, 'c2')?.at).toBe(T2);
   });
 
-  it('mudança que não está mais em changes não tem marca', () => {
+  it('a change that is no longer in changes has no mark', () => {
     const p = revised([
       revision({ added: ['c40'], changed: { c41: { to: 1, state: null } } }),
     ]);
@@ -103,7 +103,7 @@ describe('revisionMark', () => {
     expect(revisionMarks(p).size).toBe(0);
   });
 
-  it('revisionMarks junta todas as marcas e é memoizado pelas revisões', () => {
+  it('revisionMarks gathers all the marks and is memoized by the revisions', () => {
     const p = revised([
       revision({ added: ['c2'], changed: { c1: { to: 'a', state: null } } }),
     ]);
@@ -118,11 +118,11 @@ describe('visibleRevisedChanges', () => {
     revision({ added: ['c2'], changed: { c1: { to: 'a', state: null } } }),
   ];
 
-  it('lista, na ordem de changes, as marcadas sem decisão', () => {
+  it('lists, in changes order, the marked ones without a decision', () => {
     expect(visibleRevisedChanges(revised(revisions))).toEqual(['c1', 'c2']);
   });
 
-  it('decidir tira da lista e limpar a decisão traz de volta', () => {
+  it('deciding removes from the list and clearing the decision brings it back', () => {
     const p = revised(revisions);
     const decided: Proposal = {
       ...p,
@@ -142,7 +142,7 @@ describe('visibleRevisedChanges', () => {
 });
 
 describe('latestRevisionSummary', () => {
-  it('conta changed, added e dropped da revisão mais nova', () => {
+  it('counts changed, added and dropped of the newest revision', () => {
     const p = revised([
       revision({ added: ['c1', 'c2'] }),
       revision({
@@ -162,7 +162,7 @@ describe('latestRevisionSummary', () => {
 });
 
 describe('droppedNoteOrigin', () => {
-  it('devolve a mudança retirada de onde a nota veio', () => {
+  it('returns the dropped change the note came from', () => {
     const change = droppedChange();
     const p = revised([
       revision({ dropped: [{ change, state: null, notes: ['n2', 'n3'] }] }),

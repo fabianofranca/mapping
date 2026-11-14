@@ -22,7 +22,7 @@ function codeOf(op: () => unknown): string | null {
   }
 }
 
-describe('nudgeItems: the step in each item's own space', () => {
+describe("nudgeItems: the step in each item's own space", () => {
   it('a container marking in a scale-3 container moves exactly 1 image px', () => {
     const base = multiProject();
     const p = {

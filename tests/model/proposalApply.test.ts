@@ -356,7 +356,7 @@ describe('applying only the accepted ones', () => {
     expect(done.project.containers.map((i) => i.id)).toEqual(['I1', 'I2', 'T1']);
   });
 
-  it('accepting only the child's position does not block: the settle rebuilds the parent', () => {
+  it("accepting only the child's position does not block: the settle rebuilds the parent", () => {
     const base = sampleProject();
     // Moving M2 takes M3 along; accepting only the child's position takes it out of M2 (the parent comes from
     // the geometry, not from the proposal) and it becomes a child of M1, which still contains it.
@@ -375,7 +375,7 @@ describe('applying only the accepted ones', () => {
     ).toEqual(base);
   });
 
-  it('a container's accepted placement comes out with no floating-point tail', () => {
+  it("a container's accepted placement comes out with no floating-point tail", () => {
     const base = sampleProject();
     const p0 = propose(base, moveContainer(base, 'I2', 5000, 5000));
     const placement = changeOf(p0, 'image', 'I2', 'placement');
@@ -431,7 +431,10 @@ describe('applying only the accepted ones', () => {
 
   it('changing an item that disappeared blocks (entity-missing); removing an already removed item does nothing', () => {
     const base = sampleProject();
-    const renamed = acceptAll(propose(base, renameMarking(base, 'M4', 'Lighthouse')), base);
+    const renamed = acceptAll(
+      propose(base, renameMarking(base, 'M4', 'Lighthouse')),
+      base,
+    );
     const gone = removeContainer(base, 'I2');
     const result = applyAccepted(gone, renamed, AT);
     expect(result.ok).toBe(false);
@@ -534,7 +537,7 @@ describe('old proposal with a change on the removed code field (stage 9)', () =>
     return { p, current: codeProject() };
   }
 
-  it('the removed field's change shows up as a conflict and, when accepted, blocks as "does not fit"', () => {
+  it('the removed field\'s change shows up as a conflict and, when accepted, blocks as "does not fit"', () => {
     const { p, current } = oldProposal();
     const legacy = changeOf(p, 'annotation', 'AS', 'values.implementacao');
     const rota = changeOf(p, 'annotation', 'AS', 'values.rota');
@@ -555,7 +558,7 @@ describe('old proposal with a change on the removed code field (stage 9)', () =>
     expect(applyAccepted(current, accepted, AT).ok).toBe(false);
   });
 
-  it('with the removed field's change rejected, the rest applies without bringing it back', () => {
+  it("with the removed field's change rejected, the rest applies without bringing it back", () => {
     const { p, current } = oldProposal();
     const legacy = changeOf(p, 'annotation', 'AS', 'values.implementacao');
     const decisions = decided(
@@ -566,7 +569,7 @@ describe('old proposal with a change on the removed code field (stage 9)', () =>
     );
     const result = apply(current, decisions);
     const screen = result.project.annotations.find((a) => a.id === 'AS');
-    // pt-BR kept: shared fixture data (cadastroProject/codeProject in specFixtures) asserted by tests/mcp and tests/examples
+    // pt-BR kept: shared fixture data (cadastroProject/codeProject in specFixtures.ts, other phase)
     expect(screen?.values).toEqual({ nome: 'Cadastro', rota: '/signup/new' });
     expect(result.proposal.status).toBe('applied');
     expect(validateProject(result.project)).toEqual([]);
@@ -578,7 +581,7 @@ describe('old proposal with a change on the removed code field (stage 9)', () =>
     const preview = previewProject(current, p);
     expect(preview.problems).toEqual([{ code: 'field-mismatch', changeId: legacy.id }]);
     const screen = preview.project.annotations.find((a) => a.id === 'AS');
-    // pt-BR kept: shared fixture data (cadastroProject/codeProject in specFixtures) asserted by tests/mcp and tests/examples
+    // pt-BR kept: shared fixture data (cadastroProject/codeProject in specFixtures.ts, other phase)
     expect(screen?.values).toEqual({ nome: 'Cadastro', rota: '/signup/new' });
   });
 
@@ -636,7 +639,7 @@ describe('library package in the proposal (phase B4)', () => {
     ]);
   });
 
-  it('update: returns the new version's package', () => {
+  it("update: returns the new version's package", () => {
     const base = withPackage(sampleProject(), 1);
     const after = withPackage(base, 2);
     const p = acceptAll(propose(base, after), base);

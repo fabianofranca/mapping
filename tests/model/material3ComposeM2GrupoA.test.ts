@@ -88,7 +88,7 @@ describe.each([
     expect(fillOf(id, { background: 'none' }, 'dark')).toBeUndefined();
   });
 
-  it('the chosen arrangement and alignment become the layout's justify and align (default Start/Top)', () => {
+  it('the chosen arrangement and alignment become the justify and align of the layout (default Start/Top)', () => {
     // Row.kt/Column.kt: Arrangement.Start/Top and Alignment.Top/Start are the defaults
     expect(slotLayoutOf(id, {})).toMatchObject({
       type,

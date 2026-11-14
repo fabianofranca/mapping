@@ -45,7 +45,7 @@ describe('rootPosition e rootFootprint', () => {
     expect(rootPosition(p, 'zzz')).toBeNull();
   });
 
-  it('the footprint is the root's rectangle on the canvas', () => {
+  it("the footprint is the root's rectangle on the canvas", () => {
     expect(rootFootprint(p, 'E')).toEqual({ x: 9000, y: 0, width: 1000, height: 1000 });
     expect(rootFootprint(p, 'H')).toEqual({ x: 400, y: 1300, width: 200, height: 100 });
     expect(rootFootprint(p, 'b1')).toEqual({ x: 2100, y: 100, width: 200, height: 200 });
@@ -83,7 +83,7 @@ describe('perspectiveView', () => {
     expect(view.containers[0]?.placement).toMatchObject({ x: 7100, y: 50 });
   });
 
-  it('container: the root goes to the item's position and its marking does not change', () => {
+  it("container: the root goes to the item's position and its marking does not change", () => {
     const view = perspectiveView(p, perspective(['E', 9500, -20]));
     expect(view.containers.map((c) => [c.id, c.placement.x, c.placement.y])).toEqual([
       ['E', 9500, -20],
@@ -93,7 +93,7 @@ describe('perspectiveView', () => {
     ]);
   });
 
-  it('canvas marking: takes the group's containers and the canvas markings, not the container ones', () => {
+  it("canvas marking: takes the group's containers and the canvas markings, not the container ones", () => {
     const view = perspectiveView(p, perspective(['G', 900, 400]));
     const byId = new Map(view.markings.map((m) => [m.id, m]));
     // d = (900 - (-100), 400 - (-100)) = (1000, 500)

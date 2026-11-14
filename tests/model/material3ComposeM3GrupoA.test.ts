@@ -26,6 +26,7 @@ const tok = (name: string, mode: Mode): string => {
   return typeof value === 'string' ? value : value[mode];
 };
 
+// pt-BR kept: the quoted node names ('rótulo', 'trilho', ...) are the names in the material3-compose library (libraries/*.json, outside this phase)
 const named = (d: Drawing, name: string): SceneNode | undefined => {
   for (const node of walk(d.root)) if (node.name === name && node.visible) return node;
   return undefined;
@@ -345,7 +346,7 @@ describe('M3 group A — progress-indicator', () => {
     expect(got[1]).toBeCloseTo(want[1]!, 1);
   };
 
-  it('circular determinate: 40 x 40, stroke 4 with round cap, primary indicator from 12 o'clock and secondary-container track', () => {
+  it("circular determinate: 40 x 40, stroke 4 with round cap, primary indicator from 12 o'clock and secondary-container track", () => {
     const p = both('progress-indicator', { shape: 'circular', progress: 0.6 });
     for (const mode of ['light', 'dark'] as const) {
       const d = p[mode];

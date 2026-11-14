@@ -142,7 +142,7 @@ describe('placeRootIn: near the reference', () => {
     expect(place.referenceId).toBe('S2');
   });
 
-  it('occupied floating: the margin of the target's container, overlapping no other floating ones', () => {
+  it("occupied floating: the margin of the target's container, overlapping no other floating ones", () => {
     let p = world();
     p = createMarking(p, {
       id: 'F',

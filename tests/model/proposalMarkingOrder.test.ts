@@ -15,8 +15,8 @@ import {
 import { sampleProject } from './fixtures';
 import { AT, changeOf, decided, propose } from './proposalFixtures';
 
-// Ordem entre irmãs na proposta: o campo `position` de marcação (índice entre as irmãs),
-// só quando a ordem relativa das irmãs muda.
+// Order among siblings in the proposal: the marking's `position` field (index among siblings),
+// only when the relative order of the siblings changes.
 
 function withSiblings(): Project {
   let p = sampleProject();
@@ -38,8 +38,8 @@ const order = (p: Project, imageId: string) =>
     .filter((m) => m.containerId === imageId && m.parentId === null)
     .map((m) => m.id);
 
-describe('proposta: ordem entre marcações irmãs', () => {
-  it('reordenar gera position só em quem sai da ordem relativa', () => {
+describe('proposal: order among sibling markings', () => {
+  it('reordering generates position only for those that leave the relative order', () => {
     const base = withSiblings();
     const p = propose(base, reorderMarking(base, 'M6', 0));
     expect(p.changes).toMatchObject([
@@ -55,7 +55,7 @@ describe('proposta: ordem entre marcações irmãs', () => {
     expect(p.changes).toHaveLength(1);
   });
 
-  it('criar ou remover irmã não gera position', () => {
+  it('creating or removing a sibling generates no position', () => {
     const base = withSiblings();
     const created = createMarking(base, {
       id: 'M7',
@@ -69,7 +69,7 @@ describe('proposta: ordem entre marcações irmãs', () => {
     );
   });
 
-  it('criada no fim ou antes da âncora não leva position; o lugar dela vai em insertBefore', () => {
+  it('a created one at the end or before the anchor carries no position; its place goes in insertBefore', () => {
     const base = withSiblings();
     const created = reorderMarking(
       createMarking(base, {
@@ -89,9 +89,9 @@ describe('proposta: ordem entre marcações irmãs', () => {
     if (applied.ok) expect(order(applied.project, 'I2')).toEqual(order(created, 'I2'));
   });
 
-  it('criada que sai da maior subsequência leva position com from nulo', () => {
-    // Projeto proposto M7, M6, M4, M5: a âncora de M7 é M6 e o array aplicado fica M4, M5,
-    // M7, M6; a maior subsequência crescente tem empate, e M7 é uma das que se movem.
+  it('a created one that leaves the longest subsequence carries a position with a null from', () => {
+    // Proposed project M7, M6, M4, M5: the anchor of M7 is M6 and the applied array becomes M4, M5,
+    // M7, M6; the longest increasing subsequence has a tie, and M7 is one of those that move.
     const base = withSiblings();
     const withM7 = createMarking(base, {
       id: 'M7',
@@ -116,7 +116,7 @@ describe('proposta: ordem entre marcações irmãs', () => {
     if (applied.ok) expect(order(applied.project, 'I2')).toEqual(order(after, 'I2'));
   });
 
-  it('aplicar reordena como o modelo e a visão Proposto mostra a mesma ordem', () => {
+  it('applying reorders like the model and the Proposed view shows the same order', () => {
     const base = withSiblings();
     const after = reorderMarking(reorderMarking(base, 'M4', 2), 'M6', 0);
     const p = propose(base, after);
@@ -126,7 +126,7 @@ describe('proposta: ordem entre marcações irmãs', () => {
     expect(siblingPosition(result.project, 'M6').index).toBe(0);
   });
 
-  it('conflito quando o from não bate; formato aceita o campo e recusa valor inválido', () => {
+  it('conflict when the from does not match; the format accepts the field and refuses an invalid value', () => {
     const base = withSiblings();
     const p = propose(base, reorderMarking(base, 'M6', 0));
     const change = changeOf(p, 'marking', 'M6', 'position');
@@ -141,7 +141,7 @@ describe('proposta: ordem entre marcações irmãs', () => {
   });
 });
 
-/** Container 1000×200 com as marcações lado a lado (sem pertencimento entre elas). */
+/** Container 1000×200 with the markings side by side (no containment among them). */
 function row(names: readonly string[]): Project {
   let p = sampleProject();
   names.forEach((id, i) => {
@@ -154,8 +154,8 @@ function row(names: readonly string[]): Project {
   return p;
 }
 
-describe('proposta: várias reordenações e duas criadas na mesma âncora (#549)', () => {
-  /** Base P, Q, R, S, T e BIG, com as cinco primeiras dentro de BIG. */
+describe('proposal: several reorderings and two created on the same anchor (#549)', () => {
+  /** Base P, Q, R, S, T and BIG, with the first five inside BIG. */
   function nested(): Project {
     let p = sampleProject();
     ['P', 'Q', 'R', 'S', 'T'].forEach((id, i) => {
@@ -174,7 +174,7 @@ describe('proposta: várias reordenações e duas criadas na mesma âncora (#549
   const children = (p: Project, parentId: string) =>
     p.markings.filter((m) => m.parentId === parentId).map((m) => m.id);
 
-  it('os position de um grupo aplicados juntos dão a ordem do proposto', () => {
+  it('the positions of a group applied together give the proposed order', () => {
     const base = nested();
     expect(children(base, 'BIG')).toEqual(['P', 'Q', 'R', 'S', 'T']);
     let after = reorderMarking(base, 'T', 0);
@@ -198,20 +198,20 @@ describe('proposta: várias reordenações e duas criadas na mesma âncora (#549
     ]);
   });
 
-  it('com só um position aceito, o resultado é o de uma mudança sozinha', () => {
+  it('with only one position accepted, the result is that of a single change', () => {
     const base = nested();
     let after = reorderMarking(base, 'T', 0);
     after = reorderMarking(after, 'S', 0);
     after = reorderMarking(after, 'R', 0);
     const p = propose(base, after);
     const applied = patchProject(base, [changeOf(p, 'marking', 'Q', 'position')]);
-    // Q para o índice 4 entre as irmãs, como o `reorderMarking` faria sozinho.
+    // Q to index 4 among the siblings, as `reorderMarking` would do alone.
     expect(children(applied.project, 'BIG')).toEqual(
       children(reorderMarking(base, 'Q', 4), 'BIG'),
     );
   });
 
-  it('dois position da mesma marcação: nenhuma duplicada nem perdida, vale o último', () => {
+  it('two positions of the same marking: none duplicated nor lost, the last one wins', () => {
     let base = sampleProject();
     ['A', 'B', 'D', 'E'].forEach((id, i) => {
       base = createMarking(base, {
@@ -238,7 +238,7 @@ describe('proposta: várias reordenações e duas criadas na mesma âncora (#549
     );
   });
 
-  it('duas criadas antes da mesma âncora não trazem position', () => {
+  it('two created before the same anchor bring no position', () => {
     const base = row(['P', 'Q', 'R']);
     let after = createMarking(base, {
       id: 'N1',
@@ -250,7 +250,7 @@ describe('proposta: várias reordenações e duas criadas na mesma âncora (#549
       containerId: 'I2',
       rect: { x: 400, y: 100, width: 50, height: 50 },
     });
-    // Proposto P, Q, N1, N2, R: as duas criadas antes de R.
+    // Proposed P, Q, N1, N2, R: the two created ones before R.
     const [n1, n2] = after.markings.slice(-2);
     const rest = after.markings.slice(0, -2);
     const at = rest.findIndex((m) => m.id === 'R');

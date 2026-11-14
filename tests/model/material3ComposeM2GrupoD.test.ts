@@ -193,7 +193,7 @@ describe('M2 group D — fab, extended-fab and chip', () => {
     expect(solid(label(off.dark).fills)).toBe('#E6E0E9');
     expect(label(off.dark).opacity).toBe(0.38);
     expect(off.light.root.effects).toEqual([]);
-// pt-BR kept: node names of the material3-compose library (libraries/*.json, outside this phase)
+    // pt-BR kept: node names of the material3-compose library (libraries/*.json, outside this phase)
     const container = named(off.light.root, 'contêiner desabilitado');
     expect(solid(container?.fills ?? [])).toBe('#1D1B20');
     expect(container?.opacity).toBe(0.12);
@@ -239,7 +239,7 @@ describe('M2 group D — fab, extended-fab and chip', () => {
   });
 
   it.each(['fab', 'extended-fab', 'chip'])(
-    '%s: the icon node's $switch covers every suggestion of the field, with no SVG path',
+    '%s: the $switch of the icon node covers every suggestion of the field, with no SVG path',
     (id) => {
       const raw = JSON.parse(text(`components/${id}.json`)) as { template: unknown };
       const nodes: {

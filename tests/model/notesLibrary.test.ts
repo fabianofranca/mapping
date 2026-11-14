@@ -75,7 +75,7 @@ describe('pacote libraries/notas', () => {
     expect([...NOTES_FILES.keys()].sort()).toEqual(onDisk);
   });
 
-  it('the bundled text is the file's text', () => {
+  it("the bundled text is the file's text", () => {
     for (const [path, text] of NOTES_FILES) {
       expect(text, path).toBe(readFileSync(join(ROOT, path), 'utf8'));
     }
@@ -100,24 +100,24 @@ describe('pacote libraries/notas', () => {
     expect(parsed.spec.version).toBe(3);
     const [layer] = parsed.spec.layers;
     expect(layer?.name).toBe('Notas');
-    const [type, tabela] = layer?.annotationTypes ?? [];
+    const [type, table] = layer?.annotationTypes ?? [];
     expect(type).toMatchObject({
       id: 'nota',
       floating: true,
       labelField: 'titulo',
       component: 'components/nota.json',
     });
-    const texto = type?.fields.find((f) => f.key === 'texto');
-    expect(texto).toMatchObject({ type: 'string', required: true });
-    expect(tabela).toMatchObject({
+    const text = type?.fields.find((f) => f.key === 'texto');
+    expect(text).toMatchObject({ type: 'string', required: true });
+    expect(table).toMatchObject({
       id: 'tabela',
       floating: true,
       labelField: 'titulo',
       component: 'components/tabela.json',
       doc: 'docs/tabela.md',
     });
-    const linhas = tabela?.fields.find((f) => f.key === 'linhas');
-    expect(linhas?.type === 'table' && linhas.columns).toMatchObject([
+    const rows = table?.fields.find((f) => f.key === 'linhas');
+    expect(rows?.type === 'table' && rows.columns).toMatchObject([
       { key: 'chave', type: 'string', required: true },
       { key: 'valor', type: 'string' },
     ]);
@@ -301,13 +301,13 @@ describe('Tabela type', () => {
       type: { specId: NOTES_ID, typeId: 'tabela' },
     });
     p = setFieldValue(p, 'AT1', 'titulo', 'checkout_started');
-    for (const [id, chave, valor] of [
+    for (const [id, key, value] of [
       ['R1', 'source', 'cart'],
       ['R2', 'total', '149.90'],
     ] as const) {
       p = addTableRow(p, 'AT1', 'linhas', id);
-      p = setTableCell(p, 'AT1', 'linhas', id, 'chave', chave);
-      p = setTableCell(p, 'AT1', 'linhas', id, 'valor', valor);
+      p = setTableCell(p, 'AT1', 'linhas', id, 'chave', key);
+      p = setTableCell(p, 'AT1', 'linhas', id, 'valor', value);
     }
     return p;
   }

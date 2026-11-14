@@ -66,7 +66,12 @@ describe('MC6 flow-row — Arrange breaks the children into lines (FlowLayout.kt
       })(),
       packageSpecName: 'material3-compose.spec.json',
     });
-    p = addContainer(p, { id: 'I1', file: 'images/screen.png', width: 1000, height: 800 });
+    p = addContainer(p, {
+      id: 'I1',
+      file: 'images/screen.png',
+      width: 1000,
+      height: 800,
+    });
     const args = { containerId: 'I1', specId: spec.id } as const;
     p = addComponentMarking(
       p,
@@ -321,9 +326,7 @@ describe('MC6 dropdown-menu — the width by the widest item, between 112 and 28
       item('Share with the team', { leadingIcon: 'Share' }),
     ];
     const fit = fittedSize('dropdown-menu', menu(items));
-    expect(fit.width).toBe(
-      ceilFit(textWidth('Share with the team') + 12 + 24 + 12 + 12),
-    );
+    expect(fit.width).toBe(ceilFit(textWidth('Share with the team') + 12 + 24 + 12 + 12));
     expect(fit.width).toBeGreaterThan(112);
     expect(fit.width).toBeLessThan(280);
   });
@@ -332,9 +335,7 @@ describe('MC6 dropdown-menu — the width by the widest item, between 112 and 28
     const items = [item('Save', { trailingIcon: 'Check' })];
     const fit = fittedSize('dropdown-menu', menu(items));
     // 12 + text + 12 + 24 + 12 = 60 + the text, but never less than 112
-    expect(fit.width).toBe(
-      Math.max(112, ceilFit(textWidth('Save') + 12 + 12 + 24 + 12)),
-    );
+    expect(fit.width).toBe(Math.max(112, ceilFit(textWidth('Save') + 12 + 12 + 24 + 12)));
   });
 
   it('never falls below 112 nor exceeds 280', () => {

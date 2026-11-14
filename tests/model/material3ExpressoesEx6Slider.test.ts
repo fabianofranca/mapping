@@ -1,9 +1,9 @@
-// EX6 da etapa "expressões que calculam no formato 4" (#897), decisões 14, 16 e 18: o slider da
-// material3-compose lê `value`, `valueStart` e `valueEnd` como número (0 a 1), leva a alça ao
-// passo mais próximo (`steps`, como o `SliderState` do Compose) e desenha as marcas por conta
-// (`repeat` por `count`), sem as tabelas de décimos e sem o limite de 9 marcas. A regressão contra
-// as cenas de antes (tests/fixtures/material3-ex6-v1.json) e os limites de `$switch` e `$eq` ficam
-// aqui também.
+// EX6 of the "expressions that compute in format 4" stage (#897), decisions 14, 16 and 18: the slider of
+// material3-compose reads `value`, `valueStart` and `valueEnd` as a number (0 to 1), takes the handle to the
+// nearest step (`steps`, like the Compose `SliderState`) and draws the marks by computing
+// (`repeat` by `count`), without the tables of tenths and without the 9-mark limit. The regression against
+// the scenes from before (tests/fixtures/material3-ex6-v1.json) and the limits on `$switch` and `$eq` live
+// here too.
 import { describe, expect, it } from 'vitest';
 import { findEntry } from '../../src/model/catalog';
 import { instantiate, approximateMeasurer } from '../../src/model/components/instantiate';
@@ -22,9 +22,10 @@ import type {
   Values,
 } from '../support/material3Ex6Fixture';
 
+// pt-BR kept: node names of libraries/material3-compose and of tests/fixtures/material3-ex6-v1.json are Portuguese data
 const slider = findEntry(catalog, 'slider')!;
 
-/** As cenas gravadas guardam o texto que o enum gravava ("0.3"): o campo agora é número. */
+/** The recorded scenes keep the text the enum stored ("0.3"): the field is now a number. */
 function numeric(values: Values): Values {
   const out: Record<string, unknown> = { ...values };
   for (const key of ['value', 'valueStart', 'valueEnd'])
@@ -32,7 +33,7 @@ function numeric(values: Values): Values {
   return out as Values;
 }
 
-/** Desenha numa instância de largura qualquer (o `$size.width` do componente). */
+/** Draws on an instance of any width (the component's `$size.width`). */
 function drawAt(values: Values, width: number, mode: Mode = 'light'): Drawing {
   const library = catalog.library!;
   return instantiate(
@@ -52,7 +53,7 @@ interface Found {
   readonly ancestors: readonly SceneNode[];
 }
 
-/** Os nós visíveis que cumprem `pred`, com a lista de ancestrais (do mais externo ao pai). */
+/** The visible nodes that satisfy `pred`, with the list of ancestors (from the outermost to the parent). */
 function collect(d: Drawing, pred: (n: SceneNode) => boolean): Found[] {
   const out: Found[] = [];
   const visit = (node: SceneNode, ancestors: readonly SceneNode[]) => {
@@ -71,7 +72,7 @@ const centerX = (d: Drawing, node: SceneNode): number => {
 };
 const boxOf = (d: Drawing, node: SceneNode) => absoluteBoxes(d.root).get(node.id)!;
 
-/** O centro das alças visíveis, na ordem do desenho (no range: início e fim). */
+/** The center of the visible handles, in drawing order (in range: start and end). */
 const handles = (d: Drawing): { x: number; width: number }[] =>
   collect(d, (n) => n.type === 'rect' && n.name === 'alça').map(({ node }) => ({
     x: centerX(d, node),
@@ -79,13 +80,13 @@ const handles = (d: Drawing): { x: number; width: number }[] =>
   }));
 
 // ---------------------------------------------------------------------------------------------
-// A conta esperada (escrita aqui, não copiada da fixture): `SliderState` do Compose
+// The expected computation (written here, not copied from the fixture): Compose's `SliderState`
 // ---------------------------------------------------------------------------------------------
 
 const count = (steps: unknown): number =>
   typeof steps === 'number' && steps >= 1 ? Math.floor(steps) : 0;
 const clamp01 = (v: number): number => Math.min(Math.max(v, 0), 1);
-/** O valor encaixado: `coerceIn(0f..1f)` e o passo mais próximo (Slider.kt 2751 a 2759 e 2192 a 2194). */
+/** The snapped value: `coerceIn(0f..1f)` and the nearest step (Slider.kt 2751 to 2759 and 2192 to 2194). */
 function snapped(v: number, steps: unknown): number {
   const n = count(steps);
   const c = clamp01(v);
@@ -96,7 +97,7 @@ interface Expected {
   readonly n: number;
   readonly inset: number;
   readonly track: number;
-  /** O centro da alça (single) ou das alças de início e fim (range), em px da instância. */
+  /** The center of the handle (single) or of the start and end handles (range), in instance px. */
   readonly centers: number[];
 }
 
@@ -118,14 +119,14 @@ function expected(
         snapped(values.valueEnd ?? 0.8, values.steps),
       ]
     : [snapped(values.value ?? 0.5, values.steps)];
-  // o recuo de 8 nas pontas: com steps, sempre no range e, no single, só com a alça fora das pontas
+  // the inset of 8 at the ends: with steps, always in range and, in single, only with the handle off the ends
   const interior = (q: number) => q > 0 && q < 1;
   const inset = n > 0 && (range || interior(fractions[0]!)) ? 8 : 0;
   const track = width - 4 - 2 * inset;
   return { n, inset, track, centers: fractions.map((q) => 2 + inset + q * track) };
 }
 
-/** Confere alças e trilhos de um desenho contra a conta. */
+/** Checks the handles and tracks of a drawing against the computation. */
 function expectGeometry(
   values: Parameters<typeof expected>[0],
   width: number,
@@ -134,11 +135,11 @@ function expectGeometry(
   const d = drawAt(values as Values, width, mode);
   const e = expected(values, width);
   const hs = handles(d);
-  expect(hs.length, 'alças').toBe(e.centers.length);
-  hs.forEach((h, i) => expect(h.x, `alça ${i}`).toBeCloseTo(e.centers[i]!, 2));
+  expect(hs.length, 'handles').toBe(e.centers.length);
+  hs.forEach((h, i) => expect(h.x, `handle ${i}`).toBeCloseTo(e.centers[i]!, 2));
   const active = collect(d, (n) => n.type === 'rect' && n.name === 'trilho ativo');
   const inactive = collect(d, (n) => n.type === 'rect' && n.name === 'trilho inativo');
-  // o trecho que não existe sai com largura 0: só os que têm largura contam
+  // the segment that does not exist comes out with width 0: only those with width count
   const r = (x: number) => Math.round(x * 1e4) / 1e4;
   const edges = (found: Found[]) =>
     found
@@ -150,18 +151,18 @@ function expectGeometry(
   const first = e.centers[0]!;
   const last = e.centers[e.centers.length - 1]!;
   if (e.centers.length === 1) {
-    // single: o trecho ativo vai da borda até 8 antes da alça; o inativo, de 8 depois dela à borda
-    expect(edges(active), 'trecho ativo').toEqual(
+    // single: the active segment goes from the edge to 8 before the handle; the inactive one, from 8 after it to the edge
+    expect(edges(active), 'active segment').toEqual(
       first - 8 > 2 ? [[2, r(first - 8)]] : [],
     );
-    expect(edges(inactive), 'trecho inativo').toEqual(
+    expect(edges(inactive), 'inactive segment').toEqual(
       first + 8 < width - 2 ? [[r(first + 8), width - 2]] : [],
     );
   } else {
-    expect(edges(active), 'trecho ativo').toEqual(
+    expect(edges(active), 'active segment').toEqual(
       last - 8 > first + 8 ? [[r(first + 8), r(last - 8)]] : [],
     );
-    expect(edges(inactive), 'trechos inativos').toEqual([
+    expect(edges(inactive), 'inactive segments').toEqual([
       ...(first - 8 > 2 ? [[2, r(first - 8)]] : []),
       ...(last + 8 < width - 2 ? [[r(last + 8), width - 2]] : []),
     ]);
@@ -170,29 +171,29 @@ function expectGeometry(
 }
 
 // ---------------------------------------------------------------------------------------------
-// A alça no passo mais próximo
+// The handle at the nearest step
 // ---------------------------------------------------------------------------------------------
 
-describe('EX6 slider — o valor é número e a alça vai ao passo mais próximo', () => {
-  it('value 0,37 com steps 4 desenha a alça em 0,4 (e não em 0,37)', () => {
+describe('EX6 slider — the value is a number and the handle goes to the nearest step', () => {
+  it('value 0.37 with steps 4 draws the handle at 0.4 (and not at 0.37)', () => {
     const d = draw('slider', { type: 'single', value: 0.37, steps: 4 });
     const [handle] = handles(d);
-    // trilho de 308 a partir de 10: 10 + 0,4 × 308 = 133,2
+    // track of 308 starting at 10: 10 + 0.4 × 308 = 133.2
     expect(handle!.x).toBeCloseTo(133.2, 2);
     expect(handle!.x).not.toBeCloseTo(10 + 0.37 * 308, 1);
-    // e o resto segue o mesmo valor: o trecho ativo para 8 antes da alça
+    // and the rest follows the same value: the active segment stops 8 before the handle
     const active = collect(d, (n) => n.type === 'rect' && n.name === 'trilho ativo');
     expect(boxOf(d, active[0]!.node).width).toBeCloseTo(133.2 - 8 - 2, 2);
   });
 
-  it('o mesmo valor 0,37 sem steps (contínuo) fica onde está, e steps 0 ou vazio também', () => {
+  it('the same value 0.37 without steps (continuous) stays where it is, and steps 0 or empty too', () => {
     for (const steps of [null, 0, undefined] as const) {
       const d = draw('slider', { type: 'single', value: 0.37, steps });
       expect(handles(d)[0]!.x).toBeCloseTo(2 + 0.37 * 324, 2);
     }
   });
 
-  it('no range, valueStart e valueEnd vão ao passo mais próximo do mesmo jeito', () => {
+  it('in range, valueStart and valueEnd go to the nearest step the same way', () => {
     const d = draw('slider', {
       type: 'range',
       valueStart: 0.37,
@@ -204,7 +205,7 @@ describe('EX6 slider — o valor é número e a alça vai ao passo mais próximo
     expect(end!.x).toBeCloseTo(10 + 0.8 * 308, 2);
   });
 
-  it('o passo mais próximo vale para qualquer steps: 1, 2, 3, 4, 7, 12 e 30', () => {
+  it('the nearest step applies to any steps: 1, 2, 3, 4, 7, 12 and 30', () => {
     for (const steps of [1, 2, 3, 4, 7, 12, 30])
       for (let i = 0; i <= 40; i++) {
         const value = i / 40 + 0.0123;
@@ -212,7 +213,7 @@ describe('EX6 slider — o valor é número e a alça vai ao passo mais próximo
       }
   });
 
-  it('valor fora de 0 a 1 prende em 0..1, com ou sem steps', () => {
+  it('a value outside 0 to 1 clamps to 0..1, with or without steps', () => {
     for (const steps of [null, 4]) {
       const low = draw('slider', { type: 'single', value: -0.2, steps });
       const zero = draw('slider', { type: 'single', value: 0, steps });
@@ -227,7 +228,7 @@ describe('EX6 slider — o valor é número e a alça vai ao passo mais próximo
     expect(end!.x).toBeCloseTo(326, 2);
   });
 
-  it('valor vazio usa o padrão do campo (0,5; 0,2 e 0,8)', () => {
+  it('an empty value uses the field default (0.5; 0.2 and 0.8)', () => {
     for (const empty of [null, undefined, '']) {
       const single = draw('slider', { type: 'single', value: empty as never });
       expect(handles(single)[0]!.x).toBeCloseTo(2 + 0.5 * 324, 2);
@@ -243,24 +244,24 @@ describe('EX6 slider — o valor é número e a alça vai ao passo mais próximo
     }
   });
 
-  it('steps não inteiro vale o inteiro de baixo (4,7 desenha como 4)', () => {
+  it('a non-integer steps counts as the integer below (4.7 draws as 4)', () => {
     const a = draw('slider', { type: 'single', value: 0.37, steps: 4.7 });
     const b = draw('slider', { type: 'single', value: 0.37, steps: 4 });
     expect(handles(a)).toEqual(handles(b));
     expect(marksOf(a)).toEqual(marksOf(b));
   });
 
-  it('o recuo de 8 nas pontas some quando o valor encaixado cai na ponta (0,03 com steps 4 vale 0)', () => {
+  it('the inset of 8 at the ends disappears when the snapped value falls on the end (0.03 with steps 4 is 0)', () => {
     const d = draw('slider', { type: 'single', value: 0.03, steps: 4 });
     expect(handles(d)[0]!.x).toBeCloseTo(2, 2);
     const e = draw('slider', { type: 'single', value: 0.98, steps: 4 });
     expect(handles(e)[0]!.x).toBeCloseTo(326, 2);
-    // fora da ponta, o recuo volta
+    // off the end, the inset comes back
     const f = draw('slider', { type: 'single', value: 0.2, steps: 4 });
     expect(handles(f)[0]!.x).toBeCloseTo(10 + 0.2 * 308, 2);
   });
 
-  it('segue a largura da instância ($size): alça, trilhos e marcas em 200 e em 640', () => {
+  it('follows the width of the instance ($size): handle, tracks and marks at 200 and at 640', () => {
     for (const width of [120, 200, 328, 640]) {
       for (const steps of [null, 4, 12]) {
         for (const type of ['single', 'range']) {
@@ -273,7 +274,7 @@ describe('EX6 slider — o valor é número e a alça vai ao passo mais próximo
     }
   });
 
-  it('o estado de interação estreita a alça (2) no valor encaixado, e o desabilitado vence', () => {
+  it('the interaction state narrows the handle (2) at the snapped value, and the disabled state wins', () => {
     const d = draw('slider', {
       type: 'single',
       value: 0.37,
@@ -293,7 +294,7 @@ describe('EX6 slider — o valor é número e a alça vai ao passo mais próximo
 });
 
 // ---------------------------------------------------------------------------------------------
-// As marcas: exatamente as de steps, em qualquer steps
+// The marks: exactly those of steps, at any steps
 // ---------------------------------------------------------------------------------------------
 
 type Kind = 'secondary' | 'primary';
@@ -308,7 +309,7 @@ const tok = (name: string, mode: Mode): string => {
   return typeof value === 'string' ? value : value[mode];
 };
 
-/** O desabilitado do Compose em cor opaca (MF4): on-surface a `alpha` composto sobre surface. */
+/** The Compose disabled state as an opaque color (MF4): on-surface at `alpha` composited over surface. */
 const disabledColor = (
   alpha: 'state-disabled-container' | 'state-disabled-content',
   mode: Mode,
@@ -316,16 +317,16 @@ const disabledColor = (
   compositeOver(tok('on-surface', mode), tokens[alpha] as number, tok('surface', mode));
 
 /**
- * O tipo de uma marca desenhada: `secondary-container` sobre o trecho ativo, `primary` fora dele. No
- * desabilitado a marca é opaca: on-surface a 0,12 sobre surface (a que era `secondary`) ou a 0,38 (a `primary`).
+ * The kind of a drawn mark: `secondary-container` over the active segment, `primary` outside it. In the
+ * disabled state the mark is opaque: on-surface at 0.12 over surface (the one that was `secondary`) or at 0.38 (the `primary`).
  */
 function kindOf(d: Drawing, node: SceneNode, mode: Mode, enabled: boolean): Kind {
   if (!enabled) {
-    expect(node.opacity, 'marca desabilitada sem camada de opacidade').toBe(1);
+    expect(node.opacity, 'disabled mark without an opacity layer').toBe(1);
     const color = solid(node.fills);
     if (isComposite(color, disabledColor('state-disabled-container', mode)))
       return 'secondary';
-    expect(color, 'marca desabilitada: on-surface a 0,38 sobre surface').toSatisfy(
+    expect(color, 'disabled mark: on-surface at 0.38 over surface').toSatisfy(
       (c: string | undefined) =>
         isComposite(c, disabledColor('state-disabled-content', mode)),
     );
@@ -334,7 +335,7 @@ function kindOf(d: Drawing, node: SceneNode, mode: Mode, enabled: boolean): Kind
   return solid(node.fills) === tok('secondary-container', mode) ? 'secondary' : 'primary';
 }
 
-/** As marcas visíveis (as de `repeat`, dentro da fileira), por posição. */
+/** The visible marks (the `repeat` ones, inside the row), by position. */
 function marksOf(d: Drawing, mode: Mode = 'light', enabled = true): Mark[] {
   return collect(d, (n) => n.type === 'ellipse' && n.name === 'marca')
     .map(({ node }) => ({ x: boxOf(d, node).x, kind: kindOf(d, node, mode, enabled) }))
@@ -342,11 +343,11 @@ function marksOf(d: Drawing, mode: Mode = 'light', enabled = true): Mark[] {
 }
 
 /**
- * As marcas que a conta pede: a marca k fica em `8 + (largura - 20) × k / (steps + 1)`. Com steps,
- * entre as alças (ou antes da alça do single) é `secondary-container`, fora delas é `primary`, e a
- * que cairia sob uma alça não é desenhada. Sem steps só há as duas pontas e só as de `primary`
- * (antes da alça do início e depois da alça do fim, comparando a posição da marca com a da alça
- * em px); a primeira do single não existe e a última só aparece com trecho inativo depois dela.
+ * The marks the computation asks for: mark k sits at `8 + (width - 20) × k / (steps + 1)`. With steps,
+ * between the handles (or before the single handle) it is `secondary-container`, outside them it is `primary`, and the
+ * one that would fall under a handle is not drawn. Without steps there are only the two ends and only the `primary` ones
+ * (before the start handle and after the end handle, comparing the mark position with the handle's
+ * in px); the first of the single does not exist and the last only appears with an inactive segment after it.
  */
 function expectedMarks(
   values: {
@@ -361,7 +362,7 @@ function expectedMarks(
   const n = count(values.steps);
   const parts = n + 1;
   const range = values.type === 'range';
-  // a alça em unidades de passo: inteira com steps; sem, a própria fração (as duas pontas são 0 e 1)
+  // the handle in step units: an integer with steps; without, the fraction itself (the two ends are 0 and 1)
   const place = (v: number) => (n > 0 ? Math.round(clamp01(v) * parts) : clamp01(v));
   const first = range ? place(values.valueStart ?? 0.2) : -1;
   const last = place(range ? (values.valueEnd ?? 0.8) : (values.value ?? 0.5));
@@ -369,7 +370,7 @@ function expectedMarks(
   for (let k = 0; k <= parts; k++) {
     const s = Math.min(k - first, last - k);
     if (Math.abs(s) < 1e-6) continue;
-    if (s > 0 && n === 0) continue; // sem steps não há marca sobre o trecho ativo
+    if (s > 0 && n === 0) continue; // without steps there is no mark over the active segment
     if (s < 0 && n === 0 && !range && k === 0) continue;
     out.push({
       x: 8 + ((width - 20) * k) / parts,
@@ -389,21 +390,21 @@ function expectMarks(
   const want = expectedMarks(values, width);
   expect(got.length, JSON.stringify(values)).toBe(want.length);
   got.forEach((m, i) => {
-    expect(m.x, `x da marca ${i}`).toBeCloseTo(want[i]!.x, 3);
-    expect(m.kind, `tipo da marca ${i}`).toBe(want[i]!.kind);
+    expect(m.x, `x of mark ${i}`).toBeCloseTo(want[i]!.x, 3);
+    expect(m.kind, `kind of mark ${i}`).toBe(want[i]!.kind);
   });
   return got;
 }
 
-describe('EX6 slider — as marcas de steps', () => {
-  it('desenha steps marcas entre as pontas (mais as duas pontas) para qualquer steps, e não 9 de 10 em diante', () => {
+describe('EX6 slider — the marks of steps', () => {
+  it('draws steps marks between the ends (plus the two ends) for any steps, and not 9 from 10 onward', () => {
     for (const steps of [1, 2, 4, 9, 10, 12, 20, 30]) {
       for (const width of [328, 200]) {
-        // o valor no meio e fora de qualquer passo: nenhuma marca cai sob a alça sem querer
+        // the value in the middle and off any step: no mark falls under the handle by accident
         const values = { type: 'single', value: 0.5, steps };
         const marks = expectMarks(values, width);
         const at = (k: number) => 8 + ((width - 20) * k) / (steps + 1);
-        // as marcas k = 0 e k = steps + 1 são as pontas; entre elas, exatamente steps menos a da alça
+        // marks k = 0 and k = steps + 1 are the ends; between them, exactly steps minus the handle's
         const underHandle = Math.round(0.5 * (steps + 1));
         const between = marks.filter(
           (m) => m.x > at(0) + 0.01 && m.x < at(steps + 1) - 0.01,
@@ -412,34 +413,34 @@ describe('EX6 slider — as marcas de steps', () => {
         expect(marks.map((m) => m.x)).not.toContainEqual(
           expect.closeTo(at(underHandle), 3),
         );
-        // com a alça num passo, os outros steps - 1 intermediários e as duas pontas aparecem
+        // with the handle on a step, the other steps - 1 intermediates and the two ends appear
         expect(marks.length).toBe(steps + 1);
       }
     }
   });
 
-  it('steps 12 desenha as 12 marcas (antes: 9) e a alça cai no passo de 13 partes', () => {
+  it('steps 12 draws the 12 marks (before: 9) and the handle falls on the step of 13 parts', () => {
     const d = draw('slider', { type: 'single', value: 0.5, steps: 12 });
     const marks = marksOf(d);
-    // 0,5 × 13 = 6,5 arredonda para 7: a marca 7 fica sob a alça e não é desenhada
+    // 0.5 × 13 = 6.5 rounds to 7: mark 7 sits under the handle and is not drawn
     expect(handles(d)[0]!.x).toBeCloseTo(10 + (7 / 13) * 308, 2);
-    expect(marks.length).toBe(13); // 12 intermediárias + 2 pontas - 1 sob a alça
+    expect(marks.length).toBe(13); // 12 intermediates + 2 ends - 1 under the handle
     expect(marks.filter((m) => m.kind === 'secondary').length).toBe(7); // k = 0..6
     expect(marks.filter((m) => m.kind === 'primary').length).toBe(6); // k = 8..13
   });
 
-  it('sem steps (vazio, 0 ou menor que 1) só há a marca do fim, e só com trecho inativo depois da alça', () => {
+  it('without steps (empty, 0 or less than 1) there is only the end mark, and only with an inactive segment after the handle', () => {
     for (const steps of [null, undefined, 0, 0.5]) {
       const d = draw('slider', { type: 'single', value: 0.4, steps });
       expect(marksOf(d)).toEqual([{ x: expect.closeTo(316, 3), kind: 'primary' }]);
       expect(marksOf(draw('slider', { type: 'single', value: 1, steps }))).toEqual([]);
     }
-    // o range tem também a marca do início, antes da alça do início
+    // the range also has the start mark, before the start handle
     const range = draw('slider', { type: 'range', valueStart: 0.3, valueEnd: 0.6 });
     expect(marksOf(range).map((m) => m.x)).toEqual([8, expect.closeTo(316, 3)]);
   });
 
-  it('o range pinta as marcas entre as alças e fora delas com cores diferentes, e a contagem é a de steps', () => {
+  it('the range paints the marks between the handles and outside them in different colors, and the count is that of steps', () => {
     const d = draw('slider', {
       type: 'range',
       valueStart: 0.3,
@@ -447,13 +448,13 @@ describe('EX6 slider — as marcas de steps', () => {
       steps: 12,
     });
     const marks = marksOf(d);
-    // 0,3 × 13 = 3,9 → 4 e 0,7 × 13 = 9,1 → 9: as marcas 4 e 9 ficam sob as alças
+    // 0.3 × 13 = 3.9 → 4 and 0.7 × 13 = 9.1 → 9: marks 4 and 9 sit under the handles
     expect(marks.length).toBe(14 - 2);
     expect(marks.filter((m) => m.kind === 'secondary').length).toBe(4); // k = 5..8
     expect(marks.filter((m) => m.kind === 'primary').length).toBe(8);
   });
 
-  it('segue a conta em todos os tipos, larguras, passos e valores (incluindo as pontas)', () => {
+  it('follows the computation in all types, widths, steps and values (including the ends)', () => {
     for (const width of [200, 328]) {
       for (const steps of [null, 1, 4, 12, 25]) {
         for (const value of [0, 0.03, 0.37, 0.5, 0.98, 1]) {
@@ -467,22 +468,22 @@ describe('EX6 slider — as marcas de steps', () => {
     }
   });
 
-  it('40 passos desenham 40 marcas entre as pontas', () => {
+  it('40 steps draw 40 marks between the ends', () => {
     const d = draw('slider', { type: 'single', value: 0.5, steps: 40 });
-    expect(marksOf(d).length).toBe(41); // 40 + 2 pontas - 1 sob a alça
+    expect(marksOf(d).length).toBe(41); // 40 + 2 ends - 1 under the handle
   });
 
-  it('desabilitado (enabled false): as marcas seguem as opacidades do estado', () => {
+  it('disabled (enabled false): the marks follow the state opacities', () => {
     for (const mode of ['light', 'dark'] as const)
       expectMarks({ type: 'single', value: 0.37, steps: 4, enabled: 'false' }, 328, mode);
   });
 });
 
 // ---------------------------------------------------------------------------------------------
-// Muitos passos: a faixa no lugar das marcas (VL3 da etapa #1504, decisões 3, 17 e 18)
+// Many steps: the strip in place of the marks (VL3 of stage #1504, decisions 3, 17 and 18)
 // ---------------------------------------------------------------------------------------------
 
-/** A faixa de 4 que cada trecho desenha quando as marcas não cabem (os `rect` "faixa de passos"). */
+/** The strip of 4 that each segment draws when the marks do not fit (the `rect` "faixa de passos"). */
 function stripsOf(d: Drawing, mode: Mode, enabled: boolean) {
   return collect(d, (n) => n.type === 'rect' && n.name === 'faixa de passos')
     .map(({ node }) => {
@@ -497,7 +498,7 @@ function stripsOf(d: Drawing, mode: Mode, enabled: boolean) {
     .sort((a, b) => a.x - b.x);
 }
 
-/** As faixas que a conta pede: de uma marca a outra (4 de largura a mais), por trecho. */
+/** The strips the computation asks for: from one mark to the other (4 more in width), per segment. */
 function expectedStrips(
   values: { type?: string; value?: number; valueStart?: number; valueEnd?: number },
   steps: number,
@@ -520,7 +521,7 @@ function expectedStrips(
   return out;
 }
 
-describe('EX6 slider — muitos passos: faixa no lugar das marcas (#1506)', () => {
+describe('EX6 slider — many steps: strip in place of the marks (#1506)', () => {
   const cases = [
     { type: 'single', value: 0.5 },
     { type: 'single', value: 0.37 },
@@ -530,31 +531,31 @@ describe('EX6 slider — muitos passos: faixa no lugar das marcas (#1506)', () =
 
   for (const enabled of ['true', 'false']) {
     for (const mode of ['light', 'dark'] as const) {
-      it(`328 com steps 2000 (enabled ${enabled}, ${mode}): sem aviso, sem marcas e uma faixa de 4 por trecho`, () => {
+      it(`328 with steps 2000 (enabled ${enabled}, ${mode}): no warnings, no marks and a strip of 4 per segment`, () => {
         for (const c of cases) {
           const values = { ...c, steps: 2000, enabled } as Values;
           const d = drawAt(values, 328, mode);
           expect(d.warnings.join('|'), JSON.stringify(c)).not.toContain(
-            'repeat limitado',
+            'repeat limited',
           );
-          expect(d.warnings.join('|')).not.toContain('marcas');
-          expect(marksOf(d, mode, enabled === 'true'), 'marcas').toEqual([]);
+          expect(d.warnings.join('|')).not.toContain('marks');
+          expect(marksOf(d, mode, enabled === 'true'), 'marks').toEqual([]);
           const got = stripsOf(d, mode, enabled === 'true');
           const want = expectedStrips(c, 2000, 328);
           expect(got.length, JSON.stringify(c)).toBe(want.length);
           got.forEach((s, i) => {
             expect(s.height).toBe(4);
             expect(s.x, `x ${i}`).toBeCloseTo(want[i]!.x, 3);
-            expect(s.width, `largura ${i}`).toBeCloseTo(want[i]!.width, 3);
-            expect(s.kind, `tipo ${i}`).toBe(want[i]!.kind);
+            expect(s.width, `width ${i}`).toBeCloseTo(want[i]!.width, 3);
+            expect(s.kind, `kind ${i}`).toBe(want[i]!.kind);
           });
         }
       });
     }
   }
 
-  it('o limiar: o espaço entre centros logo acima de 1 desenha marcas, logo abaixo a faixa', () => {
-    // (328 - 20) / (steps + 1) = 1 em steps = 307: 306 dá 1,003 (marcas), 308 dá 0,997 (faixa)
+  it('the threshold: the spacing between centers just above 1 draws marks, just below it the strip', () => {
+    // (328 - 20) / (steps + 1) = 1 at steps = 307: 306 gives 1.003 (marks), 308 gives 0.997 (strip)
     for (const [steps, dense] of [
       [306, false],
       [307, false],
@@ -566,19 +567,19 @@ describe('EX6 slider — muitos passos: faixa no lugar das marcas (#1506)', () =
     }
   });
 
-  it('steps + 2 em 1000 desenha marcas e em 1001, a faixa, numa largura grande', () => {
-    // 998 + 2 = 1000 (marcas); 999 + 2 = 1001 (faixa); com 5000 de largura o espaço passa de 4
+  it('steps + 2 at 1000 draws marks and at 1001, the strip, on a large width', () => {
+    // 998 + 2 = 1000 (marks); 999 + 2 = 1001 (strip); with a width of 5000 the spacing goes past 4
     const at998 = drawAt({ type: 'single', value: 0.5, steps: 998 } as Values, 5000);
     expect(marksOf(at998).length).toBeGreaterThan(0);
     expect(stripsOf(at998, 'light', true)).toEqual([]);
-    expect(at998.warnings.join('|')).not.toContain('repeat limitado');
+    expect(at998.warnings.join('|')).not.toContain('repeat limited');
     const at999 = drawAt({ type: 'single', value: 0.5, steps: 999 } as Values, 5000);
     expect(marksOf(at999)).toEqual([]);
     expect(stripsOf(at999, 'light', true).length).toBe(2);
-    expect(at999.warnings.join('|')).not.toContain('repeat limitado');
+    expect(at999.warnings.join('|')).not.toContain('repeat limited');
   });
 
-  it('sem steps e abaixo do limiar não há faixa', () => {
+  it('without steps and below the threshold there is no strip', () => {
     for (const steps of [undefined, 0, 12, 40])
       expect(
         stripsOf(drawAt({ type: 'range', steps } as Values, 328), 'light', true),
@@ -587,13 +588,13 @@ describe('EX6 slider — muitos passos: faixa no lugar das marcas (#1506)', () =
 });
 
 // ---------------------------------------------------------------------------------------------
-// Regressão: as cenas de antes (decisão 16, ≤ 0,5 px por nó)
+// Regression: the scenes from before (decision 16, within ≤ 0.5 px per node)
 // ---------------------------------------------------------------------------------------------
 
 const grid = (v: number, steps: number): boolean =>
   Math.abs(v * (steps + 1) - Math.round(v * (steps + 1))) < 1e-9;
 
-/** O desenho de antes vale (os valores já estão na grade do passo, e o steps é o de antes). */
+/** The drawing from before holds (the values are already on the step grid, and the steps is the one from before). */
 function unchanged(scene: OldScene): boolean {
   const v = scene.values as Record<string, unknown>;
   const steps = v['steps'];
@@ -605,23 +606,23 @@ function unchanged(scene: OldScene): boolean {
   return nums.every((x) => grid(x, steps));
 }
 
-// Os nós de antes que a nova construção não tem, de propósito (nenhum deles desenha pixel; os que
-// desenham, `trilho ativo`, `trilho inativo`, `alça` e `marca`, batem com nome, caixa, cor e
-// opacidade):
-// - os quadros de arrumação (`trilhas`, `recuo`, `pista`, `antes do início`, `trecho ativo`,
+// The nodes from before that the new construction does not have, on purpose (none of them draws a pixel; those that
+// draw, `trilho ativo`, `trilho inativo`, `alça` and `marca`, match in name, box, color and
+// opacity):
+// - the layout frames (`trilhas`, `recuo`, `pista`, `antes do início`, `trecho ativo`,
 //   `depois do fim`, `marcas e alças`, `meio`, `recorte`, `base`, `régua`, `marcas sobre o trecho
-//   ativo`, `marcas sobre o trecho inativo`, `fim`): o recuo de 8 deixou de ser um quadro e passou
-//   à conta da largura dos trechos (os trechos agora começam na borda da faixa, e a faixa é a
-//   `trilhas` de antes), e o truque da régua e do recorte (as marcas de `primary` só aparecem fora
-//   do trecho ativo) virou uma conta por marca. A `faixa` fica, com a caixa da `trilhas`;
-// - as marcas que ficavam por baixo de outra (a de `secondary-container` no trecho inativo, a de
-//   `primary` no ativo), as que ficavam sob a alça e as de preenchimento `none` (as pontas
-//   invisíveis): a marca que aparece é a mesma, e `expectMarks` confere posição e cor de todas.
+//   ativo`, `marcas sobre o trecho inativo`, `fim`): the inset of 8 stopped being a frame and became
+//   part of the computation of the segment widths (the segments now start at the edge of the strip, and the strip is the
+//   old `trilhas`), and the trick of the ruler and the clip (the `primary` marks only appear outside
+//   the active segment) became a computation per mark. The `faixa` stays, with the box of `trilhas`;
+// - the marks that sat under another (the `secondary-container` one on the inactive segment, the
+//   `primary` one on the active), those that sat under the handle and those with `none` fill (the invisible
+//   ends): the mark that appears is the same, and `expectMarks` checks the position and color of all of them.
 const KEPT_FRAMES = new Set(['slider', 'faixa']);
 
 function skipOld(scene: OldScene, mode: Mode) {
   const enabled = (scene.values as Record<string, unknown>)['enabled'] !== 'false';
-  // os centros das alças na cena de antes (nós `alça`: o do início e o do fim, na ordem do desenho)
+  // the handle centers in the scene from before (`alça` nodes: the start and the end one, in drawing order)
   const centers = scene.nodes
     .filter((o) => o.t === 'rect' && o.n === 'alça')
     .map((o) => o.r[0]! + o.r[2]! / 2);
@@ -632,11 +633,11 @@ function skipOld(scene: OldScene, mode: Mode) {
   return (o: OldNode): boolean => {
     if (o.t === 'frame') return !KEPT_FRAMES.has(o.n);
     if (o.t !== 'ellipse') return false;
-    if (o.f === undefined) return true; // a ponta invisível (`none`)
-    // range sem steps com as duas alças no fim: a marca do fim ficava sobre o fim do trilho
+    if (o.f === undefined) return true; // the invisible end (`none`)
+    // range without steps with both handles at the end: the end mark sat over the end of the track
     if (range && !hasSteps && centers.every((c) => c > 318)) return true;
     const centre = o.r[0]! + 2;
-    if (centers.some((c) => Math.abs(c - centre) < 1)) return true; // sob a alça
+    if (centers.some((c) => Math.abs(c - centre) < 1)) return true; // under the handle
     const active = range
       ? centers.length === 2 && centre > centers[0]! && centre < centers[1]!
       : centre < centers[0]!;
@@ -652,9 +653,9 @@ function skipOld(scene: OldScene, mode: Mode) {
 }
 
 /**
- * Os nós de antes que não aparecem agora (≤ 0,5 px de geometria). Exceção do desabilitado (MF4, a cor é
- * opaca e o nó fica com opacidade 1): nesses nós a cena de antes vale pelo nome, pelo tipo e pela caixa, e a
- * cor é conferida à parte, em `disabledProblems`, como on-surface a 0,38 / 0,12 composto sobre surface.
+ * The nodes from before that do not appear now (≤ 0.5 px of geometry). Exception for the disabled state (MF4, the color is
+ * opaque and the node has opacity 1): in those nodes the scene from before holds by name, type and box, and the
+ * color is checked separately, in `disabledProblems`, as on-surface at 0.38 / 0.12 composited over surface.
  */
 function missing(d: Drawing, scene: OldScene, mode: Mode): string[] {
   const skip = skipOld(scene, mode);
@@ -671,7 +672,7 @@ function missing(d: Drawing, scene: OldScene, mode: Mode): string[] {
   ];
 }
 
-/** A cor do desabilitado: alça e trecho ativo a 0,38, trecho inativo a 0,12, sempre opacos e com opacidade 1. */
+/** The disabled color: handle and active segment at 0.38, inactive segment at 0.12, always opaque and with opacity 1. */
 function disabledProblems(d: Drawing, scene: OldScene, mode: Mode): string[] {
   const out: string[] = [];
   const want: Record<string, string> = {
@@ -681,10 +682,10 @@ function disabledProblems(d: Drawing, scene: OldScene, mode: Mode): string[] {
   };
   for (const { node } of collect(d, (n) => n.name in want)) {
     if (node.opacity !== 1)
-      out.push(`${scene.key} ${node.name}: opacidade ${node.opacity}`);
+      out.push(`${scene.key} ${node.name}: opacity ${node.opacity}`);
     if (!isComposite(solid(node.fills), want[node.name]!))
       out.push(
-        `${scene.key} ${node.name}: ${solid(node.fills)} em vez de ${want[node.name]}`,
+        `${scene.key} ${node.name}: ${solid(node.fills)} instead of ${want[node.name]}`,
       );
   }
   for (const { node } of collect(d, (n) => n.name === 'marca')) {
@@ -698,14 +699,14 @@ function disabledProblems(d: Drawing, scene: OldScene, mode: Mode): string[] {
   return out;
 }
 
-describe('EX6 slider — regressão contra as cenas de antes', () => {
+describe('EX6 slider — regression against the scenes from before', () => {
   const all = oldScenes('slider-');
 
-  it('a fixture traz as cenas esperadas', () => {
+  it('the fixture brings the expected scenes', () => {
     expect(all.length).toBe(167);
   });
 
-  it('as cenas em que o valor já está na grade do passo desenham igual a antes (≤ 0,5 px)', () => {
+  it('the scenes where the value is already on the step grid draw the same as before (≤ 0.5 px)', () => {
     const same = all.filter(unchanged);
     expect(same.length).toBeGreaterThan(100);
     for (const scene of same) {
@@ -714,7 +715,7 @@ describe('EX6 slider — regressão contra as cenas de antes', () => {
     }
   });
 
-  it('os 6 exemplos de antes, em claro e escuro, batem com a cena gravada', () => {
+  it('the 6 examples from before, in light and dark, match the recorded scene', () => {
     const examples = all.filter((s) => /^slider-ex\d-(light|dark)$/.test(s.key));
     expect(examples.length).toBe(12);
     for (const scene of examples)
@@ -724,7 +725,7 @@ describe('EX6 slider — regressão contra as cenas de antes', () => {
       ).toEqual([]);
   });
 
-  it('desabilitado (enabled false) e escuro batem com a cena gravada', () => {
+  it('disabled (enabled false) and dark match the recorded scene', () => {
     const scenes = all.filter(
       (s) =>
         ((s.values as Record<string, unknown>)['enabled'] === 'false' ||
@@ -739,7 +740,7 @@ describe('EX6 slider — regressão contra as cenas de antes', () => {
       ).toEqual([]);
   });
 
-  it('onde o valor não está na grade (steps 1 e 4), a alça vai ao passo e o resto é o desenho do valor arredondado', () => {
+  it('where the value is not on the grid (steps 1 and 4), the handle goes to the step and the rest is the drawing of the rounded value', () => {
     const off = all.filter((s) => {
       const steps = (s.values as Record<string, unknown>)['steps'];
       return (steps === 1 || steps === 4) && !unchanged(s);
@@ -748,10 +749,10 @@ describe('EX6 slider — regressão contra as cenas de antes', () => {
     for (const scene of off) {
       const values = numeric(scene.values) as Record<string, unknown> & { steps: number };
       const d = draw(scene.id, values as Values, scene.mode);
-      // a alça no passo arredondado (conta do teste), não no valor de antes
+      // the handle on the rounded step (the test's computation), not on the value from before
       expectGeometry(values as Parameters<typeof expected>[0], 328, scene.mode);
       expectMarks(values as Parameters<typeof expectedMarks>[0], 328, scene.mode);
-      // o resto: a cena gravada do valor já arredondado
+      // the rest: the recorded scene of the already rounded value
       const rounded = { ...values } as Record<string, unknown>;
       for (const key of ['value', 'valueStart', 'valueEnd'])
         if (typeof values[key] === 'number')
@@ -766,12 +767,12 @@ describe('EX6 slider — regressão contra as cenas de antes', () => {
           )
         );
       });
-      expect(reference, `${scene.key} arredondada`).toBeDefined();
+      expect(reference, `${scene.key} rounded`).toBeDefined();
       expect(missing(d, reference!, scene.mode), scene.key).toEqual([]);
     }
   });
 
-  it('steps 12 (antes: 9 marcas) segue a conta nova: 12 marcas e a alça no passo de 13 partes', () => {
+  it('steps 12 (before: 9 marks) follows the new computation: 12 marks and the handle on the step of 13 parts', () => {
     const scenes = all.filter(
       (s) => (s.values as Record<string, unknown>)['steps'] === 12,
     );
@@ -785,10 +786,10 @@ describe('EX6 slider — regressão contra as cenas de antes', () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-// Sem tabelas enumeradas e o tamanho do arquivo
+// Without enumerated tables and the file size
 // ---------------------------------------------------------------------------------------------
 
-/** Cada `$switch` com mais de 12 casos e cada `$eq` sobre um campo `number` do tipo. */
+/** Each `$switch` with more than 12 cases and each `$eq` over a `number` field of the type. */
 function offenders(id: 'slider') {
   const numberFields = new Set(
     typeOf(id)
@@ -803,39 +804,39 @@ function offenders(id: 'slider') {
     const cases = obj['cases'];
     if ('$switch' in obj && typeof cases === 'object' && cases !== null) {
       const total = Object.keys(cases).length;
-      if (total > 12) found.push(`${path}: $switch de ${total} casos`);
+      if (total > 12) found.push(`${path}: $switch of ${total} cases`);
     }
     const eq = obj['$eq'];
     if (Array.isArray(eq) && typeof eq[0] === 'string' && numberFields.has(eq[0]))
-      found.push(`${path}: $eq sobre o campo number ${eq[0]}`);
+      found.push(`${path}: $eq over the number field ${eq[0]}`);
     for (const [k, v] of Object.entries(obj)) visit(v, `${path}.${k}`);
   };
   visit(JSON.parse(text(`components/${id}.json`)), id);
   return found;
 }
 
-describe('EX6 slider — sem tabelas enumeradas', () => {
-  it('o slider não tem $switch com mais de 12 casos nem $eq sobre campo number', () => {
+describe('EX6 slider — without enumerated tables', () => {
+  it('the slider has no $switch with more than 12 cases nor $eq over a number field', () => {
     expect(offenders('slider')).toEqual([]);
   });
 
-  it('o slider não tem nenhum $switch de décimos e os campos de valor são number', () => {
+  it('the slider has no $switch of tenths and the value fields are number', () => {
     expect(text('components/slider.json')).not.toContain('$switch');
     const fields = typeOf('slider').fields;
     for (const key of ['value', 'valueStart', 'valueEnd'])
       expect(fields.find((f) => f.key === key)?.type, key).toBe('number');
   });
 
-  it('o arquivo fica bem menor que os 93 kB de antes', () => {
-    // O alvo era 20 kB; o piso desta construção é o formato do prettier (as contas ficam em
-    // dezenas de linhas indentadas, e a largura dos trechos e as marcas dependem do valor
-    // encaixado, que não se guarda em variável): ~25 kB, um quarto do de antes. A L2 (#1078) tirou as
-    // alças dos quadros `antes do início` e `depois do fim` (que podem medir 0 e não comportam a alça) e as
-    // pôs na raiz, com a posição calculada uma vez cada (a do fim e a do início): teto de 34 kB (hoje 32.789). A VL3 (#1506) acrescentou o `let` e as três faixas de passos: teto de 40 kB (hoje ~38.000).
+  it('the file stays much smaller than the 93 kB from before', () => {
+    // The target was 20 kB; the floor of this construction is the prettier format (the computations take
+    // dozens of indented lines, and the width of the segments and the marks depend on the snapped
+    // value, which is not stored in a variable): ~25 kB, a quarter of the one from before. L2 (#1078) took the
+    // handles out of the `antes do início` and `depois do fim` frames (which can measure 0 and do not hold the handle) and
+    // put them at the root, with the position computed once each (the end's and the start's): ceiling of 34 kB (now 32,789). VL3 (#1506) added the `let` and the three step strips: ceiling of 40 kB (now ~38,000).
     expect(text('components/slider.json').length).toBeLessThan(40_000);
   });
 
-  it('o preview e a descrição falam em número, não em décimos nem em 9 passos', () => {
+  it('the preview and the description talk about a number, not about tenths nor 9 steps', () => {
     const component = JSON.parse(text('components/slider.json')) as {
       description: string;
       preview: Record<string, unknown>;
@@ -843,8 +844,9 @@ describe('EX6 slider — sem tabelas enumeradas', () => {
     expect(component.preview['value']).toBe(0.5);
     expect(component.preview['valueStart']).toBe(0.2);
     expect(component.preview['valueEnd']).toBe(0.8);
+    // pt-BR kept: the Portuguese text of libraries/material3-compose/docs/slider.md and of the slider description is the object of this test
     expect(component.description).not.toMatch(/décimos|1 a 9/);
-    // a tabela de campos do doc é gerada da especialização; o resto (Fidelidade) é escrito à mão
+    // the field table of the doc is generated from the specialization; the rest (Fidelidade) is handwritten
     const written = text('docs/slider.md').split('## Fidelidade')[1] ?? '';
     expect(written.length).toBeGreaterThan(1000);
     expect(/em décimos|desenha como 9|marcas de 1 a 9/.test(written)).toBe(false);

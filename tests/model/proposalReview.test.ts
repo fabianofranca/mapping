@@ -37,14 +37,14 @@ import { AT, LATER, changeOf, decided, propose, stateOf } from './proposalFixtur
 import { cadastroProject, layerOf } from './specFixtures';
 
 /**
- * Sobre o `sampleProject`: a imagem I3 nova com as marcações N1 › N2 (criadas), a
- * anotação B1 em N2, B2 (L1) e B3 (L2, vinculada a B2) em N1, e o nome novo de M4.
+ * On top of `sampleProject`: the new image I3 with the markings N1 › N2 (created), the
+ * annotation B1 on N2, B2 (L1) and B3 (L2, linked to B2) on N1, and the new name of M4.
  */
 function creations(): { base: Project; after: Project; p: Proposal } {
   const base = sampleProject();
   let after = addContainer(base, {
     id: 'I3',
-    file: 'images/nova.png',
+    file: 'images/new.png',
     width: 1000,
     height: 1000,
   });
@@ -62,12 +62,12 @@ function creations(): { base: Project; after: Project; p: Proposal } {
   after = addAnnotation(after, { id: 'B2', markingId: 'N1', layerId: 'L1' });
   after = addAnnotation(after, { id: 'B3', markingId: 'N1', layerId: 'L2' });
   after = setAnnotationParent(after, 'B3', 'B2');
-  after = renameMarking(after, 'M4', 'Farol');
+  after = renameMarking(after, 'M4', 'Headlight');
   return { base, after, p: propose(base, after) };
 }
 
-describe('níveis da revisão', () => {
-  it('Projeto, imagens e itens aninhados pela hierarquia, com as anotações no item', () => {
+describe('review levels', () => {
+  it('Project, images and items nested by the hierarchy, with the annotations on the item', () => {
     const { base, p } = creations();
     const tree = reviewTree(p, base);
     const shape = (n: (typeof tree)['root']): unknown => ({
@@ -103,10 +103,10 @@ describe('níveis da revisão', () => {
     expect(tree.changeIdsOf({ level: 'image', id: 'I3' })).toHaveLength(6);
     expect(tree.changeIdsOf({ level: 'proposal', id: null })).toHaveLength(7);
     expect(tree.changeIdsOf({ level: 'project', id: null })).toEqual([]);
-    expect(tree.changeIdsOf({ level: 'item', id: 'nada' })).toEqual([]);
+    expect(tree.changeIdsOf({ level: 'item', id: 'nothing' })).toEqual([]);
   });
 
-  it('decidir um nível vale para tudo abaixo; o de cima mostra "parcial" com as contagens', () => {
+  it('deciding a level applies to everything below; the one above shows "partial" with the counts', () => {
     const { base, p } = creations();
     let next = decided(p, base, { level: 'image', id: 'I3' }, 'accepted');
     const tree = reviewTree(next, base);
@@ -120,7 +120,7 @@ describe('níveis da revisão', () => {
       rejected: 0,
       undecided: 1,
     });
-    // Um nível menor contraria o maior.
+    // A lower level overrides the higher one.
     const b1 = changeOf(next, 'annotation', 'B1').id;
     next = decided(next, base, { level: 'change', id: b1 }, 'rejected');
     expect(
@@ -133,8 +133,8 @@ describe('níveis da revisão', () => {
   });
 });
 
-describe('dependências', () => {
-  it('1. aceitar uma mudança dentro de um item criado aceita a criação dele e dos ancestrais', () => {
+describe('dependencies', () => {
+  it('1. accepting a change inside a created item accepts the creation of it and of its ancestors', () => {
     const { base, p } = creations();
     const b1 = changeOf(p, 'annotation', 'B1').id;
     const result = decide(
@@ -152,11 +152,11 @@ describe('dependências', () => {
     expect(accepted('image', 'I3')).toBe('accepted');
     expect(result.changed).toEqual([b1]);
     expect(result.cascaded).toHaveLength(3);
-    // O que não é requisito continua sem decisão.
+    // What is not a requirement stays undecided.
     expect(result.decisions[changeOf(p, 'annotation', 'B2').id]).toBeUndefined();
   });
 
-  it('2. rejeitar a criação de um item rejeita o que depende dele (filhas, anotações, vinculadas)', () => {
+  it('2. rejecting the creation of an item rejects what depends on it (children, annotations, linked ones)', () => {
     const { base, p } = creations();
     let next = decided(p, base, { level: 'proposal', id: null }, 'accepted');
     const n1 = changeOf(p, 'marking', 'N1').id;
@@ -178,12 +178,12 @@ describe('dependências', () => {
     ] as const) {
       expect(stateOf(next, changeOf(p, entity, id).id), id).toBe('rejected');
     }
-    // A imagem (requisito, não dependente) continua aceita.
+    // The image (a requirement, not a dependent) stays accepted.
     expect(stateOf(next, changeOf(p, 'image', 'I3').id)).toBe('accepted');
     expect(result.cascaded).toHaveLength(4);
   });
 
-  it('2. … inclusive as referências que apontam para ele', () => {
+  it('2. … including the references that point to it', () => {
     const base = cadastroProject();
     let after = createMarking(base, {
       id: 'MX',
@@ -207,13 +207,13 @@ describe('dependências', () => {
     );
     expect(stateOf(next, changeOf(p, 'annotation', 'AX').id)).toBe('rejected');
     expect(stateOf(next, ref)).toBe('rejected');
-    // E aceitar a referência traz de volta a anotação citada e a marcação dela.
+    // And accepting the reference brings back the cited annotation and its marking.
     const back = decided(next, base, { level: 'change', id: ref }, 'accepted');
     expect(stateOf(back, changeOf(p, 'annotation', 'AX').id)).toBe('accepted');
     expect(stateOf(back, changeOf(p, 'marking', 'MX').id)).toBe('accepted');
   });
 
-  it('3. aceitar a remoção de um item aceita a remoção do que a cascata remove (e conta quantos)', () => {
+  it('3. accepting the removal of an item accepts the removal of what the cascade removes (and counts how many)', () => {
     const base = sampleProject();
     const p = propose(base, removeMarking(base, 'M1'));
     const m1 = changeOf(p, 'marking', 'M1').id;
@@ -225,14 +225,14 @@ describe('dependências', () => {
       AT,
     );
     if (!result.ok) throw new Error(result.reason);
-    // M2 e M3 (descendentes) e A1, A2 e A3 (anotações de M1 e M2).
+    // M2 and M3 (descendants) and A1, A2 and A3 (annotations of M1 and M2).
     expect(result.cascaded).toHaveLength(5);
     expect(Object.values(result.decisions).every((d) => d.state === 'accepted')).toBe(
       true,
     );
   });
 
-  it('4. rejeitar a remoção de algo da cascata rejeita a remoção de quem a causa', () => {
+  it('4. rejecting the removal of something in the cascade rejects the removal of whoever causes it', () => {
     const base = sampleProject();
     const p = propose(base, removeMarking(base, 'M1'));
     let next = decided(p, base, { level: 'proposal', id: null }, 'accepted');
@@ -244,12 +244,12 @@ describe('dependências', () => {
     );
     expect(stateOf(next, changeOf(p, 'marking', 'M2').id)).toBe('rejected');
     expect(stateOf(next, changeOf(p, 'marking', 'M1').id)).toBe('rejected');
-    // As outras remoções da cascata continuam aceitas.
+    // The other removals in the cascade stay accepted.
     expect(stateOf(next, changeOf(p, 'marking', 'M3').id)).toBe('accepted');
     expect(stateOf(next, changeOf(p, 'annotation', 'A1').id)).toBe('accepted');
   });
 
-  it('limpar a decisão de uma criação tira a aceitação do que dependia dela', () => {
+  it('clearing the decision of a creation removes the acceptance of what depended on it', () => {
     const { base, p } = creations();
     let next = decided(p, base, { level: 'proposal', id: null }, 'accepted');
     next = decided(
@@ -263,7 +263,7 @@ describe('dependências', () => {
     expect(stateOf(next, changeOf(p, 'marking', 'N1').id)).toBe('accepted');
   });
 
-  it('mudanças aplicadas não mudam e só uma proposta aberta aceita decisões', () => {
+  it('applied changes do not change and only an open proposal accepts decisions', () => {
     const { base, p } = creations();
     const i3 = changeOf(p, 'image', 'I3').id;
     const applied: Proposal = {
@@ -287,21 +287,21 @@ describe('dependências', () => {
       ok: false,
       reason: 'not-open',
     });
-    expect(decide(p, tree, { level: 'item', id: 'nada' }, 'accepted', AT)).toEqual({
+    expect(decide(p, tree, { level: 'item', id: 'nothing' }, 'accepted', AT)).toEqual({
       ok: false,
       reason: 'unknown-target',
     });
   });
 });
 
-describe('conflitos', () => {
-  it('a mudança cujo from não bate com o atual vira conflito, com o valor atual', () => {
+describe('conflicts', () => {
+  it('a change whose from does not match the current one becomes a conflict, with the current value', () => {
     const base = sampleProject();
     const p = propose(
       base,
-      renameMarking(moveMarking(base, 'M4', 10, 10), 'M1', 'Porta dianteira'),
+      renameMarking(moveMarking(base, 'M4', 10, 10), 'M1', 'Front door'),
     );
-    // Alteração externa depois da proposta: M4 foi movida à mão.
+    // External change after the proposal: M4 was moved by hand.
     const edited = setMarkingRect(base, 'M4', { x: 50, y: 50, width: 100, height: 100 });
     const rect = changeOf(p, 'marking', 'M4', 'rect');
     expect(changeStatus(p, rect, edited)).toMatchObject({
@@ -314,7 +314,7 @@ describe('conflitos', () => {
     expect(changeStatus(p, rect, base).conflict).toBe(false);
   });
 
-  it('criação de id existente, remoção de item editado ou sumido e alteração de item sumido', () => {
+  it('creation of an existing id, removal of an edited or vanished item and change of a vanished item', () => {
     const base = sampleProject();
     const created = propose(
       base,
@@ -334,62 +334,62 @@ describe('conflitos', () => {
     const removed = propose(base, removeMarking(base, 'M4'));
     const removal = changeOf(removed, 'marking', 'M4');
     expect(
-      changeStatus(removed, removal, renameMarking(base, 'M4', 'Outro')).conflict,
+      changeStatus(removed, removal, renameMarking(base, 'M4', 'Other')).conflict,
     ).toBe(true);
-    // Confirmar a posição ("a revisar") não é mudança: não vira conflito.
+    // Confirming the position ("to review") is not a change: it does not become a conflict.
     expect(changeStatus(removed, removal, base).conflict).toBe(false);
     expect(changeStatus(removed, removal, removeContainer(base, 'I2'))).toMatchObject({
       conflict: true,
       current: undefined,
     });
 
-    const renamed = propose(base, renameMarking(base, 'M4', 'Farol'));
+    const renamed = propose(base, renameMarking(base, 'M4', 'Headlight'));
     expect(
       changeStatus(renamed, renamed.changes[0]!, removeContainer(base, 'I2')).conflict,
     ).toBe(true);
   });
 
-  it('remover imagem lida do disco não vira conflito (parentId derivado dos dois lados)', () => {
+  it('removing an image read from disk does not become a conflict (parentId derived on both sides)', () => {
     const base = sampleProject();
     const removed = propose(base, removeContainer(base, 'I1'));
     const removal = changeOf(removed, 'image', 'I1');
     expect(changeStatus(removed, removal, base).conflict).toBe(false);
     const parsed = parseProposalText(serializeProposal(removed));
-    if (!parsed.ok) throw new Error('proposta não lida');
+    if (!parsed.ok) throw new Error('proposal not read');
     const reread = parsed.proposal;
     expect(changeStatus(reread, changeOf(reread, 'image', 'I1'), base).conflict).toBe(
       false,
     );
-    // Um valor realmente diferente continua sendo conflito.
+    // A really different value is still a conflict.
     const moved = setImageLocked(base, 'I1', true);
     expect(changeStatus(reread, changeOf(reread, 'image', 'I1'), moved).conflict).toBe(
       true,
     );
   });
 
-  it('alterar algo criado pela mesma proposta não é conflito, e as decisões das outras ficam', () => {
+  it('changing something created by the same proposal is not a conflict, and the decisions of the others stay', () => {
     const { base, p } = creations();
     const accepted = decided(p, base, { level: 'image', id: 'I2' }, 'accepted');
-    const statuses = changeStatuses(accepted, renameMarking(base, 'M4', 'Outro'));
+    const statuses = changeStatuses(accepted, renameMarking(base, 'M4', 'Other'));
     const m4 = changeOf(p, 'marking', 'M4', 'name').id;
     expect(statuses.get(m4)).toMatchObject({
       conflict: true,
       decision: 'accepted',
-      current: 'Outro',
+      current: 'Other',
     });
     expect([...statuses.values()].filter((s) => s.conflict)).toHaveLength(1);
   });
 });
 
-describe('aviso de item trancado', () => {
-  it('geometria e remoção de marcação trancada (própria ou pelo ancestral)', () => {
+describe('locked item warning', () => {
+  it('geometry and removal of a locked marking (its own or by the ancestor)', () => {
     const base = setMarkingLocked(sampleProject(), 'M1', true);
     let after = setMarkingLocked(base, 'M1', false);
     after = moveMarking(after, 'M1', 10, 10);
-    after = renameMarking(after, 'M2', 'Puxador');
+    after = renameMarking(after, 'M2', 'Handle');
     const p = propose(base, after);
     expect(changeStatus(p, changeOf(p, 'marking', 'M1', 'rect'), base).locked).toBe(true);
-    // A filha tem a geometria travada pela trava do pai.
+    // The child has its geometry locked by the parent's lock.
     expect(changeStatus(p, changeOf(p, 'marking', 'M2', 'rect'), base).locked).toBe(true);
     expect(changeStatus(p, changeOf(p, 'marking', 'M2', 'name'), base).locked).toBe(
       false,
@@ -410,7 +410,7 @@ describe('aviso de item trancado', () => {
     );
   });
 
-  it('imagem trancada: mover, remover e trocar por outro tamanho', () => {
+  it('locked image: move, remove and replace with another size', () => {
     const base = setImageLocked(sampleProject(), 'I2', true);
     const free = setImageLocked(base, 'I2', false);
     const moved = propose(
@@ -445,8 +445,8 @@ describe('aviso de item trancado', () => {
   });
 });
 
-describe('progresso, notas e estado da proposta', () => {
-  it('conta as aceitas aguardando aplicação e diz quando a revisão terminou', () => {
+describe('progress, notes and proposal state', () => {
+  it('counts the accepted ones awaiting application and says when the review has finished', () => {
     const { base, p } = creations();
     expect(reviewProgress(p)).toMatchObject({ total: 7, undecided: 7, complete: false });
     let next = decided(p, base, { level: 'proposal', id: null }, 'accepted');
@@ -466,27 +466,27 @@ describe('progresso, notas e estado da proposta', () => {
     });
   });
 
-  it('notas em qualquer nível; editar com texto vazio remove', () => {
+  it('notes at any level; editing with empty text removes', () => {
     const { p } = creations();
-    let next = addNote(p, { level: 'item', id: 'N1' }, 'O nome está errado.', AT, 'n1');
-    next = addNote(next, { level: 'proposal', id: null }, 'Faltou a tela 3.', AT, 'n2');
+    let next = addNote(p, { level: 'item', id: 'N1' }, 'The name is wrong.', AT, 'n1');
+    next = addNote(next, { level: 'proposal', id: null }, 'Screen 3 is missing.', AT, 'n2');
     expect(notesOf(next, { level: 'item', id: 'N1' }).map((n) => n.text)).toEqual([
-      'O nome está errado.',
+      'The name is wrong.',
     ]);
-    next = editNote(next, 'n1', 'O nome e a posição.', LATER);
-    expect(next.notes[0]).toMatchObject({ text: 'O nome e a posição.', at: LATER });
+    next = editNote(next, 'n1', 'The name and the position.', LATER);
+    expect(next.notes[0]).toMatchObject({ text: 'The name and the position.', at: LATER });
     expect(editNote(next, 'n1', '  ', LATER).notes.map((n) => n.id)).toEqual(['n2']);
     expect(removeNote(next, 'n2').notes.map((n) => n.id)).toEqual(['n1']);
   });
 
-  it('retirar e substituir só valem para a proposta aberta', () => {
+  it('withdrawing and superseding only apply to the open proposal', () => {
     const { p } = creations();
     expect(withdrawProposal(p).status).toBe('withdrawn');
     expect(supersedeProposal(p).status).toBe('superseded');
     expect(withdrawProposal(supersedeProposal(p)).status).toBe('superseded');
   });
 
-  it('anotação tipada criada numa marcação nova depende das duas', () => {
+  it('a typed annotation created on a new marking depends on both', () => {
     const base = cadastroProject();
     let after = createMarking(base, {
       id: 'MB',

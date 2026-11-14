@@ -25,15 +25,15 @@ import {
   type Rand,
 } from './proposalFuzzSupport';
 
-// Fuzz da fidelidade da proposta (etapa #549, decisão 6): sobre uma base aleatória, um lote de
-// operações (criar, envolver, reordenar, mover ou redimensionar e remover) com retângulos de uma
-// grade pequena, para forçar empates de retângulo e de área. `computeChanges` seguido de
-// `patchProject` precisa dar os mesmos pais (marcações e containers) e a mesma ordem entre irmãs
-// do projeto proposto, sem `problems`, e nenhum `position` pode ser redundante (tirar qualquer
-// um muda o aplicado). A exceção é o lote em que nenhuma âncora daria os pais do proposto (um
-// empate decidido por um passo do lote que a proposta não registra; "Garantia" em
-// docs/PROPOSAL-FORMAT.md): o teste prova isso por força bruta e fixa os lotes. Semente fixa: o
-// mesmo resultado em toda execução. Limite conhecido: issue #625.
+// Proposal fidelity fuzz (stage #549, decision 6): over a random base, a batch of
+// operations (create, wrap, reorder, move or resize, and remove) with rectangles from a
+// small grid, to force rectangle and area ties. `computeChanges` followed by
+// `patchProject` must give the same parents (markings and containers) and the same order among siblings
+// as the proposed project, without `problems`, and no `position` may be redundant (removing any
+// one changes the applied result). The exception is the batch where no anchor would give the proposed parents (a
+// tie decided by a step of the batch that the proposal does not record; "Guarantee" in
+// docs/PROPOSAL-FORMAT.md): the test proves this by brute force and pins the batches. Fixed seed: the
+// same result on every run. Known limit: issue #625.
 
 const BATCHES = 2000;
 const SEED = 549;
@@ -86,7 +86,7 @@ function cases(): Case[] {
 
 const isPosition = (c: Change) => c.entity === 'marking' && c.field === 'position';
 
-/** Algum `position` sai sem mudar o aplicado (seria redundante)? */
+/** Does some `position` go away without changing the applied result (would it be redundant)? */
 function hasRedundantPosition({ base, after, changes }: Case): boolean {
   return changes.filter(isPosition).some((c) =>
     same(
@@ -99,12 +99,12 @@ function hasRedundantPosition({ base, after, changes }: Case): boolean {
   );
 }
 
-describe('proposta: o aplicado é igual ao proposto (fuzz, #549)', () => {
-  it(`${BATCHES} lotes: mesmos pais e mesma ordem entre irmãs, sem position redundante`, () => {
+describe('proposal: the applied result equals the proposed (fuzz, #549)', () => {
+  it(`${BATCHES} batches: same parents and same order among siblings, no redundant position`, () => {
     const unstable: number[] = [];
     const divergent: number[] = [];
     const redundant: number[] = [];
-    // A exceção da Garantia: divergem, e nenhuma âncora daria os pais do proposto.
+    // The Guarantee exception: they diverge, and no anchor would give the proposed parents.
     const exception: number[] = [];
     for (const c of cases()) {
       if (settleHierarchy(c.after) !== c.after) unstable.push(c.batch);
@@ -120,8 +120,8 @@ describe('proposta: o aplicado é igual ao proposto (fuzz, #549)', () => {
       divergent: [],
       redundant: [],
     });
-    // Antes da correção (semente 549): 6 lotes divergentes e 6 com position redundante.
-    // Sobram os dois da exceção (cerca de 1 lote em 1.000).
+    // Before the fix (seed 549): 6 divergent batches and 6 with a redundant position.
+    // The two of the exception remain (about 1 batch in 1,000).
     expect(exception).toEqual([182, 300]);
   });
 });

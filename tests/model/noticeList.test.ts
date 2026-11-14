@@ -183,7 +183,7 @@ describe('changeNotices', () => {
     ).toEqual(['deprecated', 'diverges', 'pending']);
   });
 
-  it('changing the type brings the type's notices', () => {
+  it("changing the type brings the type's notices", () => {
     expect(
       kinds(
         changeNotices(noticeProject(), change('annotation', 'update', 'type'), 'type'),
@@ -191,7 +191,7 @@ describe('changeNotices', () => {
     ).toEqual(['pending']);
   });
 
-  it('a field value brings the field's notice and its columns' notices', () => {
+  it("a field value brings the field's notice and its columns' notices", () => {
     const p = noticeProject();
     expect(
       kinds(

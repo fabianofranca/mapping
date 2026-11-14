@@ -304,6 +304,7 @@ describe('Material 3 (Compose) library', () => {
       components: 50,
       docs: 50,
     });
+    // pt-BR kept: 'parâmetro fora da ficha' is the pt-BR text of the model.library.paramOutsideSignature warning
     // Only the known `parâmetro fora da ficha` warnings (provisional: owner decision pending in bug #1774; curation
     // in #1134): the fonts come in the package and `code` covers the fields the drawing does not use. The set cannot grow
     // or keep an item that disappeared.
@@ -598,7 +599,7 @@ describe('Material 3 (Compose) library v2 icon set', () => {
     expect(report.summary.level).toBe(3);
   }, 30_000);
 
-  it('covers every suggestion (by Compose name) through the icon node's $switch, and what the components draw on their own', () => {
+  it('covers every suggestion (by Compose name) through the $switch of the icon node, and what the components draw on their own', () => {
     const field = typeOf('icon').fields.find((f) => f.key === 'imageVector');
     const suggestions = field?.type === 'string' ? (field.suggestions ?? []) : [];
     expect(suggestions.length).toBeGreaterThan(0);
@@ -623,20 +624,28 @@ describe('Material 3 (Compose) library v2 icon set', () => {
 });
 
 describe('components migrated in M1 (text, icon, divider, surface)', () => {
-  it.each(MIGRATED)('%s is format 4, with no literal color and no literal family', (id) => {
-    const raw = text(`components/${id}.json`);
-    const component = JSON.parse(raw) as Rec;
-    expect(component.formatVersion).toBe(4);
-    expect(raw).not.toMatch(/"family"/);
-    // no #hex or rgb()/rgba() in the file (color only through `$token` or `none`; pure layout has no color)
-    expect(raw).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
-    expect(raw).not.toMatch(/rgba?\(/);
-  });
+  it.each(MIGRATED)(
+    '%s is format 4, with no literal color and no literal family',
+    (id) => {
+      const raw = text(`components/${id}.json`);
+      const component = JSON.parse(raw) as Rec;
+      expect(component.formatVersion).toBe(4);
+      expect(raw).not.toMatch(/"family"/);
+      // no #hex or rgb()/rgba() in the file (color only through `$token` or `none`; pure layout has no color)
+      expect(raw).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+      expect(raw).not.toMatch(/rgba?\(/);
+    },
+  );
 
   it('text drops the family and uses the typography and color tokens', () => {
     const catalog = sharedCatalog;
     const entry = findEntry(catalog, 'text')!;
-    const light = drawIn(catalog, entry, { text: 'Hello', style: 'titleMedium' }, 'light');
+    const light = drawIn(
+      catalog,
+      entry,
+      { text: 'Hello', style: 'titleMedium' },
+      'light',
+    );
     const dark = drawIn(catalog, entry, { text: 'Hello', style: 'titleMedium' }, 'dark');
     const textNode = (d: typeof light) => findText(d.root);
     expect(textNode(light)?.style.fontSize).toBe(16);
@@ -812,7 +821,7 @@ describe('reading direction and anchor in the Material 3 (Compose) library (R5, 
   const carets = (drawn: ReturnType<typeof drawWith>) =>
     drawn.nodes.filter((n) => n.name === 'seta' && n.visible);
 
-  describe('the anchored tooltip draws the arrow under the anchor's center', () => {
+  describe('the anchored tooltip draws the arrow under the center of the anchor', () => {
     // The 120 × 24 plain tooltip and the 40 × 40 anchor 4 apart (Compose's spacing).
     const W = 120;
     const H = 24;
@@ -895,7 +904,7 @@ describe('reading direction and anchor in the Material 3 (Compose) library (R5, 
       expect(endCaret.transform[0]).toBeLessThan(0);
     });
 
-    it('in rtl, top and bottom follow the anchor's physical center (the pseudo-field's x does not mirror)', () => {
+    it('in rtl, top and bottom follow the physical center of the anchor (the x of the pseudo-field does not mirror)', () => {
       for (const anchorCase of [cases[0], cases[1]]) {
         const ltr = drawWith(
           'tooltip',
@@ -936,7 +945,7 @@ describe('reading direction and anchor in the Material 3 (Compose) library (R5, 
       }
     });
 
-    it('the plain arrow is inverse-surface and follows the anchor's center off the tooltip's center', () => {
+    it('the plain arrow is inverse-surface and follows the center of the anchor off the center of the tooltip', () => {
       const drawn = drawWith(
         'tooltip',
         { text: 'Help' },
@@ -950,7 +959,7 @@ describe('reading direction and anchor in the Material 3 (Compose) library (R5, 
     });
   });
 
-  describe('anchor on the root of the tooltip, the badge and the dropdown-menu (the commit's numbers)', () => {
+  describe('anchor on the root of the tooltip, the badge and the dropdown-menu (the numbers of the commit)', () => {
     const rootAnchor = (id: string) => findEntry(catalog, id)!.component!.anchor;
 
     it('tooltip: top/center, 4 of spacing (SpacingBetweenTooltipAndAnchor)', () => {
@@ -977,7 +986,7 @@ describe('reading direction and anchor in the Material 3 (Compose) library (R5, 
       });
     });
 
-    it('the three defaults come out in pixels through the container's density', () => {
+    it('the three defaults come out in pixels through the density of the container', () => {
       const file = findEntry(catalog, 'tooltip')!.component!;
       expect(componentAnchorDefaults(file, 3).offset).toEqual({ main: 12, cross: 0 });
     });

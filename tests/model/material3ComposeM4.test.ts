@@ -64,28 +64,34 @@ describe('M4 — navigation and lists in format 4', () => {
     };
   };
 
-  it.each(M4)('%s: fields, examples, preview, minSize and size equal to those of v1', (id) => {
-    const before = (v1.components as Record<string, Rec>)[id]!;
-    const type = rawTypes[id]!;
-    const now = component(id);
-    const { actual, expected } = v1WithEstados(id, type, before);
-    expect(actual).toEqual(expected);
-    expect(withoutAddedPreview(id, now.preview)).toEqual(before.preview);
-    expect(now.minSize).toEqual(before.minSize);
-    expect(now.size).toEqual(COMPOSE_SIZES[id] ?? before.size);
-  });
+  it.each(M4)(
+    '%s: fields, examples, preview, minSize and size equal to those of v1',
+    (id) => {
+      const before = (v1.components as Record<string, Rec>)[id]!;
+      const type = rawTypes[id]!;
+      const now = component(id);
+      const { actual, expected } = v1WithEstados(id, type, before);
+      expect(actual).toEqual(expected);
+      expect(withoutAddedPreview(id, now.preview)).toEqual(before.preview);
+      expect(now.minSize).toEqual(before.minSize);
+      expect(now.size).toEqual(COMPOSE_SIZES[id] ?? before.size);
+    },
+  );
 
-  it.each(M4)('%s: the default and the examples draw without warnings in light and dark', (id) => {
-    const catalog = shared;
-    const entry = findEntry(catalog, id)!;
-    const cases = [{}, ...(entry.examples ?? []).map((e) => e.values)];
-    for (const mode of ['light', 'dark'] as const) {
-      for (const values of cases) {
-        const drawing = drawIn(catalog, entry, values ?? {}, mode);
-        expect(drawing.warnings.filter((w) => BAD_WARNING.test(w))).toEqual([]);
+  it.each(M4)(
+    '%s: the default and the examples draw without warnings in light and dark',
+    (id) => {
+      const catalog = shared;
+      const entry = findEntry(catalog, id)!;
+      const cases = [{}, ...(entry.examples ?? []).map((e) => e.values)];
+      for (const mode of ['light', 'dark'] as const) {
+        for (const values of cases) {
+          const drawing = drawIn(catalog, entry, values ?? {}, mode);
+          expect(drawing.warnings.filter((w) => BAD_WARNING.test(w))).toEqual([]);
+        }
       }
-    }
-  });
+    },
+  );
 
   it('the library validates with 0 errors and only the known warnings (provisional, #1774)', () => {
     const report = validateLibrary({ files, specPath: SPEC_FILE });

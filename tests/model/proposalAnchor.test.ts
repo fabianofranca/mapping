@@ -62,7 +62,7 @@ function accept(from: Project, proposal: Proposal, only?: string): Project {
 
 const markingOf = (p: Project, id: string) => p.markings.find((m) => m.id === id)!;
 
-describe('proposal with the marking's anchor', () => {
+describe("proposal with the marking's anchor", () => {
   it('with no anchor the proposal stays at formatVersion 4 and 9 is a readable version', () => {
     const proposal = build(base);
     expect(proposal.formatVersion).toBe(PROPOSAL_FORMAT_VERSION);
@@ -71,7 +71,7 @@ describe('proposal with the marking's anchor', () => {
     expect(PROPOSAL_FORMAT_VERSIONS).toContain(9);
   });
 
-  it('anchoring is the marking's anchor field (from null); writes 9; round trip; accepting writes', () => {
+  it("anchoring is the marking's anchor field (from null); writes 9; round trip; accepting writes", () => {
     const anchored = setMarkingAnchor(base, 'B', { to: 'T', side: 'top' });
     const proposal = build(anchored);
     expect(proposal.formatVersion).toBe(PROPOSAL_ANCHOR_FORMAT_VERSION);

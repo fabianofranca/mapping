@@ -85,6 +85,7 @@ describe('formatVersion 9: variants', () => {
     expect(code?.variants?.cases.text).toEqual({
       symbol: 'androidx.compose.material3.TextButton',
       path: 'compose/material3/TextButton.kt',
+      // pt-BR kept: shared fixture data asserted by tests/mcp, tests/model/codeVariants.test.ts (variantsFixtures)
       notes: 'sem fundo',
     });
   });
@@ -222,6 +223,7 @@ describe('formatVersion 9: variants', () => {
     expect(code?.variants?.cases.text).toEqual({
       symbol: 'androidx.compose.material3.TextButton',
       path: 'compose/material3/TextButton.kt',
+      // pt-BR kept: shared fixture data asserted by tests/mcp, tests/model/codeVariants.test.ts (variantsFixtures)
       notes: 'sem fundo',
     });
     expect(code?.variants?.field).toBe('style');

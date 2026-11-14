@@ -21,7 +21,7 @@ function slotLayout(id: string, values: Record<string, string | number>) {
 const version = (id: string) => entry(id).component!.formatVersion;
 
 describe('M2 group B — foundation in format 4', () => {
-  it('lazy-column: Arrangement and Alignment become the slot's justify and align; spacing and contentPadding, gap and padding', () => {
+  it('lazy-column: Arrangement and Alignment become the justify and align of the slot; spacing and contentPadding, gap and padding', () => {
     expect(version('lazy-column')).toBe(4);
     const bottom = slotLayout('lazy-column', {
       verticalArrangement: 'Bottom',
@@ -74,7 +74,7 @@ describe('M2 group B — foundation in format 4', () => {
     ).toBe('center');
   });
 
-  it('lazy-row: horizontalArrangement and verticalAlignment become the slot's justify and align', () => {
+  it('lazy-row: horizontalArrangement and verticalAlignment become the justify and align of the slot', () => {
     expect(version('lazy-row')).toBe(4);
     const l = slotLayout('lazy-row', {
       horizontalArrangement: 'End',

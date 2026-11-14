@@ -28,6 +28,7 @@ const tok = (name: string, mode: Mode): string => {
   return typeof value === 'object' ? value[mode] : String(value);
 };
 
+// pt-BR kept: the quoted node names ('rótulo', 'trilho', ...) are the names in the material3-compose library (libraries/*.json, outside this phase)
 const named = (d: Drawing, name: string): SceneNode | undefined => {
   for (const node of walk(d.root)) if (node.name === name && node.visible) return node;
   return undefined;

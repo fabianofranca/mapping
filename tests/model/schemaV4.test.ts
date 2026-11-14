@@ -782,7 +782,10 @@ describe('issues and invariants', () => {
       'layer-mismatch',
     ]);
     expect(
-      issueCodes(patch(p, 'AIN', { type: { specId: 'sdui', typeId: 'vanished' } }), 'AIN'),
+      issueCodes(
+        patch(p, 'AIN', { type: { specId: 'sdui', typeId: 'vanished' } }),
+        'AIN',
+      ),
     ).toEqual(['unknown-type']);
     expect(
       issueCodes(

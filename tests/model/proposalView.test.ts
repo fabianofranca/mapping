@@ -35,27 +35,27 @@ import { AT, changeOf, decided, propose } from './proposalFixtures';
 
 function scenario() {
   const base = sampleProject();
-  let after = renameMarking(base, 'M1', 'Porta dianteira');
+  let after = renameMarking(base, 'M1', 'Front door');
   after = setMarkingRect(after, 'M4', { x: 10, y: 10, width: 100, height: 100 });
   after = addAnnotation(after, {
     id: 'A9',
     markingId: 'M4',
     layerId: 'L1',
-    name: 'Novo',
+    name: 'New',
   });
   after = removeAnnotation(after, 'A4');
   after = moveContainer(after, 'I2', 5000, 5000);
   after = addContainer(after, {
     id: 'I3',
-    file: 'images/nova.webp',
+    file: 'images/new.webp',
     width: 800,
     height: 600,
   });
   return { base, proposal: propose(base, after) };
 }
 
-describe('tipo e alvo das mudanças', () => {
-  it('classifica criada, removida, movida, alterada e imagem trocada', () => {
+describe('type and target of the changes', () => {
+  it('classifies created, removed, moved, changed and replaced image', () => {
     const { base, proposal } = scenario();
     expect(changeType(changeOf(proposal, 'annotation', 'A9'))).toBe('created');
     expect(changeType(changeOf(proposal, 'annotation', 'A4'))).toBe('removed');
@@ -66,20 +66,20 @@ describe('tipo e alvo das mudanças', () => {
     const replaced = propose(
       base,
       replaceContainer(base, 'I2', {
-        file: 'images/outra.jpg',
+        file: 'images/other.jpg',
         width: 1000,
         height: 1000,
       }),
     );
     expect(changeType(changeOf(replaced, 'image', 'I2', 'file'))).toBe('replaced');
     expect(changeImageFile(changeOf(replaced, 'image', 'I2', 'file'))).toBe(
-      'images/outra.jpg',
+      'images/other.jpg',
     );
-    expect(changeImageFile(changeOf(proposal, 'image', 'I3'))).toBe('images/nova.webp');
+    expect(changeImageFile(changeOf(proposal, 'image', 'I3'))).toBe('images/new.webp');
     expect(changeImageFile(changeOf(proposal, 'marking', 'M1', 'name'))).toBeNull();
   });
 
-  it('o tipo dominante: criada > removida > imagem trocada > alterada; movida só sozinha', () => {
+  it('the dominant type: created > removed > replaced image > changed; moved only alone', () => {
     expect(dominantChangeType(['moved', 'changed'])).toBe('changed');
     expect(dominantChangeType(['moved'])).toBe('moved');
     expect(dominantChangeType(['moved', 'changed', 'removed'])).toBe('removed');
@@ -88,7 +88,7 @@ describe('tipo e alvo das mudanças', () => {
     expect(dominantChangeType([])).toBeNull();
   });
 
-  it('o alvo é o item, a imagem ou o grupo Projeto, e a chave junta nível e id', () => {
+  it('the target is the item, the image or the Project group, and the key joins level and id', () => {
     const { proposal } = scenario();
     expect(changeTarget(changeOf(proposal, 'marking', 'M1', 'name'))).toEqual({
       level: 'item',
@@ -102,7 +102,7 @@ describe('tipo e alvo das mudanças', () => {
     expect(reviewKey({ level: 'project', id: null })).toBe('project:');
   });
 
-  it('a camada de uma mudança vem da anotação (nova, atual ou removida)', () => {
+  it('a change's layer comes from the annotation (new, current or removed)', () => {
     const { base, proposal } = scenario();
     expect(changeLayerId(changeOf(proposal, 'annotation', 'A9'), base)).toBe('L1');
     expect(changeLayerId(changeOf(proposal, 'annotation', 'A4'), base)).toBe('L2');
@@ -110,10 +110,10 @@ describe('tipo e alvo das mudanças', () => {
   });
 });
 
-describe('filtros', () => {
+describe('filters', () => {
   const noConflicts = new Set<string>();
 
-  it('só revisadas deixa as mudanças do conjunto revisado', () => {
+  it('only revised keeps the changes of the revised set', () => {
     const { base, proposal } = scenario();
     const first = proposal.changes[0]?.id ?? '';
     expect(hasActiveFilters({ ...NO_FILTERS, onlyRevised: true })).toBe(true);
@@ -128,7 +128,7 @@ describe('filtros', () => {
     expect(got.map((c) => c.id)).toEqual([first]);
   });
 
-  it('sem filtros devolve todas, na ordem da proposta', () => {
+  it('without filters returns all, in proposal order', () => {
     const { base, proposal } = scenario();
     expect(hasActiveFilters(NO_FILTERS)).toBe(false);
     expect(filterChanges(proposal, base, NO_FILTERS, noConflicts)).toEqual(
@@ -136,7 +136,7 @@ describe('filtros', () => {
     );
   });
 
-  it('filtra por tipo, imagem, camada, decisão e só conflitos', () => {
+  it('filters by type, image, layer, decision and conflicts only', () => {
     const { base, proposal } = scenario();
     const ids = (filters: Partial<typeof NO_FILTERS>, conflicts = noConflicts) =>
       filterChanges(proposal, base, { ...NO_FILTERS, ...filters }, conflicts).map(
@@ -179,8 +179,8 @@ describe('filtros', () => {
   });
 });
 
-describe('pendências, o que ficou para trás e navegação', () => {
-  it('lista o que ficou sem decisão, aceito sem aplicar e rejeitado', () => {
+describe('pending items, what was left behind and navigation', () => {
+  it('lists what was left undecided, accepted without applying, and rejected', () => {
     const { base, proposal } = scenario();
     const accepted = changeOf(proposal, 'marking', 'M1', 'name').id;
     const rejected = changeOf(proposal, 'marking', 'M4', 'rect').id;
@@ -199,7 +199,7 @@ describe('pendências, o que ficou para trás e navegação', () => {
     expect(behind.undecided.length + 2).toBe(p.changes.length);
   });
 
-  it('a mudança seguinte e a anterior dão a volta', () => {
+  it('the next and the previous change wrap around', () => {
     const order = new Map([
       ['a', 0],
       ['b', 1],
@@ -218,28 +218,28 @@ describe('pendências, o que ficou para trás e navegação', () => {
   });
 });
 
-// Fase 8.2 (P10): a regra de negócio da revisão que morava no store e na interface.
-describe('tipo do nível, status da lista e lembrete ao sair (fase 8.2)', () => {
+// Phase 8.2 (P10): the review business rule that lived in the store and the interface.
+describe('level type, list status and exit reminder (phase 8.2)', () => {
   const changesOf = (p: Proposal, project: Project, target: ReviewTarget) => {
     const ids = new Set(reviewTree(p, project).changeIdsOf(target));
     return p.changes.filter((c) => ids.has(c.id));
   };
 
-  it('levelType: item e imagem pelo tipo da própria entidade; "movida" só sozinha; mudança interna = alterada; proposta e projeto pelo dominante', () => {
+  it('levelType: item and image by the type of the entity itself; "moved" only alone; internal change = changed; proposal and project by the dominant one', () => {
     const { base, proposal } = scenario();
     const of = (target: ReviewTarget) =>
       levelType(target.level, target.id, changesOf(proposal, base, target));
-    // M1: só o nome muda.
+    // M1: only the name changes.
     expect(of({ level: 'item', id: 'M1' })).toBe('changed');
-    // M4: a posição muda, mas uma anotação entra e outra sai → alterada, não movida.
+    // M4: the position changes, but one annotation enters and another leaves → changed, not moved.
     expect(of({ level: 'item', id: 'M4' })).toBe('changed');
-    // I2: a imagem move, mas um item dela muda → alterada.
+    // I2: the image moves, but one of its items changes → changed.
     expect(of({ level: 'image', id: 'I2' })).toBe('changed');
     expect(of({ level: 'image', id: 'I3' })).toBe('created');
     expect(of({ level: 'proposal', id: null })).toBe('created');
     expect(levelType('project', null, [])).toBeNull();
 
-    // Só a posição muda: movida (item e imagem).
+    // Only the position changes: moved (item and image).
     const onlyMoved = propose(
       base,
       moveContainer(
@@ -255,7 +255,7 @@ describe('tipo do nível, status da lista e lembrete ao sair (fase 8.2)', () => 
     expect(
       levelType('image', 'I1', changesOf(onlyMoved, base, { level: 'image', id: 'I1' })),
     ).toBe('moved');
-    // Removida e imagem trocada ganham de alterada.
+    // Removed and replaced image beat changed.
     const removed = propose(base, removeMarking(base, 'M2'));
     expect(
       levelType('item', 'M2', changesOf(removed, base, { level: 'item', id: 'M2' })),
@@ -264,7 +264,7 @@ describe('tipo do nível, status da lista e lembrete ao sair (fase 8.2)', () => 
       base,
       renameMarking(
         replaceContainer(base, 'I1', {
-          file: 'images/outra.webp',
+          file: 'images/other.webp',
           width: 4000,
           height: 3000,
         }),
@@ -277,7 +277,7 @@ describe('tipo do nível, status da lista e lembrete ao sair (fase 8.2)', () => 
     ).toBe('replaced');
   });
 
-  it('proposalListStatus: Nova e Revisar primário só na fresh; Em revisão depois de decidir ou anotar; fechadas só se veem', () => {
+  it('proposalListStatus: New and a primary Review only when fresh; In review after deciding or noting; closed ones are only viewed', () => {
     const { base, proposal } = scenario();
     const progress = reviewProgress(proposal);
     expect(proposalListStatus(proposal, progress, true)).toEqual({
@@ -285,7 +285,7 @@ describe('tipo do nível, status da lista e lembrete ao sair (fase 8.2)', () => 
       action: 'review',
       primary: true,
     });
-    // Aberta, já vista, sem decisão nem nota: sem selo, Revisar comum.
+    // Open, already seen, with no decision or note: no badge, plain Review.
     expect(proposalListStatus(proposal, progress, false)).toEqual({
       flag: null,
       action: 'review',
@@ -307,7 +307,7 @@ describe('tipo do nível, status da lista e lembrete ao sair (fase 8.2)', () => 
       ['applied', 'applied'],
       ['withdrawn', 'withdrawn'],
     ] as const) {
-      // O derivado nunca marca uma fechada como `fresh`; a regra não depende disso.
+      // The derived state never marks a closed one as `fresh`; the rule does not depend on it.
       expect(proposalListStatus({ ...proposal, status }, progress, true)).toEqual({
         flag,
         action: 'view',
@@ -316,7 +316,7 @@ describe('tipo do nível, status da lista e lembrete ao sair (fase 8.2)', () => 
     }
   });
 
-  it('needsExitReminder: só com aceitas aguardando aplicação numa proposta aplicável', () => {
+  it('needsExitReminder: only with accepted changes awaiting application in an applicable proposal', () => {
     expect(needsExitReminder('open', 0)).toBe(false);
     expect(needsExitReminder('open', 3)).toBe(true);
     expect(needsExitReminder('superseded', 1)).toBe(true);
@@ -326,8 +326,8 @@ describe('tipo do nível, status da lista e lembrete ao sair (fase 8.2)', () => 
   });
 });
 
-describe('canRemoveProposal (fase 9.2)', () => {
-  it('só retirada, substituída e aplicada podem ser apagadas; aberta não', () => {
+describe('canRemoveProposal (phase 9.2)', () => {
+  it('only withdrawn, superseded and applied can be deleted; open cannot', () => {
     const { proposal } = scenario();
     expect(canRemoveProposal({ ...proposal, status: 'open' })).toBe(false);
     expect(canRemoveProposal({ ...proposal, status: 'withdrawn' })).toBe(true);

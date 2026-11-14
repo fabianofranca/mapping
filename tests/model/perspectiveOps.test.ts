@@ -164,7 +164,9 @@ describe('project perspectives: add, rename, duplicate, delete', () => {
   it('rename: accepts the same one with a different case, refuses a repeat and a nonexistent id', () => {
     const p = base();
     expect(renamePerspective(p, 'P', 'FLOW').perspectives[0]?.name).toBe('FLOW');
-    expect(code(() => renamePerspective(p, 'P', 'screens'))).toBe('perspective-name-taken');
+    expect(code(() => renamePerspective(p, 'P', 'screens'))).toBe(
+      'perspective-name-taken',
+    );
     expect(code(() => renamePerspective(p, 'P', ' '))).toBe('perspective-name-empty');
     expect(code(() => renamePerspective(p, 'zzz', 'X'))).toBe('not-found');
   });
@@ -329,7 +331,7 @@ describe('mover na perspectiva', () => {
     expect(code(() => moveRootsInPerspective(p, 'zzz', []))).toBe('not-found');
   });
 
-  it('the stored position has at most 6 decimal places (the gesture's y, with no floating-point tail)', () => {
+  it("the stored position has at most 6 decimal places (the gesture's y, with no floating-point tail)", () => {
     const next = moveRootsInPerspective(p, 'P', [
       { root: 'D', dx: 0.1 + 0.2, dy: 250.2979740000001 },
     ]);
@@ -343,7 +345,7 @@ describe('mover na perspectiva', () => {
 });
 
 describe('camadas escondidas', () => {
-  it('only layers that exist, without repeating, in the project's layer order', () => {
+  it("only layers that exist, without repeating, in the project's layer order", () => {
     const p = {
       ...addLayer(base(), { id: 'L2', name: 'Two', color: '#1E88E5' }),
     };

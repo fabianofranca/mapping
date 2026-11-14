@@ -40,6 +40,7 @@ const both = (id: string, values: Values, box?: { width: number; height: number 
   dark: draw(id, values, 'dark', box),
 });
 
+// pt-BR kept: the quoted node names ('rótulo', 'trilho', ...) are the names in the material3-compose library (libraries/*.json, outside this phase)
 /** The first visible node with the name. */
 const named = (root: SceneNode, name: string): SceneNode | undefined => {
   for (const node of walk(root)) if (node.name === name && node.visible) return node;
@@ -311,11 +312,10 @@ describe('M3 group B — text-field', () => {
     expect(texts(both1, 'valor')?.style.maxLines).toBe(1);
   });
 
-  it('label and supporting text wrap by word, with no line limit or ellipsis (like Compose's Text)', () => {
+  it('label and supporting text wrap by word, with no line limit or ellipsis (like the Compose Text)', () => {
     const d = draw('text-field', {
       label: 'Very long field label',
-      supportingText:
-        'Supporting text long enough to go over one line in the width',
+      supportingText: 'Supporting text long enough to go over one line in the width',
     });
     for (const name of ['rótulo', 'apoio']) {
       const node = texts(d, name);
@@ -325,7 +325,7 @@ describe('M3 group B — text-field', () => {
     }
   });
 
-  it('the field's floor of height 56 comes from minHeight, even in a shorter box', () => {
+  it('the floor of height 56 comes from minHeight, even in a shorter box', () => {
     const d = draw('text-field', { label: 'Name' }, 'light', { width: 280, height: 40 });
     expect(boxOf(d, 'contêiner')?.height).toBe(56);
   });
@@ -557,7 +557,7 @@ describe('M3 group B — icons and combinations', () => {
     name.replace(/(?<!^)([A-Z])/g, '_$1').toLowerCase();
 
   it.each(['text-field', 'secure-text-field', 'search-bar'])(
-    '%s: the icon node's $switch covers every suggestion, with no SVG path',
+    '%s: the $switch of the icon node covers every suggestion, with no SVG path',
     (id) => {
       const nodes = rawNodes(id);
       expect(nodes.length).toBe(2);

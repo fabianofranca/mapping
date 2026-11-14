@@ -193,7 +193,9 @@ describe('MF4: inherited content color (decision 14)', () => {
         new Set([t['on-primary']]),
       );
       const alone = draw(id, values, 'light');
-      expect(colors(alone.root), `${id} without inheritance`).not.toContain(t['on-primary']);
+      expect(colors(alone.root), `${id} without inheritance`).not.toContain(
+        t['on-primary'],
+      );
     }
     // The filled style has its own content (on-primary / on-surface-variant): it does not inherit.
     const filled = draw('icon-button', { icon: 'Edit', style: 'filled' }, 'light', {
@@ -411,8 +413,7 @@ describe('MF4: rounded gap in the text-field and secure-text-field outline (deci
 
 describe('MF4: justified text (decision 18)', () => {
   it('textAlign Justify draws with align justify; the others keep the alignment', () => {
-    const long =
-      'A sentence long enough to break into two or more lines in the box.';
+    const long = 'A sentence long enough to break into two or more lines in the box.';
     const justified = draw('text', {
       text: long,
       textAlign: 'Justify',

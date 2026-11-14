@@ -52,6 +52,7 @@ const tok = (name: string, mode: Mode): string => {
 };
 const num = (name: string): number => tokens[name] as number;
 
+// pt-BR kept: the quoted node names ('rótulo', 'trilho', ...) are the names in the material3-compose library (libraries/*.json, outside this phase)
 const named = (d: Drawing, name: string): SceneNode | undefined => {
   for (const node of walk(d.root)) if (node.name === name && node.visible) return node;
   return undefined;
@@ -185,7 +186,7 @@ describe('M4 group A — top-app-bar', () => {
     expect(d.warnings.filter((w) => /text larger than the box/.test(w))).toEqual([]);
   });
 
-  it('centered: title centered in the bar's width (equal margins), in title-large and align center', () => {
+  it('centered: title centered in the width of the bar (equal margins), in title-large and align center', () => {
     for (const mode of MODES) {
       const d = both('top-app-bar', {
         title: 'Profile',
@@ -212,7 +213,7 @@ describe('M4 group A — top-app-bar', () => {
     }
   });
 
-  it('medium and large: title in headline-small (24/32) and headline-medium (28/36), 16 from the edge and with the baseline 24 and 28 from the bar's bottom', () => {
+  it('medium and large: title in headline-small (24/32) and headline-medium (28/36), 16 from the edge and with the baseline 24 and 28 from the bottom of the bar', () => {
     const cases = [
       {
         style: 'medium',
@@ -413,9 +414,7 @@ describe('M4 group A — dropdown-menu', () => {
   it('trailing icon: 24 in on-surface-variant, 12 from the right edge', () => {
     const d = drawBox(
       'dropdown-menu',
-      items([
-        { text: 'Save', leadingIcon: '', trailingIcon: 'Check', enabled: 'true' },
-      ]),
+      items([{ text: 'Save', leadingIcon: '', trailingIcon: 'Check', enabled: 'true' }]),
       200,
       160,
     );
@@ -455,7 +454,7 @@ describe('M4 group A — dropdown-menu', () => {
     expect(box(regular, 'menu').width).toBe(200);
   });
 
-  it('exposed: 56 field (filled) in surface-container-highest with a 1 indicator in on-surface-variant, and the menu right below with the field's width', () => {
+  it('exposed: 56 field (filled) in surface-container-highest with a 1 indicator in on-surface-variant, and the menu right below with the width of the field', () => {
     for (const mode of MODES) {
       const d = drawBox(
         'dropdown-menu',

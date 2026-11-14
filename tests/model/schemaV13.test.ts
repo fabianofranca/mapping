@@ -123,7 +123,7 @@ describe('migration v12 → v13 (no inheritance)', () => {
     expect(out.markings).toEqual([{ id: 'M1', floating: true }, null]);
   });
 
-  it('the migration does not settle: the markings\' `parentId` stays as is, the containers\' is null', () => {
+  it("the migration does not settle: the markings' `parentId` stays as is, the containers' is null", () => {
     // In v12 the parent was a chosen datum: M3 points to M1 even with M2 (smaller) containing it.
     const raw = v12Raw();
     raw.markings = raw.markings.map((m: Raw) =>

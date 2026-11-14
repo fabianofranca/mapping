@@ -24,10 +24,10 @@ import {
 import { sampleProject } from './fixtures';
 import { AT, changeOf, decided, propose } from './proposalFixtures';
 
-// Marcação do canvas na proposta (ME1): o nível Canvas da revisão, a mudança composta
-// `space`, o pai sempre derivado (assentar depois de aplicar) e o caminho "Canvas › …".
+// Canvas marking in the proposal (ME1): the review's Canvas level, the composite `space`
+// change, the always-derived parent (settle after applying) and the "Canvas › …" path.
 
-/** O projeto de exemplo com uma marcação do canvas (`C1`) em volta do container I2. */
+/** The sample project with a canvas marking (`C1`) around container I2. */
 function withCanvasMarking(): Project {
   const base = sampleProject();
   const i2 = base.containers.find((c) => c.id === 'I2')!;
@@ -42,20 +42,20 @@ function withCanvasMarking(): Project {
         width: around.width + 40,
         height: around.height + 40,
       },
-      name: 'Grupo',
+      name: 'Group',
     }),
   );
 }
 
-/** M4 (de I2) arrastada para fora de qualquer container: vira marcação do canvas. */
+/** M4 (of I2) dragged out of any container: becomes a canvas marking. */
 function leaving(): { base: Project; after: Project } {
   const base = withCanvasMarking();
   const after = moveMarking(base, 'M4', -3000, 0);
   return { base, after };
 }
 
-describe('troca de espaço', () => {
-  it('uma marcação que sai do container vira UMA mudança `space` (sem `rect` à parte)', () => {
+describe('space change', () => {
+  it('a marking that leaves the container becomes ONE `space` change (no separate `rect`)', () => {
     const { base, after } = leaving();
     const moved = after.markings.find((m) => m.id === 'M4')!;
     expect(moved.containerId).toBeNull();
@@ -64,13 +64,13 @@ describe('troca de espaço', () => {
     expect(changeOf(p, 'marking', 'M4', 'space')).toMatchObject({
       from: { containerId: 'I2', rect: { x: 0, y: 0, width: 100, height: 100 } },
       to: { containerId: null, rect: moved.rect },
-      // O cabeçalho aponta o espaço de depois: sem container, é o grupo Canvas.
+      // The header points to the space after: with no container, it is the Canvas group.
       imageId: null,
       markingId: 'M4',
     });
   });
 
-  it('aceitar `space` converte o espaço, refaz o pai e o resultado é o projeto proposto', () => {
+  it('accepting `space` converts the space, rebuilds the parent and the result is the proposed project', () => {
     const { base, after } = leaving();
     const p = propose(base, after);
     const accepted = decided(p, base, { level: 'item', id: 'M4' }, 'accepted');
@@ -83,7 +83,7 @@ describe('troca de espaço', () => {
     expect(result.project).toEqual(after);
   });
 
-  it('rejeitar `space` mantém tudo como estava', () => {
+  it('rejecting `space` keeps everything as it was', () => {
     const { base, after } = leaving();
     const p = decided(
       propose(base, after),
@@ -97,7 +97,7 @@ describe('troca de espaço', () => {
     expect(result.applied).toEqual([]);
   });
 
-  it('o `space` em conflito é detectado pelo valor atual (container e rect juntos)', () => {
+  it('a conflicting `space` is detected by the current value (container and rect together)', () => {
     const { base, after } = leaving();
     const p = propose(base, after);
     const change = changeOf(p, 'marking', 'M4', 'space');
@@ -105,9 +105,9 @@ describe('troca de espaço', () => {
     expect(changeStatus(p, change, after).conflict).toBe(true);
   });
 
-  it('o pai sai sempre do assentar: aceitar só o rect de uma filha refaz o pai', () => {
+  it("the parent always comes from the settle: accepting only a child's rect rebuilds the parent", () => {
     const base = sampleProject();
-    // M3 (filha de M2) vai para fora de M2 e continua dentro de M1.
+    // M3 (child of M2) goes outside M2 and stays inside M1.
     const p = propose(base, moveMarking(base, 'M3', 0, 200));
     expect(p.changes.map((c) => c.field)).toEqual(['rect']);
     const accepted = decided(
@@ -123,7 +123,7 @@ describe('troca de espaço', () => {
 });
 
 describe('floating comparado', () => {
-  it('trocar a flutuação com o espaço junto: `space` e `floating`', () => {
+  it('changing the floating state together with the space: `space` and `floating`', () => {
     const base = withCanvasMarking();
     const after = settleHierarchy({
       ...base,
@@ -141,19 +141,19 @@ describe('floating comparado', () => {
     );
     if (!result.ok) throw new Error('bloqueada');
     expect(result.project.markings.find((m) => m.id === 'C1')?.floating).toBe(true);
-    // Flutuante não é pai de ninguém.
+    // A floating marking is nobody's parent.
     expect(result.project.containers.find((c) => c.id === 'I2')?.parentId).toBeNull();
   });
 });
 
-describe('o nível Canvas da revisão', () => {
+describe("the review's Canvas level", () => {
   function proposalWithCanvas() {
     const { base, after } = leaving();
     let next = createMarking(after, {
       id: 'C2',
       containerId: null,
       rect: { x: 5000, y: 5000, width: 100, height: 100 },
-      name: 'Nota',
+      name: 'Note',
     });
     next = settleHierarchy({
       ...next,
@@ -162,18 +162,18 @@ describe('o nível Canvas da revisão', () => {
     return { base, proposal: propose(base, next) };
   }
 
-  it('as mudanças de marcações do canvas ficam no grupo Canvas, irmão das imagens', () => {
+  it("the canvas markings' changes go in the Canvas group, a sibling of the images", () => {
     const { base, proposal } = proposalWithCanvas();
     const tree = reviewTree(proposal, base);
     const canvas = tree.nodes.get(reviewKey({ level: 'canvas', id: null }));
     expect(canvas?.children.map((n) => n.id).sort()).toEqual(['C2', 'M4']);
     expect(tree.root.children.map((n) => n.level)).toEqual(['canvas']);
     expect(tree.changeIdsOf({ level: 'canvas', id: null })).toHaveLength(2);
-    // Não é o grupo Projeto.
+    // It is not the Project group.
     expect(tree.changeIdsOf({ level: 'project', id: null })).toEqual([]);
   });
 
-  it('o Canvas vem depois do Projeto e antes das imagens', () => {
+  it('Canvas comes after Project and before the images', () => {
     const { base, after } = leaving();
     let next = createMarking(after, {
       id: 'N1',
@@ -182,7 +182,7 @@ describe('o nível Canvas da revisão', () => {
     });
     next = {
       ...next,
-      layers: next.layers.map((l, i) => (i === 0 ? { ...l, name: 'Outra' } : l)),
+      layers: next.layers.map((l, i) => (i === 0 ? { ...l, name: 'Other' } : l)),
     };
     const tree = reviewTree(propose(base, next), base);
     expect(tree.root.children.map((n) => n.level)).toEqual([
@@ -192,7 +192,7 @@ describe('o nível Canvas da revisão', () => {
     ]);
   });
 
-  it('sem marcação do canvas o nó Canvas existe, vazio', () => {
+  it('with no canvas marking the Canvas node exists, empty', () => {
     const base = sampleProject();
     const p = propose(base, moveMarking(base, 'M4', 10, 10));
     const tree = reviewTree(p, base);
@@ -202,13 +202,13 @@ describe('o nível Canvas da revisão', () => {
     expect(tree.root.children.map((n) => n.level)).toEqual(['image']);
   });
 
-  it('decidir o grupo Canvas decide as mudanças dele', () => {
+  it('deciding the Canvas group decides its changes', () => {
     const { base, proposal } = proposalWithCanvas();
     const decidedP = decided(proposal, base, { level: 'canvas', id: null }, 'accepted');
     expect(Object.keys(decidedP.decisions)).toHaveLength(proposal.changes.length);
   });
 
-  it('o filtro Canvas só deixa as mudanças de marcações do canvas', () => {
+  it("the Canvas filter only leaves the canvas markings' changes", () => {
     const { base, proposal } = proposalWithCanvas();
     const next = settleHierarchy(base);
     const filtered = filterChanges(
@@ -223,7 +223,7 @@ describe('o nível Canvas da revisão', () => {
     ).toEqual([]);
   });
 
-  it('o alvo de uma mudança de marcação do canvas é o item; a do projeto, o grupo Projeto', () => {
+  it("the target of a canvas marking change is the item; the project's, the Project group", () => {
     const { proposal } = proposalWithCanvas();
     const c = proposal.changes[0] as Change;
     expect(changeTarget(c)).toEqual({ level: 'item', id: c.markingId });
@@ -235,13 +235,13 @@ describe('o nível Canvas da revisão', () => {
     });
   });
 
-  it('a prévia ("como ficaria") assenta o pertencimento', () => {
+  it('the preview ("how it would look") settles the containment', () => {
     const { base, after } = leaving();
     const p = propose(base, after);
     expect(previewProject(base, p).project).toEqual(after);
   });
 
-  it('serializa e relê: o nível `canvas` é um alvo válido de nota', () => {
+  it('serializes and rereads: the `canvas` level is a valid note target', () => {
     const { base, proposal } = proposalWithCanvas();
     const withNote: Proposal = {
       ...proposal,
@@ -256,15 +256,15 @@ describe('o nível Canvas da revisão', () => {
   });
 });
 
-describe('caminho legível na comparação de propostas', () => {
-  it('marcações do canvas criadas em duas propostas casam por "Canvas › pai › nome"', () => {
+describe('readable path in the proposal comparison', () => {
+  it('canvas markings created in two proposals match by "Canvas › parent › name"', () => {
     const base = sampleProject();
     const make = (id: string) =>
       createMarking(base, {
         id,
         containerId: null,
         rect: { x: 5000, y: 5000, width: 100, height: 100 },
-        name: 'Nota',
+        name: 'Note',
       });
     const first = propose(base, make('X1'), { id: 'P1' });
     const second = propose(base, make('X2'), { id: 'P2' });
@@ -275,7 +275,7 @@ describe('caminho legível na comparação de propostas', () => {
         id: 'X3',
         containerId: null,
         rect: { x: 5000, y: 5000, width: 100, height: 100 },
-        name: 'Outra',
+        name: 'Other',
       }),
       { id: 'P3' },
     );
@@ -284,7 +284,7 @@ describe('caminho legível na comparação de propostas', () => {
 });
 
 describe('proposta antiga com `parentId`', () => {
-  it('a mudança de `parentId` é descartada na leitura, com aviso', () => {
+  it('the `parentId` change is discarded on read, with a warning', () => {
     const base = sampleProject();
     const p = propose(base, moveMarking(base, 'M4', 10, 10));
     const json = JSON.parse(
@@ -304,7 +304,7 @@ describe('proposta antiga com `parentId`', () => {
     });
     json.decisions.c9 = { ...json.decisions.c1 };
     json.notes = [
-      { id: 'n1', target: { level: 'change', id: 'c9' }, text: 'Pai.', at: AT },
+      { id: 'n1', target: { level: 'change', id: 'c9' }, text: 'Parent.', at: AT },
     ];
     const read = parseProposal(json);
     if (!read.ok) throw new Error(read.errors.join('\n'));
@@ -314,7 +314,7 @@ describe('proposta antiga com `parentId`', () => {
     expect(read.warnings.join(' ')).toContain('parentId');
   });
 
-  it('criação antiga de marcação (sem `floating`) é lida como não flutuante', () => {
+  it('an old marking creation (without `floating`) is read as non-floating', () => {
     const base = sampleProject();
     const p = propose(
       base,

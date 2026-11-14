@@ -52,7 +52,7 @@ function parsed(input: unknown): Spec {
   return result.spec;
 }
 
-const str = (extra: Json = {}): Json => ({ key: 'tipo', type: 'string', ...extra });
+const str = (extra: Json = {}): Json => ({ key: 'kind', type: 'string', ...extra });
 
 describe('formatVersion 8: suggestions', () => {
   it('the current version is 16 and the earlier ones are still accepted', () => {
@@ -197,7 +197,7 @@ function linkedSpec(
 const linkedField = 'layers[0].annotationTypes[0].fields[2]';
 const linkedColumn = 'layers[0].annotationTypes[0].fields[0].columns[2]';
 const linked = (extra: Json = {}): Json => ({
-  key: 'tipo',
+  key: 'kind',
   type: 'string',
   linkedRef: 'typeRef',
   ...extra,
@@ -284,7 +284,7 @@ describe('formatVersion 8: linkedRef', () => {
 
   it('adding, changing or removing linkedRef (and suggestions) makes no difference; 7 moves to 8', () => {
     const plain = (v: number, version: number, asColumn = false) =>
-      parsed(linkedSpec(v, { key: 'tipo', type: 'string' }, asColumn, version));
+      parsed(linkedSpec(v, { key: 'kind', type: 'string' }, asColumn, version));
     for (const asColumn of [false, true]) {
       const before = plain(7, 1, asColumn);
       const added = parsed(linkedSpec(8, linked({ suggestions: ['Int'] }), asColumn, 2));

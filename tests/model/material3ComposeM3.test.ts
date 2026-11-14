@@ -53,33 +53,39 @@ describe('M3 — selection and input in format 4', () => {
     expect(text(`components/${id}.json`)).not.toMatch(/"M\d[^"]{40,}"/);
   });
 
-  it.each(M3)('%s: fields, examples, preview, minSize and size equal to those of v1', (id) => {
-    const before = (v1.components as Record<string, Rec>)[id]!;
-    const type = rawTypes[id]!;
-    const now = component(id);
-    const { actual, expected } = v1WithEstados(id, type, before);
-    expect(actual).toEqual(expected);
-    expect(now.preview).toEqual(v1Preview(id, before.preview));
-    expect(now.minSize).toEqual(before.minSize);
-    // #863: text-field and secure-text-field go from 76 (v1) to 84, which fits the outlined style with supporting text.
-    const heightFixed = id === 'text-field' || id === 'secure-text-field';
-    expect(now.size).toEqual(
-      COMPOSE_SIZES[id] ??
-        (heightFixed ? { ...(before.size as object), height: 84 } : before.size),
-    );
-  });
+  it.each(M3)(
+    '%s: fields, examples, preview, minSize and size equal to those of v1',
+    (id) => {
+      const before = (v1.components as Record<string, Rec>)[id]!;
+      const type = rawTypes[id]!;
+      const now = component(id);
+      const { actual, expected } = v1WithEstados(id, type, before);
+      expect(actual).toEqual(expected);
+      expect(now.preview).toEqual(v1Preview(id, before.preview));
+      expect(now.minSize).toEqual(before.minSize);
+      // #863: text-field and secure-text-field go from 76 (v1) to 84, which fits the outlined style with supporting text.
+      const heightFixed = id === 'text-field' || id === 'secure-text-field';
+      expect(now.size).toEqual(
+        COMPOSE_SIZES[id] ??
+          (heightFixed ? { ...(before.size as object), height: 84 } : before.size),
+      );
+    },
+  );
 
-  it.each(M3)('%s: the default and the examples draw without warnings in light and dark', (id) => {
-    const catalog = shared;
-    const entry = findEntry(catalog, id)!;
-    const cases = [{}, ...(entry.examples ?? []).map((e) => e.values)];
-    for (const mode of ['light', 'dark'] as const) {
-      for (const values of cases) {
-        const drawing = drawIn(catalog, entry, values ?? {}, mode);
-        expect(drawing.warnings.filter((w) => BAD_WARNING.test(w))).toEqual([]);
+  it.each(M3)(
+    '%s: the default and the examples draw without warnings in light and dark',
+    (id) => {
+      const catalog = shared;
+      const entry = findEntry(catalog, id)!;
+      const cases = [{}, ...(entry.examples ?? []).map((e) => e.values)];
+      for (const mode of ['light', 'dark'] as const) {
+        for (const values of cases) {
+          const drawing = drawIn(catalog, entry, values ?? {}, mode);
+          expect(drawing.warnings.filter((w) => BAD_WARNING.test(w))).toEqual([]);
+        }
       }
-    }
-  });
+    },
+  );
 
   it('the library validates with 0 errors and only the known warnings (provisional, #1774)', () => {
     const report = validateLibrary({ files, specPath: SPEC_FILE });

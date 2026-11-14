@@ -1,7 +1,7 @@
-// Etapa "formato 4" (#896), fase FX5 (#1012): a `material3-compose` sem os paliativos da decisão 24 —
-// `$token` na sombra e nos raios por canto, `alpha` no véu do `carousel`, o `badge` sem altura fixa — e o
-// anel de foco no `interaction: "focused"` dos tipos que o Compose desenha com anel (`FocusIndicatorColor`
-// nos `*Tokens.kt` do commit fixado), pelo `stroke.offset`. A `version` sobe uma vez (4 → 5), de forma aditiva.
+// "Format 4" stage (#896), phase FX5 (#1012): `material3-compose` without the stopgaps of decision 24 —
+// `$token` in the shadow and in the per-corner radii, `alpha` in the `carousel` scrim, the `badge` without a fixed height — and the
+// focus ring on `interaction: "focused"` of the types that Compose draws with a ring (`FocusIndicatorColor`
+// in the `*Tokens.kt` of the pinned commit), by `stroke.offset`. The `version` goes up once (4 → 5), additively.
 import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import {
@@ -42,7 +42,7 @@ const components = types.map((t) => ({
   json: JSON.parse(text(`components/${t.id}.json`)) as Json,
 }));
 
-/** Percorre toda a árvore do componente e chama `visit` em cada objeto, com o caminho dele. */
+/** Walks the whole component tree and calls `visit` on each object, with its path. */
 function walk(
   value: Json,
   path: string,
@@ -57,7 +57,7 @@ function walk(
   }
 }
 
-/** Os números literais (fora de `$token`) dentro de um valor, com o caminho. */
+/** The literal numbers (outside `$token`) inside a value, with the path. */
 function literalNumbers(value: Json, path: string, out: string[] = []): string[] {
   if (typeof value === 'number') out.push(`${path}=${value}`);
   else if (Array.isArray(value))
@@ -69,8 +69,8 @@ function literalNumbers(value: Json, path: string, out: string[] = []): string[]
   return out;
 }
 
-describe('paliativos da Material 3 trocados pelas chaves novas (decisão 24)', () => {
-  it('nenhuma sombra com x, y ou blur literal (todos têm token de elevação)', () => {
+describe('Material 3 stopgaps replaced by the new keys (decision 24)', () => {
+  it('no shadow with a literal x, y or blur (all have an elevation token)', () => {
     const found: string[] = [];
     for (const c of components)
       walk(c.json, c.id, (obj, p) => {
@@ -84,12 +84,12 @@ describe('paliativos da Material 3 trocados pelas chaves novas (decisão 24)', (
     expect(found).toEqual([]);
   });
 
-  it('nenhum raio por canto literal diferente de 0 (cada valor vem de um token)', () => {
+  it('no literal per-corner radius other than 0 (each value comes from a token)', () => {
     const found: string[] = [];
     for (const c of components)
       walk(c.json, c.id, (obj, p) => {
         if (!('cornerRadius' in obj)) return;
-        // só as listas de raios por canto (A2); um raio uniforme em número é outro assunto
+        // only the per-corner radius lists (A2); a uniform radius as a number is another matter
         const lits = literalNumbers(obj.cornerRadius, `${p}/cornerRadius`)
           .filter((s) => /\/cornerRadius(\/[a-z]+)*\/\d+=/.test(s))
           .filter((s) => !s.endsWith('=0'));
@@ -98,7 +98,7 @@ describe('paliativos da Material 3 trocados pelas chaves novas (decisão 24)', (
     expect(found).toEqual([]);
   });
 
-  it('nenhuma opacidade fixa entre 0 e 1: a cor leva o `alpha` do token (o véu do carousel é um degradê)', () => {
+  it('no fixed opacity between 0 and 1: the color carries the token `alpha` (the carousel scrim is a gradient)', () => {
     const found: string[] = [];
     for (const c of components)
       walk(c.json, c.id, (obj, p) => {
@@ -111,21 +111,21 @@ describe('paliativos da Material 3 trocados pelas chaves novas (decisão 24)', (
     expect(carousel).toContain('"alpha":0');
   });
 
-  it('o contador do badge não fixa a altura (a prova de desenho usa os tokens do modo)', () => {
+  it('the badge counter does not fix the height (the drawing proof uses the mode tokens)', () => {
     const badge = JSON.stringify(
       (components.find((c) => c.id === 'badge')?.json as { template: Json }).template,
     );
     expect(badge).not.toMatch(/"height":\s*16/);
   });
 
-  it('valida sem erro e só com os avisos conhecidos nos três níveis, em todos os modos', () => {
+  it('validates without errors and only with the known warnings at the three levels, in all modes', () => {
     const report = validateLibrary({ files, specPath: SPEC_FILE });
     expect(report.errors).toEqual([]);
     expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
   }, 30_000);
 });
 
-/** Tipos com `interaction: "focused"` e `FocusIndicatorColor` no `*Tokens.kt` do commit fixado, e o desenho a conferir. */
+/** Types with `interaction: "focused"` and `FocusIndicatorColor` in the `*Tokens.kt` of the pinned commit, and the drawing to check. */
 const RING: { id: string; values: Record<string, unknown>; node?: string }[] = [
   { id: 'chip', values: { style: 'assist' } },
   { id: 'chip', values: { style: 'filter' } },
@@ -144,19 +144,20 @@ const RING: { id: string; values: Record<string, unknown>; node?: string }[] = [
       expanded: 'true',
       items: [
         {
-          text: 'Editar',
+          text: 'Edit',
           leadingIcon: 'Edit',
           trailingIcon: '',
           enabled: 'true',
           selected: 'true',
         },
-        { text: 'Excluir', leadingIcon: 'Delete', trailingIcon: '', enabled: 'true' },
+        { text: 'Delete', leadingIcon: 'Delete', trailingIcon: '', enabled: 'true' },
       ],
     },
   },
   { id: 'navigation-drawer', values: { style: 'modal', headline: 'Mapping' } },
 ];
 
+// pt-BR kept: node names of libraries/material3-compose are Portuguese data
 function rings(node: SceneNode, out: SceneNode[] = []): SceneNode[] {
   if (!node.visible) return out;
   if (node.name === 'anel de foco') out.push(node);
@@ -165,15 +166,15 @@ function rings(node: SceneNode, out: SceneNode[] = []): SceneNode[] {
 }
 const entryOf = (id: string) => {
   const e = findEntry(catalog, id);
-  if (e === undefined) throw new Error(`entrada ${id} ausente`);
+  if (e === undefined) throw new Error(`entry ${id} missing`);
   return e;
 };
 const rgba = (c: string): string => c.toLowerCase().slice(0, 7);
 
-describe('anel de foco no interaction: focused (A15, pelo stroke.offset)', () => {
+describe('focus ring on interaction: focused (A15, by stroke.offset)', () => {
   for (const { id, values } of RING) {
     const label = `${id} ${JSON.stringify(values).slice(0, 40)}`;
-    it(`${label}: o anel secondary de 3, afastado 2, por fora da forma em focused, e nenhum em none`, () => {
+    it(`${label}: the secondary ring of 3, offset 2, outside the shape in focused, and none in none`, () => {
       for (const mode of MODES) {
         const base = { ...(entryOf(id).previewValues ?? {}), ...values };
         const none = drawIn(catalog, entryOf(id), { ...base, interaction: 'none' }, mode);
@@ -201,7 +202,7 @@ describe('anel de foco no interaction: focused (A15, pelo stroke.offset)', () =>
     });
   }
 
-  it('o card outlined não tem anel (o OutlinedCardTokens.kt não define FocusIndicatorColor)', () => {
+  it('the outlined card has no ring (OutlinedCardTokens.kt does not define FocusIndicatorColor)', () => {
     for (const mode of MODES) {
       const drawn = drawIn(
         catalog,
@@ -217,7 +218,7 @@ describe('anel de foco no interaction: focused (A15, pelo stroke.offset)', () =>
     }
   });
 
-  it('o recorte da raiz alarga 5 de cada lado em focused quando a raiz recorta, e não alarga em none', () => {
+  it('the root clip widens 5 on each side in focused when the root clips, and does not widen in none', () => {
     for (const id of ['card', 'list-item']) {
       const none = drawIn(
         catalog,
@@ -252,14 +253,14 @@ describe('anel de foco no interaction: focused (A15, pelo stroke.offset)', () =>
   });
 });
 
-describe('reverseLayout liga o layout.reverse: a ordem se inverte e o bloco fica no fim do eixo', () => {
+describe('reverseLayout turns on layout.reverse: the order is inverted and the block sits at the end of the axis', () => {
   const CASES: [string, 'x' | 'y'][] = [
     ['lazy-column', 'y'],
     ['lazy-row', 'x'],
     ['horizontal-pager', 'x'],
   ];
   for (const [id, axis] of CASES) {
-    it(`${id}: com reverseLayout a primeira filha vai para o fim, sem ele para o começo`, () => {
+    it(`${id}: with reverseLayout the first child goes to the end, without it to the start`, () => {
       const e = entryOf(id);
       const slot = { x: 0, y: 0, width: 400, height: 400 };
       const kids = [1, 2, 3].map(() => ({ box: { x: 0, y: 0, width: 50, height: 50 } }));
@@ -276,7 +277,7 @@ describe('reverseLayout liga o layout.reverse: a ordem se inverte e o bloco fica
       expect(off.layout.reverse).toBe(false);
       const size = axis === 'x' ? 'width' : 'height';
       const end = (axis === 'x' ? on.layout.padding.right : on.layout.padding.bottom) + 0;
-      // a primeira filha encosta no fim do eixo e a última fica mais perto do começo
+      // the first child sits against the end of the axis and the last one is closer to the start
       expect(on.boxes[0]![axis] + on.boxes[0]![size]).toBe(400 - end);
       expect(on.boxes[0]![axis]).toBeGreaterThan(on.boxes[2]![axis]);
       expect(off.boxes[0]![axis]).toBeLessThan(off.boxes[2]![axis]);
@@ -284,17 +285,17 @@ describe('reverseLayout liga o layout.reverse: a ordem se inverte e o bloco fica
   }
 });
 
-describe('atualização da biblioteca (version 4 → 5)', () => {
-  it('sobe a version uma vez por etapa: 5 na FX5, 6 na EX4 da #897, 7 na MF4 da #899 , 8 na MC5 da #898, 10 na D3 da #1085 (a 9 foi a L5) 11 na VL2 da #1504, 12 na S5 da #1120 13 na RC1 da #1743 e 14 na R5 da #1110', () => {
+describe('library update (version 4 → 5)', () => {
+  it('bumps the version once per stage: 5 in FX5, 6 in EX4 of #897, 7 in MF4 of #899, 8 in MC5 of #898, 10 in D3 of #1085 (9 was L5), 11 in VL2 of #1504, 12 in S5 of #1120, 13 in RC1 of #1743 and 14 in R5 of #1110', () => {
     expect(spec.version).toBe(14);
   });
 
-  it('é aditiva: troca o desenho sem mudar campo, sem passos de migração', () => {
+  it('is additive: changes the drawing without changing a field, with no migration steps', () => {
     const previous = JSON.parse(JSON.stringify(spec)) as Spec;
     (previous as { version: number }).version = 4;
     expect(missingMigrations(previous, spec)).toEqual([]);
-    // só a EX6 (#897) tem migração: o slider passou de enum a number (`fill-field`), e os campos
-    // que estes testes comparam não mudam
+    // only EX6 (#897) has a migration: the slider went from enum to number (`fill-field`), and the fields
+    // these tests compare do not change
     expect(
       (spec.migrations ?? []).flatMap((m) =>
         m.steps.map((s) => `${s.op}:${'type' in s ? s.type : ''}`),

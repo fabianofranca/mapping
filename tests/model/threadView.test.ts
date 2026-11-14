@@ -25,11 +25,7 @@ describe('resolveAnchor / hostOf / isOrphan', () => {
     ['annotation of an arrow', { kind: 'annotation', id: 'ra1' }, 'arrow:r1'],
     ['field', { kind: 'field', annotationId: 't1', key: 'variant' }, 'marking:a2'],
     ['entry', { kind: 'entry', annotationId: 'n1', entryId: 'e1' }, 'marking:a1'],
-    [
-      'row',
-      { kind: 'row', annotationId: 't1', key: 'table', rowId: 'w1' },
-      'marking:a2',
-    ],
+    ['row', { kind: 'row', annotationId: 't1', key: 'table', rowId: 'w1' }, 'marking:a2'],
     ['layer', { kind: 'layer', id: 'L1' }, null],
     [
       'point in the container',
@@ -72,13 +68,21 @@ describe('resolveAnchor / hostOf / isOrphan', () => {
     ['arrow', { kind: 'arrow', id: 'zz' }, 'arrow'],
     ['annotation', { kind: 'annotation', id: 'zz' }, 'annotation'],
     ['layer', { kind: 'layer', id: 'zz' }, 'layer'],
-    ['field without an annotation', { kind: 'field', annotationId: 'zz', key: 'k' }, 'annotation'],
+    [
+      'field without an annotation',
+      { kind: 'field', annotationId: 'zz', key: 'k' },
+      'annotation',
+    ],
     [
       'entry without an annotation',
       { kind: 'entry', annotationId: 'zz', entryId: 'e1' },
       'annotation',
     ],
-    ['entry without the pair', { kind: 'entry', annotationId: 'n1', entryId: 'zz' }, 'entry'],
+    [
+      'entry without the pair',
+      { kind: 'entry', annotationId: 'n1', entryId: 'zz' },
+      'entry',
+    ],
     [
       'row without an annotation',
       { kind: 'row', annotationId: 'zz', key: 'table', rowId: 'w1' },
@@ -116,9 +120,7 @@ describe('resolveAnchor / hostOf / isOrphan', () => {
   );
 
   it('the field exists as long as the annotation exists (the empty key in the value does not delete it)', () => {
-    expect(isOrphan(p, { kind: 'field', annotationId: 't1', key: 'absent' })).toBe(
-      false,
-    );
+    expect(isOrphan(p, { kind: 'field', annotationId: 't1', key: 'absent' })).toBe(false);
   });
 
   it('an annotation whose owner no longer exists has no host', () => {
@@ -190,9 +192,7 @@ describe('threadSubject', () => {
   });
 
   it('the live label of the target does not go through the markdown cleanup again (item 51)', () => {
-    expect(subject('see [x](mapping://p/m/abc)', () => '__init__')).toBe(
-      'see __init__',
-    );
+    expect(subject('see [x](mapping://p/m/abc)', () => '__init__')).toBe('see __init__');
     expect(subject('**[x](mapping://p/m/abc)**', () => '_a_b\\*')).toBe('_a_b\\*');
   });
 

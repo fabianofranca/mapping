@@ -27,7 +27,7 @@ describe('placeFloatingNear', () => {
     });
   });
 
-  it('container marking: at the container's margin, at its height', () => {
+  it("container marking: at the container's margin, at its height", () => {
     expect(placeFloatingNear(arrowBase(), { kind: 'marking', id: 'a1' }, size)).toEqual({
       x: 1000 + FLOATING_GAP,
       y: 100,

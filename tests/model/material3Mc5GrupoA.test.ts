@@ -1,7 +1,7 @@
-// MC5 (#1033, etapa #898), grupo A: snackbar, tooltip e alert-dialog. As posições verticais que eram
-// estimadas para o Roboto 14/20 passam a `baselinePadding` com os números do Compose (decisão 19), e o
-// snackbar mede 48, 68 ou 81 pelas linhas do texto (decisão 20; `Snackbar.kt` linhas 365 a 394). O botão
-// de texto do diálogo cresce com o rótulo longo (decisão 20; `Button.kt` linhas 143 a 148 e 504 a 510).
+// MC5 (#1033, stage #898), group A: snackbar, tooltip and alert-dialog. The vertical positions that were
+// estimated for Roboto 14/20 become `baselinePadding` with the Compose numbers (decision 19), and the
+// snackbar measures 48, 68 or 81 by the lines of the text (decision 20; `Snackbar.kt` lines 365 to 394). The text
+// button of the dialog grows with the long label (decision 20; `Button.kt` lines 143 to 148 and 504 to 510).
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { approximateMeasurer } from '../../src/model/components/instantiate';
@@ -15,11 +15,13 @@ import {
 } from '../support/material3Fitted';
 import type { Mode, Values } from '../support/material3Fitted';
 
+// pt-BR kept: node names of libraries/material3-compose are Portuguese data
 const MODES: Mode[] = ['light', 'dark'];
-/** A primeira linha de base do Roboto 14/20 no medidor aproximado (ascent 0,93 e descent 0,24 de 14). */
+/** The first baseline of Roboto 14/20 in the approximate measurer (ascent 0.93 and descent 0.24 of 14). */
 const BASELINE = 14.83;
+// pt-BR kept: the warning texts may come in pt-BR (`não cabe`, `$lines instável`) as well as in English
 const BAD_WARNING =
-  /unknown icon|não cabe|text larger than the box|stretched icon|content larger than the box|\$lines instável/;
+  /unknown icon|não cabe|text larger than the box|stretched icon|content larger than the box|\$lines instável|\$lines unstable/;
 
 type Drawing = ReturnType<typeof drawFitted>['drawing'];
 
@@ -30,10 +32,10 @@ const named = (d: Drawing, name: string): SceneNode | undefined => {
 const absOf = (d: Drawing, node: SceneNode) => absoluteBoxes(d.root).get(node.id)!;
 const box = (d: Drawing, name: string) => {
   const node = named(d, name);
-  if (node === undefined) throw new Error(`nó ausente: ${name}`);
+  if (node === undefined) throw new Error(`node missing: ${name}`);
   return absOf(d, node);
 };
-/** Os nós de texto visíveis cujo nome começa por `prefix`. */
+/** The visible text nodes whose name starts with `prefix`. */
 const textsOf = (d: Drawing, prefix: string): TextNode[] =>
   [...walk(d.root)].filter(
     (n): n is TextNode =>
@@ -41,14 +43,14 @@ const textsOf = (d: Drawing, prefix: string): TextNode[] =>
   );
 const oneText = (d: Drawing, prefix: string): TextNode => {
   const found = textsOf(d, prefix);
-  if (found.length !== 1) throw new Error(`${found.length} textos visíveis "${prefix}"`);
+  if (found.length !== 1) throw new Error(`${found.length} visible texts "${prefix}"`);
   return found[0]!;
 };
-/** As linhas do texto no tamanho dele (o medidor aproximado, o mesmo do ajuste). */
+/** The lines of the text at its size (the approximate measurer, the same as the fit). */
 const linesOf = (d: Drawing, prefix: string): number => {
   const node = oneText(d, prefix);
   const style = node.style;
-  // o texto fica na largura do nó; com `baselinePadding` a caixa tem mais que as linhas, mas a largura é a mesma
+  // the text stays at the node width; with `baselinePadding` the box has more than the lines, but the width is the same
   return approximateMeasurer(
     node.text,
     {
@@ -62,37 +64,37 @@ const linesOf = (d: Drawing, prefix: string): number => {
     absOf(d, node).width,
   ).lines!.length;
 };
-/** A linha de base da primeira linha do texto (y do nó + `baselineTop`, ou a da fonte sem ele). */
+/** The baseline of the first line of the text (node y + `baselineTop`, or the font's without it). */
 const baselineOf = (d: Drawing, prefix: string): number => {
   const node = oneText(d, prefix);
   return absOf(d, node).y + (node.style.baselineTop ?? BASELINE);
 };
 
-/** Texto de palavras que quebra em exatamente `lines` linhas na configuração dada (o medidor aproximado). */
+/** Text of words that breaks into exactly `lines` lines in the given configuration (the approximate measurer). */
 function messageWith(lines: number, values: Values, mode: Mode): string {
   for (let words = 1; words < 60; words++) {
-    const message = Array.from({ length: words }, () => 'palavra').join(' ');
+    const message = Array.from({ length: words }, () => 'message').join(' ');
     const { drawing } = drawFitted('snackbar', { ...values, message }, mode);
     if (linesOf(drawing, 'mensagem') === lines) return message;
   }
-  throw new Error(`nenhum texto de ${lines} linhas`);
+  throw new Error(`no text of ${lines} lines`);
 }
 
 const CONFIGS: { name: string; values: Values }[] = [
-  { name: 'sem ação', values: {} },
-  { name: 'com ação', values: { actionLabel: 'Desfazer' } },
+  { name: 'no action', values: {} },
+  { name: 'with action', values: { actionLabel: 'Undo' } },
   {
-    name: 'com ação e fechar',
-    values: { actionLabel: 'Tentar de novo', dismissAction: 'true' },
+    name: 'with action and close',
+    values: { actionLabel: 'Try again', dismissAction: 'true' },
   },
 ];
 
 const stringify = (node: unknown): string => JSON.stringify(node);
 
-describe('MC5 grupo A: snackbar', () => {
-  it('nenhum nó com a posição estimada: o texto leva baselinePadding (30 e 11 na fileira; 30 e 12 com a ação em nova linha)', () => {
+describe('MC5 group A: snackbar', () => {
+  it('no node with the estimated position: the text carries baselinePadding (30 and 11 in the row; 30 and 12 with the action on a new line)', () => {
     const template = stringify(entryOf('snackbar').component!.template);
-    // os paddings estimados para o Roboto 14/20 (15 em cima, 7 embaixo) e o respiro de 14 das várias linhas
+    // the paddings estimated for Roboto 14/20 (15 on top, 7 on the bottom) and the 14 breathing room of the multi-line case
     expect(template.includes('[15,8,7,0]')).toBe(false);
     const texts = templateNodes('snackbar', 'mensagem').filter((n) => n.type === 'text');
     expect(texts).toHaveLength(1);
@@ -108,7 +110,7 @@ describe('MC5 grupo A: snackbar', () => {
     );
   });
 
-  it('1, 2 e 3 linhas medem 48, 68 e 81 no tamanho ajustado, em light e dark, sem ação, com ação e com ação e fechar', () => {
+  it('1, 2 and 3 lines measure 48, 68 and 81 at the fitted size, in light and dark, with no action, with action and with action and close', () => {
     for (const mode of MODES) {
       for (const { name, values } of CONFIGS) {
         for (const [lines, height] of [
@@ -134,8 +136,8 @@ describe('MC5 grupo A: snackbar', () => {
     }
   });
 
-  it('três linhas: a primeira linha de base a 30 do topo (FirstBaseline) e a ação e o fechar centrados na altura de 81', () => {
-    const values = { actionLabel: 'Tentar de novo', dismissAction: 'true' };
+  it('three lines: the first baseline at 30 from the top (FirstBaseline) and the action and the close centered on the height of 81', () => {
+    const values = { actionLabel: 'Try again', dismissAction: 'true' };
     const message = messageWith(3, values, 'light');
     const { drawing } = drawFitted('snackbar', { ...values, message });
     const text = absOf(drawing, oneText(drawing, 'mensagem'));
@@ -147,8 +149,8 @@ describe('MC5 grupo A: snackbar', () => {
     expect(close.y + close.height / 2).toBeCloseTo(81 / 2, 6);
   });
 
-  it('duas linhas: a linha de base a 30 (o texto a 15, e não a 14 do respiro) e a ação centrada em 34', () => {
-    const values = { actionLabel: 'Desfazer' };
+  it('two lines: the baseline at 30 (the text at 15, and not the 14 of the breathing room) and the action centered at 34', () => {
+    const values = { actionLabel: 'Undo' };
     const message = messageWith(2, values, 'light');
     const { drawing } = drawFitted('snackbar', { ...values, message });
     expect(baselineOf(drawing, 'mensagem')).toBeCloseTo(30, 6);
@@ -156,9 +158,9 @@ describe('MC5 grupo A: snackbar', () => {
     expect(action.y + action.height / 2).toBe(34);
   });
 
-  it('uma linha continua centrada: texto a 14 do topo, altura 48 e a ação centrada em 24', () => {
+  it('one line stays centered: text at 14 from the top, height 48 and the action centered at 24', () => {
     const { drawing } = drawFitted('snackbar', {
-      message: 'Arquivada',
+      message: 'Archived',
       actionLabel: 'Ok',
     });
     expect(drawing.root.height).toBe(48);
@@ -167,17 +169,17 @@ describe('MC5 grupo A: snackbar', () => {
     expect(action.y + action.height / 2).toBe(24);
   });
 
-  it('ação em nova linha: a linha de base a 30 e a ação 12 abaixo (30 + 12), altura 92 com uma linha e 112 com duas', () => {
+  it('action on a new line: the baseline at 30 and the action 12 below (30 + 12), height 92 with one line and 112 with two', () => {
     for (const mode of MODES) {
-      const values = { actionLabel: 'Desfazer', actionOnNewLine: 'true' };
-      const one = drawFitted('snackbar', { ...values, message: 'Uma linha só' }, mode);
+      const values = { actionLabel: 'Undo', actionOnNewLine: 'true' };
+      const one = drawFitted('snackbar', { ...values, message: 'Just one line' }, mode);
       expect(one.drawing.root.height).toBe(92);
       const text = absOf(one.drawing, oneText(one.drawing, 'mensagem'));
       expect(text.x).toBe(16);
       expect(baselineOf(one.drawing, 'mensagem')).toBeCloseTo(30, 6);
       expect(box(one.drawing, 'ação').y).toBe(30 + 12);
 
-      const long = 'palavra '.repeat(9).trim();
+      const long = 'message '.repeat(9).trim();
       const two = drawFitted('snackbar', { ...values, message: long }, mode);
       expect(linesOf(two.drawing, 'mensagem')).toBe(2);
       expect(two.drawing.root.height).toBe(30 + 20 + 12 + 48 + 2);
@@ -186,11 +188,11 @@ describe('MC5 grupo A: snackbar', () => {
     }
   });
 
-  it('uma mensagem de três linhas com ação mede 81 (o exemplo que a prova da biblioteca ainda não aceita: ela o desenha no size 344 × 48)', () => {
+  it('a three-line message with an action measures 81 (the example that the library proof does not accept yet: it draws it at size 344 × 48)', () => {
     const values = {
       message:
-        'Seu arquivo foi movido para a lixeira e será apagado de vez em trinta dias',
-      actionLabel: 'Desfazer',
+        'Your file was moved to the trash and will be permanently deleted in thirty days',
+      actionLabel: 'Undo',
     };
     for (const mode of MODES) {
       const fit = fittedSize('snackbar', values, mode);
@@ -201,8 +203,9 @@ describe('MC5 grupo A: snackbar', () => {
     }
   });
 
-  it('a Fidelidade não diz mais que o 15 e o 7 são estimados nem que três linhas medem 88', () => {
+  it('the Fidelidade no longer says that the 15 and the 7 are estimated nor that three lines measure 88', () => {
     const doc = readFileSync('libraries/material3-compose/docs/snackbar.md', 'utf8');
+    // pt-BR kept: the Portuguese text of libraries/material3-compose/docs is the object of this test
     expect(doc.includes('o 15 e o 7 são estimados')).toBe(false);
     expect(doc.includes('com três linhas o desenho mede 88')).toBe(false);
     expect(doc.includes('o motor não alinha por linha de base')).toBe(false);
@@ -210,7 +213,7 @@ describe('MC5 grupo A: snackbar', () => {
   });
 });
 
-/** Todos os nós (objetos com `type`) de um template JSON. */
+/** All the nodes (objects with `type`) of a JSON template. */
 function* walk0(node: unknown): Generator<Record<string, unknown>> {
   if (Array.isArray(node)) for (const item of node) yield* walk0(item);
   else if (node !== null && typeof node === 'object') {
@@ -220,10 +223,10 @@ function* walk0(node: unknown): Generator<Record<string, unknown>> {
   }
 }
 
-describe('MC5 grupo A: tooltip rich', () => {
+describe('MC5 group A: tooltip rich', () => {
   const rich = (extra: Values = {}): Values => ({
     style: 'rich',
-    text: 'Desliga o Wi-Fi.',
+    text: 'Turns off Wi-Fi.',
     ...extra,
   });
   const richBox = (extra: Values, mode: Mode = 'light') => {
@@ -231,9 +234,9 @@ describe('MC5 grupo A: tooltip rich', () => {
     return { fit, ...drawFitted('tooltip', rich(extra), mode) };
   };
 
-  it('o título e o texto levam baselinePadding do Compose (28; 24 depois da caixa do título, 16 embaixo) e os paddings estimados somem', () => {
+  it('the title and the text carry the Compose baselinePadding (28; 24 after the title box, 16 below) and the estimated paddings are gone', () => {
     const template = stringify(entryOf('tooltip').component!.template);
-    // 13 e 9 de respiro (28 e 24 menos a linha de base 15), o 4 antes do texto e o 16 antes da ação
+    // 13 and 9 of breathing room (28 and 24 minus the baseline 15), the 4 before the text and the 16 before the action
     expect(template.includes('[13,16,')).toBe(false);
     expect(template.includes('[9,16,')).toBe(false);
     expect(template.includes('[4,0,0,0]')).toBe(false);
@@ -246,14 +249,14 @@ describe('MC5 grupo A: tooltip rich', () => {
     expect(body).toBeDefined();
   });
 
-  it('alturas de uma linha de texto: só texto 28, com título 78, com título e ação 126, com ação 93 (TooltipTest.kt 260 e 265)', () => {
+  it('heights of a line of text: text only 28, with title 78, with title and action 126, with action 93 (TooltipTest.kt 260 and 265)', () => {
     for (const mode of MODES) {
       expect(richBox({}, mode).fit.height).toBe(28);
-      expect(richBox({ title: 'Modo avião' }, mode).fit.height).toBe(78);
+      expect(richBox({ title: 'Airplane mode' }, mode).fit.height).toBe(78);
       expect(
-        richBox({ title: 'Modo avião', action: 'Saiba mais' }, mode).fit.height,
+        richBox({ title: 'Airplane mode', action: 'Learn more' }, mode).fit.height,
       ).toBe(126);
-      expect(richBox({ action: 'Saiba mais' }, mode).fit.height).toBe(93);
+      expect(richBox({ action: 'Learn more' }, mode).fit.height).toBe(93);
       const extras: Values[] = [
         {},
         { title: 'T' },
@@ -268,50 +271,50 @@ describe('MC5 grupo A: tooltip rich', () => {
     }
   });
 
-  it('com título: a base do título a 28 do topo e a do texto 24 abaixo do fim da caixa do título (29 de base a base)', () => {
-    const { drawing } = richBox({ title: 'Modo avião', action: 'Saiba mais' });
+  it('with title: the title baseline at 28 from the top and the text one 24 below the end of the title box (29 from baseline to baseline)', () => {
+    const { drawing } = richBox({ title: 'Airplane mode', action: 'Learn more' });
     expect(baselineOf(drawing, 'título')).toBeCloseTo(28, 6);
     // Compose: subheadBound.bottom (13 + 20) + 24 = 57
     expect(baselineOf(drawing, 'texto')).toBeCloseTo(33 + 24, 6);
-    // a ação vem 16 abaixo do fim do texto (textBound.bottom = base + 5)
+    // the action comes 16 below the end of the text (textBound.bottom = baseline + 5)
     expect(box(drawing, 'botão da ação').y).toBeCloseTo(
       baselineOf(drawing, 'texto') + 5 + 16,
       0,
     );
   });
 
-  it('título de duas linhas: a base do texto fica 29 abaixo da última base do título', () => {
-    const longTitle = 'Palavra '.repeat(8).trim();
+  it('two-line title: the text baseline sits 29 below the last title baseline', () => {
+    const longTitle = 'Heading '.repeat(8).trim();
     const { drawing } = richBox({ title: longTitle });
     expect(linesOf(drawing, 'título')).toBe(2);
-    // a base do título (28) mais a segunda linha (20) mais os 29 do Compose (5 do fim da linha + 24)
+    // the title baseline (28) plus the second line (20) plus the Compose 29 (5 from the end of the line + 24)
     expect(baselineOf(drawing, 'texto')).toBeCloseTo(28 + 20 + 29, 6);
   });
 
-  it('só ação: a base do texto a 24 do topo e 16 até a ação', () => {
-    const { drawing } = richBox({ action: 'Saiba mais' });
+  it('action only: the text baseline at 24 from the top and 16 to the action', () => {
+    const { drawing } = richBox({ action: 'Learn more' });
     expect(baselineOf(drawing, 'texto')).toBeCloseTo(24, 6);
     expect(box(drawing, 'botão da ação').y).toBeCloseTo(24 + 5 + 16, 0);
   });
 
-  it('só texto: 4 em cima e embaixo (padding, sem linha de base) e o texto a 4 do topo', () => {
+  it('text only: 4 above and below (padding, no baseline) and the text at 4 from the top', () => {
     const { drawing } = richBox({});
     expect(absOf(drawing, oneText(drawing, 'texto')).y).toBe(4);
     expect(drawing.root.height).toBe(28);
   });
 });
 
-describe('MC5 grupo A: alert-dialog', () => {
+describe('MC5 group A: alert-dialog', () => {
   const base: Values = {
-    title: 'Confirmar',
-    text: 'Texto do diálogo.',
+    title: 'Confirm',
+    text: 'Dialog text.',
     confirmButton: 'OK',
-    dismissButton: 'Cancelar',
+    dismissButton: 'Cancel',
   };
   const LONG =
-    'Confirmar tudo e continuar com a operação agora mesmo sem voltar atrás nunca mais';
+    'Confirm everything and continue with the operation right now without ever going back again';
 
-  it('a altura do botão de texto é hug com o mínimo de 40 e a fileira dos botões hug com o mínimo de 48 (decisão 20)', () => {
+  it('the text button height is hug with a minimum of 40 and the button row is hug with a minimum of 48 (decision 20)', () => {
     for (const name of ['dispensar', 'confirmar']) {
       const node = templateNodes('alert-dialog', name)[0]!;
       expect([name, node.height, node.minHeight]).toEqual([name, 'hug', 40]);
@@ -320,7 +323,7 @@ describe('MC5 grupo A: alert-dialog', () => {
     expect([row.height, row.minHeight]).toEqual(['hug', 48]);
   });
 
-  it('rótulos curtos continuam a 40 num quadro de 48, centrados', () => {
+  it('short labels stay at 40 in a frame of 48, centered', () => {
     for (const mode of MODES) {
       const { drawing } = drawFitted('alert-dialog', base, mode);
       expect(box(drawing, 'confirmar').height).toBe(40);
@@ -332,14 +335,14 @@ describe('MC5 grupo A: alert-dialog', () => {
     }
   });
 
-  it('rótulo longo quebra, o botão cresce (8 de respiro em cima e embaixo) e a fileira e o diálogo crescem junto', () => {
+  it('a long label wraps, the button grows (8 of breathing room above and below) and the row and the dialog grow along', () => {
     for (const mode of MODES) {
       const values = { ...base, confirmButton: LONG, dismissButton: '' };
       const short = fittedSize('alert-dialog', { ...base, dismissButton: '' }, mode);
       const fit = fittedSize('alert-dialog', values, mode);
       const { drawing } = drawFitted('alert-dialog', values, mode);
       const button = box(drawing, 'confirmar');
-      // 8 de respiro de cima e de baixo (TextButtonContentPadding) e linhas de 20
+      // 8 of breathing room above and below (TextButtonContentPadding) and lines of 20
       expect((button.height - 16) % 20).toBe(0);
       expect(button.height).toBeGreaterThanOrEqual(56);
       expect(button.width).toBeLessThanOrEqual(264);
@@ -350,8 +353,9 @@ describe('MC5 grupo A: alert-dialog', () => {
     }
   });
 
-  it('a Fidelidade não diz mais que o motor não alinha por linha de base', () => {
+  it('the Fidelidade no longer says that the engine does not align by baseline', () => {
     const doc = readFileSync('libraries/material3-compose/docs/alert-dialog.md', 'utf8');
+    // pt-BR kept: the Portuguese text of libraries/material3-compose/docs is the object of this test
     expect(doc.includes('porque o motor não alinha por linha de base')).toBe(false);
   });
 });

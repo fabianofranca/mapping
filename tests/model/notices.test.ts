@@ -124,7 +124,9 @@ function specOf(): Spec {
           {
             id: 'button',
             name: 'Button',
-            notices: [{ kind: 'deprecated', message: 'use Button2', since: '2026-05-01' }],
+            notices: [
+              { kind: 'deprecated', message: 'use Button2', since: '2026-05-01' },
+            ],
             fields: [
               {
                 key: 'label',

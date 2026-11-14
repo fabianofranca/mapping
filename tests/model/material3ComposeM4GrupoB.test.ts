@@ -57,6 +57,7 @@ const all = (d: Drawing, name: string): SceneNode[] => {
     if (node.name === name && node.visible) found.push(node);
   return found;
 };
+// pt-BR kept: the quoted node names ('rótulo', 'trilho', ...) are the names in the material3-compose library (libraries/*.json, outside this phase)
 const named = (d: Drawing, name: string): SceneNode | undefined => all(d, name)[0];
 const at = (d: Drawing, node: SceneNode | undefined) => {
   if (node === undefined) throw new Error('missing node');
@@ -446,7 +447,7 @@ describe('M4 group B — navigation-drawer', () => {
     }
   });
 
-  it('24 icon 16 from the item's edge and label 12 after, in label-large; selected on-secondary-container', () => {
+  it('24 icon 16 from the edge of the item and label 12 after, in label-large; selected on-secondary-container', () => {
     for (const mode of MODES) {
       const d = drawer({ style: 'modal' }, mode);
       expect(at(d, named(d, 'email'))).toEqual({ x: 28, y: 28, w: 24, h: 24 });
@@ -461,7 +462,7 @@ describe('M4 group B — navigation-drawer', () => {
     }
   });
 
-  it('badge at the end of the item (24 of padding on the right), in the label's color and in label-large', () => {
+  it('badge at the end of the item (24 of padding on the right), in the color of the label and in label-large', () => {
     for (const mode of MODES) {
       const d = drawer({ style: 'modal' }, mode);
       const badge = named(d, 'selo');

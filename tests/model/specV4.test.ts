@@ -888,12 +888,7 @@ describe('origins', () => {
       'origins[0].screen.width',
       'required',
     ],
-    [
-      'unknown key',
-      (o: Json) => (o.extra = 1),
-      'origins[0].extra',
-      'unknown key: extra',
-    ],
+    ['unknown key', (o: Json) => (o.extra = 1), 'origins[0].extra', 'unknown key: extra'],
     [
       '[*] outside roots',
       (o: Json) => (o.screen.width = { path: 'a[*]' }),
@@ -1056,11 +1051,14 @@ describe('each new key is rejected in formatVersion 3', () => {
         delete s.layers[0].annotationTypes[1].fields[2].columns[0].sources[0].path,
       `${BADGE}.fields[2].columns[0].sources[0].path`,
     ],
-  ])('without %s, the error of that key disappears and only of it', (_name, remove, path) => {
-    const spec = v3WithEverything();
-    remove(spec);
-    expect(issuesOf(spec).map((i) => i.path)).not.toContain(path);
-  });
+  ])(
+    'without %s, the error of that key disappears and only of it',
+    (_name, remove, path) => {
+      const spec = v3WithEverything();
+      remove(spec);
+      expect(issuesOf(spec).map((i) => i.path)).not.toContain(path);
+    },
+  );
 
   it('the same specialization in v4 (without the figma column) is valid', () => {
     expect(parseSpec(v4()).ok).toBe(true);

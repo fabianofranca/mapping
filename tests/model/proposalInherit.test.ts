@@ -8,15 +8,15 @@ import {
 import { sampleProject } from './fixtures';
 import { AT, decided, propose } from './proposalFixtures';
 
-// Propostas escritas antes do schema 13 trazem `inherit`: a leitura ignora o campo (com aviso)
-// e o resto da proposta fica como estava. A formatVersion 3 já nasce sem ele.
+// Proposals written before schema 13 carry `inherit`: reading ignores the field (with a warning)
+// and the rest of the proposal stays as it was. formatVersion 3 is already born without it.
 
 type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-/** Proposta v2 como a app antiga a gravava: c1 renomeia, c2 cria A9 e c3 muda `inherit`. */
+/** Version 2 proposal as the old app wrote it: c1 renames, c2 creates A9 and c3 changes `inherit`. */
 function legacySample(): Json {
   const base = sampleProject();
-  let after = renameAnnotation(base, 'A3', 'Trinco');
+  let after = renameAnnotation(base, 'A3', 'Latch');
   after = addAnnotation(after, { id: 'A9', markingId: 'M4', layerId: 'L1' });
   let p = propose(base, after);
   p = decided(p, base, { level: 'change', id: 'c1' }, 'accepted');
@@ -36,13 +36,13 @@ function legacySample(): Json {
   json.decisions.c3 = { ...json.decisions.c1 };
   json.applied.c3 = { at: AT };
   json.notes = [
-    { id: 'n1', target: { level: 'change', id: 'c3' }, text: 'Herança.', at: AT },
+    { id: 'n1', target: { level: 'change', id: 'c3' }, text: 'Inheritance.', at: AT },
   ];
   return json;
 }
 
-describe('proposta com `inherit` (formatVersion 1 e 2)', () => {
-  it('descarta a mudança do campo, a decisão e a aplicação dela, com aviso', () => {
+describe('proposal with `inherit` (formatVersion 1 and 2)', () => {
+  it('discards the field's change, its decision and its application, with a warning', () => {
     const result = parseProposal(legacySample());
     if (!result.ok) throw new Error(result.errors.join('\n'));
     expect(result.proposal.formatVersion).toBe(2);
@@ -54,7 +54,7 @@ describe('proposta com `inherit` (formatVersion 1 e 2)', () => {
     expect(result.warnings.join(' ')).toContain('inherit');
   });
 
-  it('a nota presa à mudança descartada passa para a proposta', () => {
+  it('the note attached to the discarded change moves to the proposal', () => {
     const result = parseProposal(legacySample());
     if (!result.ok) throw new Error(result.errors.join('\n'));
     expect(result.proposal.notes.map((n) => n.target)).toEqual([
@@ -62,7 +62,7 @@ describe('proposta com `inherit` (formatVersion 1 e 2)', () => {
     ]);
   });
 
-  it('a anotação inteira de uma criação perde `inherit`', () => {
+  it('the whole annotation of a creation loses `inherit`', () => {
     const json = legacySample();
     json.changes = json.changes.filter((c: Json) => c.id !== 'c3');
     delete json.decisions.c3;
@@ -78,7 +78,7 @@ describe('proposta com `inherit` (formatVersion 1 e 2)', () => {
     expect(result.warnings.length).toBeGreaterThan(0);
   });
 
-  it('a proposta sem `inherit` não tem avisos', () => {
+  it('a proposal without `inherit` has no warnings', () => {
     const json = legacySample();
     json.changes = json.changes.filter((c: Json) => c.id !== 'c3');
     delete json.decisions.c3;
@@ -90,10 +90,10 @@ describe('proposta com `inherit` (formatVersion 1 e 2)', () => {
   });
 });
 
-describe('proposta formatVersion 4 (sem inherit desde a 3)', () => {
-  it('é aceita e volta igual', () => {
+describe('proposal formatVersion 4 (without inherit since 3)', () => {
+  it('is accepted and comes back the same', () => {
     const base = sampleProject();
-    const p = propose(base, renameAnnotation(base, 'A3', 'Trinco'));
+    const p = propose(base, renameAnnotation(base, 'A3', 'Latch'));
     const json = JSON.parse(serializeProposal(p)) as Json;
     expect(json.formatVersion).toBe(4);
     const result = parseProposal(json);

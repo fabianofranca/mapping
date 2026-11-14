@@ -1,8 +1,8 @@
-// L5 (#1101, decisões 24 e 25 da #1078): a Material 3 (Compose) adota o layout novo do motor.
-//  - `box`: o slot `none` alinhado pelo `contentAlignment` (o Arrumar põe a filha onde o Compose põe);
-//  - `lazy-vertical-grid`: o slot `grid` com `columns`/`minColumnWidth` e os espaçamentos;
-//  - `segmented-button`: os segmentos numa grade de colunas iguais (o `IntrinsicSize.Min`);
-//  - `row`, `column`, `lazy-column`, `lazy-row` e a grade lazy: o slot com `clip`.
+// L5 (#1101, decisions 24 and 25 of #1078): Material 3 (Compose) adopts the engine's new layout.
+//  - `box`: the `none` slot aligned by `contentAlignment` (Arrange puts the child where Compose puts it);
+//  - `lazy-vertical-grid`: the `grid` slot with `columns`/`minColumnWidth` and the spacings;
+//  - `segmented-button`: the segments in a grid of equal columns (the `IntrinsicSize.Min`);
+//  - `row`, `column`, `lazy-column`, `lazy-row` and the lazy grid: the slot with `clip`.
 import { describe, expect, it } from 'vitest';
 import {
   approximateMeasurer,
@@ -24,7 +24,7 @@ import {
   type Json,
 } from '../support/material3Adoption';
 
-describe('box: o Arrumar põe a filha pelo contentAlignment (o Compose)', () => {
+describe('box: Arrange puts the child by contentAlignment (Compose)', () => {
   const arrange = (contentAlignment: string, n = 1) => {
     const p = withButtons(
       'box',
@@ -35,7 +35,7 @@ describe('box: o Arrumar põe a filha pelo contentAlignment (o Compose)', () => 
     return arrangeMarking(p, catalog, 'C', approximateMeasurer).project;
   };
 
-  /** O retângulo da filha e o do Box (20, 20, 200 × 160): `x` e `y` pelo meio ou pelo fim. */
+  /** The rectangle of the child and of the Box (20, 20, 200 × 160): `x` and `y` by the middle or the end. */
   const place = (alignment: string) => {
     const r = at(arrange(alignment), 'B1');
     return {
@@ -48,29 +48,29 @@ describe('box: o Arrumar põe a filha pelo contentAlignment (o Compose)', () => 
     };
   };
 
-  it('Center: a filha no meio do Box de 200 × 160', () => {
+  it('Center: the child in the middle of the 200 × 160 Box', () => {
     const { r, center } = place('Center');
     expect([r.x, r.y]).toEqual([center.x, center.y]);
   });
 
-  it('BottomEnd: no canto de baixo à direita', () => {
+  it('BottomEnd: in the bottom right corner', () => {
     const { r, end } = place('BottomEnd');
     expect([r.x, r.y]).toEqual([end.x, end.y]);
   });
 
-  it('TopCenter e CenterStart usam um eixo cada', () => {
+  it('TopCenter and CenterStart use one axis each', () => {
     const top = place('TopCenter');
     expect([top.r.x, top.r.y]).toEqual([top.center.x, 20]);
     const side = place('CenterStart');
     expect([side.r.x, side.r.y]).toEqual([20, side.center.y]);
   });
 
-  it('as filhas continuam sobrepostas, cada uma alinhada sozinha', () => {
+  it('the children stay overlapped, each aligned on its own', () => {
     const p = arrange('Center', 2);
     expect(at(p, 'B1')).toEqual(at(p, 'B2'));
   });
 
-  it('TopStart (o padrão) não mexe nas filhas: o none de sempre', () => {
+  it('TopStart (the default) does not touch the children: the usual none', () => {
     const p = withButtons(
       'box',
       { x: 20, y: 20, width: 200, height: 160 },
@@ -80,7 +80,7 @@ describe('box: o Arrumar põe a filha pelo contentAlignment (o Compose)', () => 
     expect(() => arrangeMarking(p, catalog, 'C', approximateMeasurer)).toThrow();
   });
 
-  it('o slot declara align e justify pelo contentAlignment', () => {
+  it('the slot declares align and justify by contentAlignment', () => {
     const layout = layoutOf('box');
     expect(layout.type).toBe('none');
     expect(layout.align).toMatchObject({ $switch: 'contentAlignment' });
@@ -88,7 +88,7 @@ describe('box: o Arrumar põe a filha pelo contentAlignment (o Compose)', () => 
   });
 });
 
-describe('lazy-vertical-grid: o Arrumar põe as filhas em grade', () => {
+describe('lazy-vertical-grid: Arrange puts the children in a grid', () => {
   const arrange = (values: NewComponentArgs['values'], n = 5) => {
     const p = withButtons(
       'lazy-vertical-grid',
@@ -104,7 +104,7 @@ describe('lazy-vertical-grid: o Arrumar põe as filhas em grade', () => {
       return [r.x, r.y];
     });
 
-  it('columns 2: 5 filhas em 3 linhas, com horizontalSpacing e verticalSpacing', () => {
+  it('columns 2: 5 children in 3 rows, with horizontalSpacing and verticalSpacing', () => {
     const p = arrange({
       columns: 2,
       minColumnWidth: null,
@@ -112,7 +112,7 @@ describe('lazy-vertical-grid: o Arrumar põe as filhas em grade', () => {
       verticalSpacing: 12,
       contentPadding: 0,
     });
-    // Colunas de (360 − 8) / 2 = 176: a segunda começa em 20 + 184; linhas de 40 + 12.
+    // Columns of (360 − 8) / 2 = 176: the second starts at 20 + 184; rows of 40 + 12.
     expect(cells(p)).toEqual([
       [20, 20],
       [204, 20],
@@ -122,7 +122,7 @@ describe('lazy-vertical-grid: o Arrumar põe as filhas em grade', () => {
     ]);
   });
 
-  it('minColumnWidth 100 (Adaptive): floor((360 + 8) / 108) = 3 colunas', () => {
+  it('minColumnWidth 100 (Adaptive): floor((360 + 8) / 108) = 3 columns', () => {
     const p = arrange({
       columns: 2,
       minColumnWidth: 100,
@@ -130,7 +130,7 @@ describe('lazy-vertical-grid: o Arrumar põe as filhas em grade', () => {
       verticalSpacing: 12,
       contentPadding: 0,
     });
-    // Três colunas de (360 − 16) / 3 ≈ 114,7: passo de 122,7.
+    // Three columns of (360 − 16) / 3 ≈ 114.7: step of 122.7.
     expect(cells(p)).toEqual([
       [20, 20],
       [143, 20],
@@ -140,7 +140,7 @@ describe('lazy-vertical-grid: o Arrumar põe as filhas em grade', () => {
     ]);
   });
 
-  it('o slot é uma grade e o rótulo não resume mais Fixed/Adaptive', () => {
+  it('the slot is a grid and the label no longer summarizes Fixed/Adaptive', () => {
     const layout = layoutOf('lazy-vertical-grid');
     expect(layout.type).toBe('grid');
     expect(layout.gap).toMatchObject({ $field: 'horizontalSpacing' });
@@ -150,11 +150,12 @@ describe('lazy-vertical-grid: o Arrumar põe as filhas em grade', () => {
   });
 });
 
-describe('segmented-button: segmentos de largura igual pelo mais largo', () => {
+describe('segmented-button: segments of equal width set by the widest', () => {
   const options = (...labels: string[]) =>
     labels.map((label, i) => ({ label, icon: '', selected: i === 0 ? 'true' : 'false' }));
 
-  /** As larguras dos nós `segmento` do desenho. */
+  /** The widths of the `segmento` nodes of the drawing. */
+  // pt-BR kept: node names of libraries/material3-compose are Portuguese data
   const widths = (values: Json, mode: 'light' | 'dark' = 'light') => {
     const { drawing, box } = drawFitted('segmented-button', values, mode);
     const boxes = absoluteBoxes(drawing.root);
@@ -166,33 +167,33 @@ describe('segmented-button: segmentos de largura igual pelo mais largo', () => {
     };
   };
 
-  it('"A" e "Configurações avançadas": os dois segmentos medem o mesmo (o mais largo) (#898)', () => {
-    const values = { options: options('A', 'Configurações avançadas') };
+  it('"A" and "Advanced application settings": both segments measure the same (the widest) (#898)', () => {
+    const values = { options: options('A', 'Advanced application settings') };
     const fitted = fittedSize('segmented-button', values);
     const { box, widths: w } = widths(values);
     expect(w).toHaveLength(2);
     expect(Math.abs((w[0] as number) - (w[1] as number))).toBeLessThanOrEqual(1);
-    // O tamanho ajustado é duas vezes o segmento mais largo; o "A" não encolhe para o rótulo dele.
+    // The fitted size is twice the widest segment; the "A" does not shrink to its label.
     expect(Math.abs(fitted.width - 2 * (w[0] as number))).toBeLessThanOrEqual(2);
     expect(box.width).toBe(fitted.width);
     expect(w[0]).toBeGreaterThan(150);
   });
 
-  it('com a caixa de 328, os três segmentos dividem a largura por igual', () => {
+  it('with the 328 box, the three segments split the width equally', () => {
     const { widths: w, heights: h } = widths({
-      options: options('Dia', 'Semana', 'Mês'),
+      options: options('Day', 'Week', 'Month'),
     });
     expect(Math.max(...w) - Math.min(...w)).toBeLessThanOrEqual(1);
-    // Os segmentos têm a altura da linha (40), e não só a do conteúdo.
+    // The segments have the height of the row (40), not just that of the content.
     expect(h).toEqual([40, 40, 40]);
   });
 
-  it('em light e dark o desenho é o mesmo (só as cores mudam)', () => {
-    const values = { options: options('A', 'Configurações avançadas') };
+  it('in light and dark the drawing is the same (only the colors change)', () => {
+    const values = { options: options('A', 'Advanced application settings') };
     expect(widths(values, 'dark').widths).toEqual(widths(values, 'light').widths);
   });
 
-  it('os segmentos são uma grade com uma coluna por opção', () => {
+  it('the segments are a grid with one column per option', () => {
     const repeat = (component('segmented-button').template as Json).children as Json[];
     const grid = repeat.find((c) => c.type === 'repeat') as Json;
     expect(grid.layout).toMatchObject({ type: 'grid', columns: { $rows: 'options' } });
@@ -200,20 +201,20 @@ describe('segmented-button: segmentos de largura igual pelo mais largo', () => {
   });
 });
 
-describe('o slot dos contêineres com rolagem e dos fluxos corta o que passa (clip)', () => {
+describe('the slot of the scrolling containers and of the flows cuts what goes past (clip)', () => {
   it.each(['lazy-column', 'lazy-row', 'lazy-vertical-grid', 'row', 'column'])(
-    '%s: slot com clip true',
+    '%s: slot with clip true',
     (id) => {
       expect(slotOf(id).clip).toBe(true);
     },
   );
 
-  it('box e flow-row não cortam (o Compose não corta)', () => {
+  it('box and flow-row do not clip (Compose does not clip)', () => {
     expect(slotOf('box').clip).toBeUndefined();
     expect(slotOf('flow-row').clip).toBeUndefined();
   });
 
-  it('na app: o desenho da filha leva a caixa do slot da mãe como recorte', () => {
+  it('in the app: the drawing of the child carries the box of the parent slot as the clip', () => {
     const drawings = createDrawingCache()(clipProject(), catalog, approximateMeasurer, 0);
     expect(drawings.get('K')?.clip).toMatchObject({
       x: 20,

@@ -442,7 +442,7 @@ describe('M5 group A — bottom-sheet', () => {
 
 describe('M5 group A — snackbar', () => {
   const WIDTH = 344;
-  const ACTION = { message: 'Message archived', actionLabel: 'Undo' };
+  const ACTION = { message: 'Message archived', actionLabel: 'Undo changes' };
   const snack = (values: Values, mode: Mode = 'light') =>
     drawHug('snackbar', values, WIDTH, mode);
 
@@ -485,7 +485,7 @@ describe('M5 group A — snackbar', () => {
       expect(action.width).toBeGreaterThanOrEqual(58);
       expect(action.x + action.width).toBe(WIDTH - 8);
       const label = textIn(d, NAMES.action)!;
-      expect(label.text).toBe('Undo');
+      expect(label.text).toBe('Undo changes');
       expect(fontOf(label)).toEqual(scale('label-large'));
       expect(solid(label.fills)).toBe(tok('inverse-primary', mode));
       expect(absOf(d, label).x - action.x).toBeCloseTo(12, 6);
@@ -513,7 +513,7 @@ describe('M5 group A — snackbar', () => {
 
   it('a long message wraps and the height grows by 20 from 68 (two lines)', () => {
     const long = 'Message that needs to wrap onto two lines';
-    const d = snack({ message: long, actionLabel: 'Undo' });
+    const d = snack({ message: long, actionLabel: 'Undo changes' });
     // MC5 (#1033): with two lines the `mensagem em várias linhas` frame appears, with the baseline at 30
     // and 11 to the bottom of the text box (30 + 20 + 11 = 61), and the text is no longer the one-line `mensagem`
     expect(textIn(d, NAMES.multilineMessage)!.style.maxLines).toBeUndefined();

@@ -214,22 +214,18 @@ describe('large project with typed annotations and references', () => {
     },
   );
 
-  budgetIt(
-    'repeated queries on the same version reuse the index',
-    BUDGET_OPTIONS,
-    () => {
-      projectIssues(project);
-      const queryAll = () => {
-        for (const a of project.annotations) {
-          getAnnotationIssues(project, a.id);
-          getBacklinks(project, a.id);
-        }
-      };
-      queryAll(); // Warms up the JIT.
-      const runs = Array.from({ length: 5 }, () => time(queryAll).ms);
-      expectBelow(median(runs), FRAME_BUDGET_MS * 4);
-    },
-  );
+  budgetIt('repeated queries on the same version reuse the index', BUDGET_OPTIONS, () => {
+    projectIssues(project);
+    const queryAll = () => {
+      for (const a of project.annotations) {
+        getAnnotationIssues(project, a.id);
+        getBacklinks(project, a.id);
+      }
+    };
+    queryAll(); // Warms up the JIT.
+    const runs = Array.from({ length: 5 }, () => time(queryAll).ms);
+    expectBelow(median(runs), FRAME_BUDGET_MS * 4);
+  });
 });
 
 // Settle growth (#882, phase 1): the shuffled dense space (all `parentId` cleared, the

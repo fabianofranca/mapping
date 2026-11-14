@@ -123,7 +123,7 @@ describe('migration v11 → v12 (containers)', () => {
     expect(serialize(again.project)).toBe(saved);
   });
 
-  it('the v1 → v12 chain (a real v1) reaches today\'s project', () => {
+  it("the v1 → v12 chain (a real v1) reaches today's project", () => {
     const v1 = readFileSync(
       new URL('../fixtures/mapping-v1.json', import.meta.url),
       'utf8',

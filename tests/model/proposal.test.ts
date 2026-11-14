@@ -39,9 +39,7 @@ function sample(): Json {
   const byId = (id: string) => json.changes.find((c: Json) => c.id === id);
   json.changes = [byId('c2'), byId('c1'), byId('c3')];
   json.applied = { c2: { at: AT } };
-  json.notes = [
-    { id: 'n1', target: { level: 'change', id: 'c1' }, text: 'No.', at: AT },
-  ];
+  json.notes = [{ id: 'n1', target: { level: 'change', id: 'c1' }, text: 'No.', at: AT }];
   return json;
 }
 
