@@ -22,6 +22,7 @@ import { PerspectivesSection, usePrincipalOnly } from './PerspectivesSection';
 import { Section } from './DetailsSection';
 import { Icon } from './icons';
 import { ContainerDensityField } from './ContainerDensityField';
+import { ContainerDirectionField } from './ContainerDirectionField';
 import { ContainerDrawingModeField } from './ContainerDrawingModeField';
 import { MarkingColorField } from './MarkingColorField';
 import { Property, PropertyGrid } from './PropertyGrid';
@@ -181,6 +182,7 @@ export function SelectionPanel({
             </Property>
           )}
           <ContainerDrawingModeField image={image} disabled={disabled} />
+          <ContainerDirectionField image={image} disabled={disabled} />
           <ContainerDensityField
             key={image.id}
             image={image}

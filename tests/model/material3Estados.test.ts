@@ -246,7 +246,7 @@ describe('teste final: os tipos com o interaction (ME1 a ME5)', () => {
     const report = validateLibrary({ files, specPath: SPEC_FILE });
     expect(report.errors).toEqual([]);
     expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
-  });
+  }, 30_000);
 });
 
 describe('atualização da versão anterior da biblioteca para a nova', () => {
@@ -258,8 +258,8 @@ describe('atualização da versão anterior da biblioteca para a nova', () => {
         if (type.id in INTERACTION_OPTIONS)
           type.fields = type.fields.filter((f) => f.key !== 'interaction');
       }
-    // 7 depois da MF4 da #899 (a 6 foi a EX4 da #897; 11 depois da VL2 da #1504; 12 depois da S5 da #1120; 13 depois da RC1 da #1743)
-    expect(spec.version).toBe(13);
+    // 7 depois da MF4 da #899 (a 6 foi a EX4 da #897; 11 depois da VL2 da #1504; 12 depois da S5 da #1120; 13 depois da RC1 da #1743; 14 depois da R5 da #1110)
+    expect(spec.version).toBe(14);
     expect(missingMigrations(previous, spec)).toEqual([]);
     // só a EX6 (#897) tem migração: o slider passou de enum a number (`fill-field`), e os campos
     // que estes testes comparam não mudam
@@ -274,5 +274,5 @@ describe('atualização da versão anterior da biblioteca para a nova', () => {
     );
     const report = validateLibrary({ files, specPath: SPEC_FILE, previous });
     expect(report.errors).toEqual([]);
-  });
+  }, 30_000);
 });

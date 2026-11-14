@@ -1,4 +1,10 @@
-import type { FieldRow, FieldValue, FieldValues } from './components/componentFormat';
+import type { InstanceAnchor } from './components/anchor';
+import type {
+  AnchorSide,
+  FieldRow,
+  FieldValue,
+  FieldValues,
+} from './components/componentFormat';
 import { modelMessage, type ModelMessage } from './modelMessage';
 import {
   annotationRefLabel,
@@ -12,7 +18,7 @@ import {
 } from './refs';
 import type { SpecAnnotationType, SpecColumn, SpecField } from './spec';
 import { isEmptyValue } from './typed';
-import type { Annotation, JsonValue, Project } from './types';
+import type { Annotation, JsonValue, Project, Rect } from './types';
 
 // Valores do desenho (etapa Biblioteca, B3): os valores da anotação tipada na forma que o
 // motor dos componentes lê (`FieldValues`): texto, número ou vazio. Os campos `ref` são
@@ -169,4 +175,34 @@ export function drawingValues(
     }
   }
   return { values, warnings };
+}
+
+/**
+ * A âncora de uma marcação na forma que a instância lê (`InstantiateOptions.anchor`, os pseudo-campos
+ * `$anchor.*`): o centro e o tamanho da âncora em UNIDADES do componente (pixels ÷ `density`), o
+ * centro relativo ao canto da caixa da marcação (pode ser negativo ou passar da caixa). O `side` é o
+ * LÓGICO declarado na marcação (`top`, `bottom`, `start`, `end`) ou, sem `side` declarado, o padrão do
+ * componente (`componentAnchorDefaults`): não se resolve em físico, pois o molde escolhe pelo lado
+ * lógico e a direção já espelha o que for `start`/`end`.
+ */
+export function anchorValues(input: {
+  /** O `rect` da marcação (pixels do espaço dela). */
+  readonly rect: Rect;
+  /** O `rect` da marcação-âncora, no mesmo espaço. */
+  readonly anchorRect: Rect;
+  /** O `side` declarado em `marking.anchor`, se houver. */
+  readonly side: AnchorSide | undefined;
+  /** O padrão do componente, quando a marcação não declara o lado. */
+  readonly defaults: { readonly side: AnchorSide };
+  /** A densidade do espaço da marcação (`effectiveDensity`). */
+  readonly density: number;
+}): InstanceAnchor {
+  const { rect, anchorRect, density } = input;
+  return {
+    side: input.side ?? input.defaults.side,
+    centerX: (anchorRect.x + anchorRect.width / 2 - rect.x) / density,
+    centerY: (anchorRect.y + anchorRect.height / 2 - rect.y) / density,
+    width: anchorRect.width / density,
+    height: anchorRect.height / density,
+  };
 }

@@ -120,6 +120,16 @@ const MISSING_TODAY: string[] = [
   // pelo roteiro R25.
   'component:node.icon.name',
   'component:node.icon.strokeWidth',
+  // Direção de leitura (etapa #1096, R1): `direction` no nó, a condição `$direction` e o `mirror`
+  // do `icon` e do `path`. As bibliotecas distribuídas desenham em `ltr` e não os adotam nesta
+  // etapa; cobertos por tests/model/components/direction.test.ts, directionParse.test.ts,
+  // layoutDirection.test.ts, tests/mcp/directionRaster.test.ts e pelo roteiro R27.
+  'component:node.direction',
+  // As âncoras lógicas `start` e `end` já têm exemplo: a seta do tooltip da Material 3 (etapa #1096, R5).
+  'component:cond.$direction',
+  'component:node.icon.mirror',
+  // Âncora (etapa #1096, R3 e R5): `anchor` na raiz do componente e os `$anchor.*` já têm exemplo no tooltip,
+  // no badge e no menu da Material 3, e o `mirror` do `path`, na seta do tooltip (R5).
   // Tela e traço em escala (CF8, etapa #747): `screen` na raiz e `stroke.scale` (formato 4) e
   // `structural` no tipo (formatVersion 15); as bibliotecas distribuídas não migram; coberto por
   // tests/model/components/ e pelo roteiro R25.

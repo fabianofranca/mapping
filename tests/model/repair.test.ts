@@ -545,4 +545,54 @@ describe('repairProject: setas', () => {
     const fixed = repair(base(arrowOf('R1', 'M1', 'M9'), arrowOf('R2', 'M1', 'M4')));
     expect(deserialize(serialize(fixed.project)).ok).toBe(true);
   });
+
+  describe('âncora (v20)', () => {
+    const withAnchors = (anchors: Record<string, string>): Project => {
+      const p = sampleProject();
+      return {
+        ...p,
+        markings: p.markings.map((m) =>
+          anchors[m.id] === undefined ? m : { ...m, anchor: { to: anchors[m.id]! } },
+        ),
+      };
+    };
+    const released = (r: ReturnType<typeof repair>) =>
+      r.repaired.filter((x) => x.action === 'released');
+
+    it.each([
+      ['anchor-missing', { M2: 'NAO-EXISTE' }, ['M2']],
+      ['anchor-self', { M2: 'M2' }, ['M2']],
+      ['anchor-other-space', { M2: 'M4' }, ['M2']],
+      ['anchor-cycle', { M2: 'M3', M3: 'M2' }, ['M2', 'M3']],
+    ] as const)('%s: a âncora vira null e o projeto abre', (code, anchors, ids) => {
+      const result = repair(withAnchors(anchors));
+      expect(result.unrepaired).toEqual([]);
+      expect(released(result).map((r) => [r.code, r.id])).toEqual(
+        ids.map((id) => [code, id]),
+      );
+      for (const id of ids) expect(marking(result.project, id).anchor).toBeNull();
+      expect(validateProject(result.project)).toEqual([]);
+    });
+
+    it('âncora válida passa intacta; só a quebrada é solta', () => {
+      const p = withAnchors({ M2: 'M3', M3: 'NAO-EXISTE' });
+      const result = repair(p);
+      expect(marking(result.project, 'M2').anchor).toEqual({ to: 'M3' });
+      expect(marking(result.project, 'M3').anchor).toBeNull();
+      expect(released(result).map((r) => r.id)).toEqual(['M3']);
+    });
+
+    it('a ancorada numa marcação removida pelo reparo é solta na rodada seguinte', () => {
+      const p = withAnchors({ M4: 'M2' });
+      const broken: Project = {
+        ...p,
+        markings: p.markings.map((m) =>
+          m.id === 'M2' ? { ...m, containerId: 'I9' } : m,
+        ),
+      };
+      const result = repair(broken);
+      expect(result.unrepaired).toEqual([]);
+      expect(marking(result.project, 'M4').anchor).toBeNull();
+    });
+  });
 });

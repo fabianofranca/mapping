@@ -27,6 +27,7 @@ import { arrangeHintKey, arrangeMarking, canArrangeMarking } from './arrange';
 import { useEditor } from './EditorContext';
 import { keepFocusAfterAction } from './focus';
 import { imageLabel, markingErrorMessage, markingLabel } from './labels';
+import { MarkingAnchorSection } from './MarkingAnchorSection';
 import { MarkingPicker } from './MarkingPicker';
 import { PerspectivesSection, usePrincipalOnly } from './PerspectivesSection';
 import { Property, PropertyGrid } from './PropertyGrid';
@@ -313,6 +314,8 @@ export function MarkingPanel({
           {error}
         </p>
       )}
+
+      <MarkingAnchorSection project={project} marking={marking} readOnly={readOnly} />
 
       <AnnotationsPanel
         project={project}

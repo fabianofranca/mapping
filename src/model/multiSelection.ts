@@ -1,3 +1,5 @@
+import { releasedAnchors } from './anchorRelease';
+import { withAnchoredFollowers } from './anchors';
 import { arrowIdsAttachedTo, withoutArrows } from './arrows';
 import { fail } from './errors';
 import {
@@ -184,8 +186,12 @@ export function moveItems(
     if (marking.containerId === null) {
       const cx = Math.round(dx);
       const cy = Math.round(dy);
-      if (cx !== 0 || cy !== 0)
-        rects.set(marking.id, translateRect(marking.rect, cx, cy));
+      if (cx === 0 && cy === 0) continue;
+      // Com as ancoradas (v20), também do canvas.
+      for (const id of withAnchoredFollowers(p, [marking.id])) {
+        const m = index.markings.get(id);
+        if (m !== undefined) rects.set(id, translateRect(m.rect, cx, cy));
+      }
       continue;
     }
     // Marcação de container: o deslocamento do canvas em pixels do container, para ela e as
@@ -194,7 +200,10 @@ export function moveItems(
     const mx = Math.round(dx / space.placement.scale);
     const my = Math.round(dy / space.placement.scale);
     if (mx === 0 && my === 0) continue;
-    for (const m of [marking, ...descendantsOf(p, marking.id)]) {
+    // Com as descendentes e as ancoradas (v20), que andam junto.
+    for (const id of withAnchoredFollowers(p, [marking.id])) {
+      const m = index.markings.get(id);
+      if (m === undefined) continue;
       const next = translateRect(m.rect, mx, my);
       if (space.bounds && !containsRect(space.bounds, next)) {
         fail('rect-out-of-image', m.id);
@@ -346,7 +355,7 @@ function nudgedMoves(
   return { placements, rects };
 }
 
-/** Os novos `rect` de uma marcação e das descendentes (as do canvas andam sozinhas). */
+/** Os novos `rect` de uma marcação, das descendentes e das ancoradas nelas (v20). */
 function nudgedMarkingRects(
   p: Project,
   marking: Marking,
@@ -355,11 +364,20 @@ function nudgedMarkingRects(
 ): Map<string, Rect> {
   const out = new Map<string, Rect>();
   if (marking.containerId === null) {
-    out.set(marking.id, translateRect(marking.rect, dx, dy));
+    // Com as ancoradas (v20), também do canvas.
+    const { markings } = projectIndex(p);
+    for (const id of withAnchoredFollowers(p, [marking.id])) {
+      const m = markings.get(id);
+      if (m !== undefined) out.set(id, translateRect(m.rect, dx, dy));
+    }
     return out;
   }
   const space = spaceOf(p, marking);
-  for (const m of [marking, ...descendantsOf(p, marking.id)]) {
+  const { markings } = projectIndex(p);
+  // As descendentes e as ancoradas (v20) andam junto.
+  for (const id of withAnchoredFollowers(p, [marking.id])) {
+    const m = markings.get(id);
+    if (m === undefined) continue;
     const next = translateRect(m.rect, dx, dy);
     if (space.bounds && !containsRect(space.bounds, next))
       fail('rect-out-of-image', m.id);
@@ -467,7 +485,7 @@ function cascadeRemoveItems(p: Project, selected: ResolvedItems): Project {
         selected.containers.size === 0
           ? p.containers
           : p.containers.filter((c) => !selected.containers.has(c.id)),
-      markings: p.markings.filter((m) => !markingIds.has(m.id)),
+      markings: releasedAnchors(p, markingIds).filter((m) => !markingIds.has(m.id)),
       annotations: p.annotations.filter((a) => !markingIds.has(a.markingId)),
     },
     removedArrowIds(p, selected, markingIds),

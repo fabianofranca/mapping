@@ -44,6 +44,7 @@ function probeOf(
     lineHeight: font.lineHeight / font.size,
     wrap: wraps ? 'word' : 'none',
     ellipsis: font.ellipsis === true,
+    ...(font.direction === 'rtl' ? { direction: 'rtl' as const } : {}),
     // A folga de 0,5 px: a linha só quebra além dela (o desenho usa a mesma).
     ...(safe.width !== undefined ? { width: safe.width + WRAP_SLACK } : {}),
   });

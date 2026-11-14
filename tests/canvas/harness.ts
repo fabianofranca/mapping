@@ -93,6 +93,7 @@ export const TOKENS: CanvasTokens = {
   surface: '#ffffff',
   card: 'rgba(250, 250, 250, 0.9)',
   border: '#cccccc',
+  borderControl: '#7d7e80',
   text: '#111111',
   textMuted: '#666666',
   warningText: '#b26a00',

@@ -54,6 +54,7 @@ import {
   type ModelMessage,
   type LevelSummary,
   type ListedImage,
+  type Marking,
   type MarkingLockState,
   type MarkingVisibility,
   type NoticeCounts,
@@ -101,6 +102,14 @@ export interface EditorDerived {
   /** Anotações de cada marcação, na ordem do projeto. */
   readonly annotationsByMarking: ReadonlySignal<
     ReadonlyMap<string, readonly Annotation[]>
+  >;
+  /**
+   * As marcações do projeto à vista por espaço (o id do container; `null` = o canvas), na ordem
+   * do projeto: as candidatas a âncora de uma marcação são as do mesmo espaço (`canAnchorTo`).
+   * O mesmo mapa enquanto o projeto não muda.
+   */
+  readonly markingsBySpace: ReadonlySignal<
+    ReadonlyMap<string | null, readonly Marking[]>
   >;
   /** Indicadores (bolinhas) de cada marcação nas camadas visíveis. */
   readonly layerDots: ReadonlySignal<ReadonlyMap<string, readonly LayerDot[]>>;
@@ -436,6 +445,16 @@ export function createEditorDerived(
     return p ? projectIndex(p).annotationsByMarking : NO_ANNOTATIONS;
   });
 
+  const markingsBySpace = computed((): ReadonlyMap<string | null, readonly Marking[]> => {
+    const spaces = new Map<string | null, Marking[]>();
+    for (const marking of project.value?.markings ?? []) {
+      const list = spaces.get(marking.containerId);
+      if (list) list.push(marking);
+      else spaces.set(marking.containerId, [marking]);
+    }
+    return spaces;
+  });
+
   const layerDots = computed(() => {
     const p = project.value;
     return p ? layerDotsByMarking(p, visible.value) : NO_DOTS;
@@ -724,6 +743,7 @@ export function createEditorDerived(
     visibleLayers: visible,
     issues,
     annotationsByMarking,
+    markingsBySpace,
     layerDots,
     markingVisibility: visibility,
     canvasVisibility,

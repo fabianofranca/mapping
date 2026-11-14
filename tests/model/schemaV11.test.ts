@@ -40,7 +40,7 @@ describe('migração v10 → v11 (repositório na especialização)', () => {
     );
     expect(result.migratedFrom).toBe(10);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(19);
+    expect(result.project.schemaVersion).toBe(20);
     expect(result.project.platformRepos).toEqual({ android: { localPath: '../..' } });
     expect(result.discardedUrlTemplates).toEqual([
       { platform: 'android', urlTemplate: TEMPLATE },
@@ -92,7 +92,7 @@ describe('migração v10 → v11 (repositório na especialização)', () => {
       ).project,
     );
     const parsed = JSON.parse(saved) as { schemaVersion: number; platformRepos: unknown };
-    expect(parsed.schemaVersion).toBe(19);
+    expect(parsed.schemaVersion).toBe(20);
     expect(parsed.platformRepos).toEqual({ android: { localPath: '..' } });
     const again = load(saved);
     expect(again.migratedFrom).toBeNull();
@@ -114,7 +114,7 @@ describe('migração v10 → v11 (repositório na especialização)', () => {
     });
     const result = load(v1);
     expect(result.migratedFrom).toBe(1);
-    expect(result.project.schemaVersion).toBe(19);
+    expect(result.project.schemaVersion).toBe(20);
     expect(result.project.platformRepos).toEqual({});
     expect(result.discardedUrlTemplates).toEqual([]);
   });

@@ -49,7 +49,7 @@ describe('migração v7 → v8 (origem externa)', () => {
     const result = load(v7Text(sampleProject()));
     expect(result.migratedFrom).toBe(7);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(19);
+    expect(result.project.schemaVersion).toBe(20);
     expect(result.project.containers.every((i) => i.source === null)).toBe(true);
     expect(result.project.markings.every((m) => m.source === null)).toBe(true);
     expect(result.project).toEqual(sampleProject());
@@ -62,7 +62,7 @@ describe('migração v7 → v8 (origem externa)', () => {
 
   it('o v7 migrado salva como v16 estável (round-trip)', () => {
     const saved = serialize(load(v7Text(sampleProject())).project);
-    expect(JSON.parse(saved).schemaVersion).toBe(19);
+    expect(JSON.parse(saved).schemaVersion).toBe(20);
     const again = load(saved);
     expect(again.migratedFrom).toBeNull();
     expect(serialize(again.project)).toBe(saved);

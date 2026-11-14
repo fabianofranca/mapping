@@ -54,6 +54,8 @@ export interface CanvasTokens {
   readonly surface: string;
   readonly card: string;
   readonly border: string;
+  /** Borda de controle (`--color-border-control`): a linha de ligação da âncora (R4). */
+  readonly borderControl: string;
   readonly text: string;
   readonly textMuted: string;
   /** Alerta em texto sobre `surface`/`card` (a cor `warning` do canvas não tem contraste ali). */
@@ -164,6 +166,7 @@ export function canvasTokensFrom(read: TokenReader): CanvasTokens {
     surface: read('--color-surface'),
     card: read('--color-card'),
     border: read('--color-border'),
+    borderControl: read('--color-border-control'),
     text: read('--color-text'),
     textMuted: read('--color-text-muted'),
     warningText: read('--color-warning'),

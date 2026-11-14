@@ -14,6 +14,7 @@
  * desenho se adaptar ao tamanho do retângulo.
  */
 import type { IconSet } from './icons';
+import type { AnchorAlign, AnchorSide } from '../anchorSides';
 
 export const COMPONENT_FORMAT = 'mapping-component';
 /** Versão em que os componentes sem `repeat` são escritos (os geradores do repositório a gravam). */
@@ -55,12 +56,18 @@ export type FieldValue = string | number | null | undefined | readonly FieldRow[
 /** Valores dos campos da instância, pela `key` do campo. */
 export type FieldValues = Readonly<Record<string, FieldValue>>;
 
+/** Direção de leitura (v4): da esquerda para a direita (padrão) ou da direita para a esquerda. */
+export type Direction = 'ltr' | 'rtl';
+export const DIRECTIONS: readonly Direction[] = ['ltr', 'rtl'];
+
 export type Condition =
   /** Campo "verdadeiro": não vazio e diferente de `"não"`, `"false"`, `"0"`, `"off"`. */
   | { readonly $field: string }
   | { readonly $eq: readonly [field: string, value: string | number] }
   | { readonly $has: string }
   | { readonly $not: Condition }
+  /** A direção de leitura efetiva do nó (v4): `ltr` ou `rtl`; vale onde vale uma condição. */
+  | { readonly $direction: Direction }
   | { readonly $and: readonly Condition[] }
   | { readonly $or: readonly Condition[] }
   /** Comparações numéricas (v4): operando sem valor dá falso. */
@@ -213,8 +220,12 @@ export interface FontSpec {
   /** Múltiplo do tamanho (1.2) ou px quando > 3. */
   readonly lineHeight?: Expr<number>;
   readonly letterSpacing?: Expr<number>;
-  /** `justify` (v4): o texto ocupa a largura da caixa, e a última linha de cada parágrafo fica à esquerda. */
-  readonly align?: Expr<'left' | 'center' | 'right' | 'justify'>;
+  /**
+   * `justify` (v4): o texto ocupa a largura da caixa, e a última linha de cada parágrafo fica à
+   * esquerda. `start` (o padrão) e `end` (v4) seguem a direção de leitura: `left`/`right` em `ltr`,
+   * `right`/`left` em `rtl`; `left` e `right` continuam físicos.
+   */
+  readonly align?: Expr<'left' | 'center' | 'right' | 'justify' | 'start' | 'end'>;
   /** `cap-middle` centra pela altura da maiúscula (só formatVersion 4). */
   readonly verticalAlign?: Expr<'top' | 'middle' | 'bottom' | 'cap-middle'>;
   readonly decoration?: Expr<'none' | 'underline' | 'line-through'>;
@@ -251,6 +262,12 @@ export type SizeSpec = number | 'fill' | 'hug' | IntrinsicSize | `${number}%`;
 export interface Anchors {
   readonly left?: Expr<number>;
   readonly right?: Expr<number>;
+  /**
+   * Lógicas (v4), no eixo horizontal: `start` é a borda de onde a leitura começa (esquerda em `ltr`,
+   * direita em `rtl`) e `end` a oposta. `start` não combina com `left` nem `end` com `right`.
+   */
+  readonly start?: Expr<number>;
+  readonly end?: Expr<number>;
   readonly top?: Expr<number>;
   readonly bottom?: Expr<number>;
   /** Centraliza no eixo (ignora left/right ou top/bottom). */
@@ -340,6 +357,12 @@ interface TemplateNodeBase {
    * muda layout, medida, `hug` nem a caixa do nó. Não vale na raiz. Sem valor, ou 0, não gira.
    */
   readonly rotation?: Expr<number>;
+  /**
+   * `formatVersion` 4: fixa a direção de leitura da subárvore (literal `ltr` ou `rtl`), em vez de
+   * seguir a do container: um número de telefone, um trecho de código. O nó é posto pelo pai na
+   * direção dele; o que está dentro do nó segue a que ele fixa.
+   */
+  readonly direction?: Direction;
   /** Tamanho no eixo; aceita expressão na `formatVersion` 4 (valor inválido cai no padrão, com aviso). */
   readonly width?: Expr<SizeSpec>;
   readonly height?: Expr<SizeSpec>;
@@ -454,6 +477,8 @@ export interface PathTemplate extends TemplateNodeBase {
   readonly d: Expr<string>;
   readonly viewBox: readonly [number, number];
   readonly fillRule?: 'nonzero' | 'evenodd';
+  /** Espelha o desenho na horizontal quando a direção do nó é `rtl` (v4; padrão `false`). */
+  readonly mirror?: BoolExpr;
 }
 
 /**
@@ -495,7 +520,7 @@ export interface SlotTemplate extends TemplateNodeBase {
  * `opacity`, `width`, `height` e `anchors` valem no nó: o desenho (fundo, borda, cantos) é do
  * `template` de cada linha ou do quadro que envolve o `repeat`.
  */
-export interface RepeatTemplate extends TemplateNodeBase {
+export interface RepeatTemplate extends Omit<TemplateNodeBase, 'direction'> {
   readonly type: 'repeat';
   /** Chave do campo `table` do tipo cujas linhas se repetem (exatamente um de `field` e `count`). */
   readonly field?: string;
@@ -574,6 +599,11 @@ export interface IconTemplate extends Omit<TemplateNodeBase, 'name'> {
   readonly name: Expr<string>;
   readonly color?: Expr<Color>;
   readonly strokeWidth?: Expr<number>;
+  /**
+   * Espelha o ícone na horizontal quando a direção do nó é `rtl` (v4). Ausente vale o `mirror` do
+   * ícone no conjunto (`mapping-icons` formatVersion 2), que por sua vez vale `false`.
+   */
+  readonly mirror?: BoolExpr;
 }
 
 export type TemplateNode =
@@ -632,6 +662,27 @@ export interface ScreenSpec {
   readonly anchor?: ScreenAnchor;
 }
 
+// Os lados e o alinhamento da âncora têm uma só definição, em `../types` (o formato do projeto, que
+// não importa daqui): o arquivo do componente os reexporta.
+export {
+  ANCHOR_ALIGNS,
+  ANCHOR_SIDES,
+  type AnchorAlign,
+  type AnchorSide,
+} from '../anchorSides';
+
+/**
+ * Como o tipo prefere encostar na âncora (v4, só na raiz do arquivo): os padrões de `side`, `align`
+ * e `offset` de uma marcação que declara âncora sem dizê-los. Tudo opcional: ausentes valem `top`,
+ * `center` e `{ main: 0, cross: 0 }`. O `offset` é em UNIDADES do componente (a densidade do
+ * container o converte em pixels ao aplicar); ver `componentAnchorDefaults`.
+ */
+export interface ComponentAnchor {
+  readonly side?: AnchorSide;
+  readonly align?: AnchorAlign;
+  readonly offset?: { readonly main?: number; readonly cross?: number };
+}
+
 export interface ComponentFile {
   readonly format: typeof COMPONENT_FORMAT;
   readonly formatVersion: ComponentFormatVersion;
@@ -647,6 +698,8 @@ export interface ComponentFile {
   readonly sizing?: ComponentSizing;
   /** Desenho em pixels de tela ancorado no retângulo da marcação (v4); ver `ScreenSpec`. */
   readonly screen?: ScreenSpec;
+  /** Como o tipo prefere encostar na âncora (v4); ver `ComponentAnchor`. */
+  readonly anchor?: ComponentAnchor;
   /**
    * Valores de pré-visualização dos campos (biblioteca e instância nova): os campos vêm do
    * tipo da especialização; aqui só os valores de exemplo.

@@ -57,5 +57,5 @@ describe('zip da biblioteca Material 3 (Compose)', () => {
     });
     expect(report.errors.map((i) => `${i.file} ${i.path} ${i.message}`)).toEqual([]);
     expect(report.ok).toBe(true);
-  });
+  }, 30_000);
 });

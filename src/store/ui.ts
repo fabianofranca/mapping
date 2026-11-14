@@ -370,6 +370,7 @@ export type DetailsSection =
   | {
       readonly kind:
         | 'marking'
+        | 'anchor'
         | 'image'
         | 'arrow'
         | 'arrowLinks'

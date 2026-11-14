@@ -499,8 +499,8 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
       expect(r16).toContain('OutlinedButton');
     });
 
-    it('o prompt da nuvem lista os roteiros até o R26', () => {
-      expect(prompt).toContain('R0 a R26');
+    it('o prompt da nuvem lista os roteiros até o R27', () => {
+      expect(prompt).toContain('R0 a R27');
     });
   });
 
@@ -519,9 +519,9 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
       expect(guide).toContain('`material3-compose.zip` (R17)');
     });
 
-    it('tem os passos R17.1 a R17.47, em ordem, e nenhum depende do dono', () => {
+    it('tem os passos R17.1 a R17.54, em ordem, e nenhum depende do dono', () => {
       const codes = [...stepActions(r17).keys()];
-      expect(codes).toEqual(Array.from({ length: 47 }, (_, i) => `R17.${i + 1}`));
+      expect(codes).toEqual(Array.from({ length: 54 }, (_, i) => `R17.${i + 1}`));
       expect(/sem substituto/i.test(r17)).toBe(false);
       expect(r17).not.toContain('[pessoa]');
     });
@@ -568,8 +568,8 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
       expect(r17).toContain('Aplicar zip…');
     });
 
-    it('o prompt da nuvem lista os roteiros até o R26', () => {
-      expect(prompt).toContain('R0 a R26');
+    it('o prompt da nuvem lista os roteiros até o R27', () => {
+      expect(prompt).toContain('R0 a R27');
     });
   });
 
@@ -643,8 +643,13 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
       expect(JSON.parse(block)).toEqual(JSON.parse(fixture));
     });
 
-    it('o prompt da nuvem lista os roteiros até o R26', () => {
-      expect(prompt).toContain('R0 a R26');
+    it('o prompt da nuvem lista os roteiros até o R27', () => {
+      expect(prompt).toContain('R0 a R27');
+    });
+
+    it('a enumeração da ordem da rodada completa termina no R27, como o cabeçalho', () => {
+      expect(prompt).toContain('R5, R8 e R9 a R27.');
+      expect(prompt).not.toContain('R9 a R26');
     });
   });
 });
@@ -1356,6 +1361,43 @@ describe('D2 — roteiro da densidade (R9.29 a R9.31, etapa #1085)', () => {
     expect(r).toContain('`264`');
     expect(58 * 3).toBe(174);
     expect(88 * 3).toBe(264);
+  });
+});
+
+describe('A4 — roteiro da âncora na app (R9.32 a R9.36, etapa #1096, R4)', () => {
+  const rows = read('docs/TESTING.md')
+    .split('\n')
+    .filter((l) => /^\| R9\.(32|33|34|35|36) /.test(l));
+  const row = (id: string): string => rows.find((l) => l.startsWith(`| ${id} `)) ?? '';
+
+  it('os cinco passos existem e não pedem o MCP (a nuvem faz sozinha)', () => {
+    for (const id of ['R9.32', 'R9.33', 'R9.34', 'R9.35', 'R9.36']) {
+      expect(row(id), id).not.toBe('');
+    }
+    expect(rows.join('\n')).not.toMatch(/stdio|plan_changes|propose_changes/);
+  });
+
+  it('os textos citados são os da interface (pt-BR)', () => {
+    expect(row('R9.32')).toContain(ptBR['anchor.section']);
+    expect(row('R9.32')).toContain(ptBR['anchor.target']);
+    expect(row('R9.32')).toContain(ptBR['anchor.none']);
+    expect(row('R9.33')).toContain(ptBR['anchor.sideBottom']);
+    expect(row('R9.33')).toContain(ptBR['anchor.alignEnd']);
+    expect(row('R9.33')).toContain(ptBR['anchor.offsetMainShort']);
+    expect(row('R9.33')).toContain(ptBR['anchor.error.number']);
+    expect(row('R9.34')).toContain(ptBR['anchor.snap']);
+    expect(row('R9.34')).toContain(ptBR['anchor.snapped']);
+    expect(row('R9.34')).toContain(ptBR['anchor.snapNothing']);
+    expect(row('R9.36')).toContain(ptBR['arrange.done']);
+  });
+
+  it('as contas do encosto: botão 88 × 40, acima (Y 400 − 40 = 360) e abaixo com 10 (Y 400 + 40 + 10 = 450)', () => {
+    const r = row('R9.34');
+    expect(r).toContain('88 × 40');
+    expect(r).toContain('`360`');
+    expect(r).toContain('`450`');
+    expect(400 - 40).toBe(360);
+    expect(400 + 40 + 10).toBe(450);
   });
 });
 

@@ -1631,6 +1631,11 @@
         "background": {
           "$ref": "#/$defs/valueSource"
         },
+        "direction": {
+          "type": "string",
+          "enum": ["ltr", "rtl"],
+          "description": "Direção de leitura da tela: literal `ltr` (padrão) ou `rtl`. Só o literal vale (não aceita `{ path, values?, default? }`)."
+        },
         "roots": {
           "type": "array",
           "minItems": 1,

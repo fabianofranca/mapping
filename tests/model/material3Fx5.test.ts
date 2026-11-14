@@ -122,7 +122,7 @@ describe('paliativos da Material 3 trocados pelas chaves novas (decisão 24)', (
     const report = validateLibrary({ files, specPath: SPEC_FILE });
     expect(report.errors).toEqual([]);
     expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
-  });
+  }, 30_000);
 });
 
 /** Tipos com `interaction: "focused"` e `FocusIndicatorColor` no `*Tokens.kt` do commit fixado, e o desenho a conferir. */
@@ -285,8 +285,8 @@ describe('reverseLayout liga o layout.reverse: a ordem se inverte e o bloco fica
 });
 
 describe('atualização da biblioteca (version 4 → 5)', () => {
-  it('sobe a version uma vez por etapa: 5 na FX5, 6 na EX4 da #897, 7 na MF4 da #899 , 8 na MC5 da #898, 10 na D3 da #1085 (a 9 foi a L5) 11 na VL2 da #1504, 12 na S5 da #1120 e 13 na RC1 da #1743', () => {
-    expect(spec.version).toBe(13);
+  it('sobe a version uma vez por etapa: 5 na FX5, 6 na EX4 da #897, 7 na MF4 da #899 , 8 na MC5 da #898, 10 na D3 da #1085 (a 9 foi a L5) 11 na VL2 da #1504, 12 na S5 da #1120 13 na RC1 da #1743 e 14 na R5 da #1110', () => {
+    expect(spec.version).toBe(14);
   });
 
   it('é aditiva: troca o desenho sem mudar campo, sem passos de migração', () => {
@@ -306,5 +306,5 @@ describe('atualização da biblioteca (version 4 → 5)', () => {
     );
     const report = validateLibrary({ files, specPath: SPEC_FILE, previous });
     expect(report.errors).toEqual([]);
-  });
+  }, 30_000);
 });

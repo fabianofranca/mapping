@@ -1,4 +1,4 @@
-# Formato do `mapping.json` (schema v19)
+# Formato do `mapping.json` (schema v20)
 
 O projeto é uma pasta (ou um zip com o mesmo conteúdo) com `mapping.json`, `images/` (os arquivos de imagem dos containers) e,
 se houver especializações aplicadas, `specs/` (e, se houver propostas de alteração, `proposals/`). Todas as coordenadas das marcações são
@@ -98,7 +98,7 @@ como `M1` nos exemplos também valem). Cores são `#RRGGBB`.
 
 | Campo              | Tipo    | Descrição                                                                    |
 | ------------------ | ------- | ---------------------------------------------------------------------------- |
-| `schemaVersion`    | `18`    | Versão do schema.                                                            |
+| `schemaVersion`    | `20`    | Versão do schema.                                                            |
 | `revision`         | inteiro | Contador de gravações (v6, ver abaixo).                                      |
 | `app`              | string  | Sempre `"mapping"` (a leitura aceita também `"mapeador-imagens"`).           |
 | `coordinateSystem` | string  | Sempre `"image-pixels-exif-oriented"`: pixels da imagem, EXIF aplicado.      |
@@ -107,6 +107,7 @@ como `M1` nos exemplos também valem). Cores são `#RRGGBB`.
 | `platformRepos`    | objeto  | Clone local de cada plataforma (v7; só `localPath` desde a v11, ver abaixo). |
 | `docRepos`         | objeto  | Clone local de cada repositório de documentos (v14, ver "Campos da v14").    |
 | `drawingMode`      | string  | Modo do desenho do projeto (v18, opcional, ver "Campos da v18").             |
+| `direction`        | string  | Direção de leitura do projeto (v20, opcional, ver "Campos da v20").          |
 | `layers`           | array   | Camadas, **globais** (valem para todos os containers), na ordem de exibição. |
 | `containers`       | array   | Containers do projeto (v12; antes `images`).                                 |
 | `markings`         | array   | Marcações retangulares (de um container ou do canvas, v13).                  |
@@ -123,14 +124,14 @@ no projeto; `null` no container sem arquivo, v10: ver abaixo); `width` e `height
 `parentId` (v13: `null` ou a marcação do canvas que envolve o container, calculado pela app; ver abaixo);
 `markingColor` (`null` ou cor); `locked` (booleano, v5: ver abaixo); `source` (`null` ou origem, v8:
 ver abaixo); `background` (`null` ou cor `#RRGGBB`, v10: a cor de fundo do container sem arquivo);
-`drawingMode` (v18, opcional: o modo do desenho que o container fixa; ver "Campos da v18"); `density` (v19, opcional: pixels da imagem por unidade do componente; ver "Campos da v19").
+`drawingMode` (v18, opcional: o modo do desenho que o container fixa; ver "Campos da v18"); `direction` (v20, opcional: a direção de leitura que o container fixa, `ltr` ou `rtl`; ver "Campos da v20"); `density` (v19, opcional: pixels da imagem por unidade do componente; ver "Campos da v19").
 
 **`markings[]`**: `id`; `containerId` (v12; antes `imageId`; `null` na marcação do canvas, v13); `parentId` (marcação-pai ou `null`,
 calculado pela app desde a v13); `name` (`string` ou `null`);
 `rect` (`{ x, y, width, height }`, **inteiros em pixels da imagem original** do container, `x`/`y` ≥ 0; na marcação do canvas,
 **inteiros em unidades do canvas**, `x`/`y` podem ser negativos);
 `needsReview` (booleano, só para a interface); `locked` (booleano, v5: ver abaixo); `floating` (booleano, v13: ver abaixo);
-`source` (`null` ou origem, v8: ver abaixo).
+`source` (`null` ou origem, v8: ver abaixo); `anchor` (v20, opcional: a âncora; ver "Campos da v20").
 
 **`arrows[]`** (v13): `id` (no mesmo espaço dos ids das marcações); `from` e `to` (ids de marcações, diferentes); `fromSide` e `toSide`
 (`top`, `right`, `bottom`, `left` ou `null`); `points` (pontos de passagem da rota); `style` (`straight`, `curve` ou `elbow`);
@@ -158,6 +159,8 @@ arquivo ao ler.
 - Pertencimento (v13): ver "Campos da v13 (pertencimento)"; o `parentId` do container e a marcação flutuante têm regras próprias.
 - As imagens **não se sobrepõem** no canvas (`placement` × tamanho × escala).
 - Toda anotação aponta para uma marcação (ou uma seta, v13) e uma camada existentes.
+- Âncora (v20): `anchor.to` é uma marcação existente do **mesmo espaço**, diferente da própria e sem ciclo
+  (`anchor-missing`, `anchor-self`, `anchor-other-space`, `anchor-cycle`); ver "Campos da v20".
 - Seta (v13): `from` e `to` são marcações existentes (nem outra seta, nem um container) e diferentes
   (`arrow-endpoint-missing`, `arrow-self`); o id dela não repete o de uma marcação nem o de outra seta
   (`duplicate-id`). Nada mais é invariante: duas setas iguais são permitidas.
@@ -190,21 +193,22 @@ mostra a **lista exata** dos problemas (regra, tipo do item, id e nome), com **C
 Quando todos os problemas têm reparo mecânico e inequívoco (`repairProject` em `src/model/repair.ts`), o
 diálogo oferece **Reparar e abrir**:
 
-| Problema                                                                                                 | Reparo                                                                     |
-| -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| Par com `id` já usado (em outra anotação ou na mesma)                                                    | O primeiro fica com o id; os outros ganham um id novo.                     |
-| `rect` fora da imagem                                                                                    | Recortado aos limites da imagem; se não sobra área, a marcação é removida. |
-| Marcação de imagem inexistente                                                                           | Removida.                                                                  |
-| Seta com ponta inexistente (ou que é outra seta) ou ligada a ela mesma (v13)                             | Removida, com as anotações dela (na rodada seguinte).                      |
-| Anotação de marcação ou camada inexistente                                                               | Removida, com as anotações que ela possui (`parentAnnotationId`).          |
-| `parentId` inexistente ou ciclo na hierarquia de marcações                                               | A marcação (no ciclo, cada uma do ciclo) vira raiz do espaço dela.         |
-| Marcação flutuante dentro de um container ou com pai (v13)                                               | Vai para o canvas, com o `rect` convertido, e fica sem pai.                |
-| Pai de marcação flutuante; pai de container inexistente, que não é do canvas ou que não o contém (v13)   | O `parentId` vira `null`.                                                  |
-| Imagens sobrepostas                                                                                      | A de maior índice vai para a direita da caixa das anteriores.              |
-| Perspectiva com item de raiz inexistente, que não é raiz ou repetida; camada escondida inexistente (v16) | O item (o segundo, se repetido) ou a camada sai da perspectiva.            |
-| Perspectiva com `id` repetido (v16)                                                                      | A primeira fica com o id; as outras ganham um id novo.                     |
-| Perspectiva com nome repetido (v16)                                                                      | A primeira fica com o nome; as outras ganham " (2)", " (3)"…               |
-| Chegada de raiz inexistente, que não é raiz ou repetida (v16)                                            | Removida (a segunda, se repetida).                                         |
+| Problema                                                                                                 | Reparo                                                                       |
+| -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Par com `id` já usado (em outra anotação ou na mesma)                                                    | O primeiro fica com o id; os outros ganham um id novo.                       |
+| `rect` fora da imagem                                                                                    | Recortado aos limites da imagem; se não sobra área, a marcação é removida.   |
+| Marcação de imagem inexistente                                                                           | Removida.                                                                    |
+| Seta com ponta inexistente (ou que é outra seta) ou ligada a ela mesma (v13)                             | Removida, com as anotações dela (na rodada seguinte).                        |
+| Anotação de marcação ou camada inexistente                                                               | Removida, com as anotações que ela possui (`parentAnnotationId`).            |
+| `parentId` inexistente ou ciclo na hierarquia de marcações                                               | A marcação (no ciclo, cada uma do ciclo) vira raiz do espaço dela.           |
+| Marcação flutuante dentro de um container ou com pai (v13)                                               | Vai para o canvas, com o `rect` convertido, e fica sem pai.                  |
+| Pai de marcação flutuante; pai de container inexistente, que não é do canvas ou que não o contém (v13)   | O `parentId` vira `null`.                                                    |
+| Imagens sobrepostas                                                                                      | A de maior índice vai para a direita da caixa das anteriores.                |
+| Perspectiva com item de raiz inexistente, que não é raiz ou repetida; camada escondida inexistente (v16) | O item (o segundo, se repetido) ou a camada sai da perspectiva.              |
+| Perspectiva com `id` repetido (v16)                                                                      | A primeira fica com o id; as outras ganham um id novo.                       |
+| Perspectiva com nome repetido (v16)                                                                      | A primeira fica com o nome; as outras ganham " (2)", " (3)"…                 |
+| Chegada de raiz inexistente, que não é raiz ou repetida (v16)                                            | Removida (a segunda, se repetida).                                           |
+| Âncora com alvo inexistente, nela mesma, noutro espaço ou em ciclo (v20)                                 | A marcação fica onde está, com `anchor: null` (no ciclo, cada uma do ciclo). |
 
 Um reparo pode expor outro (a marcação removida deixa as anotações dela sem marcação e os filhos sem pai):
 cada rodada resolve o que a anterior expôs. Qualquer outro problema (id repetido de imagem, marcação,
@@ -1072,6 +1076,72 @@ Um app anterior recusa o arquivo v19 como "versão mais nova", em vez de descart
 Só `schemaVersion` muda para 19; nenhum dado é alterado (nenhuma densidade é criada). Como em toda migração, o
 original vai para `backups/` antes da primeira gravação e a faixa da migração aparece no topo.
 
+## Campos da v20 (direção e âncora)
+
+A v20 acrescenta a **direção de leitura**: `ltr` (da esquerda para a direita) ou `rtl` (da direita para a
+esquerda). O motor dos componentes a recebe e espelha as fileiras (`row`), as grades, as posições `start` e `end` e
+os nós `mirror` (ver [`COMPONENT-FORMAT.md`](COMPONENT-FORMAT.md), "Direção de leitura"). A **âncora**
+liga uma marcação a outra do mesmo espaço (tooltip, badge, menu) e entra na mesma versão (v20); vem depois da direção, abaixo.
+
+- **`direction` na raiz** (`"ltr"` ou `"rtl"`, opcional): a direção do projeto. Ausente vale `ltr`. Fica depois de
+  `drawingMode`.
+- **`containers[].direction`** (`"ltr"` ou `"rtl"`, opcional): a direção que o container fixa. Ausente, o container
+  **segue o projeto**. A marcação do canvas (`containerId` nulo) e a flutuante seguem sempre o projeto. A direção
+  efetiva de uma marcação é a do seu container, se ele fixa uma; senão a do projeto; senão `ltr`. Fica depois de
+  `drawingMode` e antes de `density`.
+- **`null` no container** é lido como ausente e **não é gravado**; o campo só aparece no arquivo quando tem valor.
+  Qualquer valor fora de `ltr`/`rtl` é erro de schema (o arquivo não abre).
+- **O que a direção muda:** só o desenho e o Arrumar dos componentes (fileiras e grades espelham, a primeira filha
+  de uma linha encosta na direita, a posição de uma filha nova vem à esquerda da última). Nenhum pixel de
+  marcação muda ao trocar a direção; a especialização e o componente não mudam.
+- **Proposta:** o campo `direction` do container e da entidade `project` vai na `formatVersion` 8 da proposta (ver
+  [`PROPOSAL-FORMAT.md`](PROPOSAL-FORMAT.md)).
+
+### Âncora (`markings[].anchor`)
+
+- **`anchor`** (objeto, opcional): a marcação declara **outra marcação do mesmo espaço** como âncora. As chaves:
+  `to` (obrigatória: o id da marcação-âncora); `side` (`top`, `bottom`, `start` ou `end`: de que lado da âncora a
+  marcação fica, fora dela); `align` (`start`, `center` ou `end`: o alinhamento ao longo desse lado); `offset`
+  (`{ main, cross }`, números). `main` é a distância da borda da âncora (negativo sobrepõe); `cross` é o
+  deslocamento **ao longo** do lado e é **lógico**: com `side` `top` ou `bottom`, positivo vai no sentido da
+  leitura (para a direita em `ltr`, para a esquerda em `rtl`); com `start` ou `end`, positivo vai para baixo. Os dois
+  são em **pixels do container** (como o `rect`; no canvas, em unidades dele). `start` e `end` seguem a direção
+  efetiva (ver acima).
+- **Chaves ausentes** (`side`, `align`, `offset`) valem os padrões do componente da marcação (a chave `anchor`
+  da raiz do componente, em unidades convertidas pela densidade do container; ver [`COMPONENT-FORMAT.md`](COMPONENT-FORMAT.md),
+  "Âncora") e, sem eles, `top`, `center` e `{ main: 0, cross: 0 }`.
+- **`null` e ausente** são o mesmo ("sem âncora"). A chave só é **gravada** quando presente e não nula: um projeto
+  sem âncoras sai do mesmo jeito de antes.
+- **Invariantes** (no mesmo conjunto das outras regras de validade): `anchor-missing` (`to` não é uma marcação
+  existente), `anchor-self` (a marcação ancorada nela mesma), `anchor-other-space` (a âncora está em outro
+  container, ou uma está no canvas e a outra num container) e `anchor-cycle` (A ancorada em B e B em A, direta ou
+  por uma cadeia). O reparo mecânico é soltar a âncora (`anchor: null`; a marcação fica onde está, e num ciclo
+  cada uma das que o fecham é solta), o mesmo que o modelo faz ao excluir o alvo. Só marcações
+  entram (nunca um container ou uma seta).
+- **Não é pertencimento.** A âncora é uma relação ao lado da árvore de pertencimento, como a seta: `parentId`
+  continua decidido só pela geometria (`settleHierarchy` não a lê), e o `rect` continua sendo a verdade. A
+  marcação **não segue a âncora sozinha**: ela só encosta de novo por uma **ação** (**Encostar** na app,
+  `snap_to_anchor` e `create_marking` sem `rect` no MCP).
+- **Mover leva junto; redimensionar não.** Mover a âncora (arrastar, as setas do teclado, `update_marking` com `move` no MCP, a
+  seleção de várias) move as marcações ancoradas nela, **mesmo trancadas**, e as descendentes delas, e as ancoradas
+  dessas, em cadeia: o mesmo deslocamento, numa entrada de desfazer. Redimensionar a âncora não move nenhuma.
+- **Excluir a âncora** põe `anchor: null` nas ancoradas (elas ficam onde estão).
+- **Sair do espaço do alvo solta a âncora.** Quando a marcação ancorada deixa o espaço do alvo (mover para fora do
+  container, para outro container ou para o canvas), o modelo grava `anchor: null` nela em vez de recusar a operação
+  (`anchor-other-space` só vale ao **gravar** uma âncora entre espaços diferentes); o mesmo vale quando é o alvo que
+  sai do espaço das ancoradas. O `rect` não muda por isso.
+- **Índice.** `projectIndex(p)` ganha `anchoredBy` (alvo para as ancoradas, na ordem do array) e `anchorOf` (marcação
+  para o id do alvo).
+- **Proposta:** a âncora na criação e na mudança de marcação sobe a proposta para a `formatVersion` 9 (ver
+  [`PROPOSAL-FORMAT.md`](PROPOSAL-FORMAT.md); o `snap_to_anchor` sozinho não sobe: é só a Posição); a revisão a mostra como o campo "Âncora" e o encostar como a Posição de sempre.
+
+Um app anterior recusa o arquivo v20 como "versão mais nova", em vez de descartar a direção ou a âncora ao gravar.
+
+### Migração v19 → v20
+
+Só `schemaVersion` muda para 20; nenhum dado é alterado (nenhuma direção nem âncora é criada). Como em toda migração, o
+original vai para `backups/` antes da primeira gravação e a faixa da migração aparece no topo.
+
 ## Migração
 
 Arquivos v1 são migrados ao abrir: toda imagem recebe `name: null` e toda anotação recebe
@@ -1082,7 +1152,7 @@ imagem e em cada marcação. Arquivos v5 recebem `revision: 0`. Arquivos v6 rece
 Arquivos v7 recebem `source: null` em cada imagem e em cada marcação. Arquivos v8 perdem os valores dos
 campos `codeRef`, pelo tipo declarado na cópia da especialização (ver "Campos da v9"). Arquivos v9
 recebem `background: null` em cada imagem (ver "Campos da v10"). Arquivos v10 perdem o `urlTemplate` de
-cada entrada de `platformRepos`, e a entrada que só o tinha sai (ver "Campos da v11"). Arquivos v11 trocam `images` por `containers` e `imageId` por `containerId` (ver "Campos da v12"). Arquivos v12 perdem `inherit` de cada anotação e ganham `floating: false` em cada marcação, `parentId: null` em cada container e `arrows: []` na raiz (ver "Campos da v13"). Arquivos v13 ganham `parentRole: null` em cada anotação e `docRepos: {}` na raiz (ver "Campos da v14"). Arquivos v14 só sobem o número (ver "Campos da v15"). Arquivos v15 ganham `project.id` (um UUID novo), `perspectives: []` e `arrivals: []` (ver "Campos da v16"). Arquivos v16 só sobem o número (ver "Campos da v17"). Arquivos v17 só sobem o número (ver "Campos da v18"). Arquivos v18 só sobem o número (ver "Campos da v19"). Ao salvar, o
-arquivo passa a ser v18 (e, no modo pasta, o original vai antes para `backups/`, como em qualquer
+cada entrada de `platformRepos`, e a entrada que só o tinha sai (ver "Campos da v11"). Arquivos v11 trocam `images` por `containers` e `imageId` por `containerId` (ver "Campos da v12"). Arquivos v12 perdem `inherit` de cada anotação e ganham `floating: false` em cada marcação, `parentId: null` em cada container e `arrows: []` na raiz (ver "Campos da v13"). Arquivos v13 ganham `parentRole: null` em cada anotação e `docRepos: {}` na raiz (ver "Campos da v14"). Arquivos v14 só sobem o número (ver "Campos da v15"). Arquivos v15 ganham `project.id` (um UUID novo), `perspectives: []` e `arrivals: []` (ver "Campos da v16"). Arquivos v16 só sobem o número (ver "Campos da v17"). Arquivos v17 só sobem o número (ver "Campos da v18"). Arquivos v18 só sobem o número (ver "Campos da v19"). Arquivos v19 só sobem o número (ver "Campos da v20"). Ao salvar, o
+arquivo passa a ser v20 (e, no modo pasta, o original vai antes para `backups/`, como em qualquer
 migração).
 Arquivos de versão mais nova abrem somente para leitura.

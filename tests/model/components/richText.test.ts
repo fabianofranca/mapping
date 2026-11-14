@@ -702,3 +702,65 @@ describe('minContentRuns (L4, decisão 17 da #1078)', () => {
     expect(minContentRuns([], base, approximateMeasurer)).toBe(0);
   });
 });
+
+describe('direção de leitura nos trechos (R2, #1107)', () => {
+  const runs = [run('Pagar '), run('fatura', { weight: 700 }), run(' hoje')];
+
+  it('em rtl os pedaços de uma linha correm da direita para a esquerda, no mesmo espaço', () => {
+    const ltr = layoutRuns(runs, { ...BASE, align: 'right' }, approximateMeasurer, 200);
+    const rtl = layoutRuns(
+      runs,
+      { ...BASE, align: 'right', direction: 'rtl' },
+      approximateMeasurer,
+      200,
+    );
+    const xs = (l: typeof ltr) => l.lines[0]!.pieces.map((p) => p.x);
+    expect(xs(ltr)[0]!).toBeLessThan(xs(ltr)[1]!);
+    expect(xs(rtl)[0]!).toBeGreaterThan(xs(rtl)[1]!);
+    expect(xs(rtl)[1]!).toBeGreaterThan(xs(rtl)[2]!);
+    // a ordem lógica dos pedaços e a largura da linha não mudam; só as posições espelham
+    expect(rtl.lines[0]!.pieces.map((p) => p.run)).toEqual([0, 1, 2]);
+    expect(rtl.width).toBe(ltr.width);
+    const right = (l: typeof ltr) =>
+      Math.max(...l.lines[0]!.pieces.map((p) => p.x + p.width));
+    expect(right(rtl)).toBeCloseTo(right(ltr), 9);
+    expect(Math.min(...xs(rtl))).toBeCloseTo(Math.min(...xs(ltr)), 9);
+  });
+
+  it('o primeiro pedaço lógico fica na borda direita do conteúdo, o último na esquerda', () => {
+    const layout = layoutRuns(
+      [run('ab'), run('cd')],
+      { ...BASE, direction: 'rtl' },
+      approximateMeasurer,
+      100,
+    );
+    const [first, last] = layout.lines[0]!.pieces;
+    expect(last!.x).toBe(0);
+    expect(first!.x).toBeCloseTo(last!.width, 9);
+  });
+
+  it('sem direction (ou em ltr) nada muda', () => {
+    const plain = layoutRuns(runs, BASE, approximateMeasurer, 100);
+    expect(plain.lines[0]!.pieces[0]!.x).toBe(0);
+    expect(layoutRuns(runs, { ...BASE }, approximateMeasurer, 100)).toEqual(plain);
+  });
+
+  it('o texto rico de um nó rtl chega à cena com os pedaços espelhados', () => {
+    const file = richFile({
+      font: { size: 14, align: 'start' },
+      runs: [{ text: 'ab' }, { text: 'cd' }],
+    });
+    const ltr = textOf(file, {}).runLayout!.lines[0]!.pieces.map((p) => p.x);
+    const { root } = instantiate(
+      file,
+      {},
+      { x: 0, y: 0, width: 100, height: 40 },
+      { measure: approximateMeasurer, direction: 'rtl' },
+    );
+    const scene = [...walk(root)].find((n): n is TextNode => n.type === 'text')!;
+    expect(scene.style.direction).toBe('rtl');
+    const rtl = scene.runLayout!.lines[0]!.pieces.map((p) => p.x);
+    expect(ltr[0]!).toBeLessThan(ltr[1]!);
+    expect(rtl[0]!).toBeGreaterThan(rtl[1]!);
+  });
+});

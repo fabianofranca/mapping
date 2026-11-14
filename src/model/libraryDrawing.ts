@@ -1,5 +1,6 @@
-import type { ComponentFile, FieldValues } from './components/componentFormat';
+import type { ComponentFile, Direction, FieldValues } from './components/componentFormat';
 import { type Box, approximateMeasurer, instantiate } from './components/instantiate';
+import { isDirectionSensitive } from './components/direction';
 import { type Library, type TextFile, loadLibrary } from './components/library';
 import { type Origin, screenFromSource } from './components/origin';
 import type { IconSet } from './components/icons';
@@ -77,6 +78,13 @@ export function defaultValues(
   }
   return values;
 }
+
+/** O aviso que só aparece em `rtl`: o do motor com o prefixo "em rtl" (o aviso vai em `detail`, que a interface traduz). */
+const inRtl = (message: ModelMessage): ModelMessage => {
+  const params = { reason: message.text };
+  const text = fillTemplate(MODEL_MESSAGE_TEMPLATES['engine.inRtl'], params);
+  return modelMessage('engine.inRtl', params, text, message);
+};
 
 /** O caso provado: um código de prova por caso e por haver modo ou não (ver `drawCode`). */
 type DrawKind = 'defaults' | 'preview' | 'example';
@@ -207,7 +215,19 @@ function fittedBox(
   }
 }
 
-/** Prova um caso em cada modo, num tamanho por modo; o aviso que vale em todos os modos sai uma vez. */
+/** O resultado da prova de um caso num modo: os avisos do motor ou o erro de uma exceção. */
+interface ModeResult {
+  readonly mode: string | undefined;
+  readonly box: Box;
+  readonly texts: ModelMessage[];
+  readonly error: string | undefined;
+}
+
+/**
+ * Prova um caso em cada modo, num tamanho por modo, em `ltr` e depois em `rtl`: o aviso que vale
+ * em todos os modos sai uma vez; o de `rtl` que o `ltr` do mesmo modo já deu não se repete, e o que
+ * só `rtl` dá sai com o prefixo "em rtl" (um componente que estoura só em `rtl` é um problema dele).
+ */
 function proveCase(
   type: SpecAnnotationType,
   component: ComponentFile,
@@ -237,60 +257,89 @@ function proveCase(
       },
       detail,
     );
+  const run = (direction: Direction): ModeResult[] =>
+    modes.map(({ mode, tokens }, i): ModeResult => {
+      try {
+        const { messages } = instantiate(component, drawCase.values, boxes[i] as Box, {
+          measure: approximateMeasurer,
+          ...(tokens === undefined ? {} : { tokens }),
+          ...(direction === 'rtl' ? { direction } : {}),
+        });
+        // O aviso do `sizing` não depende da medida do texto nem da direção: sai sem o sufixo
+        // `(aproximado)` e só na passada `ltr`.
+        const sizing =
+          fitted || direction === 'rtl'
+            ? []
+            : resolveSizing(component, drawCase.values).messages;
+        return {
+          mode,
+          box: boxes[i] as Box,
+          texts: [
+            ...messages
+              .filter((m) => {
+                const key = String(m.params.key ?? '');
+                return m.code !== NOT_INFORMED_CODE || key === '' || keys.has(key);
+              })
+              .map(approximate),
+            ...sizing,
+          ],
+          error: undefined,
+        };
+      } catch (error) {
+        return { mode, box: boxes[i] as Box, texts: [], error: messageOf(error) };
+      }
+    });
   // O aviso que vale em todos os modos sai uma vez, sem modo; o que depende do modo cita o modo.
-  const perMode = modes.map(({ mode, tokens }, i) => {
-    try {
-      const { messages } = instantiate(component, drawCase.values, boxes[i] as Box, {
-        measure: approximateMeasurer,
-        ...(tokens === undefined ? {} : { tokens }),
-      });
-      // O aviso do `sizing` não depende da medida do texto: sai sem o sufixo `(aproximado)`.
-      const sizing = fitted ? [] : resolveSizing(component, drawCase.values).messages;
+  const emit = (perMode: readonly ModeResult[]): void => {
+    const first = boxes[0] as Box;
+    const common =
+      modes.length > 1 && boxes.every((b) => sameBox(b, first))
+        ? (perMode[0]?.texts ?? []).filter((t) =>
+            perMode.every(
+              (m) => m.error === undefined && m.texts.some((x) => x.text === t.text),
+            ),
+          )
+        : [];
+    for (const message of common) out.push(issue(undefined, first, message, 'warning'));
+    for (const { mode, box, texts, error } of perMode) {
+      if (error !== undefined) {
+        out.push(
+          issue(mode, box, templateMessage('library.drawFailed', { error }), 'error'),
+        );
+        continue;
+      }
+      for (const message of texts) {
+        if (!common.some((c) => c.text === message.text))
+          out.push(issue(mode, box, message, 'warning'));
+      }
+    }
+  };
+  const ltr = run('ltr');
+  emit(ltr);
+  // A passada em `rtl` só roda no componente sensível à direção (`isDirectionSensitive`): nos
+  // outros ela custaria o dobro para repetir, espelhados, os mesmos avisos do `ltr`.
+  if (isDirectionSensitive(component)) emit(rtlOnly(ltr, run('rtl')));
+}
+
+/** O que `rtl` dá a mais que o `ltr` do mesmo modo: avisos novos com o prefixo "em rtl"; erro só de `rtl` idem. */
+function rtlOnly(ltr: readonly ModeResult[], rtl: readonly ModeResult[]): ModeResult[] {
+  return rtl.map((r, i) => {
+    const base = ltr[i] as ModeResult;
+    if (r.error !== undefined) {
       return {
-        mode,
-        box: boxes[i] as Box,
-        texts: [
-          ...messages
-            .filter((m) => {
-              const key = String(m.params.key ?? '');
-              return m.code !== NOT_INFORMED_CODE || key === '' || keys.has(key);
-            })
-            .map(approximate),
-          ...sizing,
-        ],
-        error: undefined as string | undefined,
-      };
-    } catch (error) {
-      return {
-        mode,
-        box: boxes[i] as Box,
-        texts: [] as ModelMessage[],
-        error: messageOf(error),
+        ...r,
+        error: undefined,
+        texts: base.error === undefined ? rtlError(r.error) : [],
       };
     }
+    const seen = new Set(base.texts.map((t) => t.text));
+    return { ...r, texts: r.texts.filter((t) => !seen.has(t.text)).map(inRtl) };
   });
-  const first = boxes[0] as Box;
-  const common =
-    modes.length > 1 && boxes.every((b) => sameBox(b, first))
-      ? (perMode[0]?.texts ?? []).filter((t) =>
-          perMode.every(
-            (m) => m.error === undefined && m.texts.some((x) => x.text === t.text),
-          ),
-        )
-      : [];
-  for (const message of common) out.push(issue(undefined, first, message, 'warning'));
-  for (const { mode, box, texts, error } of perMode) {
-    if (error !== undefined) {
-      out.push(
-        issue(mode, box, templateMessage('library.drawFailed', { error }), 'error'),
-      );
-      continue;
-    }
-    for (const message of texts) {
-      if (!common.some((c) => c.text === message.text))
-        out.push(issue(mode, box, message, 'warning'));
-    }
-  }
+}
+
+/** A exceção que só `rtl` lança, como um aviso "em rtl" (a prova segue; o erro de `ltr` já vale). */
+function rtlError(error: string): ModelMessage[] {
+  return [inRtl(templateMessage('library.drawFailed', { error }))];
 }
 
 function typeDrawing(

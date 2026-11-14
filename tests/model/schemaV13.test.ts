@@ -65,7 +65,7 @@ function v13Me0Raw(): Raw {
 
 describe('migração v12 → v13 (sem herança)', () => {
   it('o registro tem a migração v12 → v13', () => {
-    expect(SCHEMA_VERSION).toBe(19);
+    expect(SCHEMA_VERSION).toBe(20);
     expect(migrations.get(12)).toBe(migrateFrom12To13);
   });
 
@@ -74,7 +74,7 @@ describe('migração v12 → v13 (sem herança)', () => {
     const result = load(JSON.stringify(raw));
     expect(result.migratedFrom).toBe(12);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(19);
+    expect(result.project.schemaVersion).toBe(20);
     expect(result.project.annotations.map((a) => a.id)).toEqual(
       raw.annotations.map((a: Raw) => a.id),
     );
@@ -86,7 +86,7 @@ describe('migração v12 → v13 (sem herança)', () => {
     const result = load(JSON.stringify(v12Raw()));
     const saved = serialize(result.project);
     const data = JSON.parse(saved) as Raw;
-    expect(data.schemaVersion).toBe(19);
+    expect(data.schemaVersion).toBe(20);
     for (const a of data.annotations) expect(a).not.toHaveProperty('inherit');
     expect(saved).not.toContain('"inherit"');
     const again = load(saved);

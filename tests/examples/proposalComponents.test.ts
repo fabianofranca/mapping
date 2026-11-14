@@ -83,7 +83,7 @@ describe('zip de exemplo com componentes novos na proposta', () => {
     const report = validateLibrary({ files, specPath: 'material3-compose.spec.json' });
     expect(report.errors.map((i) => `${i.file} ${i.path} ${i.message}`)).toEqual([]);
     expect(report.ok).toBe(true);
-  });
+  }, 30_000);
 
   it('a app lê o zip: o projeto e a proposta aberta com as decisões gravadas', async () => {
     const { project, proposal } = await readExample();

@@ -286,7 +286,15 @@ export const EXPR_OPS = [
   '$lines',
   '$provided',
 ] as const;
-export const CONDITION_OPS = ['$field', '$eq', '$has', '$not', '$and', '$or'] as const;
+export const CONDITION_OPS = [
+  '$field',
+  '$eq',
+  '$has',
+  '$not',
+  '$and',
+  '$or',
+  '$direction',
+] as const;
 export const ROOT_KEYS = [
   'format',
   'formatVersion',
@@ -297,6 +305,7 @@ export const ROOT_KEYS = [
   'minSize',
   'sizing',
   'screen',
+  'anchor',
   'preview',
   'template',
 ] as const;
@@ -319,6 +328,7 @@ export const BASE_KEYS = [
   'maxHeight',
   'span',
   'weight',
+  'direction',
 ] as const;
 /** Chaves de cada tipo de nó, além das comuns. */
 export const EXTRA_KEYS: Record<(typeof NODE_TYPES)[number], readonly string[]> = {
@@ -326,7 +336,7 @@ export const EXTRA_KEYS: Record<(typeof NODE_TYPES)[number], readonly string[]> 
   rect: [],
   ellipse: [],
   text: ['text', 'runs', 'font', 'color', 'baselinePadding'],
-  path: ['d', 'viewBox', 'fillRule'],
+  path: ['d', 'viewBox', 'fillRule', 'mirror'],
   slot: ['label', 'layout', 'provide', 'clip'],
   repeat: [
     'field',
@@ -342,7 +352,7 @@ export const EXTRA_KEYS: Record<(typeof NODE_TYPES)[number], readonly string[]> 
     'template',
   ],
   image: ['src', 'fit'],
-  icon: ['name', 'color', 'strokeWidth'],
+  icon: ['name', 'color', 'strokeWidth', 'mirror'],
 };
 /** O `repeat` só aceita estas chaves comuns: o desenho é do `template` de cada linha. */
 export const REPEAT_BASE_KEYS = [
@@ -359,9 +369,19 @@ export const REPEAT_BASE_KEYS = [
   'maxHeight',
   'span',
   'weight',
+  'direction',
 ];
 
-const ANCHOR_KEYS = ['left', 'right', 'top', 'bottom', 'centerX', 'centerY'] as const;
+const ANCHOR_KEYS = [
+  'left',
+  'right',
+  'top',
+  'bottom',
+  'centerX',
+  'centerY',
+  'start',
+  'end',
+] as const;
 const LAYOUT_KEYS = ['gap', 'padding', 'align', 'justify'] as const;
 const STROKE_KEYS = ['color', 'width', 'align', 'dash', 'scale'] as const;
 const SHADOW_KEYS = ['color', 'x', 'y', 'blur'] as const;
@@ -560,8 +580,12 @@ function nodeFeatures(node: unknown, out: Set<string>): void {
   out.add(`node.${type}`);
   for (const key of Object.keys(node)) {
     if (key === 'type') continue;
-    if ((BASE_KEYS as readonly string[]).includes(key)) out.add(`node.${key}`);
-    else out.add(`node.${type}.${key}`);
+    // O `direction` do `repeat` é o empilhamento das linhas (`row`/`column`), não a direção de
+    // leitura da chave comum: ele conta como chave própria do `repeat`.
+    const common =
+      (BASE_KEYS as readonly string[]).includes(key) &&
+      !(type === 'repeat' && key === 'direction');
+    out.add(common ? `node.${key}` : `node.${type}.${key}`);
   }
   for (const axis of ['width', 'height'] as const) {
     const feature = sizeFeature(node[axis], 'size');
