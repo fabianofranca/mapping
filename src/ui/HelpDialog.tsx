@@ -95,7 +95,7 @@ function Shortcuts() {
   );
 }
 
-/** Guia interativo: o link (em outra aba) e como ver o mesmo projeto na app. */
+/** Interactive guide: the link (in another tab) and how to see the same project in the app. */
 function GuideUsage() {
   const url = guideUrl();
   return (
@@ -180,7 +180,7 @@ function Downloads() {
 interface Topic {
   readonly id: string;
   readonly title: string;
-  /** Todo o texto do assunto, para a busca. */
+  /** All the text of the topic, for the search. */
   readonly text: string;
   readonly body: ComponentChildren;
 }

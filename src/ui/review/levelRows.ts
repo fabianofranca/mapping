@@ -10,7 +10,7 @@ import {
 // the filters. Pure functions over the model tree (`reviewTree`).
 
 export interface LevelRow {
-  /** `reviewKey` do alvo (`item:M1`, `change:c3`…). */
+  /** `reviewKey` of the target (`item:M1`, `change:c3`…). */
   readonly key: string;
   readonly target: ReviewTarget;
   /** Depth (0 = proposal); `aria-level` is `depth + 1`. */

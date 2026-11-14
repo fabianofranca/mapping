@@ -168,7 +168,7 @@ function changesByLayer(
   return result;
 }
 
-/** Valor de um campo da entidade no projeto mostrado (para o marcador de uma parte). */
+/** Value of an entity field in the shown project (for the marker of a part). */
 function fieldValue(
   project: Project,
   e: EntityChanges,

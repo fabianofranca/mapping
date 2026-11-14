@@ -30,9 +30,9 @@ export interface RemovedAnnotation {
 /** Rows of a table that the shown value gained, and the note of those that went away. */
 export interface TableRowsExtra {
   readonly added: ReadonlySet<string>;
-  /** Nome do selo + das linhas novas ("Linha nova"). */
+  /** Name of the badge + the new rows ("New row"). */
   readonly addedLabel: string;
-  /** Texto embaixo da tabela (ex.: as linhas que saem); `null` sem nada a dizer. */
+  /** Text below the table (e.g. the rows that go away); `null` with nothing to say. */
   readonly note: ComponentChildren;
 }
 
@@ -55,7 +55,7 @@ export interface DetailsExtension {
   readonly decision: (entityId: string) => ComponentChildren;
   /** "Other changes" section at the end of the item panel (what has no field), or `null`. */
   readonly others: (entityId: string) => ComponentChildren;
-  /** Selos embaixo do nome da entidade e se o nome sai riscado. */
+  /** Badges below the entity name, and whether the name is struck through. */
   readonly identity: (entityId: string) => {
     readonly flags: ComponentChildren;
     readonly struck: boolean;

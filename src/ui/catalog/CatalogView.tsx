@@ -23,7 +23,7 @@ export interface CatalogViewProps {
   readonly project?: Project | null;
   readonly layout: 'split' | 'list';
   readonly onAddToScreen?: (typeId: string) => void;
-  /** Motivo de o Adicionar estar desabilitado (vira o `title`). */
+  /** Reason Add is disabled (becomes the `title`). */
   readonly addDisabledReason?: string;
   readonly initialTypeId?: string;
   /** Measurer, rasterizer and cache; the default uses Konva (tests inject a fake). */
@@ -229,7 +229,7 @@ export function CatalogView({
                     {layer.entries.map((entry) => {
                       return (
                         <li key={entry.type.id}>
-                          {/* Exceção ao Button: list option of catalog types (docs/DESIGN-SYSTEM.md, "Botões avulsos") */}
+                          {/* Exception to Button: list option of catalog types (docs/DESIGN-SYSTEM.md, "Loose buttons") */}
                           <button
                             type="button"
                             class="catalog-entry"

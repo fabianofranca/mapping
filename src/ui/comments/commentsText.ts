@@ -4,12 +4,12 @@ import type { ThreadActionError } from '../../store/threadActions';
 // Short texts of the Comments window, the status bar and the strip: counts in singular and
 // plural and the reason an action was refused.
 
-/** "5 abertas" / "1 aberta". */
+/** "5 open" / "1 open". */
 export function openCountText(count: number): string {
   return count === 1 ? t('comments.openCountOne') : t('comments.openCount', { count });
 }
 
-/** "5 conversas abertas · 2 aguardando agente" (a barra de status). */
+/** "5 open conversations · 2 waiting for agent" (the status bar). */
 export function statusBarText(open: number, awaitingAgent: number): string {
   const base =
     open === 1
@@ -20,7 +20,7 @@ export function statusBarText(open: number, awaitingAgent: number): string {
     : base;
 }
 
-/** "N abertas · M aguardando agente · K resolvidas" (o resumo da janela). */
+/** "N open · M waiting for agent · K resolved" (the window summary). */
 export function summaryText(
   open: number,
   awaitingAgent: number,

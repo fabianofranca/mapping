@@ -393,7 +393,7 @@ export function TableEditor({
               >
                 <span class="grid-cell grid-cell-grip" role="cell">
                   {!readOnly && (
-                    /* Exceção ao Button: row drag handle (docs/DESIGN-SYSTEM.md, "Botões avulsos") */
+                    /* Exception to Button: row drag handle (docs/DESIGN-SYSTEM.md, "Loose buttons") */
                     <button
                       type="button"
                       class="grid-grip"
@@ -444,7 +444,7 @@ export function TableEditor({
                             title: issue,
                           })
                         ) : (
-                          /* Exceção ao Button: reference field (select look), disabled (docs/DESIGN-SYSTEM.md, "Botões avulsos") */
+                          /* Exception to Button: reference field (select look), disabled (docs/DESIGN-SYSTEM.md, "Loose buttons") */
                           <button
                             type="button"
                             class="ref-control is-empty"

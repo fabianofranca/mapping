@@ -177,7 +177,7 @@ export function ReviewBar({ onExit }: { readonly onExit: () => void }) {
       </div>
       <div class="review-bar-actions">
         {applyState.blocked && (
-          /* Exceção ao Button: clickable problem badge (docs/DESIGN-SYSTEM.md, "Botões avulsos") */
+          /* Exception to Button: clickable problem badge (docs/DESIGN-SYSTEM.md, "Loose buttons") */
           <button
             type="button"
             class="flag flag-danger review-bar-problem"

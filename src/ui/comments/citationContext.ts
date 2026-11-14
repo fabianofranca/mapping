@@ -56,7 +56,7 @@ export function citationNameFallback(): string {
   return t('citation.unnamed');
 }
 
-/** Como um chip aparece: o nome, se o alvo sumiu e, achado, o alvo (para o clique). */
+/** How a chip looks: the name, whether the target is gone and, if found, the target (to click). */
 export interface CitationView {
   /** The live name; without a name, the neutral text; broken, the fallback label. */
   readonly name: string;

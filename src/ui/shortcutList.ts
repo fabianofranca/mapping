@@ -29,7 +29,7 @@ const row = (key: TranslationKey, ...combos: KeyCombo[]): ShortcutRow => ({
   combos,
 });
 
-/** Atalhos do editor do desktop, por grupo, no idioma atual. */
+/** Desktop editor shortcuts, by group, in the current language. */
 export function shortcutGroups(): readonly ShortcutGroup[] {
   const windows = [...TOOL_WINDOWS].sort((a, b) => WINDOW_NUMBER[a] - WINDOW_NUMBER[b]);
   return [

@@ -16,9 +16,9 @@ const GAP = px('space-1');
 export type TooltipPlacement = 'bottom' | 'top' | 'end';
 
 interface TooltipProps {
-  /** Texto da dica. */
+  /** Tip text. */
   readonly label: string;
-  /** Atalho mostrado ao lado do texto (ex.: `Ctrl+Z`). */
+  /** Shortcut shown beside the text (e.g. `Ctrl+Z`). */
   readonly shortcut?: string;
   /** `end`: beside the control (side strip), without covering the content next to it. */
   readonly placement?: TooltipPlacement;

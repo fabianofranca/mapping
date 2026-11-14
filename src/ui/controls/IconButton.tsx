@@ -21,7 +21,7 @@ interface IconButtonProps extends NativeButton {
   readonly size?: 'md' | 'sm';
   /** Visible text beside the icon; without it, the button shows only the icon. */
   readonly text?: string;
-  /** Atalho mostrado na dica (e, na sintaxe ARIA, em `aria-keyshortcuts`). */
+  /** Shortcut shown in the tip (and, in ARIA syntax, in `aria-keyshortcuts`). */
   readonly shortcut?: string;
   /** Toggle button (e.g. mode): `aria-pressed` and visual highlight. */
   readonly pressed?: boolean;
@@ -33,7 +33,7 @@ interface IconButtonProps extends NativeButton {
   readonly tooltipSuppressed?: boolean;
   /** Where the tip opens (`end`: beside it, on the side strip); default: below. */
   readonly tooltipPlacement?: TooltipPlacement;
-  /** O `<button>` (para devolver o foco a ele), como o `inputRef` do `TextField`. */
+  /** The `<button>` (to return focus to it), like the `inputRef` of `TextField`. */
   readonly buttonRef?: Ref<HTMLButtonElement>;
 }
 
@@ -96,7 +96,7 @@ interface IconLinkProps {
   readonly icon: IconName;
   /** Accessible name (and tip text, if there is no `tooltip`). */
   readonly label: string;
-  /** Texto da dica quando difere do nome. */
+  /** Tip text when it differs from the name. */
   readonly tooltip?: string;
   /** Link address: always opens in another tab and without sending the app's address (`noreferrer`). */
   readonly href: string;

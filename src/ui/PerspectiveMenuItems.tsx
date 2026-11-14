@@ -46,7 +46,7 @@ export function PrincipalOnlyHint({ id }: { readonly id: string }) {
   );
 }
 
-/** Um item de menu que pode estar bloqueado fora da Principal (com a dica sob ele). */
+/** A menu item that can be blocked outside Main (with the hint under it). */
 export function PrincipalOnlyItem({
   blocked,
   disabled = false,
@@ -162,8 +162,8 @@ export function PerspectiveMenuItems({
     openedByHover.current = false;
     setExpanded(false);
   };
-  // Sair do item (e do submenu, que fica dentro dele) fecha o que o hover abriu; aberto por
-  // clique ou tecla, o submenu fica.
+  // Leaving the item (and the submenu, which is inside it) closes what hover opened; opened by
+  // click or key, the submenu stays.
   const hoverLeave = () => {
     if (openedByHover.current) hoverClose();
   };

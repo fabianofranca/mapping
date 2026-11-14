@@ -252,7 +252,7 @@ interface ContainerFieldsProps {
 
 type ContainerField = 'width' | 'height' | 'background';
 
-/** Largura, altura e cor de fundo do container sem arquivo (no lugar de Arquivo e Tamanho). */
+/** Width, height and background color of a container without a file (in place of File and Size). */
 function ContainerFields({ image, ids, disabled }: ContainerFieldsProps) {
   const { actions } = useEditor();
   // One error per field, under the field itself; the container's `key` resets everything on a switch.
