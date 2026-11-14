@@ -1,7 +1,7 @@
-// Auxiliares da regressão da EX6 (#897): a fixture tests/fixtures/material3-ex6-v1.json guarda as
-// cenas do slider, do progress-indicator, do carousel, da short-navigation-bar e do
-// pull-to-refresh como a biblioteca material3-compose version 6 (com as tabelas) as desenhava.
-// Cada nó é uma linha `tipo|nome|x,y,w,h|preenchimento|opacidade|texto|d`; as caixas são absolutas.
+// Helpers for the EX6 regression (#897): the fixture tests/fixtures/material3-ex6-v1.json stores the
+// scenes of the slider, the progress-indicator, the carousel, the short-navigation-bar and the
+// pull-to-refresh as the material3-compose library version 6 (with the tables) drew them.
+// Each node is a line `type|name|x,y,w,h|fill|opacity|text|d`; the boxes are absolute.
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import { absoluteBoxes, walk } from '../../src/model/components/scene';
 import type { PathNode, SceneNode } from '../../src/model/components/scene';
@@ -48,7 +48,7 @@ function parseNode(line: string): OldNode {
 const raw = (fixture as unknown as { scenes: Record<string, Record<string, unknown>> })
   .scenes;
 
-/** As cenas gravadas cujo nome começa com `prefix` (ex.: `slider-single-`, `progress-linear-`). */
+/** The recorded scenes whose name starts with `prefix` (e.g. `slider-single-`, `progress-linear-`). */
 export function oldScenes(prefix: string): OldScene[] {
   return Object.entries(raw)
     .filter(([key]) => key.startsWith(prefix))
@@ -68,13 +68,13 @@ export function draw(id: string, values: Values, mode: Mode = 'light'): Drawing 
 export interface PathPoint {
   readonly x: number;
   readonly y: number;
-  /** Flags do arco (`large sweep`), só nos pontos de um `A`. */
+  /** Arc flags (`large sweep`), only in the points of an `A`. */
   readonly flags?: string;
 }
 
 /**
- * Os pontos finais de cada segmento de um `d` com comandos absolutos (M, L, H, V, C, A, Z);
- * `null` se houver outro comando (os ícones usam relativos: neles só a caixa e a cor contam).
+ * The end points of each segment of a `d` with absolute commands (M, L, H, V, C, A, Z);
+ * `null` if there is another command (the icons use relative ones: for them only the box and the color count).
  */
 export function pathPoints(d: string): PathPoint[] | null {
   if (/[a-yA-Y]/.test(d.replace(/[MLHVCAZ]/g, '').replace(/e/g, ''))) return null;
@@ -108,8 +108,8 @@ export function pathPoints(d: string): PathPoint[] | null {
       cy = next();
       out.push({ x: cx, y: cy });
     } else if (cmd === 'A') {
-      i += 2; // raios
-      i += 1; // rotação do eixo
+      i += 2; // radii
+      i += 1; // axis rotation
       const large = tokens[i++];
       const sweep = tokens[i++];
       cx = next();
@@ -122,7 +122,7 @@ export function pathPoints(d: string): PathPoint[] | null {
   return out;
 }
 
-/** Os pontos do path de um nó já desenhado, com a `rotation` do nó em volta do centro da caixa. */
+/** The points of the path of an already drawn node, with the node's `rotation` around the center of the box. */
 export function drawnPathPoints(node: PathNode): PathPoint[] | null {
   const pts = pathPoints(node.d);
   if (pts === null) return null;
@@ -141,18 +141,18 @@ export function drawnPathPoints(node: PathNode): PathPoint[] | null {
 }
 
 export interface CompareOptions {
-  /** Tolerância em px (padrão 0,5, decisão 16). */
+  /** Tolerance in px (default 0.5, decision 16). */
   readonly tol?: number;
-  /** Nome de antes → nome de agora, quando a nova construção repartiu o nó. */
+  /** Old name → current name, when the new build split the node. */
   readonly rename?: Record<string, string>;
-  /** Nós de antes que não têm correspondente de propósito (ex.: a faixa de 4000 de largura). */
+  /** Old nodes that deliberately have no counterpart (e.g. the 4000-wide strip). */
   readonly skip?: (old: OldNode) => boolean;
 }
 
 const close = (a: readonly number[], b: readonly number[], tol: number) =>
   a.length === b.length && a.every((v, i) => Math.abs(v - b[i]!) <= tol);
 
-/** Os nós de antes que não aparecem no desenho de agora (lista vazia = regressão cumprida). */
+/** The old nodes that do not appear in the current drawing (empty list = regression fulfilled). */
 export function missingNodes(
   d: Drawing,
   old: readonly OldNode[],

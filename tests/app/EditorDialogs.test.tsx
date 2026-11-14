@@ -13,16 +13,16 @@ import { EditorContext } from '../../src/ui/EditorContext';
 import { createHarness, type Harness } from '../components/harness';
 import { sampleProject } from '../model/fixtures';
 
-// Confirmação de exclusão: quando há itens trancados dentro, ela diz quantos serão
-// excluídos junto (a trava protege o item, não impede excluir o pai).
+// Delete confirmation: when there are locked items inside, it says how many will be
+// deleted along (the lock protects the item, it does not prevent deleting the parent).
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
 function open(harness: Harness, current: EditorDialog) {
-  // Como no editor, fechar tira o diálogo da tela (ele não é redesenhado com o item já excluído).
+  // As in the editor, closing removes the dialog from the screen (it is not redrawn with the item already deleted).
   const close = vi.fn(() => cleanup());
   const dialogs = {
     current,
@@ -46,23 +46,23 @@ const marking = (h: Harness, id: string) => {
   return found;
 };
 
-describe('confirmar exclusão da marcação', () => {
-  it('sem itens trancados dentro, não há aviso', () => {
+describe('confirm marking deletion', () => {
+  it('without locked items inside, there is no warning', () => {
     const harness = createHarness(sampleProject());
     const { dialog } = open(harness, {
       kind: 'deleteMarking',
       marking: marking(harness, 'M1'),
     });
-    expect(dialog.getByText(/será excluída com 2 marcação/)).toBeTruthy();
+    expect(dialog.getByText(/will be deleted with 2 inner marking/)).toBeTruthy();
     expect(dialog.queryByRole('alert', { hidden: true })).toBeNull();
   });
 
-  it('avisa as referências que vão quebrar quando uma anotação da marcação é alvo', () => {
+  it('warns about the references that will break when an annotation of the marking is a target', () => {
     const base = sampleProject();
     const project = {
       ...base,
       annotations: base.annotations.map((a) =>
-        a.id === 'A4' ? { ...a, values: { alvo: { annotationId: 'A3' } } } : a,
+        a.id === 'A4' ? { ...a, values: { target: { annotationId: 'A3' } } } : a,
       ),
     };
     const harness = createHarness(project);
@@ -73,16 +73,16 @@ describe('confirmar exclusão da marcação', () => {
     expect(dialog.getByText(t('ref.deleteMarking', { count: 1 }))).toBeTruthy();
   });
 
-  it('sem referências para as anotações da marcação, não há aviso de referências', () => {
+  it('without references to the marking annotations, there is no references warning', () => {
     const harness = createHarness(sampleProject());
     const { dialog } = open(harness, {
       kind: 'deleteMarking',
       marking: marking(harness, 'M1'),
     });
-    expect(dialog.queryByText(/referência/)).toBeNull();
+    expect(dialog.queryByText(/reference/)).toBeNull();
   });
 
-  it('com descendentes trancados, avisa quantos serão excluídos junto', () => {
+  it('with locked descendants, warns how many will be deleted along', () => {
     const harness = createHarness(sampleProject());
     harness.actions.setMarkingLocked('M2', true);
     harness.actions.setMarkingLocked('M3', true);
@@ -95,7 +95,7 @@ describe('confirmar exclusão da marcação', () => {
     expect(warning.textContent).toContain('2');
   });
 
-  it('só conta os descendentes trancados do item, não de outras marcações', () => {
+  it('only counts the locked descendants of the item, not of other markings', () => {
     const harness = createHarness(sampleProject());
     harness.actions.setMarkingLocked('M3', true);
     const { dialog } = open(harness, {
@@ -107,7 +107,7 @@ describe('confirmar exclusão da marcação', () => {
     );
   });
 
-  it('confirmar exclui o pai com os trancados e limpa a seleção', async () => {
+  it('confirming deletes the parent with the locked ones and clears the selection', async () => {
     const harness = createHarness(sampleProject());
     harness.actions.setMarkingLocked('M3', true);
     harness.ui.selection.value = { kind: 'marking', id: 'M1' };
@@ -124,8 +124,8 @@ describe('confirmar exclusão da marcação', () => {
   });
 });
 
-describe('confirmar exclusão da imagem', () => {
-  it('sem marcações trancadas, não há aviso', () => {
+describe('confirm image deletion', () => {
+  it('without locked markings, there is no warning', () => {
     const harness = createHarness(sampleProject());
     const { dialog } = open(harness, {
       kind: 'deleteImage',
@@ -134,7 +134,7 @@ describe('confirmar exclusão da imagem', () => {
     expect(dialog.queryByRole('alert', { hidden: true })).toBeNull();
   });
 
-  it('com marcações trancadas, avisa quantas serão excluídas junto', () => {
+  it('with locked markings, warns how many will be deleted along', () => {
     const harness = createHarness(sampleProject());
     harness.actions.setImageMarkingsLocked('I1', true);
     const { dialog } = open(harness, {
@@ -146,31 +146,31 @@ describe('confirmar exclusão da imagem', () => {
     );
   });
 
-  it('a imagem trancada em si não chega a pedir confirmação, mas a ação seguiria recusada', async () => {
+  it('the locked image itself never asks for confirmation, but the action would still be refused', async () => {
     const harness = createHarness(sampleProject());
     harness.actions.setImageLocked('I2', true);
     expect(harness.actions.removeContainer('I2')).toEqual({ ok: false, error: 'locked' });
   });
 });
 
-// Etapa 8 (8.3), F10: as confirmações destrutivas são alertdialog, descritas pelo corpo; a
-// pergunta da proporção (não destrutiva) continua um diálogo comum.
-describe('papel das confirmações', () => {
-  it('excluir a marcação é um alertdialog descrito pelo corpo', () => {
+// Stage 8 (8.3), F10: destructive confirmations are alertdialog, described by the body; the
+// aspect ratio question (non-destructive) remains a regular dialog.
+describe('role of the confirmations', () => {
+  it('deleting the marking is an alertdialog described by the body', () => {
     const harness = createHarness(sampleProject());
     open(harness, { kind: 'deleteMarking', marking: marking(harness, 'M1') });
     const el = document.querySelector('dialog') as HTMLElement;
     expect(el.getAttribute('role')).toBe('alertdialog');
     const body = document.getElementById(el.getAttribute('aria-describedby') ?? '');
-    expect(body?.textContent).toMatch(/será excluída/);
+    expect(body?.textContent).toMatch(/will be deleted/);
   });
 
-  it('fechar sem salvar também', () => {
+  it('closing without saving too', () => {
     open(createHarness(sampleProject()), { kind: 'confirmClose' });
     expect(document.querySelector('dialog')?.getAttribute('role')).toBe('alertdialog');
   });
 
-  it('a proporção da imagem não', () => {
+  it('the image aspect ratio is not', () => {
     open(createHarness(sampleProject()), {
       kind: 'aspect',
       change: { from: { width: 10, height: 10 }, to: { width: 20, height: 10 } },
@@ -180,8 +180,8 @@ describe('papel das confirmações', () => {
   });
 });
 
-describe('confirmar exclusão da seleção', () => {
-  it('mostra o impacto somado e exclui tudo numa entrada de desfazer', async () => {
+describe('confirm selection deletion', () => {
+  it('shows the summed impact and deletes everything in one undo entry', async () => {
     const harness = createHarness(sampleProject());
     harness.actions.setMarkingLocked('M3', true);
     const items = [

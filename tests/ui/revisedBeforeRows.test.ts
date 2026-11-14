@@ -11,8 +11,9 @@ import { beforeRows } from '../../src/ui/review/RevisedBefore';
 import { valueParts, type ReviewNames } from '../../src/ui/review/changeText';
 import { cadastroProject } from '../model/specFixtures';
 
-// "Antes da revisão" campo a campo (etapa #676, AR1): numa criação revisada, o bloco desce
-// em `values` e `entries` e lista só o que mudou, pelo rótulo do campo; nada de JSON.
+// "Before the revision" field by field (stage #676, AR1): in a revised creation, the block goes
+// down into `values` and `entries` and lists only what changed, by the field label; no JSON.
+// pt-BR kept: shared fixture data asserted by tests/model (cadastroProject field ids and values)
 
 const project = cadastroProject();
 const names = (): ReviewNames => ({
@@ -51,10 +52,10 @@ const typedTo = (values: Record<string, JsonValue>): Record<string, JsonValue> =
   entries: [],
 });
 
-describe('beforeRows: criação de anotação tipada', () => {
+describe('beforeRows: creation of a typed annotation', () => {
   const now = { id: 'input_email', tipo: 'email', obrigatorio: 'sim' };
 
-  it('lista só os campos de values que mudaram, pelo rótulo do campo', () => {
+  it('lists only the values fields that changed, by the field label', () => {
     const c = create('AIE', typedTo(now));
     const before = typedTo({ ...now, tipo: 'text', obrigatorio: 'nao' });
     expect(beforeRows(names(), c, before).perField).toBe(true);
@@ -66,7 +67,7 @@ describe('beforeRows: criação de anotação tipada', () => {
     }
   });
 
-  it('um campo de values que entrou ou saiu aparece; os iguais não', () => {
+  it('a values field that came in or went out shows up; the equal ones do not', () => {
     const c = create('AIE', typedTo(now));
     const before = typedTo({ id: 'input_email', tipo: 'email' });
     const rows = textOf(beforeRows(names(), c, before));
@@ -74,16 +75,16 @@ describe('beforeRows: criação de anotação tipada', () => {
     expect(rows[0]).toContain(label('obrigatorio'));
   });
 
-  it('values e um campo de primeiro nível: as linhas dos dois, só as que mudaram', () => {
-    const c = create('AIE', { ...typedTo(now), name: 'Atual' });
-    const before = { ...typedTo({ ...now, tipo: 'text' }), name: 'Antigo' };
+  it('values and a top-level field: the rows of both, only the ones that changed', () => {
+    const c = create('AIE', { ...typedTo(now), name: 'Current' });
+    const before = { ...typedTo({ ...now, tipo: 'text' }), name: 'Previous' };
     const rows = textOf(beforeRows(names(), c, before));
     expect(rows).toHaveLength(2);
-    expect(rows.some((r) => r.endsWith('=Antigo'))).toBe(true);
+    expect(rows.some((r) => r.endsWith('=Previous'))).toBe(true);
     expect(rows).toContain(`${label('tipo')}=text`);
   });
 
-  it('a referência (ref) sai pelo rótulo do alvo, nunca em JSON', () => {
+  it('the reference (ref) comes out by the target label, never as JSON', () => {
     const dado = { annotationId: 'AU', entryId: 'EN' };
     const c = create(
       'AIE',
@@ -94,33 +95,33 @@ describe('beforeRows: criação de anotação tipada', () => {
   });
 });
 
-describe('beforeRows: criação de anotação livre', () => {
+describe('beforeRows: creation of a free annotation', () => {
   const free = (entries: JsonValue): Record<string, JsonValue> => ({
     markingId: 'MF',
     layerId: 'LM',
-    name: 'Livre',
+    name: 'Free',
     type: null,
     values: null,
     entries,
   });
 
-  it('uma linha por par trocado, pela chave, com o valor anterior', () => {
+  it('one row per changed pair, by the key, with the previous value', () => {
     const c = create(
       'AL',
       free([
-        { id: 'E1', key: 'a', value: 'novo' },
+        { id: 'E1', key: 'a', value: 'new' },
         { id: 'E2', key: 'b', value: 'x' },
       ]),
     );
     const before = free([
-      { id: 'E1', key: 'a', value: 'velho' },
+      { id: 'E1', key: 'a', value: 'old' },
       { id: 'E2', key: 'b', value: 'x' },
     ]);
-    expect(textOf(beforeRows(names(), c, before))).toEqual(['a=velho']);
+    expect(textOf(beforeRows(names(), c, before))).toEqual(['a=old']);
   });
 });
 
-describe('valueParts: alteração de values.<campo>', () => {
+describe('valueParts: change of values.<field>', () => {
   const update = (field: string, from: JsonValue, to: JsonValue): Change => ({
     ...create('AIE', {}),
     kind: 'update',
@@ -129,7 +130,7 @@ describe('valueParts: alteração de values.<campo>', () => {
     to,
   });
 
-  it('tabela pelas linhas, sem JSON', () => {
+  it('table by rows, without JSON', () => {
     const rows: JsonValue = [{ _id: 'R1', nome: 'email', tipo: 'String' }];
     const text = valueParts(names(), update('values.atributos', [], rows), rows)
       .map((p) => p.text)
@@ -139,7 +140,7 @@ describe('valueParts: alteração de values.<campo>', () => {
     expect(text).not.toContain('_id');
   });
 
-  it('ref pelo rótulo do alvo', () => {
+  it('ref by the target label', () => {
     const ref: JsonValue = { annotationId: 'AU', entryId: 'EN' };
     const text = valueParts(names(), update('values.dado', ref, ref), ref)
       .map((p) => p.text)

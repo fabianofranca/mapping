@@ -1,7 +1,7 @@
 /** @jsxImportSource react */
 /**
- * Invólucro React do visualizador (projeto `viewer-react`: React 19 de verdade, jsdom e canvas
- * falso). Observa efeitos reais no Stage do Konva em vez de espionar o `createViewer`.
+ * React wrapper of the viewer (`viewer-react` project: real React 19, jsdom and a fake canvas).
+ * Observes real effects on the Konva Stage instead of spying on `createViewer`.
  */
 import Konva from 'konva';
 import * as React from 'react';
@@ -30,7 +30,7 @@ const m3Library = loadLibrary(M3_FILES);
 let host: HTMLDivElement | undefined;
 let root: Root | undefined;
 
-/** Monta o invólucro num contêiner com tamanho (o layout do jsdom é zero). */
+/** Mounts the wrapper in a sized container (the jsdom layout is zero). */
 async function mount(props: MappingViewerProps, strict = true): Promise<HTMLDivElement> {
   host = document.createElement('div');
   document.body.append(host);
@@ -46,17 +46,16 @@ async function render(props: MappingViewerProps, strict = true): Promise<void> {
   });
 }
 
-/** O `<div>` do invólucro, com `clientWidth/Height` (o jsdom não calcula layout). */
+/** The wrapper `<div>`, with `clientWidth/Height` (jsdom does not compute layout). */
 function viewerDiv(): HTMLDivElement {
   const div = host?.firstElementChild;
-  if (!(div instanceof HTMLDivElement))
-    throw new Error('div do invólucro não encontrado');
+  if (!(div instanceof HTMLDivElement)) throw new Error('wrapper div not found');
   return div;
 }
 
 function stageOf(div: HTMLElement): Konva.Stage {
   const stage = Konva.stages.find((s) => s.container() === div);
-  if (!stage) throw new Error('stage não encontrado');
+  if (!stage) throw new Error('stage not found');
   return stage;
 }
 
@@ -64,7 +63,7 @@ function instanceCount(stage: Konva.Stage): number {
   return stage.find((n: Konva.Node) => n.getAttr('instanceId') !== undefined).length;
 }
 
-/** Retângulos da cor de seleção na camada de overlay (a segunda; a de conteúdo tem os componentes). */
+/** Rectangles of the selection color in the overlay layer (the second; the content one has the components). */
 function selectionRects(stage: Konva.Stage): Konva.Rect[] {
   const overlay = stage.getLayers()[1];
   return (overlay?.find<Konva.Rect>('Rect') ?? []).filter(
@@ -72,7 +71,7 @@ function selectionRects(stage: Konva.Stage): Konva.Rect[] {
   );
 }
 
-/** Ids internos de todos os nós da camada de conteúdo (mudam quando o desenho é refeito). */
+/** Internal ids of all the nodes of the content layer (they change when the drawing is redone). */
 function contentIds(stage: Konva.Stage): number[] {
   return (stage.getLayers()[0]?.find(() => true) ?? []).map((n: Konva.Node) => n._id);
 }
@@ -87,17 +86,17 @@ afterEach(async () => {
 });
 
 describe('<MappingViewer/>', () => {
-  it('roda no React 19 de verdade', () => {
+  it('runs on real React 19', () => {
     expect(React.version.startsWith('19')).toBe(true);
   });
 
-  it('cria o stage no contêiner (StrictMode) e o esvazia ao desmontar', async () => {
+  it('creates the stage in the container (StrictMode) and empties it on unmount', async () => {
     const el = await mount({ library, screen: SAMPLE_SCREEN });
     const div = viewerDiv();
     expect(div.style.width).toBe('100%');
     expect(div.style.height).toBe('100%');
     expect(el.querySelectorAll('canvas').length).toBe(2);
-    // O monta-desmonta-monta do StrictMode não deixa stage sobrando.
+    // The StrictMode mount-unmount-mount leaves no stage behind.
     expect(Konva.stages.filter((s) => s.container() === div).length).toBe(1);
     expect(instanceCount(stageOf(div))).toBe(SAMPLE_SCREEN.instances.length);
     await act(async () => root?.unmount());
@@ -106,21 +105,21 @@ describe('<MappingViewer/>', () => {
     expect(Konva.stages.filter((s) => s.container() === div).length).toBe(0);
   });
 
-  it('mescla className e style do hospedeiro sobre o padrão', async () => {
+  it('merges the host className and style over the default', async () => {
     await mount({
       library,
       screen: SAMPLE_SCREEN,
-      className: 'meu',
+      className: 'mine',
       style: { height: '50%', background: 'red' },
     });
     const div = viewerDiv();
-    expect(div.className).toBe('meu');
+    expect(div.className).toBe('mine');
     expect(div.style.width).toBe('100%');
     expect(div.style.height).toBe('50%');
     expect(div.style.background).toBe('red');
   });
 
-  it('trocar screen e library atualiza o desenho e os avisos', async () => {
+  it('changing screen and library updates the drawing and the warnings', async () => {
     const onWarnings = vi.fn();
     await mount({ library, screen: SAMPLE_SCREEN, onWarnings });
     const div = viewerDiv();
@@ -132,11 +131,11 @@ describe('<MappingViewer/>', () => {
     await render({ library: m3Library, screen: M3_SCREEN, onWarnings });
     expect(instanceCount(stageOf(div))).toBe(M3_SCREEN.instances.length);
     expect(onWarnings.mock.calls.length).toBeGreaterThan(calls);
-    // Continua o mesmo stage: atualizou, não recriou.
+    // Still the same stage: it updated, did not recreate.
     expect(stageOf(div)).toBe(stage);
   });
 
-  it('tela sem uma instância desenha uma a menos', async () => {
+  it('a screen without one instance draws one less', async () => {
     await mount({ library, screen: SAMPLE_SCREEN });
     const less = {
       ...SAMPLE_SCREEN,
@@ -146,7 +145,7 @@ describe('<MappingViewer/>', () => {
     expect(instanceCount(stageOf(viewerDiv()))).toBe(less.instances.length);
   });
 
-  it('selection cria o retângulo de seleção e limpar o remove', async () => {
+  it('selection creates the selection rectangle and clearing it removes it', async () => {
     const id = SAMPLE_SCREEN.instances[0]?.id ?? '';
     await mount({ library, screen: SAMPLE_SCREEN });
     const stage = stageOf(viewerDiv());
@@ -162,7 +161,7 @@ describe('<MappingViewer/>', () => {
     expect(selectionRects(stage).length).toBe(0);
   });
 
-  it('hover mostra o realce de hover (sem disparar onHover)', async () => {
+  it('hover shows the hover highlight (without firing onHover)', async () => {
     const id = SAMPLE_SCREEN.instances[0]?.id ?? '';
     const onHover = vi.fn();
     await mount({ library, screen: SAMPLE_SCREEN, onHover });
@@ -177,14 +176,14 @@ describe('<MappingViewer/>', () => {
     expect(onHover).not.toHaveBeenCalled();
   });
 
-  it('repassa fonts, measure, selectionColor e hoverColor ao viewer', async () => {
+  it('passes fonts, measure, selectionColor e hoverColor ao viewer', async () => {
     const id = SAMPLE_SCREEN.instances[0]?.id ?? '';
     const measure = vi.fn(approximateMeasurer);
     await mount({
       library,
       screen: SAMPLE_SCREEN,
       measure,
-      fonts: { sans: 'FontePropriaSans', mono: 'FontePropriaMono' },
+      fonts: { sans: 'OwnFontSans', mono: 'OwnFontMono' },
       selectionColor: '#112233',
       hoverColor: '#445566',
       selection: [id],
@@ -197,10 +196,10 @@ describe('<MappingViewer/>', () => {
     expect(strokes).toContain('#112233');
     expect(strokes).toContain('#445566');
     expect(measure).toHaveBeenCalled();
-    expect(JSON.stringify(measure.mock.calls)).toContain('FontePropriaSans');
+    expect(JSON.stringify(measure.mock.calls)).toContain('OwnFontSans');
   });
 
-  it('trocar o callback não recria o viewer; o novo callback é o que recebe os eventos', async () => {
+  it('changing the callback does not recreate the viewer; the new callback is the one that receives the events', async () => {
     const first = vi.fn();
     const second = vi.fn();
     await mount({ library, screen: SAMPLE_SCREEN, onClick: first });
@@ -221,7 +220,7 @@ describe('<MappingViewer/>', () => {
     expect(second.mock.calls[0]?.[0]).toBeUndefined();
   });
 
-  it('interactive liga e desliga o ponteiro do stage sem recriá-lo', async () => {
+  it('interactive turns the stage pointer on and off without recreating it', async () => {
     const onClick = vi.fn();
     await mount({ library, screen: SAMPLE_SCREEN, onClick, interactive: false });
     const div = viewerDiv();
@@ -247,7 +246,7 @@ describe('<MappingViewer/>', () => {
     expect(stage.listening()).toBe(false);
   });
 
-  it('fontsVersion refaz o desenho sem recriar o stage', async () => {
+  it('fontsVersion redoes the drawing without recreating the stage', async () => {
     await mount({ library, screen: SAMPLE_SCREEN, fontsVersion: 0 });
     const div = viewerDiv();
     const stage = stageOf(div);
@@ -255,13 +254,13 @@ describe('<MappingViewer/>', () => {
     expect(before.length).toBeGreaterThan(0);
     await render({ library, screen: SAMPLE_SCREEN, fontsVersion: 1 });
     expect(stageOf(div)).toBe(stage);
-    // `redraw` re-instancia o conteúdo das instâncias: aparecem nós novos.
+    // `redraw` re-instantiates the content of the instances: new nodes appear.
     const after = contentIds(stage);
     expect(after.length).toBeGreaterThan(0);
     expect(after.some((id) => !before.includes(id))).toBe(true);
   });
 
-  it('source desenha a tela calculada e onSource recebe o resultado; novo objeto recalcula', async () => {
+  it('source draws the computed screen and onSource receives the result; a new object recomputes', async () => {
     const onSource = vi.fn();
     await mount({ library: m3Library, screen: undefined, source: settings, onSource });
     const stage = stageOf(viewerDiv());
@@ -271,7 +270,7 @@ describe('<MappingViewer/>', () => {
     expect(instanceCount(stage)).toBe(first.screen?.instances.length);
     const calls = onSource.mock.calls.length;
 
-    // Re-render com o mesmo source: nada a recalcular.
+    // Re-render with the same source: nothing to recompute.
     await render({ library: m3Library, screen: undefined, source: settings, onSource });
     expect(onSource.mock.calls.length).toBe(calls);
 
@@ -281,7 +280,7 @@ describe('<MappingViewer/>', () => {
     expect(stageOf(viewerDiv())).toBe(stage);
   });
 
-  it('source com erro não desenha e o erro chega em onSource', async () => {
+  it('a source with an error does not draw and the error reaches onSource', async () => {
     const onSource = vi.fn();
     await mount({ library: m3Library, screen: M3_SCREEN, source: {}, onSource });
     expect((onSource.mock.calls.at(-1)?.[0] as SourceResult).error).toBeDefined();

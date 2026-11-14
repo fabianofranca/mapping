@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { composable, extract, extractJson, paramsOf, run } from './support';
 
-// Casos sintéticos do leitor Kotlin: um `A.kt` mínimo em memória por teste.
+// Synthetic cases of the Kotlin reader: a minimal in-memory `A.kt` per test.
 
-describe('enum class do mesmo arquivo vira kind enum com options', () => {
+describe('enum class of the same file becomes kind enum with options', () => {
   const enumSource = `package demo.ui
 
 enum class Variant(val code: Int) {
@@ -22,7 +22,7 @@ enum class Size { Small, Medium, Large }
 fun Chip(variant: Variant = Variant.Tonal, size: Size?, other: Missing = Missing.A) {}
 `;
 
-  it('options na ordem da declaração (constantes com argumentos, corpo, anotação e ";")', () => {
+  it('options in declaration order (constants with arguments, body, annotation and ";")', () => {
     const sig = extractJson(enumSource, 'Chip');
     const by = Object.fromEntries(sig.params.map((p) => [p.name, p]));
     expect(by.variant?.value).toEqual({
@@ -37,12 +37,12 @@ fun Chip(variant: Variant = Variant.Tonal, size: Size?, other: Missing = Missing
     expect(by.size?.required).toBe(true);
   });
 
-  it('enum desconhecido (de outro arquivo) é opaque e não tem value.default', () => {
+  it('unknown enum (from another file) is opaque and has no value.default', () => {
     const sig = extractJson(enumSource, 'Chip');
     expect(sig.params[2]?.value).toEqual({ kind: 'opaque' });
   });
 
-  it('o enum de um --also conta', () => {
+  it('the enum of an --also counts', () => {
     const also = `package demo.other\n\nenum class Tone { Warm, Cold }\n`;
     const sig = extractJson(
       composable('tone: Tone = Tone.Cold'),
@@ -57,7 +57,7 @@ fun Chip(variant: Variant = Variant.Tonal, size: Size?, other: Missing = Missing
     });
   });
 
-  it('padrão de outra constante qualificada que não existe no enum não vira value.default', () => {
+  it('a default of another qualified constant that does not exist in the enum does not become value.default', () => {
     const sig = extractJson(
       `package p\nenum class E { A, B }\n@Composable\nfun Foo(e: E = E.Z) {}\n`,
       'Foo',
@@ -66,7 +66,7 @@ fun Chip(variant: Variant = Variant.Tonal, size: Size?, other: Missing = Missing
   });
 });
 
-describe('sobrecargas', () => {
+describe('overloads', () => {
   const overloads = `package demo.ui
 
 @Deprecated("use the other", level = DeprecationLevel.HIDDEN)
@@ -77,13 +77,13 @@ fun Card(title: String) {}
 fun Card(title: String, subtitle: String = "") {}
 `;
 
-  it('a @Deprecated é ignorada: sobrando uma, é ela, sem source.overload', () => {
+  it('the @Deprecated is ignored: with one left, it is that one, without source.overload', () => {
     const sig = extractJson(overloads, 'Card');
     expect(sig.params.map((p) => p.name)).toEqual(['title', 'subtitle']);
     expect(sig.source).not.toHaveProperty('overload');
   });
 
-  it('a função de mesmo nome sem @Composable não conta', () => {
+  it('the same-named function without @Composable does not count', () => {
     const sig = extractJson(
       `package p\nfun Card(a: Int) {}\n@Composable fun Card(b: Int) {}\n`,
       'Card',
@@ -91,7 +91,7 @@ fun Card(title: String, subtitle: String = "") {}
     expect(sig.params.map((p) => p.name)).toEqual(['b']);
   });
 
-  it('duas restantes sem --overload: "ambiguous overload:" error com uma candidata por linha', () => {
+  it('two remaining without --overload: "ambiguous overload:" error with one candidate per line', () => {
     const source = `package demo.ui
 
 @Composable
@@ -114,7 +114,7 @@ fun Card(a: Int, b: Int) {}
     ]);
   });
 
-  it('--overload n escolhe a n-ésima da lista completa (deprecada inclusive) e grava source.overload', () => {
+  it('--overload n picks the n-th of the complete list (deprecated included) and writes source.overload', () => {
     const sig = extractJson(overloads, 'Card', ['--overload', '0']);
     expect(sig.params.map((p) => p.name)).toEqual(['title']);
     expect(sig.source.overload).toBe(0);
@@ -123,7 +123,7 @@ fun Card(a: Int, b: Int) {}
     expect(second.source.overload).toBe(1);
   });
 
-  it('--overload fora da lista: erro com a lista', () => {
+  it('--overload outside the list: error with the list', () => {
     const result = extract(overloads, 'Card', ['--overload', '5']);
     expect(result.code).toBe(1);
     expect(result.stderr).toContain('--overload 5');
@@ -132,14 +132,14 @@ fun Card(a: Int, b: Int) {}
     expect(result.stderr).toContain('  1: line 8 (title, subtitle)');
   });
 
-  it('--overload inválido (não inteiro, negativo) é erro de uso', () => {
+  it('invalid --overload (not an integer, negative) is a usage error', () => {
     for (const bad of ['x', '-1', '1.5', '']) {
       const result = extract(overloads, 'Card', ['--overload', bad]);
       expect(result.code, bad).toBe(2);
     }
   });
 
-  it('só deprecadas e sem --overload: erro ambíguo (nenhuma restante)', () => {
+  it('only deprecated ones and no --overload: ambiguous error (none remaining)', () => {
     const result = extract(
       `package p\n@Deprecated("x")\n@Composable\nfun Old(a: Int) {}\n`,
       'Old',
@@ -149,41 +149,41 @@ fun Card(a: Int, b: Int) {}
     expect(result.stderr).toContain('  0: line 4 [@Deprecated] (a)');
   });
 
-  it('símbolo ausente: "função @Composable <nome> não encontrada em <arquivo>"', () => {
-    const result = extract(composable('a: Int'), 'Nada');
+  it('missing symbol: "@Composable function <name> not found in <file>"', () => {
+    const result = extract(composable('a: Int'), 'Nothing');
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain('@Composable function Nada not found in A.kt');
+    expect(result.stderr).toContain('@Composable function Nothing not found in A.kt');
   });
 
-  it('uma função sem @Composable não é candidata (símbolo ausente)', () => {
+  it('a function without @Composable is not a candidate (missing symbol)', () => {
     const result = extract(`package p\nfun Plain(a: Int) {}\n`, 'Plain');
     expect(result.code).toBe(1);
     expect(result.stderr).toContain('@Composable function Plain not found');
   });
 });
 
-describe('erro de sintaxe com arquivo:linha:coluna (do abridor)', () => {
+describe('syntax error with file:line:column (of the opener)', () => {
   const cases: [string, string, string][] = [
     [
-      'parêntese não fechado',
+      'unclosed parenthesis',
       `package p\n\n@Composable\nfun Foo(a: Int,\n  b: Int\n`,
       'A.kt:4:8:',
     ],
     [
-      'string não terminada',
+      'unterminated string',
       `package p\nval s = "abc\n@Composable fun Foo() {}\n`,
       'A.kt:2:9:',
     ],
     [
-      'comentário não terminado',
-      `package p\n\n  /* nunca fecha\nfun x() {}\n`,
+      'unterminated comment',
+      `package p\n\n  /* never closes\nfun x() {}\n`,
       'A.kt:3:3:',
     ],
-    ['chave não fechada', `package p\nclass X {\n  fun y() {\n}\n`, 'A.kt:2:9:'],
-    ['colchete fechado sem abrir', `package p\nval a = 1 ]\n`, 'A.kt:2:11:'],
-    ['fechamento do tipo errado', `package p\nval a = (1]\n`, 'A.kt:2:11:'],
-    ['raw string não terminada', `package p\nval a = """abc\n`, 'A.kt:2:9:'],
-    ['caractere não terminado', `package p\nval c = 'a\n`, 'A.kt:2:9:'],
+    ['unclosed brace', `package p\nclass X {\n  fun y() {\n}\n`, 'A.kt:2:9:'],
+    ['closing bracket without opening', `package p\nval a = 1 ]\n`, 'A.kt:2:11:'],
+    ['closing of the wrong kind', `package p\nval a = (1]\n`, 'A.kt:2:11:'],
+    ['unterminated raw string', `package p\nval a = """abc\n`, 'A.kt:2:9:'],
+    ['unterminated character', `package p\nval c = 'a\n`, 'A.kt:2:9:'],
   ];
 
   it.each(cases)('%s', (_name, source, prefix) => {
@@ -194,7 +194,7 @@ describe('erro de sintaxe com arquivo:linha:coluna (do abridor)', () => {
     expect(result.stderr).toMatch(/^A\.kt:\d+:\d+: \S/);
   });
 
-  it('o erro de um --also cita o arquivo dele', () => {
+  it('the error of an --also cites its own file', () => {
     const result = extract(composable('a: Int'), 'Foo', ['--also', 'B.kt'], {
       'B.kt': 'package q\nobject O {\n',
     });
@@ -203,8 +203,8 @@ describe('erro de sintaxe com arquivo:linha:coluna (do abridor)', () => {
   });
 });
 
-describe('parâmetros: texto, role e value', () => {
-  it('genéricos viram opaque e a vírgula do genérico não separa parâmetros', () => {
+describe('parameters: text, role and value', () => {
+  it('generics become opaque and the comma of the generic does not separate parameters', () => {
     const by = paramsOf(
       'items: List<String> = emptyList(), map: Map<String, List<Int>>, last: Int',
     );
@@ -222,7 +222,7 @@ describe('parâmetros: texto, role e value', () => {
     expect(by.last?.value).toEqual({ kind: 'integer' });
   });
 
-  it('vararg: role other, type "vararg T", sem value', () => {
+  it('vararg: role other, type "vararg T", without value', () => {
     const by = paramsOf('vararg tags: String, last: Int = 0');
     expect(by.tags).toEqual({
       name: 'tags',
@@ -232,7 +232,7 @@ describe('parâmetros: texto, role e value', () => {
     });
   });
 
-  it('lambdas com receptor: com @Composable é slot; sem, callback; anulável idem', () => {
+  it('lambdas with receiver: with @Composable is slot; without, callback; nullable likewise', () => {
     const by = paramsOf(
       [
         'a: @Composable RowScope.() -> Unit',
@@ -254,7 +254,7 @@ describe('parâmetros: texto, role e value', () => {
     for (const p of Object.values(by).slice(0, 5)) expect(p.value).toBeUndefined();
   });
 
-  it('padrão com chaves e vírgulas dentro dele', () => {
+  it('default with braces and commas inside it', () => {
     const by = paramsOf(
       'navigationIcon: @Composable () -> Unit = {}, actions: @Composable () -> Unit = { Text("a, b"); foo(1, 2) }, z: Int = 1',
     );
@@ -263,7 +263,7 @@ describe('parâmetros: texto, role e value', () => {
     expect(by.z?.value).toEqual({ kind: 'integer', default: 1 });
   });
 
-  it('strings com parênteses, vírgulas e $ (inclusive ${…} aninhado e raw string)', () => {
+  it('strings with parentheses, commas and $ (including nested ${…} and raw string)', () => {
     const by = paramsOf(
       [
         'a: String = "x, (y) \\" z"',
@@ -277,20 +277,20 @@ describe('parâmetros: texto, role e value', () => {
     expect(by.c?.default).toBe('"v${foo(1, "q)")}w"');
     expect(by.d?.default).toBe('"""raw ) , "quoted" $x"""');
     expect(by.e?.name).toBe('e');
-    // padrão com `$` ou escape não é literal simples: só o texto fica
+    // a default with `$` or an escape is not a simple literal: only the text stays
     for (const name of ['a', 'b', 'c', 'd'])
       expect(by[name]?.value).toEqual({ kind: 'text' });
   });
 
-  it('comentários dentro da lista de parâmetros não contam', () => {
+  it('comments inside the parameter list do not count', () => {
     const sig = extractJson(
       `package p
 
 @Composable
 fun Foo(
     // a, b (
-    a: Int, /* x, ) */ b: String = "k", // fim, de, linha
-    /** doc de c, d */
+    a: Int, /* x, ) */ b: String = "k", // end, of, line
+    /** doc of c, d */
     c: Boolean = true, // c
 ) {}
 `,
@@ -303,7 +303,7 @@ fun Foo(
     ]);
   });
 
-  it('vírgula final, anuláveis e o ? não muda o kind', () => {
+  it('trailing comma, nullables and the ? do not change the kind', () => {
     const by = paramsOf('a: String?, b: Boolean? = null, c: Int?,');
     expect(by.a).toMatchObject({
       type: 'String?',
@@ -315,7 +315,7 @@ fun Foo(
     expect(by.c?.value).toEqual({ kind: 'integer' });
   });
 
-  it('o kind de cada tipo conhecido; os demais são opaque', () => {
+  it('the kind of each known type; the rest are opaque', () => {
     const kinds: [string, string][] = [
       ['String', 'text'],
       ['AnnotatedString', 'text'],
@@ -341,7 +341,7 @@ fun Foo(
     });
   });
 
-  it('value.default só para literal representável', () => {
+  it('value.default only for a representable literal', () => {
     const literals: [string, string, string | number | boolean | undefined][] = [
       ['Boolean', 'true', true],
       ['Boolean', 'false', false],
@@ -371,7 +371,7 @@ fun Foo(
     });
   });
 
-  it('Enum.CONSTANTE de enum do arquivo vira value.default', () => {
+  it('Enum.CONSTANT of an enum in the file becomes value.default', () => {
     const sig = extractJson(
       `package p\nenum class Kind { Plain, Fancy }\n@Composable\nfun Foo(k: Kind = Kind.Fancy, j: Kind = DefaultKind) {}\n`,
       'Foo',
@@ -381,7 +381,7 @@ fun Foo(
     expect(sig.params[1]?.default).toBe('DefaultKind');
   });
 
-  it('role: Modifier, estados e o resto', () => {
+  it('role: Modifier, states and the rest', () => {
     const by = paramsOf(
       [
         'm: Modifier = Modifier',
@@ -406,7 +406,7 @@ fun Foo(
       expect(by[n]?.value).toBeUndefined();
   });
 
-  it('anotação própria do parâmetro: o texto fica no começo de type e o value é opaque', () => {
+  it('the parameter own annotation: the text stays at the start of type and the value is opaque', () => {
     const by = paramsOf(
       '@FloatRange(from = 0.0, to = 1.0) alpha: Float = 1f, @StringRes val label: Int, noinline cb: () -> Unit',
     );
@@ -420,7 +420,7 @@ fun Foo(
     expect(by.cb).toMatchObject({ role: 'callback', type: '() -> Unit' });
   });
 
-  it('espaços e quebras de linha do tipo e do padrão são normalizados', () => {
+  it('spaces and line breaks of the type and the default are normalized', () => {
     const by = paramsOf(
       `a:   Map<
         String,
@@ -436,8 +436,8 @@ fun Foo(
   });
 });
 
-describe('candidatas', () => {
-  it('@Composable em outra linha, depois de outras anotações, com genéricos e receptor', () => {
+describe('candidates', () => {
+  it('@Composable on another line, after other annotations, with generics and receiver', () => {
     const source = `package p
 
 @Suppress("x")
@@ -454,7 +454,7 @@ internal fun <T> RowScope.Foo(item: T, onPick: (T) -> Unit) {}
     });
   });
 
-  it('@Composable no tipo de um parâmetro não faz candidata (a função não é composable)', () => {
+  it('@Composable in the type of a parameter does not make a candidate (the function is not composable)', () => {
     const result = extract(
       `package p\nfun Host(content: @Composable () -> Unit) {}\n`,
       'Host',
@@ -463,7 +463,7 @@ internal fun <T> RowScope.Foo(item: T, onPick: (T) -> Unit) {}
     expect(result.stderr).toContain('@Composable function Host not found');
   });
 
-  it('@Composable na mesma linha e com nome qualificado', () => {
+  it('@Composable on the same line and with a qualified name', () => {
     const sig = extractJson(
       `package p\n@Composable fun A(x: Int) = Unit\n@androidx.compose.runtime.Composable fun B(y: Int) = Unit\n`,
       'B',
@@ -471,15 +471,15 @@ internal fun <T> RowScope.Foo(item: T, onPick: (T) -> Unit) {}
     expect(sig.params.map((p) => p.name)).toEqual(['y']);
   });
 
-  it('o KDoc só vale se vier colado à declaração e só para parâmetros que existem', () => {
+  it('the KDoc only counts if attached to the declaration and only for parameters that exist', () => {
     const source = `package p
 
 /**
- * Primeira.
- * @param a o primeiro
- *   que continua aqui
- * @param fantasma não existe
- * @return nada
+ * First.
+ * @param a the first
+ *   that continues here
+ * @param ghost does not exist
+ * @return nothing
  */
 @Composable
 fun Foo(a: Int, b: Int) {}
@@ -488,13 +488,13 @@ fun Foo(a: Int, b: Int) {}
 fun Bar(a: Int) {}
 `;
     const foo = extractJson(source, 'Foo');
-    expect(foo.doc).toEqual({ a: 'o primeiro que continua aqui' });
+    expect(foo.doc).toEqual({ a: 'the first that continues here' });
     const bar = extractJson(source, 'Bar');
     expect(bar.doc).toBeUndefined();
   });
 });
 
-describe('fábricas (factory)', () => {
+describe('factories (factory)', () => {
   const colorsSource = (extra = '') => `package demo.ui
 
 @Composable
@@ -503,14 +503,14 @@ fun Foo(colors: Colors = FooDefaults.colors(), shape: Shape = FooDefaults.shape)
 object FooDefaults {
     val shape: Shape = RoundedCornerShape(4.dp)
 
-    /** sem parâmetros. */
+    /** no parameters. */
     @Composable fun colors() = Colors()
 
     /**
-     * Com tudo.
-     * @param container a cor do container
-     * @param content a cor do conteúdo
-     * @param ghost não existe
+     * With everything.
+     * @param container the container color
+     * @param content the content color
+     * @param ghost does not exist
      */
     @Composable
     fun colors(
@@ -522,7 +522,7 @@ ${extra}
 }
 `;
 
-  it('a sobrecarga de mais parâmetros; params sem factory dentro; doc como colors.<param>', () => {
+  it('the overload with the most parameters; params without a factory inside; doc as colors.<param>', () => {
     const sig = extractJson(colorsSource(), 'Foo');
     const colors = sig.params[0];
     expect(colors?.factory?.call).toBe('demo.ui.FooDefaults.colors');
@@ -535,15 +535,15 @@ ${extra}
     expect(colors?.factory?.params[2]).not.toHaveProperty('factory');
     expect(colors?.value).toBeUndefined();
     expect(sig.doc).toEqual({
-      'colors.container': 'a cor do container',
-      'colors.content': 'a cor do conteúdo',
+      'colors.container': 'the container color',
+      'colors.content': 'the content color',
     });
-    // um padrão sem parênteses (`FooDefaults.shape`) não é fábrica
+    // a default without parentheses (`FooDefaults.shape`) is not a factory
     expect(sig.params[1]).toMatchObject({ value: { kind: 'opaque' } });
     expect(sig.params[1]).not.toHaveProperty('factory');
   });
 
-  it('as @Deprecated são descartadas, mesmo com mais parâmetros', () => {
+  it('the @Deprecated ones are discarded, even with more parameters', () => {
     const sig = extractJson(
       colorsSource(`
     @Deprecated("old")
@@ -558,7 +558,7 @@ ${extra}
     ]);
   });
 
-  it('empate no número de parâmetros: a primeira', () => {
+  it('tie in the number of parameters: the first one', () => {
     const source = `package p
 @Composable
 fun Foo(c: C = D.make()) {}
@@ -570,7 +570,7 @@ object D {
     expect(extractJson(source, 'Foo').params[0]?.factory?.params[0]?.name).toBe('first');
   });
 
-  it('fábrica sem parâmetros ou objeto ausente: sem factory (o value continua)', () => {
+  it('factory without parameters or missing object: no factory (the value stays)', () => {
     const sig = extractJson(
       `package p
 @Composable
@@ -584,11 +584,11 @@ object D { fun make(): A = A() }
     expect(sig.params[0]?.value).toEqual({ kind: 'opaque' });
   });
 
-  it('--also: a fábrica em outro arquivo usa o package dele em call', () => {
+  it('--also: the factory in another file uses its own package in call', () => {
     const also = `package demo.defaults
 
 object Elsewhere {
-    /** @param tint a cor */
+    /** @param tint the color */
     fun make(tint: Color = Color.Red): B = B()
 }
 `;
@@ -610,10 +610,10 @@ object Elsewhere {
         },
       ],
     });
-    expect(sig.doc).toEqual({ 'b.tint': 'a cor' });
+    expect(sig.doc).toEqual({ 'b.tint': 'the color' });
   });
 
-  it('membros aninhados e corpos de função não viram fábrica', () => {
+  it('nested members and function bodies do not become factories', () => {
     const sig = extractJson(
       `package p
 @Composable
@@ -632,39 +632,39 @@ object D {
 describe('--symbol, --path, --ref', () => {
   const source = composable('a: Int');
 
-  it('--symbol completo com o package do arquivo funciona; source.symbol é sempre o nome completo', () => {
+  it('a full --symbol with the file package works; source.symbol is always the full name', () => {
     expect(extractJson(source, 'demo.ui.Foo').source.symbol).toBe('demo.ui.Foo');
     expect(extractJson(source, 'Foo').source.symbol).toBe('demo.ui.Foo');
   });
 
-  it('--symbol completo com package diferente: erro', () => {
+  it('a full --symbol with a different package: error', () => {
     const result = extract(source, 'other.pkg.Foo');
     expect(result.code).toBe(1);
     expect(result.stderr).toContain('other.pkg');
     expect(result.stderr).toContain('demo.ui');
   });
 
-  it('arquivo sem package: source.symbol é só o nome', () => {
+  it('file without a package: source.symbol is just the name', () => {
     const sig = extractJson(`@Composable\nfun Foo(a: Int) {}\n`, 'Foo');
     expect(sig.source.symbol).toBe('Foo');
     expect(extract(`@Composable\nfun Foo(a: Int) {}\n`, 'x.Foo').code).toBe(1);
   });
 
-  it('sem --path, o --file relativo vale (separadores /, sem ./ na frente)', () => {
+  it('without --path, the relative --file is used (/ separators, no leading ./)', () => {
     const sig = extractJson(source, 'Foo');
     expect(sig.source.path).toBe('A.kt');
     const nested = run2('./ui\\Foo.kt');
     expect(nested.source.path).toBe('ui/Foo.kt');
   });
 
-  it('sem --path e com --file absoluto: erro de uso pedindo --path', () => {
+  it('without --path and with an absolute --file: usage error asking for --path', () => {
     const result = run3('/abs/dir/A.kt');
     expect(result.code).toBe(2);
     expect(result.stderr).toContain('--path');
     expect(result.stderr).toContain('repository root');
   });
 
-  it('--path vale mesmo com --file absoluto', () => {
+  it('--path is valid even with an absolute --file', () => {
     const result = run3('/abs/dir/A.kt', ['--path', 'ui/A.kt']);
     expect(result.code).toBe(0);
     expect((JSON.parse(result.stdout) as { source: { path: string } }).source.path).toBe(
@@ -672,15 +672,15 @@ describe('--symbol, --path, --ref', () => {
     );
   });
 
-  it('--ref vai em source.ref; sem ele a chave não existe', () => {
+  it('--ref goes in source.ref; without it the key does not exist', () => {
     expect(extractJson(source, 'Foo', ['--ref', 'v1.2.3']).source.ref).toBe('v1.2.3');
     expect(extractJson(source, 'Foo').source).not.toHaveProperty('ref');
   });
 
-  it('o arquivo ilegível é erro de extração (exit 1)', () => {
-    const result = extract(source, 'Foo', ['--also', 'nao-existe.kt']);
+  it('an unreadable file is an extraction error (exit 1)', () => {
+    const result = extract(source, 'Foo', ['--also', 'does-not-exist.kt']);
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain('nao-existe.kt');
+    expect(result.stderr).toContain('does-not-exist.kt');
   });
 });
 
@@ -698,18 +698,18 @@ function run3(file: string, flags: readonly string[] = []): ReturnType<typeof ru
   });
 }
 
-describe('revisão: anotação qualificada, fábrica inteira, tipo-função entre parênteses', () => {
-  it('anotação qualificada: @androidx.compose.runtime.Composable vira slot', () => {
+describe('review: qualified annotation, whole factory, function type in parentheses', () => {
+  it('qualified annotation: @androidx.compose.runtime.Composable becomes slot', () => {
     const p = paramsOf('content: @androidx.compose.runtime.Composable () -> Unit');
     expect(p.content?.role).toBe('slot');
   });
 
-  it('@Composable (() -> Unit)? = null é slot', () => {
+  it('@Composable (() -> Unit)? = null is slot', () => {
     const p = paramsOf('content: @Composable (() -> Unit)? = null');
     expect(p.content?.role).toBe('slot');
   });
 
-  it('Objeto.fabrica(...).copy(...) não é fábrica (o default fica em texto)', () => {
+  it('Object.factory(...).copy(...) is not a factory (the default stays as text)', () => {
     const source = `package p
 object FDefaults {
     fun colors(a: Int = 0, b: Int = 1): Colors = Colors()
@@ -723,7 +723,7 @@ fun Foo(colors: Colors = FDefaults.colors().copy(a = 1), plain: Colors = FDefaul
     expect(sig.params[1]?.factory?.call).toBe('p.FDefaults.colors');
   });
 
-  it('sobrecarga irmã com lista malformada não quebra quando --overload escolhe a boa', () => {
+  it('a sibling overload with a malformed list does not break when --overload picks the good one', () => {
     const source = `package p
 @Composable
 fun Foo(a: Int) {}
@@ -734,7 +734,7 @@ fun Foo(b Int) {}
     expect(sig.params[0]?.name).toBe('a');
   });
 
-  it('sobrecarga malformada ao lado de uma só não-deprecada não quebra', () => {
+  it('a malformed overload next to a single non-deprecated one does not break', () => {
     const source = `package p
 @Deprecated("x")
 @Composable
@@ -746,7 +746,7 @@ fun Foo(a: Int) {}
     expect(sig.params[0]?.name).toBe('a');
   });
 
-  it('enum class cujo nome termina em State é enum, não state', () => {
+  it('enum class whose name ends in State is enum, not state', () => {
     const source = `package p
 enum class ToggleState { On, Off }
 @Composable
@@ -763,8 +763,8 @@ fun Foo(s: ToggleState = ToggleState.On, t: OtherState) {}
   });
 });
 
-describe('CL2 R-3: nome de parâmetro com crases', () => {
-  it('`object`: String vira o parâmetro object (sem as crases), como o nome de função', () => {
+describe('CL2 R-3: parameter name with backticks', () => {
+  it('`object`: String becomes the parameter object (without the backticks), like the function name', () => {
     const sig = extractJson(composable('`object`: String, label: String'), 'Foo');
     expect(sig.params.map((p) => p.name)).toEqual(['object', 'label']);
   });

@@ -21,12 +21,12 @@ import type {
 import type { Size } from '../../src/model/geometry';
 
 /**
- * REFERÊNCIA CONGELADA DA EQUIVALÊNCIA (#882, decisão 1). Cópia literal do assentar de
- * `src/model/hierarchySettle.ts` como era antes do índice espacial (commit c0365b0): varre o espaço
- * inteiro para cada marcação (O(k²)). NÃO SE EDITA: o teste de equivalência
- * (`tests/model/settleEquivalence.test.ts`) compara a implementação nova com ela, e é isso que
- * prova que a otimização não mudou nenhum resultado, empate incluído. Só `settleIf`/`settleFrom`
- * e as funções públicas de consulta ficam fora; `clearArrowRoutes` é importada porque não mudou.
+ * FROZEN EQUIVALENCE REFERENCE (#882, decision 1). Literal copy of the settle of
+ * `src/model/hierarchySettle.ts` as it was before the spatial index (commit c0365b0): it scans the whole
+ * space for each marking (O(k²)). DO NOT EDIT: the equivalence test
+ * (`tests/model/settleEquivalence.test.ts`) compares the new implementation with it, and that is what
+ * proves the optimization changed no result, ties included. Only `settleIf`/`settleFrom`
+ * and the public query functions are left out; `clearArrowRoutes` is imported because it did not change.
  */
 
 interface SettleOptions {
@@ -62,15 +62,15 @@ function containerContaining(p: Project, canvas: Rect): ProjectContainer | null 
   return null;
 }
 
-/** Marcação de um espaço com o índice dela no array `markings`. */
+/** A marking of a space with its index in the `markings` array. */
 interface Entry {
   readonly m: Marking;
   readonly i: number;
 }
 
 /**
- * Pode `outer` (posto `ro`) ser o pai de `inner` (posto `ri`)? Contém e é maior, ou é igual e
- * vem antes na ordem dos retângulos iguais (`equalRectRanks`). Uma ordem estrita: nunca há ciclo.
+ * Can `outer` (rank `ro`) be the parent of `inner` (rank `ri`)? It contains it and is bigger, or is equal and
+ * comes first in the order of equal rectangles (`equalRectRanks`). A strict order: there is never a cycle.
  */
 function canContain(outer: Rect, ro: number, inner: Rect, ri: number): boolean {
   if (!containsRect(outer, inner)) return false;
@@ -81,18 +81,18 @@ function canContain(outer: Rect, ro: number, inner: Rect, ri: number): boolean {
 
 const rectKey = (r: Rect): string => `${r.x},${r.y},${r.width},${r.height}`;
 
-/** O pai atual de `e` é uma das marcações de `ids` que ainda não foi posta na ordem? */
+/** Is the current parent of `e` one of the markings of `ids` that has not been put in the order yet? */
 function waitsForParent(e: Entry, ids: ReadonlySet<string>, done: ReadonlySet<string>) {
   const parent = e.m.parentId;
   return parent !== null && ids.has(parent) && !done.has(parent);
 }
 
 /**
- * Ordem de fora para dentro de um grupo de retângulos iguais (em ordem de array): a ordenação
- * topológica dos `parentId` atuais dentro do grupo (o pai antes do filho) e, entre as livres
- * ao mesmo tempo, a que vem antes no array. Quem não tem pai no grupo (nova, ou que chegou
- * agora ao retângulo) entra pelo array, como antes. `parentId` em ciclo (arquivo inválido) é
- * quebrado pela primeira do array. Total e sem ciclo.
+ * Outside-in order of a group of equal rectangles (in array order): the topological
+ * sort of the current `parentId`s inside the group (the parent before the child) and, among those free
+ * at the same time, the one that comes first in the array. Whoever has no parent in the group (new, or that just arrived
+ * at the rectangle) enters by the array, as before. A `parentId` in a cycle (invalid file) is
+ * broken by the first one of the array. Total and cycle-free.
  */
 function chainOrder(bucket: readonly Entry[]): Entry[] {
   const ids = new Set(bucket.map((e) => e.m.id));
@@ -109,9 +109,9 @@ function chainOrder(bucket: readonly Entry[]): Entry[] {
 }
 
 /**
- * Posto de cada marcação de um espaço: o índice no array, salvo nos grupos de retângulos
- * iguais, onde as do grupo trocam de lugar entre si na ordem de `chainOrder`. Assim
- * reordenar irmãs (que só troca índices) não muda quem é a de fora.
+ * Rank of each marking of a space: the index in the array, except in the groups of equal
+ * rectangles, where those of the group swap places among themselves in the order of `chainOrder`. This way
+ * reordering siblings (which only swaps indices) does not change which one is the outer one.
  */
 function equalRectRanks(group: readonly Entry[], ranks: Map<string, number>): void {
   const buckets = new Map<string, Entry[]>();
@@ -129,8 +129,8 @@ function equalRectRanks(group: readonly Entry[], ranks: Map<string, number>): vo
 }
 
 /**
- * As candidatas de menor área, com só a de dentro (maior posto) de cada grupo de retângulos
- * iguais.
+ * The smallest-area candidates, with only the inner one (highest rank) of each group of equal
+ * rectangles.
  */
 function innermostOfLeast(
   candidates: readonly Entry[],
@@ -149,9 +149,9 @@ function innermostOfLeast(
 }
 
 /**
- * Entre as candidatas que contêm (todas válidas pela geometria), o pai: das de menor área
- * (`innermostOfLeast`), o pai atual, se é uma delas; senão, a de maior posto (a que vem
- * depois no array).
+ * Among the candidates that contain it (all valid by geometry), the parent: of those of smallest area
+ * (`innermostOfLeast`), the current parent, if it is one of them; otherwise, the one of highest rank (the one that comes
+ * later in the array).
  */
 function pickParent(
   candidates: readonly Entry[],
@@ -167,10 +167,10 @@ function pickParent(
 }
 
 /**
- * O pai que o assentar escolheria entre as marcações `candidates` do espaço `containerId`
- * (todas já válidas pela geometria: contêm o que se quer pôr dentro): das de menor área, a de
- * dentro de cada cadeia de retângulos iguais (`equalRectRanks`), e o `current`, se é uma delas.
- * O Envolver usa isto para achar o pai atual do conjunto pela cadeia, nunca pelo array.
+ * The parent the settle would choose among the markings `candidates` of the space `containerId`
+ * (all already valid by geometry: they contain what is to be put inside): of those of smallest area, the one
+ * inside each chain of equal rectangles (`equalRectRanks`), and the `current`, if it is one of them.
+ * Wrap uses this to find the current parent of the set by the chain, never by the array.
  */
 export function referenceEnclosingAmong(
   p: Project,
@@ -188,7 +188,7 @@ export function referenceEnclosingAmong(
   return pickParent(inside, current, (id) => ranks.get(id) ?? -1);
 }
 
-/** O espaço e o `rect` que a geometria dá à marcação; ela mesma se nada muda. */
+/** The space and the `rect` that geometry gives to the marking; itself if nothing changes. */
 function settleSpace(
   p: Project,
   m: Marking,
@@ -199,7 +199,7 @@ function settleSpace(
     canvas = m.rect;
   } else {
     const own = projectIndex(p).containers.get(m.containerId);
-    // Container inexistente: projeto inválido; o reparo resolve, o assentar não inventa.
+    // Nonexistent container: invalid project; the repair fixes it, the settle does not invent.
     if (!own) return m;
     if (!m.floating && containsRect(imagePixelRect(own), m.rect)) return m;
     canvas = toCanvasRect(own.placement, m.rect);
@@ -215,10 +215,10 @@ function settleSpace(
   };
 }
 
-/** O assentar da geometria e do pertencimento, sem as perspectivas. */
+/** The settle of geometry and membership, without the perspectives. */
 function referenceSettleGeometry(p: Project, options?: SettleOptions): Project {
   let changed = false;
-  // Marcações que trocaram de espaço: a seta presa a elas perde os pontos de passagem.
+  // Markings that changed space: the arrow attached to them loses its waypoints.
   const movedSpace = new Set<string>();
   const placed = p.markings.map((m) => {
     const next = settleSpace(p, m, options);
@@ -229,7 +229,7 @@ function referenceSettleGeometry(p: Project, options?: SettleOptions): Project {
     return next;
   });
 
-  // Marcações por espaço, com o índice no array; o posto resolve o empate de retângulo igual.
+  // Markings per space, with the index in the array; the rank breaks the tie of equal rectangles.
   const bySpace = new Map<string | null, Entry[]>();
   placed.forEach((m, i) => {
     if (m.floating) return;
@@ -253,7 +253,7 @@ function referenceSettleGeometry(p: Project, options?: SettleOptions): Project {
     return { ...m, parentId };
   });
 
-  // Pai de um container: a menor marcação do canvas (não flutuante) que contém o retângulo dele.
+  // Parent of a container: the smallest canvas marking (not floating) that contains its rectangle.
   const canvasGroup = bySpace.get(null) ?? [];
   const containers = p.containers.map((c) => {
     const rect = imageCanvasRect(c, c.placement);
@@ -264,12 +264,12 @@ function referenceSettleGeometry(p: Project, options?: SettleOptions): Project {
     return { ...c, parentId };
   });
 
-  // Seta (v13): fora da árvore de pertencimento, o assentar a ignora, salvo numa coisa: se uma
-  // ponta mudou de espaço, os `points` (que ficam no espaço das pontas) voltam à rota padrão.
+  // Arrow (v13): outside the membership tree, the settle ignores it, except for one thing: if an
+  // end changed space, the `points` (which stay in the space of the ends) go back to the default route.
   return changed ? clearArrowRoutes({ ...p, markings, containers }, movedSpace) : p;
 }
 
-/** O assentar inteiro de antes: a geometria e depois as perspectivas (`settleHierarchy`). */
+/** The whole settle of before: geometry and then the perspectives (`settleHierarchy`). */
 export function referenceSettleHierarchy(p: Project, options?: SettleOptions): Project {
   return reconcilePerspectives(options?.before ?? p, referenceSettleGeometry(p, options));
 }

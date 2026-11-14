@@ -1,19 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { matchesSearch, normalizeSearch } from '../../src/utils/search';
 
-describe('busca', () => {
-  it('ignora acentos e maiúsculas', () => {
+describe('search', () => {
+  it('ignores accents and case (pt-BR text)', () => {
+    // pt-BR kept: accent normalization of Portuguese text is the object
     expect(normalizeSearch('Ação Ñandú')).toBe('acao nandu');
     expect(matchesSearch('Especialização de dados', 'ESPECIALIZACAO')).toBe(true);
   });
 
-  it('exige todas as palavras, em qualquer ordem', () => {
-    expect(matchesSearch('Carro vermelho', 'vermelho carro')).toBe(true);
-    expect(matchesSearch('Carro vermelho', 'carro azul')).toBe(false);
+  it('requires all the words, in any order', () => {
+    expect(matchesSearch('Red car', 'car red')).toBe(true);
+    expect(matchesSearch('Red car', 'car blue')).toBe(false);
   });
 
-  it('consulta vazia casa com tudo', () => {
-    expect(matchesSearch('qualquer coisa', '')).toBe(true);
-    expect(matchesSearch('qualquer coisa', '   ')).toBe(true);
+  it('an empty query matches everything', () => {
+    expect(matchesSearch('anything', '')).toBe(true);
+    expect(matchesSearch('anything', '   ')).toBe(true);
   });
 });

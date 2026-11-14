@@ -12,7 +12,7 @@ function list(dir: string): string[] {
   );
 }
 
-/** O pacote do Material 3 como a app o recebe: caminho relativo à pasta → texto ou bytes. */
+/** The Material 3 package as the app receives it: path relative to the folder -> text or bytes. */
 export function material3Package(): Map<string, string | Blob> {
   const files = new Map<string, string | Blob>();
   for (const path of list(ROOT).sort()) {
@@ -30,6 +30,6 @@ export function material3Package(): Map<string, string | Blob> {
 export function material3Spec(): Spec {
   const text = material3Package().get('material3.spec.json');
   const parsed = parseSpecText(typeof text === 'string' ? text : '');
-  if (!parsed.ok) throw new Error('material3.spec.json inválido');
+  if (!parsed.ok) throw new Error('material3.spec.json invalid');
   return parsed.spec;
 }

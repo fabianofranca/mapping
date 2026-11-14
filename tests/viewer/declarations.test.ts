@@ -1,11 +1,11 @@
 // @vitest-environment node
-// Fechamento das declarações do pacote `mapping-viewer`: todo pacote que as `.d.ts` das duas
-// entradas importam precisa estar em `dependencies` ou `peerDependencies` do manifesto, senão o
-// hospedeiro com `skipLibCheck: false` leva TS2307 (e com `true` os tipos viram `any` calados).
+// Closure of the `mapping-viewer` package declarations: every package that the `.d.ts` of the two
+// entries import must be in `dependencies` or `peerDependencies` of the manifest, otherwise the
+// host with `skipLibCheck: false` gets TS2307 (and with `true` the types silently become `any`).
 import { posix } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import ts from 'typescript';
-// @ts-expect-error módulo .mjs do build, sem declarações
+// @ts-expect-error build .mjs module, without declarations
 import { packageJson } from '../../viewer/packageManifest.mjs';
 
 const manifest = packageJson as {
@@ -13,10 +13,10 @@ const manifest = packageJson as {
   peerDependencies?: Record<string, string>;
 };
 
-/** Gera as declarações das duas entradas em memória (nada vai ao disco). */
+/** Emits the declarations of the two entries in memory (nothing goes to disk). */
 function emitDeclarations(): Map<string, string> {
   const configPath = ts.findConfigFile('viewer', ts.sys.fileExists, 'tsconfig.json');
-  if (!configPath) throw new Error('viewer/tsconfig.json não encontrado');
+  if (!configPath) throw new Error('viewer/tsconfig.json not found');
   const config = ts.getParsedCommandLineOfConfigFile(
     configPath,
     {},
@@ -27,7 +27,7 @@ function emitDeclarations(): Map<string, string> {
       },
     },
   );
-  if (!config) throw new Error('tsconfig do viewer inválido');
+  if (!config) throw new Error('invalid viewer tsconfig');
   const program = ts.createProgram(config.fileNames, config.options);
   const out = new Map<string, string>();
   program.emit(undefined, (fileName, text) => {
@@ -36,7 +36,7 @@ function emitDeclarations(): Map<string, string> {
   return out;
 }
 
-/** Especificadores de `import`/`export ... from` e `import("...")` de uma declaração. */
+/** Specifiers of `import`/`export ... from` and `import("...")` of a declaration. */
 function specifiersOf(fileName: string, text: string): string[] {
   const source = ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true);
   const found: string[] = [];
@@ -71,8 +71,8 @@ function resolveRelative(from: string, specifier: string, all: Map<string, strin
   return [`${base}.d.ts`, posix.join(base, 'index.d.ts')].find((c) => all.has(c));
 }
 
-describe('declarações do mapping-viewer', () => {
-  it('todo pacote alcançável pelas duas entradas está declarado no manifesto', () => {
+describe('mapping-viewer declarations', () => {
+  it('every package reachable from the two entries is declared in the manifest', () => {
     const all = emitDeclarations();
     const roots = [...all.keys()].filter(
       (f) => f.endsWith('/viewer/index.d.ts') || f.endsWith('/viewer/react.d.ts'),
@@ -100,8 +100,8 @@ describe('declarações do mapping-viewer', () => {
       }
     }
     expect(
-      [...undeclared].map(([name, file]) => `${name} (em ${file})`),
-      'pacotes importados pelas declarações e ausentes do manifesto',
+      [...undeclared].map(([name, file]) => `${name} (in ${file})`),
+      'packages imported by the declarations and missing from the manifest',
     ).toEqual([]);
   }, 60_000);
 });

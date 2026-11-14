@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 
-// Foco visível em tudo e altura dos controles pelos papéis.
+// Visible focus on everything and control height by the roles.
 
 const DIR = 'src/theme';
 const css = Object.fromEntries(
@@ -10,15 +10,15 @@ const css = Object.fromEntries(
     .map((f) => [f, readFileSync(`${DIR}/${f}`, 'utf8')]),
 );
 
-describe('foco visível', () => {
-  it('nenhum CSS remove o contorno de foco', () => {
+describe('visible focus', () => {
+  it('no CSS removes the focus outline', () => {
     for (const [file, text] of Object.entries(css)) {
       expect(text, file).not.toMatch(/outline\s*:\s*(none|0)\b/);
       expect(text, file).not.toMatch(/outline-style\s*:\s*none/);
     }
   });
 
-  it('há um anel global em :focus-visible com o token de foco', () => {
+  it('there is a global ring on :focus-visible with the focus token', () => {
     expect(css['base.css']).toMatch(
       /:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--color-focus\)/,
     );
@@ -27,7 +27,7 @@ describe('foco visível', () => {
 
 describe('altura dos controles', () => {
   it.each(['.button', '.icon-button', '.segmented-item', '.input', '.tab'])(
-    '%s usa a altura do papel --control-height',
+    '%s uses the height of the --control-height role',
     (selector) => {
       const rule = new RegExp(
         `(?:^|[\\s,])${selector.replace('.', '\\.')}[^{]*\\{[^}]*min-height:\\s*var\\(--control-height\\)`,
@@ -38,43 +38,43 @@ describe('altura dos controles', () => {
   );
 });
 
-// R4 (seção Layouts e ToolStripButton do DS 2.0): a faixa é discreta e a janela sem
-// foco esmaece a seleção.
+// R4 (Layouts and ToolStripButton section of DS 2.0): the strip is discreet and the unfocused window
+// fades the selection.
 describe('janelas de ferramenta', () => {
-  it('o botão da faixa com a janela aberta usa a seleção fraca, não o azul de alternância', () => {
+  it('the strip button with the window open uses the weak selection, not the toggle blue', () => {
     expect(css['editor.css']).toMatch(
       /\.tool-strip \.icon-button\[aria-pressed='true'\][^{]*\{[^}]*background: var\(--color-selection-muted\)/,
     );
   });
 
-  it('a janela sem foco esmaece a linha selecionada', () => {
+  it('the unfocused window fades the selected row', () => {
     expect(css['editor.css']).toMatch(
       /\.tool-window:not\(:focus-within\)[^{]*\{[^}]*background: var\(--color-selection-muted\)/,
     );
   });
 });
 
-// Etapa 6 (6.4): regras de CSS por trás dos achados 2, 3, 5 e 6 (o e2e mede o layout).
-describe('etapa 6.4: tooltips, camadas, tabela e Diagnóstico', () => {
-  it('a dica fica fora do fluxo (posição fixa): oculta, não alarga nem rola o contêiner', () => {
+// Stage 6 (6.4): CSS rules behind findings 2, 3, 5 and 6 (e2e measures the layout).
+describe('stage 6.4: tooltips, layers, table and Diagnostics', () => {
+  it('the hint stays out of the flow (fixed position): hidden, it neither widens nor scrolls the container', () => {
     expect(css['controls.css']).toMatch(/\.tooltip\s*\{[^}]*position:\s*fixed/);
   });
 
-  it('com o menu aberto (aria-expanded), a dica do botão não aparece por cima dele', () => {
+  it('with the menu open (aria-expanded), the button hint does not appear over it', () => {
     expect(css['controls.css']).toMatch(
       /\.tooltip-anchor:has\(\[aria-haspopup\]\[aria-expanded='true'\]\) \.tooltip[^{]*\{[^}]*display:\s*none/,
     );
   });
 
-  it('o editor recorta em vez de rolar (overflow: clip): o foco não o desloca', () => {
+  it('the editor clips instead of scrolling (overflow: clip): focus does not shift it', () => {
     expect(css['layout.css']).toMatch(/\.editor\s*\{[^}]*overflow:\s*clip/);
   });
 
-  it('as linhas da janela Camadas não encolhem: a lista rola', () => {
+  it('the rows of the Layers window do not shrink: the list scrolls', () => {
     expect(css['panels.css']).toMatch(/\.layer-row\s*\{[^}]*flex:\s*none/);
   });
 
-  it('Diagnóstico: Hora e Contexto sem quebra no meio', () => {
+  it('Diagnostics: Time and Context without a break in the middle', () => {
     expect(css['panels.css']).toMatch(
       /\.diagnostics-nowrap\s*\{[^}]*white-space:\s*nowrap/,
     );
@@ -87,9 +87,9 @@ describe('etapa 6.4: tooltips, camadas, tabela e Diagnóstico', () => {
   });
 });
 
-describe('campo de texto no Detalhes', () => {
-  it('o campo dentro do invólucro do editor de texto ocupa a coluna (sem largura intrínseca)', () => {
-    // Sem isto o <input> mantém ~220 px e passa da borda do painel estreito (barra horizontal).
+describe('text field in Details', () => {
+  it('the field inside the text editor wrapper takes the column (no intrinsic width)', () => {
+    // Without this the <input> keeps ~220 px and goes past the edge of the narrow panel (horizontal bar).
     expect(css['details.css']).toMatch(
       /\.props-value > \.string-editor > \.input[^{]*\{[^}]*width:\s*100%/,
     );

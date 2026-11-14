@@ -7,15 +7,15 @@ import {
 } from '../../src/app/trustedTypes';
 import { reportedErrors } from '../../src/utils/report';
 
-describe('regras da política default de Trusted Types', () => {
-  it('createHTML aceita só a string vazia', () => {
+describe('rules of the default Trusted Types policy', () => {
+  it('createHTML accepts only the empty string', () => {
     expect(createHTML('')).toBe('');
-    for (const input of ['<b>x</b>', ' ', '<img src="https://x/y.png">', 'texto']) {
+    for (const input of ['<b>x</b>', ' ', '<img src="https://x/y.png">', 'text']) {
       expect(createHTML(input)).toBeNull();
     }
   });
 
-  it('createScriptURL aceita só a URL exata do service worker', () => {
+  it('createScriptURL accepts only the exact service worker URL', () => {
     expect(SERVICE_WORKER_URL).toBe('./sw.js');
     expect(createScriptURL('./sw.js')).toBe('./sw.js');
     for (const input of [
@@ -32,7 +32,7 @@ describe('regras da política default de Trusted Types', () => {
 });
 
 describe('installTrustedTypesPolicy', () => {
-  it('cria a política default com as duas regras e sem createScript', () => {
+  it('creates the default policy with the two rules and without createScript', () => {
     const createPolicy = vi.fn(() => ({}));
     expect(installTrustedTypesPolicy({ trustedTypes: { createPolicy } })).toBe(
       'installed',
@@ -48,13 +48,13 @@ describe('installTrustedTypesPolicy', () => {
     expect(rules.createScriptURL).toBe(createScriptURL);
   });
 
-  it('sem Trusted Types no navegador devolve unsupported', () => {
+  it('without Trusted Types in the browser returns unsupported', () => {
     expect(installTrustedTypesPolicy({})).toBe('unsupported');
     expect(installTrustedTypesPolicy({ trustedTypes: {} })).toBe('unsupported');
     expect(installTrustedTypesPolicy(null)).toBe('unsupported');
   });
 
-  it('se createPolicy lança devolve failed e registra no Diagnóstico', () => {
+  it('if createPolicy throws, returns failed and records it in Diagnostics', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const createPolicy = () => {
       throw new TypeError('Policy with name "default" already exists.');

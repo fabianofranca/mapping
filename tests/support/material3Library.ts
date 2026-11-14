@@ -1,4 +1,4 @@
-// Auxiliares dos testes da biblioteca Material 3 (Compose): lê a pasta, carrega a especialização e desenha um componente.
+// Helpers for the Material 3 (Compose) library tests: reads the folder, loads the specialization and draws a component.
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { isFontPath } from '../../src/model/components/library';
@@ -33,7 +33,7 @@ export const text = (path: string): string =>
 
 function loadSpec(): Spec {
   const parsed = parseSpecText(text(SPEC_FILE));
-  if (!parsed.ok) throw new Error('especialização inválida');
+  if (!parsed.ok) throw new Error('invalid specialization');
   return parsed.spec;
 }
 export const spec = loadSpec();
@@ -60,7 +60,7 @@ export const solid = (paints: readonly Paint[]): string | undefined => {
   return first?.type === 'solid' ? first.color : undefined;
 };
 
-/** As opções com que os testes instanciam um componente da biblioteca (medidor aproximado, tokens do modo, ícones). */
+/** The options the tests use to instantiate a library component (approximate measurer, mode tokens, icons). */
 export function instantiateOptions(
   catalog: ReturnType<typeof buildCatalog>,
   mode: 'light' | 'dark',
@@ -90,7 +90,7 @@ export function drawIn(
   );
 }
 
-/** Componentes já migrados para o formato 4 (M1: 4; M2: +19; M3: +9; M4: +9; M5: +9 = 50). Cresce a cada fase. */
+/** Components already migrated to format 4 (M1: 4; M2: +19; M3: +9; M4: +9; M5: +9 = 50). Grows with each phase. */
 export const MIGRATED = [
   'text',
   'icon',
@@ -152,16 +152,17 @@ type Raw = {
   values?: Record<string, unknown>;
 };
 
-/** Descrições de campo que a etapa Material 3 com estados (#869, ME1) corrigiu em relação à v1 (decisão 10). */
+/** Field descriptions that the Material 3 with states stage (#869, ME1) fixed relative to v1 (decision 10). */
 /**
- * Campos de arranjo que perderam o `default` (e o valor de prévia) para o padrão e o `Top`/`Start`
- * explícito se distinguirem com `reverseLayout` (CL1, FX5): a descrição ganha a frase do padrão.
+ * Arrangement fields that lost the `default` (and the preview value) so the default and the explicit `Top`/`Start`
+ * can be told apart with `reverseLayout` (CL1, FX5): the description gains the default sentence.
  */
 export const V1_NO_DEFAULT: Record<string, string> = {
   'lazy-column': 'verticalArrangement',
   'lazy-row': 'horizontalArrangement',
 };
 
+// pt-BR kept: shared fixture data asserted by tests/model, tests/examples (text of the library files)
 const V1_DESCRIPTION_FIXES: Record<string, Record<string, string>> = {
   'date-picker': {
     displayedMonth:
@@ -195,7 +196,8 @@ const V1_DESCRIPTION_FIXES: Record<string, Record<string, string>> = {
   },
 };
 
-/** Exemplos que a ME2 (#913) acrescentou para mostrar limites conhecidos, por tipo. */
+/** Examples that ME2 (#913) added to show known limits, by type. */
+// pt-BR kept: shared fixture data asserted by tests/model, tests/examples (text of the library files)
 export const LIMIT_EXAMPLES: Record<string, string> = {
   button: 'Rótulo longo',
   'time-picker': '24 horas, campos',
@@ -203,16 +205,17 @@ export const LIMIT_EXAMPLES: Record<string, string> = {
 };
 
 /**
- * Exemplos da v1 que a L2 (#1078) tirou: o `size` do tooltip (240 × 24) é o do `plain` e não comporta o `rich`, então o
- * exemplo dele passaria da caixa (aviso `content larger than the box`).
+ * Examples of v1 that L2 (#1078) removed: the `size` of the tooltip (240 × 24) is the `plain` one and does not hold the `rich`, so its
+ * example would go past the box (warning `content larger than the box`).
  */
+// pt-BR kept: shared fixture data asserted by tests/model, tests/examples (text of the library files)
 const L2_REMOVED_EXAMPLES: Record<string, string[]> = {
   tooltip: ['Rich com título', 'Rich com ação'],
 };
 
-/** Campos e exemplos que a etapa de expressões (#897, EX4) acrescentou ao date-picker e ao time-picker. */
+/** Fields and examples that the expressions stage (#897, EX4) added to the date-picker and the time-picker. */
 const EX4_FIELDS: Record<string, string[]> = { 'date-picker': ['month', 'year'] };
-/** Campos e exemplos que a etapa #899 (MF5) acrescentou: o dia de hoje e as variantes como campo opcional. */
+/** Fields and examples that stage #899 (MF5) added: today's date and the variants as an optional field. */
 const MF5_FIELDS: Record<string, string[]> = {
   'date-picker': ['today'],
   chip: ['avatar'],
@@ -220,24 +223,25 @@ const MF5_FIELDS: Record<string, string[]> = {
   'progress-indicator': ['trackColor', 'strokeCap'],
 };
 const MF5_EXAMPLES: Record<string, string[]> = {
-  // MC5 (#1033): o item de três linhas pelo apoio de duas linhas (`$lines` do apoio)
+  // MC5 (#1033): the three-line item by the two-line support (`$lines` of the support)
+  // pt-BR kept: shared fixture data asserted by tests/model, tests/examples (text of the library files)
   'list-item': ['Apoio de duas linhas'],
   'date-picker': ['Dia de hoje'],
   chip: ['Com avatar', 'Rótulo longo'],
-  // MC5 (#1033, grupo C): o rótulo longo do extended-fab e o campo com apoio (a altura pelo `sizing`)
+  // MC5 (#1033, group C): the long label of the extended-fab and the field with support (the height by `sizing`)
   'extended-fab': ['Rótulo longo'],
   'text-field': ['Preenchido com apoio'],
   'secure-text-field': ['Preenchido com apoio'],
   divider: ['Recuo por ponta'],
   'progress-indicator': ['Trilho colorido e ponta reta'],
-  // MC6 (#1034): a quebra do flow-row, os botões do alert-dialog em duas linhas e a largura do menu pelo item mais largo
+  // MC6 (#1034): the flow-row wrap, the alert-dialog buttons on two lines and the menu width by the widest item
   'flow-row': ['Três por linha'],
   'alert-dialog': ['Botões em duas linhas'],
   'dropdown-menu': ['Itens de larguras diferentes'],
 };
 /**
- * Campos que a importação pela assinatura (#1079, S5) acrescentou a cada tipo: um por parâmetro da ficha do `code`
- * (`signatures/`), de forma aditiva. A v1 não os tinha.
+ * Fields that the import by signature (#1079, S5) added to each type: one per parameter of the `code` sheet
+ * (`signatures/`), additively. v1 did not have them.
  */
 export const IMPORTED_FIELDS: Record<string, string[]> = {
   'alert-dialog': [
@@ -544,7 +548,7 @@ export const IMPORTED_FIELDS: Record<string, string[]> = {
     'collapsedHeight',
   ],
 };
-/** Os campos de valor do slider (EX6): eram `enum` em décimos na v1 e passaram a `number`. */
+/** The value fields of the slider (EX6): they were `enum` in tenths in v1 and became `number`. */
 const SLIDER_NUMBERS: Record<string, number> = {
   value: 0.5,
   valueStart: 0.2,
@@ -558,12 +562,13 @@ const toNumbers = (values: Record<string, unknown> | undefined) =>
           k in SLIDER_NUMBERS && typeof v === 'string' ? [k, Number(v)] : [k, v],
         ),
       );
-/** A prévia da v1 como a EX6 a grava (o slider guarda número). */
+/** The v1 preview as EX6 records it (the slider stores a number). */
 export function v1Preview(id: string, preview: unknown): unknown {
   return id === 'slider'
     ? toNumbers(preview as Record<string, unknown> | undefined)
     : preview;
 }
+// pt-BR kept: shared fixture data asserted by tests/model, tests/examples (text of the library files)
 const EX4_EXAMPLES: Record<string, string[]> = {
   slider: ['Encaixe no passo'],
   'date-picker': [
@@ -575,7 +580,7 @@ const EX4_EXAMPLES: Record<string, string[]> = {
   'time-picker': ['10:37 em 24 horas, minutos', '22:05 em 12 horas (PM)'],
 };
 
-/** Tamanhos que a ME2 (#913) subiu aos do Compose (decisão 9); os demais ficam os da v1. */
+/** Sizes that ME2 (#913) raised to the Compose ones (decision 9); the rest stay the v1 ones. */
 export const COMPOSE_SIZES: Record<string, { width: number; height: number }> = {
   'top-app-bar': { width: 412, height: 152 },
   'date-picker': { width: 360, height: 512 },
@@ -584,11 +589,11 @@ export const COMPOSE_SIZES: Record<string, { width: number; height: number }> = 
   slider: { width: 328, height: 48 },
 };
 
-/** Colunas de tabela que a etapa acrescentou a um tipo (a ME4 deu `selected` aos itens do `dropdown-menu`). */
+/** Table columns that the stage added to a type (ME4 gave `selected` to the items of the `dropdown-menu`). */
 const ADDED_COLUMNS: Record<string, Record<string, string[]>> = {
   'dropdown-menu': { items: ['selected'] },
 };
-/** Os avisos que a importação pela assinatura (#1079, S5) pôs nos campos (`diverges`): a v1 não os tinha. */
+/** The notices that the import by signature (#1079, S5) put on the fields (`diverges`): v1 did not have them. */
 function withoutImportNotices(field: Raw): Raw {
   const { notices: _notices, ...rest } = field as Raw & { notices?: unknown };
   void _notices;
@@ -605,8 +610,8 @@ function withoutAddedColumns(id: string, field: Raw): Raw {
 }
 
 /**
- * O exemplo sem as linhas dos campos `table` (a EX5 da #897 pôs as do `preview` em todo exemplo
- * de tipo com tabela; a v1 não tinha, porque o exemplo não aceitava linhas).
+ * The example without the rows of the `table` fields (EX5 of #897 put those of the `preview` in every example
+ * of a type with a table; v1 did not have it, because the example did not accept rows).
  */
 function withoutTableValues(fields: readonly Raw[], example: Raw): Raw {
   if (example.values === undefined) return example;
@@ -620,8 +625,8 @@ function withoutTableValues(fields: readonly Raw[], example: Raw): Raw {
 }
 
 /**
- * Compara os campos e os exemplos de um tipo com os da v1, sem o que a etapa Material 3 com estados acrescentou
- * (o campo `interaction` e os exemplos que o usam, e os exemplos dos limites da ME2) e com as descrições corrigidas de `V1_DESCRIPTION_FIXES`.
+ * Compares the fields and the examples of a type with those of v1, without what the Material 3 with states stage added
+ * (the `interaction` field and the examples that use it, and the examples of the ME2 limits) and with the descriptions fixed by `V1_DESCRIPTION_FIXES`.
  */
 export function v1WithEstados(
   id: string,
@@ -688,10 +693,10 @@ export function v1WithEstados(
 }
 
 /**
- * PROVISÓRIO (decisão do coordenador, #1079 S5; decisão do dono pendente no bug #1774; curadoria na #1134).
- * Avisos `parâmetro fora da ficha` que a importação deixa: o `params` da base (ou o herdado) cita um parâmetro que a
- * ficha do caso (`variants`) não tem (o `removed` não deixa mais: o importador tira o parâmetro do `params`, CL1/S5-a). Cada item é `<tipo>[.<caso>] <campo>=<parâmetro>`.
- * Qualquer outro aviso, ou erro, continua falhando; um aviso conhecido que sumir também (a lista só encolhe).
+ * PROVISIONAL (coordinator decision, #1079 S5; owner decision pending in bug #1774; curation in #1134).
+ * `parameter outside the signature` warnings that the import leaves: the `params` of the base (or the inherited one) cites a parameter that the
+ * sheet of the case (`variants`) does not have (`removed` no longer leaves it: the importer takes the parameter out of `params`, CL1/S5-a). Each item is `<type>[.<case>] <field>=<parameter>`.
+ * Any other warning, or error, keeps failing; a known warning that disappears does too (the list only shrinks).
  */
 export const KNOWN_PARAM_WARNINGS: readonly string[] = [
   'top-app-bar.center subtitle=subtitle',
@@ -755,7 +760,7 @@ export const KNOWN_PARAM_WARNINGS: readonly string[] = [
   'carousel.centered-hero preferredItemWidth=preferredItemWidth',
 ];
 
-/** Compara os avisos da validação da biblioteca com o conjunto conhecido: só `parameter outside the signature`, e exatamente esses. */
+/** Compares the library validation warnings with the known set: only `parameter outside the signature`, and exactly those. */
 export function unknownWarnings(warnings: readonly { path: string; message: string }[]): {
   unexpected: string[];
   missing: string[];

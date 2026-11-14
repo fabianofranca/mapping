@@ -1,8 +1,8 @@
-// Sequenciador do Vitest que divide `--shard=i/N` pelo tempo de cada arquivo (etapa Vitest rápido).
-// O padrão divide por número de arquivos (hash do caminho): com 4 shards, o mais lento levava
-// 53 s e o mais rápido, 33 s. Aqui a divisão é gulosa (maior primeiro, para o shard menos
-// carregado), com os tempos de `tests/support/durations.json` (`npm run test:durations`).
-// Tempo desatualizado só desequilibra: todo arquivo cai em exatamente um shard.
+// Vitest sequencer that splits `--shard=i/N` by the time of each file (fast Vitest stage).
+// The default splits by number of files (path hash): with 4 shards, the slowest took
+// 53 s and the fastest 33 s. Here the split is greedy (biggest first, to the least
+// loaded shard), with the times from `tests/support/durations.json` (`npm run test:durations`).
+// Stale times only unbalance: every file lands in exactly one shard.
 import { readFileSync } from 'node:fs';
 import { relative } from 'node:path';
 import { BaseSequencer, type TestSpecification } from 'vitest/node';
@@ -10,13 +10,13 @@ import { BaseSequencer, type TestSpecification } from 'vitest/node';
 export type Durations = Record<string, number>;
 
 /**
- * Custo fixo de cada arquivo, em segundos (import, transformação, ambiente), que o tempo
- * medido do arquivo não inclui: um shard de ~200 arquivos pequenos levava ~55 s contra ~36 s
- * de um de ~50 arquivos com a mesma soma dos tempos (≈ 0,2 s por arquivo).
+ * Fixed cost of each file, in seconds (import, transform, environment), which the measured
+ * time of the file does not include: a shard of ~200 small files took ~55 s against ~36 s
+ * for one of ~50 files with the same sum of times (≈ 0.2 s per file).
  */
 export const FILE_OVERHEAD = 0.2;
 
-/** Mediana dos tempos conhecidos (1 s sem nenhum): é o tempo de um arquivo ainda sem registro. */
+/** Median of the known times (1 s with none): it is the time of a file that has no record yet. */
 export function medianDuration(durations: Durations): number {
   const values = Object.values(durations).sort((a, b) => a - b);
   if (values.length === 0) return 1;
@@ -25,9 +25,9 @@ export function medianDuration(durations: Durations): number {
 }
 
 /**
- * Reparte os caminhos em `count` shards (índice 0 = shard 1). Determinístico e independente
- * da ordem de entrada: ordena por tempo (maior primeiro) e, no empate, pelo caminho; cada
- * arquivo vai para o shard menos carregado (empate: o de menor índice).
+ * Splits the paths into `count` shards (index 0 = shard 1). Deterministic and independent
+ * of the input order: sorts by time (biggest first) and, on a tie, by path; each
+ * file goes to the least loaded shard (tie: the one with the lowest index).
  */
 export function balanceShards(
   paths: readonly string[],
@@ -57,7 +57,7 @@ function readDurations(): Durations {
   try {
     return JSON.parse(readFileSync(durationsFile, 'utf8')) as Durations;
   } catch {
-    return {}; // sem arquivo de tempos, todos valem a mesma coisa (divisão por contagem)
+    return {}; // no times file, everything is worth the same (split by count)
   }
 }
 

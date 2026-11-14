@@ -1,7 +1,7 @@
 import JSZip from 'jszip';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-// Limite de 100 bytes no lugar dos 64 MiB, para provar a contagem sem arquivos enormes.
+// Limit of 100 bytes in place of 64 MiB, to prove the count without huge files.
 vi.mock('../../src/model', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../src/model')>()),
   packageWithinLimits: (count: number, bytes: number) => count <= 500 && bytes <= 100,
@@ -13,7 +13,7 @@ import {
   readPackageFromZip,
 } from '../../src/ui/specPackageImport';
 
-// Fase 1 da #954 (item 69): o limite do pacote conta bytes e vale antes de descomprimir.
+// Phase 1 of #954 (item 69): the package limit counts bytes and applies before decompressing.
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -23,24 +23,25 @@ async function zipOf(files: Record<string, string>): Promise<Blob> {
   return new Blob([await zip.generateAsync({ type: 'arraybuffer' })]);
 }
 
-describe('readPackageFromZip: limite do pacote', () => {
-  it('conta bytes UTF-8, não unidades UTF-16', async () => {
-    // 60 caracteres, 120 bytes: cabe em 100 só se contar unidades UTF-16.
+describe('readPackageFromZip: package limit', () => {
+  it('counts UTF-8 bytes, not UTF-16 units', async () => {
+    // 60 characters, 120 bytes: fits in 100 only if it counts UTF-16 units.
+    // pt-BR kept: a multi-byte accented character is the test data (UTF-8 byte count)
     const result = await readPackageFromZip(await zipOf({ 'a.json': 'é'.repeat(60) }));
     expect(result).toEqual({ ok: false, reason: 'too-big' });
   });
 
-  it('um pacote dentro do limite entra', async () => {
+  it('a package within the limit gets in', async () => {
     const result = await readPackageFromZip(await zipOf({ 'a.json': '{}' }));
     expect(result.ok).toBe(true);
   });
 
-  it('recusa pelo tamanho declarado, sem descomprimir a entrada', async () => {
+  it('refuses by the declared size, without decompressing the entry', async () => {
     const zip = await JSZip.loadAsync(
       await (await zipOf({ 'a.json': 'x'.repeat(5000) })).arrayBuffer(),
     );
     const entry = zip.files['a.json'];
-    if (!entry) throw new Error('entrada ausente');
+    if (!entry) throw new Error('missing entry');
     const decompress = vi.spyOn(Object.getPrototypeOf(entry), 'async');
     const result = await readPackageFromZip(await zipOf({ 'a.json': 'x'.repeat(5000) }));
     expect(result).toEqual({ ok: false, reason: 'too-big' });
@@ -69,21 +70,21 @@ function fileHandle(name: string, size: number, reads: string[]) {
 function folderOf(entries: ReturnType<typeof fileHandle>[]): DirectoryHandleLike {
   return {
     kind: 'directory',
-    name: 'pacote',
+    name: 'package',
     values: async function* () {
       for (const entry of entries) yield entry;
     },
   } as unknown as DirectoryHandleLike;
 }
 
-describe('readPackageFromDirectory: limite do pacote', () => {
-  it('para no primeiro arquivo que passa do limite, sem ler o conteúdo dele nem dos seguintes', async () => {
+describe('readPackageFromDirectory: package limit', () => {
+  it('stops at the first file over the limit, without reading its content or the following ones', async () => {
     const reads: string[] = [];
     const result = await readPackageFromDirectory(
       folderOf([
         fileHandle('ok.json', 10, reads),
-        fileHandle('grande.json', 500, reads),
-        fileHandle('depois.json', 10, reads),
+        fileHandle('big.json', 500, reads),
+        fileHandle('after.json', 10, reads),
       ]),
     );
     expect(result).toEqual({ ok: false, reason: 'too-big' });

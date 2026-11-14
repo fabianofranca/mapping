@@ -14,8 +14,8 @@ function contrast(a: string, b: string): number {
   return (hi! + 0.05) / (lo! + 0.05);
 }
 
-// [primeiro plano, fundo, mínimo WCAG]: 4.5 para texto, 3 para elementos gráficos.
-// Pares da seção Contraste do design system (docs/DESIGN-SYSTEM.md).
+// [foreground, background, WCAG minimum]: 4.5 for text, 3 for graphic elements.
+// Pairs of the Contrast section of the design system (docs/DESIGN-SYSTEM.md).
 const PAIRS: readonly [string, string, number][] = [
   ['text', 'bg', 4.5],
   ['text', 'surface', 4.5],
@@ -45,7 +45,7 @@ const PAIRS: readonly [string, string, number][] = [
   ['thread-agent', 'thread-agent-bg', 4.5],
   ['thread-resolved', 'thread-resolved-bg', 4.5],
   ['tooltip-text', 'tooltip', 4.5],
-  // Limite de controle (campos, botões, selos): 3:1 sobre os fundos onde aparece.
+  // Control boundary (fields, buttons, badges): 3:1 over the backgrounds where it appears.
   ['border-control', 'surface', 3],
   ['border-control', 'bg', 3],
   ['border-control', 'hover', 3],
@@ -53,18 +53,18 @@ const PAIRS: readonly [string, string, number][] = [
   ['accent', 'bg', 3],
 ];
 
-describe.each(['light', 'dark'] as const)('marcação do canvas no tema %s', (theme) => {
+describe.each(['light', 'dark'] as const)('canvas marking in the %s theme', (theme) => {
   const canvasBg = tokenValue('color-canvas-bg', theme);
 
   it.each(['cv-canvas-marking', 'cv-absorb', 'cv-select-secondary', 'cv-arrow'])(
-    '%s sobre o fundo do canvas ≥ 3',
+    '%s over the canvas background ≥ 3',
     (name) => {
       expect(contrast(tokenValue(name, theme), canvasBg)).toBeGreaterThanOrEqual(3);
     },
   );
 });
 
-/** Cor `cv-*` ('#rrggbb' ou 'rgba(r, g, b, a)') como [r, g, b, a]. */
+/** `cv-*` color ('#rrggbb' or 'rgba(r, g, b, a)') as [r, g, b, a]. */
 function rgba(value: string): [number, number, number, number] {
   if (value.startsWith('#')) {
     const [r, g, b] = [1, 3, 5].map((i) => parseInt(value.slice(i, i + 2), 16));
@@ -74,7 +74,7 @@ function rgba(value: string): [number, number, number, number] {
   return [r!, g!, b!, a ?? 1];
 }
 
-/** '#rrggbb' do `fg` (com alfa) pintado sobre o `bg` opaco. */
+/** '#rrggbb' of `fg` (with alpha) painted over the opaque `bg`. */
 function over(fg: string, bg: string): string {
   const [r, g, b, a] = rgba(fg);
   const base = rgba(bg);
@@ -82,22 +82,22 @@ function over(fg: string, bg: string): string {
   return `#${mix.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
 }
 
-// Retângulo de seleção (Shift+arrasto): borda `cv-select` sobre um halo `cv-halo`. No tema claro a
-// borda sozinha não chega a 3:1 sobre o canvas (o azul é claro); quem separa o retângulo do
-// canvas é o halo, escuro. No escuro é a borda. A silhueta passa de 3:1 nos dois temas.
+// Selection rectangle (Shift+drag): `cv-select` border over a `cv-halo` halo. In the light theme the
+// border alone does not reach 3:1 over the canvas (the blue is light); what separates the rectangle from the
+// canvas is the halo, dark. In the dark one it is the border. The silhouette passes 3:1 in both themes.
 describe.each(['light', 'dark'] as const)(
-  'retângulo de seleção com halo no tema %s',
+  'selection rectangle with halo in the %s theme',
   (theme) => {
     const canvasBg = tokenValue('color-canvas-bg', theme);
     const border = tokenValue('cv-select', theme);
     const halo = over(tokenValue('cv-halo', theme), canvasBg);
 
-    it('a silhueta (o halo ou a borda) se destaca do canvas vazio em ≥ 3', () => {
+    it('the silhouette (the halo or the border) stands out from the empty canvas at ≥ 3', () => {
       const silhouette = Math.max(contrast(border, canvasBg), contrast(halo, canvasBg));
       expect(silhouette).toBeGreaterThanOrEqual(3);
     });
 
-    it('sem o halo, só o tema claro ficaria abaixo de 3 (por isso o halo)', () => {
+    it('without the halo, only the light theme would be below 3 (that is why the halo)', () => {
       const borderAlone = contrast(border, canvasBg) >= 3;
       expect(borderAlone).toBe(theme === 'dark');
     });
@@ -107,7 +107,7 @@ describe.each(['light', 'dark'] as const)(
 describe('canvas (iguais nos dois temas)', () => {
   const cv = (name: string) => tokenValue(name, 'light');
 
-  it('texto da etiqueta do nome sobre cv-name-tag ≥ 4,5', () => {
+  it('name tag text over cv-name-tag ≥ 4.5', () => {
     expect(contrast(cv('cv-name-tag-text'), cv('cv-select'))).toBeGreaterThanOrEqual(4.5);
   });
 
@@ -116,15 +116,15 @@ describe('canvas (iguais nos dois temas)', () => {
   });
 });
 
-describe.each(['light', 'dark'] as const)('contraste no tema %s', (theme) => {
+describe.each(['light', 'dark'] as const)('contrast in the %s theme', (theme) => {
   const color = (name: string) => tokenValue(`color-${name}`, theme);
 
-  it.each(PAIRS)('%s sobre %s ≥ %s', (fg, bg, min) => {
+  it.each(PAIRS)('%s over %s ≥ %s', (fg, bg, min) => {
     expect(contrast(color(fg), color(bg))).toBeGreaterThanOrEqual(min);
   });
 
   it.each(LAYER_COLORS.map((c, i) => [i + 1, c] as const))(
-    'camada %i (%s) sobre surface ≥ 3',
+    'layer %i (%s) over surface ≥ 3',
     (_n, hex) => {
       expect(contrast(hex, color('surface'))).toBeGreaterThanOrEqual(3);
     },

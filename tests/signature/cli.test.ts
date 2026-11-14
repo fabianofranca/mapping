@@ -24,7 +24,7 @@ import {
   spawnBundle,
 } from './support';
 
-// A CLI de verdade: o bundle gerado (`dist-mcp/mapping-signature.js` e `.mjs`), num processo à parte.
+// The real CLI: the generated bundle (`dist-mcp/mapping-signature.js` and `.mjs`), in a separate process.
 
 const temp = mkdtempSync(join(tmpdir(), 'mapping-signature-'));
 afterAll(() => rmSync(temp, { recursive: true, force: true }));
@@ -41,8 +41,8 @@ const button = [
   REF,
 ];
 
-describe('--help e erros de uso (exit 2)', () => {
-  it('--help imprime o uso na saída padrão e sai com 0', () => {
+describe('--help and usage errors (exit 2)', () => {
+  it('--help prints the usage on stdout and exits with 0', () => {
     const result = spawnBundle(BUNDLE_CJS, ['--help']);
     expect(result.code).toBe(0);
     expect(result.stderr).toBe('');
@@ -52,14 +52,14 @@ describe('--help e erros de uso (exit 2)', () => {
     }
   });
 
-  it('sem argumentos: uso no stderr e exit 2', () => {
+  it('without arguments: usage on stderr and exit 2', () => {
     const result = spawnBundle(BUNDLE_CJS, []);
     expect(result.code).toBe(2);
     expect(result.stdout).toBe('');
     expect(result.stderr).toContain('--help');
   });
 
-  it('leitor desconhecido: "leitor desconhecido: <x>; disponíveis: kotlin"', () => {
+  it('unknown reader: "unknown reader: <x>; available: kotlin"', () => {
     const result = spawnBundle(BUNDLE_CJS, ['rust', '--file', 'a.rs', '--symbol', 'X']);
     expect(result.code).toBe(2);
     expect(result.stderr).toContain(
@@ -68,16 +68,16 @@ describe('--help e erros de uso (exit 2)', () => {
   });
 
   it.each([
-    ['sem --file', ['kotlin', '--symbol', 'Foo']],
-    ['sem --symbol', ['kotlin', '--file', 'A.kt']],
-    ['--file sem valor', ['kotlin', '--symbol', 'Foo', '--file']],
+    ['without --file', ['kotlin', '--symbol', 'Foo']],
+    ['without --symbol', ['kotlin', '--file', 'A.kt']],
+    ['--file without a value', ['kotlin', '--symbol', 'Foo', '--file']],
     [
-      'opção desconhecida',
+      'unknown option',
       ['kotlin', '--file', 'A.kt', '--symbol', 'Foo', '--nope', 'x'],
     ],
-    ['argumento solto', ['kotlin', 'A.kt', '--symbol', 'Foo']],
+    ['stray argument', ['kotlin', 'A.kt', '--symbol', 'Foo']],
     [
-      '--overload repetido',
+      'repeated --overload',
       [
         'kotlin',
         '--file',
@@ -90,14 +90,14 @@ describe('--help e erros de uso (exit 2)', () => {
         '2',
       ],
     ],
-  ])('%s: exit 2 com a mensagem no stderr', (_name, args) => {
+  ])('%s: exit 2 with the message on stderr', (_name, args) => {
     const result = spawnBundle(BUNDLE_CJS, args);
     expect(result.code).toBe(2);
     expect(result.stdout).toBe('');
     expect(result.stderr.length).toBeGreaterThan(0);
   });
 
-  it('--file absoluto sem --path é erro de uso (exit 2) antes de ler qualquer arquivo', () => {
+  it('absolute --file without --path is a usage error (exit 2) before reading any file', () => {
     const result = run(['kotlin', '--file', '/abs/A.kt', '--symbol', 'Foo']);
     expect(result.code).toBe(2);
     const withAlso = run([
@@ -112,21 +112,21 @@ describe('--help e erros de uso (exit 2)', () => {
     expect(withAlso.code).toBe(2);
   });
 
-  it('arquivo inexistente é erro de extração (exit 1), não de uso', () => {
+  it('a missing file is an extraction error (exit 1), not a usage error', () => {
     const result = spawnBundle(BUNDLE_CJS, [
       'kotlin',
       '--file',
-      'nao/existe.kt',
+      'does/not/exist.kt',
       '--symbol',
       'Foo',
     ]);
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain('nao/existe.kt');
+    expect(result.stderr).toContain('does/not/exist.kt');
   });
 });
 
-describe('a ficha impressa (CJS e ESM)', () => {
-  it('o Button do androidx: a ficha esperada, byte a byte, pelo .js e pelo .mjs', () => {
+describe('the printed signature (CJS and ESM)', () => {
+  it('the androidx Button: the expected signature, byte by byte, from the .js and the .mjs', () => {
     const cjs = spawnBundle(BUNDLE_CJS, button);
     const esm = spawnBundle(BUNDLE_ESM, button);
     expect(cjs.stderr).toBe('');
@@ -137,11 +137,11 @@ describe('a ficha impressa (CJS e ESM)', () => {
     expect(esm.stdout).toBe(cjs.stdout);
   });
 
-  it('determinismo: duas execuções dão os mesmos bytes (mesmo de outra pasta de trabalho)', () => {
+  it('determinism: two runs give the same bytes (even from another working folder)', () => {
     const a = spawnBundle(BUNDLE_CJS, button);
     const b = spawnBundle(BUNDLE_CJS, button);
     expect(b.stdout).toBe(a.stdout);
-    // o texto não depende de datas nem de caminhos absolutos
+    // the text does not depend on dates or absolute paths
     expect(a.stdout).not.toMatch(/\d{4}-\d{2}-\d{2}T/);
     expect(a.stdout).not.toContain(process.cwd());
     expect(a.stdout.endsWith('}\n')).toBe(true);
@@ -156,7 +156,7 @@ describe('a ficha impressa (CJS e ESM)', () => {
   ];
 
   it.each(all)(
-    '%s %j: .js e .mjs dão os mesmos bytes e a ficha passa no parseSignature',
+    '%s %j: .js and .mjs give the same bytes and the signature passes parseSignature',
     (file, rest) => {
       const args = [
         'kotlin',
@@ -176,7 +176,7 @@ describe('a ficha impressa (CJS e ESM)', () => {
 });
 
 describe('--out', () => {
-  it('grava o arquivo (mesma saída da padrão), não imprime a ficha e cria só ele', () => {
+  it('writes the file (same output as stdout), does not print the signature and creates only it', () => {
     const dir = mkdtempSync(join(temp, 'out-'));
     writeFileSync(join(dir, 'Button.kt'), fixtureText('Button.kt'));
     const args = [
@@ -189,14 +189,14 @@ describe('--out', () => {
       'x/Button.kt',
     ];
     const printed = spawnBundle(BUNDLE_CJS, args, dir);
-    const result = spawnBundle(BUNDLE_CJS, [...args, '--out', 'ficha.json'], dir);
+    const result = spawnBundle(BUNDLE_CJS, [...args, '--out', 'signature.json'], dir);
     expect(result.code).toBe(0);
     expect(result.stdout).toBe('');
-    expect(readdirSync(dir).sort()).toEqual(['Button.kt', 'ficha.json']);
-    expect(readFileSync(join(dir, 'ficha.json'), 'utf8')).toBe(printed.stdout);
+    expect(readdirSync(dir).sort()).toEqual(['Button.kt', 'signature.json']);
+    expect(readFileSync(join(dir, 'signature.json'), 'utf8')).toBe(printed.stdout);
   });
 
-  it('não cria pastas: --out numa pasta que não existe é erro de extração e nada é criado', () => {
+  it('does not create folders: --out in a folder that does not exist is an extraction error and nothing is created', () => {
     const dir = mkdtempSync(join(temp, 'nodir-'));
     writeFileSync(join(dir, 'Button.kt'), fixtureText('Button.kt'));
     const result = spawnBundle(
@@ -210,7 +210,7 @@ describe('--out', () => {
         '--path',
         'p.kt',
         '--out',
-        'sub/ficha.json',
+        'sub/signature.json',
       ],
       dir,
     );
@@ -218,9 +218,9 @@ describe('--out', () => {
     expect(readdirSync(dir)).toEqual(['Button.kt']);
   });
 
-  it('ficha que não passa no parseSignature: erro interno (exit 1) e nada é escrito', () => {
+  it('a signature that fails parseSignature: internal error (exit 1) and nothing is written', () => {
     const dir = mkdtempSync(join(temp, 'bad-'));
-    // nome de parâmetro repetido: a validação da ficha recusa
+    // repeated parameter name: the signature validation refuses it
     writeFileSync(
       join(dir, 'A.kt'),
       'package p\n@Composable\nfun Foo(a: Int, a: Int) {}\n',
@@ -236,7 +236,7 @@ describe('--out', () => {
         '--path',
         'A.kt',
         '--out',
-        'ficha.json',
+        'signature.json',
       ],
       dir,
     );
@@ -246,7 +246,7 @@ describe('--out', () => {
     expect(readdirSync(dir)).toEqual(['A.kt']);
   });
 
-  it('o erro de sintaxe sai como arquivo:linha:coluna: mensagem (exit 1)', () => {
+  it('the syntax error comes out as file:line:column: message (exit 1)', () => {
     const dir = mkdtempSync(join(temp, 'syntax-'));
     mkdirSync(join(dir, 'ui'));
     writeFileSync(join(dir, 'ui', 'A.kt'), 'package p\n\n@Composable\nfun Foo(a: Int,\n');

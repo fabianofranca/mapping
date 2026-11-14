@@ -13,9 +13,10 @@ import { clearReportedErrors } from '../../src/utils/report';
 import { sampleProject } from '../model/fixtures';
 import { MemoryDirectory } from '../storage/memoryFs';
 
-// ME3: a biblioteca de notas embutida é aplicada por padrão. Projeto novo (local e em pasta) já
-// nasce com ela; projeto de schema anterior ao 13 a ganha ao abrir (em memória, sem desfazer, e
-// a primeira gravação escreve `specs/notas/`); projeto já na v14 fica como está.
+// ME3: the bundled notes library is applied by default. A new project (local and in a folder)
+// is born with it; a project with a schema earlier than 13 gets it on opening (in memory, no
+// undo, and the first save writes `specs/notas/`); a project already on v14 stays as it is.
+// pt-BR kept: ids, names and paths of the bundled library `libraries/notas` (`notas`, `Notas`, `nota`), asserted verbatim
 
 const pickDirectory = vi.fn<() => Promise<DirectoryHandleLike | null>>();
 
@@ -27,7 +28,7 @@ vi.mock('../../src/storage/folder', async (importOriginal) => {
 type Controller = typeof import('../../src/app/controller');
 type Local = typeof import('../../src/storage/local');
 
-/** O controller guarda estado no módulo: cada teste carrega uma cópia nova. */
+/** The controller keeps state in the module: each test loads a fresh copy. */
 async function load(): Promise<{ app: Controller; local: Local }> {
   vi.resetModules();
   const app = await import('../../src/app/controller');
@@ -64,47 +65,47 @@ const PACKAGE_PATHS = [
 
 async function openedSession(): Promise<NonNullable<typeof app.openProject.value>> {
   const current = app.openProject.value;
-  if (!current) throw new Error('nenhum projeto aberto');
+  if (!current) throw new Error('no project open');
   return current;
 }
 
 function projectOf(opened: NonNullable<typeof app.openProject.value>): Project {
   const p = opened.session.store.project.value;
-  if (!p) throw new Error('projeto fechado');
+  if (!p) throw new Error('project closed');
   return p;
 }
 
 const notesLayers = (p: Project) => p.layers.filter((l) => l.spec?.specId === 'notas');
 
-/** O mapping.json de um projeto do schema 12: o de hoje com a versão antiga (a migração é a real). */
+/** The mapping.json of a schema 12 project: today's with the old version (the migration is the real one). */
 function v12Text(p: Project): string {
   const data = JSON.parse(serialize(p)) as Record<string, unknown>;
   return `${JSON.stringify({ ...data, schemaVersion: 12 }, null, 2)}\n`;
 }
 
-/** Uma pasta de projeto em memória: mapping.json e, opcionalmente, os arquivos de `specs/`. */
+/** An in-memory project folder: mapping.json and, optionally, the files of `specs/`. */
 function folderOf(mapping: string, extra: ReadonlyMap<string, string> = new Map()) {
-  const root = new MemoryDirectory('pasta');
+  const root = new MemoryDirectory('folder');
   root.put('mapping.json', mapping);
   for (const [path, text] of extra) root.put(path, text);
   return root;
 }
 
-/** Projeto com as notas aplicadas pela pessoa e os arquivos como estariam no disco. */
+/** A project with the notes applied by the person and the files as they would be on disk. */
 function withNotes() {
   const project = applyBundledLibrary(sampleProject(), NOTES_LIBRARY).project;
   return { project, files: bundledLibraryDiskFiles(project, NOTES_LIBRARY) };
 }
 
-describe('projeto novo', () => {
-  it('local: nasce com a especialização notas, a camada Notas e specs/notas/ no armazenamento', async () => {
-    expect((await app.createLocalProject('Novo')).ok).toBe(true);
+describe('new project', () => {
+  it('local: is born with the notas specialization, the Notas layer and specs/notas/ in storage', async () => {
+    expect((await app.createLocalProject('New')).ok).toBe(true);
     const opened = await openedSession();
     const project = projectOf(opened);
     expect(project.specializations).toEqual([
       expect.objectContaining({ id: 'notas', file: SPEC_FILE }),
     ]);
-    // A primeira camada leva o nome da língua da interface; a das notas vem da biblioteca.
+    // The first layer takes the name in the interface language; the notes one comes from the library.
     expect(project.layers).toHaveLength(2);
     expect(project.layers.at(-1)?.name).toBe('Notas');
     expect(notesLayers(project)).toHaveLength(1);
@@ -124,7 +125,7 @@ describe('projeto novo', () => {
       )?.text(),
     ).toBe(NOTES_LIBRARY.files.get('docs/nota.md'));
 
-    // Reabrir do armazenamento mantém tudo e o catálogo de componentes lê o pacote.
+    // Reopening from storage keeps everything and the component catalog reads the package.
     const id = opened.localId ?? '';
     await app.closeProject();
     expect((await app.openLocalProject(id)).ok).toBe(true);
@@ -136,24 +137,24 @@ describe('projeto novo', () => {
     ).toBe(true);
   });
 
-  it('em pasta: grava specs/notas/ antes do mapping.json, que cita a especialização', async () => {
-    const root = new MemoryDirectory('minha-pasta');
+  it('in a folder: writes specs/notas/ before mapping.json, which cites the specialization', async () => {
+    const root = new MemoryDirectory('my-folder');
     expect((await app.createFolderProject(root, 'P', [])).ok).toBe(true);
 
     for (const path of PACKAGE_PATHS) {
       expect(await root.read(path), path).not.toBeNull();
     }
-    const notasDir = root.dirs.get('specs')?.dirs.get('notas');
+    const notesDir = root.dirs.get('specs')?.dirs.get('notas');
     const mappingTick = root.modified.get('mapping.json') ?? 0;
     expect(mappingTick).toBeGreaterThan(0);
-    for (const [name, tick] of notasDir?.modified ?? []) {
+    for (const [name, tick] of notesDir?.modified ?? []) {
       expect(tick, name).toBeLessThan(mappingTick);
     }
-    for (const [name, tick] of notasDir?.dirs.get('components')?.modified ?? []) {
+    for (const [name, tick] of notesDir?.dirs.get('components')?.modified ?? []) {
       expect(tick, name).toBeLessThan(mappingTick);
     }
     const saved = deserialize((await root.read('mapping.json')) ?? '');
-    if (!saved.ok) throw new Error('mapping inválido');
+    if (!saved.ok) throw new Error('invalid mapping');
     expect(saved.project.specializations).toEqual([
       expect.objectContaining({ id: 'notas', file: SPEC_FILE }),
     ]);
@@ -167,8 +168,8 @@ describe('projeto novo', () => {
   });
 });
 
-describe('abrir projeto existente', () => {
-  it('v12 sem notas: abre com a biblioteca em memória, sem desfazer; a primeira gravação escreve specs/notas/, o backup e um mapping v16', async () => {
+describe('open existing project', () => {
+  it('v12 without notes: opens with the library in memory, no undo; the first save writes specs/notas/, the backup and a v16 mapping', async () => {
     const original = v12Text(sampleProject());
     const root = folderOf(original);
     pickDirectory.mockResolvedValue(root);
@@ -180,27 +181,27 @@ describe('abrir projeto existente', () => {
       expect.objectContaining({ id: 'notas', file: SPEC_FILE }),
     ]);
     expect(notesLayers(project)).toHaveLength(1);
-    // Em memória: nada de desfazer e nada no disco ainda.
+    // In memory: no undo and nothing on disk yet.
     expect(opened.session.store.canUndo.value).toBe(false);
     expect(await root.read('mapping.json')).toBe(original);
     expect(root.dirs.has('specs')).toBe(false);
     expect(root.dirs.has('backups')).toBe(false);
-    // O catálogo já enxerga o tipo da nota.
+    // The catalog already sees the note type.
     await opened.session.components.whenIdle();
     expect(opened.session.components.catalog.value.get('notas')?.byType.has('nota')).toBe(
       true,
     );
 
-    // A primeira alteração grava tudo junto.
-    opened.session.actions.renameProject('Renomeado');
+    // The first change writes everything together.
+    opened.session.actions.renameProject('Renamed');
     expect((await opened.session.flush()).ok).toBe(true);
     for (const path of PACKAGE_PATHS) {
       expect(await root.read(path), path).not.toBeNull();
     }
     const saved = deserialize((await root.read('mapping.json')) ?? '');
-    if (!saved.ok) throw new Error('mapping inválido');
+    if (!saved.ok) throw new Error('invalid mapping');
     expect(saved.project.schemaVersion).toBe(20);
-    expect(saved.project.project.name).toBe('Renomeado');
+    expect(saved.project.project.name).toBe('Renamed');
     expect(saved.project.specializations).toEqual([
       expect.objectContaining({ id: 'notas', file: SPEC_FILE }),
     ]);
@@ -214,13 +215,13 @@ describe('abrir projeto existente', () => {
         ?.files.get(backups[0] ?? '')
         ?.text(),
     ).toBe(original);
-    // Só a renomeação entra no histórico.
+    // Only the rename enters the history.
     expect(opened.session.store.canUndo.value).toBe(true);
     opened.session.store.undo();
     expect(opened.session.store.canUndo.value).toBe(false);
   });
 
-  it('v12 local: o armazenamento recebe specs/notas/ na primeira gravação', async () => {
+  it('v12 local: storage receives specs/notas/ on the first save', async () => {
     const library = await local.openLocalLibrary();
     await library?.create('v12', {
       mapping: v12Text(sampleProject()),
@@ -235,7 +236,7 @@ describe('abrir projeto existente', () => {
     expect(opened.session.store.canUndo.value).toBe(false);
     expect(await opened.session.storage.readSpecFile(SPEC_FILE)).toBeNull();
 
-    opened.session.actions.renameProject('Renomeado');
+    opened.session.actions.renameProject('Renamed');
     await opened.session.flush();
     for (const path of PACKAGE_PATHS) {
       expect(await opened.session.storage.readSpecFile(path), path).not.toBeNull();
@@ -244,7 +245,7 @@ describe('abrir projeto existente', () => {
     library?.close();
   });
 
-  it('já na v14 sem a especialização notas: não a adiciona', async () => {
+  it('already on v14 without the notas specialization: does not add it', async () => {
     const root = folderOf(serialize(sampleProject()));
     pickDirectory.mockResolvedValue(root);
     expect((await app.openFolder()).ok).toBe(true);
@@ -253,12 +254,12 @@ describe('abrir projeto existente', () => {
     expect(project.specializations).toEqual([]);
     expect(notesLayers(project)).toEqual([]);
     expect(opened.session.store.canUndo.value).toBe(false);
-    opened.session.actions.renameProject('Renomeado');
+    opened.session.actions.renameProject('Renamed');
     await opened.session.flush();
     expect(root.dirs.has('specs')).toBe(false);
   });
 
-  it('v12 que já tem a especialização notas (aplicada pela pessoa): não duplica', async () => {
+  it('v12 that already has the notas specialization (applied by the person): does not duplicate', async () => {
     const { project, files } = withNotes();
     const root = folderOf(v12Text(project), files);
     pickDirectory.mockResolvedValue(root);
@@ -268,23 +269,23 @@ describe('abrir projeto existente', () => {
     expect(opened12.specializations).toHaveLength(1);
     expect(notesLayers(opened12)).toHaveLength(1);
     expect(opened12.layers).toHaveLength(project.layers.length);
-    // Nem tentou aplicar de novo (o erro de "já aplicada" iria para o Diagnóstico).
+    // It did not even try to apply again (the "already applied" error would go to Diagnostics).
     const report = await import('../../src/utils/report');
     expect(report.reportedErrors.value.map((e) => e.context)).not.toContain('open.notes');
     expect(opened.session.store.canUndo.value).toBe(false);
 
-    // A cópia da pessoa continua a que está no disco, sem regravar o pacote por cima.
+    // The person's copy remains the one on disk, without rewriting the package over it.
     const before = root.dirs
       .get('specs')
       ?.dirs.get('notas')
       ?.modified.get('notas.spec.json');
-    opened.session.actions.renameProject('Renomeado');
+    opened.session.actions.renameProject('Renamed');
     await opened.session.flush();
     expect(
       root.dirs.get('specs')?.dirs.get('notas')?.modified.get('notas.spec.json'),
     ).toBe(before);
     const saved = deserialize((await root.read('mapping.json')) ?? '');
-    if (!saved.ok) throw new Error('mapping inválido');
+    if (!saved.ok) throw new Error('invalid mapping');
     expect(saved.project.specializations).toHaveLength(1);
     expect(notesLayers(saved.project)).toHaveLength(1);
   });

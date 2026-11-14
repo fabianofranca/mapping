@@ -1,4 +1,4 @@
-// Visualizador embutível: a árvore das instâncias (puro, sem DOM).
+// Embeddable viewer: the instance tree (pure, no DOM).
 import { describe, expect, it } from 'vitest';
 import { loadLibrary } from '../../src/model/components/library';
 import { SAMPLE_FILES, SAMPLE_SCREEN } from '../../viewer/samples/samples';
@@ -10,7 +10,7 @@ const sampleLibrary = loadLibrary(SAMPLE_FILES);
 const m3Library = loadLibrary(M3_FILES);
 
 describe('screenTree', () => {
-  it('tela sem hierarquia: uma raiz por instância, na ordem de desenho, sem filhos', () => {
+  it('a screen without hierarchy: one root per instance, in drawing order, with no children', () => {
     const tree = screenTree(SAMPLE_SCREEN, sampleLibrary);
     expect(tree.map((n) => n.id)).toEqual(renderOrder(SAMPLE_SCREEN).map((i) => i.id));
     expect(tree.every((n) => n.depth === 0 && n.children.length === 0)).toBe(true);
@@ -23,7 +23,7 @@ describe('screenTree', () => {
     expect(bar?.instance).toBe(SAMPLE_SCREEN.instances.find((i) => i.id === 'i-bar'));
   });
 
-  it('o rótulo é o instanceLabel do tipo (labelField preenchido, senão o nome)', () => {
+  it('the label is the type instanceLabel (labelField filled in, otherwise the name)', () => {
     const tree = flattenTree(screenTree(M3_SCREEN, m3Library));
     expect(tree.find((n) => n.id === 'm-chip1')?.label).toBe('All');
     expect(tree.find((n) => n.id === 'm-row-chips')?.label).toBe(
@@ -31,7 +31,7 @@ describe('screenTree', () => {
     );
   });
 
-  it('tela do Material 3: o Row é raiz e leva os chips como filhos, com a profundidade', () => {
+  it('Material 3 screen: the Row is a root and carries the chips as children, with the depth', () => {
     const tree = screenTree(M3_SCREEN, m3Library);
     const row = tree.find((n) => n.id === 'm-row-chips');
     expect(row?.depth).toBe(0);
@@ -42,11 +42,11 @@ describe('screenTree', () => {
       expect(child.parentId).toBe('m-row-chips');
       expect(child.children).toEqual([]);
     }
-    // Os chips não aparecem como raízes.
+    // The chips do not appear as roots.
     expect(tree.some((n) => n.id === 'm-chip1')).toBe(false);
   });
 
-  it('flattenTree segue a ordem de renderOrder e traz todas as instâncias', () => {
+  it('flattenTree follows the renderOrder order and brings all the instances', () => {
     for (const [screen, library] of [
       [SAMPLE_SCREEN, sampleLibrary],
       [M3_SCREEN, m3Library],
@@ -57,7 +57,7 @@ describe('screenTree', () => {
     }
   });
 
-  it('aninha vários níveis e trata parentId inexistente como raiz', () => {
+  it('nests several levels and treats a nonexistent parentId as a root', () => {
     const screen: Screen = {
       ...SAMPLE_SCREEN,
       instances: [
@@ -87,7 +87,7 @@ describe('screenTree', () => {
     );
   });
 
-  it('tipo desconhecido: o rótulo é o typeId e não há typeName', () => {
+  it('unknown type: the label is the typeId and there is no typeName', () => {
     const screen: Screen = {
       ...SAMPLE_SCREEN,
       instances: [
@@ -104,7 +104,7 @@ describe('screenTree', () => {
     expect(node && 'typeName' in node).toBe(false);
   });
 
-  it('biblioteca undefined: todos os tipos são desconhecidos, mas a hierarquia vale', () => {
+  it('undefined library: all the types are unknown, but the hierarchy applies', () => {
     const flat = flattenTree(screenTree(M3_SCREEN, undefined));
     expect(flat).toHaveLength(M3_SCREEN.instances.length);
     expect(flat.every((n) => n.label === n.typeId && n.typeName === undefined)).toBe(
@@ -116,7 +116,7 @@ describe('screenTree', () => {
     });
   });
 
-  it('tela vazia: árvore vazia', () => {
+  it('empty screen: empty tree', () => {
     expect(screenTree({ ...SAMPLE_SCREEN, instances: [] }, sampleLibrary)).toEqual([]);
     expect(flattenTree([])).toEqual([]);
   });

@@ -10,10 +10,10 @@ import {
 import { tableLines, valueParts } from '../../src/ui/review/changeText';
 import { world } from '../model/refAnnotationFixtures';
 
-// `ref` para a anotação inteira (etapa #679, CF1) na revisão da proposta: trocar o alvo de uma
-// célula aparece como mudança daquela linha, com o rótulo da instância.
-describe('tableLines com a célula ref para a anotação inteira', () => {
-  it('a linha mostra o rótulo do alvo; trocar o alvo muda o texto da linha', () => {
+// `ref` to the whole annotation (stage #679, CF1) in the proposal review: changing the target of a
+// cell shows up as a change of that row, with the instance label.
+describe('tableLines with the ref cell to the whole annotation', () => {
+  it('the row shows the target label; changing the target changes the row text', () => {
     let p = world();
     p = addTableRow(p, 'AL', 'itens', 'I1');
     p = setTableCell(p, 'AL', 'itens', 'I1', 'alvo', { annotationId: 'AM' });
@@ -32,8 +32,8 @@ describe('tableLines com a célula ref para a anotação inteira', () => {
   });
 });
 
-describe('valueParts com o campo ref para a anotação inteira', () => {
-  it('mostra o rótulo do alvo, não o JSON', () => {
+describe('valueParts with the ref field to the whole annotation', () => {
+  it('shows the target label, not the JSON', () => {
     const names = { current: world(), preview: null, proposal: {} as Proposal };
     const change = { kind: 'update', field: 'values.item' } as unknown as Change;
     expect(valueParts(names, change, { annotationId: 'AM' })).toEqual([
@@ -42,12 +42,12 @@ describe('valueParts com o campo ref para a anotação inteira', () => {
   });
 });
 
-describe('referência quebrada na revisão segue o idioma (#945, item 41)', () => {
+describe('broken reference in the review follows the language (#945, item 41)', () => {
   afterEach(() => {
-    locale.value = 'pt-BR';
+    locale.value = 'en-US';
   });
 
-  it('em en-US a célula e o campo ref quebrados saem em inglês', () => {
+  it('in en-US the broken ref cell and field come out in English', () => {
     locale.value = 'en-US';
     const names = { current: world(), preview: null, proposal: {} as Proposal };
     const change = { kind: 'update', field: 'values.item' } as unknown as Change;

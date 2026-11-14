@@ -28,11 +28,11 @@ import { createHarness, type Harness } from '../components/harness';
 import { sampleProject } from '../model/fixtures';
 import { MemoryDirectory } from '../storage/memoryFs';
 
-// Etapa 3a.2: o diálogo "Projeto alterado fora da app", o aviso "Projeto atualizado por
-// fora" e a conferência periódica do mapping.json.
+// Stage 3a.2: the "Project changed outside the app" dialog, the "Project updated
+// externally" notice and the periodic check of mapping.json.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(() => {
   cleanup();
@@ -40,7 +40,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-/** O `conflict` da sessão é só de leitura para a interface; o teste o escreve. */
+/** The session `conflict` is read-only for the interface; the test writes it. */
 const conflictOf = (h: Harness) =>
   h.context.session.conflict as unknown as Signal<ExternalConflict | null>;
 const reloadsOf = (h: Harness) => h.context.session.reloads as unknown as Signal<number>;
@@ -62,13 +62,13 @@ function renderDialogs(harness: Harness) {
 
 const dialogEl = () => document.querySelector('dialog') as HTMLElement | null;
 
-describe('diálogo "Projeto alterado fora da app"', () => {
-  it('não aparece sem conflito', () => {
+describe('"Project changed outside the app" dialog', () => {
+  it('does not show without a conflict', () => {
     renderDialogs(createHarness(sampleProject()));
     expect(dialogEl()).toBeNull();
   });
 
-  it('aparece com o conflito, com Recarregar e Manter as minhas', async () => {
+  it('shows with the conflict, with Reload and Keep mine', async () => {
     const harness = createHarness(sampleProject());
     renderDialogs(harness);
     conflictOf(harness).value = { reloadFailed: false };
@@ -86,7 +86,7 @@ describe('diálogo "Projeto alterado fora da app"', () => {
     expect(dialog.queryByRole('alert', { hidden: true })).toBeNull();
   });
 
-  it('cada botão decide o conflito na sessão', async () => {
+  it('each button decides the conflict in the session', async () => {
     const harness = createHarness(sampleProject());
     const resolve = vi
       .spyOn(harness.context.session, 'resolveConflict')
@@ -106,9 +106,9 @@ describe('diálogo "Projeto alterado fora da app"', () => {
     expect(resolve).toHaveBeenLastCalledWith('keep');
   });
 
-  // Etapa 6 (6.2), achado 9: o X aparecia e não fazia nada. A escolha é obrigatória, então
-  // o diálogo não tem botão de fechar; Esc e o clique no fundo também não decidem.
-  it('sem o X: Esc e o clique no fundo não decidem por ninguém', async () => {
+  // Stage 6 (6.2), finding 9: the X showed up and did nothing. The choice is mandatory, so
+  // the dialog has no close button; Esc and clicking the backdrop do not decide either.
+  it('no X: Esc and clicking the backdrop do not decide for anyone', async () => {
     const harness = createHarness(sampleProject());
     const resolve = vi.spyOn(harness.context.session, 'resolveConflict');
     renderDialogs(harness);
@@ -130,7 +130,7 @@ describe('diálogo "Projeto alterado fora da app"', () => {
     expect(dialogEl()).not.toBeNull();
   });
 
-  it('avisa quando recarregar falhou', async () => {
+  it('warns when reloading failed', async () => {
     const harness = createHarness(sampleProject());
     renderDialogs(harness);
     conflictOf(harness).value = { reloadFailed: true };
@@ -140,7 +140,7 @@ describe('diálogo "Projeto alterado fora da app"', () => {
     );
   });
 
-  it('some quando o conflito é resolvido', async () => {
+  it('disappears when the conflict is resolved', async () => {
     const harness = createHarness(sampleProject());
     renderDialogs(harness);
     conflictOf(harness).value = { reloadFailed: false };
@@ -150,7 +150,7 @@ describe('diálogo "Projeto alterado fora da app"', () => {
   });
 });
 
-describe('avisos sobre o canvas', () => {
+describe('notices over the canvas', () => {
   const notices: EditorNotices = {
     progress: null,
     message: null,
@@ -167,7 +167,7 @@ describe('avisos sobre o canvas', () => {
     );
   }
 
-  it('mostra o aviso curto da UI (ex.: "Referência copiada")', async () => {
+  it('shows the short UI notice (e.g. "Reference copied")', async () => {
     const harness = createHarness(sampleProject());
     renderNotices(harness);
     expect(screen.queryByRole('status')).toBeNull();
@@ -177,7 +177,7 @@ describe('avisos sobre o canvas', () => {
     await vi.waitFor(() => expect(screen.queryByRole('status')).toBeNull());
   });
 
-  it('o erro de gravação some enquanto o diálogo de conflito explica o motivo', async () => {
+  it('the save error disappears while the conflict dialog explains the reason', async () => {
     const harness = createHarness(sampleProject());
     const status = harness.context.session.saveStatus as unknown as Signal<string>;
     renderNotices(harness);
@@ -214,7 +214,7 @@ describe('useExternalChanges', () => {
   });
   afterEach(() => Reflect.deleteProperty(document, 'visibilityState'));
 
-  it('confere o mapping.json a cada 3 s com a janela visível (sem olhar as imagens)', async () => {
+  it('checks mapping.json every 3 s with the window visible (without looking at the images)', async () => {
     const harness = createHarness(sampleProject());
     const sync = vi.spyOn(harness.context.session, 'sync').mockResolvedValue('unchanged');
     mount(harness);
@@ -226,20 +226,20 @@ describe('useExternalChanges', () => {
     expect(sync).toHaveBeenCalledTimes(3);
   });
 
-  // Etapa #1777 (decisão 8): o próximo ciclo começa `clamp(4 × duração, 3 s, 30 s)` depois de o
-  // último terminar, nunca com trabalho em curso, e o foco confere na hora.
-  describe('conferência adaptativa (etapa #1777)', () => {
-    /** Um `sync` que leva `ms` para terminar (relógio falso). */
+  // Stage #1777 (decision 8): the next cycle starts `clamp(4 × duration, 3 s, 30 s)` after the
+  // last one ends, never with work in progress, and focus checks right away.
+  describe('adaptive check (stage #1777)', () => {
+    /** A `sync` that takes `ms` to finish (fake clock). */
     const takes = (ms: number) => () =>
       new Promise<'unchanged'>((resolve) => setTimeout(() => resolve('unchanged'), ms));
 
-    it('exporta os limites: mínimo de 3 s, teto de 30 s, fator 4', () => {
+    it('exports the limits: minimum of 3 s, ceiling of 30 s, factor 4', () => {
       expect(EXTERNAL_POLL_MS).toBe(3000);
       expect(EXTERNAL_POLL_MAX_MS).toBe(30_000);
       expect(EXTERNAL_POLL_FACTOR).toBe(4);
     });
 
-    it('numa pasta rápida, os ciclos seguem a cada 3 s', async () => {
+    it('in a fast folder, the cycles keep running every 3 s', async () => {
       const harness = createHarness(sampleProject());
       const sync = vi
         .spyOn(harness.context.session, 'sync')
@@ -249,29 +249,29 @@ describe('useExternalChanges', () => {
       expect(sync).toHaveBeenCalledTimes(0);
       await vi.advanceTimersByTimeAsync(1);
       expect(sync).toHaveBeenCalledTimes(1);
-      // O ciclo terminou 50 ms depois: o próximo começa 3 s depois do fim (4 × 50 ms < 3 s).
+      // The cycle ended 50 ms later: the next one starts 3 s after the end (4 × 50 ms < 3 s).
       await vi.advanceTimersByTimeAsync(50 + EXTERNAL_POLL_MS - 1);
       expect(sync).toHaveBeenCalledTimes(1);
       await vi.advanceTimersByTimeAsync(1);
       expect(sync).toHaveBeenCalledTimes(2);
     });
 
-    it('com um ciclo de 2 s, o próximo começa 8 s depois do fim', async () => {
+    it('with a 2 s cycle, the next one starts 8 s after the end', async () => {
       const harness = createHarness(sampleProject());
       const sync = vi
         .spyOn(harness.context.session, 'sync')
         .mockImplementation(takes(2000));
       mount(harness);
-      await vi.advanceTimersByTimeAsync(EXTERNAL_POLL_MS); // começa o ciclo 1
+      await vi.advanceTimersByTimeAsync(EXTERNAL_POLL_MS); // cycle 1 starts
       expect(sync).toHaveBeenCalledTimes(1);
-      await vi.advanceTimersByTimeAsync(2000); // termina
+      await vi.advanceTimersByTimeAsync(2000); // ends
       await vi.advanceTimersByTimeAsync(8000 - 1);
       expect(sync).toHaveBeenCalledTimes(1);
       await vi.advanceTimersByTimeAsync(1);
       expect(sync).toHaveBeenCalledTimes(2);
     });
 
-    it('com um ciclo de 10 s, o próximo espera o teto de 30 s', async () => {
+    it('with a 10 s cycle, the next one waits for the 30 s ceiling', async () => {
       const harness = createHarness(sampleProject());
       const sync = vi
         .spyOn(harness.context.session, 'sync')
@@ -285,23 +285,23 @@ describe('useExternalChanges', () => {
       expect(sync).toHaveBeenCalledTimes(2);
     });
 
-    it('um ciclo rápido depois de um lento volta aos 3 s', async () => {
+    it('a fast cycle after a slow one goes back to 3 s', async () => {
       const harness = createHarness(sampleProject());
       const sync = vi
         .spyOn(harness.context.session, 'sync')
         .mockImplementationOnce(takes(2000))
         .mockImplementation(takes(0));
       mount(harness);
-      await vi.advanceTimersByTimeAsync(EXTERNAL_POLL_MS + 2000 + 8000); // ciclo 2 começa
+      await vi.advanceTimersByTimeAsync(EXTERNAL_POLL_MS + 2000 + 8000); // cycle 2 starts
       expect(sync).toHaveBeenCalledTimes(2);
-      await vi.advanceTimersByTimeAsync(1); // o ciclo 2 (quase instantâneo) termina
+      await vi.advanceTimersByTimeAsync(1); // cycle 2 (almost instantaneous) ends
       await vi.advanceTimersByTimeAsync(EXTERNAL_POLL_MS - 1);
       expect(sync).toHaveBeenCalledTimes(2);
       await vi.advanceTimersByTimeAsync(1);
       expect(sync).toHaveBeenCalledTimes(3);
     });
 
-    it('com gravação em curso, o ciclo é adiado de 3 em 3 s e roda depois', async () => {
+    it('with a save in progress, the cycle is postponed every 3 s and runs afterwards', async () => {
       const harness = createHarness(sampleProject());
       const sync = vi
         .spyOn(harness.context.session, 'sync')
@@ -316,7 +316,7 @@ describe('useExternalChanges', () => {
       expect(sync).toHaveBeenLastCalledWith({ images: false });
     });
 
-    it('o foco confere na hora, com as imagens, mesmo com trabalho em curso', async () => {
+    it('focus checks right away, with the images, even with work in progress', async () => {
       const harness = createHarness(sampleProject());
       const sync = vi
         .spyOn(harness.context.session, 'sync')
@@ -328,19 +328,19 @@ describe('useExternalChanges', () => {
       expect(sync).toHaveBeenLastCalledWith({ images: true });
     });
 
-    it('um erro do ciclo não para a cadeia', async () => {
+    it('an error in the cycle does not stop the chain', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => undefined);
       const harness = createHarness(sampleProject());
       const sync = vi
         .spyOn(harness.context.session, 'sync')
-        .mockRejectedValueOnce(new Error('sem permissão'))
+        .mockRejectedValueOnce(new Error('no permission'))
         .mockResolvedValue('unchanged');
       mount(harness);
       await vi.advanceTimersByTimeAsync(EXTERNAL_POLL_MS * 2);
       expect(sync).toHaveBeenCalledTimes(2);
     });
 
-    it('desmontar durante um ciclo não agenda o seguinte', async () => {
+    it('unmounting during a cycle does not schedule the next one', async () => {
       const harness = createHarness(sampleProject());
       const sync = vi
         .spyOn(harness.context.session, 'sync')
@@ -354,7 +354,7 @@ describe('useExternalChanges', () => {
     });
   });
 
-  it('com a janela escondida, não confere', async () => {
+  it('with the window hidden, it does not check', async () => {
     const harness = createHarness(sampleProject());
     const sync = vi.spyOn(harness.context.session, 'sync').mockResolvedValue('unchanged');
     mount(harness);
@@ -364,7 +364,7 @@ describe('useExternalChanges', () => {
     expect(sync).not.toHaveBeenCalled();
   });
 
-  it('ao voltar o foco, confere na hora, inclusive os arquivos de imagem', () => {
+  it('when focus returns, it checks right away, including the image files', () => {
     const harness = createHarness(sampleProject());
     const sync = vi.spyOn(harness.context.session, 'sync').mockResolvedValue('unchanged');
     mount(harness);
@@ -374,7 +374,7 @@ describe('useExternalChanges', () => {
     expect(sync).toHaveBeenCalledTimes(2);
   });
 
-  it('recarregou: avisa "Projeto atualizado por fora" e o aviso some sozinho', async () => {
+  it('reloaded: warns "Project updated from outside" and the notice disappears on its own', async () => {
     const harness = createHarness(sampleProject());
     vi.spyOn(harness.context.session, 'sync')
       .mockResolvedValueOnce('reloaded')
@@ -386,7 +386,7 @@ describe('useExternalChanges', () => {
     expect(harness.ui.toast.value).toBeNull();
   });
 
-  it('sem recarga (nada mudou, ou há pendências), não avisa', async () => {
+  it('without a reload (nothing changed, or there are pending items), it does not warn', async () => {
     const harness = createHarness(sampleProject());
     const sync = vi.spyOn(harness.context.session, 'sync').mockResolvedValue('busy');
     mount(harness);
@@ -395,18 +395,18 @@ describe('useExternalChanges', () => {
     expect(harness.ui.toast.value).toBeNull();
   });
 
-  it('um erro da conferência vai para o Diagnóstico e a conferência continua', async () => {
+  it('an error in the check goes to Diagnostics and the check continues', async () => {
     const harness = createHarness(sampleProject());
     const sync = vi
       .spyOn(harness.context.session, 'sync')
-      .mockRejectedValueOnce(new Error('sem permissão'))
+      .mockRejectedValueOnce(new Error('no permission'))
       .mockResolvedValue('unchanged');
     mount(harness);
     await vi.advanceTimersByTimeAsync(EXTERNAL_POLL_MS * 2);
     expect(sync).toHaveBeenCalledTimes(2);
   });
 
-  it('projeto fora de uma pasta (não observável) não confere nada', async () => {
+  it('a project outside a folder (not watchable) checks nothing', async () => {
     const harness = createHarness(sampleProject());
     Object.defineProperty(harness.context.session, 'watchable', { value: false });
     const sync = vi.spyOn(harness.context.session, 'sync');
@@ -416,7 +416,7 @@ describe('useExternalChanges', () => {
     expect(sync).not.toHaveBeenCalled();
   });
 
-  it('ao desmontar, para de conferir', async () => {
+  it('on unmount, it stops checking', async () => {
     const harness = createHarness(sampleProject());
     const sync = vi.spyOn(harness.context.session, 'sync').mockResolvedValue('unchanged');
     const view = mount(harness);
@@ -426,31 +426,31 @@ describe('useExternalChanges', () => {
     expect(sync).not.toHaveBeenCalled();
   });
 
-  it('depois de recarregar, a seleção que deixou de existir é limpa; a que existe fica', async () => {
+  it('after a reload, the selection that no longer exists is cleared; the one that exists stays', async () => {
     const harness = createHarness(sampleProject());
     mount(harness);
     harness.ui.selection.value = { kind: 'marking', id: 'M2' };
     reloadsOf(harness).value++;
     expect(harness.ui.selection.value).toEqual({ kind: 'marking', id: 'M2' });
 
-    harness.ui.selection.value = { kind: 'marking', id: 'sumiu' };
+    harness.ui.selection.value = { kind: 'marking', id: 'gone' };
     reloadsOf(harness).value++;
     expect(harness.ui.selection.value).toBeNull();
   });
 
-  // Etapa 6 (6.2), achado 8 (R6.10): com a gravação em erro (arquivo travado), a alteração
-  // feita por fora abre o diálogo na conferência seguinte, sem esperar "Tentar de novo".
-  describe('com a gravação em erro (fase 6.2)', () => {
+  // Stage 6 (6.2), finding 8 (R6.10): with the save in error (locked file), the change
+  // made externally opens the dialog on the next check, without waiting for "Try again".
+  describe('with the save in error (phase 6.2)', () => {
     function lockedFolder() {
-      const root = new MemoryDirectory('loja');
+      const root = new MemoryDirectory('shop');
       const project = sampleProject();
       const text = serialize(project);
       root.put('mapping.json', text);
       const session = openSession({
-        storage: createFolderStorage(root, { copyId: 'externa' }),
+        storage: createFolderStorage(root, { copyId: 'external' }),
         project,
         loadedText: text,
-        prepareImage: () => Promise.reject(new Error('sem imagens aqui')),
+        prepareImage: () => Promise.reject(new Error('no images here')),
         now: () => '2026-10-11T12:00:00.000Z',
       });
       const context = createEditorContextValue({
@@ -479,23 +479,23 @@ describe('useExternalChanges', () => {
       return { root, project, session, view };
     }
 
-    /** R6.9 e R6.10: edição na app com o arquivo travado, depois edição por fora. */
+    /** R6.9 and R6.10: edit in the app with the file locked, then an external edit. */
     async function failedThenExternal(root: MemoryDirectory, session: ProjectSession) {
       vi.spyOn(console, 'error').mockImplementation(() => undefined);
       root.failWrites = new Error('NoModificationAllowedError');
-      session.actions.renameProject('Título app');
+      session.actions.renameProject('App title');
       await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
       expect(session.saveStatus.value).toBe('error');
       const external = serialize({
         ...sampleProject(),
         revision: 1,
-        project: { ...sampleProject().project, name: 'Rodapé externo' },
+        project: { ...sampleProject().project, name: 'External footer' },
       });
       root.put('mapping.json', external);
       return external;
     }
 
-    it('o diálogo abre em até um ciclo da conferência', async () => {
+    it('the dialog opens within one check cycle', async () => {
       const { root, session, view } = lockedFolder();
       await failedThenExternal(root, session);
       expect(dialogEl()).toBeNull();
@@ -507,12 +507,12 @@ describe('useExternalChanges', () => {
           hidden: true,
         }),
       ).toBeTruthy();
-      expect(session.store.project.value?.project.name).toBe('Título app');
+      expect(session.store.project.value?.project.name).toBe('App title');
       view.unmount();
       await session.close();
     });
 
-    it('Recarregar a partir desse estado lê o arquivo de fora', async () => {
+    it('Reload from that state reads the outside file', async () => {
       const { root, session, view } = lockedFolder();
       const external = await failedThenExternal(root, session);
       await vi.advanceTimersByTimeAsync(EXTERNAL_POLL_MS);
@@ -521,14 +521,14 @@ describe('useExternalChanges', () => {
         .getByRole('button', { name: t('external.reload'), hidden: true })
         .click();
       await vi.waitFor(() => expect(dialogEl()).toBeNull());
-      expect(session.store.project.value?.project.name).toBe('Rodapé externo');
+      expect(session.store.project.value?.project.name).toBe('External footer');
       expect(session.saveStatus.value).toBe('saved');
       expect(await root.read('mapping.json')).toBe(external);
       view.unmount();
       await session.close();
     });
 
-    it('Manter as minhas a partir desse estado grava por cima ao devolver a permissão', async () => {
+    it('Keep mine from that state writes over it once permission is given back', async () => {
       const { root, session, view } = lockedFolder();
       await failedThenExternal(root, session);
       await vi.advanceTimersByTimeAsync(EXTERNAL_POLL_MS);
@@ -540,14 +540,14 @@ describe('useExternalChanges', () => {
       await vi.waitFor(() => expect(dialogEl()).toBeNull());
       await vi.waitFor(() => expect(session.saveStatus.value).toBe('saved'));
       const saved = await root.read('mapping.json');
-      expect(saved).toContain('Título app');
-      expect(saved).not.toContain('Rodapé externo');
+      expect(saved).toContain('App title');
+      expect(saved).not.toContain('External footer');
       view.unmount();
       await session.close();
     });
   });
 
-  it('as camadas escondidas continuam como estavam', () => {
+  it('hidden layers stay as they were', () => {
     const harness = createHarness(sampleProject());
     mount(harness);
     harness.ui.hiddenLayers.value = new Set(['L2']);

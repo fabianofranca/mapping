@@ -3,7 +3,7 @@ import source from '../../pwa/sw.js?raw';
 
 type Listener = (event: Record<string, unknown>) => void;
 
-/** Executa o sw.js com um `self`/`caches` falsos e devolve o que ele registrou. */
+/** Runs sw.js with a fake `self`/`caches` and returns what it recorded. */
 function loadWorker(cacheNames: string[] = [], channel: 'main' | 'preview' = 'main') {
   const fetched: { url: string; cache: string }[] = [];
   const listeners = new Map<string, Listener>();
@@ -74,7 +74,7 @@ function loadWorker(cacheNames: string[] = [], channel: 'main' | 'preview' = 'ma
 }
 
 describe('sw.js', () => {
-  it('instala o app no cache sem ativar sozinho (espera o usuário)', async () => {
+  it('installs the app in the cache without activating by itself (waits for the user)', async () => {
     const worker = loadWorker();
     await worker.dispatch('install');
     expect(worker.skipWaiting).not.toHaveBeenCalled();
@@ -83,12 +83,12 @@ describe('sw.js', () => {
     expect(cache?.has('https://example.com/app/manifest.webmanifest')).toBe(true);
   });
 
-  it('o guia interativo entra no cache da instalação e funciona offline', async () => {
+  it('the interactive guide enters the install cache and works offline', async () => {
     const worker = loadWorker();
     await worker.dispatch('install');
     const [cache] = [...worker.stored.values()];
     expect(cache?.has('https://example.com/app/guia/index.html')).toBe(true);
-    // Navegação para o guia (com ou sem o index.html, com query) vem do cache, não da rede.
+    // Navigation to the guide (with or without index.html, with a query) comes from the cache, not the network.
     for (const path of ['guia/', 'guia/index.html', 'guia/index.html?x=1']) {
       const [response] = await worker.dispatch('fetch', {
         request: {
@@ -101,7 +101,7 @@ describe('sw.js', () => {
     }
   });
 
-  it('o guia do preview é o do preview: a versão principal não responde por ele', async () => {
+  it('the preview guide belongs to the preview: the main version does not answer for it', async () => {
     const main = loadWorker();
     await main.dispatch('install');
     const responses = await main.dispatch('fetch', {
@@ -124,7 +124,7 @@ describe('sw.js', () => {
     expect(response).toBe('cached');
   });
 
-  it('o precache ignora o cache HTTP do navegador (cache: reload)', async () => {
+  it('the precache ignores the browser HTTP cache (cache: reload)', async () => {
     const worker = loadWorker();
     await worker.dispatch('install');
     expect(worker.fetched.length).toBeGreaterThan(0);
@@ -134,46 +134,47 @@ describe('sw.js', () => {
     );
   });
 
-  it('ativa quando o app manda SKIP_WAITING', async () => {
+  it('activates when the app sends SKIP_WAITING', async () => {
     const worker = loadWorker();
     await worker.dispatch('message', { data: { type: 'SKIP_WAITING' } });
     expect(worker.skipWaiting).toHaveBeenCalledOnce();
   });
 
-  it('apaga só caches antigos do app ao ativar', async () => {
-    const worker = loadWorker(['mapeador-antigo', 'outro-site', 'mapeador-__BUILD_ID__']);
+  // pt-BR kept: the cache prefix `mapeador-` is the legacy identifier kept by pwa/sw.js (before the rename to Mapping)
+  it('deletes only old app caches on activation', async () => {
+    const worker = loadWorker(['mapeador-old', 'other-site', 'mapeador-__BUILD_ID__']);
     await worker.dispatch('activate');
-    expect(worker.deleted).toContain('mapeador-antigo');
-    expect(worker.deleted).not.toContain('outro-site');
+    expect(worker.deleted).toContain('mapeador-old');
+    expect(worker.deleted).not.toContain('other-site');
     expect(worker.claim).toHaveBeenCalled();
   });
 
-  it('versão principal e preview não apagam o cache um do outro', async () => {
+  it('main version and preview do not delete each other cache', async () => {
     const names = [
-      'mapeador-antigo',
-      'mapeador-preview-antigo',
+      'mapeador-old',
+      'mapeador-preview-old',
       'mapeador-__BUILD_ID__',
       'mapeador-preview-__BUILD_ID__',
     ];
     const main = loadWorker(names);
     await main.dispatch('activate');
-    expect(main.deleted).toEqual(['mapeador-antigo']);
+    expect(main.deleted).toEqual(['mapeador-old']);
 
     const preview = loadWorker(names, 'preview');
     await preview.dispatch('activate');
-    expect(preview.deleted).toEqual(['mapeador-preview-antigo']);
+    expect(preview.deleted).toEqual(['mapeador-preview-old']);
   });
 
-  it('o preview instala no próprio cache', async () => {
+  it('the preview installs in its own cache', async () => {
     const worker = loadWorker([], 'preview');
     await worker.dispatch('install');
     expect([...worker.stored.keys()]).toEqual(['mapeador-preview-__BUILD_ID__']);
   });
 
-  it('a versão principal não responde pelas páginas do preview', async () => {
+  it('the main version does not answer for the preview pages', async () => {
     const worker = loadWorker();
     await worker.dispatch('install');
-    // Sem a barra final também: o GitHub Pages redireciona `/preview` para `/preview/`.
+    // Without the trailing slash too: GitHub Pages redirects `/preview` to `/preview/`.
     for (const path of ['preview/', 'preview', 'preview?x=1', 'preview/sw.js']) {
       const responses = await worker.dispatch('fetch', {
         request: {
@@ -186,7 +187,7 @@ describe('sw.js', () => {
     }
   });
 
-  it('a versão principal responde por caminhos que só começam com "preview"', async () => {
+  it('the main version answers for paths that merely start with "preview"', async () => {
     const worker = loadWorker();
     await worker.dispatch('install');
     const responses = await worker.dispatch('fetch', {
@@ -196,15 +197,15 @@ describe('sw.js', () => {
         url: 'https://example.com/app/previews/icon.png',
       },
     });
-    // Não é do preview: a versão principal assume a requisição (cache, depois rede).
+    // It is not the preview's: the main version takes the request (cache, then network).
     expect(responses).toHaveLength(1);
   });
 
-  it('navegação para outra página do site (ex.: outra/) vai à rede, não ao index.html', async () => {
+  it('navigation to another page of the site (e.g. other/) goes to the network, not to index.html', async () => {
     for (const channel of ['main', 'preview'] as const) {
       const worker = loadWorker([], channel);
       await worker.dispatch('install');
-      for (const path of ['outra/', 'outra/index.html', 'outra.html']) {
+      for (const path of ['other/', 'other/index.html', 'other.html']) {
         const responses = await worker.dispatch('fetch', {
           request: {
             method: 'GET',
@@ -217,7 +218,7 @@ describe('sw.js', () => {
     }
   });
 
-  it('navegação para a própria página serve o index.html do cache', async () => {
+  it('navigation to the page itself serves index.html from the cache', async () => {
     const worker = loadWorker();
     await worker.dispatch('install');
     for (const path of ['', 'index.html', 'index.html?x=1']) {
@@ -232,7 +233,7 @@ describe('sw.js', () => {
     }
   });
 
-  it('navegação serve o index.html do cache, mesmo com query', async () => {
+  it('navigation serves index.html from the cache, even with a query', async () => {
     const worker = loadWorker();
     await worker.dispatch('install');
     const [response] = await worker.dispatch('fetch', {
@@ -245,7 +246,7 @@ describe('sw.js', () => {
     expect(response).toBe('cached');
   });
 
-  it('ignora POST e outras origens', async () => {
+  it('ignores POST and other origins', async () => {
     const worker = loadWorker();
     const post = await worker.dispatch('fetch', {
       request: { method: 'POST', mode: 'cors', url: 'https://example.com/app/x' },

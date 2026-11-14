@@ -4,17 +4,17 @@ import { BUILD_ID, formatBuildId, resolveBuildId } from '../../src/utils/build';
 
 const NOW = new Date('2026-10-10T15:30:00.000Z');
 
-describe('identificação do build', () => {
-  it('SHA curto do commit mais a data do build', () => {
+describe('build identification', () => {
+  it('short commit SHA plus the build date', () => {
     expect(formatBuildId('abcdef0123456789', NOW)).toBe('abcdef0 · 2026-10-10');
   });
 
-  it('usa o commit do git; sem git, o GITHUB_SHA do CI; sem os dois, `dev`', () => {
+  it('uses the git commit; without git, the CI GITHUB_SHA; without both, `dev`', () => {
     const git = () => 'fedcba9\n';
     const noGit = () => {
       throw new Error('not a git repository');
     };
-    // O deploy faz checkouts próprios (main e preview): vale o commit do checkout.
+    // The deploy makes its own checkouts (main and preview): the checkout commit wins.
     expect(resolveBuildId({ githubSha: '0123456789abcdef', gitSha: git, now: NOW })).toBe(
       'fedcba9 · 2026-10-10',
     );
@@ -26,7 +26,7 @@ describe('identificação do build', () => {
     );
   });
 
-  it('a constante do build é um texto não vazio', () => {
+  it('the build constant is a non-empty string', () => {
     expect(typeof BUILD_ID).toBe('string');
     expect(BUILD_ID.length).toBeGreaterThan(0);
   });

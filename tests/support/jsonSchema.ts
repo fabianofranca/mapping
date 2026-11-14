@@ -1,8 +1,8 @@
 /**
- * Verificador mínimo de JSON Schema para os testes (sem dependência). Entende só o subconjunto
- * usado em `docs/*.schema.json`: type (inclusive lista), enum, const, required, properties,
+ * Minimal JSON Schema checker for the tests (no dependency). Understands only the subset
+ * used in `docs/*.schema.json`: type (including list), enum, const, required, properties,
  * additionalProperties, items, prefixItems, $ref/$defs, oneOf, anyOf, pattern, minimum, maximum,
- * exclusiveMinimum, minLength, minItems, maxItems, propertyNames (só `pattern`). Palavra desconhecida falha (não é ignorada).
+ * exclusiveMinimum, minLength, minItems, maxItems, propertyNames (`pattern` only). An unknown keyword fails (it is not ignored).
  */
 type Rec = Record<string, unknown>;
 
@@ -51,17 +51,17 @@ function matchesType(v: unknown, t: string): boolean {
 
 const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
 
-/** Devolve os problemas de `value` contra `schema` (lista vazia = aceito), cada um `"caminho: texto"`. */
+/** Returns the problems of `value` against `schema` (empty list = accepted), each one `"path: text"`. */
 export function checkSchema(root: Rec, value: unknown, at = '$'): string[] {
   return walk(root, root, value, at);
 }
 
 function walk(root: Rec, schema: unknown, value: unknown, at: string): string[] {
   if (schema === true) return [];
-  if (schema === false) return [`${at}: não permitido`];
-  if (!isRec(schema)) return [`${at}: schema inválido`];
+  if (schema === false) return [`${at}: not allowed`];
+  if (!isRec(schema)) return [`${at}: invalid schema`];
   for (const key of Object.keys(schema)) {
-    if (!KNOWN.has(key)) return [`${at}: palavra do schema não suportada: ${key}`];
+    if (!KNOWN.has(key)) return [`${at}: unsupported schema keyword: ${key}`];
   }
   if (typeof schema.$ref === 'string') {
     const name = schema.$ref.replace(/^#\/\$defs\//, '');
@@ -74,38 +74,38 @@ function walk(root: Rec, schema: unknown, value: unknown, at: string): string[] 
   if (schema.type !== undefined) {
     const types = Array.isArray(schema.type) ? schema.type : [schema.type];
     if (!types.some((t) => matchesType(value, String(t))))
-      return [`${at}: esperava ${types.join('|')}, veio ${typeOf(value)}`];
+      return [`${at}: expected ${types.join('|')}, got ${typeOf(value)}`];
   }
   if (Array.isArray(schema.enum) && !schema.enum.some((e) => same(e, value)))
-    out.push(`${at}: fora de enum`);
-  if ('const' in schema && !same(schema.const, value)) out.push(`${at}: fora de const`);
+    out.push(`${at}: not in enum`);
+  if ('const' in schema && !same(schema.const, value)) out.push(`${at}: not equal to const`);
   if (Array.isArray(schema.anyOf)) {
     if (!schema.anyOf.some((s) => walk(root, s, value, at).length === 0))
-      out.push(`${at}: nenhuma alternativa de anyOf aceita`);
+      out.push(`${at}: no anyOf alternative accepts it`);
   }
   if (Array.isArray(schema.oneOf)) {
     const n = schema.oneOf.filter((s) => walk(root, s, value, at).length === 0).length;
-    if (n !== 1) out.push(`${at}: oneOf aceito por ${n} alternativas`);
+    if (n !== 1) out.push(`${at}: oneOf accepted by ${n} alternatives`);
   }
   if (typeof value === 'string') {
     if (typeof schema.pattern === 'string' && !new RegExp(schema.pattern).test(value))
-      out.push(`${at}: fora do padrão ${schema.pattern}`);
+      out.push(`${at}: outside the pattern ${schema.pattern}`);
     if (typeof schema.minLength === 'number' && value.length < schema.minLength)
-      out.push(`${at}: texto curto demais`);
+      out.push(`${at}: text too short`);
   }
   if (typeof value === 'number') {
     if (typeof schema.minimum === 'number' && value < schema.minimum)
-      out.push(`${at}: menor que ${schema.minimum}`);
+      out.push(`${at}: less than ${schema.minimum}`);
     if (typeof schema.maximum === 'number' && value > schema.maximum)
-      out.push(`${at}: maior que ${schema.maximum}`);
+      out.push(`${at}: greater than ${schema.maximum}`);
     if (typeof schema.exclusiveMinimum === 'number' && value <= schema.exclusiveMinimum)
-      out.push(`${at}: não maior que ${schema.exclusiveMinimum}`);
+      out.push(`${at}: not greater than ${schema.exclusiveMinimum}`);
   }
   if (Array.isArray(value)) {
     if (typeof schema.minItems === 'number' && value.length < schema.minItems)
-      out.push(`${at}: poucos itens`);
+      out.push(`${at}: too few items`);
     if (typeof schema.maxItems === 'number' && value.length > schema.maxItems)
-      out.push(`${at}: itens demais`);
+      out.push(`${at}: too many items`);
     const prefix = Array.isArray(schema.prefixItems) ? schema.prefixItems : [];
     value.forEach((item, i) => {
       const s = i < prefix.length ? prefix[i] : schema.items;
@@ -116,15 +116,15 @@ function walk(root: Rec, schema: unknown, value: unknown, at: string): string[] 
     const props = isRec(schema.properties) ? schema.properties : {};
     if (Array.isArray(schema.required))
       for (const key of schema.required)
-        if (!(String(key) in value)) out.push(`${at}.${String(key)}: obrigatório`);
+        if (!(String(key) in value)) out.push(`${at}.${String(key)}: required`);
     const names = isRec(schema.propertyNames) ? schema.propertyNames.pattern : undefined;
     for (const [key, item] of Object.entries(value)) {
       const path = `${at}.${key}`;
       if (typeof names === 'string' && !new RegExp(names).test(key))
-        out.push(`${path}: nome fora do padrão ${names}`);
+        out.push(`${path}: name outside the pattern ${names}`);
       if (key in props) out.push(...walk(root, props[key], item, path));
       else if (schema.additionalProperties === false)
-        out.push(`${path}: chave desconhecida`);
+        out.push(`${path}: unknown key`);
       else if (schema.additionalProperties !== undefined)
         out.push(...walk(root, schema.additionalProperties, item, path));
     }

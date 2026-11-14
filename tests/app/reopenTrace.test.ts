@@ -1,5 +1,5 @@
-// Devolução do portão da 8.4 (achado 1): o rastro de um Abrir de pasta dos recentes no
-// Diagnóstico (`folders.reopen`), para separar as hipóteses numa reprodução do dono.
+// Return from the 8.4 gate (finding 1): the trace of an Open of a recent folder in
+// Diagnostics (`folders.reopen`), to separate the hypotheses in a reproduction by the owner.
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { REOPEN_CONTEXT, ReopenTrace } from '../../src/app/reopenTrace';
 import { clearReportedErrors, reportedErrors } from '../../src/utils/report';
@@ -14,7 +14,7 @@ const unavailable = {
 } as const;
 const opened = { ok: true, value: { kind: 'opened' } } as const;
 
-/** Um `<dialog>` aberto na página, como o aviso depois do `showModal`. */
+/** An open `<dialog>` on the page, like the notice after `showModal`. */
 function openDialog(): HTMLDialogElement {
   const dialog = document.createElement('dialog');
   dialog.setAttribute('open', '');
@@ -22,7 +22,7 @@ function openDialog(): HTMLDialogElement {
   return dialog;
 }
 
-/** O caminho do relato: pedido concedido e a pasta sem `mapping.json`. */
+/** The reported path: request granted and the folder without `mapping.json`. */
 function promptedMissing(trace: ReopenTrace): void {
   clock = 4;
   trace.step('handle=idb');
@@ -44,7 +44,7 @@ afterEach(() => {
 });
 
 describe('ReopenTrace', () => {
-  it('pedido concedido e aviso: uma linha com o caminho, o que a Home fez e o aviso na tela', () => {
+  it('request granted and notice: one line with the path, what Home did and the notice on screen', () => {
     const trace = new ReopenTrace(now);
     promptedMissing(trace);
     clock = 3816;
@@ -59,7 +59,7 @@ describe('ReopenTrace', () => {
     trace.end();
   });
 
-  it('o fechamento do aviso vira a segunda linha, com a causa e quanto tempo ficou aberto', () => {
+  it('closing the notice becomes the second line, with the cause and how long it stayed open', () => {
     const trace = new ReopenTrace(now);
     promptedMissing(trace);
     trace.settle(unavailable, true);
@@ -68,12 +68,12 @@ describe('ReopenTrace', () => {
     clock = 4120;
     trace.closed('backdrop');
     expect(lines()[1]).toBe('notice closed: backdrop after 120ms');
-    // Fechado, o rastro acabou: nada mais grava.
+    // Once closed, the trace is over: nothing else is recorded.
     trace.closed('cancel');
     expect(lines()).toHaveLength(2);
   });
 
-  it('pedido e projeto aberto: não grava (o editor acenderia "há erros novos")', () => {
+  it('request and project opened: does not record (the editor would light up "there are new errors")', () => {
     const trace = new ReopenTrace(now);
     trace.step('query=prompt');
     trace.step('request=granted');
@@ -82,7 +82,7 @@ describe('ReopenTrace', () => {
     expect(lines()).toEqual([]);
   });
 
-  it('aviso sem pedido (o caminho que funciona): não grava, nem ao fechar', () => {
+  it('notice without a request (the path that works): does not record, not even on close', () => {
     const trace = new ReopenTrace(now);
     trace.step('query=granted');
     trace.step('branch=no-mapping');
@@ -92,7 +92,7 @@ describe('ReopenTrace', () => {
     expect(lines()).toEqual([]);
   });
 
-  it('erro mostrado como mensagem: grava sempre, com o código', () => {
+  it('error shown as a message: always records, with the code', () => {
     const trace = new ReopenTrace(now);
     trace.step('query=granted');
     trace.settle({ ok: false, error: 'storage-failed' }, true);
@@ -106,27 +106,27 @@ describe('ReopenTrace', () => {
     inconsistent: { issues: [], repaired: [], unrepaired: [], repair: null },
   } as const;
 
-  it('projeto inconsistente sem pedido: caminho normal, não grava', () => {
+  it('inconsistent project without a request: normal path, does not record', () => {
     const trace = new ReopenTrace(now);
     trace.settle(inconsistent, true);
     expect(lines()).toHaveLength(0);
   });
 
-  it('projeto inconsistente depois do pedido de permissão: grava', () => {
+  it('inconsistent project after the permission request: records', () => {
     const trace = new ReopenTrace(now);
     trace.step('request=granted');
     trace.settle(inconsistent, true);
     expect(lines()[0]).toContain('home=inconsistent');
   });
 
-  it('a Home saiu antes do resultado: grava', () => {
+  it('Home left before the result: records', () => {
     const trace = new ReopenTrace(now);
     trace.step('query=granted');
     trace.settle(unavailable, false);
     expect(lines()[0]).toContain('home=unmounted');
   });
 
-  it('aviso que não está aberto na tela: grava, mesmo sem pedido', () => {
+  it('notice that is not open on screen: records, even without a request', () => {
     const trace = new ReopenTrace(now);
     trace.step('query=granted');
     trace.settle(unavailable, true);
@@ -136,7 +136,7 @@ describe('ReopenTrace', () => {
     expect(lines()[0]).toMatch(/shown=closed,/);
   });
 
-  it('aviso que nunca montou: grava ao acabar o rastro', () => {
+  it('notice that never mounted: records when the trace ends', () => {
     const trace = new ReopenTrace(now);
     trace.step('query=granted');
     trace.settle(unavailable, true);
@@ -144,7 +144,7 @@ describe('ReopenTrace', () => {
     expect(lines()[0]).toContain('shown=never');
   });
 
-  it('os eventos da janela entram com o tempo, no máximo 8', () => {
+  it('window events come in with the time, at most 8', () => {
     const trace = new ReopenTrace(now);
     trace.step('query=prompt');
     clock = 40;
@@ -168,7 +168,7 @@ describe('ReopenTrace', () => {
     ).toHaveLength(8);
   });
 
-  it('depois de acabar, o rastro não ouve mais a janela', () => {
+  it('once finished, the trace no longer listens to the window', () => {
     const trace = new ReopenTrace(now);
     trace.step('query=granted');
     trace.settle(opened, true);
@@ -176,23 +176,25 @@ describe('ReopenTrace', () => {
     expect(lines()).toEqual([]);
   });
 
-  it('pagehide com o Abrir em curso grava o que já se sabe (vai ao console)', () => {
+  it('pagehide with the Open in progress records what is already known (goes to the console)', () => {
     const trace = new ReopenTrace(now);
     trace.step('query=prompt');
     clock = 50;
     window.dispatchEvent(new Event('pagehide'));
     expect(lines()).toHaveLength(1);
+    // pt-BR kept: message emitted by src/app/reopenTrace.ts (outside this phase), asserted verbatim
     expect(lines()[0]).toMatch(/^pagehide com o Abrir em curso: query=prompt@0/);
     trace.end();
   });
 
-  it('pagehide com o aviso de um rastro gravado aberto também grava', () => {
+  it('pagehide with the notice of a recorded trace open also records', () => {
     const trace = new ReopenTrace(now);
     promptedMissing(trace);
     trace.settle(unavailable, true);
     trace.shown(openDialog());
     window.dispatchEvent(new Event('pagehide'));
     expect(lines()).toHaveLength(2);
+    // pt-BR kept: message emitted by src/app/reopenTrace.ts (outside this phase), asserted verbatim
     expect(lines()[1]).toMatch(/^pagehide com o aviso aberto/);
     trace.end();
   });
