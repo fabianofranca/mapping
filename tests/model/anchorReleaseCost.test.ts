@@ -1,5 +1,5 @@
-// Sem âncora no projeto, criar marcações não monta o índice (O(n)) de cada versão: o
-// assentar só olha o índice quando há relação de âncora (regressão de desempenho da R3).
+// Without an anchor in the project, creating markings does not build the index (O(n)) of each version: the
+// settle only looks at the index when there is an anchor relation (R3 performance regression).
 import { describe, expect, it, vi } from 'vitest';
 
 const built = vi.hoisted(() => ({ count: 0 }));
@@ -36,8 +36,8 @@ function withContainer() {
   });
 }
 
-describe('assentar sem âncoras não monta o índice a cada operação', () => {
-  it('50 criações num projeto sem âncora montam poucos índices', () => {
+describe('settling without anchors does not build the index on every operation', () => {
+  it('50 creations in a project without anchors build few indexes', () => {
     let p = withContainer();
     built.count = 0;
     for (let i = 0; i < 50; i++) {
@@ -47,11 +47,11 @@ describe('assentar sem âncoras não monta o índice a cada operação', () => {
         rect: { x: (i % 10) * 60, y: Math.floor(i / 10) * 60, width: 50, height: 50 },
       });
     }
-    // O custo não pode crescer com o número de operações (sem o caminho rápido era um índice por criação).
+    // The cost must not grow with the number of operations (without the fast path it was one index per creation).
     expect(built.count).toBeLessThan(10);
   });
 
-  it('com âncora no projeto, o índice volta a ser consultado', () => {
+  it('with an anchor in the project, the index is consulted again', () => {
     let p = withContainer();
     for (const [id, x] of [
       ['A', 0],

@@ -1,5 +1,5 @@
-// Validador da biblioteca em três níveis (`validateLibrary`, etapa Biblioteca, fase B1). O
-// `loadLibrary` do motor tem o próprio teste em `tests/model/components/library.test.ts`.
+// Library validator on three levels (`validateLibrary`, Library stage, phase B1). The
+// engine's `loadLibrary` has its own test in `tests/model/components/library.test.ts`.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -13,7 +13,7 @@ import {
 import { parseSpec, type Spec } from '../../src/model/spec';
 
 // ---------------------------------------------------------------------------------------
-// Um pacote pequeno, válido, montado em memória
+// A small, valid package, built in memory
 // ---------------------------------------------------------------------------------------
 
 const SPEC = 'mini.spec.json';
@@ -24,10 +24,10 @@ const BUTTON_COMPONENT = {
   format: 'mapping-component',
   formatVersion: 1,
   id: 'mini-button',
-  name: 'Botão',
+  name: 'Button',
   size: { width: 120, height: 40 },
   minSize: { width: 96, height: 40 },
-  preview: { label: 'Salvar', variant: 'primary' },
+  preview: { label: 'Save', variant: 'primary' },
   template: {
     type: 'frame',
     name: 'button',
@@ -37,7 +37,7 @@ const BUTTON_COMPONENT = {
       {
         type: 'text',
         name: 'label',
-        text: { $field: 'label', default: 'Botão' },
+        text: { $field: 'label', default: 'Button' },
         font: FONT,
         color: '#000000',
       },
@@ -49,10 +49,10 @@ const CARD_COMPONENT = {
   format: 'mapping-component',
   formatVersion: 1,
   id: 'mini-card',
-  name: 'Cartão',
+  name: 'Card',
   size: { width: 200, height: 120 },
   minSize: { width: 120, height: 60 },
-  preview: { title: 'Título' },
+  preview: { title: 'Title' },
   template: {
     type: 'frame',
     name: 'card',
@@ -62,7 +62,7 @@ const CARD_COMPONENT = {
       {
         type: 'text',
         name: 'title',
-        text: { $field: 'title', default: 'Título' },
+        text: { $field: 'title', default: 'Title' },
         font: FONT,
         color: '#000000',
         anchors: { left: 8, top: 8 },
@@ -104,14 +104,14 @@ const SPEC_JSON = {
       annotationTypes: [
         {
           id: 'mini-button',
-          name: 'Botão',
+          name: 'Button',
           labelField: 'label',
           component: 'components/mini-button.json',
           doc: 'docs/mini-button.md',
           examples: [
-            { name: 'Primário', values: { label: 'Salvar', variant: 'primary' } },
-            { name: 'Texto', values: { label: 'Cancelar', variant: 'text' } },
-            { name: 'Nó SDUI', system: 'sdui', file: 'examples/button.sdui.json' },
+            { name: 'Primary', values: { label: 'Save', variant: 'primary' } },
+            { name: 'Text', values: { label: 'Cancel', variant: 'text' } },
+            { name: 'SDUI node', system: 'sdui', file: 'examples/button.sdui.json' },
           ],
           sources: [{ system: 'sdui', name: 'Button' }],
           fields: [
@@ -132,7 +132,7 @@ const SPEC_JSON = {
         },
         {
           id: 'mini-card',
-          name: 'Cartão',
+          name: 'Card',
           component: 'components/mini-card.json',
           sources: [{ system: 'sdui', name: 'Card', slot: 'content' }],
           fields: [
@@ -152,12 +152,12 @@ const HOME_JSON = {
   screen: { width: 360, height: 640 },
   content: {
     type: 'Card',
-    props: { title: 'Olá' },
-    children: [{ type: 'Button', props: { text: 'Ir', style: 'primary' } }],
+    props: { title: 'Hello' },
+    children: [{ type: 'Button', props: { text: 'Go', style: 'primary' } }],
   },
 };
 
-const BUTTON_NODE_JSON = { type: 'Button', props: { text: 'Salvar', style: 'text' } };
+const BUTTON_NODE_JSON = { type: 'Button', props: { text: 'Save', style: 'text' } };
 
 const json = (value: unknown): string => JSON.stringify(value, null, 2);
 
@@ -166,16 +166,16 @@ function miniPackage(): LibraryFile[] {
     { path: SPEC, text: json(SPEC_JSON) },
     { path: 'components/mini-button.json', text: json(BUTTON_COMPONENT) },
     { path: 'components/mini-card.json', text: json(CARD_COMPONENT) },
-    { path: 'docs/mini-button.md', text: '# Botão\n\nAção principal.\n' },
+    { path: 'docs/mini-button.md', text: '# Button\n\nMain action.\n' },
     { path: 'examples/button.sdui.json', text: json(BUTTON_NODE_JSON) },
     { path: 'examples/home.sdui.json', text: json(HOME_JSON) },
     { path: 'fonts/Roboto-Medium.ttf', binary: true },
-    { path: 'fonts/LEIA-ME.txt', text: 'Licença da fonte.' },
+    { path: 'fonts/README.txt', text: 'Font license.' },
   ];
 }
 
 // ---------------------------------------------------------------------------------------
-// Edição dos arquivos do pacote (sem `any`: o JSON é percorrido como `unknown`)
+// Editing the package files (no `any`: the JSON is walked as `unknown`)
 // ---------------------------------------------------------------------------------------
 
 type JsonPath = readonly (string | number)[];
@@ -184,12 +184,12 @@ function setIn(root: unknown, path: JsonPath, value: unknown): void {
   let node: unknown = root;
   for (const key of path.slice(0, -1)) node = Reflect.get(Object(node), key);
   const last = path[path.length - 1];
-  if (last === undefined) throw new Error('caminho vazio');
+  if (last === undefined) throw new Error('empty path');
   if (value === undefined) Reflect.deleteProperty(Object(node), last);
   else Reflect.set(Object(node), last, value);
 }
 
-/** Troca (ou, com `undefined`, apaga) o valor num caminho do JSON de um arquivo do pacote. */
+/** Replaces (or, with `undefined`, deletes) the value at a JSON path of a package file. */
 function patch(
   files: readonly LibraryFile[],
   path: string,
@@ -221,7 +221,7 @@ const validate = (
   extra: Partial<LibraryInput> = {},
 ): ReturnType<typeof validateLibrary> => validateLibrary({ files, ...extra });
 
-/** `[severity, file, path, message]` para comparar sem ruído. */
+/** `[severity, file, path, message]` to compare without noise. */
 const brief = (issue: LibraryIssue): [string, string, string, string] => [
   issue.severity,
   issue.file,
@@ -230,10 +230,10 @@ const brief = (issue: LibraryIssue): [string, string, string, string] => [
 ];
 
 // ---------------------------------------------------------------------------------------
-// Pacote válido
+// Valid package
 // ---------------------------------------------------------------------------------------
 
-describe('validateLibrary: família de fonte do componente', () => {
+describe('validateLibrary: component font family', () => {
   const family = (value: string): LibraryIssue[] =>
     validate(
       patch(
@@ -244,7 +244,7 @@ describe('validateLibrary: família de fonte do componente', () => {
       ),
     ).warnings.slice();
 
-  it('uma família que o CSS não aceita é aviso, com o caminho do nó e o valor', () => {
+  it('a family that CSS does not accept is a warning, with the node path and the value', () => {
     const warnings = family('"Segoe UI, Roboto');
     expect(warnings.map(brief)).toEqual([
       [
@@ -256,13 +256,13 @@ describe('validateLibrary: família de fonte do componente', () => {
     ]);
   });
 
-  it('uma pilha válida não avisa', () => {
+  it('a valid stack does not warn', () => {
     expect(family('system-ui, "Segoe UI", sans-serif')).toEqual([]);
   });
 });
 
-describe('validateLibrary: pacote válido', () => {
-  it('não tem erro nem aviso, e o resumo conta o pacote', () => {
+describe('validateLibrary: valid package', () => {
+  it('has no error or warning, and the summary counts the package', () => {
     const report = validate(miniPackage());
     expect(report.issues.map(brief)).toEqual([]);
     expect(report.ok).toBe(true);
@@ -274,12 +274,12 @@ describe('validateLibrary: pacote válido', () => {
       types: 2,
       components: 2,
       docs: 1,
-      examples: 4, // 3 do tipo mini-button + 1 tela de exemplo da origem
+      examples: 4, // 3 of the mini-button type + 1 example screen of the origin
       fonts: 1,
     });
   });
 
-  it('docs conta os documentos do pacote e os externos (docRepos), e concorda com o número de tipos com doc', () => {
+  it('docs counts the package documents and the external ones (docRepos), and agrees with the number of types with a doc', () => {
     const spec = structuredClone(SPEC_JSON) as unknown as {
       formatVersion: number;
       docRepos: unknown[];
@@ -299,7 +299,7 @@ describe('validateLibrary: pacote válido', () => {
     expect(report.summary.docs).toBe(2);
   });
 
-  it('acha a especialização sozinha ou pelo specPath, com o pacote numa subpasta', () => {
+  it('finds the specialization on its own or by specPath, with the package in a subfolder', () => {
     const nested = miniPackage().map((f) => ({ ...f, path: `pack/${f.path}` }));
     expect(validate(nested).issues).toEqual([]);
     expect(validate(nested, { specPath: `pack/${SPEC}` }).issues).toEqual([]);
@@ -307,11 +307,11 @@ describe('validateLibrary: pacote válido', () => {
 });
 
 // ---------------------------------------------------------------------------------------
-// Um pacote quebrado por regra
+// A package broken by rule
 // ---------------------------------------------------------------------------------------
 
-describe('validateLibrary: nível 1 (cada arquivo)', () => {
-  it('sem especialização no pacote: um erro do pacote e nada mais', () => {
+describe('validateLibrary: level 1 (each file)', () => {
+  it('without a specialization in the package: one package error and nothing else', () => {
     const report = validate([{ path: 'a.md', text: 'x' }]);
     expect(report.ok).toBe(false);
     expect(report.issues.map(brief)).toEqual([
@@ -333,24 +333,26 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
     });
   });
 
-  it('duas especializações sem specPath: pede para indicar; com specPath inexistente: erro no arquivo', () => {
-    const two = [...miniPackage(), { path: 'outra.spec.json', text: json(SPEC_JSON) }];
+  it('two specializations without specPath: asks to say which; with a nonexistent specPath: error on the file', () => {
+    const two = [...miniPackage(), { path: 'other.spec.json', text: json(SPEC_JSON) }];
     expect(validate(two).issues.map(brief)).toEqual([
       [
         'error',
         '',
         '',
-        'there are 2 specializations in the package (mini.spec.json, outra.spec.json): say which one to validate',
+        'there are 2 specializations in the package (mini.spec.json, other.spec.json): say which one to validate',
       ],
     ]);
-    expect(validate(miniPackage(), { specPath: 'nada.json' }).issues.map(brief)).toEqual([
-      ['error', 'nada.json', '', 'specialization file not found: nada.json'],
+    expect(
+      validate(miniPackage(), { specPath: 'nothing.json' }).issues.map(brief),
+    ).toEqual([
+      ['error', 'nothing.json', '', 'specialization file not found: nothing.json'],
     ]);
   });
 
-  it('especialização inválida: o erro do parseSpec com o caminho; sem nível 2 nem 3', () => {
-    // O componente continua quebrado, mas sem especialização legível ninguém o lê.
-    const files = patch(miniPackage(), SPEC, [...TYPE0, 'fields', 0, 'type'], 'texto');
+  it('invalid specialization: the parseSpec error with the path; no level 2 or 3', () => {
+    // The component is still broken, but without a readable specialization nobody reads it.
+    const files = patch(miniPackage(), SPEC, [...TYPE0, 'fields', 0, 'type'], 'wrong');
     const report = validate(withText(files, 'components/mini-button.json', '{'));
     expect(report.ok).toBe(false);
     expect(report.errors).toHaveLength(1);
@@ -359,14 +361,14 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
       path: 'layers[0].annotationTypes[0].fields[0].type',
       severity: 'error',
     });
-    expect(report.errors[0]?.message).toContain('"texto" is invalid');
+    expect(report.errors[0]?.message).toContain('"wrong" is invalid');
     expect(report.spec).toBeUndefined();
     expect(report.summary.level).toBe(1);
   });
 
-  it('especialização com JSON quebrado', () => {
+  it('specialization with broken JSON', () => {
     const report = validate(withText(miniPackage(), SPEC, '{"format": "mapping-spec",'));
-    // Não é candidata a especialização: o pacote fica sem nenhuma.
+    // Not a specialization candidate: the package is left with none.
     expect(report.errors).toHaveLength(1);
     expect(report.errors[0]?.message).toContain('no specialization found');
     const named = validate(withText(miniPackage(), SPEC, '{oops'), { specPath: SPEC });
@@ -375,7 +377,7 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
     expect(named.errors[0]?.message).toContain('invalid JSON');
   });
 
-  it('componente inválido: erros no arquivo dele, com o caminho dentro dele; o outro segue', () => {
+  it('invalid component: errors on its file, with the path inside it; the other one carries on', () => {
     const files = patch(
       miniPackage(),
       'components/mini-button.json',
@@ -387,7 +389,7 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
     expect(report.errors.map(brief)).toEqual([
       ['error', 'components/mini-button.json', 'formatVersion', 'expected 1, 2, 3 or 4'],
     ]);
-    // O botão não passa pelo nível 3, mas a tela de exemplo da origem ainda o usa e avisa.
+    // The button does not go through level 3, but the example screen of the origin still uses it and warns.
     expect(report.warnings.map(brief)).toEqual([
       [
         'warning',
@@ -398,7 +400,7 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
     ]);
   });
 
-  it('componente com JSON quebrado', () => {
+  it('component with broken JSON', () => {
     const report = validate(
       withText(miniPackage(), 'components/mini-card.json', '{oops'),
     );
@@ -410,7 +412,7 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
     expect(report.errors[0]?.message).toContain('invalid JSON');
   });
 
-  it('component apontando para arquivo que não existe', () => {
+  it('component pointing to a file that does not exist', () => {
     const report = validate(without(miniPackage(), 'components/mini-card.json'));
     expect(report.errors.map(brief)).toEqual([
       [
@@ -422,7 +424,7 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
     ]);
   });
 
-  it('o erro de arquivo ausente traz código e parâmetros para a interface traduzir', () => {
+  it('the missing file error carries a code and parameters for the interface to translate', () => {
     const report = validate(without(miniPackage(), 'components/mini-card.json'));
     expect(report.errors[0]).toMatchObject({
       code: 'library.fileNotFound',
@@ -430,7 +432,7 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
     });
   });
 
-  it('exemplo com linhas de table fora do formato: código e parâmetros no nível 1', () => {
+  it('example with table rows in the wrong format: code and parameters at level 1', () => {
     const files = patch(
       patch(miniPackage(), SPEC, [...TYPE0, 'fields', 2], {
         key: 'rows',
@@ -439,16 +441,16 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
       }),
       SPEC,
       [...TYPE0, 'examples', 0, 'values'],
-      { rows: [{ nada: 'x' }, 'y'] },
+      { rows: [{ nothing: 'x' }, 'y'] },
     );
     const report = validate(files, { level: 1 });
     expect(report.errors).toHaveLength(2);
     expect(report.errors[0]).toMatchObject({
       file: SPEC,
-      path: 'layers[0].annotationTypes[0].examples[0].values.rows[0].nada',
-      message: '"nada" is not a column of "rows"',
+      path: 'layers[0].annotationTypes[0].examples[0].values.rows[0].nothing',
+      message: '"nothing" is not a column of "rows"',
       code: 'spec.exampleNotColumn',
-      params: { key: 'nada', field: 'rows' },
+      params: { key: 'nothing', field: 'rows' },
     });
     expect(report.errors[1]).toMatchObject({
       path: 'layers[0].annotationTypes[0].examples[0].values.rows[1]',
@@ -458,7 +460,7 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
     expect(report.errors[1]).not.toHaveProperty('params');
   });
 
-  it('doc para arquivo que não existe', () => {
+  it('doc pointing to a file that does not exist', () => {
     const report = validate(without(miniPackage(), 'docs/mini-button.md'));
     expect(report.errors.map(brief)).toEqual([
       [
@@ -470,7 +472,7 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
     ]);
   });
 
-  it('.md vazio é aviso, não erro', () => {
+  it('an empty .md is a warning, not an error', () => {
     const report = validate(withText(miniPackage(), 'docs/mini-button.md', '  \n'));
     expect(report.ok).toBe(true);
     expect(report.warnings.map(brief)).toEqual([
@@ -478,27 +480,22 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
     ]);
   });
 
-  it('.json e .md que ninguém referencia são aviso; outros arquivos passam', () => {
+  it('.json and .md that nobody references are a warning; other files pass', () => {
     const files = [
       ...miniPackage(),
-      { path: 'components/velho.json', text: '{}' },
-      { path: 'docs/solto.md', text: '# solto' },
-      { path: 'fonts/Outra.ttf', binary: true },
+      { path: 'components/old.json', text: '{}' },
+      { path: 'docs/loose.md', text: '# loose' },
+      { path: 'fonts/Other.ttf', binary: true },
     ];
     const report = validate(files);
     expect(report.ok).toBe(true);
     expect(report.warnings.map(brief)).toEqual([
-      [
-        'warning',
-        'components/velho.json',
-        '',
-        'file not referenced by the specialization',
-      ],
-      ['warning', 'docs/solto.md', '', 'file not referenced by the specialization'],
+      ['warning', 'components/old.json', '', 'file not referenced by the specialization'],
+      ['warning', 'docs/loose.md', '', 'file not referenced by the specialization'],
     ]);
   });
 
-  it('avisos da especialização (specWarnings) entram como aviso, no caminho dela', () => {
+  it('specialization warnings (specWarnings) come in as a warning, at its path', () => {
     const files = patch(miniPackage(), SPEC, ['platforms'], [{ id: 'web', name: 'Web' }]);
     const report = validate(files, { level: 1 });
     expect(report.ok).toBe(true);
@@ -510,13 +507,13 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
   });
 });
 
-describe('validateLibrary: nível 2 (coerência entre arquivos)', () => {
-  it('campo citado pelo template que não existe no tipo: erro no componente, no ponto da citação', () => {
+describe('validateLibrary: level 2 (consistency across files)', () => {
+  it('field cited by the template that does not exist in the type: error on the component, at the point of the citation', () => {
     const files = patch(
       miniPackage(),
       'components/mini-button.json',
       ['template', 'children', 0, 'text', '$field'],
-      'rotulo',
+      'caption',
     );
     const report = validate(files);
     expect(report.errors.map(brief)).toEqual([
@@ -524,10 +521,10 @@ describe('validateLibrary: nível 2 (coerência entre arquivos)', () => {
         'error',
         'components/mini-button.json',
         'template.children[0].text.$field',
-        'the drawing uses the field "rotulo", which the type "mini-button" does not declare',
+        'the drawing uses the field "caption", which the type "mini-button" does not declare',
       ],
     ]);
-    // E o campo que o desenho deixou de usar vira aviso no tipo.
+    // And the field that the drawing stopped using becomes a warning on the type.
     expect(report.warnings.map(brief)).toContainEqual([
       'warning',
       SPEC,
@@ -536,8 +533,8 @@ describe('validateLibrary: nível 2 (coerência entre arquivos)', () => {
     ]);
   });
 
-  it('campo que o desenho não usa mas o code usa (params, values, variants ou notes) não é aviso', () => {
-    // Quatro campos extras no primeiro tipo; nenhum é desenhado pelo componente.
+  it('a field that the drawing does not use but the code does (params, values, variants or notes) is not a warning', () => {
+    // Four extra fields in the first type; none is drawn by the component.
     const fieldsAt = ['layers', 0, 'annotationTypes', 0, 'fields'] as const;
     const base = miniPackage();
     const type = (
@@ -546,10 +543,10 @@ describe('validateLibrary: nível 2 (coerência entre arquivos)', () => {
       }
     ).layers[0]?.annotationTypes[0];
     const extras = [
-      { key: 'porParams', type: 'string' },
-      { key: 'porValues', type: 'enum', options: ['a', 'b'] },
-      { key: 'porNotes', type: 'string' },
-      { key: 'esquecido', type: 'string' },
+      { key: 'byParams', type: 'string' },
+      { key: 'byValues', type: 'enum', options: ['a', 'b'] },
+      { key: 'byNotes', type: 'string' },
+      { key: 'forgotten', type: 'string' },
     ];
     let files = patch(base, SPEC, [...fieldsAt], [...(type?.fields ?? []), ...extras]);
     files = patch(files, SPEC, ['formatVersion'], 9);
@@ -557,33 +554,33 @@ describe('validateLibrary: nível 2 (coerência entre arquivos)', () => {
     files = patch(files, SPEC, ['layers', 0, 'annotationTypes', 0, 'code'], {
       web: {
         symbol: 'MiniButton',
-        params: { porParams: 'p' },
-        values: { porValues: { a: 'A', b: 'B' } },
-        notes: 'O `porNotes` vira o modificador; esquecido_nao conta.',
+        params: { byParams: 'p' },
+        values: { byValues: { a: 'A', b: 'B' } },
+        notes: 'The `byNotes` becomes the modifier; forgotten_not does not count.',
       },
     });
     const unused = validate(files)
       .warnings.filter((w) => w.message.includes('is not used by the drawing'))
       .map((w) => w.message.match(/the field "(\w+)"/)?.[1]);
-    expect(unused).toContain('esquecido');
-    for (const key of ['porParams', 'porValues', 'porNotes']) {
+    expect(unused).toContain('forgotten');
+    for (const key of ['byParams', 'byValues', 'byNotes']) {
       expect(unused, key).not.toContain(key);
     }
   });
 
-  it('slot declarado que não existe no componente (e componente sem slot)', () => {
+  it('declared slot that does not exist in the component (and component without a slot)', () => {
     const wrongName = patch(
       miniPackage(),
       SPEC,
       [...TYPE1, 'sources', 0, 'slot'],
-      'itens',
+      'items',
     );
     expect(validate(wrongName).errors.map(brief)).toEqual([
       [
         'error',
         SPEC,
         'layers[0].annotationTypes[1].sources[0].slot',
-        'the slot of the component components/mini-card.json is "content", not "itens"',
+        'the slot of the component components/mini-card.json is "content", not "items"',
       ],
     ]);
     const noSlot = patch(
@@ -602,7 +599,7 @@ describe('validateLibrary: nível 2 (coerência entre arquivos)', () => {
     ]);
   });
 
-  it('exemplo externo com arquivo ausente', () => {
+  it('external example with a missing file', () => {
     const report = validate(without(miniPackage(), 'examples/button.sdui.json'));
     expect(report.errors.map(brief)).toEqual([
       [
@@ -614,11 +611,11 @@ describe('validateLibrary: nível 2 (coerência entre arquivos)', () => {
     ]);
   });
 
-  it('exemplo externo com JSON inválido, também na tela de exemplo da origem', () => {
+  it('external example with invalid JSON, also in the example screen of the origin', () => {
     const files = withText(
       withText(miniPackage(), 'examples/button.sdui.json', '{"type": '),
       'examples/home.sdui.json',
-      'não é json',
+      'not json',
     );
     const report = validate(files);
     expect(report.errors.map((e) => [e.file, e.path])).toEqual([
@@ -628,7 +625,7 @@ describe('validateLibrary: nível 2 (coerência entre arquivos)', () => {
     expect(report.errors.every((e) => e.message.startsWith('invalid JSON'))).toBe(true);
   });
 
-  it('tela de exemplo da origem com arquivo ausente', () => {
+  it('example screen of the origin with a missing file', () => {
     const report = validate(without(miniPackage(), 'examples/home.sdui.json'));
     expect(report.errors.map(brief)).toEqual([
       [
@@ -640,7 +637,7 @@ describe('validateLibrary: nível 2 (coerência entre arquivos)', () => {
     ]);
   });
 
-  it('fonte declarada sem o arquivo é aviso, não erro', () => {
+  it('a declared font without the file is a warning, not an error', () => {
     const report = validate(without(miniPackage(), 'fonts/Roboto-Medium.ttf'));
     expect(report.ok).toBe(true);
     expect(report.warnings.map(brief)).toEqual([
@@ -653,23 +650,23 @@ describe('validateLibrary: nível 2 (coerência entre arquivos)', () => {
     ]);
   });
 
-  it('scrim que não é tipo', () => {
+  it('scrim that is not a type', () => {
     const files = patch(miniPackage(), SPEC, ['origins', 0, 'screen', 'roots', 1], {
       path: 'modal',
       anchor: 'bottom',
-      scrim: 'nao-existe',
+      scrim: 'does-not-exist',
     });
     expect(validate(files).errors.map(brief)).toEqual([
       [
         'error',
         SPEC,
         'origins[0].screen.roots[1].scrim',
-        'the type "nao-existe" does not exist in the specialization',
+        'the type "does-not-exist" does not exist in the specialization',
       ],
     ]);
   });
 
-  it('dois tipos no mesmo arquivo de componente: aviso no segundo; campos do arquivo que o outro tipo não tem: erro', () => {
+  it('two types in the same component file: warning on the second; fields of the file that the other type does not have: error', () => {
     const files = patch(
       miniPackage(),
       SPEC,
@@ -683,8 +680,8 @@ describe('validateLibrary: nível 2 (coerência entre arquivos)', () => {
       'layers[0].annotationTypes[1].component',
       'the file components/mini-button.json is already the component of the type "mini-button"',
     ]);
-    // O cartão não declara `label` nem `variant`, que o desenho do botão usa (e o botão não
-    // tem o slot que o cartão declara).
+    // The card declares neither `label` nor `variant`, which the button drawing uses (and the button does not
+    // have the slot that the card declares).
     expect(report.errors.map((e) => [e.file, e.path, e.message])).toEqual([
       [
         SPEC,
@@ -704,30 +701,30 @@ describe('validateLibrary: nível 2 (coerência entre arquivos)', () => {
     ]);
   });
 
-  it('campo do preview que o tipo não tem é aviso no componente', () => {
+  it('a preview field that the type does not have is a warning on the component', () => {
     const files = patch(
       miniPackage(),
       'components/mini-card.json',
-      ['preview', 'subtitulo'],
+      ['preview', 'subtitle'],
       'x',
     );
     expect(validate(files).warnings.map(brief)).toEqual([
       [
         'warning',
         'components/mini-card.json',
-        'preview.subtitulo',
-        'the type "mini-card" has no field "subtitulo"',
+        'preview.subtitle',
+        'the type "mini-card" has no field "subtitle"',
       ],
     ]);
   });
 });
 
-describe('validateLibrary: contrato de versão (previous)', () => {
+describe('validateLibrary: version contract (previous)', () => {
   const TYPE2 = ['layers', 0, 'annotationTypes', 2] as const;
 
   /**
-   * A versão anterior do pacote: o `mini` com um terceiro tipo sem componente, `mini-note`, que
-   * tem o campo `legado` e a tabela `linhas` de duas colunas.
+   * The previous version of the package: `mini` with a third type without a component, `mini-note`, which
+   * has the field `legacy` and the table `rows` of two columns.
    */
   function previousSpec(version = 1, note = true): Spec {
     const old: unknown = structuredClone(SPEC_JSON);
@@ -735,11 +732,11 @@ describe('validateLibrary: contrato de versão (previous)', () => {
     if (note) {
       setIn(old, TYPE2, {
         id: 'mini-note',
-        name: 'Nota',
+        name: 'Note',
         fields: [
-          { key: 'legado', type: 'string' },
+          { key: 'legacy', type: 'string' },
           {
-            key: 'linhas',
+            key: 'rows',
             type: 'table',
             columns: [
               { key: 'a', type: 'string' },
@@ -754,32 +751,32 @@ describe('validateLibrary: contrato de versão (previous)', () => {
     return parsed.spec;
   }
 
-  /** O pacote novo: `mini-note` sem o campo `legado` e sem a coluna `b` (duas quebras). */
+  /** The new package: `mini-note` without the field `legacy` and without the column `b` (two breaks). */
   function nextPackage(): LibraryFile[] {
     return patch(miniPackage(), SPEC, TYPE2, {
       id: 'mini-note',
-      name: 'Nota',
-      fields: [{ key: 'linhas', type: 'table', columns: [{ key: 'a', type: 'string' }] }],
+      name: 'Note',
+      fields: [{ key: 'rows', type: 'table', columns: [{ key: 'a', type: 'string' }] }],
     });
   }
 
-  it('sem previous o contrato não roda', () => {
+  it('without previous the contract does not run', () => {
     expect(validate(nextPackage()).issues).toEqual([]);
   });
 
-  it('quebra sem migração é erro, com a mensagem e o caminho da quebra', () => {
+  it('a break without a migration is an error, with the message and the path of the break', () => {
     const report = validate(nextPackage(), { previous: previousSpec() });
     expect(report.ok).toBe(false);
     expect(report.errors.map((e) => [e.file, e.path])).toEqual([
       [SPEC, 'layers[0].annotationTypes[2].fields[0]'],
       [SPEC, 'layers[0].annotationTypes[2].fields[1].columns[1]'],
     ]);
-    expect(report.errors[0]?.message).toContain('"legado"');
+    expect(report.errors[0]?.message).toContain('"legacy"');
     expect(report.errors[0]?.message).toContain('remove-field');
     expect(report.errors[1]?.message).toContain('"b"');
   });
 
-  it('migração declarada cobre a quebra, inclusive a coluna de table (tabela.coluna)', () => {
+  it('a declared migration covers the break, including the table column (table.column)', () => {
     const files = patch(
       nextPackage(),
       SPEC,
@@ -789,8 +786,8 @@ describe('validateLibrary: contrato de versão (previous)', () => {
           from: 1,
           to: 2,
           steps: [
-            { op: 'remove-field', type: 'mini-note', field: 'legado' },
-            { op: 'remove-field', type: 'mini-note', field: 'linhas.b' },
+            { op: 'remove-field', type: 'mini-note', field: 'legacy' },
+            { op: 'remove-field', type: 'mini-note', field: 'rows.b' },
           ],
         },
       ],
@@ -800,7 +797,7 @@ describe('validateLibrary: contrato de versão (previous)', () => {
     expect(report.ok).toBe(true);
   });
 
-  it('version que não cresceu é erro', () => {
+  it('a version that did not grow is an error', () => {
     const report = validate(miniPackage(), { previous: previousSpec(2, false) });
     expect(report.errors.map(brief)).toEqual([
       [
@@ -812,9 +809,9 @@ describe('validateLibrary: contrato de versão (previous)', () => {
     ]);
   });
 
-  it('versão anterior de outra especialização é erro e não compara mais nada', () => {
+  it('a previous version of another specialization is an error and compares nothing else', () => {
     const other: unknown = structuredClone(SPEC_JSON);
-    setIn(other, ['id'], 'outra');
+    setIn(other, ['id'], 'other');
     setIn(other, ['version'], 1);
     const parsed = parseSpec(other);
     if (!parsed.ok) throw new Error(parsed.errors.join('; '));
@@ -824,12 +821,12 @@ describe('validateLibrary: contrato de versão (previous)', () => {
         'error',
         SPEC,
         'id',
-        'the previous version is of the specialization "outra", not "mini"',
+        'the previous version is of the specialization "other", not "mini"',
       ],
     ]);
   });
 
-  it('passo da migração que cita o que não existia na versão anterior é aviso', () => {
+  it('a migration step that cites what did not exist in the previous version is a warning', () => {
     const files = patch(
       nextPackage(),
       SPEC,
@@ -839,10 +836,10 @@ describe('validateLibrary: contrato de versão (previous)', () => {
           from: 1,
           to: 2,
           steps: [
-            { op: 'remove-field', type: 'mini-note', field: 'legado' },
-            { op: 'remove-field', type: 'mini-note', field: 'linhas.b' },
-            { op: 'remove-type', type: 'fantasma', mode: 'delete' },
-            { op: 'rename-field', type: 'mini-note', from: 'sumiu', to: 'linhas' },
+            { op: 'remove-field', type: 'mini-note', field: 'legacy' },
+            { op: 'remove-field', type: 'mini-note', field: 'rows.b' },
+            { op: 'remove-type', type: 'ghost', mode: 'delete' },
+            { op: 'rename-field', type: 'mini-note', from: 'vanished', to: 'rows' },
           ],
         },
       ],
@@ -854,19 +851,19 @@ describe('validateLibrary: contrato de versão (previous)', () => {
         'warning',
         SPEC,
         'migrations[0].steps[2].type',
-        'the type "fantasma" did not exist in version 1',
+        'the type "ghost" did not exist in version 1',
       ],
       [
         'warning',
         SPEC,
         'migrations[0].steps[3].from',
-        'the field "sumiu" of the type "mini-note" did not exist in version 1',
+        'the field "vanished" of the type "mini-note" did not exist in version 1',
       ],
     ]);
   });
 });
 
-/** O botão do pacote mini com tamanho (inicial e mínimo) de 20×40: o conteúdo não cabe. */
+/** The button of the mini package with (initial and minimum) size of 20×40: the content does not fit. */
 function tinyButton(files: readonly LibraryFile[]): LibraryFile[] {
   const box = { width: 20, height: 40 };
   return patch(
@@ -877,11 +874,11 @@ function tinyButton(files: readonly LibraryFile[]): LibraryFile[] {
   );
 }
 
-describe('validateLibrary: nível 3 (prova de desenho)', () => {
-  it('conteúdo que não cabe vira aviso (approximate), com o caso e o tamanho', () => {
+describe('validateLibrary: level 3 (drawing proof)', () => {
+  it('content that does not fit becomes a warning (approximate), with the case and the size', () => {
     const report = validate(tinyButton(miniPackage()));
     expect(report.ok).toBe(true);
-    // O preview e os dois exemplos de valores, no tamanho inicial.
+    // The preview and the two value examples, at the initial size.
     expect(report.warnings.map(brief)).toEqual([
       [
         'warning',
@@ -893,18 +890,18 @@ describe('validateLibrary: nível 3 (prova de desenho)', () => {
         'warning',
         SPEC,
         'layers[0].annotationTypes[0].examples[0]',
-        'type "mini-button", the example "Primário", initial size 20×40: content larger than the box: button (approximate)',
+        'type "mini-button", the example "Primary", initial size 20×40: content larger than the box: button (approximate)',
       ],
       [
         'warning',
         SPEC,
         'layers[0].annotationTypes[0].examples[1]',
-        'type "mini-button", the example "Texto", initial size 20×40: content larger than the box: button (approximate)',
+        'type "mini-button", the example "Text", initial size 20×40: content larger than the box: button (approximate)',
       ],
     ]);
   });
 
-  it('o tamanho mínimo não é desenhado: o conteúdo que só não cabe nele não avisa', () => {
+  it('the minimum size is not drawn: content that only does not fit in it does not warn', () => {
     const files = patch(miniPackage(), 'components/mini-button.json', ['minSize'], {
       width: 20,
       height: 40,
@@ -912,15 +909,15 @@ describe('validateLibrary: nível 3 (prova de desenho)', () => {
     const report = validate(files);
     expect(report.ok).toBe(true);
     expect(
-      report.warnings.map((w) => w.message).filter((m) => m.includes('mínimo')),
+      report.warnings.map((w) => w.message).filter((m) => m.includes('minimum')),
     ).toEqual([]);
   });
 
-  it('exemplo de sistema externo: propriedade desconhecida e tipo sem tipo de anotação são avisos', () => {
+  it('external system example: unknown property and a type without an annotation type are warnings', () => {
     const node = {
       type: 'Button',
-      props: { text: 'Salvar', style: 'text', cor: 'vermelho' },
-      children: [{ type: 'Desconhecido' }],
+      props: { text: 'Save', style: 'text', color: 'red' },
+      children: [{ type: 'Unknown' }],
     };
     const report = validate(
       withText(miniPackage(), 'examples/button.sdui.json', json(node)),
@@ -931,14 +928,14 @@ describe('validateLibrary: nível 3 (prova de desenho)', () => {
       [SPEC, 'layers[0].annotationTypes[0].examples[2].file'],
     ]);
     expect(report.warnings[0]?.message).toBe(
-      'example "Nó SDUI" of the system "sdui": props.cor: unknown property in Button',
+      'example "SDUI node" of the system "sdui": props.color: unknown property in Button',
     );
     expect(report.warnings[1]?.message).toContain(
-      'external type without an annotation type: Desconhecido',
+      'external type without an annotation type: Unknown',
     );
   });
 
-  it('exemplo de sistema externo que é de outro tipo: aviso', () => {
+  it('external system example that belongs to another type: warning', () => {
     const report = validate(
       withText(
         miniPackage(),
@@ -951,12 +948,12 @@ describe('validateLibrary: nível 3 (prova de desenho)', () => {
         'warning',
         SPEC,
         'layers[0].annotationTypes[0].examples[2].file',
-        'example "Nó SDUI" of the system "sdui": the node matches the type "mini-card", not "mini-button"',
+        'example "SDUI node" of the system "sdui": the node matches the type "mini-card", not "mini-button"',
       ],
     ]);
   });
 
-  it('tela de exemplo da origem que a declaração não lê é erro', () => {
+  it('example screen of the origin that the declaration does not read is an error', () => {
     const report = validate(
       withText(miniPackage(), 'examples/home.sdui.json', json({ screen: {} })),
     );
@@ -970,7 +967,7 @@ describe('validateLibrary: nível 3 (prova de desenho)', () => {
     ]);
   });
 
-  it('tela de exemplo da origem com propriedade desconhecida: aviso', () => {
+  it('example screen of the origin with an unknown property: warning', () => {
     const home = structuredClone(HOME_JSON);
     Reflect.set(Object(home.content.children[0]?.props), 'extra', 1);
     const report = validate(
@@ -988,25 +985,25 @@ describe('validateLibrary: nível 3 (prova de desenho)', () => {
   });
 });
 
-describe('validateLibrary: nível por nível', () => {
-  /** Um problema de cada nível: arquivo de componente (1), slot (2) e conteúdo que não cabe (3). */
+describe('validateLibrary: level by level', () => {
+  /** One problem per level: component file (1), slot (2) and content that does not fit (3). */
   function brokenAtEveryLevel(): LibraryFile[] {
     let files = patch(miniPackage(), 'components/mini-card.json', ['formatVersion'], 9);
     files = patch(files, SPEC, [...TYPE0, 'sources', 0, 'slot'], 'content');
     return tinyButton(files);
   }
 
-  it('level 1 só produz issues do nível 1', () => {
+  it('level 1 only produces level 1 issues', () => {
     const report = validate(brokenAtEveryLevel(), { level: 1 });
     expect(report.errors.map((e) => [e.file, e.path])).toEqual([
       ['components/mini-card.json', 'formatVersion'],
     ]);
     expect(report.warnings).toEqual([]);
     expect(report.summary.level).toBe(1);
-    expect(report.summary.types).toBe(2); // o resumo conta o pacote mesmo parando no nível 1
+    expect(report.summary.types).toBe(2); // the summary counts the package even when stopping at level 1
   });
 
-  it('level 2 acrescenta o nível 2 e não chega ao 3', () => {
+  it('level 2 adds level 2 and does not reach 3', () => {
     const report = validate(brokenAtEveryLevel(), { level: 2 });
     expect(report.issues.map((i) => [i.severity, i.file])).toEqual([
       ['error', 'components/mini-card.json'],
@@ -1015,16 +1012,16 @@ describe('validateLibrary: nível por nível', () => {
     expect(report.summary.level).toBe(2);
   });
 
-  it('level 3 (padrão) mantém a ordem: nível 1, depois 2, depois 3', () => {
+  it('level 3 (default) keeps the order: level 1, then 2, then 3', () => {
     const report = validate(brokenAtEveryLevel());
     expect(report.summary.level).toBe(3);
     expect(report.issues.map((i) => [i.severity, i.file])).toEqual([
-      ['error', 'components/mini-card.json'], // 1: componente inválido
-      ['error', SPEC], // 2: slot que o componente não tem
-      ['warning', 'components/mini-button.json'], // 3: preview no tamanho inicial
-      ['warning', SPEC], // 3: exemplo "Primário"
-      ['warning', SPEC], // 3: exemplo "Texto"
-      ['warning', SPEC], // 3: a tela de exemplo da origem usa o cartão, que não tem componente
+      ['error', 'components/mini-card.json'], // 1: invalid component
+      ['error', SPEC], // 2: slot that the component does not have
+      ['warning', 'components/mini-button.json'], // 3: preview at the initial size
+      ['warning', SPEC], // 3: example "Primary"
+      ['warning', SPEC], // 3: example "Text"
+      ['warning', SPEC], // 3: the example screen of the origin uses the card, which has no component
     ]);
     expect(report.errors).toHaveLength(2);
     expect(report.warnings).toHaveLength(4);
@@ -1033,7 +1030,7 @@ describe('validateLibrary: nível por nível', () => {
 });
 
 // ---------------------------------------------------------------------------------------
-// Material 3 inteiro (em memória; o pacote em examples/ é conferido por outro teste)
+// Whole Material 3 (in memory; the package in examples/ is checked by another test)
 // ---------------------------------------------------------------------------------------
 
 describe('validateLibrary: Material 3', () => {
@@ -1052,7 +1049,7 @@ describe('validateLibrary: Material 3', () => {
       : []),
   ];
 
-  it('zero erros; os avisos são os que o teste lista', () => {
+  it('zero errors; the warnings are the ones the test lists', () => {
     const report = validate(m3Files(true));
     expect(report.errors.map(brief)).toEqual([]);
     expect(report.ok).toBe(true);
@@ -1062,23 +1059,23 @@ describe('validateLibrary: Material 3', () => {
       components: 15,
       fonts: 2,
     });
-    // Nenhum preview cita campo que o tipo não tem: o validador acusou isso nos containers
-    // (padding no Box, alignment e arrangement no Row e no Column) e o Material 3 foi corrigido.
+    // No preview cites a field that the type does not have: the validator flagged this in the containers
+    // (padding in Box, alignment and arrangement in Row and Column) and Material 3 was fixed.
     const previews = report.warnings
       .filter((w) => w.path.startsWith('preview.'))
       .map((w) => `${w.file}:${w.path}`);
     expect(previews).toEqual([]);
-    // O tamanho mínimo não é desenhado: sem aviso de content larger than the box nele.
+    // The minimum size is not drawn: no content larger than the box warning on it.
     const drawing = report.warnings.filter((w) => w.message.endsWith('(approximate)'));
     expect(drawing.every((w) => w.message.includes('initial size'))).toBe(true);
-    // A tela de exemplo do SDUI está no pacote de teste, mas o M3_SPEC não a declara.
+    // The SDUI example screen is in the test package, but M3_SPEC does not declare it.
     const others = report.warnings.filter(
       (w) => !w.path.startsWith('preview.') && !w.message.endsWith('(approximate)'),
     );
     expect(others.map(brief)).toEqual([]);
   });
 
-  it('sem os arquivos das fontes: um aviso por fonte, nenhum erro', () => {
+  it('without the font files: one warning per font, no error', () => {
     const report = validate(m3Files(false), { level: 2 });
     expect(report.errors).toEqual([]);
     expect(
@@ -1086,7 +1083,7 @@ describe('validateLibrary: Material 3', () => {
     ).toEqual(['fonts[0].file', 'fonts[1].file']);
   });
 
-  it('com a tela de exemplo do SDUI declarada na origem: nenhum erro, e o aviso de arquivo solto some', () => {
+  it('with the SDUI example screen declared in the origin: no error, and the loose file warning goes away', () => {
     const files = [
       ...patch(
         m3Files(true),
@@ -1103,7 +1100,7 @@ describe('validateLibrary: Material 3', () => {
     expect(report.summary.examples).toBe(1);
   });
 
-  it('a tela de exemplo do SDUI fora da origem é só um arquivo não referenciado (aviso)', () => {
+  it('the SDUI example screen outside the origin is just an unreferenced file (warning)', () => {
     const files = [
       ...m3Files(true),
       { path: 'examples/settings.sdui.json', text: SDUI_SCREEN },

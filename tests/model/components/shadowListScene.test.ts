@@ -1,5 +1,5 @@
-// MF2: a cena recebe a lista de sombras com `spread`, o recorte ampliado conta o `spread` e as
-// sombras todas, e `stroke.gap` vira os trechos de vão (`Stroke.gaps`) pela caixa do nó nomeado.
+// MF2: the scene receives the shadow list with `spread`, the enlarged clip counts the `spread` and
+// all the shadows, and `stroke.gap` becomes the gap runs (`Stroke.gaps`) by the box of the named node.
 import { describe, expect, it } from 'vitest';
 import type { FieldValues } from '../../../src/model/components/componentFormat';
 import {
@@ -42,8 +42,8 @@ function run(template: Raw, values: FieldValues = {}, width = 100, height = 40) 
 
 const box = (extra: Raw): Raw => ({ type: 'rect', width: 20, height: 20, ...extra });
 
-describe('lista de sombras na cena (decisão 3)', () => {
-  it('a lista vira os efeitos na ordem, e o objeto único continua um efeito só', () => {
+describe('shadow list in the scene (decision 3)', () => {
+  it('the list becomes the effects in order, and the single object is still a single effect', () => {
     const list = run({
       type: 'frame',
       children: [
@@ -66,7 +66,7 @@ describe('lista de sombras na cena (decisão 3)', () => {
     expect(one.effects).toEqual([{ color: '#000000', offset: { x: 0, y: 2 }, blur: 4 }]);
   });
 
-  it('uma sombra de cor none sai da lista; sem spread, a cena não leva a chave', () => {
+  it('a shadow with color none leaves the list; without spread, the scene does not carry the key', () => {
     const node = run({
       type: 'frame',
       children: [box({ shadow: [{ color: 'none' }, { color: '#000000', blur: 2 }] })],
@@ -76,8 +76,8 @@ describe('lista de sombras na cena (decisão 3)', () => {
   });
 });
 
-describe('shadow.spread na cena (decisão 4)', () => {
-  it('literal, negativo e $token de número chegam à sombra', () => {
+describe('shadow.spread in the scene (decision 4)', () => {
+  it('literal, negative and number $token reach the shadow', () => {
     const effects = run({
       type: 'frame',
       children: [
@@ -94,7 +94,7 @@ describe('shadow.spread na cena (decisão 4)', () => {
   });
 });
 
-describe('recorte ampliado com várias sombras e spread (decisão 4)', () => {
+describe('enlarged clip with several shadows and spread (decision 4)', () => {
   const frameWith = (...effects: Shadow[]): FrameNode => ({
     ...baseNode({ id: 'r', name: 'r', width: 100, height: 40 }),
     type: 'frame',
@@ -109,14 +109,14 @@ describe('recorte ampliado com várias sombras e spread (decisão 4)', () => {
     ],
   });
 
-  it('o spread soma ao blur e ao deslocamento em cada lado', () => {
+  it('the spread adds to the blur and to the offset on each side', () => {
     const clip = clipBoxOf(
       frameWith({ color: '#000', offset: { x: 0, y: 2 }, blur: 4, spread: 3 }),
     );
     expect(clip).toEqual({ x: -7, y: -5, width: 107, height: 45 });
   });
 
-  it('conta todas as sombras externas (vale a que passa mais), não só a primeira', () => {
+  it('counts all the outer shadows (the one that goes furthest applies), not only the first', () => {
     const clip = clipBoxOf(
       frameWith(
         { color: '#000', offset: { x: 0, y: 0 }, blur: 2 },
@@ -126,7 +126,7 @@ describe('recorte ampliado com várias sombras e spread (decisão 4)', () => {
     expect(clip).toEqual({ x: -10, y: -10, width: 110, height: 50 });
   });
 
-  it('um spread negativo encolhe a sombra e pode tirar o recorte ampliado', () => {
+  it('a negative spread shrinks the shadow and can remove the enlarged clip', () => {
     expect(
       clipBoxOf(
         frameWith({ color: '#000', offset: { x: 0, y: 0 }, blur: 2, spread: -5 }),
@@ -135,8 +135,8 @@ describe('recorte ampliado com várias sombras e spread (decisão 4)', () => {
   });
 });
 
-describe('stroke.gap na cena (decisão 7)', () => {
-  /** Um contorno do tamanho da instância e um rótulo `hug` que cruza o lado de cima. */
+describe('stroke.gap in the scene (decision 7)', () => {
+  /** An outline the size of the instance and a `hug` label that crosses the top side. */
   const outlined = (label: Raw, stroke: Raw = {}, outline: Raw = {}) =>
     run(
       {
@@ -156,7 +156,7 @@ describe('stroke.gap na cena (decisão 7)', () => {
             },
             ...outline,
           },
-          { type: 'text', name: 'label', text: 'Nome', ...label },
+          { type: 'text', name: 'label', text: 'Name', ...label },
         ],
       },
       {},
@@ -166,7 +166,7 @@ describe('stroke.gap na cena (decisão 7)', () => {
 
   const label = (root: FrameNode): SceneNode => root.children[1]!;
 
-  it('o vão no lado de cima sai da largura medida do rótulo hug, mais o padding', () => {
+  it('the gap on the top side comes from the measured width of the hug label, plus the padding', () => {
     const root = outlined({
       width: 'hug',
       height: 'hug',
@@ -180,7 +180,7 @@ describe('stroke.gap na cena (decisão 7)', () => {
     ]);
   });
 
-  it('sem padding o vão é a largura do nó', () => {
+  it('without padding the gap is the width of the node', () => {
     const root = outlined(
       { width: 20, height: 12, anchors: { left: 30, top: -6 } },
       { gap: { node: 'label' } },
@@ -188,13 +188,13 @@ describe('stroke.gap na cena (decisão 7)', () => {
     expect(root.children[0]!.stroke?.gaps).toEqual([{ side: 'top', from: 30, to: 50 }]);
   });
 
-  it('o vão não passa da parte reta do lado (os cantos com raio ficam inteiros)', () => {
+  it('the gap does not go beyond the straight part of the side (the corners with radius stay whole)', () => {
     const root = outlined({ width: 40, height: 12, anchors: { left: 0, top: -6 } });
-    // raio 6 e padding 4: o vão começaria em -4; a parte reta começa em 6
+    // radius 6 and padding 4: the gap would start at -4; the straight part starts at 6
     expect(root.children[0]!.stroke?.gaps).toEqual([{ side: 'top', from: 6, to: 44 }]);
   });
 
-  it('um nó invisível não abre vão', () => {
+  it('an invisible node does not open a gap', () => {
     const root = outlined({
       width: 20,
       height: 12,
@@ -205,12 +205,12 @@ describe('stroke.gap na cena (decisão 7)', () => {
     expect(root.children[0]!.stroke).not.toHaveProperty('gaps');
   });
 
-  it('um nó que não atravessa nenhum lado não abre vão', () => {
+  it('a node that does not cross any side does not open a gap', () => {
     const root = outlined({ width: 20, height: 12, anchors: { left: 30, top: 14 } });
     expect(root.children[0]!.stroke).not.toHaveProperty('gaps');
   });
 
-  it('sem a chave gap a cena não muda', () => {
+  it('without the gap key the scene does not change', () => {
     const root = run({
       type: 'frame',
       children: [box({ stroke: { color: '#000' } })],
@@ -218,7 +218,7 @@ describe('stroke.gap na cena (decisão 7)', () => {
     expect(root.children[0]!.stroke).not.toHaveProperty('gaps');
   });
 
-  it('vale o primeiro nó com esse nome, na ordem do template', () => {
+  it('the first node with that name rules, in the template order', () => {
     const root = run({
       type: 'frame',
       children: [

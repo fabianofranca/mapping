@@ -3,18 +3,18 @@ import { buildLargeProject } from './largeProject';
 import { layerOf, specProject } from './specFixtures';
 
 /**
- * Projeto grande com tipadas e referências, para os orçamentos por quadro (docs/ARCHITECTURE.md,
- * "Desempenho"): as 20 imagens e 500 marcações de `buildLargeProject`, com as duas
- * especializações de exemplo e 1.500 anotações — metade tipadas — e 500 referências.
+ * Large project with typed annotations and references, for the per-frame budgets (docs/ARCHITECTURE.md,
+ * "Performance"): the 20 images and 500 markings of `buildLargeProject`, with the two
+ * sample specializations and 1,500 annotations — half of them typed — and 500 references.
  *
- * Por marcação `i`:
- * - uma livre (camada L1);
- * - par: uma Classe com 2 linhas em `atributos` e um Text com `dado` → tupla da
- *   livre da marcação seguinte; ímpar: um Input com `dado` → linha da Classe da
- *   marcação anterior e mais uma livre (camada LM).
+ * Per marking `i`:
+ * - one free annotation (layer L1);
+ * - even: a Class with 2 rows in `atributos` and a Text with `dado` → pair of the
+ *   free annotation of the next marking; odd: an Input with `dado` → row of the Class of the
+ *   previous marking and one more free annotation (layer LM).
  *
- * Algumas pendências de propósito: a cada 10 Texts, um sem `id`; a cada 50
- * Inputs, um apontando para uma linha que não existe.
+ * Some deliberate pending items: every 10 Texts, one without `id`; every 50
+ * Inputs, one pointing to a row that does not exist.
  */
 export function buildLargeTypedProject(): Project {
   const spec = specProject();
@@ -28,8 +28,8 @@ export function buildLargeTypedProject(): Project {
 }
 
 /**
- * As anotações do projeto tipado para qualquer lista de marcações (a regra acima, por índice):
- * `spec` é o `specProject()`, de onde vêm as camadas. Usada também pelo fixture de escala.
+ * The annotations of the typed project for any list of markings (the rule above, by index):
+ * `spec` is the `specProject()`, where the layers come from. Also used by the scale fixture.
  */
 export function typedAnnotations(
   spec: Project,
@@ -51,8 +51,8 @@ export function typedAnnotations(
       type: null,
       values: null,
       entries: [
-        { id: `${id}-e1`, key: 'campo', value: 'string' },
-        { id: `${id}-e2`, key: 'obs', value: id },
+        { id: `${id}-e1`, key: 'field', value: 'string' },
+        { id: `${id}-e2`, key: 'notes', value: id },
       ],
     });
   const typed = (
@@ -82,17 +82,19 @@ export function typedAnnotations(
         nome: `Classe${i}`,
         atributos: [
           { _id: `C${i}-r1`, nome: 'id', tipo: 'Long', obrigatorio: 'sim' },
+          // pt-BR kept: enum value of the specFixtures sample specialization (outside this batch)
           { _id: `C${i}-r2`, nome: 'nome', tipo: 'String', obrigatorio: 'não' },
         ],
       });
       const target = `F${(i + 1) % markings.length}`;
       typed(`T${i}`, marking.id, layer.componentes, 'sdui', 'text', {
         id: i % 20 === 0 ? '' : `text_${i}`,
-        conteudo: `Texto ${i}`,
+        conteudo: `Text ${i}`,
         dado: { annotationId: target, entryId: `${target}-e1` },
       });
     } else {
-      const rowId = i % 100 === 1 ? 'nao-existe' : `C${i - 1}-r${i % 4 === 1 ? 1 : 2}`;
+      const rowId =
+        i % 100 === 1 ? 'does-not-exist' : `C${i - 1}-r${i % 4 === 1 ? 1 : 2}`;
       typed(`N${i}`, marking.id, layer.componentes, 'sdui', 'input', {
         id: `input_${i}`,
         tipo: 'text',

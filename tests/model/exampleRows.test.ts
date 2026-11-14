@@ -1,6 +1,6 @@
-// Exemplos com as linhas de um campo `table` (decisão 24 da #897, EX5): o Catálogo dá `_id`
-// às linhas e desenha o exemplo com elas, a prova de desenho usa as linhas, e o exemplo sem o
-// campo continua sem linhas (não herda o `preview`).
+// Examples with the rows of a `table` field (decision 24 of #897, EX5): the Catalog gives `_id`
+// to the rows and draws the example with them, the drawing proof uses the rows, and the example without the
+// field stays without rows (it does not inherit the `preview`).
 import { describe, expect, it } from 'vitest';
 import { buildCatalog, exampleDrawing, findEntry } from '../../src/model/catalog';
 import { approximateMeasurer } from '../../src/model/components/instantiate';
@@ -12,27 +12,27 @@ const COMPONENT = {
   format: 'mapping-component',
   formatVersion: 4,
   id: 'tabs-lite',
-  name: 'Abas',
+  name: 'Tabs',
   size: { width: 240, height: 48 },
-  preview: { items: [{ label: 'Início' }, { label: 'Buscar' }, { label: 'Perfil' }] },
+  preview: { items: [{ label: 'Home' }, { label: 'Search' }, { label: 'Profile' }] },
   template: {
     type: 'frame',
-    name: 'abas',
+    name: 'tabs',
     layout: { type: 'row', align: 'center' },
     children: [
       {
         type: 'repeat',
-        name: 'abas',
+        name: 'tabs',
         field: 'items',
         direction: 'row',
         template: {
           type: 'frame',
-          name: 'aba',
+          name: 'tab',
           layout: { type: 'row' },
           children: [
             {
               type: 'text',
-              name: 'rótulo',
+              name: 'label',
               text: { $field: 'label' },
               font: FONT,
               color: '#000000',
@@ -60,7 +60,7 @@ function specJson(examples: unknown[]): Record<string, unknown> {
         annotationTypes: [
           {
             id: 'tabs-lite',
-            name: 'Abas',
+            name: 'Tabs',
             component: 'components/tabs-lite.json',
             doc: 'docs/tabs-lite.md',
             examples,
@@ -82,18 +82,18 @@ function pack(examples: unknown[], component: unknown = COMPONENT): LibraryFile[
   return [
     { path: 'lite.spec.json', text: JSON.stringify(specJson(examples)) },
     { path: 'components/tabs-lite.json', text: JSON.stringify(component) },
-    { path: 'docs/tabs-lite.md', text: '# Abas\n\nFileira de abas.\n' },
+    { path: 'docs/tabs-lite.md', text: '# Tabs\n\nRow of tabs.\n' },
     { path: 'fonts/Roboto-Medium.ttf', binary: true },
   ];
 }
 
 const WITH_ROWS = {
-  name: 'Com destinos',
-  values: { items: [{ label: 'Início' }, { label: 'Buscar' }] },
+  name: 'With destinations',
+  values: { items: [{ label: 'Home' }, { label: 'Search' }] },
 };
-const WITHOUT_ROWS = { name: 'Sem o campo', values: {} };
+const WITHOUT_ROWS = { name: 'Without the field', values: {} };
 
-/** Os textos desenhados, na ordem. */
+/** The drawn texts, in order. */
 function texts(node: unknown): string[] {
   if (typeof node !== 'object' || node === null) return [];
   const n = node as { type?: string; text?: string; children?: unknown[] };
@@ -101,38 +101,38 @@ function texts(node: unknown): string[] {
   return [...own, ...(n.children ?? []).flatMap(texts)];
 }
 
-describe('Catálogo: exemplo com as linhas de um campo table', () => {
+describe('Catalog: example with the rows of a table field', () => {
   const catalog = buildCatalog(pack([WITH_ROWS, WITHOUT_ROWS]));
   const entry = findEntry(catalog, 'tabs-lite')!;
 
-  it('o pacote é válido', () => {
+  it('the pack is valid', () => {
     expect(catalog.report.errors).toEqual([]);
   });
 
-  it('as linhas do exemplo ganham _id, como as do preview', () => {
+  it("the example rows get _id, like the preview's", () => {
     const rows = entry.examples[0]?.values?.items;
     expect(rows).toEqual([
-      { _id: 'preview-1', label: 'Início' },
-      { _id: 'preview-2', label: 'Buscar' },
+      { _id: 'preview-1', label: 'Home' },
+      { _id: 'preview-2', label: 'Search' },
     ]);
     expect(entry.previewValues?.items).toEqual([
-      { _id: 'preview-1', label: 'Início' },
-      { _id: 'preview-2', label: 'Buscar' },
-      { _id: 'preview-3', label: 'Perfil' },
+      { _id: 'preview-1', label: 'Home' },
+      { _id: 'preview-2', label: 'Search' },
+      { _id: 'preview-3', label: 'Profile' },
     ]);
   });
 
-  it('o exemplo com linhas desenha as linhas', () => {
+  it('the example with rows draws the rows', () => {
     const drawing = exampleDrawing(
       catalog,
       entry,
       entry.examples[0],
       approximateMeasurer,
     );
-    expect(texts(drawing?.root)).toEqual(['Início', 'Buscar']);
+    expect(texts(drawing?.root)).toEqual(['Home', 'Search']);
   });
 
-  it('o exemplo sem o campo table continua sem linhas (não herda o preview)', () => {
+  it('the example without the table field stays without rows (does not inherit the preview)', () => {
     expect(entry.examples[1]?.values).toEqual({});
     const drawing = exampleDrawing(
       catalog,
@@ -144,28 +144,28 @@ describe('Catálogo: exemplo com as linhas de um campo table', () => {
   });
 });
 
-describe('prova de desenho: o exemplo com linhas', () => {
+describe('drawing proof: the example with rows', () => {
   const NARROW = { ...COMPONENT, size: { width: 30, height: 48 } };
   const drawingWarnings = (examples: unknown[]) =>
     validateLibrary({ files: pack(examples, NARROW) }).warnings.filter((w) =>
       w.message.includes('the example'),
     );
 
-  it('desenha as linhas: elas não cabem na caixa estreita e o aviso cita o exemplo', () => {
+  it('draws the rows: they do not fit in the narrow box and the warning cites the example', () => {
     const warnings = drawingWarnings([WITH_ROWS]);
     expect(warnings).toHaveLength(1);
     expect(warnings[0]).toMatchObject({
       file: 'lite.spec.json',
       path: 'layers[0].annotationTypes[0].examples[0]',
     });
-    expect(warnings[0]?.message).toContain('the example "Com destinos"');
+    expect(warnings[0]?.message).toContain('the example "With destinations"');
   });
 
-  it('o exemplo sem o campo table não desenha linhas e não avisa', () => {
+  it('the example without the table field draws no rows and does not warn', () => {
     expect(drawingWarnings([WITHOUT_ROWS])).toEqual([]);
   });
 
-  it('um pacote com o exemplo de linhas válidas não tem erros', () => {
+  it('a pack with an example of valid rows has no errors', () => {
     expect(validateLibrary({ files: pack([WITH_ROWS]) }).errors).toEqual([]);
   });
 });

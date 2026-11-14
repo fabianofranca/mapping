@@ -1,9 +1,9 @@
 import { serialize, type Project } from '../../src/model';
 
 /**
- * Passa um mapping.json atual (schema v12) para o formato até a v11: a coleção `containers`
- * volta a ser `images` e a marcação volta a apontar por `imageId`. Mantém a ordem das chaves.
- * Os testes de migração usam isto para montar arquivos antigos a partir de um projeto de hoje.
+ * Turns a current mapping.json (schema v12) into the format up to v11: the `containers` collection
+ * goes back to `images` and the marking goes back to pointing by `imageId`. Keeps the key order.
+ * The migration tests use this to build old files from a project of today.
  */
 export function toLegacyShape(data: Record<string, unknown>): Record<string, unknown> {
   const renamed = Object.entries(data).map(([key, value]): [string, unknown] => {
@@ -26,7 +26,7 @@ function legacyMarking(marking: unknown): unknown {
   );
 }
 
-/** O projeto serializado, já no formato até a v11 (`images`, `imageId`). */
+/** The serialized project, already in the format up to v11 (`images`, `imageId`). */
 export function legacyJson(p: Project): Record<string, unknown> {
   return toLegacyShape(JSON.parse(serialize(p)) as Record<string, unknown>);
 }

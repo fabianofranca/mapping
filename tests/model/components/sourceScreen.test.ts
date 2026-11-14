@@ -1,5 +1,5 @@
-// Laboratório Componentes: do JSON externo (SDUI) à tela arrumada, pela declaração de origem
-// do Material 3. Depende de `layoutScreen` (layout.ts).
+// Components lab: from the external JSON (SDUI) to the arranged screen, by the origin declaration
+// of Material 3. Depends on `layoutScreen` (layout.ts).
 import { describe, expect, it } from 'vitest';
 import settings from '../../../viewer/samples/settings.sdui.json';
 import { approximateMeasurer } from '../../../src/model/components/instantiate';
@@ -8,11 +8,11 @@ import { screenFromSource } from '../../../src/model/components/origin';
 import { M3_FILES } from '../../../viewer/samples/samplesMaterial3';
 import { childrenOf } from '../../../src/model/components/screen';
 
-describe('screenFromSource com o Material 3', () => {
+describe('screenFromSource with Material 3', () => {
   const library = loadLibrary(M3_FILES);
   const result = screenFromSource(library, settings, { measure: approximateMeasurer });
 
-  it('dá a tela sem erro e sem nenhum aviso (tradução e arrumação)', () => {
+  it('gives the screen with no error and no warning (translation and arrangement)', () => {
     expect(result.error).toBeUndefined();
     expect(result.warnings).toEqual([]);
     expect(result.screen).toMatchObject({
@@ -24,7 +24,7 @@ describe('screenFromSource com o Material 3', () => {
     });
   });
 
-  it('toda instância tem caixa dentro da tela e id único', () => {
+  it('every instance has a box inside the screen and a unique id', () => {
     const screen = result.screen!;
     const ids = screen.instances.map((i) => i.id);
     expect(new Set(ids).size).toBe(ids.length);
@@ -39,7 +39,7 @@ describe('screenFromSource com o Material 3', () => {
     }
   });
 
-  it('o botão do cartão fica dentro do slot de ações, à direita', () => {
+  it('the card button stays inside the actions slot, on the right', () => {
     const screen = result.screen!;
     const card = screen.instances.find((i) => i.typeId === 'm3-card')!;
     const kids = childrenOf(screen, card.id);
@@ -56,7 +56,7 @@ describe('screenFromSource com o Material 3', () => {
     );
   });
 
-  it('o FAB fica em bottom-end com margem 16; a barra de navegação, no fundo', () => {
+  it('the FAB stays at bottom-end with margin 16; the navigation bar, at the bottom', () => {
     const screen = result.screen!;
     const fab = screen.instances.find((i) => i.typeId === 'm3-fab')!;
     expect(fab.box.x + fab.box.width).toBeCloseTo(screen.width - 16);
@@ -66,7 +66,7 @@ describe('screenFromSource com o Material 3', () => {
     expect(bar.box.y + bar.box.height).toBeCloseTo(screen.height);
   });
 
-  it('a película vem antes da folha, cobrindo a tela', () => {
+  it('the scrim comes before the sheet, covering the screen', () => {
     const screen = result.screen!;
     const scrimIndex = screen.instances.findIndex((i) => i.typeId === 'm3-scrim');
     const sheetIndex = screen.instances.findIndex((i) => i.typeId === 'm3-bottom-sheet');
@@ -82,7 +82,7 @@ describe('screenFromSource com o Material 3', () => {
     expect(sheet.box.y + sheet.box.height).toBeCloseTo(screen.height);
   });
 
-  it('as raízes saem na ordem: conteúdo, barra, FAB, película e folha', () => {
+  it('the roots come out in order: content, bar, FAB, scrim and sheet', () => {
     const roots = result
       .screen!.instances.filter((i) => i.parentId === undefined)
       .map((i) => i.id);

@@ -1,7 +1,7 @@
-// Validador da biblioteca com variáveis (`let` e `$var`, etapa #1504): as conferências que olham
-// os campos citados pelo desenho (coluna do repeat, campo do tipo, `$rows`) leem o componente com as
-// variáveis trocadas, então uma variável do `let` da raiz usada dentro de um `repeat` vale como a
-// citação escrita ali.
+// Library validator with variables (`let` and `$var`, stage #1504): the checks that look at
+// the fields cited by the drawing (repeat column, type field, `$rows`) read the component with the
+// variables substituted, so a root `let` variable used inside a `repeat` counts as the
+// citation written there.
 import { describe, expect, it } from 'vitest';
 import { validateLibrary } from '../../src/model/library';
 
@@ -23,7 +23,7 @@ function component(lets: Raw, rowText: unknown): Raw {
     name: 'Tab',
     size: { width: 200, height: 100 },
     minSize: { width: 120, height: 60 },
-    preview: { linhas: [{ chave: 'a' }, { chave: 'b' }] },
+    preview: { lines: [{ key: 'a' }, { key: 'b' }] },
     template: {
       type: 'frame',
       let: lets,
@@ -31,7 +31,7 @@ function component(lets: Raw, rowText: unknown): Raw {
       children: [
         {
           type: 'repeat',
-          field: 'linhas',
+          field: 'lines',
           template: { type: 'frame', children: [text(rowText)] },
         },
       ],
@@ -52,16 +52,16 @@ const SPEC: Raw = {
       color: '#112233',
       annotationTypes: [
         {
-          id: 'tabela',
-          name: 'Tabela',
+          id: 'grid',
+          name: 'Grid',
           component: 'components/tab.json',
           fields: [
             {
-              key: 'linhas',
+              key: 'lines',
               type: 'table',
-              columns: [{ key: 'chave', type: 'string' }],
+              columns: [{ key: 'key', type: 'string' }],
             },
-            { key: 'cor', type: 'string' },
+            { key: 'color', type: 'string' },
           ],
         },
       ],
@@ -79,33 +79,33 @@ function validate(comp: Raw) {
   });
 }
 
-describe('validateLibrary com variáveis', () => {
-  it('a variável da raiz que cita uma coluna, usada dentro do repeat, vale como a citação ali', () => {
-    const report = validate(component({ nome: { $field: 'chave' } }, { $var: 'nome' }));
+describe('validateLibrary with variables', () => {
+  it('a root variable that cites a column, used inside the repeat, counts as the citation there', () => {
+    const report = validate(component({ name: { $field: 'key' } }, { $var: 'name' }));
     expect(report.errors).toEqual([]);
     expect(report.ok).toBe(true);
   });
 
-  it('a variável que cita um campo do tipo, usada só dentro do repeat, conta o campo como usado', () => {
-    const report = validate(component({ tom: { $field: 'cor' } }, { $var: 'tom' }));
+  it('a variable that cites a type field, used only inside the repeat, counts the field as used', () => {
+    const report = validate(component({ tone: { $field: 'color' } }, { $var: 'tone' }));
     expect(report.errors).toEqual([]);
-    expect(report.warnings.map((w) => w.message).join('\n')).not.toContain('campo "cor"');
+    expect(report.warnings.map((w) => w.message).join('\n')).not.toContain(
+      'field "color"',
+    );
   });
 
-  it('a variável que cita o que não é coluna nem campo do tipo, usada no repeat, é erro', () => {
-    const report = validate(component({ x: { $field: 'sumiu' } }, { $var: 'x' }));
+  it('a variable that cites what is neither a column nor a type field, used in the repeat, is an error', () => {
+    const report = validate(component({ x: { $field: 'gone' } }, { $var: 'x' }));
     expect(report.errors.map((e) => [e.path, e.message])).toEqual([
       [
         'template.children[0].template.children[0].text.$var(x).$field',
-        'the row drawing uses "sumiu", which is neither a column of the table "linhas" nor a field of the type "tabela"',
+        'the row drawing uses "gone", which is neither a column of the table "lines" nor a field of the type "grid"',
       ],
     ]);
   });
 
-  it('a variável sem uso que cita um campo inexistente não gera erro nem conta como uso', () => {
-    const report = validate(
-      component({ solta: { $field: 'sumiu' } }, { $field: 'chave' }),
-    );
+  it('an unused variable that cites a missing field gives no error and does not count as use', () => {
+    const report = validate(component({ loose: { $field: 'gone' } }, { $field: 'key' }));
     expect(report.errors).toEqual([]);
   });
 });

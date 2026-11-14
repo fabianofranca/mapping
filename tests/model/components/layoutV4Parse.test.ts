@@ -1,4 +1,4 @@
-// Formato 4, fase CF2: limites de tamanho, expressão em tamanho e layout, repeat.distribute.
+// Format 4, phase CF2: size limits, expression in size and layout, repeat.distribute.
 import { describe, expect, it } from 'vitest';
 import { COMPONENT_FORMAT } from '../../../src/model/components/componentFormat';
 import { validateComponent } from '../../../src/model/components/parseComponent';
@@ -16,7 +16,7 @@ function component(template: unknown, version = 4): unknown {
   };
 }
 
-/** Um quadro raiz com um filho do tipo dado, já com as chaves extras. */
+/** A root frame with a child of the given type, already with the extra keys. */
 function withChild(child: Record<string, unknown>, version = 4): unknown {
   return component({ type: 'frame', children: [child] }, version);
 }
@@ -26,8 +26,8 @@ const rect = (extra: Record<string, unknown>): Record<string, unknown> => ({
   ...extra,
 });
 
-describe('minWidth, maxWidth, minHeight e maxHeight', () => {
-  it('valem em qualquer nó, inclusive repeat, com número ou expressão', () => {
+describe('minWidth, maxWidth, minHeight and maxHeight', () => {
+  it('apply to any node, including repeat, with a number or an expression', () => {
     const limits = {
       minWidth: 10,
       maxWidth: { $field: 'w', default: 300 },
@@ -47,14 +47,14 @@ describe('minWidth, maxWidth, minHeight e maxHeight', () => {
     ).toEqual([]);
   });
 
-  it('valor negativo ou que não é número falha no caminho da chave', () => {
+  it('a negative or non-number value fails at the key path', () => {
     expect(validateComponent(withChild(rect({ minWidth: -1, maxHeight: 'x' })))).toEqual([
       'template.children[0].minWidth: expected a number greater than or equal to 0',
       'template.children[0].maxHeight: expected a number greater than or equal to 0',
     ]);
   });
 
-  it('min maior que max, com os dois literais, falha no caminho do min', () => {
+  it('min greater than max, with both literals, fails at the min path', () => {
     expect(validateComponent(withChild(rect({ minWidth: 200, maxWidth: 100 })))).toEqual([
       'template.children[0].minWidth: cannot be greater than maxWidth',
     ]);
@@ -63,7 +63,7 @@ describe('minWidth, maxWidth, minHeight e maxHeight', () => {
     ]);
   });
 
-  it('min igual a max, ou com uma expressão, não falha', () => {
+  it('min equal to max, or with an expression, does not fail', () => {
     expect(validateComponent(withChild(rect({ minWidth: 100, maxWidth: 100 })))).toEqual(
       [],
     );
@@ -72,7 +72,7 @@ describe('minWidth, maxWidth, minHeight e maxHeight', () => {
     ).toEqual([]);
   });
 
-  it('na formatVersion 3 dão o erro de versão no caminho da chave', () => {
+  it('in formatVersion 3 they give the version error at the key path', () => {
     expect(validateComponent(withChild(rect({ minWidth: 1, maxHeight: 2 }), 3))).toEqual([
       `template.children[0].minWidth: ${V4}`,
       `template.children[0].maxHeight: ${V4}`,
@@ -88,7 +88,7 @@ describe('repeat.distribute', () => {
     template: { type: 'frame' },
   });
 
-  it('aceita none e fill; recusa outro valor e expressão', () => {
+  it('accepts none and fill; rejects another value and an expression', () => {
     expect(validateComponent(withChild(repeat('none')))).toEqual([]);
     expect(validateComponent(withChild(repeat('fill')))).toEqual([]);
     expect(validateComponent(withChild(repeat('spread')))).toEqual([
@@ -99,21 +99,21 @@ describe('repeat.distribute', () => {
     ]);
   });
 
-  it('na formatVersion 3 dá o erro de versão', () => {
+  it('in formatVersion 3 it gives the version error', () => {
     expect(validateComponent(withChild(repeat('fill'), 3))).toEqual([
       `template.children[0].distribute: ${V4}`,
     ]);
   });
 
-  it('em nó que não é repeat continua chave desconhecida', () => {
+  it('on a node that is not a repeat it is still an unknown key', () => {
     expect(validateComponent(withChild(rect({ distribute: 'fill' })))).toContain(
       'template.children[0].distribute: unknown key: distribute',
     );
   });
 });
 
-describe('expressão em width e height', () => {
-  it('aceita expressão cujos ramos são tamanhos válidos', () => {
+describe('expression in width and height', () => {
+  it('accepts an expression whose branches are valid sizes', () => {
     const width = {
       $switch: 'size',
       cases: { s: 40, m: '50%', l: 'fill' },
@@ -124,7 +124,7 @@ describe('expressão em width e height', () => {
     ).toEqual([]);
   });
 
-  it('confere o literal dentro da expressão', () => {
+  it('checks the literal inside the expression', () => {
     expect(
       validateComponent(withChild(rect({ width: { $field: 'w', default: -3 } }))),
     ).toEqual([
@@ -139,10 +139,10 @@ describe('expressão em width e height', () => {
     ]);
   });
 
-  it('o nó image recusa hug, também num ramo de expressão', () => {
+  it('the image node rejects hug, also in an expression branch', () => {
     const image = (extra: Record<string, unknown>): Record<string, unknown> => ({
       type: 'image',
-      src: { $field: 'foto' },
+      src: { $field: 'photo' },
       ...extra,
     });
     const hug =
@@ -161,11 +161,11 @@ describe('expressão em width e height', () => {
   });
 });
 
-describe('expressão em layout.type, align e justify', () => {
+describe('expression in layout.type, align and justify', () => {
   const frameWith = (layout: unknown, version = 4): unknown =>
     component({ type: 'frame', layout }, version);
 
-  it('layout.type por expressão aceita gap, padding, align e justify', () => {
+  it('layout.type by expression accepts gap, padding, align and justify', () => {
     const layout = {
       type: { $switch: 'dir', cases: { h: 'row', v: 'column' }, default: 'none' },
       gap: 8,
@@ -176,7 +176,7 @@ describe('expressão em layout.type, align e justify', () => {
     expect(validateComponent(frameWith(layout))).toEqual([]);
   });
 
-  it('o mesmo vale no layout de um slot', () => {
+  it('the same applies in the layout of a slot', () => {
     const layout = {
       type: { $field: 'dir', default: 'row' },
       align: { $field: 'a', default: 'end' },
@@ -188,7 +188,7 @@ describe('expressão em layout.type, align e justify', () => {
     ).toEqual([]);
   });
 
-  it('confere os literais dos ramos', () => {
+  it('checks the literals of the branches', () => {
     expect(
       validateComponent(frameWith({ type: { $field: 'd', default: 'diagonal' } })),
     ).toEqual([
@@ -210,21 +210,21 @@ describe('expressão em layout.type, align e justify', () => {
     ]);
   });
 
-  it('literal inválido em type mantém a mensagem de sempre', () => {
+  it('an invalid literal in type keeps the usual message', () => {
     expect(validateComponent(frameWith({ type: 'diagonal' }))).toEqual([
       'template.layout.type: expected "none", "row", "column" or "grid"',
     ]);
   });
 
-  it('com type literal none, só type vale', () => {
+  it('with literal type none, only type applies', () => {
     expect(validateComponent(frameWith({ type: 'none', gap: 4 }))).toEqual([
       'template.layout.gap: unknown key: gap',
     ]);
   });
 });
 
-describe('expressão nas cinco chaves antes da formatVersion 4', () => {
-  it('v3 com minWidth, distribute e width por expressão dá exatamente três erros', () => {
+describe('expression in the five keys before formatVersion 4', () => {
+  it('v3 with minWidth, distribute and width by expression gives exactly three errors', () => {
     const doc = component(
       {
         type: 'frame',
@@ -248,7 +248,7 @@ describe('expressão nas cinco chaves antes da formatVersion 4', () => {
     ]);
   });
 
-  it('height e layout.type/align/justify por expressão também, em slot e em repeat', () => {
+  it('height and layout.type/align/justify by expression too, in slot and in repeat', () => {
     const layout = {
       type: { $field: 'd', default: 'row' },
       align: { $field: 'a', default: 'start' },
@@ -282,7 +282,7 @@ describe('expressão nas cinco chaves antes da formatVersion 4', () => {
     ]);
   });
 
-  it('literais nessas chaves continuam valendo em todas as versões', () => {
+  it('literals in those keys remain valid in all versions', () => {
     const doc = component(
       {
         type: 'frame',
@@ -296,8 +296,8 @@ describe('expressão nas cinco chaves antes da formatVersion 4', () => {
   });
 });
 
-describe('componente v4 com tudo junto', () => {
-  it('passa', () => {
+describe('v4 component with everything together', () => {
+  it('passes', () => {
     const doc = component({
       type: 'frame',
       width: { $field: 'w', default: 'fill' },

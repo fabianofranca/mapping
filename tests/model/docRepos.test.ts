@@ -1,4 +1,4 @@
-// `docRepos` do projeto (etapa #559, PD2, decisões 13 e 15): gravar e remover o `localPath`.
+// The project's `docRepos` (stage #559, PD2, decisions 13 and 15): writing and removing the `localPath`.
 import { describe, expect, it } from 'vitest';
 import { docRepoOf, removeDocRepo, setDocRepo, type ModelError } from '../../src/model';
 import { roleProject, withDocRepo } from './roleFixtures';
@@ -13,7 +13,7 @@ function codeOf(fn: () => unknown): string {
 }
 
 describe('setDocRepo / removeDocRepo', () => {
-  it('grava o localPath de um repositório declarado pela especialização', () => {
+  it('writes the localPath of a repository declared by the specialization', () => {
     const p = setDocRepo(roleProject(withDocRepo), 'design-docs', {
       localPath: '../docs',
     });
@@ -21,7 +21,7 @@ describe('setDocRepo / removeDocRepo', () => {
     expect(docRepoOf(p, 'design-docs')).toEqual({ localPath: '../docs' });
   });
 
-  it('normaliza o caminho (barras e espaços) e o mesmo valor devolve o mesmo projeto', () => {
+  it('normalizes the path (slashes and spaces) and the same value returns the same project', () => {
     const p = setDocRepo(roleProject(withDocRepo), 'design-docs', {
       localPath: ' ..\\docs/ ',
     });
@@ -29,26 +29,26 @@ describe('setDocRepo / removeDocRepo', () => {
     expect(setDocRepo(p, 'design-docs', { localPath: '../docs' })).toBe(p);
   });
 
-  it('trocar o caminho substitui a entrada', () => {
+  it('changing the path replaces the entry', () => {
     let p = setDocRepo(roleProject(withDocRepo), 'design-docs', { localPath: '../a' });
     p = setDocRepo(p, 'design-docs', { localPath: '../b' });
     expect(p.docRepos).toEqual({ 'design-docs': { localPath: '../b' } });
   });
 
-  it('caminho vazio ou null remove a entrada', () => {
+  it('an empty path or null removes the entry', () => {
     let p = setDocRepo(roleProject(withDocRepo), 'design-docs', { localPath: '../a' });
     expect(setDocRepo(p, 'design-docs', { localPath: '  ' }).docRepos).toEqual({});
     p = setDocRepo(p, 'design-docs', { localPath: null });
     expect(p.docRepos).toEqual({});
   });
 
-  it('id não declarado por nenhuma especialização falha com unknown-doc-repo', () => {
+  it('an id not declared by any specialization fails with unknown-doc-repo', () => {
     expect(
       codeOf(() => setDocRepo(roleProject(), 'design-docs', { localPath: '../a' })),
     ).toBe('unknown-doc-repo');
   });
 
-  it('caminho absoluto falha com invalid-local-path', () => {
+  it('an absolute path fails with invalid-local-path', () => {
     expect(
       codeOf(() =>
         setDocRepo(roleProject(withDocRepo), 'design-docs', { localPath: '/x' }),
@@ -56,7 +56,7 @@ describe('setDocRepo / removeDocRepo', () => {
     ).toBe('invalid-local-path');
   });
 
-  it('remove a entrada (e falha com not-found se ela não existe); remover a especialização não a apaga', () => {
+  it('removes the entry (and fails with not-found if it does not exist); removing the specialization does not delete it', () => {
     const p = setDocRepo(roleProject(withDocRepo), 'design-docs', { localPath: '../a' });
     expect(removeDocRepo(p, 'design-docs').docRepos).toEqual({});
     expect(codeOf(() => removeDocRepo(roleProject(), 'design-docs'))).toBe('not-found');

@@ -1,5 +1,5 @@
-// MC2 (decisões 9 e 10 da #898): o `sizing` avaliado (`resolveSizing`) e a função de medida do
-// ajuste ao conteúdo (`fitComponentSize`), que a MC3 usa no `fitMarking`.
+// MC2 (decisions 9 and 10 of #898): the evaluated `sizing` (`resolveSizing`) and the measure function of the
+// fit to content (`fitComponentSize`), which MC3 uses in `fitMarking`.
 import { describe, expect, it } from 'vitest';
 import type {
   ComponentFile,
@@ -50,7 +50,7 @@ const fit = (
 ) => fitComponentSize(c, values, { measure: approximateMeasurer }, auto ? { auto } : {});
 
 describe('resolveSizing', () => {
-  it('sem sizing cada eixo vale o size, e o literal vale como escrito', () => {
+  it('without sizing each axis is the size, and the literal is as written', () => {
     const r = resolveSizing(component(undefined), {});
     expect([r.width, r.height]).toEqual([
       { spec: 200, source: 'size' },
@@ -63,7 +63,7 @@ describe('resolveSizing', () => {
     ]);
   });
 
-  it('a expressão é avaliada com os valores; texto numérico vale número; hug e fill valem', () => {
+  it('the expression is evaluated with the values; numeric text is a number; hug and fill apply', () => {
     const c = component({
       width: { $field: 'w' },
       height: { $switch: 'style', cases: { a: 64, b: 'hug', c: 'fill' } },
@@ -79,7 +79,7 @@ describe('resolveSizing', () => {
     });
   });
 
-  it('valor inválido (negativo, texto, porcentagem, sem valor) cai no size com o aviso', () => {
+  it('an invalid value (negative, text, percentage, without a value) falls back to the size with the warning', () => {
     const c = component({ height: { $field: 'h' } });
     for (const h of [-4, 'banana', '50%']) {
       const r = resolveSizing(c, { h });
@@ -93,7 +93,7 @@ describe('resolveSizing', () => {
 });
 
 describe('followedAxes', () => {
-  it('hug e o px de uma expressão acompanham; o literal em px e o fill não', () => {
+  it('hug and the px of an expression follow; the literal in px and the fill do not', () => {
     const c = component({ width: 'hug', height: { $field: 'h' } });
     expect(followedAxes(resolveSizing(c, { h: 30 }))).toEqual({
       width: true,
@@ -119,7 +119,7 @@ describe('fitComponentSize', () => {
       },
     );
 
-  it('o eixo hug é medido (48, 68 e a altura das linhas) e o outro fica no size', () => {
+  it('the hug axis is measured (48, 68 and the height of the lines) and the other stays at the size', () => {
     expect(fit(snackbar(), { msg: 'Ok' })).toMatchObject({ width: 200, height: 48 });
     expect(fit(snackbar(), { msg: LINE })).toMatchObject({ width: 200, height: 68 });
     expect(fit(snackbar(), { msg: `${LINE} ${LINE}` })).toMatchObject({
@@ -128,13 +128,13 @@ describe('fitComponentSize', () => {
     });
   });
 
-  it('o máximo da raiz limita o eixo medido', () => {
+  it('the root maximum limits the measured axis', () => {
     expect(
       fit(snackbar({ minHeight: 10, maxHeight: 60 }), { msg: `${LINE} ${LINE}` })?.height,
     ).toBe(60);
   });
 
-  it('o px de uma expressão vale como tamanho, e o hug mede o outro eixo', () => {
+  it('the px of an expression applies as a size, and hug measures the other axis', () => {
     const c = component({
       width: { $if: { $has: 'msg' }, then: 120, else: 200 },
       height: 'hug',
@@ -142,13 +142,13 @@ describe('fitComponentSize', () => {
     expect(fit(c, { msg: 'Ok' })).toMatchObject({ width: 120, height: 30 });
   });
 
-  it('o inteiro seguinte: 12,5 de altura de linha dá 13', () => {
+  it('the next integer: 12.5 of line height gives 13', () => {
     const c = component({ height: 'hug' }, { width: 'fill' });
     (c.template.children?.[0] as { font: { lineHeight: number } }).font.lineHeight = 12.5;
     expect(fit(c, { msg: 'Ok' })?.height).toBe(13);
   });
 
-  it('sem eixo que dependa do conteúdo devolve undefined; auto liga ou desliga um eixo', () => {
+  it('without an axis that depends on content it returns undefined; auto turns an axis on or off', () => {
     expect(fit(component(undefined), { msg: 'Ok' })).toBeUndefined();
     expect(fit(component({ width: 10, height: 'fill' }), { msg: 'Ok' })).toBeUndefined();
     const c = snackbar();
@@ -158,13 +158,13 @@ describe('fitComponentSize', () => {
     });
   });
 
-  it('valor inválido do sizing deixa o eixo no size: nada a ajustar (o aviso é do resolveSizing)', () => {
+  it('an invalid value of the sizing leaves the axis at the size: nothing to adjust (the warning belongs to resolveSizing)', () => {
     const c = component({ height: { $field: 'h' } });
     expect(fit(c, { h: 'banana' })).toBeUndefined();
     expect(fit(c, { h: 30 })).toMatchObject({ width: 200, height: 30 });
   });
 
-  it('o minSize e o piso de 1 px valem nos eixos medidos ou dados por expressão (como no Arrumar)', () => {
+  it('the minSize and the 1 px floor apply to the axes measured or given by expression (as in Arrange)', () => {
     const c = {
       ...component({ height: { $field: 'h' } }),
       minSize: { width: 20, height: 48 },

@@ -1,6 +1,6 @@
-// CL1 (P4): grade vazia com `hug`. O motor (`instantiate.ts`) é a fonte: o eixo das trilhas mede
-// `gap × (n − 1)` (as trilhas existem, vazias) e o das linhas de fluxo mede 0; a arrumação do slot
-// (`arrange.ts`) e a medida do `hug` do componente com slot (`layout.ts`) concordam com ele.
+// CL1 (P4): empty grid with `hug`. The engine (`instantiate.ts`) is the source: the tracks axis measures
+// `gap × (n − 1)` (the tracks exist, empty) and the flow lines axis measures 0; the slot arrangement
+// (`arrange.ts`) and the `hug` measure of the component with a slot (`layout.ts`) agree with it.
 import { describe, expect, it } from 'vitest';
 import { contentExtent, resolveSlotLayout } from '../../../src/model/components/arrange';
 import {
@@ -16,7 +16,7 @@ import { loadLibrary } from '../../../src/model/components/library';
 
 type Json = Record<string, unknown>;
 
-/** O que o motor mede para um quadro `hug` × `hug` em grade, sem filhos. */
+/** What the engine measures for a `hug` × `hug` frame in a grid, without children. */
 function engineSize(layout: Json): { width: number; height: number } {
   const component = {
     format: COMPONENT_FORMAT,
@@ -42,7 +42,7 @@ function engineSize(layout: Json): { width: number; height: number } {
   return { width, height };
 }
 
-/** O que a arrumação do slot mede para o mesmo layout, sem filhas. */
+/** What the slot arrangement measures for the same layout, without children. */
 function arrangeSize(layout: Json): { width: number; height: number } {
   const slot = {
     type: 'slot',
@@ -51,7 +51,7 @@ function arrangeSize(layout: Json): { width: number; height: number } {
   return contentExtent(resolveSlotLayout(slot, {}), [], null);
 }
 
-describe('grade vazia com hug: o motor e a arrumação do slot medem igual', () => {
+describe('empty grid with hug: the engine and the slot arrangement measure the same', () => {
   it.each([
     ['columns 3, gap 10', { columns: 3, gap: 10 }, { width: 20, height: 0 }],
     ['rows 4, gap 5', { rows: 4, gap: 5 }, { width: 0, height: 15 }],
@@ -61,7 +61,7 @@ describe('grade vazia com hug: o motor e a arrumação do slot medem igual', () 
       { width: 8, height: 0 },
     ],
     [
-      'minColumnWidth 100, gap 8 (sem limite: uma trilha)',
+      'minColumnWidth 100, gap 8 (no limit: one track)',
       { minColumnWidth: 100, gap: 8 },
       { width: 0, height: 0 },
     ],
@@ -71,7 +71,7 @@ describe('grade vazia com hug: o motor e a arrumação do slot medem igual', () 
   });
 });
 
-/** Um componente `hug` × `hug` com um slot em grade, sem filhas, numa tela sem geometria. */
+/** A `hug` × `hug` component with a grid slot, without children, on a screen without geometry. */
 function emptyHugSlot(layout: Json): { width: number; height: number } {
   const component = {
     format: COMPONENT_FORMAT,
@@ -116,7 +116,7 @@ function emptyHugSlot(layout: Json): { width: number; height: number } {
   const result = layoutScreen(
     {
       id: 's',
-      name: 'Tela',
+      name: 'Screen',
       width: 320,
       height: 200,
       background: '#FFF',
@@ -126,11 +126,11 @@ function emptyHugSlot(layout: Json): { width: number; height: number } {
     approximateMeasurer,
   );
   const box = result.screen.instances.find((i) => i.id === 'g')?.box;
-  if (box === undefined) throw new Error('sem instância');
+  if (box === undefined) throw new Error('no instance');
   return { width: box.width, height: box.height };
 }
 
-describe('grade vazia com hug na tela sem geometria (layout.ts)', () => {
+describe('empty grid with hug on the screen without geometry (layout.ts)', () => {
   it.each([
     ['columns 3, gap 10', { columns: 3, gap: 10 }, 20, 0],
     ['rows 4, gap 5', { rows: 4, gap: 5 }, 0, 15],

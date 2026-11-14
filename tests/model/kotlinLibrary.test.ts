@@ -1,5 +1,5 @@
-// Biblioteca Kotlin (`libraries/kotlin/`, pronta para uso e aplicada pela pessoa): onze tipos de declaração (classe,
-// objeto e interface), cada um com componente e documento; as propriedades são alvos de referência.
+// Kotlin library (`libraries/kotlin/`, ready to use and applied by the person): eleven declaration types (class,
+// object and interface), each with a component and a document; the properties are reference targets.
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -43,8 +43,8 @@ const files = listDisk(ROOT)
   .map((path) => ({ path, text: readFileSync(join(ROOT, path), 'utf8') }));
 const text = (path: string): string => files.find((f) => f.path === path)?.text ?? '';
 
-describe('biblioteca Kotlin', () => {
-  it('tem a especialização, um componente e um documento por tipo', () => {
+describe('Kotlin library', () => {
+  it('has the specialization, one component and one document per type', () => {
     expect(files.map((f) => f.path)).toEqual(
       [
         SPEC_FILE,
@@ -54,7 +54,7 @@ describe('biblioteca Kotlin', () => {
     );
   });
 
-  it('valida sem erro nos três níveis e sem aviso', () => {
+  it('validates without error on the three levels and without warning', () => {
     const report = validateLibrary({ files, specPath: SPEC_FILE });
     expect(report.errors).toEqual([]);
     expect(report.warnings).toEqual([]);
@@ -67,7 +67,7 @@ describe('biblioteca Kotlin', () => {
     });
   });
 
-  it('a especialização é a formatVersion 8 com duas camadas e as propriedades como alvos', () => {
+  it('the specialization is formatVersion 8 with two layers and the properties as targets', () => {
     const parsed = parseSpecText(text(SPEC_FILE));
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
@@ -97,7 +97,7 @@ describe('biblioteca Kotlin', () => {
   });
 
   it.each(ALL_TYPES)(
-    '%s desenha o preview sem aviso, com o nome entre os textos',
+    '%s draws the preview without warning, with the name among the texts',
     (id) => {
       const catalog = buildCatalog(files);
       expect(catalog.report.errors).toEqual([]);
@@ -116,9 +116,10 @@ describe('biblioteca Kotlin', () => {
     },
   );
 
-  it('class inner e open tem o estereótipo «inner open class»', () => {
+  it('class inner and open has the stereotype «inner open class»', () => {
     const catalog = buildCatalog(files);
     const entry = findEntry(catalog, 'class');
+    // pt-BR kept: `inner` option value of the Kotlin library spec (libraries/kotlin/kotlin.spec.json)
     const values = { ...entry?.previewValues, inner: 'sim', modality: 'open' };
     const drawing = drawEntry(entry!, values, approximateMeasurer);
     const texts: string[] = [];
@@ -130,7 +131,7 @@ describe('biblioteca Kotlin', () => {
     expect(texts.some((t) => t.includes('«inner open class»'))).toBe(true);
   });
 
-  it('Propriedades › Tipo e Funções › Retorno têm a lista fixa de sugestões; Supertipos › Tipo não', () => {
+  it('Properties › Type and Functions › Return have the fixed list of suggestions; Supertypes › Type does not', () => {
     const parsed = parseSpecText(text(SPEC_FILE));
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
@@ -161,7 +162,7 @@ describe('biblioteca Kotlin', () => {
     expect(checked).toBe(ALL_TYPES.length);
   });
 
-  it('Propriedades › Tipo e Supertipos › Tipo têm linkedRef typeRef; Funções › Retorno não', () => {
+  it('Properties › Type and Supertypes › Type have linkedRef typeRef; Functions › Return does not', () => {
     const parsed = parseSpecText(text(SPEC_FILE));
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;

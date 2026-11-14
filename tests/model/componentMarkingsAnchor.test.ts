@@ -1,5 +1,5 @@
-// Instância nova com `anchor` e sem `rect` (R3, decisão 12): nasce no tamanho medido e já
-// encostada na âncora (`snapToAnchor`). `componentAnchoredPlacement` é a função pura que o MCP usa.
+// New instance with `anchor` and without `rect` (R3, decision 12): born at the measured size and already
+// attached to the anchor (`snapToAnchor`). `componentAnchoredPlacement` is the pure function the MCP uses.
 import { describe, expect, it } from 'vitest';
 import {
   addComponentMarking,
@@ -41,14 +41,14 @@ const args = (
 const create = (p: Project, typeId: string, extra: Partial<NewComponentArgs> = {}) =>
   addComponentMarking(p, catalog, args(typeId, extra), approximateMeasurer);
 
-describe('instância nova ancorada', () => {
-  it('sem rect nasce no tamanho do componente, encostada acima da âncora e com a âncora gravada', () => {
+describe('new anchored instance', () => {
+  it('without rect it is born at the component size, attached above the anchor and with the anchor stored', () => {
     const b = marking(create(withTarget(), 'fit-plain'), 'B');
     expect(b.rect).toEqual({ x: 440, y: 260, width: 120, height: 40 });
     expect(b.anchor).toEqual({ to: 'T', side: 'top', align: 'center' });
   });
 
-  it('nasce no tamanho medido com os valores dados (e é o que o snapToAnchor daria)', () => {
+  it('born at the measured size with the given values (and it is what snapToAnchor would give)', () => {
     const p = create(withTarget(), 'fit-button', { values: { label: LONG_LABEL } });
     const b = marking(p, 'B');
     expect(b.rect.width).toBe(120);
@@ -57,14 +57,14 @@ describe('instância nova ancorada', () => {
     expect(snapToAnchor(p, 'B').project).toBe(p);
   });
 
-  it('o rect dado manda: não encosta, mas grava a âncora', () => {
+  it('the given rect rules: it does not attach, but stores the anchor', () => {
     const given = { x: 10, y: 20, width: 120, height: 40 };
     const b = marking(create(withTarget(), 'fit-plain', { rect: given }), 'B');
     expect(b.rect).toEqual(given);
     expect(b.anchor).toEqual({ to: 'T', side: 'top', align: 'center' });
   });
 
-  it('os padrões do componente completam o que a âncora não diz, e a densidade os escala', () => {
+  it('the component defaults complete what the anchor does not say, and the density scales them', () => {
     const p = setContainerDensity(withTarget(), 'I1', 2);
     const b = marking(
       create(p, 'fit-plain', {
@@ -73,12 +73,12 @@ describe('instância nova ancorada', () => {
       }),
       'B',
     );
-    // 120×40 unidades × 2; main 4 × 2 abaixo da âncora, cross 2 × 2 ao longo dela.
+    // 120×40 units × 2; main 4 × 2 below the anchor, cross 2 × 2 along it.
     expect(b.rect).toEqual({ x: 404, y: 408, width: 240, height: 80 });
     expect(b.anchor).toEqual({ to: 'T' });
   });
 
-  it('presa dentro do container quando passa dele', () => {
+  it('clamped inside the container when it goes past it', () => {
     const b = marking(
       create(withTarget(), 'fit-plain', {
         anchor: { to: 'T', side: 'top', offset: { main: 5000, cross: 0 } },
@@ -88,9 +88,9 @@ describe('instância nova ancorada', () => {
     expect(b.rect.y).toBe(0);
   });
 
-  it('âncora inválida falha com o código da invariante, sem criar nada', () => {
+  it('an invalid anchor fails with the invariant code, without creating anything', () => {
     const p = withTarget();
-    expect(() => create(p, 'fit-plain', { anchor: { to: 'nada' } })).toThrowError(
+    expect(() => create(p, 'fit-plain', { anchor: { to: 'nothing' } })).toThrowError(
       /^anchor-missing/,
     );
     expect(() => create(p, 'fit-plain', { anchor: { to: 'B' } })).toThrowError(
@@ -98,7 +98,7 @@ describe('instância nova ancorada', () => {
     );
   });
 
-  it('componentAnchoredPlacement devolve o retângulo e os avisos, sem criar a marcação', () => {
+  it('componentAnchoredPlacement returns the rectangle and the warnings, without creating the marking', () => {
     const p = withTarget();
     const placement = componentAnchoredPlacement(
       p,
@@ -123,8 +123,8 @@ describe('instância nova ancorada', () => {
   });
 });
 
-describe('o assentar leva a instância nova para outro espaço que o alvo', () => {
-  /** T0 no canvas sobre a borda direita de I1; a instância ancorada à esquerda dele cai dentro de I1. */
+describe('settling takes the new instance to a different space than the target', () => {
+  /** T0 on the canvas over the right edge of I1; the instance anchored to its left falls inside I1. */
   function straddling(): { p: Project; anchor: NewComponentArgs['anchor'] } {
     const p0 = fitProject();
     const box = imageCanvasRect(p0.containers[0]!, p0.containers[0]!.placement);
@@ -142,7 +142,7 @@ describe('o assentar leva a instância nova para outro espaço que o alvo', () =
     anchor,
   });
 
-  it('addComponentMarking cria a marcação e solta a âncora (não falha a criação inteira)', () => {
+  it('addComponentMarking creates the marking and drops the anchor (the whole creation does not fail)', () => {
     const { p, anchor } = straddling();
     const out = addComponentMarking(p, catalog, canvasArgs(anchor), approximateMeasurer);
     const b = marking(out, 'B');
@@ -152,10 +152,10 @@ describe('o assentar leva a instância nova para outro espaço que o alvo', () =
     expect(validateProject(out)).toEqual([]);
   });
 
-  it('o alvo inexistente continua falhando (a âncora nunca foi aceitável)', () => {
+  it('a nonexistent target still fails (the anchor was never acceptable)', () => {
     const { p } = straddling();
     expect(() =>
-      addComponentMarking(p, catalog, canvasArgs({ to: 'nada' }), approximateMeasurer),
+      addComponentMarking(p, catalog, canvasArgs({ to: 'nothing' }), approximateMeasurer),
     ).toThrowError(/^anchor-missing/);
   });
 });

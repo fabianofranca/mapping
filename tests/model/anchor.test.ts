@@ -1,6 +1,6 @@
-// Âncora da marcação (schema v20, etapa "direção e âncora", R3): `markings[].anchor` liga uma
-// marcação a outra do mesmo espaço. Aqui: formato, invariantes, índice, mover/excluir e
-// `setMarkingAnchor`. O encosto (`snapToAnchor`) está em `anchorSnap.test.ts`.
+// Marking anchor (schema v20, stage "direction and anchor", R3): `markings[].anchor` links a
+// marking to another one in the same space. Covered here: format, invariants, index, move/delete and
+// `setMarkingAnchor`. The snap (`snapToAnchor`) is in `anchorSnap.test.ts`.
 import { describe, expect, it } from 'vitest';
 import {
   addContainer,
@@ -22,7 +22,7 @@ import { emptyProject, marking } from './fixtures';
 
 type Raw = Record<string, unknown>;
 
-/** I1 (1000×800) com A, B, C e D soltos (lado a lado); I2 com E; F no canvas, G no canvas. */
+/** I1 (1000×800) with loose A, B, C and D (side by side); I2 with E; F on the canvas, G on the canvas. */
 function base(): Project {
   let p = emptyProject();
   p = addContainer(p, { id: 'I1', file: 'a.png', width: 1000, height: 800 });
@@ -53,8 +53,8 @@ const anchored = (p: Project, id: string, anchor: MarkingAnchor | null): Project
 
 const codes = (p: Project) => validateProject(p).map((i) => i.code);
 
-describe('formato da âncora (v20)', () => {
-  it('a gravação só escreve a chave quando há âncora; null e ausência não gravam', () => {
+describe('anchor format (v20)', () => {
+  it('saving only writes the key when there is an anchor; null and absence do not write', () => {
     const p = anchored(base(), 'B', {
       to: 'A',
       side: 'bottom',
@@ -76,14 +76,14 @@ describe('formato da âncora (v20)', () => {
     expect(again.markings.every((m) => !('anchor' in m))).toBe(true);
   });
 
-  it('a âncora é a última chave da marcação gravada (ordem estável)', () => {
+  it('the anchor is the last key of the saved marking (stable order)', () => {
     const p = anchored(base(), 'B', { to: 'A' });
     const saved = JSON.parse(serialize(p)) as { markings: Raw[] };
     const keys = Object.keys(saved.markings.find((m) => m.id === 'B')!);
     expect(keys[keys.length - 1]).toBe('anchor');
   });
 
-  it('lê e regrava a âncora sem perda; a versão continua a mesma', () => {
+  it('reads and rewrites the anchor losslessly; the version stays the same', () => {
     const p = anchored(base(), 'B', {
       to: 'A',
       side: 'start',
@@ -100,7 +100,7 @@ describe('formato da âncora (v20)', () => {
     expect(serialize(result.project)).toBe(serialize(p));
   });
 
-  it('side ou align fora do conjunto é erro de leitura', () => {
+  it('side or align outside the set is a read error', () => {
     const raw = JSON.parse(serialize(anchored(base(), 'B', { to: 'A' }))) as {
       markings: Raw[];
     };
@@ -116,36 +116,36 @@ describe('formato da âncora (v20)', () => {
   });
 });
 
-describe('invariantes da âncora', () => {
+describe('anchor invariants', () => {
   const withRaw = (p: Project, id: string, anchor: MarkingAnchor): Project => ({
     ...p,
     markings: p.markings.map((m) => (m.id === id ? { ...m, anchor } : m)),
   });
 
-  it('um projeto com âncoras válidas não tem problemas', () => {
+  it('a project with valid anchors has no issues', () => {
     const p = anchored(anchored(base(), 'B', { to: 'A' }), 'C', { to: 'B' });
     expect(validateProject(p)).toEqual([]);
   });
 
-  it('anchor-missing: o alvo não existe', () => {
-    const issues = validateProject(withRaw(base(), 'B', { to: 'nada' }));
+  it('anchor-missing: the target does not exist', () => {
+    const issues = validateProject(withRaw(base(), 'B', { to: 'nothing' }));
     expect(issues).toEqual([
-      { code: 'anchor-missing', entity: 'marking', id: 'B', otherId: 'nada' },
+      { code: 'anchor-missing', entity: 'marking', id: 'B', otherId: 'nothing' },
     ]);
   });
 
-  it('anchor-self: ancorada em si mesma (e não é ciclo)', () => {
+  it('anchor-self: anchored to itself (and it is not a cycle)', () => {
     const c = codes(withRaw(base(), 'B', { to: 'B' }));
     expect(c).toEqual(['anchor-self']);
   });
 
-  it('anchor-cycle: A→B→A, nas duas', () => {
+  it('anchor-cycle: A→B→A, on both', () => {
     const p = withRaw(withRaw(base(), 'A', { to: 'B' }), 'B', { to: 'A' });
     const issues = validateProject(p).filter((i) => i.code === 'anchor-cycle');
     expect(issues.map((i) => i.id).sort()).toEqual(['A', 'B']);
   });
 
-  it('anchor-cycle: ciclo de três; quem só entra no ciclo não é reportado', () => {
+  it('anchor-cycle: cycle of three; one that merely enters the cycle is not reported', () => {
     let p = withRaw(base(), 'A', { to: 'B' });
     p = withRaw(p, 'B', { to: 'C' });
     p = withRaw(p, 'C', { to: 'A' });
@@ -168,22 +168,22 @@ describe('invariantes da âncora', () => {
     ).toEqual(['A', 'B']);
   });
 
-  it('anchor-other-space: containers diferentes, ou container e canvas', () => {
+  it('anchor-other-space: different containers, or container and canvas', () => {
     expect(validateProject(withRaw(base(), 'B', { to: 'E' }))).toEqual([
       { code: 'anchor-other-space', entity: 'marking', id: 'B', otherId: 'E' },
     ]);
     expect(codes(withRaw(base(), 'B', { to: 'F' }))).toEqual(['anchor-other-space']);
   });
 
-  it('as duas no canvas (containerId nulo) é válido', () => {
+  it('both on the canvas (null containerId) is valid', () => {
     expect(validateProject(withRaw(base(), 'G', { to: 'F' }))).toEqual([]);
   });
 });
 
-describe('o assentar não lê a âncora', () => {
-  it('o parentId de todas as marcações é o mesmo com e sem âncoras', () => {
+describe('settling does not read the anchor', () => {
+  it('the parentId of every marking is the same with and without anchors', () => {
     let p = base();
-    // D dentro de A, ancorada em B (fora de A): o pai segue sendo só geometria.
+    // D inside A, anchored to B (outside A): the parent is still decided by geometry alone.
     p = createMarking(p, {
       id: 'D',
       containerId: 'I1',
@@ -194,14 +194,14 @@ describe('o assentar não lê a âncora', () => {
     const parents = (q: Project) => q.markings.map((m) => [m.id, m.parentId]);
     expect(parents(withAnchors)).toEqual(parents(plain));
     expect(marking(withAnchors, 'D').parentId).toBe('A');
-    // E depois de mexer na geometria também.
+    // And after changing the geometry too.
     const moved = moveMarking(withAnchors, 'B', 5, 5);
     expect(parents(moved)).toEqual(parents(moveMarking(plain, 'B', 5, 5)));
   });
 });
 
 describe('projectIndex: anchoredBy e anchorOf', () => {
-  it('anchoredBy lista as ancoradas de cada alvo na ordem do array; anchorOf dá o alvo', () => {
+  it('anchoredBy lists the anchored markings of each target in array order; anchorOf gives the target', () => {
     const p = anchored(anchored(base(), 'C', { to: 'A' }), 'B', { to: 'A' });
     const index = projectIndex(p);
     expect(index.anchoredBy.get('A')?.map((m) => m.id)).toEqual(['B', 'C']);
@@ -212,44 +212,44 @@ describe('projectIndex: anchoredBy e anchorOf', () => {
     expect(projectIndex(p)).toBe(index);
   });
 
-  it('anchor null não entra no índice', () => {
+  it('anchor null does not enter the index', () => {
     const p = anchored(anchored(base(), 'B', { to: 'A' }), 'B', null);
     expect(projectIndex(p).anchoredBy.size).toBe(0);
     expect(projectIndex(p).anchorOf.size).toBe(0);
   });
 });
 
-describe('mover a âncora leva as ancoradas', () => {
+describe('moving the anchor carries the anchored markings', () => {
   const rect = (p: Project, id: string) => marking(p, id).rect;
 
-  it('moveMarking leva as ancoradas, as descendentes delas e as ancoradas das ancoradas, sem duplicar', () => {
+  it('moveMarking carries the anchored markings, their descendants and the anchored of the anchored, without duplicating', () => {
     let p = base();
-    // H dentro de B (descendente da ancorada B); C ancorada em B (ancorada da ancorada).
+    // H inside B (descendant of the anchored B); C anchored to B (anchored of the anchored).
     p = createMarking(p, {
       id: 'H',
       containerId: 'I1',
       rect: { x: 410, y: 110, width: 20, height: 20 },
     });
     p = anchored(anchored(p, 'B', { to: 'A' }), 'C', { to: 'B' });
-    // H também é ancorada em A: já está no conjunto movido pela descendência de B.
+    // H is also anchored to A: it is already in the set moved through B's descendants.
     p = anchored(p, 'H', { to: 'A' });
     const moved = moveMarking(p, 'A', 10, 20);
     expect(rect(moved, 'A')).toMatchObject({ x: 110, y: 120 });
     expect(rect(moved, 'B')).toMatchObject({ x: 410, y: 120 });
     expect(rect(moved, 'C')).toMatchObject({ x: 710, y: 120 });
     expect(rect(moved, 'H')).toMatchObject({ x: 420, y: 130 });
-    // Quem não é ancorada fica.
+    // Whatever is not anchored stays.
     expect(rect(moved, 'E')).toEqual(rect(p, 'E'));
   });
 
-  it('a ancorada movida sozinha não leva a âncora', () => {
+  it('an anchored marking moved alone does not carry the anchor', () => {
     const p = anchored(base(), 'B', { to: 'A' });
     const moved = moveMarking(p, 'B', 7, 0);
     expect(rect(moved, 'A')).toEqual(rect(p, 'A'));
     expect(rect(moved, 'B').x).toBe(407);
   });
 
-  it('um ciclo inválido não trava o mover', () => {
+  it('an invalid cycle does not block the move', () => {
     const p = {
       ...base(),
       markings: base().markings.map((m) =>
@@ -264,7 +264,7 @@ describe('mover a âncora leva as ancoradas', () => {
     expect(rect(moved, 'B').x).toBe(401);
   });
 
-  it('moveItems leva as ancoradas (marcação de container e do canvas)', () => {
+  it('moveItems carries the anchored markings (container and canvas marking)', () => {
     const p = anchored(anchored(base(), 'B', { to: 'A' }), 'G', { to: 'F' });
     const moved = moveItems(p, [{ kind: 'marking', id: 'A' }], 12, 3);
     expect(rect(moved, 'A')).toMatchObject({ x: 112, y: 103 });
@@ -274,7 +274,7 @@ describe('mover a âncora leva as ancoradas', () => {
     expect(rect(canvas, 'G')).toMatchObject({ x: -295, y: -495 });
   });
 
-  it('moveItems com a ancorada também selecionada move uma vez só', () => {
+  it('moveItems with the anchored marking also selected moves it only once', () => {
     const p = anchored(base(), 'B', { to: 'A' });
     const moved = moveItems(
       p,
@@ -289,15 +289,15 @@ describe('mover a âncora leva as ancoradas', () => {
     expect(rect(moved, 'B').x).toBe(410);
   });
 
-  it('redimensionar a âncora não move as ancoradas', () => {
+  it('resizing the anchor does not move the anchored markings', () => {
     const p = anchored(base(), 'B', { to: 'A' });
     const resized = setMarkingRect(p, 'A', { x: 100, y: 100, width: 300, height: 80 });
     expect(rect(resized, 'B')).toEqual(rect(p, 'B'));
   });
 });
 
-describe('excluir a âncora', () => {
-  it('as ancoradas ficam com anchor null; as demais ancoras não mudam', () => {
+describe('deleting the anchor', () => {
+  it('the anchored markings end up with anchor null; the other anchors do not change', () => {
     let p = anchored(anchored(base(), 'B', { to: 'A' }), 'C', { to: 'B' });
     p = removeMarking(p, 'A');
     expect(marking(p, 'B').anchor).toBeNull();
@@ -305,7 +305,7 @@ describe('excluir a âncora', () => {
     expect(validateProject(p)).toEqual([]);
   });
 
-  it('excluir a mãe leva as descendentes e solta as ancoradas nelas', () => {
+  it('deleting the parent takes the descendants and releases the markings anchored to them', () => {
     let p = base();
     p = createMarking(p, {
       id: 'H',
@@ -317,7 +317,7 @@ describe('excluir a âncora', () => {
     expect(marking(p, 'B').anchor).toBeNull();
   });
 
-  it('excluir a própria ancorada não mexe nas outras', () => {
+  it('deleting the anchored marking itself does not touch the others', () => {
     const p = removeMarking(anchored(base(), 'B', { to: 'A' }), 'B');
     expect(p.markings.some((m) => m.id === 'B')).toBe(false);
     expect(validateProject(p)).toEqual([]);
@@ -328,7 +328,7 @@ describe('setMarkingAnchor', () => {
   const fails = (fn: () => unknown, code: string) =>
     expect(fn).toThrowError(new RegExp(`^${code}`));
 
-  it('grava e remove a âncora; o mesmo valor devolve o mesmo projeto', () => {
+  it('saves and removes the anchor; the same value returns the same project', () => {
     const p = anchored(base(), 'B', { to: 'A', side: 'top' });
     expect(marking(p, 'B').anchor).toEqual({ to: 'A', side: 'top' });
     expect(anchored(p, 'B', { to: 'A', side: 'top' })).toBe(p);
@@ -336,13 +336,13 @@ describe('setMarkingAnchor', () => {
     expect(marking(anchored(p, 'B', null), 'B').anchor).toBeNull();
   });
 
-  it('recusa as quebras de invariante com o código do erro', () => {
+  it('rejects invariant breaks with the error code', () => {
     const p = base();
-    fails(() => anchored(p, 'B', { to: 'nada' }), 'anchor-missing');
+    fails(() => anchored(p, 'B', { to: 'nothing' }), 'anchor-missing');
     fails(() => anchored(p, 'B', { to: 'B' }), 'anchor-self');
     fails(() => anchored(p, 'B', { to: 'E' }), 'anchor-other-space');
     fails(() => anchored(p, 'B', { to: 'F' }), 'anchor-other-space');
-    fails(() => anchored(p, 'nada', { to: 'A' }), 'not-found');
+    fails(() => anchored(p, 'nothing', { to: 'A' }), 'not-found');
     const chain = anchored(anchored(p, 'B', { to: 'A' }), 'C', { to: 'B' });
     fails(() => anchored(chain, 'A', { to: 'C' }), 'anchor-cycle');
     fails(
@@ -351,7 +351,7 @@ describe('setMarkingAnchor', () => {
     );
   });
 
-  it('a marcação trancada pode ganhar âncora (não é geometria)', () => {
+  it('a locked marking can gain an anchor (it is not geometry)', () => {
     const locked = {
       ...base(),
       markings: base().markings.map((m) => (m.id === 'B' ? { ...m, locked: true } : m)),

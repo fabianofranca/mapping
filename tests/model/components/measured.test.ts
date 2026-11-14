@@ -1,5 +1,5 @@
-// Origem `measured` (etapa #747, CF11, decisão 29): uma árvore de retângulos medidos vira
-// marcações pelas `sources` dos tipos. Núcleo puro, sem nome de plataforma.
+// `measured` origin (stage #747, CF11, decision 29): a tree of measured rectangles becomes
+// markings through the `sources` of the types. Pure core, without a platform name.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -26,7 +26,7 @@ function rawSpec(formatVersion = 15, origins: unknown[] = [MEASURED]): Json {
         annotationTypes: [
           {
             id: 'primary',
-            name: 'Botão primário',
+            name: 'Primary button',
             sources: [{ system: 'dom', name: 'btn-primary' }],
             fields: [
               {
@@ -45,7 +45,7 @@ function rawSpec(formatVersion = 15, origins: unknown[] = [MEASURED]): Json {
           },
           {
             id: 'card',
-            name: 'Cartão',
+            name: 'Card',
             sources: [
               { system: 'dom', name: 'card' },
               { system: 'dom', id: 'main' },
@@ -54,7 +54,7 @@ function rawSpec(formatVersion = 15, origins: unknown[] = [MEASURED]): Json {
           },
           {
             id: 'plain',
-            name: 'Botão',
+            name: 'Button',
             sources: [{ system: 'dom', name: 'button' }],
             fields: [],
           },
@@ -64,7 +64,7 @@ function rawSpec(formatVersion = 15, origins: unknown[] = [MEASURED]): Json {
   };
 }
 
-const MEASURED = { system: 'dom', name: 'DOM medido', kind: 'measured' };
+const MEASURED = { system: 'dom', name: 'Measured DOM', kind: 'measured' };
 
 function spec(raw: Json = rawSpec()): Spec {
   const parsed = parseSpec(raw);
@@ -76,19 +76,19 @@ const button = {
   type: 'button',
   classes: ['btn-primary'],
   rect: { x: 10, y: 20, width: 120, height: 40 },
-  props: { label: 'Salvar', tone: 'danger' },
+  props: { label: 'Save', tone: 'danger' },
   children: [],
 };
 
 describe('origins[].kind', () => {
-  it('measured é aceita na v15 e dispensa node e screen', () => {
+  it('measured is accepted in v15 and dispenses with node and screen', () => {
     expect(parseSpec(rawSpec(15)).ok).toBe(true);
     const { origins, problems } = parseOrigins([MEASURED]);
     expect(problems).toEqual([]);
     expect(origins[0]).toMatchObject({ system: 'dom', kind: 'measured' });
   });
 
-  it('measured na v14 falha com a mensagem de versão', () => {
+  it('measured in v14 fails with the version message', () => {
     const r = parseSpec(rawSpec(14));
     expect(r.ok).toBe(false);
     if (r.ok) return;
@@ -100,7 +100,7 @@ describe('origins[].kind', () => {
     );
   });
 
-  it('kind desconhecido falha; sem kind segue tree (pede node e screen)', () => {
+  it('an unknown kind fails; without kind it stays tree (asks for node and screen)', () => {
     const unknown = parseOrigins([{ system: 'x', kind: 'nope' }]);
     expect(unknown.problems.map(originProblemText).join(' ')).toContain(
       'origins[0].kind',
@@ -110,14 +110,14 @@ describe('origins[].kind', () => {
     expect(tree.problems.map(originProblemText).join(' ')).toContain('origins[0].screen');
   });
 
-  it('measured não aceita node nem screen', () => {
+  it('measured does not accept node or screen', () => {
     const { problems } = parseOrigins([{ ...MEASURED, node: {}, screen: {} }]);
     expect(problems.map(originProblemText).join(' ')).toContain('origins[0].node');
   });
 });
 
-describe('origem measured: ciclo parse → gravação → releitura', () => {
-  it('a especialização lida e regravada em JSON relê sem erro e sem node/screen', () => {
+describe('measured origin: parse → write → re-read cycle', () => {
+  it('the specialization read and re-written as JSON re-reads without error and without node/screen', () => {
     const first = parseSpec(rawSpec(15));
     expect(first.ok).toBe(true);
     if (!first.ok) return;
@@ -130,7 +130,7 @@ describe('origem measured: ciclo parse → gravação → releitura', () => {
     expect(again.spec.origins?.[0]).toMatchObject({ system: 'dom', kind: 'measured' });
   });
 
-  it('a biblioteca medido dos exemplos relê depois de gravada', () => {
+  it('the measured library of the examples re-reads after being written', () => {
     const raw = JSON.parse(
       readFileSync(join('examples', 'libraries', 'medido', 'medido.spec.json'), 'utf8'),
     ) as Json;
@@ -146,8 +146,8 @@ describe('origem measured: ciclo parse → gravação → releitura', () => {
   });
 });
 
-describe('importMeasured: casamento', () => {
-  it('casa a classe com o name do tipo, cria a marcação e preenche os campos', () => {
+describe('importMeasured: matching', () => {
+  it('matches the class with the type name, creates the marking and fills in the fields', () => {
     const r = importMeasured([spec()], { system: 'dom', tree: button });
     expect(r.error).toBeUndefined();
     expect(r.warnings).toEqual([]);
@@ -156,11 +156,11 @@ describe('importMeasured: casamento', () => {
       specId: 'ui',
       typeId: 'primary',
       rect: { x: 10, y: 20, width: 120, height: 40 },
-      values: { label: 'Salvar', tone: 'error' },
+      values: { label: 'Save', tone: 'error' },
     });
   });
 
-  it('o id do nó casa com o id da source e vence a classe; sem classe nem id, vale o type', () => {
+  it('the node id matches the source id and beats the class; without class or id, the type applies', () => {
     const r = importMeasured([spec()], {
       system: 'dom',
       tree: {
@@ -174,22 +174,22 @@ describe('importMeasured: casamento', () => {
     expect(r.markings.map((m) => m.typeId)).toEqual(['card', 'plain']);
   });
 
-  it('nó sem tipo é ignorado com aviso e os filhos seguem', () => {
+  it('a node without a type is ignored with a warning and the children continue', () => {
     const r = importMeasured([spec()], {
       system: 'dom',
       tree: {
         type: 'div',
-        classes: ['x-misterioso'],
+        classes: ['x-mysterious'],
         rect: { x: 0, y: 0, width: 300, height: 200 },
         children: [button],
       },
     });
     expect(r.markings.map((m) => m.typeId)).toEqual(['primary']);
     expect(r.warnings).toHaveLength(1);
-    expect(r.warnings[0]).toContain('x-misterioso');
+    expect(r.warnings[0]).toContain('x-mysterious');
   });
 
-  it('offset e scale multiplicam e deslocam os retângulos', () => {
+  it('offset and scale multiply and shift the rectangles', () => {
     const r = importMeasured([spec()], {
       system: 'dom',
       tree: button,
@@ -199,7 +199,7 @@ describe('importMeasured: casamento', () => {
     expect(r.markings[0]!.rect).toEqual({ x: 120, y: 90, width: 240, height: 80 });
   });
 
-  it('empty rectangle vira aviso; origem desconhecida ou não measured vira erro', () => {
+  it('empty rectangle becomes a warning; an unknown or non-measured origin becomes an error', () => {
     const empty = importMeasured([spec()], {
       system: 'dom',
       tree: { ...button, rect: { x: 0, y: 0, width: 0, height: 10 } },
@@ -215,13 +215,13 @@ describe('importMeasured: casamento', () => {
     );
   });
 
-  it('árvore malformada vira erro, sem lançar', () => {
+  it('a malformed tree becomes an error, without throwing', () => {
     const r = importMeasured([spec()], { system: 'dom', tree: { type: 'x' } });
     expect(r.error).toContain('rect');
   });
 });
 
-describe('importMeasured: booleans por especialização', () => {
+describe('importMeasured: booleans per specialization', () => {
   function boolSpec(id: string, booleans: { true: string; false: string }): Spec {
     return spec({
       format: 'mapping-spec',
@@ -254,8 +254,8 @@ describe('importMeasured: booleans por especialização', () => {
     });
   }
 
-  it('duas especializações com o mesmo system usam cada uma os próprios booleans', () => {
-    const a = boolSpec('a', { true: 'sim', false: 'não' });
+  it('two specializations with the same system each use their own booleans', () => {
+    const a = boolSpec('a', { true: 'on', false: 'off' });
     const b = boolSpec('b', { true: 'yes', false: 'no' });
     const node = (cls: string, checked: boolean) => ({
       type: 'div',
@@ -277,7 +277,7 @@ describe('importMeasured: booleans por especialização', () => {
     });
     expect(r.error).toBeUndefined();
     expect(r.markings.map((m) => [m.specId, m.values.state])).toEqual([
-      ['a', 'sim'],
+      ['a', 'on'],
       ['b', 'yes'],
       ['b', 'no'],
     ]);
@@ -287,8 +287,8 @@ describe('importMeasured: booleans por especialização', () => {
 const NODE = { type: 'type', props: 'props', children: 'children' };
 const SCREEN = { width: 100, height: 100, roots: [{ path: 'root' }] };
 
-describe('o núcleo não conhece plataforma', () => {
-  it('os módulos da importação não citam DOM nem views', () => {
+describe('the core does not know the platform', () => {
+  it('the import modules do not mention DOM or views', () => {
     for (const file of ['src/model/components/measured.ts', 'mcp/importMeasured.ts']) {
       const text = readFileSync(join(process.cwd(), file), 'utf8');
       expect(text, file).not.toMatch(/\b(DOM|views)\b/);

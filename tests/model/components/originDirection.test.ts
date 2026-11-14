@@ -1,4 +1,4 @@
-// R1 (#1096): `screen.direction` da origem (ltr/rtl), validada e repassada ao `layoutScreen`.
+// R1 (#1096): `screen.direction` of the origin (ltr/rtl), validated and passed on to `layoutScreen`.
 import { describe, expect, it } from 'vitest';
 import {
   originProblemText,
@@ -22,8 +22,8 @@ const originOf = (extra: Record<string, unknown>) => ({
   screen: screenOf(extra),
 });
 
-describe('origem: screen.direction', () => {
-  it('lê ltr e rtl; ausente fica sem a chave', () => {
+describe('origin: screen.direction', () => {
+  it('reads ltr and rtl; absent stays without the key', () => {
     for (const direction of ['ltr', 'rtl'] as const) {
       const { origins, problems } = parseOrigins([originOf({ direction })]);
       expect(problems).toEqual([]);
@@ -33,8 +33,8 @@ describe('origem: screen.direction', () => {
     expect(none.origins[0]?.screen).not.toHaveProperty('direction');
   });
 
-  it('valor fora do conjunto é problema no caminho da chave', () => {
-    for (const bad of ['cima', 1, null, { path: 'd' }]) {
+  it('a value outside the set is a problem at the key path', () => {
+    for (const bad of ['up', 1, null, { path: 'd' }]) {
       const { origins, problems } = parseOrigins([originOf({ direction: bad })]);
       expect(origins).toEqual([]);
       expect(problems.map(originProblemText)).toEqual([
@@ -48,7 +48,7 @@ const BOX = {
   format: 'mapping-component',
   formatVersion: 1,
   id: 'box',
-  name: 'Caixa',
+  name: 'Box',
   size: { width: 100, height: 40 },
   template: { type: 'frame', name: 'box', layout: { type: 'none' } },
 };
@@ -62,7 +62,7 @@ function library(direction?: string) {
     version: 1,
     origins: [
       originOf({
-        id: 'tela',
+        id: 'screen',
         ...(direction ? { direction } : {}),
       }),
     ],
@@ -73,7 +73,7 @@ function library(direction?: string) {
         annotationTypes: [
           {
             id: 'box',
-            name: 'Caixa',
+            name: 'Box',
             component: 'components/box.json',
             sources: [{ system: 'sdui', name: 'Box' }],
             fields: [],
@@ -89,13 +89,13 @@ function library(direction?: string) {
 }
 const DOC = { w: 400, h: 800, content: { type: 'Box' } };
 
-describe('origem: direction chega ao layoutScreen', () => {
-  it('translateSource põe a direção na LayoutScreen (só em rtl)', () => {
+describe('origin: direction reaches layoutScreen', () => {
+  it('translateSource puts the direction in the LayoutScreen (only in rtl)', () => {
     expect(translateSource(library('rtl'), DOC).layout?.direction).toBe('rtl');
     expect(translateSource(library(), DOC).layout?.direction).toBeUndefined();
   });
 
-  it('a raiz ancorada em top-start vai para a direita em rtl', () => {
+  it('the root anchored at top-start goes to the right in rtl', () => {
     const ltr = screenFromSource(library('ltr'), DOC, { measure: approximateMeasurer });
     const rtl = screenFromSource(library('rtl'), DOC, { measure: approximateMeasurer });
     expect(ltr.error).toBeUndefined();
@@ -104,7 +104,7 @@ describe('origem: direction chega ao layoutScreen', () => {
     expect(x(rtl)).toBe(300);
   });
 
-  it('a Screen pronta leva a direção resolvida (a da origem ou a de options), só em rtl', () => {
+  it('the finished Screen carries the resolved direction (that of the origin or of options), only in rtl', () => {
     const dir = (d: 'ltr' | 'rtl' | undefined, origin?: string) =>
       screenFromSource(library(origin), DOC, {
         measure: approximateMeasurer,
@@ -117,7 +117,7 @@ describe('origem: direction chega ao layoutScreen', () => {
     expect(dir(undefined)).not.toHaveProperty('direction');
   });
 
-  it('options.direction vence a da origem (e vale em ltr explícito)', () => {
+  it('options.direction beats that of the origin (and applies in explicit ltr)', () => {
     const rtlOrigin = library('rtl');
     const forced = translateSource(rtlOrigin, DOC, { direction: 'ltr' }).layout;
     expect(forced?.direction).toBeUndefined();

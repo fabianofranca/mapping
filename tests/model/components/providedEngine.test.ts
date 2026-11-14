@@ -1,4 +1,4 @@
-// MF3: cor herdada — avaliação do `$provided` e o que o slot oferece (`instantiate`).
+// MF3: inherited color — evaluation of `$provided` and what the slot offers (`instantiate`).
 import { describe, expect, it } from 'vitest';
 import type { ComponentFile } from '../../../src/model/components/componentFormat';
 import {
@@ -38,29 +38,29 @@ function find(node: SceneNode, name: string): SceneNode | undefined {
 
 describe('evaluate: $provided', () => {
   const expr = { $provided: 'ink', default: '#999' };
-  it('lê o valor oferecido', () => {
+  it('reads the provided value', () => {
     expect(evaluate(expr, { [providedKey('ink')]: '#f00' }, '')).toBe('#f00');
   });
-  it('sem valor vale o default; o default também é uma expressão', () => {
+  it('without a value the default applies; the default is also an expression', () => {
     expect(evaluate(expr, {}, '')).toBe('#999');
     expect(
       evaluate(
-        { $provided: 'ink', default: { $field: 'cor', default: '#abc' } },
-        { cor: '#123' },
+        { $provided: 'ink', default: { $field: 'color', default: '#abc' } },
+        { color: '#123' },
         '',
       ),
     ).toBe('#123');
   });
-  it('sem valor nem default vale o padrão do lugar', () => {
-    expect(evaluate({ $provided: 'ink' }, {}, 'padrão')).toBe('padrão');
+  it('without a value or default the fallback of the place applies', () => {
+    expect(evaluate({ $provided: 'ink' }, {}, 'fallback')).toBe('fallback');
   });
-  it('não conta como campo do tipo', () => {
+  it('does not count as a type field', () => {
     expect([...referencedFields({ color: expr })]).toEqual([]);
   });
 });
 
-describe('nomes que são membros de Object.prototype', () => {
-  it('sem ancestral que ofereça vale o default', () => {
+describe('names that are members of Object.prototype', () => {
+  it('without an ancestor that offers it, the default applies', () => {
     const comp = component({
       type: 'frame',
       children: [
@@ -78,7 +78,7 @@ describe('nomes que são membros de Object.prototype', () => {
   });
 });
 
-describe('instantiate com cor herdada', () => {
+describe('instantiate with inherited color', () => {
   const reader = component({
     type: 'frame',
     children: [
@@ -91,7 +91,7 @@ describe('instantiate com cor herdada', () => {
     ],
   });
 
-  it('a filha usa o valor oferecido pelas opções', () => {
+  it('the child uses the value offered by the options', () => {
     const { root } = instantiate(reader, {}, box, {
       measure: approximateMeasurer,
       provided: { 'content-color': '#ff0000' },
@@ -99,7 +99,7 @@ describe('instantiate com cor herdada', () => {
     expect(find(root, 't')).toMatchObject({ fills: [{ color: '#ff0000' }] });
   });
 
-  it('sem valor oferecido usa o default', () => {
+  it('without an offered value it uses the default', () => {
     const { root } = instantiate(reader, {}, box, { measure: approximateMeasurer });
     expect(find(root, 't')).toMatchObject({ fills: [{ color: '#999999' }] });
   });
@@ -112,13 +112,13 @@ describe('instantiate com cor herdada', () => {
         provide: {
           'content-color': { $field: 'ink', default: '#0000ff' },
           size: 12,
-          vazio: { $field: 'nenhum' },
+          empty: { $field: 'none' },
         },
       },
     ],
   });
 
-  it('o slot devolve o que oferece, resolvido com os campos do pai; o vazio não oferece', () => {
+  it('the slot returns what it offers, resolved with the parent fields; the empty one does not offer', () => {
     const a = instantiate(giver, { ink: '#112233' }, box, {
       measure: approximateMeasurer,
     });
@@ -127,7 +127,7 @@ describe('instantiate com cor herdada', () => {
     expect(b.provides).toEqual({ 'content-color': '#0000ff', size: 12 });
   });
 
-  it('os tokens e o modo do pai valem no valor oferecido', () => {
+  it('the tokens and the mode of the parent apply to the offered value', () => {
     const tokenGiver = component({
       type: 'frame',
       children: [{ type: 'slot', provide: { 'content-color': { $token: 'on' } } }],
@@ -139,7 +139,7 @@ describe('instantiate com cor herdada', () => {
     expect(dark.provides).toEqual({ 'content-color': '#eeeeee' });
   });
 
-  it('sem provide o resultado não oferece nada', () => {
+  it('without provide the result offers nothing', () => {
     const none = instantiate(reader, {}, box, { measure: approximateMeasurer });
     expect(none.provides ?? {}).toEqual({});
   });

@@ -1,5 +1,5 @@
-// renderOrder: a ordem de desenho (pais antes dos filhos, irmãos na ordem da lista) igual à da versão
-// quadrática antiga, inclusive com raízes soltas, pais ausentes, auto-referência e ciclos.
+// renderOrder: the draw order (parents before children, siblings in list order) equal to that of the old
+// quadratic version, including loose roots, missing parents, self-reference and cycles.
 import { describe, expect, it } from 'vitest';
 import {
   renderOrder,
@@ -7,7 +7,7 @@ import {
   type Screen,
 } from '../../../src/model/components/screen';
 
-/** A implementação antiga (O(n²)): referência da ordem. */
+/** The old implementation (O(n²)): reference for the order. */
 function referenceOrder(screen: Screen): Instance[] {
   const out: Instance[] = [];
   const known = new Set(screen.instances.map((i) => i.id));
@@ -38,11 +38,11 @@ const screenOf = (instances: Instance[]): Screen =>
   ({ id: 'S', name: 'S', width: 100, height: 100, instances }) as unknown as Screen;
 
 describe('renderOrder', () => {
-  it('lista vazia', () => {
+  it('empty list', () => {
     expect(renderOrder(screenOf([]))).toEqual([]);
   });
 
-  it('pais antes dos filhos, irmãos na ordem da lista, raízes soltas', () => {
+  it('parents before children, siblings in list order, loose roots', () => {
     const s = screenOf([
       inst('b', 'a'),
       inst('x'),
@@ -53,9 +53,9 @@ describe('renderOrder', () => {
     expect(renderOrder(s).map((i) => i.id)).toEqual(['x', 'a', 'b', 'c', 'd']);
   });
 
-  it('pai ausente vira raiz; auto-referência e ciclo ficam de fora, como antes', () => {
+  it('a missing parent becomes a root; self-reference and cycles are left out, as before', () => {
     const s = screenOf([
-      inst('o', 'sumiu'),
+      inst('o', 'gone'),
       inst('self', 'self'),
       inst('p', 'q'),
       inst('q', 'p'),
@@ -65,7 +65,7 @@ describe('renderOrder', () => {
     expect(renderOrder(s)).toEqual(referenceOrder(s));
   });
 
-  it('é igual à versão antiga em árvores embaralhadas', () => {
+  it('is equal to the old version on shuffled trees', () => {
     let seed = 7;
     const rand = (n: number) => {
       seed = (seed * 1103515245 + 12345) & 0x7fffffff;
@@ -82,7 +82,7 @@ describe('renderOrder', () => {
     }
   });
 
-  it('5.000 instâncias em cadeia de irmãos e filhos rodam em tempo linear', () => {
+  it('5,000 instances in a chain of siblings and children run in linear time', () => {
     const instances = Array.from({ length: 5000 }, (_, i) =>
       inst(`i${i}`, i % 10 === 0 ? undefined : `i${i - (i % 10)}`),
     );

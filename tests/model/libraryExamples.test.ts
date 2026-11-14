@@ -1,5 +1,5 @@
-// Pacote de biblioteca congelado dos testes (`tests/fixtures/material3/`): o Material 3 de 15 tipos
-// que prova o motor de bibliotecas (não é um exemplo distribuído; ver `examples/README.md`).
+// Frozen library package of the tests (`tests/fixtures/material3/`): the 15-type Material 3
+// that proves the library engine (it is not a distributed example; see `examples/README.md`).
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -26,17 +26,17 @@ const files = listDisk(ROOT)
 const byPath = new Map(files.map((f) => [f.path, f.text]));
 const json = (path: string): unknown => JSON.parse(byPath.get(path) ?? 'null');
 
-describe('pacote material3 é válido', () => {
+describe('material3 package is valid', () => {
   const specText = byPath.get('material3.spec.json') ?? '';
   const parsed = parseSpec(JSON.parse(specText));
 
-  it('a especialização valida na formatVersion 6', () => {
+  it('the specialization validates at formatVersion 6', () => {
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
     expect(parsed.spec.formatVersion).toBe(6);
   });
 
-  it('os quinze componentes validam', () => {
+  it('the fifteen components validate', () => {
     const paths = files.filter((f) => f.path.startsWith('components/'));
     expect(paths).toHaveLength(15);
     for (const f of paths) {
@@ -47,8 +47,8 @@ describe('pacote material3 é válido', () => {
     }
   });
 
-  it('todo component, doc e file citados existem; os .md não são vazios', () => {
-    if (!parsed.ok) throw new Error('especialização inválida');
+  it('every cited component, doc and file exists; the .md files are not empty', () => {
+    if (!parsed.ok) throw new Error('invalid specialization');
     const cited: string[] = [];
     for (const layer of parsed.spec.layers) {
       for (const type of layer.annotationTypes) {
@@ -62,7 +62,7 @@ describe('pacote material3 é válido', () => {
     }
     for (const font of parsed.spec.fonts ?? []) cited.push(font.file);
     for (const path of cited.filter((p) => !p.startsWith('fonts/'))) {
-      expect(byPath.has(path), `${path} citado e ausente`).toBe(true);
+      expect(byPath.has(path), `${path} cited but missing`).toBe(true);
     }
     for (const f of files.filter((x) => x.path.endsWith('.md'))) {
       expect(f.text.trim().length, f.path).toBeGreaterThan(0);
@@ -70,8 +70,8 @@ describe('pacote material3 é válido', () => {
     expect(files.filter((x) => x.path.endsWith('.md'))).toHaveLength(15);
   });
 
-  it('cada tipo com componente tem de um a três exemplos', () => {
-    if (!parsed.ok) throw new Error('especialização inválida');
+  it('each type with a component has one to three examples', () => {
+    if (!parsed.ok) throw new Error('invalid specialization');
     for (const layer of parsed.spec.layers) {
       for (const type of layer.annotationTypes) {
         if (!type.component) continue;
@@ -83,13 +83,13 @@ describe('pacote material3 é válido', () => {
   });
 });
 
-// O pacote do repositório é o fixture das três portas (B2), do canvas (B3) e do Catálogo (B5):
-// ele precisa passar pelos três níveis do validador sem nenhum erro. Os avisos que sobram são
-// fixados aqui, para o número não andar sozinho: duas fontes ausentes (o `.ttf` da Roboto não é
-// versionado) e o resto da prova de desenho, que avisa content larger than the box no tamanho
-// inicial (o tamanho mínimo não é desenhado). A medida do Node é **aproximada** (no
-// navegador é a do Konva, a real), e a decisão da etapa é avisar, sem recortar nem recusar.
-describe('o pacote do repositório passa pelo validador da biblioteca', () => {
+// The repository package is the fixture of the three doors (B2), of the canvas (B3) and of the Catalog (B5):
+// it must pass the validator's three levels with no error. The warnings that remain are
+// pinned here, so the number does not move on its own: two missing fonts (Roboto's `.ttf` is not
+// versioned) and the rest of the drawing proof, which warns content larger than the box at the
+// initial size (the minimum size is not drawn). The Node measure is **approximate** (in the
+// browser it is Konva's, the real one), and the stage's decision is to warn, without clipping or refusing.
+describe('the repository package passes the library validator', () => {
   const report = validateLibrary({
     files: listDisk(ROOT).map((path) => {
       const full = join(ROOT, path);
@@ -100,7 +100,7 @@ describe('o pacote do repositório passa pelo validador da biblioteca', () => {
     specPath: 'material3.spec.json',
   });
 
-  it('nenhum erro, nos três níveis', () => {
+  it('no error, at the three levels', () => {
     expect(report.errors.map((i) => `${i.file}:${i.path}: ${i.message}`)).toEqual([]);
     expect(report.ok).toBe(true);
     expect(report.summary).toMatchObject({
@@ -111,7 +111,7 @@ describe('o pacote do repositório passa pelo validador da biblioteca', () => {
     });
   });
 
-  it('os avisos são só as fontes ausentes e a prova de desenho aproximada', () => {
+  it('the warnings are only the missing fonts and the approximate drawing proof', () => {
     const fonts = report.warnings.filter((w) => w.path.startsWith('fonts['));
     expect(fonts).toHaveLength(2);
     const approximate = report.warnings.filter((w) =>
@@ -120,8 +120,8 @@ describe('o pacote do repositório passa pelo validador da biblioteca', () => {
     expect(
       approximate.every((w) => w.message.includes('content larger than the box')),
     ).toBe(true);
-    // O chip "Selecionado" passava da caixa por menos de 1 px de texto: com a tolerância de
-    // 1 px por nó de texto (decisão 10 da etapa #747) já não avisa.
+    // The "Selecionado" chip overflowed the box by less than 1 px of text: with the tolerance of
+    // 1 px per text node (decision 10 of stage #747) it no longer warns.
     expect(approximate.map((w) => w.path)).toEqual([]);
     expect(approximate.every((w) => w.message.includes('initial size'))).toBe(true);
     const others = report.warnings.filter(
@@ -131,8 +131,8 @@ describe('o pacote do repositório passa pelo validador da biblioteca', () => {
   });
 });
 
-describe('contrato da origem do pacote', () => {
-  it('a declaração traduz examples/settings.sdui.json sem aviso', () => {
+describe('contract of the package origin', () => {
+  it('the declaration translates examples/settings.sdui.json without a warning', () => {
     const library = loadLibrary(
       files
         .filter((f) => f.path.endsWith('.json'))

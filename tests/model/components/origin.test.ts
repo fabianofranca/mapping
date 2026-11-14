@@ -1,4 +1,4 @@
-// Laboratório Componentes: declaração de origem executável (`origins` + `sources`).
+// Components Lab: executable origin declaration (`origins` + `sources`).
 import { describe, expect, it } from 'vitest';
 import settings from '../../../viewer/samples/settings.sdui.json';
 import {
@@ -17,8 +17,8 @@ import { approximateMeasurer } from '../../../src/model/components/instantiate';
 import { loadLibrary, type TextFile } from '../../../src/model/components/library';
 import { M3_FILES } from '../../../viewer/samples/samplesMaterial3';
 
-describe('caminhos', () => {
-  it('lê chaves, índices e aninhamento', () => {
+describe('paths', () => {
+  it('reads keys, indices and nesting', () => {
     const parsed = parsePath('a.b[0].c');
     expect(parsed).toEqual({ ok: true, segments: ['a', 'b', 0, 'c'] });
     expect(formatPath(['a', 'b', 0, 'c'])).toBe('a.b[0].c');
@@ -32,7 +32,7 @@ describe('caminhos', () => {
     expect(readPath(doc, 'a..b')).toEqual({ found: false });
   });
 
-  it('recusa caminhos malformados', () => {
+  it('rejects malformed paths', () => {
     for (const bad of ['', '.a', 'a.', 'a..b', 'a[', 'a[x]', 'a[0]b', '[0]', 'a]']) {
       expect(parsePath(bad).ok, bad).toBe(false);
     }
@@ -49,7 +49,7 @@ const SCREEN = {
 const ORIGIN = { system: 'sdui', node: NODE, screen: SCREEN };
 
 describe('parseOrigins', () => {
-  it('lê a origem completa', () => {
+  it('reads the complete origin', () => {
     const { origins, problems } = parseOrigins([
       {
         ...ORIGIN,
@@ -57,7 +57,7 @@ describe('parseOrigins', () => {
         screen: {
           ...SCREEN,
           id: { path: 'screen.id' },
-          name: 'Tela',
+          name: 'Screen',
           background: { path: 'bg', values: { surface: '#FEF7FF' }, default: '#FFF' },
           roots: [
             { path: 'content' },
@@ -69,7 +69,7 @@ describe('parseOrigins', () => {
             { path: 'modal', anchor: 'bottom', scrim: 'x' },
           ],
         },
-        booleans: { true: 'sim', false: 'não' },
+        booleans: { true: 'yes', false: 'no' },
       },
     ]);
     expect(problems).toEqual([]);
@@ -79,14 +79,14 @@ describe('parseOrigins', () => {
       anchor: 'bottom',
       scrim: 'x',
     });
-    expect(origins[0]?.booleans).toEqual({ true: 'sim', false: 'não' });
+    expect(origins[0]?.booleans).toEqual({ true: 'yes', false: 'no' });
   });
 
-  it('sem origens: lista vazia e nenhum problema', () => {
+  it('without origins: empty list and no problem', () => {
     expect(parseOrigins(undefined)).toEqual({ origins: [], problems: [] });
   });
 
-  it('aponta cada problema com o caminho', () => {
+  it('reports each problem with the path', () => {
     const cases: [unknown, string][] = [
       ['x', 'origins: expected a list'],
       [[3], 'origins[0]: expected an object'],
@@ -112,8 +112,8 @@ describe('parseOrigins', () => {
         'origins[0].screen.width.path: "[*]" is only valid in roots[].path',
       ],
       [
-        [{ ...ORIGIN, screen: { ...SCREEN, roots: [{ path: 'a', anchor: 'meio' }] } }],
-        'origins[0].screen.roots[0].anchor: invalid anchor: meio',
+        [{ ...ORIGIN, screen: { ...SCREEN, roots: [{ path: 'a', anchor: 'middle' }] } }],
+        'origins[0].screen.roots[0].anchor: invalid anchor: middle',
       ],
       [
         [{ ...ORIGIN, screen: { ...SCREEN, roots: [{ path: 'a', margin: 8 }] } }],
@@ -136,22 +136,22 @@ describe('parseOrigins', () => {
         ],
         'origins[0].screen.background.values.a: expected text',
       ],
-      [[{ ...ORIGIN, booleans: { true: 'sim' } }], 'origins[0].booleans.false'],
+      [[{ ...ORIGIN, booleans: { true: 'yes' } }], 'origins[0].booleans.false'],
       [[ORIGIN, ORIGIN], 'origins[1].system: repeated origin: sdui'],
     ];
     for (const [raw, expected] of cases) {
       const problems = parseOrigins(raw).problems.map(originProblemText);
       expect(
         problems.some((p) => p.includes(expected)),
-        `${expected} em ${JSON.stringify(problems)}`,
+        `${expected} in ${JSON.stringify(problems)}`,
       ).toBe(true);
     }
   });
 
-  it('descarta a origem com problema e mantém as outras; aceita outro prefixo de caminho', () => {
+  it('discards the origin with a problem and keeps the others; accepts another path prefix', () => {
     const { origins, problems } = parseOrigins(
       [
-        { ...ORIGIN, system: 'ruim', extra: 1 },
+        { ...ORIGIN, system: 'bad', extra: 1 },
         { ...ORIGIN, system: 'ok' },
       ],
       'spec.origins',
@@ -162,26 +162,26 @@ describe('parseOrigins', () => {
 });
 
 // ---------------------------------------------------------------------------------------
-// Tradução: uma biblioteca pequena e uma maior (o contrato do Material 3)
+// Translation: a small library and a larger one (the Material 3 contract)
 // ---------------------------------------------------------------------------------------
 
 const BUTTON = {
   format: 'mapping-component',
   formatVersion: 1,
   id: 'btn',
-  name: 'Botão',
+  name: 'Button',
   size: { width: 100, height: 40 },
   template: { type: 'frame', name: 'btn', layout: { type: 'none' } },
 };
 const BOX = {
   ...BUTTON,
   id: 'box',
-  name: 'Caixa',
+  name: 'Box',
   template: {
     type: 'frame',
     name: 'box',
     layout: { type: 'none' },
-    children: [{ type: 'slot', name: 'conteudo' }],
+    children: [{ type: 'slot', name: 'content' }],
   },
 };
 
@@ -198,7 +198,7 @@ const MINI_ORIGIN = {
   node: NODE,
   screen: {
     id: { path: 'screen.id' },
-    name: { path: 'screen.title', default: 'Tela' },
+    name: { path: 'screen.title', default: 'Screen' },
     width: { path: 'screen.w' },
     height: { path: 'screen.h' },
     background: { path: 'screen.bg', values: { dark: '#000' }, default: '#FFFFFF' },
@@ -208,7 +208,7 @@ const MINI_ORIGIN = {
       { path: 'floating[*]', anchor: { path: 'anchor' }, margin: { path: 'margin' } },
     ],
   },
-  booleans: { true: 'sim', false: 'não' },
+  booleans: { true: 'yes', false: 'no' },
 };
 
 function miniSpec(overrides: Record<string, unknown> = {}): Record<string, unknown> {
@@ -226,7 +226,7 @@ function miniSpec(overrides: Record<string, unknown> = {}): Record<string, unkno
         annotationTypes: [
           {
             id: 'btn',
-            name: 'Botão',
+            name: 'Button',
             component: 'components/btn.json',
             sources: [{ system: 'sdui', name: 'Button', ignore: ['hint'] }],
             fields: [
@@ -247,14 +247,14 @@ function miniSpec(overrides: Record<string, unknown> = {}): Record<string, unkno
               {
                 key: 'on',
                 type: 'enum',
-                options: ['sim', 'não', 'x'],
+                options: ['yes', 'no', 'x'],
                 sources: [{ system: 'sdui', path: 'on', values: { true: 'x' } }],
               },
               {
                 key: 'off',
                 type: 'enum',
-                options: ['sim', 'não'],
-                default: 'não',
+                options: ['yes', 'no'],
+                default: 'no',
                 sources: [{ system: 'sdui', path: 'off' }],
               },
               {
@@ -284,14 +284,14 @@ function miniSpec(overrides: Record<string, unknown> = {}): Record<string, unkno
                 type: 'string',
                 sources: [{ system: 'sdui', path: 'items[1].label' }],
               },
-              { key: 'solto', type: 'string', default: 'padrão' },
+              { key: 'loose', type: 'string', default: 'default' },
             ],
           },
           {
             id: 'box',
-            name: 'Caixa',
+            name: 'Box',
             component: 'components/box.json',
-            sources: [{ system: 'sdui', name: 'Box', slot: 'conteudo' }],
+            sources: [{ system: 'sdui', name: 'Box', slot: 'content' }],
             fields: [],
           },
         ],
@@ -302,10 +302,10 @@ function miniSpec(overrides: Record<string, unknown> = {}): Record<string, unkno
 }
 
 const DOC = {
-  screen: { id: 's1', title: 'Início', w: 400, h: 800, bg: 'dark' },
+  screen: { id: 's1', title: 'Home', w: 400, h: 800, bg: 'dark' },
   content: {
     type: 'Box',
-    id: 'ignorado',
+    id: 'ignored',
     binding: { a: 1 },
     actions: { onClick: {} },
     route: '/x',
@@ -313,7 +313,7 @@ const DOC = {
       {
         type: 'Button',
         props: {
-          text: 'Entrar',
+          text: 'Sign in',
           kind: 'Primary',
           on: true,
           off: false,
@@ -321,7 +321,7 @@ const DOC = {
           step: 2,
           avatar: { initials: 'MS', color: 'red' },
           items: [{ label: 'a', route: '/a' }, { label: 'b' }],
-          hint: 'aceita',
+          hint: 'accepted',
         },
       },
     ],
@@ -335,14 +335,14 @@ function translate(doc: unknown, spec = miniSpec(), system?: string) {
 }
 
 describe('translateSource', () => {
-  it('traduz tela, valores, booleanos, values, default, aninhado e índice', () => {
+  it('translates screen, values, booleans, values, default, nested and index', () => {
     const result = translate(DOC);
     expect(result.error).toBeUndefined();
     expect(result.warnings).toEqual([]);
     const layout = result.layout!;
     expect(layout).toMatchObject({
       id: 's1',
-      name: 'Início',
+      name: 'Home',
       width: 400,
       height: 800,
       background: '#000',
@@ -354,26 +354,31 @@ describe('translateSource', () => {
     expect(button.id).toBe('content.children[0]');
     expect(button.typeId).toBe('btn');
     expect(button.values).toEqual({
-      label: 'Entrar',
+      label: 'Sign in',
       style: 'filled',
-      on: 'x', // `values` do campo vence `booleans`
-      off: 'não', // booleans da origem
+      on: 'x', // the field `values` beat `booleans`
+      off: 'no', // booleans of the origin
       count: 3,
       step: '3', // selectedIndex 2 → "3"
       inner: 'MS',
       second: 'b',
-      solto: 'padrão', // sem fonte: default do campo
+      loose: 'default', // without a source: the field default
     });
   });
 
-  it('usa o default da origem quando o caminho falta, e o padrão sem default', () => {
+  it('uses the origin default when the path is missing, and the default without default', () => {
     const doc = { screen: { w: 10, h: 20 }, content: { type: 'Box' } };
     const { layout, warnings } = translate(doc);
     expect(warnings).toEqual([]);
-    expect(layout).toMatchObject({ id: 'tela', name: 'Tela', background: '#FFFFFF' });
+    expect(layout).toMatchObject({
+      // pt-BR kept: default screen id of the engine (src/model/components/origin.ts)
+      id: 'tela',
+      name: 'Screen',
+      background: '#FFFFFF',
+    });
   });
 
-  it('props desconhecidas avisam; ignore, actions, binding, id e route não', () => {
+  it('unknown props warn; ignore, actions, binding, id and route do not', () => {
     const doc = structuredClone(DOC);
     const props = doc.content.children[0]!.props as Record<string, unknown>;
     props.foo = 1;
@@ -385,7 +390,7 @@ describe('translateSource', () => {
     ]);
   });
 
-  it('tipo externo desconhecido avisa e deixa o nó e a subárvore de fora', () => {
+  it('an unknown external type warns and leaves the node and the subtree out', () => {
     const doc = {
       screen: { w: 10, h: 20 },
       content: {
@@ -404,7 +409,7 @@ describe('translateSource', () => {
     expect(box.children.map((c) => c.id)).toEqual(['content.children[1]']);
   });
 
-  it('valor fora das opções avisa e mantém o valor; objeto no lugar de valor simples avisa e vira nulo', () => {
+  it('a value outside the options warns and keeps the value; an object in place of a simple value warns and becomes null', () => {
     const doc = {
       screen: { w: 10, h: 20 },
       content: {
@@ -424,7 +429,7 @@ describe('translateSource', () => {
     expect(values.step).toBe('7');
   });
 
-  it('raiz ausente é ignorada sem aviso; [*] vira uma raiz por elemento, com âncora e margem do nó', () => {
+  it('a missing root is ignored without a warning; [*] becomes one root per element, with the anchor and margin of the node', () => {
     const doc = {
       screen: { w: 10, h: 20 },
       bar: { type: 'Button', props: {} },
@@ -446,45 +451,45 @@ describe('translateSource', () => {
     expect(layout!.roots[1]).toMatchObject({ anchor: 'bottom-end', margin: 16 });
     expect(layout!.roots[2]).toMatchObject({ anchor: 'center' });
     expect(layout!.roots[2]?.margin).toBeUndefined();
-    // Sem valor de âncora no nó, a raiz fica ancorada no canto.
+    // Without an anchor value on the node, the root is anchored in the corner.
     expect(layout!.roots[3]).toMatchObject({ anchor: 'top-start' });
   });
 
   it('invalid anchor avisa e usa top-start', () => {
     const doc = {
       screen: { w: 10, h: 20 },
-      floating: [{ type: 'Button', anchor: 'meio', margin: 'muito' }],
+      floating: [{ type: 'Button', anchor: 'middle', margin: 'lots' }],
     };
     const { layout, warnings } = translate(doc);
     expect(warnings).toEqual([
-      'floating[0].anchor: invalid anchor: meio; using top-start',
+      'floating[0].anchor: invalid anchor: middle; using top-start',
       'floating[0].margin: expected a number greater than or equal to 0',
     ]);
     expect(layout!.roots[0]).toMatchObject({ anchor: 'top-start' });
   });
 
-  it('scrim vira scrimTypeId da raiz', () => {
+  it('scrim becomes scrimTypeId of the root', () => {
     const doc = { screen: { w: 10, h: 20 }, bar: { type: 'Button' } };
     expect(translate(doc).layout!.roots[0]?.scrimTypeId).toBe('btn');
   });
 
-  it('sem largura ou altura numéricas é erro, sem tela', () => {
+  it('without numeric width or height it is an error, without a screen', () => {
     const noWidth = translate({ screen: { h: 20 }, content: { type: 'Box' } });
     expect(noWidth.layout).toBeUndefined();
     expect(noWidth.error).toMatch(/screen width missing or invalid.*screen\.w/);
-    const badHeight = translate({ screen: { w: 10, h: 'alto' } });
+    const badHeight = translate({ screen: { w: 10, h: 'tall' } });
     expect(badHeight.error).toMatch(/screen height missing or invalid.*screen\.h/);
     expect(translate({ screen: { w: 0, h: 5 } }).error).toMatch(/screen width/);
   });
 
-  it('documento que não é objeto não lança', () => {
+  it('a document that is not an object does not throw', () => {
     for (const doc of [null, 7, 'x', [], undefined]) {
       const result = translate(doc);
       expect(result.error, String(doc)).toBeDefined();
     }
   });
 
-  it('biblioteca sem origens ou com sistema desconhecido: error', () => {
+  it('library without origins or with an unknown system: error', () => {
     const none = translate(DOC, miniSpec({ origins: undefined }));
     expect(none.error).toMatch(/declares no origins/);
     expect(none.layout).toBeUndefined();
@@ -493,12 +498,12 @@ describe('translateSource', () => {
     expect(translate(DOC, miniSpec(), 'sdui').error).toBeUndefined();
   });
 
-  it('vários tipos com o mesmo nome externo: vale o primeiro', () => {
+  it('several types with the same external name: the first one applies', () => {
     const spec = miniSpec();
     const layer = (spec.layers as { annotationTypes: Record<string, unknown>[] }[])[0]!;
     layer.annotationTypes.push({
-      id: 'outro',
-      name: 'Outro',
+      id: 'other',
+      name: 'Other',
       sources: [{ system: 'sdui', name: 'Button' }],
       fields: [],
     });
@@ -506,7 +511,7 @@ describe('translateSource', () => {
     expect(layout!.roots[0]!.node.children[0]?.typeId).toBe('btn');
   });
 
-  it('screenFromSource nunca lança: a falha vira error, com os avisos da tradução', () => {
+  it('screenFromSource never throws: the failure becomes error, with the translation warnings', () => {
     const library = loadLibrary(files(miniSpec()));
     const bad = screenFromSource(
       library,
@@ -526,21 +531,21 @@ describe('parseFieldSources: path', () => {
     return { sources, problems: problems.map(originProblemText) };
   };
 
-  it('lê path e name juntos, ou só um dos dois', () => {
+  it('reads path and name together, or only one of the two', () => {
     const { sources, problems } = parse([
-      { system: 'sdui', path: 'a.b[0]', name: 'Rótulo' },
+      { system: 'sdui', path: 'a.b[0]', name: 'Caption' },
       { system: 'sdui', path: 'c' },
       { system: 'figma', name: 'Kind' },
     ]);
     expect(problems).toEqual([]);
     expect(sources).toEqual([
-      { system: 'sdui', name: 'Rótulo', path: 'a.b[0]' },
+      { system: 'sdui', name: 'Caption', path: 'a.b[0]' },
       { system: 'sdui', path: 'c' },
       { system: 'figma', name: 'Kind' },
     ]);
   });
 
-  it('recusa path com sintaxe inválida ou com [*], e entrada sem name nem path', () => {
+  it('rejects a path with invalid syntax or with [*], and an entry without name or path', () => {
     const { sources, problems } = parse([
       { system: 'sdui', path: 'a..b' },
       { system: 'sdui', path: 'a[*]' },
@@ -558,17 +563,17 @@ describe('parseFieldSources: path', () => {
   });
 });
 
-describe('translateSource: sem system vale a primeira origem tree', () => {
+describe('translateSource: without system the first tree origin applies', () => {
   const MEASURED_ORIGIN = { system: 'dom', kind: 'measured' };
 
-  it('pula as origens measured que vêm antes', () => {
+  it('skips the measured origins that come before', () => {
     const spec = miniSpec({ origins: [MEASURED_ORIGIN, MINI_ORIGIN] });
     const result = translate(DOC, spec);
     expect(result.error).toBeUndefined();
     expect(result.layout?.id).toBe('s1');
   });
 
-  it('só com origens measured, o erro manda passar o system', () => {
+  it('with only measured origins, the error says to pass the system', () => {
     const spec = miniSpec({ origins: [MEASURED_ORIGIN] });
     const result = translate(DOC, spec);
     expect(result.layout).toBeUndefined();
@@ -576,13 +581,13 @@ describe('translateSource: sem system vale a primeira origem tree', () => {
     expect(result.error).toContain('measured');
   });
 
-  it('com system, a origem pedida vale como antes', () => {
+  it('with system, the requested origin applies as before', () => {
     const spec = miniSpec({ origins: [MEASURED_ORIGIN, MINI_ORIGIN] });
     expect(translate(DOC, spec, 'sdui').error).toBeUndefined();
   });
 });
 
-describe('translateSource: o caminho do campo vem de path, nunca de name', () => {
+describe('translateSource: the field path comes from path, never from name', () => {
   const specWithField = (source: Record<string, unknown>) => {
     const spec = miniSpec();
     const layer = (spec.layers as { annotationTypes: { fields: unknown[] }[] }[])[0]!;
@@ -601,15 +606,15 @@ describe('translateSource: o caminho do campo vem de path, nunca de name', () =>
     };
   };
 
-  it('name e path convivem: lê o valor de path e ignora name', () => {
+  it('name and path coexist: reads the value from path and ignores name', () => {
     const { library, label } = labelOf(
       specWithField({ system: 'sdui', name: 'kind', path: 'text' }),
     );
     expect(library.problems).toEqual([]);
-    expect(label).toBe('Entrar');
+    expect(label).toBe('Sign in');
   });
 
-  it('name que parece um caminho existente não é lido sem path', () => {
+  it('a name that looks like an existing path is not read without path', () => {
     const { library, result, label } = labelOf(
       specWithField({ system: 'sdui', name: 'text' }),
     );
@@ -617,15 +622,19 @@ describe('translateSource: o caminho do campo vem de path, nunca de name', () =>
       'btn.fields[0].sources[0].path: required in a system declared in origins',
     ]);
     expect(label).toBeNull();
-    // `text` não é lido como campo: vira propriedade desconhecida.
+    // `text` is not read as a field: it becomes an unknown property.
     expect(result.warnings).toContain(
       'content.children[0].props.text: unknown property in Button',
     );
   });
 });
 
-describe('contrato: Material 3 e o SDUI de configurações', () => {
-  it('traduz settings.sdui.json sem nenhum aviso e com a árvore esperada', () => {
+// pt-BR kept: boolean enum values of the pt-BR Material 3 sample (viewer/samples/samplesMaterial3.ts)
+const YES = 'sim';
+const NO = 'não';
+
+describe('contract: Material 3 and the settings SDUI', () => {
+  it('translates settings.sdui.json without any warning and with the expected tree', () => {
     const library = loadLibrary(M3_FILES);
     expect(library.problems).toEqual([]);
     expect(library.origins.map((o) => o.system)).toEqual(['sdui']);
@@ -671,7 +680,7 @@ describe('contrato: Material 3 e o SDUI de configurações', () => {
     expect(form?.values).toMatchObject({ padding: 16, spacing: 16 });
     const [field, chips, card] = form!.children;
     expect(field?.values).toMatchObject({ label: 'Search settings', state: 'enabled' });
-    expect(chips?.children.map((c) => c.values.selected)).toEqual(['sim', 'não', 'não']);
+    expect(chips?.children.map((c) => c.values.selected)).toEqual([YES, NO, NO]);
     expect(card?.typeId).toBe('m3-card');
     expect(card?.values).toMatchObject({
       headline: 'Storage almost full',
@@ -688,11 +697,11 @@ describe('contrato: Material 3 e o SDUI de configurações', () => {
     const toggles = content.children[5]!.children;
     expect(toggles[0]?.values).toMatchObject({
       label: 'Dark theme',
-      selected: 'sim',
-      icon: 'sim',
+      selected: YES,
+      icon: YES,
     });
-    expect(toggles[1]?.values).toMatchObject({ selected: 'não', icon: 'não' });
-    expect(toggles[2]?.values).toMatchObject({ checked: 'sim', error: 'não' });
+    expect(toggles[1]?.values).toMatchObject({ selected: NO, icon: NO });
+    expect(toggles[2]?.values).toMatchObject({ checked: YES, error: NO });
     expect(toggles[3]?.children.map((c) => c.values.label)).toEqual([
       'Reset options',
       'Save',
@@ -709,7 +718,7 @@ describe('contrato: Material 3 e o SDUI de configurações', () => {
     });
     expect(layout.roots[3]?.node.values).toMatchObject({
       title: 'Sort by',
-      handle: 'sim',
+      handle: YES,
       item2: 'Date modified',
       icon3: 'settings',
     });

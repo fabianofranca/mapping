@@ -1,5 +1,5 @@
-// Slot em grade (`layout.type: "grid"`, decisão 15 da #1078): resolveSlotLayout, layoutChildren,
-// contentExtent e a tela sem geometria (layoutScreen) com slot `grid`.
+// Grid slot (`layout.type: "grid"`, decision 15 of #1078): resolveSlotLayout, layoutChildren,
+// contentExtent and the screen without geometry (layoutScreen) with a `grid` slot.
 import { describe, expect, it } from 'vitest';
 import {
   contentExtent,
@@ -30,8 +30,8 @@ const kid = (width: number, height: number) => ({ box: box(0, 0, width, height) 
 const kids = (n: number, width = 50, height = 30) =>
   Array.from({ length: n }, () => kid(width, height));
 
-describe('resolveSlotLayout com grid', () => {
-  it('lê columns, minColumnWidth, rows e minRowHeight', () => {
+describe('resolveSlotLayout with grid', () => {
+  it('reads columns, minColumnWidth, rows and minRowHeight', () => {
     expect(resolve({ columns: 3 })).toMatchObject({
       type: 'grid',
       grid: { count: 3, orientation: 'vertical' },
@@ -48,7 +48,7 @@ describe('resolveSlotLayout com grid', () => {
     });
   });
 
-  it('valor inválido por expressão cai em uma trilha', () => {
+  it('an invalid value by expression falls to one track', () => {
     const n = { $field: 'n' };
     expect(resolve({ columns: n }, { n: 0 }).grid).toEqual({
       count: 1,
@@ -69,11 +69,11 @@ describe('resolveSlotLayout com grid', () => {
     });
   });
 
-  it('sem nenhuma trilha vale columns: 1', () => {
+  it('without any track, columns: 1 applies', () => {
     expect(resolve({}).grid).toEqual({ count: 1, orientation: 'vertical' });
   });
 
-  it('lineGap vale sem wrap; align e justify aceitam só start, center, end e stretch', () => {
+  it('lineGap applies without wrap; align and justify accept only start, center, end and stretch', () => {
     const l = resolve({ columns: 2, gap: 8, lineGap: 4, align: 'stretch' });
     expect(l).toMatchObject({ gap: 8, lineGap: 4, wrap: 'none', align: 'stretch' });
     expect(resolve({ columns: 2, align: 'baseline' }).align).toBe('start');
@@ -82,13 +82,13 @@ describe('resolveSlotLayout com grid', () => {
   });
 });
 
-describe('layoutChildren em grade', () => {
+describe('layoutChildren in a grid', () => {
   const slot = box(10, 20, 400, 300);
 
-  it('3 colunas, 7 filhas iguais: células arredondadas', () => {
+  it('3 columns, 7 equal children: rounded cells', () => {
     const layout = resolve({ columns: 3, gap: 8, lineGap: 4 });
     const out = layoutChildren(slot, layout, kids(7));
-    // trilha: (400 - 16) / 3 = 128; passo 136.
+    // track: (400 - 16) / 3 = 128; step 136.
     expect(out.map((b) => [b.x, b.y])).toEqual([
       [10, 20],
       [146, 20],
@@ -101,24 +101,24 @@ describe('layoutChildren em grade', () => {
     expect(out.every((b) => b.width === 50 && b.height === 30)).toBe(true);
   });
 
-  it('arredonda posições fracionárias', () => {
+  it('rounds fractional positions', () => {
     const layout = resolve({ columns: 3 });
     const out = layoutChildren(box(0, 0, 100, 100), layout, kids(3, 10, 10));
-    // 100 / 3 = 33,33...; passos 33,33 e 66,67
+    // 100 / 3 = 33.33...; steps 33.33 and 66.67
     expect(out.map((b) => b.x)).toEqual([0, 33, 67]);
   });
 
-  it('minColumnWidth com o slot de 400 e gap 8 dá 3 colunas', () => {
+  it('minColumnWidth with a slot of 400 and gap 8 gives 3 columns', () => {
     const layout = resolve({ minColumnWidth: 100, gap: 8 });
     const out = layoutChildren(slot, layout, kids(4));
     expect(out.map((b) => b.x)).toEqual([10, 146, 282, 10]);
     expect(out[3]?.y).toBe(50);
   });
 
-  it('rows: 2 preenche colunas, de cima para baixo', () => {
+  it('rows: 2 fills columns, from top to bottom', () => {
     const layout = resolve({ rows: 2, gap: 8, lineGap: 6 });
     const out = layoutChildren(box(0, 0, 400, 200), layout, kids(5));
-    // trilha (linha): (200 - 8) / 2 = 96, passo 104; colunas de 50 + 6.
+    // track (line): (200 - 8) / 2 = 96, step 104; columns of 50 + 6.
     expect(out.map((b) => [b.x, b.y])).toEqual([
       [0, 0],
       [0, 104],
@@ -128,7 +128,7 @@ describe('layoutChildren em grade', () => {
     ]);
   });
 
-  it('justify alinha na célula (eixo das trilhas)', () => {
+  it('justify aligns in the cell (tracks axis)', () => {
     const base = { columns: 3, gap: 8 };
     const x = (justify: string) =>
       layoutChildren(slot, resolve({ ...base, justify }), kids(1))[0];
@@ -137,7 +137,7 @@ describe('layoutChildren em grade', () => {
     expect(x('stretch')).toMatchObject({ x: 10, width: 128 });
   });
 
-  it('align alinha na linha de fluxo (a extensão da maior filha)', () => {
+  it('align aligns in the flow line (the extent of the largest child)', () => {
     const children = [kid(50, 30), kid(50, 10)];
     const at = (align: string) =>
       layoutChildren(slot, resolve({ columns: 2, align }), children)[1];
@@ -147,8 +147,8 @@ describe('layoutChildren em grade', () => {
     expect(at('stretch')).toMatchObject({ y: 20, height: 30 });
   });
 
-  it('align e justify numa grade horizontal trocam de eixo', () => {
-    // rows: 2: trilhas são as linhas (eixo y), justify no y; align no x.
+  it('align and justify in a horizontal grid swap axes', () => {
+    // rows: 2: the tracks are the lines (y axis), justify on y; align on x.
     const children = [kid(30, 50), kid(10, 50)];
     const out = layoutChildren(
       box(0, 0, 200, 200),
@@ -162,7 +162,7 @@ describe('layoutChildren em grade', () => {
     ).toHaveLength(2);
   });
 
-  it('reverse põe a última filha na primeira célula', () => {
+  it('reverse puts the last child in the first cell', () => {
     const layout = resolve({ columns: 2, reverse: true });
     const children = [kid(10, 10), kid(20, 10), kid(30, 10)];
     const out = layoutChildren(box(0, 0, 200, 100), layout, children);
@@ -171,7 +171,7 @@ describe('layoutChildren em grade', () => {
     expect(out[0]).toMatchObject({ x: 0, y: 10, width: 10 });
   });
 
-  it('padding recua a área de conteúdo', () => {
+  it('padding insets the content area', () => {
     const layout = resolve({ columns: 2, padding: 10 });
     const out = layoutChildren(box(0, 0, 220, 100), layout, kids(3, 20, 20));
     expect(out.map((b) => [b.x, b.y])).toEqual([
@@ -181,7 +181,7 @@ describe('layoutChildren em grade', () => {
     ]);
   });
 
-  it('filhas de tamanhos diferentes: a linha tem a extensão da maior', () => {
+  it('children of different sizes: the line has the extent of the largest', () => {
     const layout = resolve({ columns: 2, lineGap: 5 });
     const children = [kid(10, 20), kid(10, 40), kid(10, 10)];
     const out = layoutChildren(box(0, 0, 200, 200), layout, children);
@@ -189,29 +189,29 @@ describe('layoutChildren em grade', () => {
   });
 });
 
-describe('contentExtent em grade', () => {
-  it('abraça n × a maior filha e a soma das linhas', () => {
+describe('contentExtent in a grid', () => {
+  it('hugs n × the largest child and the sum of the lines', () => {
     const layout = resolve({ columns: 3, gap: 8, lineGap: 4 });
     const children = [kid(40, 10), kid(60, 30), kid(50, 20), kid(30, 15)];
-    // largura 3 × 60 + 16; linhas: 30 e 15, mais lineGap 4.
+    // width 3 × 60 + 16; lines: 30 and 15, plus lineGap 4.
     expect(contentExtent(layout, children, null)).toEqual({ width: 196, height: 49 });
   });
 
-  it('com minColumnWidth, o limite disponível decide quantas trilhas', () => {
+  it('with minColumnWidth, the available limit decides how many tracks', () => {
     const layout = resolve({ minColumnWidth: 100, gap: 8 });
     const children = kids(4, 100, 20);
     expect(contentExtent(layout, children, null)).toEqual({ width: 100, height: 80 });
     expect(contentExtent(layout, children, 400)).toEqual({ width: 316, height: 40 });
   });
 
-  it('grade horizontal abraça n × a maior alta e as colunas', () => {
+  it('horizontal grid hugs n × the tallest and the columns', () => {
     const layout = resolve({ rows: 2, gap: 8, lineGap: 2 });
     const children = [kid(30, 40), kid(20, 10), kid(50, 20)];
     expect(contentExtent(layout, children, null)).toEqual({ width: 82, height: 88 });
   });
 });
 
-// --- layoutScreen: tela sem geometria com slot grid ----------------------------------------------
+// --- layoutScreen: screen without geometry with a grid slot --------------------------------------
 
 function comp(id: string, template: object, extra: object = {}): ComponentFile {
   return {
@@ -225,7 +225,7 @@ function comp(id: string, template: object, extra: object = {}): ComponentFile {
   } as ComponentFile;
 }
 
-/** Biblioteca com `fixed` (100×40), `filler` (fill × fill) e `grid` (slot em grade com o layout dado). */
+/** Library with `fixed` (100×40), `filler` (fill × fill) and `grid` (grid slot with the given layout). */
 function gridLibrary(slotLayout: Record<string, unknown>): Library {
   const components = [
     comp('fixed', {}),
@@ -238,7 +238,7 @@ function gridLibrary(slotLayout: Record<string, unknown>): Library {
           {
             type: 'slot',
             anchors: { left: 0, right: 0, top: 0, bottom: 0 },
-            // Passa pelo analisador como `row`; a grade entra depois.
+            // Goes through the parser as `row`; the grid comes in afterwards.
             layout: { type: 'row' },
           },
         ],
@@ -299,7 +299,7 @@ function run(slotLayout: Record<string, unknown>, children: LayoutNode[], width 
   const result = layoutScreen(
     {
       id: 's',
-      name: 'Tela',
+      name: 'Screen',
       width,
       height: 600,
       background: '#FFF',
@@ -310,41 +310,41 @@ function run(slotLayout: Record<string, unknown>, children: LayoutNode[], width 
   );
   const at = (id: string) => {
     const found = result.screen.instances.find((i) => i.id === id);
-    if (!found) throw new Error(`sem instância ${id}`);
+    if (!found) throw new Error(`no instance ${id}`);
     return found.box;
   };
   return { result, at };
 }
 
-describe('layoutScreen com slot grid', () => {
-  it('arruma a tela sem geometria em 3 colunas', () => {
+describe('layoutScreen with a grid slot', () => {
+  it('arranges the screen without geometry in 3 columns', () => {
     const { result, at } = run(
       { type: 'grid', columns: 3, gap: 10, lineGap: 4 },
       [1, 2, 3, 4, 5].map((n) => node(`k${n}`, 'fixed')),
     );
     expect(result.warnings).toEqual([]);
-    // trilha: (320 - 20) / 3 = 100; passo 110; linhas de 40 + 4.
+    // track: (320 - 20) / 3 = 100; step 110; lines of 40 + 4.
     expect(at('k1')).toEqual({ x: 0, y: 0, width: 100, height: 40 });
     expect(at('k3')).toEqual({ x: 220, y: 0, width: 100, height: 40 });
     expect(at('k4')).toEqual({ x: 0, y: 44, width: 100, height: 40 });
     expect(at('k5')).toEqual({ x: 110, y: 44, width: 100, height: 40 });
-    // o container `hug` na altura abraça as duas linhas
+    // the `hug` container in height hugs the two lines
     expect(at('g')).toEqual({ x: 0, y: 0, width: 320, height: 84 });
   });
 
-  it('filho fill ocupa a célula e a linha; reverse e justify valem', () => {
+  it('a fill child takes the cell and the line; reverse and justify apply', () => {
     const { at } = run({ type: 'grid', columns: 2, reverse: true, justify: 'end' }, [
       node('a', 'small'),
       node('f', 'filler'),
       node('b', 'fixed'),
     ]);
-    // ordem invertida: b, f na primeira linha; a sozinha na segunda.
+    // reversed order: b, f on the first line; a alone on the second.
     expect(at('b')).toEqual({ x: 60, y: 0, width: 100, height: 40 });
     expect(at('f')).toEqual({ x: 160, y: 0, width: 160, height: 40 });
     expect(at('a')).toEqual({ x: 130, y: 40, width: 30, height: 10 });
   });
 
-  it('grade horizontal (rows) preenche colunas', () => {
+  it('horizontal grid (rows) fills columns', () => {
     const { at } = run({ type: 'grid', rows: 2, gap: 5 }, [
       node('a', 'small'),
       node('b', 'small'),
@@ -356,15 +356,15 @@ describe('layoutScreen com slot grid', () => {
   });
 });
 
-describe('layoutScreen com slot none alinhado (L5)', () => {
+describe('layoutScreen with an aligned none slot (L5)', () => {
   const small = () => [node('a', 'small')];
 
-  it('sem align e justify o filho fica no canto (como sempre)', () => {
+  it('without align and justify the child stays at the corner (as always)', () => {
     const { at } = run({ type: 'none' }, small());
     expect(at('a')).toEqual({ x: 0, y: 0, width: 30, height: 10 });
   });
 
-  it('justify põe o filho no meio, no fim ou o estica na largura do conteúdo', () => {
+  it('justify puts the child in the middle, at the end or stretches it to the content width', () => {
     expect(run({ type: 'none', justify: 'center' }, small()).at('a')).toMatchObject({
       x: 145,
       width: 30,
@@ -378,7 +378,7 @@ describe('layoutScreen com slot none alinhado (L5)', () => {
     });
   });
 
-  it('as filhas se sobrepõem, cada uma alinhada sozinha', () => {
+  it('the children overlap, each one aligned on its own', () => {
     const { at } = run({ type: 'none', justify: 'end' }, [
       node('a', 'small'),
       node('b', 'fixed'),

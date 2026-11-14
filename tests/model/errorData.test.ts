@@ -14,8 +14,8 @@ import {
 import { emptyProject, sampleProject } from './fixtures';
 import { multiProject } from './multiSelectionFixtures';
 
-// `ModelError.data`: fatos estruturados do erro (tamanho recebido, mínimo, outro container).
-// O modelo não conhece referências nem texto de interface; o MCP é quem escreve o detalhe.
+// `ModelError.data`: structured facts about the error (received size, minimum, other container).
+// The model knows no references or interface text; the MCP is what writes the detail.
 
 function errorOf(op: () => unknown): ModelError {
   try {
@@ -24,7 +24,7 @@ function errorOf(op: () => unknown): ModelError {
     if (e instanceof ModelError) return e;
     throw e;
   }
-  throw new Error('a operação não falhou');
+  throw new Error('the operation did not fail');
 }
 
 const rect = (x: number, y: number, width: number, height: number) => ({
@@ -35,7 +35,7 @@ const rect = (x: number, y: number, width: number, height: number) => ({
 });
 
 describe('ModelError.data: rect-too-small', () => {
-  it('createMarking abaixo do mínimo da marcação traz recebido e mínimo', () => {
+  it('createMarking below the marking minimum carries received and minimum', () => {
     const error = errorOf(() =>
       createMarking(sampleProject(), {
         id: 'X',
@@ -49,11 +49,11 @@ describe('ModelError.data: rect-too-small', () => {
       min: { width: 8, height: 8 },
       source: 'marking',
     });
-    // A message de hoje não muda.
+    // Today's message does not change.
     expect(error.message).toBe('rect-too-small');
   });
 
-  it('com minSize do componente maior, o mínimo é o do componente', () => {
+  it("with a larger component minSize, the minimum is the component's", () => {
     const error = errorOf(() =>
       createMarking(
         sampleProject(),
@@ -68,7 +68,7 @@ describe('ModelError.data: rect-too-small', () => {
     });
   });
 
-  it('abaixo dos dois, vale o maior de cada lado e a origem é o componente', () => {
+  it('below both, the larger of each side wins and the source is the component', () => {
     const error = errorOf(() =>
       setMarkingRect(sampleProject(), 'M1', rect(0, 0, 5, 50), {
         minSize: { width: 48, height: 40 },
@@ -81,7 +81,7 @@ describe('ModelError.data: rect-too-small', () => {
     });
   });
 
-  it('setMarkingRect e setMarkingSpace abaixo do mínimo trazem os dados', () => {
+  it('setMarkingRect and setMarkingSpace below the minimum carry the data', () => {
     const a = errorOf(() => setMarkingRect(sampleProject(), 'M1', rect(0, 0, 7, 10)));
     expect(a.data).toMatchObject({
       received: { width: 7, height: 10 },
@@ -98,21 +98,21 @@ describe('ModelError.data: rect-too-small', () => {
 });
 
 describe('ModelError.data: image-overlap', () => {
-  it('moveContainer diz com qual container há sobreposição (o outro)', () => {
+  it('moveContainer says which container it overlaps (the other one)', () => {
     const error = errorOf(() => moveContainer(sampleProject(), 'I2', 999, 0));
     expect(error.code).toBe('image-overlap');
     expect(error.data).toEqual({ containerId: 'I1' });
     expect(error.message).toBe('image-overlap');
   });
 
-  it('setContainerPlacement diz o outro container', () => {
+  it('setContainerPlacement says the other container', () => {
     const error = errorOf(() =>
       setContainerPlacement(sampleProject(), 'I2', { x: 999, y: 0, scale: 1 }),
     );
     expect(error.data).toEqual({ containerId: 'I1' });
   });
 
-  it('setBackgroundContainer que cresce sobre outro diz qual', () => {
+  it('setBackgroundContainer growing over another says which', () => {
     let p = addBackgroundContainer(emptyProject(), {
       id: 'B1',
       width: 100,
@@ -130,7 +130,7 @@ describe('ModelError.data: image-overlap', () => {
     expect(error.data).toEqual({ containerId: 'B2' });
   });
 
-  it('moveItems: o id é o do container que NÃO se move, não o do movido', () => {
+  it('moveItems: the id is that of the container that does NOT move, not the moved one', () => {
     const error = errorOf(() =>
       moveItems(multiProject(), [{ kind: 'image', id: 'A' }], 1500, 0),
     );
@@ -140,8 +140,8 @@ describe('ModelError.data: image-overlap', () => {
   });
 });
 
-describe('ModelError sem data', () => {
-  it('os outros erros seguem sem o campo', () => {
+describe('ModelError without data', () => {
+  it('the other errors stay without the field', () => {
     const error = errorOf(() =>
       addContainer(sampleProject(), { id: 'I1', file: 'x.png', width: 1, height: 1 }),
     );

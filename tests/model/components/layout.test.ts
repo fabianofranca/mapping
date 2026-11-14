@@ -1,4 +1,4 @@
-// Laboratório Componentes: arrumação por tamanhos (`layoutScreen`).
+// Components Lab: arrangement by sizes (`layoutScreen`).
 import { describe, expect, it } from 'vitest';
 import type {
   ComponentFile,
@@ -14,7 +14,7 @@ import {
 import { type Library, loadLibrary } from '../../../src/model/components/library';
 import { M3_CARD, M3_COLUMN, M3_BUTTON } from '../../../viewer/samples/samplesMaterial3';
 
-// --- biblioteca montada em memória ----------------------------------------------------------
+// --- library assembled in memory ----------------------------------------------------------
 
 type Sizing = NonNullable<ComponentFile['sizing']>;
 
@@ -34,7 +34,7 @@ function component(
   } as ComponentFile;
 }
 
-/** Folha sem filhos: só o tamanho (px de `size` ou o `sizing`). */
+/** Leaf without children: only the size (px of `size` or the `sizing`). */
 function block(
   id: string,
   size: { width: number; height: number },
@@ -48,7 +48,7 @@ function block(
   );
 }
 
-/** Texto `hug` × `hug`: fonte 10 (0,55 · 10 = 5,5 px por caractere), altura de linha dada. */
+/** `hug` × `hug` text: font 10 (0.55 · 10 = 5.5 px per character), given line height. */
 function label(id: string, lineHeight: number) {
   return component(
     id,
@@ -73,7 +73,7 @@ interface ContainerOptions {
   readonly size?: { width: number; height: number };
 }
 
-/** Container: quadro `none` com um slot que ocupa tudo, com o layout dado. */
+/** Container: `none` frame with a slot that fills everything, with the given layout. */
 function container(
   id: string,
   type: 'row' | 'column' | 'none',
@@ -166,7 +166,7 @@ const SPEC = {
         component: `components/${c.id}.json`,
         fields:
           c.id === 'filler'
-            ? [{ key: 'tone', label: 'Tom', type: 'string', default: 'claro' }]
+            ? [{ key: 'tone', label: 'Tone', type: 'string', default: 'light' }]
             : [],
       })),
     },
@@ -185,11 +185,11 @@ function build(components: readonly ComponentFile[], spec: object = SPEC): Libra
 
 const library = build(COMPONENTS);
 
-it('a biblioteca de teste carrega sem problemas', () => {
+it('the test library loads without problems', () => {
   expect(library.problems).toEqual([]);
 });
 
-// --- construtores -----------------------------------------------------------------------------
+// --- constructors -----------------------------------------------------------------------------
 
 function node(
   id: string,
@@ -206,7 +206,7 @@ function root(n: LayoutNode, extra: Partial<Omit<LayoutRoot, 'node'>> = {}): Lay
 
 function run(roots: readonly LayoutRoot[], width = 300, height = 600, lib = library) {
   return layoutScreen(
-    { id: 's', name: 'Tela', width, height, background: '#FFF', roots },
+    { id: 's', name: 'Screen', width, height, background: '#FFF', roots },
     lib,
     approximateMeasurer,
   );
@@ -214,19 +214,19 @@ function run(roots: readonly LayoutRoot[], width = 300, height = 600, lib = libr
 
 function boxOf(result: ReturnType<typeof run>, id: string) {
   const instance = result.screen.instances.find((i) => i.id === id);
-  if (!instance) throw new Error(`sem instância ${id}`);
+  if (!instance) throw new Error(`no instance ${id}`);
   return instance.box;
 }
 
 const ids = (result: ReturnType<typeof run>) => result.screen.instances.map((i) => i.id);
 
-// "AAAAAAAAAA" = 10 caracteres de 5,5 px = 55 px de largura, 12 px de altura.
+// "AAAAAAAAAA" = 10 characters of 5.5 px = 55 px wide, 12 px high.
 const TEN = 'AAAAAAAAAA';
 
 // --- column --------------------------------------------------------------------------------------
 
 describe('layoutScreen: column', () => {
-  it('px, hug e fill: o fill fica com o que sobra depois dos fixos e dos gaps', () => {
+  it('px, hug and fill: the fill gets what is left after the fixed ones and the gaps', () => {
     const result = run([
       root(
         node('c', 'col-fill', { gap: 10 }, [
@@ -239,12 +239,12 @@ describe('layoutScreen: column', () => {
     expect(boxOf(result, 'c')).toEqual({ x: 0, y: 0, width: 300, height: 600 });
     expect(boxOf(result, 'a')).toEqual({ x: 0, y: 0, width: 100, height: 40 });
     expect(boxOf(result, 'b')).toEqual({ x: 0, y: 50, width: 55, height: 12 });
-    // 600 − 40 − 12 − 2 gaps de 10
+    // 600 − 40 − 12 − 2 gaps of 10
     expect(boxOf(result, 'f')).toEqual({ x: 0, y: 72, width: 300, height: 528 });
     expect(result.warnings).toEqual([]);
   });
 
-  it('dois fill dividem o resto por igual', () => {
+  it('two fills split the rest equally', () => {
     const result = run([
       root(
         node('c', 'col-fill', {}, [
@@ -258,7 +258,7 @@ describe('layoutScreen: column', () => {
     expect(boxOf(result, 'f2')).toMatchObject({ y: 320, height: 280 });
   });
 
-  it('a altura hug do container é a soma dos filhos, gaps e padding', () => {
+  it('the hug height of the container is the sum of the children, gaps and padding', () => {
     const result = run([
       root(
         node('c', 'col', { gap: 4, padding: 8 }, [
@@ -273,7 +273,7 @@ describe('layoutScreen: column', () => {
     expect(boxOf(result, 'b')).toMatchObject({ x: 8, y: 52 });
   });
 
-  it('fill no eixo principal dentro de pai hug cai em hug, com aviso', () => {
+  it('fill on the main axis inside a hug parent falls back to hug, with a warning', () => {
     const result = run([
       root(
         node('c', 'col', {}, [
@@ -282,13 +282,13 @@ describe('layoutScreen: column', () => {
         ]),
       ),
     ]);
-    // filler-min em hug: o vazio vira o minSize (30)
+    // filler-min in hug: the empty one becomes the minSize (30)
     expect(boxOf(result, 'f')).toMatchObject({ y: 12, height: 30 });
     expect(boxOf(result, 'c').height).toBe(42);
     expect(result.warnings).toEqual(['f: fill inside hug: using hug']);
   });
 
-  it('o fill no eixo cruzado ocupa a largura do conteúdo; hug com stretch também', () => {
+  it('fill on the cross axis takes the width of the content; hug with stretch too', () => {
     const result = run(
       [
         root(
@@ -305,7 +305,7 @@ describe('layoutScreen: column', () => {
     expect(boxOf(result, 'f').width).toBe(280);
   });
 
-  it('justify e align: center no container de altura fixa', () => {
+  it('justify and align: center in the fixed-height container', () => {
     const result = run([
       root(node('c', 'col-px-center', {}, [node('b', 'label', { text: TEN })])),
     ]);
@@ -313,7 +313,7 @@ describe('layoutScreen: column', () => {
     expect(boxOf(result, 'b')).toEqual({ x: 122.5, y: 44, width: 55, height: 12 });
   });
 
-  it('hug de largura limitado pela largura disponível', () => {
+  it('width hug limited by the available width', () => {
     const result = run(
       [root(node('c', 'col', {}, [node('b', 'label', { text: TEN })]))],
       40,
@@ -326,7 +326,7 @@ describe('layoutScreen: column', () => {
 // --- row -------------------------------------------------------------------------------------------
 
 describe('layoutScreen: row', () => {
-  it('px, hug e fill: o fill divide o resto da largura; o fill cruzado é a altura da linha', () => {
+  it('px, hug and fill: the fill splits the rest of the width; the cross fill is the row height', () => {
     const result = run([
       root(
         node('r', 'row', { gap: 10 }, [
@@ -338,12 +338,12 @@ describe('layoutScreen: row', () => {
     ]);
     expect(boxOf(result, 'r')).toEqual({ x: 0, y: 0, width: 300, height: 60 });
     expect(boxOf(result, 'a')).toEqual({ x: 0, y: 0, width: 100, height: 40 });
-    // 300 − 100 − 55 − 2 gaps de 10
+    // 300 − 100 − 55 − 2 gaps of 10
     expect(boxOf(result, 'f')).toEqual({ x: 110, y: 0, width: 125, height: 60 });
     expect(boxOf(result, 'b')).toEqual({ x: 245, y: 0, width: 55, height: 12 });
   });
 
-  it('eixo cruzado fill em row hug: a altura da linha é a maior entre os demais', () => {
+  it('cross-axis fill in a hug row: the row height is the largest among the others', () => {
     const result = run([
       root(
         node('r', 'row-hug', { gap: 5 }, [
@@ -353,18 +353,18 @@ describe('layoutScreen: row', () => {
         ]),
       ),
     ]);
-    // altura da linha = max(12, 40) = 40; o fill herda 40
+    // row height = max(12, 40) = 40; the fill inherits 40
     expect(boxOf(result, 'r')).toEqual({ x: 0, y: 0, width: 300, height: 40 });
     expect(boxOf(result, 'f').height).toBe(40);
   });
 
-  it('row hug só com fill: cada filho em hug', () => {
+  it('hug row with only fill: each child in hug', () => {
     const result = run([root(node('r', 'row-hug', {}, [node('f', 'filler-min')]))]);
     expect(boxOf(result, 'r').height).toBe(30);
     expect(boxOf(result, 'f').height).toBe(30);
   });
 
-  it('justify end, center e space-between', () => {
+  it('justify end, center and space-between', () => {
     const kids = () => [node('a', 'fixed'), node('b', 'fixed')];
     const end = run([root(node('r', 'row-end', {}, kids()))], 400);
     expect(boxOf(end, 'a').x).toBe(200);
@@ -380,14 +380,14 @@ describe('layoutScreen: row', () => {
     );
   });
 
-  it('align center no eixo cruzado', () => {
+  it('align center on the cross axis', () => {
     const result = run([
       root(node('r', 'row-center', {}, [node('b', 'label', { text: TEN })])),
     ]);
     expect(boxOf(result, 'b').y).toBe(24);
   });
 
-  it('row hug nos dois eixos: filhos fill ficam no próprio hug e a largura é a soma', () => {
+  it('hug row on both axes: fill children stay in their own hug and the width is the sum', () => {
     const result = run([
       root(
         node('r', 'row-hug-all', { gap: 5 }, [
@@ -396,7 +396,7 @@ describe('layoutScreen: row', () => {
         ]),
       ),
     ]);
-    // filler-min em hug: 50 (minSize) × 30
+    // filler-min in hug: 50 (minSize) × 30
     expect(boxOf(result, 'r')).toEqual({ x: 0, y: 0, width: 155, height: 40 });
     expect(boxOf(result, 'f')).toMatchObject({ x: 105, width: 50 });
   });
@@ -405,7 +405,7 @@ describe('layoutScreen: row', () => {
 // --- Box -------------------------------------------------------------------------------------------
 
 describe('layoutScreen: Box (none)', () => {
-  it('cada filho no canto do conteúdo; a altura hug é a do maior', () => {
+  it('each child in the corner of the content; the hug height is that of the largest', () => {
     const result = run([
       root(
         node('x', 'box', {}, [
@@ -418,19 +418,19 @@ describe('layoutScreen: Box (none)', () => {
     expect(boxOf(result, 'x')).toEqual({ x: 0, y: 0, width: 300, height: 40 });
     expect(boxOf(result, 'a')).toEqual({ x: 0, y: 0, width: 100, height: 40 });
     expect(boxOf(result, 'b')).toEqual({ x: 0, y: 0, width: 55, height: 12 });
-    // fill de largura = conteúdo; a altura, com o pai hug, cai em hug (o minSize)
+    // width fill = content; the height, with a hug parent, falls back to hug (the minSize)
     expect(boxOf(result, 'f')).toEqual({ x: 0, y: 0, width: 300, height: 30 });
   });
 
-  it('fill ocupa o conteúdo quando o Box tem altura fixa', () => {
+  it('fill takes the content when the Box has a fixed height', () => {
     const result = run([root(node('x', 'box-fixed', {}, [node('f', 'filler')]))]);
     expect(boxOf(result, 'f')).toEqual({ x: 0, y: 0, width: 100, height: 100 });
   });
 });
 
-// --- raízes ancoradas, scrim e tela -------------------------------------------------------------
+// --- anchored roots, scrim and screen -------------------------------------------------------------
 
-describe('layoutScreen: raízes ancoradas', () => {
+describe('layoutScreen: anchored roots', () => {
   const anchored = (anchor: LayoutAnchor, margin?: number) =>
     run(
       [
@@ -441,7 +441,7 @@ describe('layoutScreen: raízes ancoradas', () => {
       800,
     );
 
-  it('as raízes ancoradas não entram no fluxo', () => {
+  it('anchored roots do not enter the flow', () => {
     const result = anchored('bottom', 16);
     expect(boxOf(result, 'flow')).toEqual({ x: 0, y: 0, width: 100, height: 40 });
   });
@@ -456,16 +456,16 @@ describe('layoutScreen: raízes ancoradas', () => {
     ['bottom-start', 4, 4, 756],
     ['bottom', 16, 150, 744],
     ['bottom-end', 4, 296, 756],
-  ])('âncora %s com margin %d', (anchor, margin, x, y) => {
+  ])('anchor %s with margin %d', (anchor, margin, x, y) => {
     const result = anchored(anchor, margin);
     expect(boxOf(result, 'a')).toEqual({ x, y, width: 100, height: 40 });
   });
 
-  it('margin padrão é 0', () => {
+  it('default margin is 0', () => {
     expect(boxOf(anchored('top-start'), 'a')).toMatchObject({ x: 0, y: 0 });
   });
 
-  it('fill ocupa a tela menos a margem nos dois lados; hug usa o conteúdo', () => {
+  it('fill takes the screen minus the margin on both sides; hug uses the content', () => {
     const result = run(
       [
         root(node('f', 'filler'), { anchor: 'bottom', margin: 10 }),
@@ -478,7 +478,7 @@ describe('layoutScreen: raízes ancoradas', () => {
     expect(boxOf(result, 'h')).toEqual({ x: 341, y: 784, width: 55, height: 12 });
   });
 
-  it('raiz ancorada container arruma os filhos dentro dela', () => {
+  it('an anchored container root arranges the children inside it', () => {
     const result = run(
       [
         root(
@@ -500,7 +500,7 @@ describe('layoutScreen: raízes ancoradas', () => {
 });
 
 describe('layoutScreen: scrim', () => {
-  it('a película entra antes da raiz, com id #scrim e a tela inteira', () => {
+  it('the scrim comes before the root, with id #scrim and the whole screen', () => {
     const result = run(
       [
         root(node('base', 'fixed')),
@@ -513,22 +513,22 @@ describe('layoutScreen: scrim', () => {
     expect(result.screen.instances[1]).toMatchObject({
       typeId: 'filler',
       box: { x: 0, y: 0, width: 400, height: 800 },
-      values: { tone: 'claro' },
+      values: { tone: 'light' },
     });
     expect(result.screen.instances[1]?.parentId).toBeUndefined();
   });
 
-  it('tipo de película desconhecido: aviso e a raiz continua', () => {
-    const result = run([root(node('modal', 'fixed'), { scrimTypeId: 'nao-existe' })]);
+  it('unknown scrim type: warning and the root continues', () => {
+    const result = run([root(node('modal', 'fixed'), { scrimTypeId: 'does-not-exist' })]);
     expect(ids(result)).toEqual(['modal']);
     expect(result.warnings).toEqual([
-      'modal#scrim: type without a component: nao-existe',
+      'modal#scrim: type without a component: does-not-exist',
     ]);
   });
 });
 
-describe('layoutScreen: limites e avisos', () => {
-  it('minSize limita os tamanhos finais (fill dividido e hug)', () => {
+describe('layoutScreen: limits and warnings', () => {
+  it('minSize limits the final sizes (split fill and hug)', () => {
     const result = run([
       root(
         node('c', 'col-px', {}, [
@@ -539,14 +539,14 @@ describe('layoutScreen: limites e avisos', () => {
         ]),
       ),
     ]);
-    // 100 de altura para 3 fill de mínimo 30: cada um 30 (a soma passa de 100, sem recorte)
+    // 100 of height for 3 fills of minimum 30: 30 each (the sum exceeds 100, without clipping)
     expect(boxOf(result, 'f1')).toMatchObject({ height: 30, width: 300 });
     expect(boxOf(result, 'f3').y).toBe(60);
-    // hug de um componente vazio vira o minSize
+    // hug of an empty component becomes the minSize
     expect(boxOf(result, 'h')).toMatchObject({ width: 80, height: 30 });
   });
 
-  it('os hug medidos sobem para o inteiro seguinte; o resto fica exato', () => {
+  it('measured hugs round up to the next integer; the rest stays exact', () => {
     const result = run([
       root(
         node('c', 'col', {}, [
@@ -555,42 +555,42 @@ describe('layoutScreen: limites e avisos', () => {
         ]),
       ),
     ]);
-    // 3 · 5,5 = 16,5 → 17; 12,5 → 13
+    // 3 · 5.5 = 16.5 → 17; 12.5 → 13
     expect(boxOf(result, 't')).toEqual({ x: 0, y: 0, width: 17, height: 13 });
   });
 
-  it('tipo sem componente: aviso e a subárvore fica de fora', () => {
+  it('type without a component: warning and the subtree is left out', () => {
     const result = run([
       root(
         node('c', 'col', {}, [
           node('ok', 'fixed'),
-          node('x', 'nao-existe', {}, [node('xx', 'fixed')]),
+          node('x', 'does-not-exist', {}, [node('xx', 'fixed')]),
         ]),
       ),
-      root(node('y', 'outro-que-nao-existe')),
+      root(node('y', 'another-that-does-not-exist')),
     ]);
     expect(ids(result)).toEqual(['c', 'ok']);
     expect(result.warnings).toEqual([
-      'x: type without a component: nao-existe',
-      'y: type without a component: outro-que-nao-existe',
+      'x: type without a component: does-not-exist',
+      'y: type without a component: another-that-does-not-exist',
     ]);
   });
 
-  it('filhos num componente sem slot: aviso e os filhos ficam de fora', () => {
+  it('children in a component without a slot: warning and the children are left out', () => {
     const result = run([root(node('p', 'plain', {}, [node('k', 'fixed')]))]);
     expect(ids(result)).toEqual(['p']);
     expect(boxOf(result, 'p')).toEqual({ x: 0, y: 0, width: 80, height: 30 });
     expect(result.warnings).toEqual(['p: children ignored (component without a slot)']);
   });
 
-  it('conteúdo maior que a altura da tela avisa, sem recortar', () => {
+  it('content taller than the screen warns, without clipping', () => {
     const result = run([root(node('a', 'tall')), root(node('b', 'tall'))], 300, 600);
     expect(result.warnings).toEqual(['screen: content taller than the screen height']);
     expect(boxOf(result, 'b')).toMatchObject({ y: 500, height: 500 });
     expect(run([root(node('a', 'tall'))], 300, 600).warnings).toEqual([]);
   });
 
-  it('os avisos não se repetem', () => {
+  it('warnings do not repeat', () => {
     const result = run([
       root(node('c', 'col', {}, [node('f', 'filler-min')])),
       root(node('c2', 'col', {}, [node('f', 'filler-min')])),
@@ -599,8 +599,8 @@ describe('layoutScreen: limites e avisos', () => {
   });
 });
 
-describe('layoutScreen: saída', () => {
-  it('copia os dados da tela e põe cada raiz seguida da subárvore em pré-ordem, com parentId', () => {
+describe('layoutScreen: output', () => {
+  it('copies the screen data and puts each root followed by its subtree in pre-order, with parentId', () => {
     const values = { gap: 3 };
     const result = run([
       root(
@@ -613,7 +613,7 @@ describe('layoutScreen: saída', () => {
     ]);
     expect(result.screen).toMatchObject({
       id: 's',
-      name: 'Tela',
+      name: 'Screen',
       width: 300,
       height: 600,
       background: '#FFF',
@@ -633,7 +633,7 @@ describe('layoutScreen: saída', () => {
     expect(result.screen.instances[0]?.typeId).toBe('col');
   });
 
-  it('a primeira raiz fica por baixo: a ordem de roots é a de desenho', () => {
+  it('the first root stays at the bottom: the order of roots is the drawing order', () => {
     const result = run([
       root(node('top', 'fixed'), { anchor: 'center' }),
       root(node('flow', 'fixed')),
@@ -642,9 +642,9 @@ describe('layoutScreen: saída', () => {
   });
 });
 
-// --- caso de prova: Material 3 ---------------------------------------------------------------------
+// --- proof case: Material 3 ---------------------------------------------------------------------
 
-describe('layoutScreen: cartão do Material 3 dentro de uma coluna', () => {
+describe('layoutScreen: Material 3 card inside a column', () => {
   const card: ComponentFile = {
     ...M3_CARD,
     sizing: { width: 'fill', height: 'hug' },
@@ -670,8 +670,8 @@ describe('layoutScreen: cartão do Material 3 dentro de uma coluna', () => {
     name: 'M3',
     layers: [
       {
-        id: 'componentes',
-        name: 'Componentes',
+        id: 'components',
+        name: 'Components',
         color: '#6750A4',
         annotationTypes: [card, column, button].map((c) => ({
           id: c.id,
@@ -683,20 +683,20 @@ describe('layoutScreen: cartão do Material 3 dentro de uma coluna', () => {
     ],
   });
 
-  const SHORT = 'Texto curto.';
+  const SHORT = 'Short text.';
   const LONG =
-    'Um texto de apoio bem mais longo, que precisa quebrar em várias linhas dentro do cartão para ' +
-    'empurrar a altura dele e a da coluna para baixo, e junto com elas o cartão que vem depois.';
+    'A much longer supporting text, which needs to wrap across several lines inside the card to ' +
+    'push its height and that of the column down, and along with them the card that comes after.';
 
   function screenWith(body: string) {
     return run(
       [
         root(
           node('col', 'm3-column', { spacing: 8, padding: 0 }, [
-            node('card', 'm3-card', { headline: 'Título', subhead: 'Sub', body }, [
+            node('card', 'm3-card', { headline: 'Title', subhead: 'Sub', body }, [
               node('ok', 'm3-button', { label: 'OK' }),
             ]),
-            node('next', 'm3-card', { headline: 'Próximo', body: SHORT }),
+            node('next', 'm3-card', { headline: 'Next', body: SHORT }),
           ]),
         ),
       ],
@@ -706,7 +706,7 @@ describe('layoutScreen: cartão do Material 3 dentro de uma coluna', () => {
     );
   }
 
-  it('a altura do cartão e da coluna crescem com o body, e o irmão desce na mesma medida', () => {
+  it('the height of the card and of the column grow with the body, and the sibling goes down by the same amount', () => {
     const short = screenWith(SHORT);
     const long = screenWith(LONG);
     expect(short.warnings).toEqual([]);
@@ -715,16 +715,16 @@ describe('layoutScreen: cartão do Material 3 dentro de uma coluna', () => {
     const shortCard = boxOf(short, 'card');
     const longCard = boxOf(long, 'card');
     const delta = longCard.height - shortCard.height;
-    // várias linhas a mais (altura de linha do bodyMedium)
+    // several more lines (line height of bodyMedium)
     expect(delta).toBeGreaterThan(40);
 
     expect(boxOf(long, 'col').height - boxOf(short, 'col').height).toBeCloseTo(delta);
     expect(boxOf(long, 'next').y - boxOf(short, 'next').y).toBeCloseTo(delta);
-    // a largura não muda e o cartão seguinte mantém a própria altura
+    // the width does not change and the next card keeps its own height
     expect(longCard.width).toBe(360);
     expect(boxOf(long, 'next').height).toBe(boxOf(short, 'next').height);
 
-    // a coluna é a soma dos dois cartões e do espaçamento
+    // the column is the sum of the two cards and the spacing
     for (const result of [short, long]) {
       expect(boxOf(result, 'col').height).toBeCloseTo(
         boxOf(result, 'card').height + 8 + boxOf(result, 'next').height,
@@ -733,21 +733,21 @@ describe('layoutScreen: cartão do Material 3 dentro de uma coluna', () => {
     }
   });
 
-  it('o botão do slot de ações fica no canto inferior direito do cartão (justify end)', () => {
+  it('the button of the actions slot sits in the bottom right corner of the card (justify end)', () => {
     for (const body of [SHORT, LONG]) {
       const result = screenWith(body);
       const cardBox = boxOf(result, 'card');
       const ok = boxOf(result, 'ok');
       expect(ok.height).toBe(40);
-      // padding 16 do cartão: o botão termina 16 px antes da borda inferior e da direita
+      // card padding 16: the button ends 16 px before the bottom and right edges
       expect(ok.y + ok.height).toBeCloseTo(cardBox.y + cardBox.height - 16);
       expect(ok.x + ok.width).toBeCloseTo(cardBox.x + cardBox.width - 16);
     }
   });
 });
 
-describe('layoutScreen: fill com minSize e âncora (#CR-13, #CR-14)', () => {
-  it('a raiz fill ancorada com margem maior que a tela não fica negativa', () => {
+describe('layoutScreen: fill with minSize and anchor (#CR-13, #CR-14)', () => {
+  it('an anchored fill root with a margin larger than the screen does not go negative', () => {
     const result = run(
       [root(node('f', 'filler'), { anchor: 'center', margin: 500 })],
       400,
@@ -758,9 +758,9 @@ describe('layoutScreen: fill com minSize e âncora (#CR-13, #CR-14)', () => {
     expect(box.height).toBeGreaterThanOrEqual(0);
   });
 
-  it('fill no eixo principal redistribui o excedente quando um filho bate no minSize', () => {
-    // Coluna de 100 px: um filho fill com minSize 80 e outro sem mínimo.
-    // distributeFill: 80 e 20 (soma 100); sem redistribuir seriam 80 e 50.
+  it('fill on the main axis redistributes the excess when a child hits the minSize', () => {
+    // 100 px column: one fill child with minSize 80 and another without a minimum.
+    // distributeFill: 80 and 20 (sum 100); without redistributing it would be 80 and 50.
     const lib = build(
       [
         ...COMPONENTS,
@@ -801,14 +801,14 @@ describe('layoutScreen: fill com minSize e âncora (#CR-13, #CR-14)', () => {
     expect(lib.problems).toEqual([]);
     expect(boxOf(result, 'a').height).toBe(80);
     expect(boxOf(result, 'b').height).toBe(20);
-    // O mesmo no eixo horizontal (row com largura 300).
+    // The same on the horizontal axis (row with width 300).
   });
 });
 
-// --- sizing por expressão (MC2, decisão 9 da #898) --------------------------------------------
+// --- sizing by expression (MC2, decision 9 of #898) --------------------------------------------
 
-describe('layoutScreen: sizing por expressão', () => {
-  /** O `top-app-bar`: a altura pelo `style` (64, 112, 152); o `size` 80 vale se a expressão falhar. */
+describe('layoutScreen: sizing by expression', () => {
+  /** The `top-app-bar`: the height by `style` (64, 112, 152); the `size` 80 applies if the expression fails. */
   const bar: ComponentFile = {
     ...component('bar', {}, { size: { width: 100, height: 80 } }),
     formatVersion: 4,
@@ -832,7 +832,7 @@ describe('layoutScreen: sizing por expressão', () => {
             id: 'bar',
             name: 'bar',
             component: 'components/bar.json',
-            fields: [{ key: 'style', label: 'Estilo', type: 'string', default: 'small' }],
+            fields: [{ key: 'style', label: 'Style', type: 'string', default: 'small' }],
           },
         ],
       },
@@ -861,11 +861,11 @@ describe('layoutScreen: sizing por expressão', () => {
       barLib,
     );
 
-  it('a biblioteca de teste carrega sem problemas', () => {
+  it('the test library loads without problems', () => {
     expect(barLib.problems).toEqual([]);
   });
 
-  it('64, 112 e 152 pelo valor do campo', () => {
+  it('64, 112 and 152 by the field value', () => {
     const result = stack('small', 'medium', 'large');
     expect(result.warnings).toEqual([]);
     expect(boxOf(result, 'b0').height).toBe(64);
@@ -873,8 +873,8 @@ describe('layoutScreen: sizing por expressão', () => {
     expect(boxOf(result, 'b2')).toMatchObject({ y: 176, height: 152 });
   });
 
-  it('valor inválido cai no size daquele eixo e avisa', () => {
-    const result = stack(['nope', -4], ['outro', 'banana']);
+  it('an invalid value falls back to the size of that axis and warns', () => {
+    const result = stack(['nope', -4], ['other', 'banana']);
     expect(boxOf(result, 'b0').height).toBe(80);
     expect(boxOf(result, 'b1').height).toBe(80);
     expect(result.warnings).toContain('invalid value in sizing.height: -4');
@@ -882,7 +882,7 @@ describe('layoutScreen: sizing por expressão', () => {
   });
 });
 
-// --- MC4: quebra de fileira (wrap) na arrumação da tela (decisões 11 e 12 da #898) ---------------
+// --- MC4: row wrapping (wrap) in the screen arrangement (decisions 11 and 12 of #898) ---------------
 
 describe('layoutScreen: wrap', () => {
   function flowContainer(id: string, layout: Record<string, unknown>, sizing: Sizing) {
@@ -954,11 +954,11 @@ describe('layoutScreen: wrap', () => {
   const flowRun = (typeId: string, count: number, width = 320) =>
     run([root(node('c', typeId, {}, kids(count)))], width, 600, wrapLibrary);
 
-  it('a biblioteca com wrap carrega', () => {
+  it('the library with wrap loads', () => {
     expect(wrapLibrary.problems).toEqual([]);
   });
 
-  it('5 filhos de 100 numa row de 320, gap 8, lineGap 12: 3 + 2, e o contêiner mede as duas linhas', () => {
+  it('5 children of 100 in a row of 320, gap 8, lineGap 12: 3 + 2, and the container measures both lines', () => {
     const result = flowRun('flow', 5);
     const x = (i: number) => boxOf(result, `k${i}`).x;
     const y = (i: number) => boxOf(result, `k${i}`).y;
@@ -970,19 +970,19 @@ describe('layoutScreen: wrap', () => {
     expect(result.warnings).toEqual([]);
   });
 
-  it('wrap-reverse: a linha nova fica acima', () => {
+  it('wrap-reverse: the new line goes above', () => {
     const result = flowRun('flow-reverse', 5);
     expect([0, 3].map((i) => boxOf(result, `k${i}`).y)).toEqual([32, 0]);
   });
 
-  it('hug na largura mede uma linha só (max-content)', () => {
-    // Numa tela larga o bastante (o `hug` nunca passa da largura disponível, como o `fit-content`).
+  it('hug on the width measures a single line (max-content)', () => {
+    // On a screen wide enough (the `hug` never exceeds the available width, like `fit-content`).
     const result = flowRun('flow-hug', 5, 600);
     expect(boxOf(result, 'c')).toMatchObject({ width: 532, height: 20 });
     expect(boxOf(result, 'k4').y).toBe(0);
   });
 
-  it('hug com maxPerLine: a largura é a da linha mais cheia e a altura soma as linhas', () => {
+  it('hug with maxPerLine: the width is that of the fullest line and the height sums the lines', () => {
     const result = flowRun('flow-per-line', 5);
     expect(boxOf(result, 'c')).toMatchObject({
       width: 204,
@@ -990,7 +990,7 @@ describe('layoutScreen: wrap', () => {
     });
   });
 
-  it('maxLines 1: os filhos além da primeira linha somem e o motor avisa', () => {
+  it('maxLines 1: the children beyond the first line disappear and the engine warns', () => {
     const result = flowRun('flow-max1', 5);
     expect(ids(result)).toEqual(['c', 'k0', 'k1', 'k2']);
     expect(result.warnings).toContain('2 children outside maxLines: c');
@@ -999,7 +999,7 @@ describe('layoutScreen: wrap', () => {
     );
   });
 
-  it('column com wrap: as colunas se enfileiram da esquerda para a direita', () => {
+  it('column with wrap: the columns line up from left to right', () => {
     const result = run(
       [
         root(
@@ -1015,16 +1015,16 @@ describe('layoutScreen: wrap', () => {
       600,
       wrapLibrary,
     );
-    // A altura é 100: cada coluna leva um filho de 80 (o segundo não cabe: 80 + 4 + 80 > 100).
+    // The height is 100: each column takes one child of 80 (the second does not fit: 80 + 4 + 80 > 100).
     expect([0, 1, 2].map((i) => boxOf(result, `k${i}`).x)).toEqual([0, 70, 140]);
     expect([0, 1, 2].map((i) => boxOf(result, `k${i}`).y)).toEqual([0, 0, 0]);
   });
 });
 
-// --- min-content e max-content no sizing (L4, decisão 17 da #1078) ---------------------------------
+// --- min-content and max-content in sizing (L4, decision 17 of #1078) ---------------------------------
 
-describe('layoutScreen: sizing min-content e max-content', () => {
-  /** Um rótulo (formatVersion 4) de duas palavras: 10 + 1 + 5 caracteres (88 px; a mais larga, 55 px). */
+describe('layoutScreen: sizing min-content and max-content', () => {
+  /** A label (formatVersion 4) of two words: 10 + 1 + 5 characters (88 px; the widest, 55 px). */
   function sentence(id: string, sizing: Sizing) {
     return component(
       id,
@@ -1091,20 +1091,20 @@ describe('layoutScreen: sizing min-content e max-content', () => {
       'b',
     ).width;
 
-  it('a biblioteca de teste carrega sem problemas', () => {
+  it('the test library loads without problems', () => {
     expect(lib.problems).toEqual([]);
   });
 
-  it('max-content não quebra, mesmo numa tela mais estreita que o texto; o hug se limita a ela', () => {
+  it('max-content does not wrap, even on a screen narrower than the text; hug is limited by it', () => {
     expect(widthOf('s-max', 40)).toBeCloseTo(16 * 5.5, 9);
     expect(widthOf('s-hug', 40)).toBe(40);
   });
 
-  it('min-content é a palavra mais larga', () => {
+  it('min-content is the widest word', () => {
     expect(widthOf('s-min', 300)).toBeCloseTo(10 * 5.5, 9);
   });
 
-  it('a altura acompanha a largura: min-content quebra em duas linhas', () => {
+  it('the height follows the width: min-content wraps into two lines', () => {
     const result = run(
       [root(node('c', 'col', {}, [node('b', 's-min', { text: TEXT })]))],
       300,
@@ -1114,7 +1114,7 @@ describe('layoutScreen: sizing min-content e max-content', () => {
     expect(boxOf(result, 'b').height).toBe(24);
   });
 
-  it('um slot com wrap em min-content vale o maior filho, não a soma', () => {
+  it('a slot with wrap in min-content is worth the largest child, not the sum', () => {
     const result = run(
       [
         root(
@@ -1133,7 +1133,7 @@ describe('layoutScreen: sizing min-content e max-content', () => {
     expect(boxOf(result, 'w').width).toBeCloseTo(10 * 5.5, 9);
   });
 
-  it('uma raiz ancorada também mede o sizing intrínseco', () => {
+  it('an anchored root also measures the intrinsic sizing', () => {
     const result = run(
       [root(node('b', 's-max', { text: TEXT }), { anchor: 'top-start' })],
       40,

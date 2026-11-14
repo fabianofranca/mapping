@@ -12,10 +12,10 @@ import {
 } from '../../src/model';
 import { emptyProject } from './fixtures';
 
-// Desempate estável (etapa #549, decisões 1 e 2): nos empates o assentar mantém a relação
-// atual (o pai atual entre as candidatas de mesma área; a cadeia atual entre retângulos
-// iguais), e a ordem do array só decide empate novo. Por isso reordenar irmãs nunca muda pais,
-// nem no assentar seguinte.
+// Stable tie-break (stage #549, decisions 1 and 2): on ties the settle keeps the current
+// relation (the current parent among candidates of the same area; the current chain among equal
+// rectangles), and the array order only decides a new tie. So reordering siblings never changes
+// parents, not even in the next settle.
 
 const rect = (x: number, y: number, width: number, height: number): Rect => ({
   x,
@@ -63,7 +63,7 @@ const parents = (p: Project) =>
 const containerParents = (p: Project) =>
   Object.fromEntries(p.containers.map((c) => [c.id, c.parentId]));
 
-/** Índice da marcação entre as irmãs (mesmo espaço e mesmo pai), na ordem do array. */
+/** Number of siblings of the marking (same space and same parent, itself included), in array order. */
 function siblingCount(p: Project, id: string): number {
   const m = p.markings.find((x) => x.id === id) as Marking;
   return p.markings.filter(
@@ -77,8 +77,8 @@ function siblingCount(p: Project, id: string): number {
 
 const C = container('C', 100, { x: 0, y: 0, scale: 1 });
 
-describe('desempate estável: reordenar não muda pais', () => {
-  it('retângulos iguais: a de fora continua a de fora depois de reordenar e assentar', () => {
+describe('stable tie-break: reordering does not change parents', () => {
+  it('equal rectangles: the outer one stays the outer one after reordering and settling', () => {
     const start = project(
       [C],
       [
@@ -93,7 +93,7 @@ describe('desempate estável: reordenar não muda pais', () => {
     expect(parents(settleHierarchy(reordered))).toEqual({ A: null, B: 'A', D: null });
   });
 
-  it('candidatas de mesma área: reordenar as duas não troca o pai da pequena', () => {
+  it('candidates of the same area: reordering the two does not change the parent of the small one', () => {
     const start = project(
       [C],
       [
@@ -108,7 +108,7 @@ describe('desempate estável: reordenar não muda pais', () => {
     expect(parents(settleHierarchy(reordered))).toEqual(before);
   });
 
-  it('pai do container: reordenar duas marcações do canvas de mesma área não troca o pai dele', () => {
+  it('container parent: reordering two canvas markings of the same area does not change its parent', () => {
     const inner = container('I', 100, { x: 100, y: 100, scale: 1 });
     const start = project(
       [inner],
@@ -120,7 +120,7 @@ describe('desempate estável: reordenar não muda pais', () => {
     expect(containerParents(settleHierarchy(reordered))).toEqual({ I: 'V' });
   });
 
-  it('empate novo continua pelo array: o Envolver de quem preenche o container dá a nova como mãe', () => {
+  it('a new tie still follows the array: Wrap of the one that fills the container makes the new one the parent', () => {
     let p = project([C], []);
     p = createMarking(p, { id: 'M1', containerId: 'C', rect: rect(0, 0, 50, 50) });
     p = createMarking(p, { id: 'M2', containerId: 'C', rect: rect(0, 0, 100, 100) });
@@ -128,20 +128,20 @@ describe('desempate estável: reordenar não muda pais', () => {
     expect(parents(p)).toMatchObject({ W: null, M2: 'W', M1: 'M2' });
   });
 
-  it('Envolver a de dentro de um par igual reordenado: a nova fica entre as duas', () => {
+  it('Wrap the inner one of a reordered equal pair: the new one sits between the two', () => {
     let p = project([C], []);
     p = createMarking(p, { id: 'O', containerId: 'C', rect: rect(0, 0, 50, 100) });
     p = createMarking(p, { id: 'M', containerId: 'C', rect: rect(0, 0, 50, 100) });
     p = createMarking(p, { id: 'D', containerId: 'C', rect: rect(50, 0, 50, 100) });
-    // A de fora (O) passa para depois da de dentro (M) no array; os pais não mudam.
+    // The outer one (O) moves after the inner one (M) in the array; the parents do not change.
     p = reorderMarking(p, 'O', 1);
     expect(parents(p)).toEqual({ D: null, M: 'O', O: null });
     p = wrapItems(p, { id: 'W', items: [{ kind: 'marking', id: 'M' }] });
     expect(parents(p)).toEqual({ D: null, W: 'O', M: 'W', O: null });
   });
 
-  it('uma marcação nova com o mesmo retângulo de uma cadeia entra no lugar que o array dá', () => {
-    // Cadeia A › B › D (mesmo retângulo), com A depois de B no array por uma reordenação.
+  it('a new marking with the same rectangle as a chain goes where the array puts it', () => {
+    // Chain A › B › D (same rectangle), with A after B in the array by a reorder.
     const chain = project(
       [C],
       [
@@ -155,7 +155,7 @@ describe('desempate estável: reordenar não muda pais', () => {
       ...chain,
       markings: [chain.markings[1], chain.markings[0], chain.markings[2]] as Marking[],
     };
-    // N entra entre B e D no array: livres ao mesmo tempo que D só depois de B.
+    // N goes between B and D in the array: free at the same time as D only after B.
     const withNew: Project = {
       ...moved,
       markings: [
@@ -167,7 +167,7 @@ describe('desempate estável: reordenar não muda pais', () => {
     };
     const settled = settleHierarchy(withNew);
     expect(parents(settled)).toEqual({ A: null, B: 'A', N: 'B', D: 'N' });
-    // N antes de todas no array: vira a de fora.
+    // N before all in the array: becomes the outer one.
     const first: Project = {
       ...moved,
       markings: [mk('N', 'C', rect(0, 0, 50, 50)), ...moved.markings],
@@ -175,7 +175,7 @@ describe('desempate estável: reordenar não muda pais', () => {
     expect(parents(settleHierarchy(first))).toEqual({ N: null, A: 'N', B: 'A', D: 'B' });
   });
 
-  it('parentId em ciclo (arquivo inválido) vira uma cadeia sem ciclo', () => {
+  it('parentId in a cycle (invalid file) becomes a chain without a cycle', () => {
     const a = { ...mk('A', 'C', rect(0, 0, 50, 50)), parentId: 'B' };
     const b = { ...mk('B', 'C', rect(0, 0, 50, 50)), parentId: 'A' };
     const settled = settleHierarchy({
@@ -188,9 +188,9 @@ describe('desempate estável: reordenar não muda pais', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Propriedade (decisão 2): retângulos de uma grade pequena forçam os dois tipos de empate.
+// Property (decision 2): rectangles on a small grid force both kinds of tie.
 
-/** Gerador congruente linear: semente fixa, resultado repetível. */
+/** Linear congruential generator: fixed seed, repeatable result. */
 function rng(seed: number): () => number {
   let s = seed >>> 0;
   return () => {
@@ -202,7 +202,7 @@ function rng(seed: number): () => number {
 const pick = <T>(r: () => number, xs: readonly T[]): T =>
   xs[Math.floor(r() * xs.length)] as T;
 
-/** Container 100×100 em (100, 100) no canvas, com marcações dentro e do canvas em volta. */
+/** A 100×100 container at (100, 100) on the canvas, with markings inside and canvas ones around it. */
 function randomProject(r: () => number, id: number): Project {
   const space = container('C', 100, { x: 100, y: 100, scale: 1 });
   const markings: Marking[] = [];
@@ -239,8 +239,8 @@ function hasCycle(p: Project): boolean {
   return false;
 }
 
-describe('desempate estável: propriedade com semente fixa', () => {
-  it('qualquer sequência de reorderMarking seguida de settleHierarchy dá os mesmos pais', () => {
+describe('stable tie-break: property with a fixed seed', () => {
+  it('any sequence of reorderMarking followed by settleHierarchy gives the same parents', () => {
     const r = rng(549);
     for (let n = 0; n < 400; n++) {
       const start = randomProject(r, n);
@@ -255,8 +255,8 @@ describe('desempate estável: propriedade com semente fixa', () => {
         if (r() < 0.3) p = settleHierarchy(p);
       }
       const settled = settleHierarchy(p);
-      expect(parents(settled), `caso ${n}`).toEqual(parents(start));
-      expect(containerParents(settled), `caso ${n}`).toEqual(containerParents(start));
+      expect(parents(settled), `case ${n}`).toEqual(parents(start));
+      expect(containerParents(settled), `case ${n}`).toEqual(containerParents(start));
       expect(settleHierarchy(settled)).toBe(settled);
       expect(hasCycle(settled)).toBe(false);
     }

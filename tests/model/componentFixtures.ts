@@ -9,8 +9,8 @@ import {
 } from '../../src/model';
 import { emptyProject } from './fixtures';
 
-// Biblioteca pequena escrita no próprio teste: um tipo de folha com campos de todos os tipos,
-// uma folha que não cabe e containers (linha, coluna, `hug`, `stretch`, `space-between`, sem layout).
+// Small library written in the test itself: a leaf type with fields of every type,
+// a leaf that does not fit and containers (row, column, `hug`, `stretch`, `space-between`, no layout).
 
 export const SPEC_FILE = 'specs/test/test.spec.json';
 export const SPEC_ID = 'test';
@@ -39,7 +39,7 @@ interface SlotOptions {
   readonly flow?: 'row' | 'column' | 'none';
   readonly align?: string;
   readonly justify?: string;
-  /** Distância do slot às bordas do container (âncoras nos quatro lados). */
+  /** Distance from the slot to the container edges (anchors on the four sides). */
   readonly inset?: number;
 }
 
@@ -82,7 +82,7 @@ function container(id: string, size: Json, slot: SlotOptions, extra: Json = {}):
   };
 }
 
-/** Container com slot em `layout.reverse` (formato 4), para trocar um tipo de `COMPONENTS` no catálogo. */
+/** Container with a slot in `layout.reverse` (format 4), to replace a type of `COMPONENTS` in the catalog. */
 export function reversedContainer(
   id: string,
   flow: 'row' | 'column',
@@ -93,7 +93,7 @@ export function reversedContainer(
     template: { children: { layout: Json }[] };
   };
   const slot = base.template.children[0];
-  if (slot === undefined) throw new Error('sem slot');
+  if (slot === undefined) throw new Error('no slot');
   slot.layout = { ...slot.layout, reverse: true };
   return { ...base, formatVersion: 4 };
 }
@@ -119,7 +119,7 @@ export const COMPONENTS: Record<string, Json> = {
       preview: { label: 'Preview', count: 3, kind: 'b' },
     },
   ),
-  // Duas caixas de 80 numa linha de 100: o motor avisa "content larger than the box".
+  // Two boxes of 80 in a row of 100: the engine warns "content larger than the box".
   wide: leaf(
     'wide',
     { width: 100, height: 40 },
@@ -174,7 +174,7 @@ export const COMPONENTS: Record<string, Json> = {
   box: container('box', { width: 300, height: 200 }, { flow: 'none' }),
 };
 
-/** Tipos da especialização, na ordem; o id do tipo é o do componente. */
+/** Types of the specialization, in order; the type id is the component's. */
 const TYPE_FIELDS: Record<string, unknown[]> = {
   text: [
     { key: 'label', type: 'string', default: 'Hello', tags: ['name'] },
@@ -197,28 +197,28 @@ export const SPEC_JSON = {
   format: 'mapping-spec',
   formatVersion: 4,
   id: SPEC_ID,
-  name: 'Teste',
+  name: 'Test',
   version: 1,
   layers: [
     {
-      id: 'componentes',
-      name: 'Componentes',
+      id: 'components',
+      name: 'Components',
       color: '#6750A4',
       annotationTypes: Object.keys(COMPONENTS).map((id) => ({
         id,
-        name: `Tipo ${id}`,
+        name: `Type ${id}`,
         component: `components/${id}.json`,
         fields: TYPE_FIELDS[id] ?? CONTAINER_FIELDS,
       })),
     },
     {
-      id: 'outra',
-      name: 'Outra',
+      id: 'other',
+      name: 'Other',
       color: '#1E88E5',
       annotationTypes: [
         {
           id: 'plain',
-          name: 'Simples',
+          name: 'Simple',
           fields: [{ key: 'note', type: 'string' }],
         },
       ],
@@ -232,7 +232,7 @@ export function testSpec(): Spec {
   return parsed.spec;
 }
 
-/** Texto de cada arquivo do pacote, pelo caminho da raiz do projeto. */
+/** Text of each file in the package, by the path from the project root. */
 export function packageTexts(overrides: Record<string, string | null> = {}) {
   const files = new Map<string, string>();
   for (const [id, component] of Object.entries(COMPONENTS)) {
@@ -265,7 +265,7 @@ export function newId(prefix = 'id'): string {
   return `${prefix}${counter}`;
 }
 
-/** Projeto com a especialização aplicada (camadas `componentes` e `outra`) e uma imagem I1 1000×800. */
+/** Project with the specialization applied (layers `components` and `other`) and an I1 image of 1000×800. */
 export function componentProject(): Project {
   let p = emptyProject();
   p = applySpecialization(p, testSpec(), {
@@ -275,17 +275,22 @@ export function componentProject(): Project {
     })(),
     packageSpecName: 'test.spec.json',
   });
-  return addContainer(p, { id: 'I1', file: 'images/tela.png', width: 1000, height: 800 });
+  return addContainer(p, {
+    id: 'I1',
+    file: 'images/screen.png',
+    width: 1000,
+    height: 800,
+  });
 }
 
 /**
- * Catálogo de teste em que o slot de `column` e `columnhug` leva `gap` e `padding` como `$token`
- * (`space-2`/`space-4`), com tabelas diferentes por modo: `light` (o primeiro) 4/10, `dark` 12/20.
+ * Test catalog in which the slot of `column` and `columnhug` carries `gap` and `padding` as `$token`
+ * (`space-2`/`space-4`), with different tables per mode: `light` (the first) 4/10, `dark` 12/20.
  */
 export function tokenSlotCatalog(): ComponentCatalog {
   const base = testCatalog();
   const loaded = base.get(SPEC_ID);
-  if (loaded === undefined) throw new Error('sem especialização de teste');
+  if (loaded === undefined) throw new Error('no test specialization');
   const byType = new Map(loaded.byType);
   const light = { 'space-2': 4, 'space-4': 10 };
   const dark = { 'space-2': 12, 'space-4': 20 };
@@ -315,8 +320,8 @@ export function tokenSlotCatalog(): ComponentCatalog {
 }
 
 /**
- * Container (`row` ou `column`) cujo slot quebra em linhas (`layout.wrap`, formato 4), para trocar
- * um tipo de `COMPONENTS` no catálogo. As chaves de `wrap` entram no `layout` do slot.
+ * Container (`row` or `column`) whose slot breaks into lines (`layout.wrap`, format 4), to replace
+ * a type of `COMPONENTS` in the catalog. The `wrap` keys go into the slot's `layout`.
  */
 export function wrappedContainer(
   id: string,
@@ -328,7 +333,7 @@ export function wrappedContainer(
     template: { children: { layout: Json }[] };
   };
   const slot = base.template.children[0];
-  if (slot === undefined) throw new Error('sem slot');
+  if (slot === undefined) throw new Error('no slot');
   slot.layout = { ...slot.layout, ...wrap };
   return { ...base, formatVersion: 4 };
 }

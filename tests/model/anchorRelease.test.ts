@@ -1,5 +1,5 @@
-// Âncora solta quando, ao fim do assentar, a marcação e o alvo ficam em espaços diferentes
-// (a regra "âncora exige o mesmo espaço"). Cobre `settleHierarchy` e `settleFrom` recortado.
+// Anchor released when, at the end of settling, the marking and the target end up in different spaces
+// (the rule "anchor requires the same space"). Covers `settleHierarchy` and the clipped `settleFrom`.
 import { describe, expect, it } from 'vitest';
 import {
   addContainer,
@@ -37,8 +37,8 @@ const get = (p: Project, id: string) => p.markings.find((m) => m.id === id)!;
 const anchorErrors = (p: Project) =>
   validateProject(p).filter((e) => e.code.startsWith('anchor'));
 
-describe('soltar a âncora que ficou noutro espaço', () => {
-  it('mover a ancorada para fora do container solta a relação (e só ela)', () => {
+describe('releasing the anchor that ended up in another space', () => {
+  it('moving the anchored marking out of the container releases the relation (and only it)', () => {
     const p = moveMarking(base(), 'B', 5000, 5000);
     expect(get(p, 'B').containerId).toBeNull();
     expect(get(p, 'B').anchor ?? null).toBeNull();
@@ -47,7 +47,7 @@ describe('soltar a âncora que ficou noutro espaço', () => {
     expect(anchorErrors(p)).toEqual([]);
   });
 
-  it('setMarkingSpace para o canvas solta a relação', () => {
+  it('setMarkingSpace to the canvas releases the relation', () => {
     const p = setMarkingSpace(base(), 'B', null, {
       x: 9000,
       y: 9000,
@@ -58,7 +58,7 @@ describe('soltar a âncora que ficou noutro espaço', () => {
     expect(anchorErrors(p)).toEqual([]);
   });
 
-  it('o container passa a cobrir só uma das duas do canvas: solta', () => {
+  it('the container now covers only one of the two canvas markings: releases', () => {
     const p = moveContainer(base(), 'I1', -1400, -600);
     expect(get(p, 'F').containerId).toBe('I1');
     expect(get(p, 'G').containerId).toBeNull();
@@ -66,7 +66,7 @@ describe('soltar a âncora que ficou noutro espaço', () => {
     expect(anchorErrors(p)).toEqual([]);
   });
 
-  it('o alvo deixa o espaço sem a ancorada (settleHierarchy): solta a ancorada', () => {
+  it('the target leaves the space without the anchored marking (settleHierarchy): releases the anchored marking', () => {
     const p0 = base();
     const moved = {
       ...p0,
@@ -79,7 +79,7 @@ describe('soltar a âncora que ficou noutro espaço', () => {
     expect(anchorErrors(p)).toEqual([]);
   });
 
-  it('settleFrom recortado dá o mesmo resultado que o assentar inteiro', () => {
+  it('clipped settleFrom gives the same result as the full settle', () => {
     const before = base();
     const next = {
       ...before,
@@ -101,7 +101,7 @@ describe('soltar a âncora que ficou noutro espaço', () => {
     );
   });
 
-  it('sem nada a soltar devolve o mesmo objeto', () => {
+  it('with nothing to release returns the same object', () => {
     const p = base();
     expect(settleHierarchy(p)).toBe(p);
     expect(settleFrom(p, p)).toBe(p);

@@ -1,4 +1,4 @@
-// Laboratório Componentes: avaliação das expressões contra os valores dos campos.
+// Components Lab: evaluation of the expressions against the field values.
 import { describe, expect, it } from 'vitest';
 import type { Condition, Expr } from '../../../src/model/components/componentFormat';
 import {
@@ -15,19 +15,20 @@ import {
 } from '../../../src/model/components/expressions';
 
 describe('isEmpty e truthy', () => {
-  it('vazio: null, undefined e texto só com espaços', () => {
+  it('empty: null, undefined and text with only spaces', () => {
     expect(isEmpty(null)).toBe(true);
     expect(isEmpty(undefined)).toBe(true);
     expect(isEmpty('')).toBe(true);
     expect(isEmpty('   ')).toBe(true);
-    expect(isEmpty('sim')).toBe(false);
+    expect(isEmpty('yes')).toBe(false);
     expect(isEmpty(0)).toBe(false);
   });
 
-  it('truthy: texto afirmativo e número diferente de zero', () => {
-    expect(truthy('sim')).toBe(true);
-    expect(truthy('Primário')).toBe(true);
+  it('truthy: affirmative text and a non-zero number', () => {
+    expect(truthy('yes')).toBe(true);
+    expect(truthy('Primary')).toBe(true);
     expect(truthy(3)).toBe(true);
+    // pt-BR kept: 'não' is in the engine's falsy set (FALSY_TEXT in src/model/components/expressions.ts)
     expect(truthy('não')).toBe(false);
     expect(truthy('nao')).toBe(false);
     expect(truthy('NAO')).toBe(false);
@@ -43,16 +44,16 @@ describe('isEmpty e truthy', () => {
 });
 
 describe('evaluateCondition', () => {
-  const values = { on: 'sim', off: 'não', variant: 'primary', count: 2, empty: '' };
+  const values = { on: 'yes', off: 'no', variant: 'primary', count: 2, empty: '' };
 
-  it('$field: campo verdadeiro', () => {
+  it('$field: truthy field', () => {
     expect(evaluateCondition({ $field: 'on' }, values)).toBe(true);
     expect(evaluateCondition({ $field: 'off' }, values)).toBe(false);
     expect(evaluateCondition({ $field: 'empty' }, values)).toBe(false);
     expect(evaluateCondition({ $field: 'missing' }, values)).toBe(false);
   });
 
-  it('$eq: compara como texto, vazio nunca é igual', () => {
+  it('$eq: compares as text, empty is never equal', () => {
     expect(evaluateCondition({ $eq: ['variant', 'primary'] }, values)).toBe(true);
     expect(evaluateCondition({ $eq: ['variant', 'secondary'] }, values)).toBe(false);
     expect(evaluateCondition({ $eq: ['count', 2] }, values)).toBe(true);
@@ -61,13 +62,13 @@ describe('evaluateCondition', () => {
     expect(evaluateCondition({ $eq: ['missing', 'x'] }, values)).toBe(false);
   });
 
-  it('$has: campo preenchido, mesmo que "não"', () => {
+  it('$has: filled field, even if "no"', () => {
     expect(evaluateCondition({ $has: 'off' }, values)).toBe(true);
     expect(evaluateCondition({ $has: 'empty' }, values)).toBe(false);
     expect(evaluateCondition({ $has: 'missing' }, values)).toBe(false);
   });
 
-  it('$not, $and e $or', () => {
+  it('$not, $and and $or', () => {
     const on: Condition = { $field: 'on' };
     const off: Condition = { $field: 'off' };
     expect(evaluateCondition({ $not: on }, values)).toBe(false);
@@ -80,7 +81,7 @@ describe('evaluateCondition', () => {
     expect(evaluateCondition({ $or: [] }, values)).toBe(false);
   });
 
-  it('condições aninhadas', () => {
+  it('nested conditions', () => {
     const condition: Condition = {
       $and: [
         { $not: { $field: 'off' } },
@@ -92,7 +93,7 @@ describe('evaluateCondition', () => {
 });
 
 describe('evaluate', () => {
-  it('literais voltam como estão', () => {
+  it('literals come back as they are', () => {
     expect(evaluate('abc', {}, 'x')).toBe('abc');
     expect(evaluate(12, {}, 0)).toBe(12);
     expect(evaluate(false, {}, true)).toBe(false);
@@ -105,8 +106,8 @@ describe('evaluate', () => {
     });
   });
 
-  it('$field com e sem default', () => {
-    expect(evaluate({ $field: 'label' }, { label: 'Salvar' }, '?')).toBe('Salvar');
+  it('$field with and without default', () => {
+    expect(evaluate({ $field: 'label' }, { label: 'Save' }, '?')).toBe('Save');
     expect(evaluate({ $field: 'size' }, { size: 14 }, 0)).toBe(14);
     expect(evaluate({ $field: 'label' }, {}, '?')).toBe('?');
     expect(evaluate({ $field: 'label' }, { label: '  ' }, '?')).toBe('?');
@@ -114,16 +115,16 @@ describe('evaluate', () => {
     expect(evaluate({ $field: 'label', default: 'OK' }, { label: 'Ir' }, '?')).toBe('Ir');
   });
 
-  it('$if com e sem else', () => {
+  it('$if with and without else', () => {
     const withElse: Expr<string> = { $if: { $field: 'on' }, then: 'A', else: 'B' };
-    expect(evaluate(withElse, { on: 'sim' }, '-')).toBe('A');
-    expect(evaluate(withElse, { on: 'não' }, '-')).toBe('B');
+    expect(evaluate(withElse, { on: 'yes' }, '-')).toBe('A');
+    expect(evaluate(withElse, { on: 'no' }, '-')).toBe('B');
     const noElse: Expr<string> = { $if: { $field: 'on' }, then: 'A' };
-    expect(evaluate(noElse, { on: 'sim' }, '-')).toBe('A');
-    expect(evaluate(noElse, { on: 'não' }, '-')).toBe('-');
+    expect(evaluate(noElse, { on: 'yes' }, '-')).toBe('A');
+    expect(evaluate(noElse, { on: 'no' }, '-')).toBe('-');
   });
 
-  it('$switch com caso, default e campo ausente', () => {
+  it('$switch with case, default and missing field', () => {
     const expr: Expr<string> = {
       $switch: 'variant',
       cases: { primary: '#0a84ff', danger: '#ff3b30' },
@@ -138,7 +139,7 @@ describe('evaluate', () => {
     expect(evaluate(noDefault, {}, '#000000')).toBe('#000000');
   });
 
-  it('$switch com valor herdado de Object.prototype cai no default', () => {
+  it('$switch with a value inherited from Object.prototype falls to the default', () => {
     const expr: Expr<string> = { $switch: 'v', cases: { a: 'A' }, default: 'D' };
     for (const key of ['toString', 'constructor', '__proto__', 'hasOwnProperty'])
       expect(evaluate(expr, { v: key }, '-')).toBe('D');
@@ -146,7 +147,7 @@ describe('evaluate', () => {
     expect(evaluate(noDefault, { v: 'toString' }, '-')).toBe('-');
   });
 
-  it('expressões aninhadas', () => {
+  it('nested expressions', () => {
     const expr: Expr<string> = {
       $if: { $has: 'variant' },
       then: {
@@ -161,7 +162,7 @@ describe('evaluate', () => {
     expect(evaluate(expr, {}, '-')).toBe('nenhum');
   });
 
-  it('$concat junta partes, convertendo números', () => {
+  it('$concat joins parts, converting numbers', () => {
     const expr: Expr<string> = {
       $concat: [
         'Total: ',
@@ -178,19 +179,19 @@ describe('evaluate', () => {
 });
 
 describe('evaluateText', () => {
-  it('texto, número e vazio com fallback', () => {
-    expect(evaluateText('Oi', {})).toBe('Oi');
+  it('text, number and empty with fallback', () => {
+    expect(evaluateText('Hi', {})).toBe('Hi');
     expect(evaluateText(42, {})).toBe('42');
     expect(evaluateText({ $field: 'n' }, { n: 7 })).toBe('7');
     expect(evaluateText({ $field: 'label' }, {})).toBe('');
-    expect(evaluateText({ $field: 'label' }, {}, 'Rótulo')).toBe('Rótulo');
-    expect(evaluateText('', {}, 'Rótulo')).toBe('Rótulo');
+    expect(evaluateText({ $field: 'label' }, {}, 'Label')).toBe('Label');
+    expect(evaluateText('', {}, 'Label')).toBe('Label');
     expect(evaluateText({ $concat: ['a', 1] }, {})).toBe('a1');
   });
 });
 
 describe('referencedFields', () => {
-  it('coleta campos de expressões e condições em um template aninhado', () => {
+  it('collects fields from expressions and conditions in a nested template', () => {
     const template = {
       type: 'frame',
       visible: { $has: 'shown' },
@@ -220,13 +221,13 @@ describe('referencedFields', () => {
     ]);
   });
 
-  it('literais não citam campos', () => {
+  it('literals do not cite fields', () => {
     expect(referencedFields('x').size).toBe(0);
     expect(referencedFields(null).size).toBe(0);
     expect(referencedFields({ type: 'rect', width: 10 }).size).toBe(0);
   });
 
-  it('acumula no conjunto recebido', () => {
+  it('accumulates into the received set', () => {
     const out = new Set(['a']);
     referencedFields({ $field: 'b' }, out);
     expect([...out]).toEqual(['a', 'b']);
@@ -234,14 +235,14 @@ describe('referencedFields', () => {
 });
 
 describe('evaluateBoolean', () => {
-  const values = { on: 'sim', off: 'não', label: 'Oi', variant: 'primary' };
+  const values = { on: 'yes', off: 'no', label: 'Hi', variant: 'primary' };
 
   it('literal', () => {
     expect(evaluateBoolean(true, {}, false)).toBe(true);
     expect(evaluateBoolean(false, {}, true)).toBe(false);
   });
 
-  it('condição direta', () => {
+  it('direct condition', () => {
     expect(evaluateBoolean({ $has: 'label' }, values, false)).toBe(true);
     expect(evaluateBoolean({ $has: 'missing' }, values, true)).toBe(false);
     expect(evaluateBoolean({ $not: { $field: 'on' } }, values, true)).toBe(false);
@@ -251,14 +252,14 @@ describe('evaluateBoolean', () => {
     ).toBe(false);
   });
 
-  it('$field por veracidade: "sim" e "não"', () => {
+  it('$field by truthiness: "yes" and "no"', () => {
     expect(evaluateBoolean({ $field: 'on' }, values, false)).toBe(true);
     expect(evaluateBoolean({ $field: 'off' }, values, true)).toBe(false);
     expect(evaluateBoolean({ $field: 'missing' }, values, true)).toBe(false);
     expect(evaluateBoolean({ $field: 'label' }, values, false)).toBe(true);
   });
 
-  it('$if com ramos booleanos', () => {
+  it('$if with boolean branches', () => {
     const expr = { $if: { $has: 'label' }, then: true, else: false };
     expect(evaluateBoolean(expr, values, false)).toBe(true);
     expect(evaluateBoolean(expr, {}, true)).toBe(false);
@@ -267,7 +268,7 @@ describe('evaluateBoolean', () => {
     expect(evaluateBoolean(noElse, values, false)).toBe(false);
   });
 
-  it('$switch com ramos booleanos', () => {
+  it('$switch with boolean branches', () => {
     const expr = { $switch: 'variant', cases: { primary: true }, default: false };
     expect(evaluateBoolean(expr, values, false)).toBe(true);
     expect(evaluateBoolean(expr, { variant: 'x' }, true)).toBe(false);
@@ -275,31 +276,31 @@ describe('evaluateBoolean', () => {
 });
 
 describe('evaluateBoolean com $field e default (#951)', () => {
-  it('campo vazio usa o default; preenchido usa a veracidade; sem default, falso', () => {
+  it('empty field uses the default; filled uses the truthiness; without default, false', () => {
     expect(evaluateBoolean({ $field: 'f', default: true }, {}, false)).toBe(true);
     expect(evaluateBoolean({ $field: 'f', default: false }, {}, true)).toBe(false);
     expect(evaluateBoolean({ $field: 'f', default: true }, { f: '  ' }, false)).toBe(
       true,
     );
-    expect(evaluateBoolean({ $field: 'f', default: true }, { f: 'não' }, false)).toBe(
+    expect(evaluateBoolean({ $field: 'f', default: true }, { f: 'no' }, false)).toBe(
       false,
     );
-    expect(evaluateBoolean({ $field: 'f', default: false }, { f: 'sim' }, false)).toBe(
+    expect(evaluateBoolean({ $field: 'f', default: false }, { f: 'yes' }, false)).toBe(
       true,
     );
     expect(evaluateBoolean({ $field: 'f' }, {}, true)).toBe(false);
-    expect(evaluateBoolean({ $field: 'f' }, { f: 'sim' }, false)).toBe(true);
+    expect(evaluateBoolean({ $field: 'f' }, { f: 'yes' }, false)).toBe(true);
   });
 });
 
 // ---------------------------------------------------------------------------------------
-// Etapa "expressões que calculam" (EX1): operações numéricas, comparações, número no texto
+// Stage "expressions that compute" (EX1): numeric operations, comparisons, number in the text
 // ---------------------------------------------------------------------------------------
 
 const num = (expr: unknown, values: Record<string, string | number | null> = {}) =>
   evaluate<number | undefined>(expr as Expr<number | undefined>, values, undefined);
 
-describe('operações numéricas', () => {
+describe('numeric operations', () => {
   it('$add, $sub, $mul, $div', () => {
     expect(num({ $add: [1, 2, 3] })).toBe(6);
     expect(num({ $sub: [10, 4] })).toBe(6);
@@ -307,14 +308,14 @@ describe('operações numéricas', () => {
     expect(num({ $div: [9, 4] })).toBe(2.25);
   });
 
-  it('$mod tem o sinal do divisor', () => {
+  it('$mod has the sign of the divisor', () => {
     expect(num({ $mod: [7, 3] })).toBe(1);
     expect(num({ $mod: [-1, 12] })).toBe(11);
     expect(num({ $mod: [7, -3] })).toBe(-2);
     expect(num({ $mod: [-7, -3] })).toBe(-1);
   });
 
-  it('$round, $floor, $ceil e $abs', () => {
+  it('$round, $floor, $ceil and $abs', () => {
     expect(num({ $round: 2.5 })).toBe(3);
     expect(num({ $round: 2.4 })).toBe(2);
     expect(num({ $floor: -1.2 })).toBe(-2);
@@ -322,7 +323,7 @@ describe('operações numéricas', () => {
     expect(num({ $abs: -4.5 })).toBe(4.5);
   });
 
-  it('$min, $max e $clamp', () => {
+  it('$min, $max and $clamp', () => {
     expect(num({ $min: [3, 1, 2] })).toBe(1);
     expect(num({ $max: [3, 1, 2] })).toBe(3);
     expect(num({ $clamp: [5, 0, 3] })).toBe(3);
@@ -330,7 +331,7 @@ describe('operações numéricas', () => {
     expect(num({ $clamp: [2, 0, 3] })).toBe(2);
   });
 
-  it('$sin e $cos em graus', () => {
+  it('$sin and $cos in degrees', () => {
     expect(num({ $sin: 0 })).toBe(0);
     expect(num({ $sin: 90 })).toBe(1);
     expect(num({ $cos: 90 })).toBe(0);
@@ -338,8 +339,8 @@ describe('operações numéricas', () => {
     expect(num({ $sin: 30 })).toBeCloseTo(0.5, 12);
   });
 
-  it('operações aninhadas e com $field, $if e $switch como operando', () => {
-    const values = { p: 0.37, kind: 'b', on: 'sim' };
+  it('nested operations and with $field, $if and $switch as operand', () => {
+    const values = { p: 0.37, kind: 'b', on: 'yes' };
     expect(num({ $mul: [{ $field: 'p' }, 200] }, values)).toBeCloseTo(74, 10);
     expect(num({ $add: [{ $mul: [2, 3] }, { $sub: [10, { $abs: -4 }] }] })).toBe(12);
     expect(num({ $add: [{ $if: { $field: 'on' }, then: 10, else: 1 }, 1] }, values)).toBe(
@@ -351,7 +352,7 @@ describe('operações numéricas', () => {
     expect(num({ $add: [{ $field: 'q', default: 4 }, 1] }, values)).toBe(5);
   });
 
-  it('operando vazio, texto não numérico ou com vírgula: sem valor (vale o fallback)', () => {
+  it('empty operand, non-numeric text or with a comma: no value (the fallback applies)', () => {
     expect(num({ $add: [{ $field: 'a' }, 1] }, { a: null })).toBeUndefined();
     expect(num({ $add: [{ $field: 'a' }, 1] }, {})).toBeUndefined();
     expect(num({ $mul: [{ $field: 'a' }, 200] }, { a: 'abc' })).toBeUndefined();
@@ -361,48 +362,48 @@ describe('operações numéricas', () => {
     expect(num({ $abs: { $field: 'a' } }, { a: 'x' })).toBeUndefined();
   });
 
-  it('texto numérico vale, com espaços aparados', () => {
+  it('numeric text applies, with trimmed spaces', () => {
     expect(num({ $mul: [{ $field: 'a' }, 200] }, { a: ' 0.5 ' })).toBe(100);
     expect(num({ $add: [{ $field: 'a' }, 1] }, { a: '3' })).toBe(4);
   });
 
-  it('divisão e resto por zero: sem valor', () => {
+  it('division and remainder by zero: no value', () => {
     expect(num({ $div: [1, 0] })).toBeUndefined();
     expect(num({ $mod: [1, 0] })).toBeUndefined();
     expect(num({ $div: [1, { $field: 'z' }] }, { z: 0 })).toBeUndefined();
   });
 
-  it('um operando sem valor faz a operação aninhada inteira ficar sem valor', () => {
+  it('an operand without a value makes the whole nested operation have no value', () => {
     expect(num({ $add: [1, { $div: [1, 0] }] })).toBeUndefined();
   });
 });
 
-describe('número no texto', () => {
-  it('0.1 + 0.2 no $concat vira 0.3', () => {
+describe('number in the text', () => {
+  it('0.1 + 0.2 in $concat becomes 0.3', () => {
     expect(evaluateText({ $concat: [{ $add: [0.1, 0.2] }] }, {})).toBe('0.3');
   });
 
-  it('não inteiro sai com até 6 casas, sem zeros à direita; inteiro como hoje', () => {
+  it('a non-integer comes out with up to 6 places, no trailing zeros; an integer as today', () => {
     expect(evaluateText({ $concat: [{ $div: [1, 3] }] }, {})).toBe('0.333333');
     expect(evaluateText({ $concat: [{ $div: [1, 4] }, '%'] }, {})).toBe('0.25%');
     expect(evaluateText({ $concat: [{ $mul: [2, 3] }, 'px'] }, {})).toBe('6px');
     expect(evaluateText({ $concat: ['a', 1.5, 'b'] }, {})).toBe('a1.5b');
   });
 
-  it('operação sem valor dentro do $concat vira texto vazio', () => {
+  it('operation without a value inside $concat becomes empty text', () => {
     expect(evaluateText({ $concat: ['x', { $div: [1, 0] }, 'y'] }, {})).toBe('xy');
   });
 
-  it('um número não inteiro como texto avaliado também usa até 6 casas', () => {
+  it('a non-integer number as evaluated text also uses up to 6 places', () => {
     expect(evaluateText({ $add: [0.1, 0.2] } as unknown as Expr<number>, {})).toBe('0.3');
   });
 });
 
-describe('comparações', () => {
+describe('comparisons', () => {
   const cmp = (condition: unknown, values: Record<string, string | number | null> = {}) =>
     evaluateCondition(condition as Condition, values);
 
-  it('$gt, $gte, $lt e $lte', () => {
+  it('$gt, $gte, $lt and $lte', () => {
     expect(cmp({ $gt: [2, 1] })).toBe(true);
     expect(cmp({ $gt: [1, 1] })).toBe(false);
     expect(cmp({ $gte: [1, 1] })).toBe(true);
@@ -411,13 +412,13 @@ describe('comparações', () => {
     expect(cmp({ $lte: [2, 2] })).toBe(true);
   });
 
-  it('operandos são expressões', () => {
+  it('operands are expressions', () => {
     const values = { p: 0.5 };
     expect(cmp({ $gt: [{ $mul: [{ $field: 'p' }, 100] }, 49] }, values)).toBe(true);
     expect(cmp({ $lt: [{ $field: 'p' }, 0.5] }, values)).toBe(false);
   });
 
-  it('operando sem valor dá falso (também em $lt e $lte)', () => {
+  it('operand without a value gives false (also in $lt and $lte)', () => {
     const values = { a: null, b: 'abc' };
     for (const op of ['$gt', '$gte', '$lt', '$lte'])
       expect(cmp({ [op]: [{ $field: 'a' }, 1] }, values)).toBe(false);
@@ -425,15 +426,15 @@ describe('comparações', () => {
     expect(cmp({ $gte: [{ $div: [1, 0] }, 0] })).toBe(false);
   });
 
-  it('compõem com $and, $or e $not; $not de operando vazio dá verdadeiro', () => {
+  it('compose with $and, $or and $not; $not of an empty operand gives true', () => {
     expect(cmp({ $and: [{ $gt: [2, 1] }, { $lt: [1, 2] }] })).toBe(true);
     expect(cmp({ $or: [{ $gt: [1, 2] }, { $lt: [1, 2] }] })).toBe(true);
     expect(cmp({ $not: { $gt: [{ $field: 'a' }, 1] } }, { a: null })).toBe(true);
   });
 
-  it('valem em $if e em visible (evaluateBoolean)', () => {
-    expect(evaluate({ $if: { $gte: [3, 3] }, then: 'sim', else: 'não' }, {}, 'x')).toBe(
-      'sim',
+  it('apply in $if and in visible (evaluateBoolean)', () => {
+    expect(evaluate({ $if: { $gte: [3, 3] }, then: 'yes', else: 'no' }, {}, 'x')).toBe(
+      'yes',
     );
     expect(
       evaluateBoolean(
@@ -452,8 +453,8 @@ describe('comparações', () => {
   });
 });
 
-describe('referencedFields com operações e comparações', () => {
-  it('conta os campos dentro das operações, das comparações e de $if/$switch aninhados', () => {
+describe('referencedFields with operations and comparisons', () => {
+  it('counts the fields inside the operations, the comparisons and nested $if/$switch', () => {
     const fields = referencedFields({
       width: { $mul: [{ $field: 'p' }, { $add: [{ $field: 'q' }, 1] }] },
       visible: { $gt: [{ $field: 'r' }, { $sub: [{ $field: 's' }, 1] }] },
@@ -463,21 +464,21 @@ describe('referencedFields com operações e comparações', () => {
   });
 });
 
-describe('chaves herdadas do Object não são operações', () => {
-  it('um objeto com constructor ou valueOf continua sendo o literal', () => {
+describe('keys inherited from Object are not operations', () => {
+  it('an object with constructor or valueOf is still the literal', () => {
     const literal = { constructor: 1, valueOf: 2 };
     expect(evaluate(literal as unknown as Expr<unknown>, {}, 'x')).toBe(literal);
   });
 });
 
-describe('tabela das operações', () => {
-  it('toda operação com aridade tem implementação, e vice-versa', () => {
+describe('table of the operations', () => {
+  it('every operation with an arity has an implementation, and vice-versa', () => {
     expect(Object.keys(NUMERIC_FNS).sort()).toEqual(Object.keys(NUMERIC_OPS).sort());
   });
 });
 
 describe('$rows e $size (formato 4, EX2)', () => {
-  it('$rows é o número de linhas do campo table (0 sem linhas ou sem campo)', () => {
+  it('$rows is the number of rows of the table field (0 without rows or without the field)', () => {
     const expr = { $rows: 'itens' } as unknown as Expr<number>;
     expect(evaluate(expr, { itens: [{ a: 1 }, { a: 2 }] }, -1)).toBe(2);
     expect(evaluate(expr, { itens: [] }, -1)).toBe(0);
@@ -485,7 +486,7 @@ describe('$rows e $size (formato 4, EX2)', () => {
     expect(evaluate(expr, { itens: 'texto' }, -1)).toBe(0);
   });
 
-  it('$size lê a largura ou a altura da instância; sem tamanho, nenhum valor', () => {
+  it('$size reads the width or the height of the instance; without a size, no value', () => {
     const w = { $size: 'width' } as unknown as Expr<number>;
     const h = { $size: 'height' } as unknown as Expr<number>;
     const values = { '$size:width': 120, '$size:height': 48 };
@@ -494,7 +495,7 @@ describe('$rows e $size (formato 4, EX2)', () => {
     expect(evaluate(w, {}, -1)).toBe(-1);
   });
 
-  it('entram em operações e comparações', () => {
+  it('enter operations and comparisons', () => {
     const values = { '$size:width': 200, itens: [{}, {}, {}] };
     const half = { $mul: [{ $size: 'width' }, 0.5] } as unknown as Expr<number>;
     expect(evaluate(half, values, -1)).toBe(100);
@@ -503,28 +504,28 @@ describe('$rows e $size (formato 4, EX2)', () => {
     );
   });
 
-  it('referencedFields conta o campo de $rows, não o $index', () => {
+  it('referencedFields counts the $rows field, not the $index', () => {
     expect([...referencedFields({ a: { $rows: 'itens' } })]).toEqual(['itens']);
     expect([...referencedFields({ a: { $field: '$index' } })]).toEqual([]);
   });
 });
 
-describe('$lines (MC2, decisão 8 da #898)', () => {
-  it('lê o número de linhas que o motor põe nos valores', () => {
+describe('$lines (MC2, decision 8 of #898)', () => {
+  it('reads the number of lines that the engine puts in the values', () => {
     expect(evaluate({ $lines: 'msg' }, { [linesKey('msg')]: 3 }, 0)).toBe(3);
   });
 
-  it('sem valor cai no fallback', () => {
+  it('without a value it falls to the fallback', () => {
     expect(evaluate({ $lines: 'msg' }, {}, 7)).toBe(7);
   });
 
-  it('entra nas comparações e nas operações numéricas', () => {
+  it('enters the comparisons and the numeric operations', () => {
     const values = { [linesKey('msg')]: 2 };
     expect(evaluateCondition({ $gt: [{ $lines: 'msg' }, 1] }, values)).toBe(true);
     expect(evaluate({ $mul: [{ $lines: 'msg' }, 10] }, values, 0)).toBe(20);
   });
 
-  it('não é um campo: referencedFields não o conta', () => {
+  it('it is not a field: referencedFields does not count it', () => {
     expect([...referencedFields({ $gt: [{ $lines: 'msg' }, 1] })]).toEqual([]);
   });
 });

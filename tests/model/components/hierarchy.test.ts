@@ -1,4 +1,4 @@
-// Laboratório Componentes: hierarquia de instâncias (containers) no modelo da tela e slots com layout no formato.
+// Components Lab: instance hierarchy (containers) in the screen model and slots with layout in the format.
 import { describe, expect, it } from 'vitest';
 import {
   parseComponent,
@@ -56,8 +56,8 @@ function tree() {
   return { s, col, row, a, b, loose };
 }
 
-describe('hierarquia de instâncias', () => {
-  it('filhos, descendentes, ancestrais e ordem de desenho', () => {
+describe('instance hierarchy', () => {
+  it('children, descendants, ancestors and drawing order', () => {
     const { s, col, row, a, b, loose } = tree();
     expect(childrenOf(s, undefined).map((i) => i.id)).toEqual([col, loose]);
     expect(childrenOf(s, row).map((i) => i.id)).toEqual([a, b]);
@@ -66,7 +66,7 @@ describe('hierarquia de instâncias', () => {
     expect(renderOrder(s).map((i) => i.id)).toEqual([col, row, a, b, loose]);
   });
 
-  it('mover um container leva os descendentes; redimensionar não', () => {
+  it('moving a container carries the descendants; resizing does not', () => {
     const { s, col, a } = tree();
     const moved = updateBox(s, col, { x: 110, y: 60, width: 300, height: 300 });
     expect(moved.instances.find((i) => i.id === a)?.box).toEqual({
@@ -84,7 +84,7 @@ describe('hierarquia de instâncias', () => {
     });
   });
 
-  it('setParent muda o pai, posiciona entre irmãos e recusa ciclos', () => {
+  it('setParent changes the parent, positions among siblings and rejects cycles', () => {
     const { s, col, row, a, b, loose } = tree();
     const inRow = setParent(s, loose, row, 1);
     expect(childrenOf(inRow, row).map((i) => i.id)).toEqual([a, loose, b]);
@@ -96,7 +96,7 @@ describe('hierarquia de instâncias', () => {
     expect(setParent(s, col, col)).toBe(s);
   });
 
-  it('moveSibling reordena entre irmãos e para nas pontas', () => {
+  it('moveSibling reorders among siblings and stops at the ends', () => {
     const { s, row, a, b } = tree();
     const swapped = moveSibling(s, a, 1);
     expect(childrenOf(swapped, row).map((i) => i.id)).toEqual([b, a]);
@@ -104,7 +104,7 @@ describe('hierarquia de instâncias', () => {
     expect(childrenOf(moveSibling(swapped, a, -1), row).map((i) => i.id)).toEqual([a, b]);
   });
 
-  it('removeInstance sobe os filhos; removeSubtree apaga tudo', () => {
+  it('removeInstance lifts the children; removeSubtree deletes everything', () => {
     const { s, col, row, a, b } = tree();
     const lifted = removeInstance(s, row);
     expect(lifted.instances.find((i) => i.id === a)?.parentId).toBe(col);
@@ -113,13 +113,13 @@ describe('hierarquia de instâncias', () => {
     expect(gone.instances.map((i) => i.typeId)).toEqual(['leaf']);
   });
 
-  it('parentId sobrevive à serialização', () => {
+  it('parentId survives serialization', () => {
     const { s } = tree();
     expect(parseScreen(JSON.parse(serializeScreen(s)))).toEqual(s);
   });
 });
 
-describe('slot com layout no formato', () => {
+describe('slot with layout in the format', () => {
   const component = (slot: object) => ({
     format: 'mapping-component',
     formatVersion: 1,
@@ -133,7 +133,7 @@ describe('slot com layout no formato', () => {
     },
   });
 
-  it('aceita layout row/column com gap e padding por expressão', () => {
+  it('accepts row/column layout with gap and padding by expression', () => {
     expect(
       validateComponent(
         component({
@@ -149,7 +149,7 @@ describe('slot com layout no formato', () => {
     expect(parseComponent(component({ layout: { type: 'none' } })).ok).toBe(true);
   });
 
-  it('recusa layout inválido no slot e layout em nós que não são frame nem slot', () => {
+  it('rejects an invalid layout in the slot and a layout on nodes that are neither frame nor slot', () => {
     expect(validateComponent(component({ layout: { type: 'diagonal' } }))[0]).toMatch(
       /children\[0\]\.layout\.type: expected/,
     );

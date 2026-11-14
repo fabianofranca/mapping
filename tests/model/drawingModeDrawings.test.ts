@@ -1,5 +1,5 @@
-// CF6: o modo efetivo de cada marcação escolhe os tokens do desenho; trocar o modo (do projeto ou
-// do container) redesenha sem recarregar o catálogo.
+// CF6: the effective mode of each marking picks the drawing tokens; switching the mode (of the project or
+// of the container) redraws without reloading the catalog.
 import { describe, expect, it } from 'vitest';
 import {
   addComponentMarking,
@@ -76,8 +76,8 @@ function fillOf(p: Project, catalog: ComponentCatalog, id: string): unknown {
   return drawing?.root.fills[0];
 }
 
-describe('modo do desenho no desenho das marcações', () => {
-  it('sem modo, o primeiro modo da especialização; com modo, os tokens dele', () => {
+describe('drawing mode in the drawing of markings', () => {
+  it("without a mode, the specialization's first mode; with a mode, its tokens", () => {
     const catalog = tokenCatalog();
     const p = withText('T1');
     const light = JSON.stringify(fillOf(p, catalog, 'T1'));
@@ -86,20 +86,20 @@ describe('modo do desenho no desenho das marcações', () => {
     expect(dark).toContain('#111111');
   });
 
-  it('o container que fixa o modo vence o do projeto', () => {
+  it("the container that sets the mode beats the project's", () => {
     const catalog = tokenCatalog();
     let p = setProjectDrawingMode(withText('T1'), 'dark');
     p = setContainerDrawingMode(p, 'I1', 'light');
     expect(JSON.stringify(fillOf(p, catalog, 'T1'))).toContain('#ffffff');
   });
 
-  it('modo não declarado cai no primeiro modo', () => {
+  it('an undeclared mode falls back to the first mode', () => {
     const catalog = tokenCatalog();
     const p = setProjectDrawingMode(withText('T1'), 'solar');
     expect(JSON.stringify(fillOf(p, catalog, 'T1'))).toContain('#ffffff');
   });
 
-  it('trocar o modo redesenha só pelo cache, sem novo catálogo, e o mesmo modo reaproveita', () => {
+  it('switching the mode redraws only through the cache, with no new catalog, and the same mode reuses', () => {
     const catalog = tokenCatalog();
     const cache = createDrawingCache();
     const p = withText('T1');

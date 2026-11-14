@@ -1,5 +1,5 @@
-// R1 (#1096): a arrumação dos filhos de um slot na app aceita a direção (padrão ltr) e espelha no
-// eixo horizontal dentro da área de conteúdo (o padding segue físico; reverse compõe com rtl).
+// R1 (#1096): the arrangement of the children of a slot in the app accepts the direction (default ltr) and mirrors on the
+// horizontal axis inside the content area (padding stays physical; reverse composes with rtl).
 import { describe, expect, it } from 'vitest';
 import {
   dropIndex,
@@ -27,36 +27,36 @@ function layout(over: Partial<ResolvedSlotLayout>): ResolvedSlotLayout {
 const xs = (over: Partial<ResolvedSlotLayout>, direction?: 'ltr' | 'rtl') =>
   layoutChildren(slot, layout(over), kids, direction).map((b) => b.x);
 
-describe('layoutChildren com direção', () => {
-  it('ltr explícito é igual ao padrão', () => {
+describe('layoutChildren with direction', () => {
+  it('explicit ltr equals the default', () => {
     expect(xs({ gap: 4 }, 'ltr')).toEqual(xs({ gap: 4 }));
   });
 
-  it('row em rtl corre da direita para a esquerda', () => {
+  it('row in rtl runs from right to left', () => {
     expect(xs({}, 'ltr')).toEqual([0, 10, 30]);
     expect(xs({}, 'rtl')).toEqual([90, 70, 40]);
     expect(xs({ gap: 4 }, 'rtl')).toEqual([90, 66, 32]);
   });
 
-  it('justify start/end são lógicos; center não muda', () => {
+  it('justify start/end are logical; center does not change', () => {
     expect(xs({ justify: 'end' }, 'rtl')).toEqual([50, 30, 0]);
     expect(xs({ justify: 'center' }, 'ltr')).toEqual([20, 30, 50]);
     expect(xs({ justify: 'center' }, 'rtl')).toEqual([70, 50, 20]);
   });
 
-  it('reverse compõe com rtl: volta à ordem física de ltr', () => {
+  it('reverse composes with rtl: back to the physical order of ltr', () => {
     expect(xs({ reverse: true }, 'rtl')).toEqual(xs({}, 'ltr'));
     expect(xs({ reverse: true }, 'ltr')).toEqual(xs({}, 'rtl'));
   });
 
-  it('o padding continua físico', () => {
+  it('padding stays physical', () => {
     const padding = { top: 0, right: 5, bottom: 0, left: 15 };
-    // conteúdo de 15 a 95: o primeiro (10) termina em 95
+    // content from 15 to 95: the first (10) ends at 95
     expect(xs({ padding }, 'rtl')).toEqual([85, 65, 35]);
     expect(xs({ padding }, 'ltr')).toEqual([15, 25, 45]);
   });
 
-  it('column: align start/end e stretch viram lógicos no eixo cruzado', () => {
+  it('column: align start/end and stretch become logical on the cross axis', () => {
     const col = (align: ResolvedSlotLayout['align'], direction: 'ltr' | 'rtl') =>
       layoutChildren(slot, layout({ type: 'column', align }), kids, direction).map(
         (b) => [b.x, b.width],
@@ -74,10 +74,10 @@ describe('layoutChildren com direção', () => {
     expect(col('stretch', 'rtl').map(([, w]) => w)).toEqual([100, 100, 100]);
   });
 
-  it('wrap: cada linha espelha', () => {
+  it('wrap: each line mirrors', () => {
     const wrapped = layout({ wrap: 'wrap' });
     const out = layoutChildren({ ...slot, width: 40 }, wrapped, kids, 'rtl');
-    // linhas: [10,20] e [30]
+    // lines: [10,20] and [30]
     expect(out.map((b) => [b.x, b.y])).toEqual([
       [30, 0],
       [10, 0],
@@ -85,7 +85,7 @@ describe('layoutChildren com direção', () => {
     ]);
   });
 
-  it('grade: as colunas espelham', () => {
+  it('grid: the columns mirror', () => {
     const grid = layout({
       type: 'grid',
       grid: { count: 2, orientation: 'vertical' },
@@ -96,14 +96,14 @@ describe('layoutChildren com direção', () => {
     expect(rtl[0]).toBe(100 - ltr[0]! - 10);
   });
 
-  it('none alinhado: justify start vai para a direita', () => {
+  it('aligned none: justify start goes to the right', () => {
     const none = layout({ type: 'none', justify: 'start' });
     expect(layoutChildren(slot, none, kids, 'rtl').map((b) => b.x)).toEqual([90, 80, 70]);
     expect(layoutChildren(slot, none, kids, 'ltr').map((b) => b.x)).toEqual([0, 0, 0]);
   });
 });
 
-describe('dropIndex com direção', () => {
+describe('dropIndex with direction', () => {
   const screen = {
     id: 's',
     name: 'S',
@@ -129,22 +129,22 @@ describe('dropIndex com direção', () => {
     ],
   } as unknown as Screen;
 
-  it('em rtl a linha corre para a esquerda: antes do ponto são os irmãos à direita dele', () => {
+  it('in rtl the line runs to the left: before the point are the siblings to its right', () => {
     expect(dropIndex(screen, 'p', layout({}), { x: 95, y: 0 }, undefined, 'rtl')).toBe(0);
     expect(dropIndex(screen, 'p', layout({}), { x: 5, y: 0 }, undefined, 'rtl')).toBe(2);
     expect(dropIndex(screen, 'p', layout({}), { x: 5, y: 0 })).toBe(0);
   });
 
-  it('reverse compõe com rtl', () => {
+  it('reverse composes with rtl', () => {
     expect(
       dropIndex(screen, 'p', layout({ reverse: true }), { x: 5, y: 0 }, undefined, 'rtl'),
     ).toBe(0);
   });
 });
 
-describe('arrange com direção', () => {
-  it('repassa a direção: rtl espelha a row na caixa do container; o padrão é ltr', async () => {
-    // Reusa o cenário de arrange.test.ts em miniatura: container row-start com 3 filhas.
+describe('arrange with direction', () => {
+  it('passes the direction on: rtl mirrors the row in the container box; the default is ltr', async () => {
+    // Reuses the scenario of arrange.test.ts in miniature: row-start container with 3 children.
     const { arrange } = await import('../../../src/model/components/arrange');
     const { approximateMeasurer } =
       await import('../../../src/model/components/instantiate');
@@ -224,7 +224,7 @@ describe('arrange com direção', () => {
     ]);
   });
 
-  it('rtl: a caixa do slot também é a da direção (slot ao lado de um rect), não a de ltr', async () => {
+  it('rtl: the slot box is also the direction one (slot beside a rect), not the ltr one', async () => {
     const { arrange } = await import('../../../src/model/components/arrange');
     const { approximateMeasurer } =
       await import('../../../src/model/components/instantiate');
@@ -300,16 +300,16 @@ describe('arrange com direção', () => {
     } as unknown as Screen;
     const xsOf = (s: Screen) => s.instances.filter((i) => i.parentId).map((i) => i.box.x);
     expect(library.problems).toEqual([]);
-    // rtl: o rect de 40 fica à direita (160..200); o slot ocupa 0..160 e as filhas espelham nele.
+    // rtl: the 40 rect stays on the right (160..200); the slot takes 0..160 and the children mirror in it.
     expect(xsOf(arrange(screen, library, approximateMeasurer, 'rtl'))).toEqual([
       140, 110,
     ]);
   });
 });
 
-describe('arrange: linha de base do filho na direção (achado 6 do CL2)', () => {
-  // `dir`: o texto de 22/28 só aparece em rtl, antes do de 14/20; a primeira linha de base do
-  // filho muda com a direção. Numa row `align: baseline`, o `txt` (14/20) acompanha a dele.
+describe('arrange: child baseline in the direction (CL2 finding 6)', () => {
+  // `dir`: the 22/28 text only appears in rtl, before the 14/20 one; the first baseline of the
+  // child changes with the direction. In a `align: baseline` row, the `txt` (14/20) follows it.
   async function ys(direction: 'ltr' | 'rtl'): Promise<number[]> {
     const { arrange } = await import('../../../src/model/components/arrange');
     const { approximateMeasurer } =
@@ -412,12 +412,12 @@ describe('arrange: linha de base do filho na direção (achado 6 do CL2)', () =>
     return out.instances.filter((i) => i.parentId).map((i) => i.box.y);
   }
 
-  it('em ltr os dois ficam na mesma linha de base', async () => {
+  it('in ltr both stay on the same baseline', async () => {
     const [a, b] = await ys('ltr');
     expect(b).toBe(a);
   });
 
-  it('em rtl o filho tem a linha de base do desenho rtl: o de 14 desce 7 px', async () => {
+  it('in rtl the child has the baseline of the rtl design: the 14 one drops 7 px', async () => {
     const [a, b] = await ys('rtl');
     expect((b as number) - (a as number)).toBe(7);
   });

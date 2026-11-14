@@ -11,19 +11,19 @@ import {
 } from '../../src/model';
 import { cadastroProject } from './specFixtures';
 
-// Um `mapping.json` inconsistente por classe de invariante (`tests/fixtures/invalid/`), todos
-// gerados a partir do projeto do roteiro 13.9 (`cadastroProject`) com uma alteração à mão.
-// `invalidFixtures.test.ts` confere que cada arquivo continua igual ao gerado aqui; para
-// regravar: `UPDATE_FIXTURES=1 npx vitest run tests/model/invalidFixtures.test.ts`.
+// One inconsistent `mapping.json` per invariant class (`tests/fixtures/invalid/`), all
+// generated from the project of script 13.9 (`cadastroProject`) with one manual change.
+// `invalidFixtures.test.ts` checks that each file is still equal to the one generated here; to
+// rewrite: `UPDATE_FIXTURES=1 npx vitest run tests/model/invalidFixtures.test.ts`.
 
 export const INVALID_FIXTURES_DIR = join(process.cwd(), 'tests', 'fixtures', 'invalid');
 
 export interface InvalidCase {
-  /** Nome do arquivo, sem `.json`. */
+  /** File name, without `.json`. */
   readonly name: string;
-  /** Invariante que o arquivo viola. */
+  /** Invariant that the file violates. */
   readonly code: InvariantCode;
-  /** A app oferece "Reparar e abrir" (todos os problemas têm reparo mecânico). */
+  /** The app offers "Repair and open" (all the problems have a mechanical repair). */
   readonly repairable: boolean;
   readonly build: (p: Project) => Project;
 }
@@ -70,13 +70,14 @@ const freeAnnotation = (p: Project, annotation: Partial<Annotation>): Project =>
       parentRole: null,
       type: null,
       values: null,
+      // pt-BR kept: the generated JSON in tests/fixtures/invalid/ must stay byte-identical (outside this batch)
       entries: [{ id: 'EX', key: 'campo', value: 'texto' }],
       ...annotation,
     },
   ],
 });
 
-/** Seta `AR` do Título (MT) para o Nome (MN), com uma anotação livre dela, e `arrow` por cima. */
+/** Arrow `AR` from the Title (MT) to the Name (MN), with a free annotation of it, and `arrow` on top. */
 const arrowWithNote = (p: Project, arrow: Partial<Arrow>): Project =>
   freeAnnotation(
     {
@@ -100,10 +101,10 @@ const arrowWithNote = (p: Project, arrow: Partial<Arrow>): Project =>
     { markingId: 'AR' },
   );
 
-/** Segunda imagem (500×500); sem `at`, à direita da primeira e sem sobrepor. */
+/** Second image (500×500); without `at`, to the right of the first and without overlapping. */
 const secondImage = (p: Project, at?: { x: number; y: number }): Project => {
   const first = p.containers[0];
-  if (!first) throw new Error('fixture sem imagem');
+  if (!first) throw new Error('fixture without an image');
   const firstRect = imageCanvasRect(first, first.placement);
   return {
     ...p,
@@ -112,6 +113,7 @@ const secondImage = (p: Project, at?: { x: number; y: number }): Project => {
       {
         ...first,
         id: 'I2',
+        // pt-BR kept: the generated JSON in tests/fixtures/invalid/ must stay byte-identical (outside this batch)
         name: 'Segunda',
         file: 'images/segunda.png',
         width: 500,
@@ -123,12 +125,13 @@ const secondImage = (p: Project, at?: { x: number; y: number }): Project => {
 };
 
 export const INVALID_CASES: readonly InvalidCase[] = [
-  // ---- Reparáveis ----
+  // ---- Repairable ----
   {
     name: 'duplicate-entry-id',
     code: 'duplicate-entry-id',
     repairable: true,
-    // Par com o id `EN`, já usado em outra anotação (AU).
+    // Pair with the id `EN`, already used in another annotation (AU).
+    // pt-BR kept: the generated JSON in tests/fixtures/invalid/ must stay byte-identical (outside this batch)
     build: (p) =>
       freeAnnotation(p, { entries: [{ id: 'EN', key: 'campo', value: 'x' }] }),
   },
@@ -136,7 +139,7 @@ export const INVALID_CASES: readonly InvalidCase[] = [
     name: 'rect-out-of-image',
     code: 'rect-out-of-image',
     repairable: true,
-    // Título passa 100 px da borda direita: recorta para 800 → 900 de largura.
+    // Title goes 100 px past the right edge: clipped to 800 → 900 wide.
     build: (p) =>
       markings(p, (m) =>
         m.id === 'MT' ? { ...m, rect: { ...m.rect, width: 1000 } } : m,
@@ -146,7 +149,8 @@ export const INVALID_CASES: readonly InvalidCase[] = [
     name: 'rect-out-of-image-entirely',
     code: 'rect-out-of-image',
     repairable: true,
-    // Inteira fora da imagem: recortada fica sem área e é removida.
+    // Entirely outside the image: once clipped it has no area and is removed.
+    // pt-BR kept: the generated JSON in tests/fixtures/invalid/ must stay byte-identical (outside this batch)
     build: (p) =>
       extraMarking(p, { name: 'Fora', rect: { x: 1200, y: 100, width: 50, height: 50 } }),
   },
@@ -154,6 +158,7 @@ export const INVALID_CASES: readonly InvalidCase[] = [
     name: 'missing-image',
     code: 'missing-image',
     repairable: true,
+    // pt-BR kept: the generated JSON in tests/fixtures/invalid/ must stay byte-identical (outside this batch)
     build: (p) => extraMarking(p, { name: 'Órfã', containerId: 'I9' }),
   },
   {
@@ -178,31 +183,31 @@ export const INVALID_CASES: readonly InvalidCase[] = [
     name: 'arrow-endpoint-missing',
     code: 'arrow-endpoint-missing',
     repairable: true,
-    // Seta para uma marcação que não existe: removida, com a anotação dela.
+    // Arrow to a marking that does not exist: removed, with its annotation.
     build: (p) => arrowWithNote(p, { to: 'M9' }),
   },
   {
     name: 'arrow-self',
     code: 'arrow-self',
     repairable: true,
-    // Seta ligada a ela mesma: removida, com a anotação dela.
+    // Arrow linked to itself: removed, with its annotation.
     build: (p) => arrowWithNote(p, { from: 'MN', to: 'MN' }),
   },
   {
     name: 'hierarchy-cycle',
     code: 'hierarchy-cycle',
     repairable: true,
-    // Formulário › Nome › Formulário.
+    // Form › Name › Form.
     build: (p) => markings(p, (m) => (m.id === 'MF' ? { ...m, parentId: 'MN' } : m)),
   },
   {
     name: 'images-overlap',
     code: 'images-overlap',
     repairable: true,
-    // A segunda imagem começa no mesmo ponto da primeira.
+    // The second image starts at the same point as the first.
     build: (p) => secondImage(p, p.containers[0]?.placement),
   },
-  // ---- Recusados (sem reparo mecânico inequívoco) ----
+  // ---- Refused (without an unambiguous mechanical repair) ----
   {
     name: 'duplicate-id',
     code: 'duplicate-id',
@@ -218,6 +223,7 @@ export const INVALID_CASES: readonly InvalidCase[] = [
       return {
         ...q,
         containers: q.containers.map((i) =>
+          // pt-BR kept: file name of the cadastroProject fixture (specFixtures.ts, outside this batch)
           i.id === 'I2' ? { ...i, file: 'images/cadastro.png' } : i,
         ),
       };
@@ -238,7 +244,7 @@ export const INVALID_CASES: readonly InvalidCase[] = [
     name: 'rect-outside-parent',
     code: 'rect-outside-parent',
     repairable: false,
-    // Nome começa antes do Formulário (x = 50).
+    // Name starts before the Form (x = 50).
     build: (p) =>
       markings(p, (m) => (m.id === 'MN' ? { ...m, rect: { ...m.rect, x: 20 } } : m)),
   },
@@ -261,7 +267,7 @@ export const INVALID_CASES: readonly InvalidCase[] = [
     code: 'annotation-parent-same-layer',
     repairable: false,
     build: (p) =>
-      // Só a anotação livre viola o invariante (a tipada vira a pendência `owner-not-allowed`).
+      // Only the free annotation violates the invariant (the typed one becomes the `owner-not-allowed` pending item).
       annotations(p, (a) =>
         a.id === 'AOC'
           ? { ...a, parentAnnotationId: 'AOH', type: null, values: null }

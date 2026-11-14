@@ -1,5 +1,5 @@
-// Direção de leitura do projeto e do container (schema v20, etapa "direção e âncora", R2): a do
-// projeto (ausente = ltr), a que o container fixa e a efetiva. Funções puras do modelo.
+// Reading direction of the project and of the container (schema v20, stage "direction and anchor", R2): the
+// project's (absent = ltr), the one the container fixes and the effective one. Pure model functions.
 import { describe, expect, it } from 'vitest';
 import {
   deserialize,
@@ -25,8 +25,8 @@ function open(raw: Raw) {
 
 const rawOf = (p: Project): Raw => JSON.parse(serialize(p)) as Raw;
 
-describe('direção do projeto e do container', () => {
-  it('setProjectDirection fixa, troca e remove (null); igual devolve o mesmo projeto', () => {
+describe('project and container direction', () => {
+  it('setProjectDirection sets, switches and removes (null); the same value returns the same project', () => {
     const { p } = projectWithContainer();
     const rtl = setProjectDirection(p, 'rtl');
     expect(rtl.direction).toBe('rtl');
@@ -38,7 +38,7 @@ describe('direção do projeto e do container', () => {
     expect(setProjectDirection(p, null)).toBe(p);
   });
 
-  it('setContainerDirection fixa e volta a seguir o projeto com null', () => {
+  it('setContainerDirection sets and goes back to following the project with null', () => {
     const { p, containerId } = projectWithContainer();
     const fixed = setContainerDirection(p, containerId, 'rtl');
     expect(fixed.containers[0]!.direction).toBe('rtl');
@@ -46,16 +46,16 @@ describe('direção do projeto e do container', () => {
     expect(follow.containers[0]!.direction ?? null).toBeNull();
     expect(setContainerDirection(p, containerId, null)).toBe(p);
     expect(setContainerDirection(fixed, containerId, 'rtl')).toBe(fixed);
-    expect(() => setContainerDirection(p, 'nao-existe', 'rtl')).toThrow();
+    expect(() => setContainerDirection(p, 'does-not-exist', 'rtl')).toThrow();
   });
 
-  it('a direção efetiva: o container fixa, senão o projeto, senão ltr', () => {
+  it("the effective direction: the container's, else the project's, else ltr", () => {
     const { p, containerId } = projectWithContainer();
     expect(effectiveDirection(p, containerId)).toBe('ltr');
     expect(effectiveDirection(p, null)).toBe('ltr');
     const rtl = setProjectDirection(p, 'rtl');
     expect(effectiveDirection(rtl, containerId)).toBe('rtl');
-    // Canvas e flutuante (containerId nulo) seguem o projeto.
+    // Canvas and floating (null containerId) follow the project.
     expect(effectiveDirection(rtl, null)).toBe('rtl');
     const fixedLtr = setContainerDirection(rtl, containerId, 'ltr');
     expect(effectiveDirection(fixedLtr, containerId)).toBe('ltr');
@@ -63,15 +63,15 @@ describe('direção do projeto e do container', () => {
     const fixedRtl = setContainerDirection(p, containerId, 'rtl');
     expect(effectiveDirection(fixedRtl, containerId)).toBe('rtl');
     expect(effectiveDirection(fixedRtl, null)).toBe('ltr');
-    // `null` volta a seguir o projeto.
+    // `null` goes back to following the project.
     expect(
       effectiveDirection(setContainerDirection(fixedLtr, containerId, null), containerId),
     ).toBe('rtl');
-    // Container desconhecido segue o projeto.
-    expect(effectiveDirection(rtl, 'nao-existe')).toBe('rtl');
+    // An unknown container follows the project.
+    expect(effectiveDirection(rtl, 'does-not-exist')).toBe('rtl');
   });
 
-  it('o schema aceita ltr e rtl no projeto e no container e recusa o resto', () => {
+  it('the schema accepts ltr and rtl on the project and on the container and refuses the rest', () => {
     const { p, containerId } = projectWithContainer();
     const base = rawOf(
       setContainerDirection(setProjectDirection(p, 'rtl'), containerId, 'ltr'),
@@ -87,16 +87,16 @@ describe('direção do projeto e do container', () => {
     }
   });
 
-  it('ausente vale ltr e null no container é o mesmo que ausente', () => {
+  it('absent is ltr and null on the container is the same as absent', () => {
     const { p, containerId } = projectWithContainer();
     const raw = rawOf(p);
     expect('direction' in raw).toBe(false);
     const opened = open(raw);
-    if (!opened.ok) throw new Error('inválido');
+    if (!opened.ok) throw new Error('invalid');
     expect(effectiveDirection(opened.project, containerId)).toBe('ltr');
     const containers = (raw.containers as Raw[]).map((c) => ({ ...c, direction: null }));
     const withNull = open({ ...raw, containers });
-    if (!withNull.ok) throw new Error('inválido');
+    if (!withNull.ok) throw new Error('invalid');
     expect(effectiveDirection(withNull.project, containerId)).toBe('ltr');
   });
 });

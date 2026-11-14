@@ -1,4 +1,4 @@
-// Laboratório Componentes: a especialização aponta para um arquivo por componente.
+// Components Lab: the specialization points to one file per component.
 import { describe, expect, it } from 'vitest';
 import { findSlot } from '../../../src/model/components/arrange';
 import type { FieldValue } from '../../../src/model/components/componentFormat';
@@ -17,7 +17,7 @@ import {
 } from '../../../viewer/samples/samples';
 
 describe('library', () => {
-  it('resolve caminhos relativos ao arquivo da especialização', () => {
+  it('resolves paths relative to the specialization file', () => {
     expect(resolvePath('spec.json', 'components/button.json')).toBe(
       'components/button.json',
     );
@@ -29,7 +29,7 @@ describe('library', () => {
     );
   });
 
-  it('resolvePathChecked devolve undefined quando o `..` sai da raiz da biblioteca', () => {
+  it('resolvePathChecked returns undefined when the `..` leaves the library root', () => {
     expect(resolvePathChecked('spec.json', '../x.json')).toBeUndefined();
     expect(resolvePathChecked('a/spec.json', '../../x.json')).toBeUndefined();
     expect(resolvePathChecked('a/spec.json', '../x.json')).toBe('x.json');
@@ -38,13 +38,13 @@ describe('library', () => {
     );
   });
 
-  describe('caminho que sai da biblioteca', () => {
+  describe('path that leaves the library', () => {
     const specFiles = (spec: Record<string, unknown>): TextFile[] => [
       ...SAMPLE_FILES.filter((f) => !f.path.endsWith('spec.json')),
       { path: 'spec.json', text: JSON.stringify({ ...SAMPLE_SPEC, ...spec }) },
     ];
 
-    it('componente: problema no caminho do tipo, sem "não encontrado" redundante', () => {
+    it('component: problem at the type path, without a redundant "not found"', () => {
       const layers = SAMPLE_SPEC.layers.map((layer) => ({
         ...layer,
         annotationTypes: layer.annotationTypes.map((t) =>
@@ -57,7 +57,7 @@ describe('library', () => {
       expect(lib.types.find((t) => t.id === 'button')?.component).toBeUndefined();
     });
 
-    it('allowOutside: o `..` que sai da raiz é descartado, como no carregamento por URL', () => {
+    it('allowOutside: the `..` that leaves the root is discarded, as in loading by URL', () => {
       const layers = SAMPLE_SPEC.layers.map((layer) => ({
         ...layer,
         annotationTypes: layer.annotationTypes.map((t) =>
@@ -69,12 +69,12 @@ describe('library', () => {
       expect(lib.types.find((t) => t.id === 'button')?.component).toBeDefined();
     });
 
-    it('fonte: problema em fonts[i] e a fonte não é carregada', () => {
+    it('font: problem in fonts[i] and the font is not loaded', () => {
       const lib = loadLibrary(
         specFiles({
           fonts: [
             { family: 'Roboto', file: 'fonts/R.ttf' },
-            { family: 'Fora', file: '../R.ttf' },
+            { family: 'Outside', file: '../R.ttf' },
           ],
         }),
       );
@@ -82,24 +82,26 @@ describe('library', () => {
       expect(lib.fonts.map((f) => f.family)).toEqual(['Roboto']);
     });
 
-    it('ícones: problema `icons` com o texto citado', () => {
+    it('icons: `icons` problem with the quoted text', () => {
       const lib = loadLibrary(specFiles({ icons: '../icons.json' }));
       expect(lib.problems).toEqual(['icons: path outside the library: ../icons.json']);
       expect(lib.icons).toBeUndefined();
     });
   });
 
-  it('instanceLabel: valor de tabela (array/objeto) conta como vazio, nunca [object Object]', () => {
+  it('instanceLabel: a table value (array/object) counts as empty, never [object Object]', () => {
     const button = loadLibrary(SAMPLE_FILES).types.find((t) => t.id === 'button')!;
     const label = button.labelField!;
+    // pt-BR kept: the default label of the button in viewer/samples/samples.ts (pt-BR sample data)
     expect(instanceLabel(button, { [label]: [{ a: 'x' }] })).toBe('Botão');
+    // pt-BR kept: same sample default label
     expect(instanceLabel(button, { [label]: { a: 'x' } as unknown as FieldValue })).toBe(
       'Botão',
     );
     expect(instanceLabel(button, { [label]: 42 })).toBe('42');
   });
 
-  it('carrega os exemplos: todo tipo com componente válido e sem problemas', () => {
+  it('loads the samples: every type with a valid component and no problems', () => {
     const lib = loadLibrary(SAMPLE_FILES);
     expect(lib.specId).toBe('lab-components');
     expect(lib.problems).toEqual([]);
@@ -116,6 +118,7 @@ describe('library', () => {
       'disabled',
       'action',
     ]);
+    // pt-BR kept: the preview values of the button in viewer/samples/samples.ts (pt-BR sample data)
     expect(initialValues(button!)).toEqual({
       label: 'Entrar',
       variant: 'primary',
@@ -123,15 +126,16 @@ describe('library', () => {
       disabled: 'não',
       action: null,
     });
-    expect(instanceLabel(button!, { label: 'Salvar' })).toBe('Salvar');
+    expect(instanceLabel(button!, { label: 'Save' })).toBe('Save');
+    // pt-BR kept: the default label of the button in viewer/samples/samples.ts (pt-BR sample data)
     expect(instanceLabel(button!, { label: '  ' })).toBe('Botão');
   });
 
-  it('registra arquivo ausente, componente inválido e JSON quebrado como problemas, sem derrubar o resto', () => {
+  it('records a missing file, an invalid component and broken JSON as problems, without taking down the rest', () => {
     const files = SAMPLE_FILES.filter((f) => !f.path.endsWith('avatar.json')).map((f) =>
       f.path.endsWith('card.json') ? { ...f, text: '{"format":"mapping-component"}' } : f,
     );
-    files.push({ path: 'components/quebrado.json', text: '{oops' });
+    files.push({ path: 'components/broken.json', text: '{oops' });
     const lib = loadLibrary(files);
     expect(
       lib.problems.some((p) => p.includes('avatar') && p.includes('not found')),
@@ -141,29 +145,29 @@ describe('library', () => {
         p.endsWith('card.json: formatVersion: expected 1, 2, 3 or 4'),
       ),
     ).toBe(true);
-    // um problema por issue, cada um com o caminho do arquivo
+    // one problem per issue, each with the file path
     expect(lib.problems.filter((p) => p.includes('card.json: ')).length).toBeGreaterThan(
       1,
     );
     expect(
-      lib.problems.some((p) => p.includes('quebrado.json') && p.includes('invalid JSON')),
+      lib.problems.some((p) => p.includes('broken.json') && p.includes('invalid JSON')),
     ).toBe(true);
     expect(lib.types.find((t) => t.id === 'button')?.component).toBeDefined();
     expect(lib.types.find((t) => t.id === 'avatar')?.component).toBeUndefined();
   });
 
-  it('sem especialização, lança; com duas, usa a primeira e avisa', () => {
+  it('without a specialization, it throws; with two, it uses the first and warns', () => {
     expect(() => loadLibrary([{ path: 'a.json', text: '{}' }])).toThrow(/mapping-spec/);
     const twice = [
       ...SAMPLE_FILES,
-      { path: 'outra.json', text: JSON.stringify({ ...SAMPLE_SPEC, id: 'outra' }) },
+      { path: 'other.json', text: JSON.stringify({ ...SAMPLE_SPEC, id: 'other' }) },
     ];
     const lib = loadLibrary(twice);
     expect(lib.specId).toBe('lab-components');
     expect(lib.problems[0]).toMatch(/2 specializations/);
   });
 
-  describe('origens e sources', () => {
+  describe('origins and sources', () => {
     const originOf = (overrides: Record<string, unknown> = {}) => ({
       system: 'sdui',
       node: { type: 'type', props: 'props', children: 'children' },
@@ -199,7 +203,7 @@ describe('library', () => {
       return [{ path: 'spec.json', text: JSON.stringify(spec) }, cardFile];
     };
 
-    it('lê origins e sources (inclusive de outros sistemas) sem problemas', () => {
+    it('reads origins and sources (including from other systems) without problems', () => {
       const lib = loadLibrary(
         specWith(
           {
@@ -232,7 +236,7 @@ describe('library', () => {
       expect(lib.problems.filter((p) => !p.includes('slot'))).toEqual([]);
     });
 
-    it('sem origins nem sources: listas vazias', () => {
+    it('without origins or sources: empty lists', () => {
       const lib = loadLibrary(SAMPLE_FILES);
       expect(lib.origins).toEqual([]);
       for (const type of lib.types) {
@@ -241,7 +245,7 @@ describe('library', () => {
       }
     });
 
-    it('problemas de origins aparecem em library.problems, com caminho', () => {
+    it('origins problems appear in library.problems, with a path', () => {
       const lib = loadLibrary(
         specWith({}, { origins: [originOf({ extra: 1, node: { type: 'type' } })] }),
       );
@@ -250,7 +254,7 @@ describe('library', () => {
       expect(lib.problems.some((p) => p.startsWith('origins[0].node.props:'))).toBe(true);
     });
 
-    it('scrim que não é tipo da especialização é problema', () => {
+    it('a scrim that is not a type of the specialization is a problem', () => {
       const lib = loadLibrary(
         specWith(
           {},
@@ -260,7 +264,7 @@ describe('library', () => {
                 screen: {
                   width: 10,
                   height: 20,
-                  roots: [{ path: 'm', scrim: 'nao-existe' }],
+                  roots: [{ path: 'm', scrim: 'does-not-exist' }],
                 },
               }),
             ],
@@ -268,11 +272,11 @@ describe('library', () => {
         ),
       );
       expect(lib.problems).toContain(
-        'origins[0].screen.roots[0].scrim: nonexistent type: nao-existe',
+        'origins[0].screen.roots[0].scrim: nonexistent type: does-not-exist',
       );
     });
 
-    it('slot do tipo precisa ser o nome do slot do componente', () => {
+    it('the type slot must be the name of the component slot', () => {
       const slotName = (() => {
         const lib = loadLibrary(SAMPLE_FILES);
         const card = lib.types.find((t) => t.id === 'card')!;
@@ -284,12 +288,12 @@ describe('library', () => {
       );
       expect(ok.problems).toEqual([]);
       const wrong = loadLibrary(
-        specWith({ sources: [{ system: 'sdui', name: 'Card', slot: 'outro' }] }),
+        specWith({ sources: [{ system: 'sdui', name: 'Card', slot: 'other' }] }),
       );
       expect(wrong.problems).toEqual([
-        `card.sources[0].slot: the component's slot is "${slotName}", not "outro"`,
+        `card.sources[0].slot: the component's slot is "${slotName}", not "other"`,
       ]);
-      // Componente sem slot: o botão.
+      // Component without a slot: the button.
       const buttonFile = SAMPLE_FILES.find((f) => f.path.endsWith('button.json'))!;
       const noSlot = loadLibrary([
         {
@@ -324,17 +328,17 @@ describe('library', () => {
       ]);
     });
 
-    it('values só em campo enum e com destinos dentro de options', () => {
+    it('values only on an enum field and with targets inside options', () => {
       const lib = loadLibrary(
         specWith({
           fields: [
             {
-              key: 'texto',
+              key: 'text',
               type: 'string',
               sources: [{ system: 'sdui', name: 'a', values: { x: 'y' } }],
             },
             {
-              key: 'modo',
+              key: 'mode',
               type: 'enum',
               options: ['a', 'b'],
               sources: [{ system: 'figma', name: 'M', values: { X: 'a', Y: 'zzz' } }],
@@ -348,7 +352,7 @@ describe('library', () => {
       ]);
     });
 
-    it('fonte malformada de tipo ou de campo vira problema e é descartada', () => {
+    it('a malformed type or field source becomes a problem and is discarded', () => {
       const lib = loadLibrary(
         specWith({
           sources: [
@@ -356,7 +360,7 @@ describe('library', () => {
             { name: 'X' },
             { system: 'sdui', name: 'X', extra: 1 },
             { system: 'sdui', name: 'Ok', ignore: 'a' },
-            { system: 'sdui', name: 'Certo' },
+            { system: 'sdui', name: 'Right' },
           ],
           fields: [
             {
@@ -367,7 +371,7 @@ describe('library', () => {
           ],
         }),
       );
-      expect(lib.types[0]!.sources).toEqual([{ system: 'sdui', name: 'Certo' }]);
+      expect(lib.types[0]!.sources).toEqual([{ system: 'sdui', name: 'Right' }]);
       expect(lib.types[0]!.fields[0]!.sources).toEqual([{ system: 'sdui', name: 'ok' }]);
       expect(lib.problems).toEqual([
         'card.fields[0].sources[0]: needs name or path',
@@ -379,7 +383,7 @@ describe('library', () => {
       ]);
     });
 
-    it('o path de um campo, numa origem executável, é um caminho válido sem [*]', () => {
+    it('the path of a field, in an executable origin, is a valid path without [*]', () => {
       const lib = loadLibrary(
         specWith(
           {
@@ -391,7 +395,7 @@ describe('library', () => {
                   { system: 'sdui', path: 'a..b' },
                   { system: 'sdui', path: 'a[*]' },
                   { system: 'sdui', path: 'a.b[0]' },
-                  { system: 'figma', name: 'qualquer coisa..' },
+                  { system: 'figma', name: 'anything..' },
                 ],
               },
             ],
@@ -409,7 +413,7 @@ describe('library', () => {
       ]);
     });
 
-    it('campo de sistema executável sem path é problema, com o caminho do campo', () => {
+    it('a field of an executable system without path is a problem, with the field path', () => {
       const lib = loadLibrary(
         specWith(
           {
@@ -417,7 +421,7 @@ describe('library', () => {
               {
                 key: 'a',
                 type: 'string',
-                sources: [{ system: 'sdui', name: 'so-o-nome' }],
+                sources: [{ system: 'sdui', name: 'only-the-name' }],
               },
             ],
           },
@@ -429,7 +433,7 @@ describe('library', () => {
       ]);
     });
 
-    it('name e path convivem: o name é só o nome e o path é o caminho', () => {
+    it('name and path coexist: the name is only the name and the path is the path', () => {
       const lib = loadLibrary(
         specWith(
           {

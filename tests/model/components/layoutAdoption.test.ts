@@ -1,7 +1,7 @@
-// L5 (#1101, decisões 24 e 25 da #1078): o que a Material 3 precisa do motor para adotar o layout novo.
-//  - o slot `none` com `align`/`justify` posiciona as filhas no Arrumar (o `Box(contentAlignment)`);
-//  - `columns` e `minColumnWidth` coexistem por expressão e vale a primeira que tem valor (o
-//    `GridCells.Fixed` ou o `GridCells.Adaptive` escolhido por um campo).
+// L5 (#1101, decisions 24 and 25 of #1078): what Material 3 needs from the engine to adopt the new layout.
+//  - the `none` slot with `align`/`justify` positions the children in Arrange (the `Box(contentAlignment)`);
+//  - `columns` and `minColumnWidth` coexist by expression and the first one with a value applies (the
+//    `GridCells.Fixed` or the `GridCells.Adaptive` chosen by a field).
 import { describe, expect, it } from 'vitest';
 import {
   contentExtent,
@@ -29,8 +29,8 @@ const box = (x: number, y: number, width: number, height: number) => ({
 });
 const kid = (width: number, height: number) => ({ box: box(7, 9, width, height) });
 
-describe('slot none alinhado: resolveSlotLayout e layoutChildren', () => {
-  it('lê align e justify do none; sem eles, start e start (nada muda)', () => {
+describe('aligned none slot: resolveSlotLayout and layoutChildren', () => {
+  it('reads align and justify of none; without them, start and start (nothing changes)', () => {
     const plain = resolveSlotLayout(slotOf({ type: 'none' }), {});
     expect([plain.type, plain.align, plain.justify]).toEqual(['none', 'start', 'start']);
     const aligned = resolveSlotLayout(
@@ -42,7 +42,7 @@ describe('slot none alinhado: resolveSlotLayout e layoutChildren', () => {
       'end',
       'center',
     ]);
-    // Valor fora do conjunto do none cai em start.
+    // A value outside the none set falls back to start.
     expect(resolveSlotLayout(slotOf({ type: 'none', align: 'baseline' }), {}).align).toBe(
       'start',
     );
@@ -56,7 +56,7 @@ describe('slot none alinhado: resolveSlotLayout e layoutChildren', () => {
       [kid(w, h)],
     )[0];
 
-  it('põe a filha nos nove pontos: justify na horizontal, align na vertical', () => {
+  it('puts the child at the nine points: justify horizontal, align vertical', () => {
     // x: start 20, center 70, end 120; y: start 30, center 70, end 110.
     expect(place('start', 'start')).toEqual(box(20, 30, 100, 40));
     expect(place('center', 'center')).toEqual(box(70, 70, 100, 40));
@@ -65,12 +65,12 @@ describe('slot none alinhado: resolveSlotLayout e layoutChildren', () => {
     expect(place('end', 'start')).toEqual(box(20, 110, 100, 40));
   });
 
-  it('stretch ocupa o eixo todo e mantém o outro', () => {
+  it('stretch fills the whole axis and keeps the other', () => {
     expect(place('stretch', 'center')).toEqual(box(70, 30, 100, 120));
     expect(place('center', 'stretch')).toEqual(box(20, 70, 200, 40));
   });
 
-  it('as filhas se sobrepõem: cada uma é posta sozinha', () => {
+  it('the children overlap: each one is placed on its own', () => {
     const layout = resolveSlotLayout(
       slotOf({ type: 'none', align: 'center', justify: 'center' }),
       {},
@@ -79,7 +79,7 @@ describe('slot none alinhado: resolveSlotLayout e layoutChildren', () => {
     expect(out).toEqual([box(70, 70, 100, 40), box(90, 80, 60, 20)]);
   });
 
-  it('o hug do slot none é o maior, não a soma (as filhas se sobrepõem)', () => {
+  it('the hug of the none slot is the largest, not the sum (the children overlap)', () => {
     const layout = resolveSlotLayout(slotOf({ type: 'none', align: 'center' }), {});
     expect(contentExtent(layout, [kid(100, 40), kid(60, 20)], null)).toEqual({
       width: 100,
@@ -88,12 +88,12 @@ describe('slot none alinhado: resolveSlotLayout e layoutChildren', () => {
   });
 });
 
-describe('trilhas da grade por expressão: a primeira que tem valor', () => {
+describe('grid tracks by expression: the first one with a value', () => {
   const both = (columns: unknown, min: unknown, values = {}) =>
     resolveSlotLayout(slotOf({ type: 'grid', columns, minColumnWidth: min }), values)
       .grid;
 
-  it('columns informado vence; sem ele vale minColumnWidth', () => {
+  it('given columns wins; without it minColumnWidth applies', () => {
     const cols = {
       $if: { $not: { $has: 'min' } },
       then: { $field: 'columns', default: 2 },
@@ -109,13 +109,13 @@ describe('trilhas da grade por expressão: a primeira que tem valor', () => {
     });
   });
 
-  it('valor presente e inválido não passa para a chave seguinte (cai em 1 coluna)', () => {
+  it('a present but invalid value does not pass to the next key (falls back to 1 column)', () => {
     expect(
       both({ $field: 'columns' }, { $field: 'min' }, { columns: 0, min: 120 }),
     ).toEqual({ count: 1, orientation: 'vertical' });
   });
 
-  it('nenhuma chave com valor: uma coluna', () => {
+  it('no key with a value: one column', () => {
     expect(both({ $field: 'a' }, { $field: 'b' })).toEqual({
       count: 1,
       orientation: 'vertical',
@@ -145,16 +145,16 @@ function gridComponent(layout: Json, version = 4): Json {
   };
 }
 
-describe('validação: mais de uma trilha só quando todas são expressão', () => {
+describe('validation: more than one track only when all are expressions', () => {
   const E = (name: string) => ({ $field: name });
-  it('aceita columns e minColumnWidth por expressão', () => {
+  it('accepts columns and minColumnWidth by expression', () => {
     expect(
       validateComponent(
         gridComponent({ type: 'grid', columns: E('a'), minColumnWidth: E('b') }),
       ),
     ).toEqual([]);
   });
-  it('várias trilhas só da mesma orientação: columns com rows é erro', () => {
+  it('several tracks only of the same orientation: columns with rows is an error', () => {
     const message =
       'template.layout: layout: give exactly one of columns, minColumnWidth, rows and minRowHeight';
     expect(
@@ -166,7 +166,7 @@ describe('validação: mais de uma trilha só quando todas são expressão', () 
       ),
     ).toEqual([]);
   });
-  it('uma trilha literal com outra: continua erro', () => {
+  it('a literal track with another: still an error', () => {
     const message =
       'template.layout: layout: give exactly one of columns, minColumnWidth, rows and minRowHeight';
     expect(
@@ -180,7 +180,7 @@ describe('validação: mais de uma trilha só quando todas são expressão', () 
   });
 });
 
-describe('instantiate: a trilha com valor decide no quadro', () => {
+describe('instantiate: the track with a value decides in the frame', () => {
   const run = (values: Json) => {
     const component = gridComponent({
       type: 'grid',
@@ -204,13 +204,13 @@ describe('instantiate: a trilha com valor decide no quadro', () => {
     return { xs, warnings };
   };
 
-  it('com columns 2: duas colunas de 145', () => {
+  it('with columns 2: two columns of 145', () => {
     expect(run({ columns: 2, min: null })).toEqual({
       xs: [0, 155, 0, 155, 0],
       warnings: [],
     });
   });
-  it('com minColumnWidth 90: floor((300 + 10) / 100) = 3 colunas de 93,3', () => {
+  it('with minColumnWidth 90: floor((300 + 10) / 100) = 3 columns of 93.3', () => {
     const { xs, warnings } = run({ columns: 2, min: 90 });
     expect(warnings).toEqual([]);
     expect(xs.map((x) => Math.round(x))).toEqual([0, 103, 207, 0, 103]);

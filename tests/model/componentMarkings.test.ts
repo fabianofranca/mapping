@@ -60,15 +60,15 @@ function add(
 const rectOf = (p: Project, id: string): Rect => marking(p, id).rect;
 
 describe('componentTypes', () => {
-  it('lista os tipos com componente na ordem da especialização', () => {
+  it('lists the types with a component in specialization order', () => {
     const types = componentTypes(componentProject(), catalog);
     expect(types.map((t) => t.typeId)).toEqual(Object.keys(COMPONENTS));
     const text = types[0];
     expect(text).toMatchObject({
       specId: SPEC_ID,
       typeId: 'text',
-      name: 'Tipo text',
-      layerId: 'componentes',
+      name: 'Type text',
+      layerId: 'components',
       container: false,
     });
     expect(text?.component.id).toBe('text');
@@ -77,7 +77,7 @@ describe('componentTypes', () => {
     expect(types.find((t) => t.typeId === 'wide')?.container).toBe(false);
   });
 
-  it('tipo sem componente fica de fora; catálogo vazio ou de outra versão, lista vazia', () => {
+  it('a type without a component is left out; an empty catalog or one of another version gives an empty list', () => {
     const p = componentProject();
     expect(componentTypes(p, catalog).some((t) => t.typeId === 'plain')).toBe(false);
     expect(componentTypes(p, EMPTY_CATALOG)).toEqual([]);
@@ -88,7 +88,7 @@ describe('componentTypes', () => {
   });
 });
 
-describe('componentPlacement: sem container', () => {
+describe('componentPlacement: without a container', () => {
   const place = (center?: { x: number; y: number }, typeId = 'text') =>
     componentPlacement(
       componentProject(),
@@ -103,11 +103,11 @@ describe('componentPlacement: sem container', () => {
       approximateMeasurer,
     );
 
-  it('sem centro: no centro da imagem, no tamanho inicial', () => {
+  it('without a center: at the image center, at the initial size', () => {
     expect(place()).toEqual({ x: 450, y: 380, width: 100, height: 40 });
   });
 
-  it('centrada no ponto pedido, com coordenadas inteiras', () => {
+  it('centered on the requested point, with integer coordinates', () => {
     expect(place({ x: 200, y: 300 })).toEqual({ x: 150, y: 280, width: 100, height: 40 });
     expect(place({ x: 200.5, y: 300.4 })).toEqual({
       x: 151,
@@ -117,7 +117,7 @@ describe('componentPlacement: sem container', () => {
     });
   });
 
-  it('presa dentro da imagem', () => {
+  it('clamped inside the image', () => {
     expect(place({ x: 0, y: 0 })).toEqual({ x: 0, y: 0, width: 100, height: 40 });
     expect(place({ x: 5000, y: 5000 })).toEqual({
       x: 900,
@@ -128,24 +128,24 @@ describe('componentPlacement: sem container', () => {
     expect(place({ x: -10, y: 790 })).toEqual({ x: 0, y: 760, width: 100, height: 40 });
   });
 
-  it('imagem menor que o tamanho inicial: encolhe até o mínimo', () => {
+  it('an image smaller than the initial size: shrinks down to the minimum', () => {
     let p = componentProject();
-    p = addContainer(p, { id: 'I2', file: 'images/pequena.png', width: 80, height: 30 });
+    p = addContainer(p, { id: 'I2', file: 'images/small.png', width: 80, height: 30 });
     const rect = componentPlacement(
       p,
       catalog,
       { containerId: 'I2', parentId: null, specId: SPEC_ID, typeId: 'text' },
       approximateMeasurer,
     );
-    // 100×40 preso em 80×30; o mínimo (60×24) cabe.
+    // 100×40 clamped to 80×30; the minimum (60×24) fits.
     expect(rect).toEqual({ x: 0, y: 0, width: 80, height: 30 });
   });
 
-  it('nem o mínimo cabe na imagem: rect-out-of-image', () => {
+  it('not even the minimum fits in the image: rect-out-of-image', () => {
     let p = componentProject();
     p = addContainer(p, {
       id: 'I2',
-      file: 'images/minuscula.png',
+      file: 'images/tiny.png',
       width: 50,
       height: 50,
     });
@@ -159,14 +159,14 @@ describe('componentPlacement: sem container', () => {
     ).toThrow('rect-out-of-image');
   });
 
-  it('tipo desconhecido, sem componente ou imagem inexistente', () => {
+  it('unknown type, without a component or nonexistent image', () => {
     const p = componentProject();
     const args = { containerId: 'I1', parentId: null, specId: SPEC_ID };
     expect(() =>
       componentPlacement(p, catalog, { ...args, typeId: 'plain' }, approximateMeasurer),
     ).toThrow('unknown-type');
     expect(() =>
-      componentPlacement(p, catalog, { ...args, typeId: 'nada' }, approximateMeasurer),
+      componentPlacement(p, catalog, { ...args, typeId: 'nothing' }, approximateMeasurer),
     ).toThrow('unknown-type');
     expect(() =>
       componentPlacement(
@@ -179,14 +179,14 @@ describe('componentPlacement: sem container', () => {
   });
 });
 
-describe('componentPlacement: dentro de um container', () => {
+describe('componentPlacement: inside a container', () => {
   function withRow(): Project {
     return add(componentProject(), 'C', 'row', {
       rect: { x: 100, y: 100, width: 300, height: 100 },
     });
   }
 
-  it('primeira filha no início do slot; as seguintes à direita, com o gap', () => {
+  it('first child at the start of the slot; the following ones to the right, with the gap', () => {
     let p = withRow();
     p = add(p, 'T1', 'text', { parentId: 'C' });
     expect(rectOf(p, 'T1')).toEqual({ x: 100, y: 100, width: 100, height: 40 });
@@ -196,19 +196,19 @@ describe('componentPlacement: dentro de um container', () => {
     expectValid(p);
   });
 
-  it('passou do slot: no lugar livre mais perto, dentro do container', () => {
+  it('went past the slot: in the nearest free place, inside the container', () => {
     let p = withRow();
     p = add(p, 'T1', 'text', { parentId: 'C' });
     p = add(p, 'T2', 'text', { parentId: 'C' });
     p = add(p, 'T3', 'text', { parentId: 'C' });
-    // Próxima posição: 316 + 100 > 400. Antes ficava presa em x = 300, em cima da T2 (sobreposta);
-    // agora vai ao lugar livre mais perto, embaixo dela (148 = 100 + 40 + 8), ainda dentro do container.
+    // Next position: 316 + 100 > 400. It used to be clamped at x = 300, on top of T2 (overlapping);
+    // now it goes to the nearest free place, below it (148 = 100 + 40 + 8), still inside the container.
     expect(rectOf(p, 'T3')).toEqual({ x: 300, y: 148, width: 100, height: 40 });
     expect(marking(p, 'T3').parentId).toBe('C');
     expectValid(p);
   });
 
-  it('passou do slot e o container está cheio: presa dentro dele, sem erro', () => {
+  it('went past the slot and the container is full: clamped inside it, without an error', () => {
     let p = add(componentProject(), 'C', 'row', {
       rect: { x: 100, y: 100, width: 300, height: 40 },
     });
@@ -219,7 +219,7 @@ describe('componentPlacement: dentro de um container', () => {
     expectValid(p);
   });
 
-  it('o padding do slot desloca o início', () => {
+  it('the slot padding shifts the start', () => {
     let p = withRow();
     p = setFieldValue(p, 'A_C', 'padding', 4);
     p = add(p, 'T1', 'text', { parentId: 'C' });
@@ -228,7 +228,7 @@ describe('componentPlacement: dentro de um container', () => {
     expect(rectOf(p, 'T2')).toEqual({ x: 212, y: 104, width: 100, height: 40 });
   });
 
-  it('coluna: abaixo da última filha, com o gap', () => {
+  it('column: below the last child, with the gap', () => {
     let p = add(componentProject(), 'C', 'column', {
       rect: { x: 50, y: 50, width: 300, height: 300 },
     });
@@ -239,7 +239,7 @@ describe('componentPlacement: dentro de um container', () => {
     expectValid(p);
   });
 
-  it('layout.reverse em linha: a primeira filha no fim do slot, as seguintes à esquerda da última (FX3)', () => {
+  it('layout.reverse in a row: the first child at the end of the slot, the following ones to the left of the last (FX3)', () => {
     const reverse = testCatalog({
       ...COMPONENTS,
       row: reversedContainer('row', 'row', { width: 300, height: 100 }),
@@ -261,7 +261,7 @@ describe('componentPlacement: dentro de um container', () => {
     expectValid(p);
   });
 
-  it('layout.reverse em coluna: a primeira filha no fim do slot, as seguintes acima da última (FX3)', () => {
+  it('layout.reverse in a column: the first child at the end of the slot, the following ones above the last (FX3)', () => {
     const reverse = testCatalog({
       ...COMPONENTS,
       column: reversedContainer('column', 'column', { width: 300, height: 300 }),
@@ -276,13 +276,13 @@ describe('componentPlacement: dentro de um container', () => {
     p = setFieldValue(p, 'A_C', 'padding', 4);
     p = add(p, 'T1', 'text', { parentId: 'C' }, reverse);
     p = add(p, 'T2', 'text', { parentId: 'C' }, reverse);
-    // O slot acaba em y = 350; com o padding de 4 a primeira filha termina em 346.
+    // The slot ends at y = 350; with the padding of 4 the first child ends at 346.
     expect(rectOf(p, 'T1')).toEqual({ x: 54, y: 306, width: 100, height: 40 });
     expect(rectOf(p, 'T2')).toEqual({ x: 54, y: 258, width: 100, height: 40 });
     expectValid(p);
   });
 
-  it('gap e padding do slot em $token valem os da tabela do modo do desenho (#948)', () => {
+  it('slot gap and padding in $token use those of the drawing mode table (#948)', () => {
     const tokens = tokenSlotCatalog();
     let p = add(
       componentProject(),
@@ -293,10 +293,10 @@ describe('componentPlacement: dentro de um container', () => {
     );
     p = add(p, 'T1', 'text', { parentId: 'C' }, tokens);
     p = add(p, 'T2', 'text', { parentId: 'C' }, tokens);
-    // Primeiro modo: padding 10, gap 4.
+    // First mode: padding 10, gap 4.
     expect(rectOf(p, 'T1')).toEqual({ x: 60, y: 60, width: 100, height: 40 });
     expect(rectOf(p, 'T2')).toEqual({ x: 60, y: 104, width: 100, height: 40 });
-    // O container no modo `dark`: padding 20, gap 12.
+    // The container in `dark` mode: padding 20, gap 12.
     let dark = setContainerDrawingMode(
       add(
         componentProject(),
@@ -314,19 +314,19 @@ describe('componentPlacement: dentro de um container', () => {
     expect(rectOf(dark, 'T2')).toEqual({ x: 70, y: 122, width: 100, height: 40 });
   });
 
-  it('layout none: a primeira no início do slot; a segunda, ao lado, sem coincidir', () => {
+  it('layout none: the first at the start of the slot; the second, beside it, without coinciding', () => {
     let p = add(componentProject(), 'C', 'box', {
       rect: { x: 50, y: 50, width: 300, height: 200 },
     });
     p = add(p, 'T1', 'text', { parentId: 'C' });
     p = add(p, 'T2', 'text', { parentId: 'C' });
     expect(rectOf(p, 'T1')).toEqual({ x: 50, y: 50, width: 100, height: 40 });
-    // O início do slot já está ocupado pela T1: o lugar livre mais perto é logo abaixo (50 + 40 + 8).
+    // The start of the slot is already taken by T1: the nearest free place is right below (50 + 40 + 8).
     expect(rectOf(p, 'T2')).toEqual({ x: 50, y: 98, width: 100, height: 40 });
     expect(marking(p, 'T2').parentId).toBe('C');
   });
 
-  it('container menor que o tamanho inicial: encolhe, respeitando o mínimo', () => {
+  it('a container smaller than the initial size: shrinks, respecting the minimum', () => {
     let p = add(componentProject(), 'C', 'row', {
       rect: { x: 100, y: 100, width: 80, height: 30 },
     });
@@ -335,16 +335,16 @@ describe('componentPlacement: dentro de um container', () => {
     expectValid(p);
   });
 
-  it('nem o mínimo cabe no container: rect-outside-parent', () => {
+  it('not even the minimum fits in the container: rect-outside-parent', () => {
     const p = add(componentProject(), 'C', 'row', {
       rect: { x: 100, y: 100, width: 50, height: 30 },
     });
     expect(() => add(p, 'T1', 'text', { parentId: 'C' })).toThrow('rect-outside-parent');
   });
 
-  it('o pai precisa estar na mesma imagem', () => {
+  it('the parent must be in the same image', () => {
     let p = withRow();
-    p = addContainer(p, { id: 'I2', file: 'images/outra.png', width: 500, height: 500 });
+    p = addContainer(p, { id: 'I2', file: 'images/other.png', width: 500, height: 500 });
     expect(() => add(p, 'T1', 'text', { parentId: 'C', containerId: 'I2' })).toThrow(
       'invalid-parent',
     );
@@ -352,12 +352,12 @@ describe('componentPlacement: dentro de um container', () => {
 });
 
 describe('addComponentMarking', () => {
-  it('cria a marcação e a anotação tipada na camada do tipo, com o preview', () => {
-    const p = add(componentProject(), 'M1', 'text', { name: 'Título' });
+  it('creates the marking and the typed annotation in the type layer, with the preview', () => {
+    const p = add(componentProject(), 'M1', 'text', { name: 'Title' });
     const m = marking(p, 'M1');
     expect(m).toMatchObject({
       parentId: null,
-      name: 'Título',
+      name: 'Title',
       containerId: 'I1',
       needsReview: false,
       locked: false,
@@ -367,7 +367,7 @@ describe('addComponentMarking', () => {
     expect(annotation.markingId).toBe('M1');
     expect(annotation.type).toEqual({ specId: SPEC_ID, typeId: 'text' });
     expect(annotation.layerId).toBe('LS1');
-    // preview {label, count, kind}; o resto fica no default do campo.
+    // preview {label, count, kind}; the rest stays at the field default.
     expect(annotation.values).toEqual({
       label: 'Preview',
       count: 3,
@@ -379,7 +379,7 @@ describe('addComponentMarking', () => {
     expectValid(p);
   });
 
-  it('sem preview os campos ficam nos default', () => {
+  it('without a preview the fields stay at their defaults', () => {
     const p = add(componentProject(), 'C', 'row');
     expect(p.annotations.find((a) => a.id === 'A_C')?.values).toEqual({
       spacing: 8,
@@ -387,16 +387,16 @@ describe('addComponentMarking', () => {
     });
   });
 
-  it('values parciais: os campos ausentes começam com o preview, os informados vencem', () => {
+  it('partial values: the absent fields start with the preview, the given ones win', () => {
     const p = add(componentProject(), 'M1', 'text', {
-      values: { label: 'Dado', count: 5 },
+      values: { label: 'Given', count: 5 },
     });
     const values = p.annotations.find((a) => a.id === 'A_M1')?.values;
-    // preview {label: 'Preview', count: 3, kind: 'b'}: o `kind` ausente vem do preview, não do default 'a'.
-    expect(values).toMatchObject({ label: 'Dado', count: 5, kind: 'b' });
+    // preview {label: 'Preview', count: 3, kind: 'b'}: the absent `kind` comes from the preview, not from the default 'a'.
+    expect(values).toMatchObject({ label: 'Given', count: 5, kind: 'b' });
   });
 
-  it('values parciais: table e ref continuam no default', () => {
+  it('partial values: table and ref stay at the default', () => {
     const p = add(componentProject(), 'M1', 'text', { values: { count: 5 } });
     expect(p.annotations.find((a) => a.id === 'A_M1')?.values).toMatchObject({
       label: 'Preview',
@@ -406,9 +406,11 @@ describe('addComponentMarking', () => {
     });
   });
 
-  it('values inválidos são recusados com o erro do campo', () => {
+  it('invalid values are refused with the field error', () => {
     const p = componentProject();
-    expect(() => add(p, 'M1', 'text', { values: { nada: 1 } })).toThrow('unknown-field');
+    expect(() => add(p, 'M1', 'text', { values: { nothing: 1 } })).toThrow(
+      'unknown-field',
+    );
     expect(() => add(p, 'M1', 'text', { values: { kind: 'z' } })).toThrow(
       'unknown-option',
     );
@@ -417,7 +419,7 @@ describe('addComponentMarking', () => {
     );
   });
 
-  it('preview que o campo não aceita fica no default, sem falhar', () => {
+  it('a preview the field does not accept stays at the default, without failing', () => {
     const bad = {
       ...COMPONENTS,
       text: { ...COMPONENTS.text, preview: { label: 'Ok', kind: 'zzz', count: 'x' } },
@@ -430,13 +432,13 @@ describe('addComponentMarking', () => {
     });
   });
 
-  it('retângulo explícito vale em vez da colocação', () => {
+  it('an explicit rectangle applies instead of the placement', () => {
     const rect = { x: 10, y: 20, width: 70, height: 30 };
     const p = add(componentProject(), 'M1', 'text', { rect });
     expect(rectOf(p, 'M1')).toEqual(rect);
   });
 
-  it('retângulo explícito: respeita minSize, a imagem e o pai', () => {
+  it('explicit rectangle: respects minSize, the image and the parent', () => {
     let p = add(componentProject(), 'C', 'row', {
       rect: { x: 100, y: 100, width: 300, height: 100 },
     });
@@ -459,14 +461,14 @@ describe('addComponentMarking', () => {
     expect(marking(p, 'M2').parentId).toBe('C');
   });
 
-  it('o pai gravado é o que a geometria dá, nunca o pedido', () => {
+  it('the stored parent is the one the geometry gives, never the requested one', () => {
     let p = add(componentProject(), 'C', 'box', {
       rect: { x: 400, y: 300, width: 300, height: 200 },
     });
-    // Sem pai pedido, mas o centro da imagem cai dentro de C: C é o pai.
+    // No parent requested, but the image center falls inside C: C is the parent.
     p = add(p, 'M1', 'text');
     expect(marking(p, 'M1').parentId).toBe('C');
-    // Pedido C como alvo do posicionamento; a instância cai dentro de D (dentro de C): D é o pai.
+    // C requested as the placement target; the instance falls inside D (inside C): D is the parent.
     p = add(p, 'D', 'box', { rect: { x: 420, y: 320, width: 100, height: 100 } });
     expect(marking(p, 'D').parentId).toBe('C');
     p = add(p, 'M2', 'text', {
@@ -477,14 +479,14 @@ describe('addComponentMarking', () => {
     expectValid(p);
   });
 
-  it('é uma operação pura: o projeto de entrada não muda', () => {
+  it('it is a pure operation: the input project does not change', () => {
     const p = componentProject();
     add(p, 'M1', 'text');
     expect(p.markings).toHaveLength(0);
     expect(p.annotations).toHaveLength(0);
   });
 
-  it('recusas: tipo sem componente, catálogo de outra versão, camada ausente, id repetido', () => {
+  it('refusals: type without a component, catalog of another version, missing layer, repeated id', () => {
     const p = componentProject();
     expect(() => add(p, 'M1', 'plain')).toThrow('unknown-type');
     expect(() => add(p, 'M1', 'text', {}, EMPTY_CATALOG)).toThrow('unknown-type');
@@ -505,7 +507,7 @@ describe('addComponentMarking', () => {
   });
 });
 
-describe('no canvas (containerId nulo)', () => {
+describe('on the canvas (null containerId)', () => {
   const place = (args: Partial<Parameters<typeof componentPlacement>[2]> = {}) =>
     componentPlacement(
       componentProject(),
@@ -514,9 +516,9 @@ describe('no canvas (containerId nulo)', () => {
       approximateMeasurer,
     );
 
-  it('sem centro: o size do componente em unidades do canvas, centrado em (0, 0)', () => {
-    // O container I1 ocupa (0, 0) no canvas: o centro pedido está coberto, então a peça vai ao
-    // lugar livre mais perto, logo acima dele (-8 − 40 = -48).
+  it('without a center: the component size in canvas units, centered at (0, 0)', () => {
+    // The I1 container sits at (0, 0) on the canvas: the requested center is covered, so the piece goes to
+    // the nearest free place, right above it (-8 − 40 = -48).
     expect(place()).toEqual({ x: -50, y: -48, width: 100, height: 40 });
     const away = moveContainer(componentProject(), 'I1', 5000, 5000);
     expect(
@@ -529,7 +531,7 @@ describe('no canvas (containerId nulo)', () => {
     ).toEqual({ x: -50, y: -20, width: 100, height: 40 });
   });
 
-  it('centrada no ponto pedido, com coordenadas inteiras e sem limite nenhum', () => {
+  it('centered on the requested point, with integer coordinates and no limit at all', () => {
     expect(place({ center: { x: 5000.5, y: -3000.4 } })).toEqual({
       x: 4951,
       y: -3020,
@@ -544,21 +546,21 @@ describe('no canvas (containerId nulo)', () => {
     });
   });
 
-  it('tipo sem componente continua recusado no canvas', () => {
+  it('a type without a component is still refused on the canvas', () => {
     expect(() => place({ typeId: 'plain' })).toThrow('unknown-type');
   });
 
-  it('cria a marcação do canvas com a anotação tipada, sem container nem pai', () => {
+  it('creates the canvas marking with the typed annotation, without container or parent', () => {
     const p = add(componentProject(), 'M1', 'text', {
       containerId: null,
       center: { x: -3000, y: 500 },
-      name: 'Solta',
+      name: 'Loose',
     });
     expect(marking(p, 'M1')).toMatchObject({
       containerId: null,
       parentId: null,
       floating: false,
-      name: 'Solta',
+      name: 'Loose',
       rect: { x: -3050, y: 480, width: 100, height: 40 },
     });
     const annotation = p.annotations.find((a) => a.id === 'A_M1')!;
@@ -566,10 +568,10 @@ describe('no canvas (containerId nulo)', () => {
     expectValid(p);
   });
 
-  it('o tamanho inicial vale mesmo onde um container não o comportaria', () => {
+  it('the initial size applies even where a container would not hold it', () => {
     const p = addContainer(componentProject(), {
       id: 'I2',
-      file: 'images/minuscula.png',
+      file: 'images/tiny.png',
       width: 50,
       height: 50,
     });
@@ -586,13 +588,13 @@ describe('no canvas (containerId nulo)', () => {
     expectValid(q);
   });
 
-  it('caiu inteira dentro de um container: o assentar a faz marcação dele, convertida', () => {
-    // Com `rect` explícito (sem `rect`, a colocação desvia do container, que é obstáculo no canvas).
+  it('fell entirely inside a container: settling makes it a marking of that container, converted', () => {
+    // With an explicit `rect` (without `rect`, the placement avoids the container, which is an obstacle on the canvas).
     const p = add(componentProject(), 'M1', 'text', {
       containerId: null,
       rect: { x: 150, y: 280, width: 100, height: 40 },
     });
-    // Container I1 em (0,0) na escala 1: o retângulo do canvas vira o mesmo em pixels dele.
+    // Container I1 at (0,0) at scale 1: the canvas rectangle becomes the same one in its pixels.
     expect(marking(p, 'M1')).toMatchObject({
       containerId: 'I1',
       rect: { x: 150, y: 280, width: 100, height: 40 },
@@ -600,7 +602,7 @@ describe('no canvas (containerId nulo)', () => {
     expectValid(p);
   });
 
-  it('dentro de um componente com slot do canvas: posiciona no slot e grava o pai assentado', () => {
+  it('inside a component with a canvas slot: places in the slot and stores the settled parent', () => {
     let p = add(componentProject(), 'C', 'row', {
       containerId: null,
       rect: { x: -2000, y: 100, width: 300, height: 100 },
@@ -614,7 +616,7 @@ describe('no canvas (containerId nulo)', () => {
     expectValid(p);
   });
 
-  it('o pai alvo precisa ser do mesmo espaço', () => {
+  it('the target parent must be in the same space', () => {
     const p = add(componentProject(), 'C', 'row', {
       rect: { x: 100, y: 100, width: 300, height: 100 },
     });
@@ -624,7 +626,7 @@ describe('no canvas (containerId nulo)', () => {
   });
 });
 
-describe('tipo flutuante (biblioteca de notas)', () => {
+describe('floating type (notes library)', () => {
   const notes = notesCatalog();
   const addNote = (
     p: Project,
@@ -646,7 +648,7 @@ describe('tipo flutuante (biblioteca de notas)', () => {
       approximateMeasurer,
     );
 
-  it('componentTypes expõe floating', () => {
+  it('componentTypes exposes floating', () => {
     const types = componentTypes(notesProject(), notes);
     expect(types.map((t) => [t.typeId, t.floating])).toEqual([
       ['nota', true],
@@ -657,15 +659,16 @@ describe('tipo flutuante (biblioteca de notas)', () => {
     );
   });
 
-  it('cria a marcação flutuante no canvas, centrada em center, com o preview', () => {
+  it('creates the floating marking on the canvas, centered on center, with the preview', () => {
     const p = addNote(notesProject(), 'N1', { center: { x: 3000, y: 500 } });
     const m = marking(p, 'N1');
     expect(m).toMatchObject({ floating: true, containerId: null, parentId: null });
-    // Tamanho do componente da nota: 240 x 120, centrado em (3000, 500).
+    // Size of the note component: 240 x 120, centered at (3000, 500).
     expect(m.rect).toEqual({ x: 2880, y: 440, width: 240, height: 120 });
     const annotation = p.annotations.find((a) => a.id === 'A_N1')!;
     expect(annotation.type).toEqual({ specId: NOTES_SPEC_ID, typeId: 'nota' });
     expect(annotation.layerId).toBe(p.layers.find((l) => l.spec !== null)?.id);
+    // pt-BR kept: the preview values come from the notes library of mappings-workspace (Portuguese data).
     expect(annotation.values).toMatchObject({
       titulo: 'Título',
       texto: 'Escreva aqui o comentário.',
@@ -673,17 +676,17 @@ describe('tipo flutuante (biblioteca de notas)', () => {
     expectValid(p);
   });
 
-  it('com containerId ou parentId falha com invalid-space', () => {
+  it('with containerId or parentId fails with invalid-space', () => {
     const base = notesProject();
     expect(() => addNote(base, 'N1', { containerId: 'I1' })).toThrow('invalid-space');
     const withNote = addNote(base, 'N1');
     expect(() => addNote(withNote, 'N2', { parentId: 'N1' })).toThrow('invalid-space');
   });
 
-  it('criada sobre um container, não vira filha e settleHierarchy a deixa em paz', () => {
+  it('created over a container, it does not become a child and settleHierarchy leaves it alone', () => {
     const base = addContainer(notesProject(), {
       id: 'I2',
-      file: 'images/outra.png',
+      file: 'images/other.png',
       width: 500,
       height: 500,
     });
@@ -702,7 +705,7 @@ describe('tipo flutuante (biblioteca de notas)', () => {
   });
 });
 
-describe('componentPlacement: tamanho opcional (size)', () => {
+describe('componentPlacement: optional size (size)', () => {
   const column = (): Project =>
     add(componentProject(), 'C', 'column', {
       rect: { x: 50, y: 50, width: 300, height: 300 },
@@ -721,7 +724,7 @@ describe('componentPlacement: tamanho opcional (size)', () => {
       approximateMeasurer,
     );
 
-  it('substitui o size do componente e a posição continua vindo do slot', () => {
+  it('replaces the component size and the position still comes from the slot', () => {
     let p = column();
     expect(place(p, { width: 200, height: 60 })).toEqual({
       x: 50,
@@ -730,7 +733,7 @@ describe('componentPlacement: tamanho opcional (size)', () => {
       height: 60,
     });
     p = add(p, 'T1', 'text', { parentId: 'C' });
-    // Depois da última filha (50 + 40) e do gap de 8.
+    // After the last child (50 + 40) and the gap of 8.
     expect(place(p, { width: 200, height: 60 })).toEqual({
       x: 50,
       y: 98,
@@ -739,12 +742,12 @@ describe('componentPlacement: tamanho opcional (size)', () => {
     });
   });
 
-  it('sem size, igual ao size do componente', () => {
+  it('without size, equal to the component size', () => {
     const p = column();
     expect(place(p)).toEqual({ x: 50, y: 50, width: 100, height: 40 });
   });
 
-  it('preso à área do slot', () => {
+  it('clamped to the slot area', () => {
     expect(place(column(), { width: 900, height: 900 })).toEqual({
       x: 50,
       y: 50,
@@ -753,14 +756,14 @@ describe('componentPlacement: tamanho opcional (size)', () => {
     });
   });
 
-  it('nunca abaixo do minSize do componente', () => {
+  it('never below the component minSize', () => {
     const rect = place(column(), { width: 1, height: 1 });
     const min = catalog.get(SPEC_ID)!.byType.get('text')!.minSize;
     expect(rect.width).toBeGreaterThanOrEqual(min?.width ?? 1);
     expect(rect.height).toBeGreaterThanOrEqual(min?.height ?? 1);
   });
 
-  it('nem o mínimo cabe no slot: rect-outside-parent', () => {
+  it('not even the minimum fits in the slot: rect-outside-parent', () => {
     const p = add(componentProject(), 'C', 'row', {
       rect: { x: 100, y: 100, width: 50, height: 30 },
     });
@@ -785,7 +788,7 @@ describe('placementFitsSlot', () => {
   const fits = (p: Project, rect: Rect): boolean =>
     placementFitsSlot(p, catalog, 'C', rect, approximateMeasurer);
 
-  it('slot livre: o retângulo calculado cabe', () => {
+  it('free slot: the computed rectangle fits', () => {
     const p = add(componentProject(), 'C', 'column', {
       rect: { x: 50, y: 50, width: 300, height: 300 },
     });
@@ -798,8 +801,8 @@ describe('placementFitsSlot', () => {
     expect(fits(p, rect)).toBe(true);
   });
 
-  it('slot cheio: a filha presa ao componente não cabe na área do slot', () => {
-    // O slot de `inset` fica 20 px para dentro do componente: x de 120 a 380, y de 120 a 160.
+  it('full slot: the child clamped to the component does not fit in the slot area', () => {
+    // The `inset` slot sits 20 px inside the component: x from 120 to 380, y from 120 to 160.
     let p = add(componentProject(), 'C', 'inset', {
       rect: { x: 100, y: 100, width: 300, height: 80 },
     });
@@ -811,12 +814,12 @@ describe('placementFitsSlot', () => {
       { containerId: 'I1', parentId: 'C', specId: SPEC_ID, typeId: 'text' },
       approximateMeasurer,
     );
-    // 120 + 100 + 8 + 100 + 8 = 336; 336 + 100 passa de 380: presa ao componente (x = 300).
+    // 120 + 100 + 8 + 100 + 8 = 336; 336 + 100 goes past 380: clamped to the component (x = 300).
     expect(rect).toEqual({ x: 300, y: 120, width: 100, height: 40 });
     expect(fits(p, rect)).toBe(false);
   });
 
-  it('slot cheio do tamanho do componente: presa dentro dele, mas em cima da última filha', () => {
+  it('slot full at the component size: clamped inside it, but on top of the last child', () => {
     let p = add(componentProject(), 'C', 'row', {
       rect: { x: 100, y: 100, width: 300, height: 40 },
     });
@@ -832,7 +835,7 @@ describe('placementFitsSlot', () => {
     expect(fits(p, rect)).toBe(false);
   });
 
-  it('alvo sem slot: não cabe', () => {
+  it('target without a slot: does not fit', () => {
     const p = add(componentProject(), 'C', 'text', {
       rect: { x: 100, y: 100, width: 300, height: 100 },
     });
@@ -840,7 +843,7 @@ describe('placementFitsSlot', () => {
   });
 });
 
-describe('a instância nova nasce no tamanho medido (MC3, decisão 16 da #898)', () => {
+describe('the new instance is born at the measured size (MC3, decision 16 of #898)', () => {
   const fcat = fitCatalog();
   const args = (
     typeId: string,
@@ -857,7 +860,7 @@ describe('a instância nova nasce no tamanho medido (MC3, decisão 16 da #898)',
   const create = (typeId: string, extra: Partial<NewComponentArgs> = {}) =>
     addComponentMarking(fitProject(), fcat, args(typeId, extra), approximateMeasurer);
 
-  it('sem rect, o eixo hug vale a altura do rótulo dado; a largura e o centro ficam', () => {
+  it('without rect, the hug axis takes the height of the given label; the width and the center stay', () => {
     const rect = marking(
       create('fit-button', { values: { label: LONG_LABEL } }),
       'B',
@@ -865,17 +868,17 @@ describe('a instância nova nasce no tamanho medido (MC3, decisão 16 da #898)',
     expect(rect.width).toBe(120);
     expect(rect.height).toBeGreaterThanOrEqual(76);
     expect((rect.height - 16) % 20).toBe(0);
-    // Centrado na imagem de 1000 × 800 com o tamanho medido.
+    // Centered on the 1000 × 800 image with the measured size.
     expect(rect.x).toBe(500 - 60);
     expect(rect.y).toBe(Math.round(400 - rect.height / 2));
   });
 
-  it('o rótulo que cabe dá o tamanho de sempre (o minSize vale)', () => {
+  it('a label that fits gives the usual size (the minSize applies)', () => {
     const rect = marking(create('fit-button', { values: { label: 'Ok' } }), 'B').rect;
     expect(rect).toMatchObject({ width: 120, height: 40 });
   });
 
-  it('sem values mede o default do campo; componente sem eixo ajustável não muda', () => {
+  it('without values it measures the field default; a component without a fittable axis does not change', () => {
     expect(marking(create('fit-button'), 'B').rect).toMatchObject({
       width: 120,
       height: 40,
@@ -886,18 +889,18 @@ describe('a instância nova nasce no tamanho medido (MC3, decisão 16 da #898)',
     });
   });
 
-  it('o rect dado manda, sem medir', () => {
+  it('the given rect rules, without measuring', () => {
     const given = { x: 10, y: 20, width: 120, height: 40 };
     const p = create('fit-button', { values: { label: LONG_LABEL }, rect: given });
     expect(marking(p, 'B').rect).toEqual(given);
   });
 
-  it('o sizing por expressão também: o campo que liga o px vale na criação', () => {
-    const rect = marking(create('fit-px', { values: { tall: 'sim' } }), 'B').rect;
+  it('expression sizing too: the field that switches on the px applies on creation', () => {
+    const rect = marking(create('fit-px', { values: { tall: 'yes' } }), 'B').rect;
     expect(rect.height).toBe(80);
   });
 
-  it('componentPlacement e componentSize medem com os values dados', () => {
+  it('componentPlacement and componentSize measure with the given values', () => {
     const base = {
       containerId: 'I1',
       parentId: null,
@@ -919,14 +922,14 @@ describe('a instância nova nasce no tamanho medido (MC3, decisão 16 da #898)',
       approximateMeasurer,
     );
     expect({ width: rect.width, height: rect.height }).toEqual(size);
-    // Sem values, o tamanho do componente (o rótulo é o default, curto).
+    // Without values, the component size (the label is the default, short).
     expect(componentSize(fitProject(), fcat, base, approximateMeasurer)).toEqual({
       width: 120,
       height: 40,
     });
   });
 
-  it('com values de um valor que o campo recusa, mede sem ele (a criação falha como antes)', () => {
+  it('with values containing a value the field refuses, it measures without it (the creation fails as before)', () => {
     const base = {
       containerId: 'I1',
       parentId: null,
@@ -936,21 +939,21 @@ describe('a instância nova nasce no tamanho medido (MC3, decisão 16 da #898)',
     const size = componentSize(
       fitProject(),
       fcat,
-      { ...base, values: { label: 5 as never, inexistente: 'x' } },
+      { ...base, values: { label: 5 as never, nonexistent: 'x' } },
       approximateMeasurer,
     );
     expect(size).toEqual({ width: 120, height: 40 });
   });
 });
 
-describe('componentPlacement: filha nova num slot com wrap (MC4, decisão 12)', () => {
+describe('componentPlacement: new child in a slot with wrap (MC4, decision 12)', () => {
   const wrapped = (wrap: Record<string, unknown>) =>
     testCatalog({
       ...COMPONENTS,
       row: wrappedContainer('row', 'row', { width: 320, height: 100 }, wrap),
     });
 
-  it('entra depois da última na mesma linha enquanto cabe e na linha seguinte quando não cabe', () => {
+  it('goes after the last one on the same line while it fits and on the next line when it does not', () => {
     const cat = wrapped({ wrap: 'wrap', lineGap: 12 });
     let p = add(
       componentProject(),
@@ -964,12 +967,12 @@ describe('componentPlacement: filha nova num slot com wrap (MC4, decisão 12)', 
     expect(rectOf(p, 'T1')).toEqual({ x: 100, y: 100, width: 100, height: 40 });
     expect(rectOf(p, 'T2')).toEqual({ x: 208, y: 100, width: 100, height: 40 });
     expect(rectOf(p, 'T3')).toEqual({ x: 316, y: 100, width: 100, height: 40 });
-    // 316 + 100 + 8 + 100 > 420: a quarta vai para o começo da linha seguinte.
+    // 316 + 100 + 8 + 100 > 420: the fourth goes to the start of the next line.
     expect(rectOf(p, 'T4')).toEqual({ x: 100, y: 152, width: 100, height: 40 });
     expectValid(p);
   });
 
-  it('maxPerLine quebra a linha antes de o espaço acabar', () => {
+  it('maxPerLine breaks the line before the space runs out', () => {
     const cat = wrapped({ wrap: 'wrap', maxPerLine: 2 });
     let p = add(
       componentProject(),
@@ -982,7 +985,7 @@ describe('componentPlacement: filha nova num slot com wrap (MC4, decisão 12)', 
     expect(rectOf(p, 'T3')).toEqual({ x: 100, y: 140, width: 100, height: 40 });
   });
 
-  it('maxLines: a filha que abriria uma linha além do limite não abre a linha seguinte', () => {
+  it('maxLines: a child that would open a line beyond the limit does not open the next line', () => {
     const cat = wrapped({ wrap: 'wrap', maxLines: 1 });
     let p = add(
       componentProject(),
@@ -993,11 +996,11 @@ describe('componentPlacement: filha nova num slot com wrap (MC4, decisão 12)', 
     );
     for (const id of ['T1', 'T2', 'T3', 'T4'])
       p = add(p, id, 'text', { parentId: 'C' }, cat);
-    // Sem a linha nova (y 140), a filha cai no fluxo de uma linha só e o lugar livre a leva adiante.
+    // Without the new line (y 140), the child falls into the single-line flow and the free place takes it further.
     expect(rectOf(p, 'T4').y).not.toBe(140);
   });
 
-  it('sem wrap, a filha segue à direita da última (o comportamento de hoje)', () => {
+  it("without wrap, the child follows to the right of the last one (today's behavior)", () => {
     let p = add(componentProject(), 'C', 'row', {
       rect: { x: 100, y: 100, width: 320, height: 100 },
     });
@@ -1006,7 +1009,7 @@ describe('componentPlacement: filha nova num slot com wrap (MC4, decisão 12)', 
   });
 });
 
-describe('top-app-bar da Material 3 nasce com a altura do estilo (TB1, decisão 1 da #1335)', () => {
+describe('the Material 3 top-app-bar is born with the style height (TB1, decision 1 of #1335)', () => {
   const m3 = (): Project => {
     let n = 0;
     const p = applySpecialization(emptyProject(), m3Spec, {
@@ -1036,7 +1039,7 @@ describe('top-app-bar da Material 3 nasce com a altura do estilo (TB1, decisão 
     ['medium', 112],
     ['large', 152],
   ])(
-    'sem rect, o estilo %s nasce com altura %i e a largura presa aos 360 do container',
+    'without rect, the %s style is born with height %i and the width clamped to the 360 of the container',
     (style, height) => {
       const rect = rectOf(create({ style }), 'B');
       expect(rect.height).toBe(height);
@@ -1044,11 +1047,11 @@ describe('top-app-bar da Material 3 nasce com a altura do estilo (TB1, decisão 
     },
   );
 
-  it('sem values, o estilo padrão (small) dá 64', () => {
+  it('without values, the default style (small) gives 64', () => {
     expect(rectOf(create(), 'B').height).toBe(64);
   });
 
-  it('componentSize e componentPlacement dão a mesma altura do estilo', () => {
+  it('componentSize and componentPlacement give the same style height', () => {
     const base = {
       containerId: 'I1',
       parentId: null,
@@ -1062,7 +1065,7 @@ describe('top-app-bar da Material 3 nasce com a altura do estilo (TB1, decisão 
     expect({ width: rect.width, height: rect.height }).toEqual(size);
   });
 
-  it('com rect explícito, o rect manda', () => {
+  it('with an explicit rect, the rect rules', () => {
     const given = { x: 0, y: 0, width: 360, height: 90 };
     const p = addComponentMarking(
       m3(),

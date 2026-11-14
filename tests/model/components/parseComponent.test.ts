@@ -1,4 +1,4 @@
-// Laboratório Componentes: validação do arquivo `mapping-component`.
+// Components lab: validation of the `mapping-component` file.
 import { describe, expect, it } from 'vitest';
 import type { ComponentFile } from '../../../src/model/components/componentFormat';
 import {
@@ -8,27 +8,27 @@ import {
   validateComponent,
 } from '../../../src/model/components/parseComponent';
 
-/** Valida e devolve o arquivo tipado; falha o teste se o resultado não for ok. */
+/** Validates and returns the typed file; fails the test if the result is not ok. */
 function parsedOf(input: unknown): ComponentFile {
   const result = parseComponent(input);
   if (!result.ok) throw new Error(result.errors.join('; '));
   return result.component;
 }
 
-/** Um botão realista: ícone opcional, rótulo ligado ao campo, cor por variante, borda condicional. */
+/** A realistic button: optional icon, label bound to the field, color per variant, conditional border. */
 function button(): Record<string, unknown> {
   return {
     format: 'mapping-component',
     formatVersion: 1,
     id: 'button',
-    name: 'Botão',
-    description: 'Botão com ícone opcional.',
+    name: 'Button',
+    description: 'Button with an optional icon.',
     size: { width: 120, height: 40 },
     minSize: { width: 60, height: 32 },
-    preview: { label: 'Salvar', variant: 'primary', icon: 'sim', count: 3, note: null },
+    preview: { label: 'Save', variant: 'primary', icon: 'yes', count: 3, note: null },
     template: {
       type: 'frame',
-      name: 'Raiz',
+      name: 'Root',
       clip: true,
       layout: {
         type: 'row',
@@ -63,7 +63,7 @@ function button(): Record<string, unknown> {
       children: [
         {
           type: 'path',
-          name: 'Ícone',
+          name: 'Icon',
           visible: { $field: 'icon' },
           width: 16,
           height: 16,
@@ -78,7 +78,7 @@ function button(): Record<string, unknown> {
           height: '100%',
           opacity: { $if: { $field: 'disabled' }, then: 0.4, else: 1 },
           text: {
-            $concat: [{ $field: 'label', default: 'Botão' }, ' ', { $field: 'count' }],
+            $concat: [{ $field: 'label', default: 'Button' }, ' ', { $field: 'count' }],
           },
           font: {
             family: 'Inter',
@@ -115,7 +115,7 @@ function button(): Record<string, unknown> {
               anchors: { centerX: true, centerY: true },
               cornerRadius: [1, 2, 3, 4],
             },
-            { type: 'slot', label: { $field: 'slotLabel', default: 'Conteúdo' } },
+            { type: 'slot', label: { $field: 'slotLabel', default: 'Content' } },
           ],
         },
       ],
@@ -125,22 +125,22 @@ function button(): Record<string, unknown> {
 
 type Mutate = (c: Record<string, any>) => void; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-/** Aplica a mutação a um botão válido e devolve os problemas. */
+/** Applies the mutation to a valid button and returns the problems. */
 function problemsAfter(mutate: Mutate): string[] {
   const c = button();
   mutate(c);
   return validateComponent(c);
 }
 
-/** Afirma que existe um problema exatamente no caminho dado, com o trecho de mensagem. */
+/** Asserts that a problem exists exactly at the given path, with the message fragment. */
 function expectProblem(problems: string[], path: string, fragment: string): void {
   const found = problems.find((p) => p.startsWith(`${path}: `));
-  expect(found, `problemas: ${JSON.stringify(problems)}`).toBeDefined();
+  expect(found, `problems: ${JSON.stringify(problems)}`).toBeDefined();
   expect(found).toContain(fragment);
 }
 
-describe('parseComponent: componente válido', () => {
-  it('aceita o botão completo e devolve o mesmo objeto', () => {
+describe('parseComponent: valid component', () => {
+  it('accepts the full button and returns the same object', () => {
     const input = button();
     expect(validateComponent(input)).toEqual([]);
     const parsed = parsedOf(input);
@@ -148,7 +148,7 @@ describe('parseComponent: componente válido', () => {
     expect(parsed.template.children).toHaveLength(3);
   });
 
-  it('collectFieldKeys lista as chaves citadas, ordenadas e sem repetição', () => {
+  it('collectFieldKeys lists the cited keys, sorted and without repetition', () => {
     expect(collectFieldKeys(parsedOf(button()))).toEqual([
       'badge',
       'count',
@@ -162,12 +162,12 @@ describe('parseComponent: componente válido', () => {
     ]);
   });
 
-  it('aceita o mínimo: só os campos requireds', () => {
+  it('accepts the minimum: only the required fields', () => {
     const minimal = {
       format: 'mapping-component',
       formatVersion: 1,
       id: 'box',
-      name: 'Caixa',
+      name: 'Box',
       size: { width: 10, height: 10 },
       template: { type: 'frame' },
     };
@@ -176,13 +176,13 @@ describe('parseComponent: componente válido', () => {
   });
 });
 
-describe('parseComponent: raiz', () => {
-  it('format errado', () => {
-    const problems = problemsAfter((c) => (c.format = 'outro'));
+describe('parseComponent: root', () => {
+  it('wrong format', () => {
+    const problems = problemsAfter((c) => (c.format = 'other'));
     expectProblem(problems, 'format', 'mapping-component');
   });
 
-  it('formatVersion errada', () => {
+  it('wrong formatVersion', () => {
     expectProblem(
       problemsAfter((c) => (c.formatVersion = 5)),
       'formatVersion',
@@ -190,9 +190,9 @@ describe('parseComponent: raiz', () => {
     );
   });
 
-  it('id inválido', () => {
+  it('invalid id', () => {
     expectProblem(
-      problemsAfter((c) => (c.id = 'Botão Grande')),
+      problemsAfter((c) => (c.id = 'Big Button')),
       'id',
       'matching',
     );
@@ -208,7 +208,7 @@ describe('parseComponent: raiz', () => {
     );
   });
 
-  it('name vazio e description não texto', () => {
+  it('empty name and non-text description', () => {
     expectProblem(
       problemsAfter((c) => (c.name = ' ')),
       'name',
@@ -221,7 +221,7 @@ describe('parseComponent: raiz', () => {
     );
   });
 
-  it('size ausente ou com valor inválido', () => {
+  it('missing size or with an invalid value', () => {
     expectProblem(
       problemsAfter((c) => delete c.size),
       'size',
@@ -239,12 +239,12 @@ describe('parseComponent: raiz', () => {
     );
   });
 
-  it('minSize maior que size', () => {
+  it('minSize greater than size', () => {
     const problems = problemsAfter((c) => (c.minSize = { width: 200, height: 10 }));
     expectProblem(problems, 'minSize', 'greater than size');
   });
 
-  it('preview com valor de tipo inválido', () => {
+  it('preview with a value of an invalid type', () => {
     expectProblem(
       problemsAfter((c) => (c.preview.flag = true)),
       'preview.flag',
@@ -257,7 +257,7 @@ describe('parseComponent: raiz', () => {
     );
   });
 
-  it('template ausente ou que não é frame', () => {
+  it('missing template or one that is not a frame', () => {
     expectProblem(
       problemsAfter((c) => delete c.template),
       'template',
@@ -267,7 +267,7 @@ describe('parseComponent: raiz', () => {
     expectProblem(problems, 'template.type', 'frame');
   });
 
-  it('chave desconhecida na raiz', () => {
+  it('unknown key at the root', () => {
     expectProblem(
       problemsAfter((c) => (c.extra = 1)),
       'extra',
@@ -275,24 +275,24 @@ describe('parseComponent: raiz', () => {
     );
   });
 
-  it('entrada que não é objeto', () => {
+  it('input that is not an object', () => {
     expect(validateComponent(null)).toEqual(['component: expected an object']);
     expect(validateComponent([])).toEqual(['component: expected an object']);
   });
 });
 
-describe('parseComponent: nós', () => {
+describe('parseComponent: nodes', () => {
   it('unknown node type', () => {
     const problems = problemsAfter((c) => (c.template.children[1].type = 'blob'));
     expectProblem(problems, 'template.children[1].type', 'unknown node type');
   });
 
-  it('chave desconhecida em nó (erro de digitação)', () => {
+  it('unknown key in a node (typo)', () => {
     const problems = problemsAfter((c) => (c.template.children[0].colour = '#fff'));
     expectProblem(problems, 'template.children[0].colour', 'unknown key: colour');
   });
 
-  it('SizeSpec inválido', () => {
+  it('invalid SizeSpec', () => {
     expectProblem(
       problemsAfter((c) => (c.template.children[0].width = '10px')),
       'template.children[0].width',
@@ -305,13 +305,13 @@ describe('parseComponent: nós', () => {
     );
   });
 
-  it('opacidade fora de 0..1', () => {
+  it('opacity outside 0..1', () => {
     expectProblem(
       problemsAfter((c) => (c.template.opacity = 2)),
       'template.opacity',
       'between 0 and 1',
     );
-    // literal dentro da expressão segue a mesma regra
+    // a literal inside the expression follows the same rule
     expectProblem(
       problemsAfter((c) => (c.template.children[1].opacity.then = 5)),
       'template.children[1].opacity.then',
@@ -319,7 +319,7 @@ describe('parseComponent: nós', () => {
     );
   });
 
-  it('âncoras inválidas', () => {
+  it('invalid anchors', () => {
     const problems = problemsAfter((c) => {
       const anchors = c.template.children[2].children[0].anchors;
       anchors.left = '4';
@@ -332,14 +332,14 @@ describe('parseComponent: nós', () => {
     expectProblem(problems, `${base}.middle`, 'unknown key: middle');
   });
 
-  it('gradiente com uma parada só', () => {
+  it('gradient with a single stop', () => {
     const problems = problemsAfter((c) => {
       c.template.fill.cases.danger.stops = [{ offset: 0, color: '#fff' }];
     });
     expectProblem(problems, 'template.fill.cases.danger.stops', 'at least 2');
   });
 
-  it('parada com offset fora de 0..1', () => {
+  it('stop with an offset outside 0..1', () => {
     const problems = problemsAfter(
       (c) => (c.template.fill.cases.danger.stops[1].offset = 3),
     );
@@ -350,12 +350,12 @@ describe('parseComponent: nós', () => {
     );
   });
 
-  it('borda sem cor', () => {
+  it('border without a color', () => {
     const problems = problemsAfter((c) => delete c.template.stroke.color);
     expectProblem(problems, 'template.stroke.color', 'required field');
   });
 
-  it('borda com align inválido e sombra sem cor', () => {
+  it('border with an invalid align and shadow without a color', () => {
     const problems = problemsAfter((c) => {
       c.template.stroke.align = 'middle';
       delete c.template.shadow.color;
@@ -364,12 +364,12 @@ describe('parseComponent: nós', () => {
     expectProblem(problems, 'template.shadow.color', 'required field');
   });
 
-  it('cornerRadius inválido', () => {
+  it('invalid cornerRadius', () => {
     const problems = problemsAfter((c) => (c.template.cornerRadius = [1, 2]));
     expectProblem(problems, 'template.cornerRadius', '4 numbers');
   });
 
-  it('layout inválido', () => {
+  it('invalid layout', () => {
     const problems = problemsAfter((c) => {
       c.template.layout.justify = 'around';
       c.template.layout.padding = [1, 2, 3];
@@ -378,15 +378,15 @@ describe('parseComponent: nós', () => {
     expectProblem(problems, 'template.layout.padding', 'list of 4');
   });
 
-  it('texto sem text', () => {
+  it('text without text', () => {
     const problems = problemsAfter((c) => delete c.template.children[1].text);
     expectProblem(problems, 'template.children[1].text', 'required field');
   });
 
-  it('fonte com peso fora de 100..900 e alinhamento inválido', () => {
+  it('font with a weight outside 100..900 and an invalid alignment', () => {
     const problems = problemsAfter((c) => {
       c.template.children[1].font.weight = 1000;
-      c.template.children[1].font.align = 'distribuido';
+      c.template.children[1].font.align = 'distributed';
     });
     expectProblem(problems, 'template.children[1].font.weight', '100 and 900');
     expectProblem(
@@ -396,7 +396,7 @@ describe('parseComponent: nós', () => {
     );
   });
 
-  it('path sem viewBox ou com viewBox inválido', () => {
+  it('path without a viewBox or with an invalid viewBox', () => {
     expectProblem(
       problemsAfter((c) => delete c.template.children[0].viewBox),
       'template.children[0].viewBox',
@@ -409,14 +409,14 @@ describe('parseComponent: nós', () => {
     );
   });
 
-  it('children em um rect', () => {
+  it('children in a rect', () => {
     const problems = problemsAfter(
       (c) => (c.template.children[2].children[1].children = []),
     );
     expectProblem(problems, 'template.children[2].children[1].children', 'frame');
   });
 
-  it('layout em um text', () => {
+  it('layout in a text', () => {
     const problems = problemsAfter(
       (c) => (c.template.children[1].layout = { type: 'none' }),
     );
@@ -424,8 +424,8 @@ describe('parseComponent: nós', () => {
   });
 });
 
-describe('parseComponent: visible e italic como BoolExpr', () => {
-  it('aceita condição direta, $field, literal e $if', () => {
+describe('parseComponent: visible and italic as BoolExpr', () => {
+  it('accepts a direct condition, $field, literal and $if', () => {
     const visibles = [
       { $has: 'label' },
       { $not: { $field: 'on' } },
@@ -441,25 +441,25 @@ describe('parseComponent: visible e italic como BoolExpr', () => {
     }
   });
 
-  it('italic aceita condição direta', () => {
+  it('italic accepts a direct condition', () => {
     const problems = problemsAfter(
       (c) => (c.template.children[1].font.italic = { $has: 'em' }),
     );
     expect(problems).toEqual([]);
   });
 
-  it('campos da condição direta entram em collectFieldKeys', () => {
+  it('direct condition fields enter collectFieldKeys', () => {
     const c = button();
     (c.template as Record<string, unknown>).visible = { $has: 'extra' };
     expect(collectFieldKeys(parsedOf(c))).toContain('extra');
   });
 
-  it('$has com valor que não é texto é inválido', () => {
+  it('$has with a value that is not text is invalid', () => {
     const problems = problemsAfter((c) => (c.template.children[0].visible = { $has: 3 }));
     expectProblem(problems, 'template.children[0].visible.$has', 'field key');
   });
 
-  it('condição direta inválida em italic e com operador extra', () => {
+  it('invalid direct condition in italic and with an extra operator', () => {
     expectProblem(
       problemsAfter((c) => (c.template.children[1].font.italic = { $has: 3 })),
       'template.children[1].font.italic.$has',
@@ -474,17 +474,17 @@ describe('parseComponent: visible e italic como BoolExpr', () => {
     );
   });
 
-  it('literal que não é booleano continua inválido', () => {
+  it('a literal that is not a boolean is still invalid', () => {
     expectProblem(
-      problemsAfter((c) => (c.template.children[0].visible = 'sim')),
+      problemsAfter((c) => (c.template.children[0].visible = 'yes')),
       'template.children[0].visible',
       'boolean',
     );
   });
 });
 
-describe('parseComponent: expressões', () => {
-  it('expressão com dois operadores', () => {
+describe('parseComponent: expressions', () => {
+  it('expression with two operators', () => {
     const problems = problemsAfter(
       (c) =>
         (c.template.children[0].visible = { $field: 'icon', $switch: 'x', cases: {} }),
@@ -492,7 +492,7 @@ describe('parseComponent: expressões', () => {
     expectProblem(problems, 'template.children[0].visible', 'more than one operator');
   });
 
-  it('chave desconhecida dentro de expressão', () => {
+  it('unknown key inside an expression', () => {
     const problems = problemsAfter((c) => (c.template.children[0].visible.defualt = 'x'));
     expectProblem(
       problems,
@@ -501,36 +501,36 @@ describe('parseComponent: expressões', () => {
     );
   });
 
-  it('$if sem then', () => {
+  it('$if without then', () => {
     const problems = problemsAfter((c) => delete c.template.stroke.color.then);
     expectProblem(problems, 'template.stroke.color.then', 'required field');
   });
 
-  it('$eq que não é lista', () => {
+  it('$eq that is not a list', () => {
     const problems = problemsAfter(
       (c) => (c.template.stroke.color.$if = { $eq: 'variant' }),
     );
     expectProblem(problems, 'template.stroke.color.$if.$eq', 'expected a list');
   });
 
-  it('$eq com valor que não é texto nem número', () => {
+  it('$eq with a value that is neither text nor number', () => {
     const problems = problemsAfter(
       (c) => (c.template.stroke.color.$if = { $eq: ['v', true] }),
     );
     expectProblem(problems, 'template.stroke.color.$if.$eq', 'expected a list');
   });
 
-  it('condição sem operador ou com operador desconhecido', () => {
+  it('condition without an operator or with an unknown operator', () => {
     const problems = problemsAfter((c) => (c.template.stroke.color.$if = { $nope: 'x' }));
     expectProblem(problems, 'template.stroke.color.$if', 'without an operator');
   });
 
-  it('literal do tipo errado dentro de then', () => {
+  it('literal of the wrong type inside then', () => {
     const problems = problemsAfter((c) => (c.template.stroke.color.then = 12));
     expectProblem(problems, 'template.stroke.color.then', 'expected a color');
   });
 
-  it('literal do tipo errado em fill por $if e em $concat', () => {
+  it('literal of the wrong type in fill by $if and in $concat', () => {
     expectProblem(
       problemsAfter((c) => (c.template.fill = { $if: { $field: 'a' }, then: 12 })),
       'template.fill.then',
@@ -543,7 +543,7 @@ describe('parseComponent: expressões', () => {
     );
   });
 
-  it('$switch com casos e default conferidos', () => {
+  it('$switch with cases and default checked', () => {
     const problems = problemsAfter((c) => {
       c.template.fill.cases.primary = 5;
       c.template.fill.default = false;
@@ -553,10 +553,10 @@ describe('parseComponent: expressões', () => {
     expectProblem(problems, 'template.fill.cases', 'object of cases');
   });
 
-  it('$field com chave vazia e default do tipo errado', () => {
+  it('$field with an empty key and default of the wrong type', () => {
     const problems = problemsAfter((c) => {
       c.template.children[1].text.$concat[0] = { $field: '' };
-      c.template.children[0].visible = { $field: 'icon', default: 'sim' };
+      c.template.children[0].visible = { $field: 'icon', default: 'yes' };
     });
     expectProblem(problems, 'template.children[1].text.$concat[0].$field', 'field key');
     expectProblem(problems, 'template.children[0].visible.default', 'boolean');
@@ -564,10 +564,10 @@ describe('parseComponent: expressões', () => {
 });
 
 describe('validateComponent e parseComponent', () => {
-  it('validateComponent devolve todos os problemas de uma vez', () => {
+  it('validateComponent returns all the problems at once', () => {
     const problems = problemsAfter((c) => {
       c.format = 'x';
-      c.id = 'Ruim';
+      c.id = 'Bad';
       delete c.size;
       c.template.children[0].width = '10px';
       c.template.children[1].opacity = 2;
@@ -582,10 +582,10 @@ describe('validateComponent e parseComponent', () => {
     expectProblem(problems, 'template.children[2].children[1].children', 'frame');
   });
 
-  it('parseComponent devolve issues com caminho e mensagem, e errors no formato de validateComponent', () => {
+  it('parseComponent returns issues with path and message, and errors in the validateComponent format', () => {
     const input = button();
     input.format = 'x';
-    input.id = 'Ruim';
+    input.id = 'Bad';
     input.name = '';
     const result = parseComponent(input);
     expect(result.ok).toBe(false);
@@ -599,7 +599,7 @@ describe('validateComponent e parseComponent', () => {
     expect(result.errors).toEqual(validateComponent(input));
   });
 
-  it('parseComponent devolve o componente quando válido', () => {
+  it('parseComponent returns the component when valid', () => {
     const input = button();
     expect(parseComponent(input)).toEqual({
       ok: true,
@@ -608,16 +608,16 @@ describe('validateComponent e parseComponent', () => {
       tokenRefs: [],
       rewrite: expect.any(Function),
     });
-    // Sem variáveis, o caminho do componente lido é o do arquivo.
+    // Without variables, the path of the read component is the file's.
     const parsed = parseComponent(input);
     expect(parsed.ok && parsed.rewrite('template.children[0]')).toBe(
       'template.children[0]',
     );
   });
 
-  it('parseComponentText lê o texto JSON e trata JSON inválido como issue de caminho vazio', () => {
+  it('parseComponentText reads the JSON text and treats invalid JSON as an issue with an empty path', () => {
     expect(parseComponentText(JSON.stringify(button())).ok).toBe(true);
-    const bad = parseComponentText('{ nao json');
+    const bad = parseComponentText('{ not json');
     expect(bad.ok).toBe(false);
     if (bad.ok) return;
     expect(bad.issues).toHaveLength(1);
@@ -627,7 +627,7 @@ describe('validateComponent e parseComponent', () => {
   });
 });
 
-describe('aviso de font.family', () => {
+describe('font.family warning', () => {
   const withFamily = (family: unknown): Record<string, unknown> => {
     const c = button();
     c.template = {
@@ -642,7 +642,7 @@ describe('aviso de font.family', () => {
     return result.warnings;
   };
 
-  it('um family literal inválido é aviso, com o caminho do nó e o valor', () => {
+  it('an invalid literal family is a warning, with the node path and the value', () => {
     expect(warningsOf('"Segoe UI, Roboto')).toEqual([
       {
         path: 'template.children[0].font.family',
@@ -653,15 +653,15 @@ describe('aviso de font.family', () => {
     ]);
   });
 
-  it('pilha válida e expressão não geram aviso', () => {
+  it('a valid stack and an expression do not generate a warning', () => {
     expect(
       warningsOf('system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'),
     ).toEqual([]);
-    expect(warningsOf({ $field: 'fonte' })).toEqual([]);
+    expect(warningsOf({ $field: 'font' })).toEqual([]);
   });
 });
 
-describe('parseComponent: operações numéricas e comparações (formato 4)', () => {
+describe('parseComponent: numeric operations and comparisons (format 4)', () => {
   const V4 = 'only allowed with formatVersion 4';
   const opsComponent = (extra: Record<string, unknown>, version = 4): unknown => ({
     format: 'mapping-component',
@@ -677,7 +677,7 @@ describe('parseComponent: operações numéricas e comparações (formato 4)', (
     return validateComponent(opsComponent({ ...rest, ...layout }, version));
   };
 
-  it('aceita cada operação onde vale número, inclusive aninhada', () => {
+  it('accepts each operation where a number is valid, including nested', () => {
     const ok = {
       width: { $mul: [{ $field: 'p' }, 200] },
       height: { $add: [{ $sub: [100, 4] }, { $round: { $field: 'h', default: 1.4 } }] },
@@ -707,7 +707,7 @@ describe('parseComponent: operações numéricas e comparações (formato 4)', (
     ).toEqual([]);
   });
 
-  it('aceita as comparações em $if, visible, $and, $or e $not', () => {
+  it('accepts the comparisons in $if, visible, $and, $or and $not', () => {
     expect(
       problems({
         visible: {
@@ -719,7 +719,7 @@ describe('parseComponent: operações numéricas e comparações (formato 4)', (
     expect(problems({ visible: { $gt: [1, 2] } })).toEqual([]);
   });
 
-  it('numa formatVersion 1 a 3, cada chave nova é só da 4, no caminho da chave', () => {
+  it('in a formatVersion 1 to 3, each new key is only for 4, at the key path', () => {
     for (const version of [1, 2, 3]) {
       const found = problems(
         {
@@ -736,7 +736,7 @@ describe('parseComponent: operações numéricas e comparações (formato 4)', (
     }
   });
 
-  it('a aridade errada é recusada', () => {
+  it('the wrong arity is refused', () => {
     expectProblem(
       problems({ gap: { $sub: [1, 2, 3] } }),
       'template.layout.gap.$sub',
@@ -794,7 +794,7 @@ describe('parseComponent: operações numéricas e comparações (formato 4)', (
     );
   });
 
-  it('operando literal que não é número é recusado, no caminho do operando', () => {
+  it('an operand literal that is not a number is refused, at the operand path', () => {
     expectProblem(
       problems({ gap: { $add: [1, 'x'] } }),
       'template.layout.gap.$add[1]',
@@ -822,7 +822,7 @@ describe('parseComponent: operações numéricas e comparações (formato 4)', (
     );
   });
 
-  it('chave herdada do Object (constructor, toString) num caso do $switch não vira operação', () => {
+  it('a key inherited from Object (constructor, toString) in a $switch case does not become an operation', () => {
     for (const version of [3, 4]) {
       expect(
         problems(
@@ -838,7 +838,7 @@ describe('parseComponent: operações numéricas e comparações (formato 4)', (
     }
   });
 
-  it('operação fora de posição numérica é recusada; chave estranha também', () => {
+  it('an operation outside a numeric position is refused; an unknown key too', () => {
     expectProblem(problems({ fill: { $add: [1, 2] } }), 'template.fill', 'a number');
     expectProblem(
       problems({ gap: { $add: [1, 2], extra: 1 } }),
@@ -853,12 +853,12 @@ describe('parseComponent: operações numéricas e comparações (formato 4)', (
   });
 });
 
-describe('$lines e sizing por expressão (MC2, decisões 8 e 9 da #898)', () => {
+describe('$lines and sizing by expression (MC2, decisions 8 and 9 of #898)', () => {
   const V4 = 'only allowed with formatVersion 4';
   const text = (name: string, extra: Record<string, unknown> = {}) => ({
     type: 'text',
     name,
-    text: 'Olá',
+    text: 'Hello',
     ...extra,
   });
   const file = (
@@ -882,12 +882,12 @@ describe('$lines e sizing por expressão (MC2, decisões 8 e 9 da #898)', () => 
     ...extra,
   });
 
-  it('aceita $lines citando um nó text único, onde vale número', () => {
+  it('accepts $lines citing a single text node, where a number is valid', () => {
     expect(validateComponent(file(root([text('msg')])))).toEqual([]);
   });
 
-  it('nó citado inexistente, ou que não é text', () => {
-    for (const nodes of [[text('outro')], [{ type: 'rect', name: 'msg' }]]) {
+  it('cited node that does not exist, or is not text', () => {
+    for (const nodes of [[text('other')], [{ type: 'rect', name: 'msg' }]]) {
       const errors = validateComponent(file(root(nodes)));
       expect(errors).toHaveLength(1);
       expect(errors[0]).toMatch(
@@ -896,13 +896,13 @@ describe('$lines e sizing por expressão (MC2, decisões 8 e 9 da #898)', () => 
     }
   });
 
-  it('nó repetido', () => {
+  it('repeated node', () => {
     const errors = validateComponent(file(root([text('msg'), text('msg')])));
     expect(errors).toHaveLength(1);
     expect(errors[0]).toMatch(/\$lines: more than one text node "msg"$/);
   });
 
-  it('um nó dentro de repeat só se cita de dentro da mesma linha', () => {
+  it('a node inside a repeat can only be cited from inside the same row', () => {
     const rowOf = (cell: Record<string, unknown>) => ({
       type: 'repeat',
       field: 'rows',
@@ -917,7 +917,7 @@ describe('$lines e sizing por expressão (MC2, decisões 8 e 9 da #898)', () => 
     );
     expect(outside).toHaveLength(1);
     expect(outside[0]).toMatch(/\$lines: text node "cell" is inside a repeat/);
-    // De dentro da mesma linha, e de dentro do repeat para um nó de fora, vale.
+    // From inside the same row, and from inside the repeat to a node outside, it is valid.
     expect(
       validateComponent(
         file({
@@ -939,7 +939,7 @@ describe('$lines e sizing por expressão (MC2, decisões 8 e 9 da #898)', () => 
     ).toEqual([]);
   });
 
-  it('o próprio nó: $lines no width do nó citado', () => {
+  it('the node itself: $lines in the width of the cited node', () => {
     const errors = validateComponent(
       file({
         type: 'frame',
@@ -950,12 +950,12 @@ describe('$lines e sizing por expressão (MC2, decisões 8 e 9 da #898)', () => 
     expect(errors[0]).toMatch(/\$lines: the node cannot depend on its own lines$/);
   });
 
-  it('só na v4: a chave nova numa formatVersion 3 pede a 4', () => {
+  it('v4 only: the new key in a formatVersion 3 asks for 4', () => {
     const errors = validateComponent(file(root([text('msg')]), {}, 3));
     expect(errors.some((e) => e.endsWith(V4))).toBe(true);
   });
 
-  it('o nome precisa ser texto não vazio', () => {
+  it('the name must be non-empty text', () => {
     expect(
       validateComponent(file(root([text('msg')], { minHeight: { $lines: '' } }))),
     ).toEqual([
@@ -963,7 +963,7 @@ describe('$lines e sizing por expressão (MC2, decisões 8 e 9 da #898)', () => 
     ]);
   });
 
-  it('sizing aceita expressão que dá número, fill ou hug (v4)', () => {
+  it('sizing accepts an expression that gives a number, fill or hug (v4)', () => {
     const sizing = {
       width: 'fill',
       height: { $switch: 'style', cases: { small: 64, medium: 112, large: 152 } },
@@ -979,7 +979,7 @@ describe('$lines e sizing por expressão (MC2, decisões 8 e 9 da #898)', () => 
     ).toEqual([]);
   });
 
-  it('sizing por expressão numa formatVersion 3 pede a 4', () => {
+  it('sizing by expression in a formatVersion 3 asks for 4', () => {
     expect(
       validateComponent(
         file({ type: 'frame' }, { sizing: { height: { $field: 'h', default: 10 } } }, 3),
@@ -987,7 +987,7 @@ describe('$lines e sizing por expressão (MC2, decisões 8 e 9 da #898)', () => 
     ).toEqual([`sizing.height: ${V4}`]);
   });
 
-  it('$size dentro do sizing é erro', () => {
+  it('$size inside sizing is an error', () => {
     expect(
       validateComponent(
         file({ type: 'frame' }, { sizing: { height: { $size: 'width' } } }),
@@ -1003,7 +1003,7 @@ describe('$lines e sizing por expressão (MC2, decisões 8 e 9 da #898)', () => 
     ).toEqual(['sizing.width: $size is not valid in sizing']);
   });
 
-  it('$lines dentro do sizing é erro', () => {
+  it('$lines inside sizing is an error', () => {
     expect(
       validateComponent(
         file(root([text('msg')], { minHeight: 1 }), {
@@ -1013,7 +1013,7 @@ describe('$lines e sizing por expressão (MC2, decisões 8 e 9 da #898)', () => 
     ).toEqual(['sizing.height: $lines is not valid in sizing']);
   });
 
-  it('o valor literal inválido continua erro', () => {
+  it('the invalid literal value is still an error', () => {
     expect(
       validateComponent(file({ type: 'frame' }, { sizing: { height: -1 } })),
     ).toEqual([
@@ -1022,7 +1022,7 @@ describe('$lines e sizing por expressão (MC2, decisões 8 e 9 da #898)', () => 
   });
 });
 
-describe('parseComponent: none alinhado e clip (L2, formato 4)', () => {
+describe('parseComponent: none aligned and clip (L2, format 4)', () => {
   const V4 = 'only allowed with formatVersion 4';
   const file = (template: Record<string, unknown>, version = 4): unknown => ({
     format: 'mapping-component',
@@ -1039,7 +1039,7 @@ describe('parseComponent: none alinhado e clip (L2, formato 4)', () => {
       file({ type: 'frame', children: [{ type: 'slot', ...slot }] }, version),
     );
 
-  it('none aceita align e justify com start, center, end e stretch (literal ou expressão)', () => {
+  it('none accepts align and justify with start, center, end and stretch (literal or expression)', () => {
     for (const value of ['start', 'center', 'end', 'stretch'])
       expect(frame({ type: 'none', align: value, justify: value })).toEqual([]);
     expect(
@@ -1051,26 +1051,26 @@ describe('parseComponent: none alinhado e clip (L2, formato 4)', () => {
     ).toEqual([]);
   });
 
-  it('none rejeita baseline e space-*', () => {
+  it('none rejects baseline and space-*', () => {
     expect(frame({ type: 'none', align: 'baseline' })).toHaveLength(1);
     expect(frame({ type: 'none', justify: 'space-between' })).toHaveLength(1);
     expect(frame({ type: 'none', justify: 'space-around' })).toHaveLength(1);
     expect(frame({ type: 'none', justify: 'space-evenly' })).toHaveLength(1);
   });
 
-  it('none continua sem gap, padding, reverse e wrap', () => {
+  it('none still has no gap, padding, reverse and wrap', () => {
     for (const key of ['gap', 'padding', 'reverse', 'wrap'])
       expect(frame({ type: 'none', [key]: 1 })).toEqual([
         `template.layout.${key}: unknown key: ${key}`,
       ]);
   });
 
-  it('justify stretch em row e column continua erro', () => {
+  it('justify stretch in row and column is still an error', () => {
     expect(frame({ type: 'row', justify: 'stretch' })).toHaveLength(1);
     expect(frame({ type: 'column', justify: 'stretch' })).toHaveLength(1);
   });
 
-  it('align e justify do none numa versão 1 a 3: só com formatVersion 4, no caminho da chave', () => {
+  it('align and justify of none in a version 1 to 3: only with formatVersion 4, at the key path', () => {
     for (const version of [1, 2, 3]) {
       expect(frame({ type: 'none', align: 'center' }, version)).toEqual([
         `template.layout.align: ${V4}`,
@@ -1082,7 +1082,7 @@ describe('parseComponent: none alinhado e clip (L2, formato 4)', () => {
     expect(frame({ type: 'row', align: 'center', justify: 'end' }, 1)).toEqual([]);
   });
 
-  it('clip do quadro: literal em toda versão, expressão só na 4', () => {
+  it('frame clip: literal in every version, expression only in 4', () => {
     expect(validateComponent(file({ type: 'frame', clip: true }, 1))).toEqual([]);
     expect(validateComponent(file({ type: 'frame', clip: { $field: 'c' } }))).toEqual([]);
     expect(validateComponent(file({ type: 'frame', clip: { $has: 'c' } }))).toEqual([]);
@@ -1091,15 +1091,15 @@ describe('parseComponent: none alinhado e clip (L2, formato 4)', () => {
     ]);
   });
 
-  it('clip do quadro com valor que não é booleano é erro', () => {
-    expect(validateComponent(file({ type: 'frame', clip: 'sim' }))).toHaveLength(1);
+  it('frame clip with a value that is not a boolean is an error', () => {
+    expect(validateComponent(file({ type: 'frame', clip: 'yes' }))).toHaveLength(1);
     expect(validateComponent(file({ type: 'frame', clip: 3 }))).toHaveLength(1);
   });
 
-  it('slot aceita clip booleano ou expressão na v4; em 1 a 3 é só da v4, no caminho do clip', () => {
+  it('slot accepts a boolean clip or an expression in v4; in 1 to 3 it is v4 only, at the clip path', () => {
     expect(withSlot({ clip: true })).toEqual([]);
     expect(withSlot({ clip: { $field: 'c' } })).toEqual([]);
-    expect(withSlot({ clip: 'sim' })).toHaveLength(1);
+    expect(withSlot({ clip: 'yes' })).toHaveLength(1);
     for (const version of [1, 2, 3]) {
       expect(withSlot({ clip: true }, version)).toEqual([
         `template.children[0].clip: ${V4}`,

@@ -2,10 +2,10 @@ import type { ComponentCatalog } from '../../src/model';
 import { SPEC_ID, testCatalog } from './componentFixtures';
 
 /**
- * O catálogo de teste com o slot do tipo `typeId` (um container `row`/`column` de `COMPONENTS`)
- * trocado por um slot em grade: `layout` entra no `layout` do slot, com `gap` e `padding` dos campos
- * do container (`spacing`, `padding`). A troca é no componente já carregado, sem passar pelo
- * analisador.
+ * The test catalog with the slot of type `typeId` (a `row`/`column` container of `COMPONENTS`)
+ * replaced by a grid slot: `layout` goes into the slot's `layout`, with `gap` and `padding` from the
+ * container fields (`spacing`, `padding`). The swap is made on the already loaded component, without
+ * going through the parser.
  */
 export function gridCatalog(
   typeId: string,
@@ -13,11 +13,11 @@ export function gridCatalog(
 ): ComponentCatalog {
   const base = testCatalog();
   const loaded = base.get(SPEC_ID);
-  if (loaded === undefined) throw new Error('sem especialização de teste');
+  if (loaded === undefined) throw new Error('no test specialization');
   const byType = new Map(loaded.byType);
   const component = byType.get(typeId);
   if (component === undefined || component.template.type !== 'frame')
-    throw new Error(`sem componente ${typeId}`);
+    throw new Error(`no component ${typeId}`);
   const children = (component.template.children ?? []).map((child) =>
     child.type === 'slot'
       ? {

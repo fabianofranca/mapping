@@ -1,6 +1,6 @@
-// A ficha no pacote da biblioteca (formatVersion 16; etapa #1079, S1): `validateLibrary` confere a
-// ficha citada (existe, é uma `mapping-signature` válida, o símbolo e o arquivo batem com o `code`)
-// e avisa do parâmetro mapeado que a ficha não tem.
+// The signature in the library package (formatVersion 16; stage #1079, S1): `validateLibrary` checks the
+// cited signature (it exists, is a valid `mapping-signature`, the symbol and the file match the `code`)
+// and warns about a mapped parameter that the signature does not have.
 import { describe, expect, it } from 'vitest';
 import { validateLibrary, type LibraryFile } from '../../src/model/library';
 import { isModelMessageTemplateCode } from '../../src/model/messages';
@@ -72,12 +72,12 @@ function issues(list: LibraryFile[]) {
   }));
 }
 
-describe('a ficha no pacote da biblioteca', () => {
-  it('uma ficha citada e válida passa sem erro nem aviso, e não fica "não referenciada"', () => {
+describe('the signature in the library package', () => {
+  it('a cited, valid signature passes with no error or warning, and is not left "unreferenced"', () => {
     expect(issues(files(spec()))).toEqual([]);
   });
 
-  it('a ficha citada que não está no pacote é erro', () => {
+  it('a cited signature that is not in the package is an error', () => {
     expect(issues(files(spec(), null))).toEqual([
       {
         file: SPEC,
@@ -88,13 +88,13 @@ describe('a ficha no pacote da biblioteca', () => {
     ]);
   });
 
-  it('a ficha inválida é erro, com o caminho dentro dela', () => {
+  it('an invalid signature is an error, with the path inside it', () => {
     const bad = buttonSignature((s) => (s.params[1].role = 'bogus'));
     const found = issues(files(spec(), bad)).filter((i) => i.severity === 'error');
     expect(found.map((i) => [i.file, i.path])).toEqual([[SIG, 'params[1].role']]);
   });
 
-  it('o símbolo da ficha diferente do code é erro; o arquivo também', () => {
+  it('a signature symbol different from the code is an error; so is the file', () => {
     const symbol = buttonSignature((s) => (s.source.symbol = 'x.Other'));
     expect(issues(files(spec(), symbol))).toEqual([
       expect.objectContaining({
@@ -114,7 +114,7 @@ describe('a ficha no pacote da biblioteca', () => {
     ]);
   });
 
-  it('parâmetro mapeado que a ficha não tem é aviso "parâmetro fora da ficha"', () => {
+  it('a mapped parameter that the signature does not have is a "parameter outside the signature" warning', () => {
     const found = issues(
       files(
         spec((code) => {
@@ -132,7 +132,7 @@ describe('a ficha no pacote da biblioteca', () => {
     ]);
   });
 
-  it('no caso de variants, o símbolo e o arquivo comparados são os do caso', () => {
+  it('in a variants case, the symbol and the file compared are those of the case', () => {
     const outlined = buttonSignature((s) => {
       s.source.symbol = 'androidx.compose.material3.OutlinedButton';
     });
@@ -152,12 +152,12 @@ describe('a ficha no pacote da biblioteca', () => {
       ),
       { path: 'signatures/button.outlined.compose.json', text: JSON.stringify(outlined) },
     ];
-    // O campo `color` do teste é string: o `variants` pede enum; o erro é só esse.
+    // The test's `color` field is a string: `variants` asks for an enum; that is the only error.
     const found = issues(list).filter((i) => !i.path.endsWith('variants.field'));
     expect(found).toEqual([]);
   });
 
-  it('a ficha de design na sources do tipo precisa existir e ser válida', () => {
+  it('a design signature in the type sources must exist and be valid', () => {
     const figma = {
       format: 'mapping-signature',
       formatVersion: 1,
@@ -188,7 +188,7 @@ describe('a ficha no pacote da biblioteca', () => {
   });
 });
 
-describe('o caso de variants e a ficha (achados da revisão)', () => {
+describe('the variants case and the signature (review findings)', () => {
   const OUT = 'signatures/button.outlined.compose.json';
   const CASE_AT = 'layers[0].annotationTypes[0].code.compose.variants.cases.outlined';
   const withCase = (kase: Json) =>
@@ -202,7 +202,7 @@ describe('o caso de variants e a ficha (achados da revisão)', () => {
     });
   const found = (list: LibraryFile[]) => issues(list);
 
-  it('o caso sem ficha própria confere os params dele contra a ficha da base', () => {
+  it('a case without its own signature checks its params against the base signature', () => {
     const list = files(withCase({ params: { label: 'bogus' } }));
     expect(found(list)).toEqual([
       {
@@ -214,7 +214,7 @@ describe('o caso de variants e a ficha (achados da revisão)', () => {
     ]);
   });
 
-  it('o caso com ficha própria confere também os params herdados da base', () => {
+  it('a case with its own signature also checks the params inherited from the base', () => {
     const outlined = buttonSignature((s) => {
       s.params = s.params.filter((p: Json) => p.name !== 'enabled');
     });
@@ -232,7 +232,7 @@ describe('o caso de variants e a ficha (achados da revisão)', () => {
     ]);
   });
 
-  it('CL2 R-2: o caso sem ficha própria confere o símbolo e o arquivo dele contra a ficha herdada', () => {
+  it('CL2 R-2: a case without its own signature checks its symbol and file against the inherited signature', () => {
     const list = files(
       withCase({
         symbol: 'androidx.compose.material3.OutlinedButton',
@@ -252,11 +252,11 @@ describe('o caso de variants e a ficha (achados da revisão)', () => {
     ]);
   });
 
-  it('CL2 R-2: o caso sem símbolo nem arquivo próprios herda os da base e não reclama', () => {
+  it('CL2 R-2: a case without its own symbol or file inherits the base ones and does not complain', () => {
     expect(found(files(withCase({ params: { label: 'enabled' } })))).toEqual([]);
   });
 
-  it('a ficha que falta é erro em cada lugar que a cita, não só no primeiro', () => {
+  it('a missing signature is an error in every place that cites it, not only the first', () => {
     const list = files(withCase({ signature: SIG }), null);
     expect(found(list).map((i) => [i.severity, i.path])).toEqual([
       ['error', 'layers[0].annotationTypes[0].code.compose.signature'],
@@ -265,10 +265,10 @@ describe('o caso de variants e a ficha (achados da revisão)', () => {
   });
 });
 
-describe('plataforma da ficha e código dos problemas (CL1: S5-b e S5-d)', () => {
+describe('signature platform and problem codes (CL1: S5-b and S5-d)', () => {
   const at = 'layers[0].annotationTypes[0].code.compose.signature';
 
-  it('S5-b: a ficha de código de outra plataforma é erro com o problema claro', () => {
+  it('S5-b: a code signature of another platform is an error with a clear problem', () => {
     const other = buttonSignature((s) => (s.source.platform = 'swiftui'));
     const found = issues(files(spec(), other));
     expect(found).toEqual([
@@ -282,11 +282,11 @@ describe('plataforma da ficha e código dos problemas (CL1: S5-b e S5-d)', () =>
     ]);
   });
 
-  it('S5-d: todo problema de ficha tem code do catálogo (e o texto dele)', () => {
+  it('S5-d: every signature problem has a catalog code (and its text)', () => {
     const problems = [
-      // não encontrada
+      // not found
       validateLibrary({ files: files(spec(), null), level: 2 }),
-      // ficha inválida por dentro
+      // signature invalid inside
       validateLibrary({
         files: files(
           spec(),
@@ -294,7 +294,7 @@ describe('plataforma da ficha e código dos problemas (CL1: S5-b e S5-d)', () =>
         ),
         level: 2,
       }),
-      // símbolo, arquivo e plataforma
+      // symbol, file and platform
       validateLibrary({
         files: files(
           spec(),
@@ -306,7 +306,7 @@ describe('plataforma da ficha e código dos problemas (CL1: S5-b e S5-d)', () =>
         ),
         level: 2,
       }),
-      // ficha de design no code
+      // design signature in code
       validateLibrary({
         files: files(
           spec(),
@@ -322,7 +322,7 @@ describe('plataforma da ficha e código dos problemas (CL1: S5-b e S5-d)', () =>
         ),
         level: 2,
       }),
-      // ficha de código na sources do tipo
+      // code signature in the type sources
       validateLibrary({
         files: [
           ...files(
@@ -335,7 +335,7 @@ describe('plataforma da ficha e código dos problemas (CL1: S5-b e S5-d)', () =>
         ],
         level: 2,
       }),
-      // parâmetro fora da ficha
+      // parameter outside the signature
       validateLibrary({
         files: files(
           spec((code) => {

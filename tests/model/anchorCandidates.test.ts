@@ -1,5 +1,5 @@
-// `canAnchorTo` (R4, decisão 13): quem a lista da seção Âncora oferece é o que `setMarkingAnchor`
-// aceitaria, sem tentar e capturar o erro.
+// `canAnchorTo` (R4, decision 13): whoever the Anchor section list offers is what `setMarkingAnchor`
+// would accept, without trying and catching the error.
 import { describe, expect, it } from 'vitest';
 import {
   addContainer,
@@ -30,13 +30,13 @@ function scene(): Project {
 }
 
 describe('canAnchorTo', () => {
-  it('aceita as outras marcações do mesmo espaço', () => {
+  it('accepts the other markings of the same space', () => {
     const p = scene();
     expect(canAnchorTo(p, 'A', 'B')).toBe(true);
     expect(canAnchorTo(p, 'A', 'C')).toBe(true);
   });
 
-  it('recusa a própria marcação, a inexistente e a de outro espaço', () => {
+  it('rejects the marking itself, the nonexistent one and one from another space', () => {
     const p = scene();
     expect(canAnchorTo(p, 'A', 'A')).toBe(false);
     expect(canAnchorTo(p, 'A', 'nope')).toBe(false);
@@ -44,7 +44,7 @@ describe('canAnchorTo', () => {
     expect(canAnchorTo(p, 'A', 'F')).toBe(false);
   });
 
-  it('recusa quem fecharia um ciclo (a que já depende dela, direta ou transitivamente)', () => {
+  it('rejects whoever would close a cycle (the one that already depends on it, directly or transitively)', () => {
     let p = scene();
     p = setMarkingAnchor(p, 'B', { to: 'A' });
     p = setMarkingAnchor(p, 'C', { to: 'B' });
@@ -55,8 +55,8 @@ describe('canAnchorTo', () => {
   });
 });
 
-describe('canAnchorTo: descendentes e seguidores de descendentes (achado 2 do CL2)', () => {
-  /** P (grande) contém C; D está ancorada em C; E solta. */
+describe('canAnchorTo: descendants and followers of descendants (finding 2 of CL2)', () => {
+  /** P (large) contains C; D is anchored to C; E is loose. */
   function nested(): Project {
     let p = scene();
     p = createMarking(p, {
@@ -77,7 +77,7 @@ describe('canAnchorTo: descendentes e seguidores de descendentes (achado 2 do CL
     return setMarkingAnchor(p, 'Dd', { to: 'Cc' });
   }
 
-  it('recusa um descendente de P e o seguidor (direto ou indireto) de um descendente', () => {
+  it('rejects a descendant of P and the follower (direct or indirect) of a descendant', () => {
     const p = nested();
     expect(projectIndex(p).markings.get('Cc')?.parentId).toBe('P');
     expect(canAnchorTo(p, 'P', 'Cc')).toBe(false);
@@ -86,15 +86,15 @@ describe('canAnchorTo: descendentes e seguidores de descendentes (achado 2 do CL
     expect(() => setMarkingAnchor(p, 'P', { to: 'Dd' })).toThrow();
   });
 
-  it('continua aceitando quem não anda junto com P', () => {
+  it('keeps accepting whoever does not move together with P', () => {
     const p = nested();
     expect(canAnchorTo(p, 'P', 'A')).toBe(true);
     expect(canAnchorTo(p, 'Cc', 'P')).toBe(true);
   });
 });
 
-describe('anchorCandidates (achado 7 do CL2)', () => {
-  /** M0 grande contendo as outras n-1 (o pior caso de `withAnchoredFollowers`). */
+describe('anchorCandidates (finding 7 of CL2)', () => {
+  /** Large M0 containing the other n-1 (the worst case of `withAnchoredFollowers`). */
   function crowded(n: number): Project {
     let p = addContainer(emptyProject(), {
       id: 'I1',
@@ -117,7 +117,7 @@ describe('anchorCandidates (achado 7 do CL2)', () => {
     return p;
   }
 
-  it('devolve o mesmo que canAnchorTo item a item, na ordem do espaço', () => {
+  it('returns the same as canAnchorTo item by item, in the space order', () => {
     const p = setMarkingAnchor(scene(), 'B', { to: 'A' });
     for (const id of ['A', 'B', 'C']) {
       const space = p.markings.filter((m) => m.containerId === 'I1');
@@ -128,7 +128,7 @@ describe('anchorCandidates (achado 7 do CL2)', () => {
     expect(anchorCandidates(p, 'nope', p.markings)).toEqual([]);
   });
 
-  it('o custo cresce linear: 4n marcações custam menos de 6× n (a dona de todas as outras)', () => {
+  it('the cost grows linearly: 4n markings cost less than 6× n (the owner of all the others)', () => {
     const time = (n: number): number => {
       const p = crowded(n);
       const space = p.markings.filter((m) => m.containerId === 'I1');

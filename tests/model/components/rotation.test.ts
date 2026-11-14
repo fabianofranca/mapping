@@ -1,5 +1,5 @@
-// Formato 4, fase EX3: `rotation` por nó (graus, sentido horário, em volta do centro da caixa).
-// É só desenho: a cena carrega o ângulo avaliado e a caixa, o layout e o `hug` não mudam.
+// Format 4, phase EX3: per-node `rotation` (degrees, clockwise, around the center of the box).
+// It is drawing only: the scene carries the evaluated angle and the box, the layout and the `hug` do not change.
 import { describe, expect, it } from 'vitest';
 import {
   COMPONENT_FORMAT,
@@ -74,11 +74,11 @@ function scene(template: Raw, values: FieldValues = {}): FrameNode {
 
 function named(node: SceneNode, name: string): SceneNode {
   for (const n of walk(node)) if (n.name === name) return n;
-  throw new Error(`sem nó ${name}`);
+  throw new Error(`no node ${name}`);
 }
 
-describe('rotation no validador', () => {
-  it('vale em qualquer nó que não seja a raiz, com número ou expressão', () => {
+describe('rotation in the validator', () => {
+  it('applies to any node that is not the root, with a number or expression', () => {
     const tpl = root([
       bar({ rotation: 45 }),
       { type: 'ellipse', rotation: { $mul: [{ $field: 'a' }, 360] } },
@@ -88,25 +88,25 @@ describe('rotation no validador', () => {
     expect(validateComponent(file(tpl))).toEqual([]);
   });
 
-  it('na raiz é erro', () => {
+  it('on the root it is an error', () => {
     expect(validateComponent(file(root([], { rotation: 10 })))).toEqual([
       'template.rotation: not valid on the root',
     ]);
   });
 
-  it('na raiz de uma formatVersion 3 só o erro de versão aparece', () => {
+  it('on the root of a formatVersion 3 only the version error appears', () => {
     expect(validateComponent(file(root([], { rotation: 10 }), 3))).toEqual([
       `template.rotation: ${V4}`,
     ]);
   });
 
-  it('literal que não é número falha no caminho da chave', () => {
+  it('a literal that is not a number fails at the key path', () => {
     expect(validateComponent(file(root([bar({ rotation: 'x' })])))).toEqual([
       'template.children[0].rotation: expected a number',
     ]);
   });
 
-  it('numa formatVersion 1 a 3 dá o erro de versão no caminho da chave', () => {
+  it('in a formatVersion 1 to 3 it gives the version error at the key path', () => {
     for (const version of [1, 2, 3]) {
       expect(validateComponent(file(root([bar({ rotation: 45 })]), version))).toEqual([
         `template.children[0].rotation: ${V4}`,
@@ -115,8 +115,8 @@ describe('rotation no validador', () => {
   });
 });
 
-describe('rotation na cena', () => {
-  it('a cena carrega o ângulo avaliado e a caixa do nó não muda', () => {
+describe('rotation in the scene', () => {
+  it('the scene carries the evaluated angle and the node box does not change', () => {
     const plain = named(scene(root([bar()])), 'bar');
     const turned = named(scene(root([bar({ rotation: 45 })])), 'bar');
     expect(turned.rotation).toBe(45);
@@ -126,21 +126,21 @@ describe('rotation na cena', () => {
     expect(turned.transform).toEqual(plain.transform);
   });
 
-  it('avalia a expressão e o campo vazio vale 0 (sem rotação na cena)', () => {
+  it('evaluates the expression and the empty field is 0 (no rotation in the scene)', () => {
     const tpl = root([bar({ rotation: { $mul: [{ $field: 'a' }, 90] } })]);
     expect(named(scene(tpl, { a: '2' }), 'bar').rotation).toBe(180);
     expect(named(scene(tpl, { a: '' }), 'bar').rotation).toBeUndefined();
     expect(named(scene(tpl, {}), 'bar').rotation).toBeUndefined();
   });
 
-  it('0 fica sem rotação; negativo e maior que 360 são mantidos', () => {
+  it('0 stays without rotation; negative and greater than 360 are kept', () => {
     const at = (rotation: number) => named(scene(root([bar({ rotation })])), 'bar');
     expect(at(0).rotation).toBeUndefined();
     expect(at(-30).rotation).toBe(-30);
     expect(at(450).rotation).toBe(450);
   });
 
-  it('o repeat passa a rotação ao quadro das linhas', () => {
+  it('the repeat passes the rotation to the row frame', () => {
     const tpl = root([
       {
         type: 'repeat',
@@ -154,7 +154,7 @@ describe('rotation na cena', () => {
     expect(frame.rotation).toBe(90);
   });
 
-  it('layout e hug são iguais com e sem rotation', () => {
+  it('layout and hug are the same with and without rotation', () => {
     const tpl = (extra: Raw) =>
       root(
         [
@@ -186,12 +186,12 @@ describe('rotation na cena', () => {
 });
 
 describe('nodeMatrix', () => {
-  it('sem rotação é a própria transformação do nó', () => {
+  it('without rotation it is the own transform of the node', () => {
     const node = named(scene(root([bar()])), 'bar');
     expect(nodeMatrix(node)).toEqual(node.transform);
   });
 
-  it('gira em volta do centro da caixa: 40×10 a 90° vira 10×40 no mesmo centro', () => {
+  it('rotates around the center of the box: 40×10 at 90° becomes 10×40 at the same center', () => {
     const node = named(scene(root([bar({ rotation: 90 })])), 'bar');
     const [a, b, c, d, e, f] = nodeMatrix(node);
     const at = (x: number, y: number) => ({
@@ -202,14 +202,14 @@ describe('nodeMatrix', () => {
     const center = at(20, 5);
     expect(center.x).toBeCloseTo(tx + 20, 9);
     expect(center.y).toBeCloseTo(ty + 5, 9);
-    // o canto superior esquerdo (0, 0) vai para o superior direito da caixa girada
+    // the top-left corner (0, 0) goes to the top-right of the rotated box
     const corner = at(0, 0);
     expect(corner.x).toBeCloseTo(tx + 20 + 5, 9);
     expect(corner.y).toBeCloseTo(ty + 5 - 20, 9);
   });
 });
 
-describe('recorte ampliado com filhos girados', () => {
+describe('enlarged clip with rotated children', () => {
   const stroked = (extra: Partial<RectNode> = {}): RectNode => ({
     ...baseNode({ id: 'r', name: 'r', width: 20, height: 20 }),
     type: 'rect',
@@ -235,17 +235,17 @@ describe('recorte ampliado com filhos girados', () => {
       ...extra,
     });
 
-  it('o traço de um filho dentro de um quadro girado sem recorte ainda alarga o recorte', () => {
+  it('the stroke of a child inside a rotated frame without clip still widens the clip', () => {
     const plain = clipBoxOf(frameOf([inner()]));
     const turned = clipBoxOf(frameOf([inner({ rotation: 45 })]));
     expect(plain).toBeDefined();
     expect(turned).toBeDefined();
-    // 0,001° não pode mudar o que se vê: o recorte continua passando da caixa pelo traço
+    // 0.001° must not change what is seen: the clip still exceeds the box by the stroke
     expect(clipBoxOf(frameOf([inner({ rotation: 0.001 })]))).toBeDefined();
     expect(turned!.x + turned!.width).toBeGreaterThanOrEqual(100);
   });
 
-  it('o recorte ampliado de um quadro com recorte girado vira a caixa dele depois do giro', () => {
+  it('the enlarged clip of a frame with a rotated clip becomes its box after the rotation', () => {
     const child = frameOf([stroked()], {
       id: 'c',
       width: 20,
@@ -255,8 +255,8 @@ describe('recorte ampliado com filhos girados', () => {
       clipBox: { x: -6, y: -6, width: 32, height: 32 },
     });
     const box = clipBoxOf(frameOf([child]));
-    // o filho (20 × 20 em 40, 40) gira em volta de (50, 50); o recorte dele (32 × 32) fica
-    // centrado no mesmo ponto e cabe no quadro de 100 × 100: nada passa da caixa do pai
+    // the child (20 × 20 at 40, 40) rotates around (50, 50); its clip (32 × 32) stays
+    // centered at the same point and fits in the 100 × 100 frame: nothing exceeds the parent box
     expect(box).toBeUndefined();
   });
 });

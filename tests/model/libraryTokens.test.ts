@@ -1,5 +1,5 @@
-// Validador da biblioteca (nível 2) com `$token` (CF5): o token precisa existir nos `tokens` da
-// especialização (ou ser embutido) e ter o tipo que a posição espera.
+// Library validator (level 2) with `$token` (CF5): the token must exist in the specialization's
+// `tokens` (or be built in) and have the type the position expects.
 import { describe, expect, it } from 'vitest';
 import { validateLibrary } from '../../src/model/library';
 
@@ -58,8 +58,8 @@ function validate(comp: Raw, tokens: unknown = TOKENS) {
 const messages = (r: ReturnType<typeof validate>) =>
   r.errors.map((e) => [e.file, e.path, e.message]);
 
-describe('validateLibrary com $token', () => {
-  it('tokens existentes e do tipo certo (e os embutidos) passam', () => {
+describe('validateLibrary with $token', () => {
+  it('existing tokens of the right type (and the built-in ones) pass', () => {
     const r = validate(
       component([
         { type: 'rect', fill: { $token: 'primary' }, cornerRadius: { $token: 'radius' } },
@@ -69,7 +69,7 @@ describe('validateLibrary com $token', () => {
     expect(r.errors).toEqual([]);
   });
 
-  it('token inexistente dá erro com o caminho do nó', () => {
+  it('a missing token gives an error with the node path', () => {
     const r = validate(component([{ type: 'rect', fill: { $token: 'inexistente' } }]));
     expect(messages(r)).toContainEqual([
       'components/tk.json',
@@ -78,7 +78,7 @@ describe('validateLibrary com $token', () => {
     ]);
   });
 
-  it('token de cor onde se espera número é erro', () => {
+  it('a color token where a number is expected is an error', () => {
     const r = validate(
       component([{ type: 'rect', cornerRadius: { $token: 'primary' } }]),
     );
@@ -89,7 +89,7 @@ describe('validateLibrary com $token', () => {
     ]);
   });
 
-  it('especialização sem tokens: só os embutidos existem', () => {
+  it('specialization without tokens: only the built-in ones exist', () => {
     const r = validate(component([{ type: 'rect', fill: { $token: 'primary' } }]), null);
     expect(messages(r)).toContainEqual([
       'components/tk.json',
@@ -98,7 +98,7 @@ describe('validateLibrary com $token', () => {
     ]);
   });
 
-  it('$token na v3 falha com a mensagem de versão', () => {
+  it('$token in v3 fails with the version message', () => {
     const r = validate(component([{ type: 'rect', fill: { $token: 'primary' } }], 3));
     expect(messages(r)).toContainEqual([
       'components/tk.json',

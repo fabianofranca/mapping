@@ -1,5 +1,5 @@
-// R1 (#1096): a prova de desenho roda cada caso em ltr e em rtl; o aviso que só aparece em rtl é
-// relatado como os de hoje (com o prefixo "em rtl"); os que valem nos dois saem uma vez.
+// R1 (#1096): the drawing proof runs each case in ltr and in rtl; a warning that only appears in rtl is
+// reported like today's (with the prefix "in rtl"); those that apply in both come out once.
 import { describe, expect, it } from 'vitest';
 import { isDirectionSensitive } from '../../src/model/components/direction';
 import { validateLibrary } from '../../src/model/library';
@@ -54,19 +54,19 @@ const rect = (name: string, width: number, extra: Raw = {}): Raw => ({
 
 const frame = (children: Raw[]): Raw => ({
   type: 'frame',
-  name: 'raiz',
+  name: 'root',
   layout: { type: 'row' },
   children,
 });
 
-describe('prova de desenho nos dois sentidos', () => {
-  it('um componente são não gera nada a mais', () => {
+describe('drawing proof in both directions', () => {
+  it('a healthy component produces nothing extra', () => {
     const report = validate(frame([rect('a', 30), rect('b', 30)]));
     expect(report.errors).toEqual([]);
     expect(report.warnings).toEqual([]);
   });
 
-  it('o aviso que vale nos dois sentidos sai uma vez só', () => {
+  it('a warning that applies in both directions comes out only once', () => {
     const report = validate(frame([rect('a', 80), rect('b', 80)]));
     const texts = [...report.errors, ...report.warnings].map((i) => i.message);
     expect(texts.filter((m) => m.includes('content larger than the box'))).toHaveLength(
@@ -76,23 +76,23 @@ describe('prova de desenho nos dois sentidos', () => {
     expect(new Set(texts).size).toBe(texts.length);
   });
 
-  it('o componente que estoura só em rtl é relatado, com "in rtl"', () => {
+  it('a component that overflows only in rtl is reported, with "in rtl"', () => {
     const report = validate(
-      frame([rect('a', 30), rect('largo', 300, { visible: { $direction: 'rtl' } })]),
+      frame([rect('a', 30), rect('wide', 300, { visible: { $direction: 'rtl' } })]),
     );
     const texts = [...report.errors, ...report.warnings].map((i) => i.message);
     expect(texts.length).toBeGreaterThan(0);
     expect(texts.every((m) => m.includes('in rtl'))).toBe(true);
-    // o mesmo componente sem a condição estoura nos dois: aviso comum, sem "in rtl"
-    const both = validate(frame([rect('a', 30), rect('largo', 300)]));
+    // the same component without the condition overflows in both: a plain warning, without "in rtl"
+    const both = validate(frame([rect('a', 30), rect('wide', 300)]));
     const bothTexts = [...both.errors, ...both.warnings].map((i) => i.message);
     expect(bothTexts.length).toBeGreaterThan(0);
     expect(bothTexts.some((m) => m.includes('in rtl'))).toBe(false);
   });
 
-  it('o aviso que só aparece em ltr não é novidade do rtl (nada de "em rtl")', () => {
+  it('a warning that only appears in ltr is not new in rtl (nothing "in rtl")', () => {
     const report = validate(
-      frame([rect('a', 30), rect('largo', 300, { visible: { $direction: 'ltr' } })]),
+      frame([rect('a', 30), rect('wide', 300, { visible: { $direction: 'ltr' } })]),
     );
     const texts = [...report.errors, ...report.warnings].map((i) => i.message);
     expect(texts.length).toBeGreaterThan(0);
@@ -100,30 +100,30 @@ describe('prova de desenho nos dois sentidos', () => {
   });
 });
 
-// A passada em `rtl` dobra o custo da prova, então ela só roda no componente que pode render aviso
-// novo: o que fala de direção (`direction`, `$direction`) ou espelha (`mirror`). Nos outros o `rtl`
-// é o espelho exato do `ltr` (mesmos tamanhos; o `approximateMeasurer` não olha a direção), e um
-// aviso novo é impossível.
-describe('a prova em rtl só roda no componente sensível à direção', () => {
-  it('componente sem direção nem espelho não é provado em rtl', () => {
+// The `rtl` pass doubles the cost of the proof, so it only runs on a component that can yield a new
+// warning: one that talks about direction (`direction`, `$direction`) or mirrors (`mirror`). In the others `rtl`
+// is the exact mirror of `ltr` (same sizes; the `approximateMeasurer` ignores direction), and a
+// new warning is impossible.
+describe('the rtl proof only runs on a direction-sensitive component', () => {
+  it('a component with neither direction nor mirror is not proven in rtl', () => {
     expect(isDirectionSensitive(frame([rect('a', 30), rect('b', 30)]))).toBe(false);
   });
 
-  it('`$direction` numa condição pede a prova em rtl', () => {
+  it('`$direction` in a condition requires the rtl proof', () => {
     expect(
       isDirectionSensitive(frame([rect('a', 30, { visible: { $direction: 'rtl' } })])),
     ).toBe(true);
   });
 
-  it('`direction` num nó pede a prova em rtl', () => {
+  it('`direction` on a node requires the rtl proof', () => {
     expect(isDirectionSensitive(frame([rect('a', 30, { direction: 'ltr' })]))).toBe(true);
   });
 
-  it('`mirror` pede a prova em rtl', () => {
+  it('`mirror` requires the rtl proof', () => {
     expect(isDirectionSensitive(frame([rect('a', 30, { mirror: true })]))).toBe(true);
   });
 
-  it('`mirror: false` e o `direction` do `repeat` (row/column) não pedem', () => {
+  it('`mirror: false` and the `direction` of `repeat` (row/column) do not require it', () => {
     expect(isDirectionSensitive(frame([rect('a', 30, { mirror: false })]))).toBe(false);
     expect(
       isDirectionSensitive({
@@ -135,7 +135,7 @@ describe('a prova em rtl só roda no componente sensível à direção', () => {
     ).toBe(false);
   });
 
-  it('âncora lógica (`start`/`end`) pede a prova em rtl', () => {
+  it('a logical anchor (`start`/`end`) requires the rtl proof', () => {
     expect(
       isDirectionSensitive(frame([rect('a', 30, { anchors: { right: 20, start: 5 } })])),
     ).toBe(true);
@@ -144,23 +144,23 @@ describe('a prova em rtl só roda no componente sensível à direção', () => {
     ).toBe(false);
   });
 
-  it('o que estoura só em rtl por âncora lógica com física é relatado', () => {
-    // Em `ltr` o `start` (esquerda) com o `right` esticam a barra para 75 px, que cabe; em `rtl` o
-    // `start` vira a direita, perde do `right` físico e a largura declarada (300) volta a valer.
+  it('what overflows only in rtl due to a logical anchor with a physical one is reported', () => {
+    // In `ltr` the `start` (left) with the `right` stretch the bar to 75 px, which fits; in `rtl` the
+    // `start` becomes the right, loses to the physical `right` and the declared width (300) applies again.
     const report = validate({
       type: 'frame',
-      name: 'raiz',
+      name: 'root',
       layout: { type: 'none' },
-      children: [rect('barra', 300, { anchors: { right: 20, start: 5 } })],
+      children: [rect('bar', 300, { anchors: { right: 20, start: 5 } })],
     });
     const texts = [...report.errors, ...report.warnings].map((i) => i.message);
     expect(texts.length).toBeGreaterThan(0);
     expect(texts.every((m) => m.includes('in rtl'))).toBe(true);
   });
 
-  it('o componente sensível continua sendo provado nos dois sentidos', () => {
+  it('the sensitive component is still proven in both directions', () => {
     const report = validate(
-      frame([rect('a', 30), rect('largo', 300, { visible: { $direction: 'rtl' } })]),
+      frame([rect('a', 30), rect('wide', 300, { visible: { $direction: 'rtl' } })]),
     );
     const texts = [...report.errors, ...report.warnings].map((i) => i.message);
     expect(texts.every((m) => m.includes('in rtl'))).toBe(true);

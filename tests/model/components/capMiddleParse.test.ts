@@ -1,4 +1,4 @@
-// Formato 4, FX1: `font.verticalAlign: "cap-middle"` (centro pela altura da maiúscula).
+// Format 4, FX1: `font.verticalAlign: "cap-middle"` (center by the capital height).
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { COMPONENT_FORMAT } from '../../../src/model/components/componentFormat';
@@ -41,7 +41,7 @@ function component(verticalAlign: unknown, version = 4): Record<string, unknown>
 }
 
 describe('font.verticalAlign: "cap-middle"', () => {
-  it('é aceito no formato 4, literal e em $switch', () => {
+  it('is accepted in format 4, literal and in $switch', () => {
     expect(validateComponent(component('cap-middle'))).toEqual([]);
     expect(
       validateComponent(
@@ -55,7 +55,7 @@ describe('font.verticalAlign: "cap-middle"', () => {
   });
 
   it.each([1, 2, 3])(
-    'na versão %i o literal falha no caminho font.verticalAlign',
+    'in version %i the literal fails on the font.verticalAlign path',
     (version) => {
       expect(validateComponent(component('cap-middle', version))).toEqual([
         `template.children[0].font.verticalAlign: ${V4}`,
@@ -63,18 +63,18 @@ describe('font.verticalAlign: "cap-middle"', () => {
     },
   );
 
-  it('os valores de sempre continuam valendo em qualquer versão', () => {
+  it('the usual values keep applying in any version', () => {
     for (const value of ['top', 'middle', 'bottom'])
       expect(validateComponent(component(value, 3))).toEqual([]);
   });
 
-  it('um valor desconhecido segue sendo erro de conjunto', () => {
+  it('an unknown value is still a set error', () => {
     expect(validateComponent(component('center'))).toEqual([
       'template.children[0].font.verticalAlign: expected one of: top, middle, bottom, cap-middle',
     ]);
   });
 
-  it('o schema JSON aceita cap-middle, literal e em $switch', () => {
+  it('the JSON schema accepts cap-middle, literal and in $switch', () => {
     expect(checkSchema(schema, component('cap-middle'))).toEqual([]);
     expect(
       checkSchema(
@@ -84,7 +84,7 @@ describe('font.verticalAlign: "cap-middle"', () => {
     ).toEqual([]);
   });
 
-  it('a cena carrega cap-middle, também vindo de um $switch', () => {
+  it('the scene loads cap-middle, also coming from a $switch', () => {
     const style = (verticalAlign: unknown, values = {}): string | undefined => {
       const { root } = instantiate(
         component(verticalAlign) as never,
@@ -105,7 +105,7 @@ describe('font.verticalAlign: "cap-middle"', () => {
     expect(style('middle')).toBe('middle');
   });
 
-  it('numa versão 1 a 3, o cap-middle vindo de expressão fica fora do conjunto e cai em top', () => {
+  it('in a version 1 to 3, cap-middle coming from an expression falls outside the set and falls to top', () => {
     const { root } = instantiate(
       component(
         { $switch: 'modo', cases: { a: 'cap-middle' }, default: 'top' },

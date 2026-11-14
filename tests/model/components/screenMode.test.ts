@@ -1,4 +1,4 @@
-// Componente em pixels de tela (`screen`) e `stroke.scale` (formato 4, decisões 22 e 23 da etapa #747).
+// Component in screen pixels (`screen`) and `stroke.scale` (format 4, decisions 22 and 23 of stage #747).
 import { describe, expect, it } from 'vitest';
 import {
   addComponentMarking,
@@ -30,27 +30,27 @@ function file(version: number, extra: Record<string, unknown> = {}, stroke?: unk
   };
 }
 
-describe('parse: screen e stroke.scale', () => {
-  it('numa formatVersion 3, screen é erro de versão no caminho da chave', () => {
+describe('parse: screen and stroke.scale', () => {
+  it('in a formatVersion 3, screen is a version error at the key path', () => {
     expect(validateComponent(file(3, { screen: { anchor: 'top-left' } }))).toEqual([
       'screen: only allowed with formatVersion 4',
     ]);
   });
 
-  it('numa formatVersion 3, stroke.scale é erro de versão no caminho da chave', () => {
+  it('in a formatVersion 3, stroke.scale is a version error at the key path', () => {
     expect(validateComponent(file(3, {}, { color: '#000', scale: false }))).toEqual([
       'template.children[0].stroke.scale: only allowed with formatVersion 4',
     ]);
   });
 
-  it('na 4 são aceitos (screen vazio vale: âncora center)', () => {
+  it('in 4 they are accepted (empty screen is valid: anchor center)', () => {
     expect(
       validateComponent(file(4, { screen: {} }, { color: '#000', scale: false })),
     ).toEqual([]);
     expect(parseComponent(file(4, { screen: { anchor: 'bottom-right' } })).ok).toBe(true);
   });
 
-  it('as nove âncoras valem; outra é erro com caminho', () => {
+  it('the nine anchors are valid; another is an error with a path', () => {
     for (const anchor of [
       'center',
       'top-left',
@@ -70,13 +70,13 @@ describe('parse: screen e stroke.scale', () => {
     expect(validateComponent(file(4, { screen: 'center' }))[0]).toMatch(/^screen: /);
   });
 
-  it('stroke.scale precisa ser booleano', () => {
+  it('stroke.scale must be a boolean', () => {
     expect(validateComponent(file(4, {}, { color: '#000', scale: 'no' }))[0]).toMatch(
       /^template\.children\[0\]\.stroke\.scale: /,
     );
   });
 
-  it('screen em nó filho é erro (chave desconhecida)', () => {
+  it('screen on a child node is an error (unknown key)', () => {
     const f = file(4) as { template: Record<string, unknown> };
     f.template.screen = { anchor: 'center' };
     expect(validateComponent(f)[0]).toMatch(/screen/);
@@ -115,8 +115,8 @@ function drawWide(
   return { marking, drawing };
 }
 
-describe('desenho com screen', () => {
-  it('a cena mede o size do componente na origem e leva a âncora e o retângulo da marcação', () => {
+describe('drawing with screen', () => {
+  it('the scene measures the component size at the origin and carries the anchor and the marking rectangle', () => {
     const { marking, drawing } = drawWide({ screen: { anchor: 'top-left' } });
     expect(marking.rect).toEqual({ x: 10, y: 20, width: 50, height: 30 });
     expect(drawing.root).toMatchObject({ width: 100, height: 40 });
@@ -127,18 +127,18 @@ describe('desenho com screen', () => {
     });
   });
 
-  it('âncora padrão é center', () => {
+  it('default anchor is center', () => {
     expect(drawWide({ screen: {} }).drawing.screen?.anchor).toBe('center');
   });
 
-  it('sem screen o desenho segue o retângulo e não tem screen', () => {
+  it('without screen the drawing follows the rectangle and has no screen', () => {
     const { drawing } = drawWide({});
     expect(drawing.screen).toBeUndefined();
     expect(drawing.root).toMatchObject({ width: 50, height: 30 });
     expect(drawing.root.transform.slice(4)).toEqual([10, 20]);
   });
 
-  it('passar do retângulo não gera a pendência "não cabe"', () => {
+  it('going past the rectangle does not generate the "does not fit" pending item', () => {
     expect(drawWide({}, { x: 0, y: 0, width: 100, height: 40 }).drawing.overflow).toBe(
       true,
     );

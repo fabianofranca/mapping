@@ -10,17 +10,17 @@ import {
 
 function first(text: string): MarkdownBlock {
   const b = parseMarkdown(text)[0];
-  if (!b) throw new Error('sem bloco');
+  if (!b) throw new Error('no block');
   return b;
 }
 
 function inlinesOf(text: string): readonly MarkdownInline[] {
   const b = first(text);
-  if (b.type !== 'paragraph') throw new Error('não é parágrafo');
+  if (b.type !== 'paragraph') throw new Error('not a paragraph');
   return b.inlines;
 }
 
-/** Percorre tudo e junta o texto: usado para conferir que nada se perde. */
+/** Walks everything and gathers the text: used to check that nothing is lost. */
 function walk(
   blocks: readonly MarkdownBlock[],
   visit: (i: MarkdownInline) => void,
@@ -45,26 +45,29 @@ function walk(
   }
 }
 
-describe('markdown: construção', () => {
-  it('títulos de 1 a 6 com id', () => {
-    const blocks = parseMarkdown('# Um\n## Dois\n###### Seis');
+describe('markdown: building', () => {
+  it('headings 1 to 6 with an id', () => {
+    const blocks = parseMarkdown('# One\n## Two\n###### Six');
     expect(blocks.map((b) => (b.type === 'heading' ? b.level : 0))).toEqual([1, 2, 6]);
-    expect(blocks[0]).toMatchObject({ id: 'um' });
+    expect(blocks[0]).toMatchObject({ id: 'one' });
   });
 
-  it('ids repetidos ganham sufixo e acentos saem do slug', () => {
+  // pt-BR kept: the accents stripped from the slug are the object of the test
+  it('repeated ids get a suffix and accents leave the slug (pt-BR)', () => {
     const ids = parseMarkdown('# Seção\n# Seção\n# Seção\n# Seção-1')
       .map((b) => (b.type === 'heading' ? b.id : ''))
       .join(',');
     expect(ids).toBe('secao,secao-1,secao-2,secao-1-1');
   });
 
-  it('parágrafos, negrito, itálico, código em linha', () => {
-    const b = parseMarkdown('um **forte** e *ênfase* e __x__ e _y_ e `c`\n\nOutro');
-    expect(b).toHaveLength(2);
-    const types = inlinesOf('um **forte** e *ênfase* e __x__ e _y_ e `c`').map(
-      (i) => i.type,
+  it('paragraphs, bold, italic, inline code', () => {
+    const b = parseMarkdown(
+      'one **strong** and *emphasis* and __x__ and _y_ and `c`\n\nOther',
     );
+    expect(b).toHaveLength(2);
+    const types = inlinesOf(
+      'one **strong** and *emphasis* and __x__ and _y_ and `c`',
+    ).map((i) => i.type);
     expect(types).toEqual([
       'text',
       'strong',
@@ -79,20 +82,20 @@ describe('markdown: construção', () => {
     ]);
   });
 
-  it('não confunde snake_case com itálico', () => {
+  it('does not confuse snake_case with italic', () => {
     expect(inlinesOf('a_b_c')).toEqual([{ type: 'text', text: 'a_b_c' }]);
   });
 
-  it('bloco de código cercado com linguagem, sem interpretar o conteúdo', () => {
+  it('fenced code block with a language, without interpreting the content', () => {
     expect(first('```ts\nconst a = **b**;\n\n<x>\n```')).toEqual({
       type: 'code',
       lang: 'ts',
       text: 'const a = **b**;\n\n<x>',
     });
-    expect(first('```\nsem')).toEqual({ type: 'code', lang: '', text: 'sem' });
+    expect(first('```\nplain')).toEqual({ type: 'code', lang: '', text: 'plain' });
   });
 
-  it('listas com marcador, numeradas e aninhadas', () => {
+  it('bulleted, numbered and nested lists', () => {
     const b = first('- a\n- b\n  - b1\n  - b2\n    - b21\n- c');
     expect(b.type).toBe('list');
     if (b.type !== 'list') return;
@@ -100,22 +103,22 @@ describe('markdown: construção', () => {
     expect(b.items).toHaveLength(3);
     const nested = b.items[1]?.children[0];
     expect(nested?.type === 'list' && nested.items).toHaveLength(2);
-    const ord = first('1. um\n2. dois\n\n3. três');
+    const ord = first('1. one\n2. two\n\n3. three');
     expect(ord.type === 'list' && ord.ordered && ord.items.length).toBe(3);
     const star = first('* x\n+ y');
     expect(star.type === 'list' && star.items.length).toBe(2);
   });
 
-  it('continuação de item e fim da lista', () => {
-    const blocks = parseMarkdown('- a\n  continua\n\nparágrafo');
+  it('item continuation and end of the list', () => {
+    const blocks = parseMarkdown('- a\n  continues\n\nparagraph');
     expect(blocks).toHaveLength(2);
     const l = blocks[0];
     expect(l?.type === 'list' && inlinesToText(l.items[0]?.inlines ?? [])).toBe(
-      'a continua',
+      'a continues',
     );
   });
 
-  it('tabela com alinhamento', () => {
+  it('table with alignment', () => {
     const b = first('| A | B | C |\n| :-- | :-: | --: |\n| 1 | **2** | 3 |\n| x | y |');
     expect(b.type).toBe('table');
     if (b.type !== 'table') return;
@@ -125,17 +128,17 @@ describe('markdown: construção', () => {
     expect(b.rows[1]).toHaveLength(3);
   });
 
-  it('tabela sem alinhamento e sem pipes nas bordas', () => {
+  it('table without alignment and without pipes at the edges', () => {
     const b = first('A | B\n--- | ---\n1 | 2');
     expect(b.type === 'table' && b.align).toEqual([null, null]);
   });
 
-  it('links: mapping://, âncora e http(s):// absoluto são vivos', () => {
+  it('links: mapping://, anchor and absolute http(s):// are live', () => {
     const [a, b, c, d] = [
       inlinesOf('[x](mapping://material3/button)')[0],
-      inlinesOf('[x](#secao)')[0],
+      inlinesOf('[x](#section)')[0],
       inlinesOf('[x](http://e.com)')[0],
-      inlinesOf('[x](relativo.md)')[0],
+      inlinesOf('[x](relative.md)')[0],
     ];
     expect(a).toMatchObject({
       type: 'link',
@@ -147,7 +150,7 @@ describe('markdown: construção', () => {
     expect(d).toEqual({ type: 'text', text: 'x' });
     expect(isSafeLinkTarget('mapping://a/b')).toBe(true);
     expect(isSafeLinkTarget('#a')).toBe(true);
-    expect(isSafeLinkTarget('https://exemplo.com/a?b=1#c')).toBe(true);
+    expect(isSafeLinkTarget('https://example.com/a?b=1#c')).toBe(true);
     for (const bad of [
       '',
       '#',
@@ -163,21 +166,21 @@ describe('markdown: construção', () => {
       expect(isSafeLinkTarget(bad)).toBe(false);
   });
 
-  it('imagem vira o texto alternativo', () => {
-    expect(inlinesOf('![alt aqui](http://x/y.png)')).toEqual([
-      { type: 'text', text: 'alt aqui' },
+  it('an image becomes its alternative text', () => {
+    expect(inlinesOf('![alt here](http://x/y.png)')).toEqual([
+      { type: 'text', text: 'alt here' },
     ]);
   });
 
-  it('CRLF equivale a LF', () => {
+  it('CRLF is equivalent to LF', () => {
     expect(parseMarkdown('# A\r\n\r\nb\r\n- c\r\n')).toEqual(
       parseMarkdown('# A\n\nb\n- c\n'),
     );
   });
 });
 
-describe('markdown: entrada hostil', () => {
-  it('HTML cru é texto', () => {
+describe('markdown: hostile input', () => {
+  it('raw HTML is text', () => {
     for (const html of [
       '<script>alert(1)</script>',
       '<img src=x onerror=alert(1)>',
@@ -192,7 +195,7 @@ describe('markdown: entrada hostil', () => {
     }
   });
 
-  it('links perigosos não viram link', () => {
+  it('dangerous links do not become links', () => {
     const hostile = [
       '[x](javascript:alert(1))',
       '[x](JavaScript:alert(1))',
@@ -211,35 +214,35 @@ describe('markdown: entrada hostil', () => {
     }
   });
 
-  it('entradas vazias', () => {
+  it('empty inputs', () => {
     expect(parseMarkdown('')).toEqual([]);
     expect(parseMarkdown('   \n \t \n')).toEqual([]);
   });
 
   const big: Record<string, string> = {
-    '1 MB de asteriscos': '*'.repeat(1_000_000),
-    '1 MB de "*a "': '*a '.repeat(350_000),
-    '1 MB de underscores': '_'.repeat(1_000_000),
-    '1 MB de colchetes': '['.repeat(1_000_000),
-    '1 MB de crases': '`'.repeat(1_000_000),
-    '5000 níveis de [': '['.repeat(5000) + 'x' + ']('.repeat(5000),
-    '5000 níveis de (': '[x]' + '('.repeat(5000),
-    '5000 níveis de >': '> '.repeat(5000) + 'x',
-    '5000 níveis de -': Array.from(
+    '1 MB of asterisks': '*'.repeat(1_000_000),
+    '1 MB of "*a "': '*a '.repeat(350_000),
+    '1 MB of underscores': '_'.repeat(1_000_000),
+    '1 MB of brackets': '['.repeat(1_000_000),
+    '1 MB of backticks': '`'.repeat(1_000_000),
+    '5000 levels of [': '['.repeat(5000) + 'x' + ']('.repeat(5000),
+    '5000 levels of (': '[x]' + '('.repeat(5000),
+    '5000 levels of >': '> '.repeat(5000) + 'x',
+    '5000 levels of -': Array.from(
       { length: 5000 },
       (_, i) => ' '.repeat(i) + '- x',
     ).join('\n'),
-    '5000 níveis de * ênfase': '*a '.repeat(5000) + 'b' + '* '.repeat(5000),
-    '5000 níveis de [ com ]': '[a'.repeat(5000) + '](#x)'.repeat(5000),
-    'cerca não fechada': '```js\n' + 'x\n'.repeat(10_000),
-    'cerca de 1 MB': '`'.repeat(3) + '\n' + 'a'.repeat(1_000_000),
-    'tabela malformada': '|\n|-|\n||||\n| a | b\n|:|\n---|---|---\n| x |',
-    'tabela enorme': '| a | b |\n|---|---|\n' + '| 1 | 2 |\n'.repeat(20_000),
-    'só pipes': '|'.repeat(100_000),
-    'CRLF solto': '\r'.repeat(10_000) + '\r\n'.repeat(10_000),
+    '5000 levels of * emphasis': '*a '.repeat(5000) + 'b' + '* '.repeat(5000),
+    '5000 levels of [ with ]': '[a'.repeat(5000) + '](#x)'.repeat(5000),
+    'unclosed fence': '```js\n' + 'x\n'.repeat(10_000),
+    '1 MB fence': '`'.repeat(3) + '\n' + 'a'.repeat(1_000_000),
+    'malformed table': '|\n|-|\n||||\n| a | b\n|:|\n---|---|---\n| x |',
+    'huge table': '| a | b |\n|---|---|\n' + '| 1 | 2 |\n'.repeat(20_000),
+    'pipes only': '|'.repeat(100_000),
+    'loose CRLF': '\r'.repeat(10_000) + '\r\n'.repeat(10_000),
   };
   for (const [name, input] of Object.entries(big)) {
-    it(`${name}: não lança nem demora`, () => {
+    it(`${name}: does not throw or take long`, () => {
       const t0 = performance.now();
       const out = parseMarkdown(input);
       expect(Array.isArray(out)).toBe(true);
@@ -250,7 +253,7 @@ describe('markdown: entrada hostil', () => {
     });
   }
 
-  it('listas aninhadas profundas têm profundidade limitada', () => {
+  it('deeply nested lists have limited depth', () => {
     let depth = 0;
     let blocks: readonly MarkdownBlock[] = parseMarkdown(
       Array.from({ length: 100 }, (_, i) => ' '.repeat(i * 2) + '- x').join('\n'),
@@ -263,14 +266,14 @@ describe('markdown: entrada hostil', () => {
   });
 });
 
-describe('citação (> )', () => {
-  it('vira um bloco de citação com os parágrafos dentro, sem o sinal solto', () => {
+describe('quote (> )', () => {
+  it('becomes a quote block with the paragraphs inside, without the loose sign', () => {
     const blocks = parseMarkdown(
-      'Antes:\n\n> uma `linha`\n> continua\n>\n> outro\n\nDepois',
+      'Before:\n\n> a `line`\n> continues\n>\n> other\n\nAfter',
     );
     expect(blocks.map((b) => b.type)).toEqual(['paragraph', 'quote', 'paragraph']);
     const quote = blocks[1];
-    if (quote?.type !== 'quote') throw new Error('sem citação');
+    if (quote?.type !== 'quote') throw new Error('no quote');
     expect(quote.children.map((b) => b.type)).toEqual(['paragraph', 'paragraph']);
     const text: string[] = [];
     walk(blocks, (i) => {
@@ -279,21 +282,21 @@ describe('citação (> )', () => {
     expect(text.join('')).not.toContain('>');
   });
 
-  it('citação aninhada tem profundidade limitada e nunca perde o texto', () => {
-    const blocks = parseMarkdown(`${'> '.repeat(30)}fundo`);
+  it('a nested quote has limited depth and never loses the text', () => {
+    const blocks = parseMarkdown(`${'> '.repeat(30)}deep`);
     expect(blocks[0]?.type).toBe('quote');
   });
 });
 
-describe('markdown: quebra de linha no parágrafo (opção)', () => {
-  it('sem a opção, a quebra simples continua um espaço (padrão do Catálogo)', () => {
+describe('markdown: line break in the paragraph (option)', () => {
+  it('without the option, a single break stays a space (the Catalog default)', () => {
     expect(inlinesOf('a\nb')).toEqual([{ type: 'text', text: 'a b' }]);
     expect(inlinesOf('a\nb')).toEqual(
       (parseMarkdown('a\nb', { lineBreaks: false })[0] as { inlines: unknown }).inlines,
     );
   });
 
-  it('com a opção, vira um nó de quebra dentro do mesmo parágrafo', () => {
+  it('with the option, it becomes a break node inside the same paragraph', () => {
     const blocks = parseMarkdown('a\nb', { lineBreaks: true });
     expect(blocks).toHaveLength(1);
     expect(blocks[0]).toEqual({
@@ -306,16 +309,16 @@ describe('markdown: quebra de linha no parágrafo (opção)', () => {
     });
   });
 
-  it('a linha em branco continua separando parágrafos e várias linhas dão várias quebras', () => {
+  it('a blank line still separates paragraphs and several lines give several breaks', () => {
     const blocks = parseMarkdown('a\nb\nc\n\nd', { lineBreaks: true });
     expect(blocks).toHaveLength(2);
     const first = blocks[0];
-    if (first?.type !== 'paragraph') throw new Error('não é parágrafo');
+    if (first?.type !== 'paragraph') throw new Error('not a paragraph');
     expect(first.inlines.filter((i) => i.type === 'break')).toHaveLength(2);
   });
 
-  it('a ênfase que atravessa a linha e o código em linha continuam inteiros', () => {
-    const blocks = parseMarkdown('um **forte\nnegrito** e `a\nb`', { lineBreaks: true });
+  it('emphasis that spans the line and inline code stay whole', () => {
+    const blocks = parseMarkdown('one **strong\nbold** and `a\nb`', { lineBreaks: true });
     const inl = (blocks[0] as { inlines: readonly MarkdownInline[] }).inlines;
     expect(inl[1]).toMatchObject({ type: 'strong' });
     const strong = inl[1] as Extract<MarkdownInline, { type: 'strong' }>;
@@ -323,12 +326,12 @@ describe('markdown: quebra de linha no parágrafo (opção)', () => {
     expect(inl.at(-1)).toEqual({ type: 'code', text: 'a b' });
   });
 
-  it('blocos que não são parágrafo não mudam (título, lista, tabela)', () => {
+  it('blocks that are not a paragraph do not change (heading, list, table)', () => {
     const src = '# T\n\n- a\n  b\n\n| x | y |\n| - | - |\n| 1 | 2 |';
     expect(parseMarkdown(src, { lineBreaks: true })).toEqual(parseMarkdown(src));
   });
 
-  it('inlinesToText devolve a quebra como \\n', () => {
+  it('inlinesToText returns the break as \\n', () => {
     const b = parseMarkdown('a\nb', { lineBreaks: true })[0] as {
       inlines: readonly MarkdownInline[];
     };
@@ -336,8 +339,8 @@ describe('markdown: quebra de linha no parágrafo (opção)', () => {
   });
 });
 
-describe('lista com recuo que volta (item 29)', () => {
-  it('"  - a\\n- b" continua na mesma lista raiz', () => {
+describe('list with an indent that comes back (item 29)', () => {
+  it('"  - a\\n- b" stays in the same root list', () => {
     const blocks = parseMarkdown('  - a\n- b');
     expect(blocks).toHaveLength(1);
     const list = blocks[0];
@@ -350,12 +353,12 @@ describe('lista com recuo que volta (item 29)', () => {
 const LONE_SURROGATE =
   /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
 
-describe('texto longo fatiado em fronteira segura (item 30)', () => {
+describe('long text sliced at a safe boundary (item 30)', () => {
   const CHUNK = 20000;
 
-  it('não parte um link que cruzaria o limite', () => {
-    const link = '[rótulo com espaços](mapping://pasta/m/abc12345)';
-    const text = 'a'.repeat(CHUNK - 10) + ' ' + link + ' fim';
+  it('does not split a link that would cross the limit', () => {
+    const link = '[label with spacing](mapping://items/m/abc12345)';
+    const text = 'a'.repeat(CHUNK - 10) + ' ' + link + ' end';
     const links: MarkdownInline[] = [];
     walk(parseMarkdown(text), (i) => {
       if (i.type === 'link') links.push(i);
@@ -363,8 +366,8 @@ describe('texto longo fatiado em fronteira segura (item 30)', () => {
     expect(links).toHaveLength(1);
   });
 
-  it('não parte uma ênfase que cruzaria o limite', () => {
-    const text = 'a'.repeat(CHUNK - 6) + ' **negrito com espaço** fim';
+  it('does not split an emphasis that would cross the limit', () => {
+    const text = 'a'.repeat(CHUNK - 6) + ' **bold text with gap** end';
     const strong: MarkdownInline[] = [];
     walk(parseMarkdown(text), (i) => {
       if (i.type === 'strong') strong.push(i);
@@ -372,7 +375,7 @@ describe('texto longo fatiado em fronteira segura (item 30)', () => {
     expect(strong).toHaveLength(1);
   });
 
-  it('não parte um par substituto', () => {
+  it('does not split a surrogate pair', () => {
     const text = 'a'.repeat(CHUNK - 1) + '😀' + 'b'.repeat(10);
     const parts = parseInlines(text).flatMap((i) => (i.type === 'text' ? [i.text] : []));
     for (const part of parts) {

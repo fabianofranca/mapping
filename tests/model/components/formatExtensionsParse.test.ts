@@ -1,5 +1,5 @@
-// Formato 4, etapa "extensões" (FX3): $token em sombra, raios e tracejado, stroke.dash por expressão,
-// justify space-around/space-evenly, layout.reverse, alpha no $token e stroke.offset — validador.
+// Format 4, "extensions" stage (FX3): $token in shadow, radii and dashed, stroke.dash by expression,
+// justify space-around/space-evenly, layout.reverse, alpha on the $token and stroke.offset — validator.
 import { describe, expect, it } from 'vitest';
 import { COMPONENT_FORMAT } from '../../../src/model/components/componentFormat';
 import {
@@ -35,10 +35,10 @@ function withFrame(frame: Record<string, unknown>, version = 4): unknown {
   };
 }
 
-describe('A1: $token em shadow.x, shadow.y e shadow.blur', () => {
+describe('A1: $token in shadow.x, shadow.y and shadow.blur', () => {
   const shadow = { color: '#000', x: t('e-x'), y: t('e-y'), blur: t('e-blur') };
 
-  it('vale na v4 e coleta as referências como número', () => {
+  it('is valid in v4 and collects the references as a number', () => {
     const r = parseComponent(withChild({ type: 'rect', width: 10, height: 10, shadow }));
     if (!r.ok) throw new Error(r.errors.join('\n'));
     expect([...r.tokenRefs].map((x) => [x.path, x.kind]).sort()).toEqual([
@@ -48,7 +48,7 @@ describe('A1: $token em shadow.x, shadow.y e shadow.blur', () => {
     ]);
   });
 
-  it('nas versões 1 a 3 dá o erro de versão, no caminho da chave', () => {
+  it('in versions 1 to 3 it gives the version error, on the key path', () => {
     for (const version of [1, 2, 3]) {
       expect(
         validateComponent(
@@ -62,7 +62,7 @@ describe('A1: $token em shadow.x, shadow.y e shadow.blur', () => {
     }
   });
 
-  it('só $token: outra expressão em x continua erro', () => {
+  it('only $token: another expression in x is still an error', () => {
     expect(
       validateComponent(
         withChild({
@@ -75,7 +75,7 @@ describe('A1: $token em shadow.x, shadow.y e shadow.blur', () => {
     ).toEqual(['template.children[0].shadow.x: expected a number']);
   });
 
-  it('o literal continua valendo em qualquer versão', () => {
+  it('the literal keeps applying in any version', () => {
     expect(
       validateComponent(
         withChild(
@@ -87,10 +87,10 @@ describe('A1: $token em shadow.x, shadow.y e shadow.blur', () => {
   });
 });
 
-describe('A2: $token em cada item da lista de cornerRadius', () => {
+describe('A2: $token in each item of the cornerRadius list', () => {
   const radius = [t('corner-xs'), 0, 0, t('corner-xs')];
 
-  it('vale na v4 e coleta um token por item', () => {
+  it('is valid in v4 and collects one token per item', () => {
     const r = parseComponent(
       withChild({ type: 'rect', width: 10, height: 10, cornerRadius: radius }),
     );
@@ -101,7 +101,7 @@ describe('A2: $token em cada item da lista de cornerRadius', () => {
     ]);
   });
 
-  it('nas versões 1 a 3 dá o erro de versão, no caminho do item', () => {
+  it('in versions 1 to 3 it gives the version error, on the item path', () => {
     expect(
       validateComponent(
         withChild({ type: 'rect', width: 10, height: 10, cornerRadius: radius }, 3),
@@ -112,7 +112,7 @@ describe('A2: $token em cada item da lista de cornerRadius', () => {
     ]);
   });
 
-  it('a lista continua com 4 itens e cada item é número ≥ 0 ou $token', () => {
+  it('the list still has 4 items and each item is a number ≥ 0 or $token', () => {
     const bad = (cornerRadius: unknown) =>
       validateComponent(withChild({ type: 'rect', width: 1, height: 1, cornerRadius }));
     expect(bad([t('a'), 1, 2])).toEqual([
@@ -125,7 +125,7 @@ describe('A2: $token em cada item da lista de cornerRadius', () => {
   });
 });
 
-describe('A19: stroke.dash por expressão e $token nos itens', () => {
+describe('A19: stroke.dash by expression and $token in the items', () => {
   const stroke = (dash: unknown, version = 4) =>
     validateComponent(
       withChild(
@@ -134,7 +134,7 @@ describe('A19: stroke.dash por expressão e $token nos itens', () => {
       ),
     );
 
-  it('vale $switch, $if e $field na v4', () => {
+  it('$switch, $if and $field are valid in v4', () => {
     expect(stroke({ $switch: 'estilo', cases: { a: [4, 2] }, default: [1, 1] })).toEqual(
       [],
     );
@@ -142,7 +142,7 @@ describe('A19: stroke.dash por expressão e $token nos itens', () => {
     expect(stroke({ $field: 'tracejado' })).toEqual([]);
   });
 
-  it('aceita $token de número em cada item', () => {
+  it('accepts a number $token in each item', () => {
     const r = parseComponent(
       withChild({
         type: 'rect',
@@ -157,7 +157,7 @@ describe('A19: stroke.dash por expressão e $token nos itens', () => {
     ]);
   });
 
-  it('numa versão 1 a 3 a expressão e o $token dão o erro de versão; a lista literal continua valendo', () => {
+  it('in a version 1 to 3 the expression and the $token give the version error; the literal list keeps applying', () => {
     expect(stroke([4, 2], 3)).toEqual([]);
     expect(stroke({ $field: 'tracejado' }, 3)).toEqual([
       `template.children[0].stroke.dash: ${V4}`,
@@ -167,23 +167,23 @@ describe('A19: stroke.dash por expressão e $token nos itens', () => {
     ]);
   });
 
-  it('item literal negativo ou que não é número continua erro', () => {
+  it('a negative literal item or one that is not a number is still an error', () => {
     expect(stroke([4, -1])).toEqual([
       'template.children[0].stroke.dash[1]: expected a number greater than or equal to 0',
     ]);
   });
 });
 
-describe('A4: justify space-around/space-evenly e layout.reverse', () => {
+describe('A4: justify space-around/space-evenly and layout.reverse', () => {
   const frame = (layout: Record<string, unknown>, version = 4) =>
     validateComponent(withFrame({ layout }, version));
 
-  it('space-around e space-evenly valem na v4', () => {
+  it('space-around and space-evenly are valid in v4', () => {
     expect(frame({ type: 'row', justify: 'space-around' })).toEqual([]);
     expect(frame({ type: 'column', justify: 'space-evenly' })).toEqual([]);
   });
 
-  it('nas versões 1 a 3 o literal novo dá o erro de versão, no caminho de justify', () => {
+  it('in versions 1 to 3 the new literal gives the version error, on the justify path', () => {
     expect(frame({ type: 'row', justify: 'space-around' }, 3)).toEqual([
       `template.layout.justify: ${V4}`,
     ]);
@@ -192,46 +192,46 @@ describe('A4: justify space-around/space-evenly e layout.reverse', () => {
     ]);
   });
 
-  it('valor fora do conjunto é "esperava um de"', () => {
+  it('a value outside the set is "expected one of"', () => {
     expect(frame({ type: 'row', justify: 'spread' })).toEqual([
       'template.layout.justify: expected one of: start, center, end, space-between, space-around, space-evenly',
     ]);
   });
 
-  it('reverse: booleano ou expressão na v4', () => {
+  it('reverse: boolean or expression in v4', () => {
     expect(frame({ type: 'row', reverse: true })).toEqual([]);
     expect(frame({ type: 'row', reverse: { $field: 'rtl' } })).toEqual([]);
-    expect(frame({ type: 'row', reverse: 'sim' })).toEqual([
+    expect(frame({ type: 'row', reverse: 'yes' })).toEqual([
       'template.layout.reverse: expected a boolean',
     ]);
   });
 
-  it('reverse nas versões 1 a 3 dá o erro de versão, no caminho da chave', () => {
+  it('reverse in versions 1 to 3 gives the version error, on the key path', () => {
     expect(frame({ type: 'row', reverse: true }, 3)).toEqual([
       `template.layout.reverse: ${V4}`,
     ]);
   });
 
-  it('reverse com type none é chave desconhecida (como align e justify)', () => {
+  it('reverse with type none is an unknown key (like align and justify)', () => {
     expect(frame({ type: 'none', reverse: true })).toEqual([
       'template.layout.reverse: unknown key: reverse',
     ]);
   });
 });
 
-describe('A10: alpha no $token de cor', () => {
+describe('A10: alpha on the color $token', () => {
   const fill = (ref: unknown, version = 4) =>
     validateComponent(
       withChild({ type: 'rect', width: 10, height: 10, fill: ref }, version),
     );
 
-  it('alpha literal de 0 a 1 vale em cor', () => {
+  it('a literal alpha from 0 to 1 is valid on a color', () => {
     expect(fill(t('scrim', { alpha: 0.32 }))).toEqual([]);
     expect(fill(t('scrim', { alpha: 0 }))).toEqual([]);
     expect(fill(t('scrim', { alpha: 1 }))).toEqual([]);
   });
 
-  it('alpha como $token de número é coletado como número', () => {
+  it('alpha as a number $token is collected as a number', () => {
     const r = parseComponent(
       withChild({
         type: 'rect',
@@ -251,7 +251,7 @@ describe('A10: alpha no $token de cor', () => {
     ]);
   });
 
-  it('fora de 0..1 é "expected a number between 0 and 1"', () => {
+  it('outside 0..1 is "expected a number between 0 and 1"', () => {
     expect(fill(t('scrim', { alpha: 1.5 }))).toEqual([
       'template.children[0].fill.alpha: expected a number between 0 and 1',
     ]);
@@ -263,7 +263,7 @@ describe('A10: alpha no $token de cor', () => {
     ]);
   });
 
-  it('fora de posição de cor dá "alpha is only valid on a color $token", no caminho do $token', () => {
+  it('outside a color position gives "alpha is only valid on a color $token", on the $token path', () => {
     expect(
       validateComponent(
         withChild({
@@ -278,7 +278,7 @@ describe('A10: alpha no $token de cor', () => {
     ]);
   });
 
-  it('na parada de um degradê também vale', () => {
+  it('on a gradient stop it also applies', () => {
     expect(
       fill({
         type: 'linear',
@@ -291,7 +291,7 @@ describe('A10: alpha no $token de cor', () => {
     ).toEqual([]);
   });
 
-  it('nas versões 1 a 3 o $token já é o erro de versão', () => {
+  it('in versions 1 to 3 the $token is already the version error', () => {
     expect(fill(t('scrim', { alpha: 0.5 }), 3)).toEqual([
       `template.children[0].fill: ${V4}`,
     ]);
@@ -313,7 +313,7 @@ describe('A15: stroke.offset', () => {
       ),
     );
 
-  it('literal ≥ 0 ou $token de número valem em frame, rect e ellipse na v4', () => {
+  it('literal ≥ 0 or number $token are valid on frame, rect and ellipse in v4', () => {
     for (const type of ['frame', 'rect', 'ellipse']) {
       expect(stroke({ offset: 2 }, 4, type)).toEqual([]);
       expect(stroke({ offset: t('focus-offset') }, 4, type)).toEqual([]);
@@ -321,7 +321,7 @@ describe('A15: stroke.offset', () => {
     expect(stroke({ offset: 0 })).toEqual([]);
   });
 
-  it('negativo ou que não é número é erro', () => {
+  it('negative or not a number is an error', () => {
     expect(stroke({ offset: -1 })).toEqual([
       'template.children[0].stroke.offset: expected a number greater than or equal to 0',
     ]);
@@ -330,13 +330,13 @@ describe('A15: stroke.offset', () => {
     ]);
   });
 
-  it('nas versões 1 a 3 dá o erro de versão, no caminho da chave', () => {
+  it('in versions 1 to 3 it gives the version error, on the key path', () => {
     expect(stroke({ offset: 2 }, 3)).toEqual([
       `template.children[0].stroke.offset: ${V4}`,
     ]);
   });
 
-  it('em path e text não vale (só frame, rect e ellipse)', () => {
+  it('in path and text it does not apply (only frame, rect and ellipse)', () => {
     const issues = validateComponent(
       withChild({
         type: 'path',

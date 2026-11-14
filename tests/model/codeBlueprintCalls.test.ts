@@ -1,6 +1,6 @@
-// `calls`, `formats`, caminhos e posicionais no `code` (formatVersion 16; etapa #1079, S1):
-// `codeBlueprint` monta os `params` aninhados, formatados e posicionais; `resolveCode` aplica o
-// `calls` do caso de `variants`. Sem as chaves novas (ou numa v15), nada muda.
+// `calls`, `formats`, paths and positionals in `code` (formatVersion 16; stage #1079, S1):
+// `codeBlueprint` builds the nested, formatted and positional `params`; `resolveCode` applies the
+// `calls` of the `variants` case. Without the new keys (or on a v15), nothing changes.
 import { describe, expect, it } from 'vitest';
 import {
   addContainer,
@@ -121,12 +121,12 @@ function projectWith(
 
 function annotationOf(p: Project): BlueprintAnnotation {
   const a = codeBlueprint(p, 'MB', 'compose').root.annotations[0];
-  if (!a) throw new Error('sem anotação');
+  if (!a) throw new Error('no annotation');
   return a;
 }
 
-describe('codeBlueprint com calls, formats, caminhos e posicionais (v16)', () => {
-  it('colors = ButtonDefaults.buttonColors(containerColor = …) só com um campo da fábrica preenchido', () => {
+describe('codeBlueprint with calls, formats, paths and positionals (v16)', () => {
+  it('colors = ButtonDefaults.buttonColors(containerColor = …) only with a filled field of the factory', () => {
     const a = annotationOf(projectWith({ containerColor: 'primary' }));
     expect(a.params).toEqual([
       { key: 'title', name: '#0', position: 0, value: null },
@@ -143,7 +143,7 @@ describe('codeBlueprint com calls, formats, caminhos e posicionais (v16)', () =>
     ]);
   });
 
-  it('a fábrica leva só os campos preenchidos, na ordem dos campos do tipo', () => {
+  it('the factory takes only the filled fields, in the order of the type fields', () => {
     const a = annotationOf(
       projectWith({ contentColor: 'onPrimary', containerColor: 'primary' }),
     );
@@ -154,7 +154,7 @@ describe('codeBlueprint com calls, formats, caminhos e posicionais (v16)', () =>
     ]);
   });
 
-  it('nada da fábrica quando todos os campos dela estão vazios', () => {
+  it('nothing from the factory when all its fields are empty', () => {
     const a = annotationOf(projectWith({ width: 16 }));
     expect(a.params.map((param) => param.name)).toEqual([
       '#0',
@@ -165,7 +165,7 @@ describe('codeBlueprint com calls, formats, caminhos e posicionais (v16)', () =>
     expect(a.params.some((param) => param.call !== undefined)).toBe(false);
   });
 
-  it('formats: 16.dp no valor do campo; vazio continua vazio', () => {
+  it('formats: 16.dp in the field value; empty stays empty', () => {
     const a = annotationOf(projectWith({ width: 16, size: 14 }));
     expect(a.params.filter((p) => p.key === 'width' || p.key === 'size')).toEqual([
       { key: 'width', name: 'width', value: '16.dp' },
@@ -175,7 +175,7 @@ describe('codeBlueprint com calls, formats, caminhos e posicionais (v16)', () =>
     expect(empty.params.find((p) => p.key === 'width')?.value).toBeNull();
   });
 
-  it('o molde vem depois da tradução do enum em values', () => {
+  it('the template comes after the enum translation in values', () => {
     const a = annotationOf(
       projectWith({ style: 'filled' }, 16, (code) => {
         code.formats = { style: 'Style({value})' };
@@ -184,19 +184,19 @@ describe('codeBlueprint com calls, formats, caminhos e posicionais (v16)', () =>
     expect(a.params.find((p) => p.key === 'style')?.value).toBe('Style(Kind.Filled)');
   });
 
-  it('posicional: #0 vira o argumento sem nome, na posição dele', () => {
+  it('positional: #0 becomes the unnamed argument, at its position', () => {
     const a = annotationOf(projectWith({ title: 'OK' }));
     expect(a.params[0]).toEqual({ key: 'title', name: '#0', position: 0, value: 'OK' });
   });
 
-  it('o calls do caso de variants substitui o da base', () => {
+  it('the calls of the variants case replaces the base one', () => {
     const a = annotationOf(projectWith({ containerColor: 'primary', style: 'outlined' }));
     const colors = a.params.find((param) => param.name === 'colors');
     expect(colors?.call).toBe(OUTLINED_COLORS);
     expect(a.symbol).toBe('androidx.compose.material3.OutlinedButton');
   });
 
-  it('numa v15 os params são textos opacos: a saída é a de hoje', () => {
+  it("on a v15 the params are opaque texts: the output is today's", () => {
     const a = annotationOf(
       projectWith({ title: 'OK', containerColor: 'primary', width: 16 }, 15),
     );
@@ -211,7 +211,7 @@ describe('codeBlueprint com calls, formats, caminhos e posicionais (v16)', () =>
   });
 });
 
-describe('resolveCode com as chaves novas', () => {
+describe('resolveCode with the new keys', () => {
   const base: SpecCode = {
     symbol: 'B',
     signature: 'signatures/b.json',
@@ -231,7 +231,7 @@ describe('resolveCode com as chaves novas', () => {
     },
   };
 
-  it('o calls do caso substitui, chave por chave, o da base; os formats se somam', () => {
+  it('the calls of the case replace the base ones key by key; the formats add up', () => {
     const resolved = resolveCode(base, { kind: 'outlined' }, [
       { key: 'kind', type: 'enum', options: ['filled', 'outlined'] } as never,
     ]);
@@ -244,7 +244,7 @@ describe('resolveCode com as chaves novas', () => {
     expect(resolved.ignore).toEqual(['shape']);
   });
 
-  it('sem caso aplicado, a base fica como está (sem variants)', () => {
+  it('without an applied case, the base stays as is (without variants)', () => {
     const resolved = resolveCode(base, { kind: 'filled' }, [
       { key: 'kind', type: 'enum', options: ['filled', 'outlined'] } as never,
     ]);
@@ -254,8 +254,8 @@ describe('resolveCode com as chaves novas', () => {
   });
 });
 
-describe('codeBlueprint: chave herdada do Object não é uma fábrica', () => {
-  it('"constructor.x" sem fábrica com esse nome é um parâmetro de nome comum', () => {
+describe('codeBlueprint: a key inherited from Object is not a factory', () => {
+  it('"constructor.x" without a factory of that name is a plain-named parameter', () => {
     const fields = [{ key: 'x', type: 'string' }] as unknown as SpecField[];
     const code = {
       symbol: 'S',
