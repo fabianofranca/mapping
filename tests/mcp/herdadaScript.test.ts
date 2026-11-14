@@ -64,7 +64,7 @@ beforeAll(async () => {
   const parsed = parseSpecText(
     readFileSync(join(lib, 'material3-compose.spec.json'), 'utf8'),
   );
-  if (!parsed.ok) throw new Error(`spec inválida: ${JSON.stringify(parsed)}`);
+  if (!parsed.ok) throw new Error(`invalid spec: ${JSON.stringify(parsed)}`);
   let p = createProject({
     name: 'Screens',
     now: NOW,

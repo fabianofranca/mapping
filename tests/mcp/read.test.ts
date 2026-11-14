@@ -162,13 +162,13 @@ describe('list_projects and discovery', () => {
         { id: 'modelo-dados', version: 1 },
       ],
     });
-    expect(cadastro.dir).toBe(realpathSync(ws.projectDir('apps/cadastro')));
+    expect(signup.dir).toBe(realpathSync(ws.projectDir('apps/cadastro')));
   });
 
   it('an unreadable project appears with the reason, without hiding the others', async () => {
     const data = ok(await mcp.call('list_projects'));
     const broken = (data.projects as { name: string; error?: { code: string } }[]).find(
-      (p) => p.name === 'broken',
+      (p) => p.name === 'quebrado',
     );
     expect(broken?.error?.code).toBe('invalid-project');
   });

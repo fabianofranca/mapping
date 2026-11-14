@@ -76,7 +76,13 @@ beforeAll(async () => {
       height: 200,
       background: '#FFFFFF',
     },
-    { op: 'add_container', name: 'Screen', width: 300, height: 200, background: '#FFFFFF' },
+    {
+      op: 'add_container',
+      name: 'Screen',
+      width: 300,
+      height: 200,
+      background: '#FFFFFF',
+    },
     {
       op: 'create_marking',
       as: '$a',
@@ -206,7 +212,13 @@ describe('wrap_items: noise in the placement', () => {
     ok(await mcp.call('create_project', { path: `projetos/${name}`, name }));
     const noisyDir = join(root, 'projetos', name);
     const base = await propose(mcp, name, [
-      { op: 'add_container', name: 'One', width: 300, height: 200, background: '#FFFFFF' },
+      {
+        op: 'add_container',
+        name: 'One',
+        width: 300,
+        height: 200,
+        background: '#FFFFFF',
+      },
     ]);
     expect(base.valid, JSON.stringify(base.errors)).toBe(true);
     acceptAllAndApply(noisyDir, base.proposal.id);

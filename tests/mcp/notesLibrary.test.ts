@@ -7,8 +7,8 @@ import { deserialize } from '../../src/model';
 import { errorOf, ok } from './proposalSupport';
 import { connect, type Connection } from './workspace';
 
-// A biblioteca de notas embutida (ME3) pelo `create_project`: aplicada por padrão, com a pasta
-// `specs/notas/` gravada antes do `mapping.json`; `notes: false` cria o projeto como antes.
+// The embedded notes library (ME3) through `create_project`: applied by default, with the folder
+// `specs/notas/` written before the `mapping.json`; `notes: false` creates the project as before.
 
 let base: string;
 let root: string;
@@ -26,22 +26,22 @@ afterAll(async () => {
   rmSync(base, { recursive: true, force: true });
 });
 
-describe('create_project com a biblioteca de notas', () => {
-  it('padrão: camada Notas, especialização aplicada e specs/notas/ idêntica ao pacote', async () => {
+describe('create_project with the notes library', () => {
+  it('default: Notas layer, specialization applied and specs/notas/ identical to the package', async () => {
     const created = ok(
       await mcp.call<{ counts: { layers: number } }>('create_project', {
-        path: 'com-notas',
-        name: 'Com notas',
+        path: 'with-notes',
+        name: 'With notes',
       }),
     );
     expect(created.counts.layers).toBe(2);
-    const dir = join(root, 'com-notas');
+    const dir = join(root, 'with-notes');
     for (const [path, text] of NOTES_FILES) {
       const onDisk = readFileSync(
         join(dir, 'specs', 'notas', ...path.split('/')),
         'utf8',
       );
-      // O JSON da especialização é regravado pela serialização do modelo; o resto é o pacote.
+      // The specialization JSON is rewritten by the model serialization; the rest is the package.
       if (path === 'notas.spec.json') {
         expect(JSON.parse(onDisk)).toEqual(JSON.parse(text));
       } else {
@@ -60,13 +60,13 @@ describe('create_project com a biblioteca de notas', () => {
     ]);
   });
 
-  it('get_project lê o projeto criado: especialização notas disponível e camada Notas', async () => {
+  it('get_project reads the created project: notas specialization available and Notas layer', async () => {
     const project = ok(
       await mcp.call<{
         layers: { name: string; spec: unknown; annotations: number }[];
         specializations: Record<string, unknown>[];
         issues: { total: number };
-      }>('get_project', { project: 'com-notas' }),
+      }>('get_project', { project: 'with-notes' }),
     );
     expect(project.specializations).toEqual([
       expect.objectContaining({
@@ -93,7 +93,7 @@ describe('create_project com a biblioteca de notas', () => {
             annotationTypes: { id: string; floating?: boolean; component?: string }[];
           }[];
         };
-      }>('get_specialization', { project: 'com-notas', specId: 'notas' }),
+      }>('get_specialization', { project: 'with-notes', specId: 'notas' }),
     );
     expect(data).toMatchObject({ id: 'notas', file: 'specs/notas/notas.spec.json' });
     expect(data.spec.formatVersion).toBe(7);
@@ -105,16 +105,16 @@ describe('create_project com a biblioteca de notas', () => {
     });
   });
 
-  it('notes: false cria só a "Camada 1", sem specs/', async () => {
+  it('notes: false creates only the "Camada 1", without specs/', async () => {
     const created = ok(
       await mcp.call<{ counts: { layers: number } }>('create_project', {
-        path: 'sem-notas',
-        name: 'Sem notas',
+        path: 'without-notes',
+        name: 'Without notes',
         notes: false,
       }),
     );
     expect(created.counts.layers).toBe(1);
-    const dir = join(root, 'sem-notas');
+    const dir = join(root, 'without-notes');
     expect(existsSync(join(dir, 'specs'))).toBe(false);
     expect(existsSync(join(dir, 'mapping.json'))).toBe(true);
     const parsed = deserialize(readFileSync(join(dir, 'mapping.json'), 'utf8'));
@@ -125,13 +125,16 @@ describe('create_project com a biblioteca de notas', () => {
 
     const project = ok(
       await mcp.call<{ specializations: unknown[] }>('get_project', {
-        project: 'sem-notas',
+        project: 'without-notes',
       }),
     );
     expect(project.specializations).toEqual([]);
     expect(
       errorOf(
-        await mcp.call('get_specialization', { project: 'sem-notas', specId: 'notas' }),
+        await mcp.call('get_specialization', {
+          project: 'without-notes',
+          specId: 'notas',
+        }),
       ).code,
     ).toBe('not-found');
   });

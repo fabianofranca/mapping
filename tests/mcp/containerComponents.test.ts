@@ -107,7 +107,12 @@ describe('add_container e update_container', () => {
   it('creates the container and edits background and size; on the photo, container-has-file', async () => {
     const result = await run([
       SCREEN,
-      { op: 'update_container', container: '$screen', background: '#000000', height: 900 },
+      {
+        op: 'update_container',
+        container: '$screen',
+        background: '#000000',
+        height: 900,
+      },
       { op: 'update_container', container: PHOTO, background: '#000000' },
       { op: 'update_container', container: PHOTO, width: 300 },
     ]);
@@ -625,7 +630,12 @@ describe('create_marking with inside (child in the slot)', () => {
       child('$b1', { container: '$other' }),
     ]);
     expect(codes(divergent)).toEqual(['invalid-parent']);
-    const same = await run([SCREEN, other, COLUMN, child('$b1', { container: '$screen' })]);
+    const same = await run([
+      SCREEN,
+      other,
+      COLUMN,
+      child('$b1', { container: '$screen' }),
+    ]);
     expect(same.errors).toEqual([]);
   });
 

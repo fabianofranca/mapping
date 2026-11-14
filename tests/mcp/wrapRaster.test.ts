@@ -1,6 +1,6 @@
-// MC4 (decisão 13 da #898): o raster do MCP pinta cada filho de uma fileira com `wrap` onde o modelo
-// o põe, a ≤ 0,5 px (5 filhos de 100 numa row de 320, `gap` 8, `lineGap` 12, as posições do
-// `FlowRow`). O Konva tem o teste dele em `tests/canvas/components/wrapParity.test.ts`.
+// MC4 (decision 13 of #898): the MCP raster paints each child of a row with `wrap` where the model
+// puts it, within ≤ 0.5 px (5 children of 100 in a row of 320, `gap` 8, `lineGap` 12, the positions of
+// `FlowRow`). Konva has its own test in `tests/canvas/components/wrapParity.test.ts`.
 import { describe, expect, it } from 'vitest';
 import { createRaster, type Raster } from '../../mcp/image/raster';
 import { paintScene } from '../../mcp/image/sceneRaster';
@@ -34,7 +34,7 @@ function component(layout: Record<string, unknown>) {
   };
 }
 
-/** O retângulo envolvente dos pixels de uma cor (RGB exato) no raster. */
+/** The bounding rectangle of the pixels of a color (exact RGB) in the raster. */
 function inkBox(raster: Raster, color: string) {
   const want = [1, 3, 5].map((i) => parseInt(color.slice(i, i + 2), 16));
   let x0 = Infinity;
@@ -63,7 +63,7 @@ describe.each([
     'space-between por linha',
     { wrap: 'wrap', gap: 8, lineGap: 12, justify: 'space-between' },
   ],
-])('wrap: raster × modelo (%s)', (_name, layout) => {
+])('wrap: raster × model (%s)', (_name, layout) => {
   const { root } = instantiate(
     component(layout) as never,
     {},
@@ -73,7 +73,7 @@ describe.each([
   const model = absoluteBoxes(root);
   const kids = [...walk(root)].filter((n) => /^k\d$/.test(n.name ?? ''));
 
-  it.each([1, 2])('pinta cada filho onde o modelo o pôs, a zoom %s', (zoom) => {
+  it.each([1, 2])('paints each child where the model put it, at zoom %s', (zoom) => {
     const raster = createRaster(320 * zoom, 200 * zoom);
     raster.data.fill(255);
     paintScene(raster, [{ root }], measure, {

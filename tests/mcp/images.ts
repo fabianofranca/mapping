@@ -23,13 +23,13 @@ export function quadrants(width: number, height: number): Raster {
   return { data, width, height };
 }
 
-/** Cor RGB do pixel (x, y). */
+/** RGB color of the pixel (x, y). */
 export function pixelAt(p: Raster, x: number, y: number): number[] {
   const i = (y * p.width + x) * 4;
   return [p.data[i]!, p.data[i + 1]!, p.data[i + 2]!];
 }
 
-/** PNG (libpng do @jsquash, o mesmo codec do servidor). */
+/** PNG (libpng from @jsquash, the same codec as the server). */
 export async function encodePng(p: Raster): Promise<Buffer> {
   return Buffer.from(await encodeImage(p, 'png'));
 }
@@ -77,7 +77,7 @@ export async function encodeJpegWithExif(
   return Buffer.concat([jpeg.subarray(0, 2), app1, payload, jpeg.subarray(2)]);
 }
 
-/** WebP com a qualidade pedida (0 a 1; 1 = sem perdas). */
+/** WebP with the requested quality (0 to 1; 1 = lossless). */
 export async function encodeWebpFixture(p: Raster, quality: number): Promise<Buffer> {
   return Buffer.from(
     await encodeImage(p, 'webp', {

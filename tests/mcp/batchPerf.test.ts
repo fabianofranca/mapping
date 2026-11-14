@@ -75,7 +75,7 @@ describe('MCP batch at scale', () => {
       const large = await medianBatchMs(project, 1000);
       const ratio = large / small;
       console.info(
-        `growth · batch of creations: 250 ${small.toFixed(0)} ms · 1000 ${large.toFixed(0)} ms · ratio ${ratio.toFixed(2)}× (teto ${GROWTH_LIMIT}×)`,
+        `growth · batch of creations: 250 ${small.toFixed(0)} ms · 1000 ${large.toFixed(0)} ms · ratio ${ratio.toFixed(2)}× (cap ${GROWTH_LIMIT}×)`,
       );
       expect(ratio, 'ratio 1000/250').toBeLessThan(GROWTH_LIMIT);
     },
@@ -88,7 +88,7 @@ describe('MCP batch at scale', () => {
       const project = buildLargeProject({ images: 400 });
       const ms = await medianBatchMs(project, 1000);
       console.info(
-        `budget · batch of 1,000 creations: ${ms.toFixed(0)} ms (teto ${BUDGET_1000_MS} ms)`,
+        `budget · batch of 1,000 creations: ${ms.toFixed(0)} ms (cap ${BUDGET_1000_MS} ms)`,
       );
       expect(ms).toBeLessThan(BUDGET_1000_MS);
     },
@@ -132,7 +132,7 @@ describe('MCP batch at scale', () => {
         expect(result.isError, text.slice(0, 300)).toBeFalsy();
         expect(JSON.parse(text).valid).toBe(true);
         console.info(
-          `budget · plan_changes of 1,000 creations (2,500 markings): ${ms.toFixed(0)} ms (teto ${BUDGET_TOOL_1000_MS} ms)`,
+          `budget · plan_changes of 1,000 creations (2,500 markings): ${ms.toFixed(0)} ms (cap ${BUDGET_TOOL_1000_MS} ms)`,
         );
         expect(ms).toBeLessThan(BUDGET_TOOL_1000_MS);
       },
