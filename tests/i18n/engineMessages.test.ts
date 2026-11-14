@@ -11,10 +11,10 @@ import type { ModelMessage } from '../../src/model/modelMessage';
 import { locale } from '../../src/store/settings';
 import { messageText } from '../../src/ui/modelMessage';
 
-// MB5 (#1360): os avisos do motor de desenho (`instantiate`, `layoutScreen`, `expandRepeats`,
-// `screenFromSource` e a origem `measured`) trazem `messages` (código + parâmetros) ao lado de
-// `warnings`, na mesma ordem. Em pt-BR o texto mostrado é igual ao de hoje; em en-US não há
-// palavra do português fora dos parâmetros (nomes de nó, ids e caminhos são dados).
+// MB5 (#1360): the drawing engine warnings (`instantiate`, `layoutScreen`, `expandRepeats`,
+// `screenFromSource` and the `measured` origin) carry `messages` (code + parameters) next to
+// `warnings`, in the same order. In pt-BR the text shown equals the current one; in en-US there is no
+// Portuguese word outside the parameters (node names, ids and paths are data).
 
 afterEach(() => {
   locale.value = 'pt-BR';
@@ -119,7 +119,7 @@ function engineCases() {
     ],
   };
   const expanded = expandRepeats(component(tableRepeat), {});
-  // `$lines` que não assenta entre as duas passagens (MC2): o espaçador estreita o texto.
+  // `$lines` that does not settle between the two passes (MC2): the spacer narrows the text.
   const unstable = instantiate(
     component(
       {
@@ -147,7 +147,7 @@ function engineCases() {
     { x: 0, y: 0, width: 200, height: 100 },
     { measure: approximateMeasurer },
   );
-  // `maxLines` que corta filhos de uma fileira com `wrap` (MC4).
+  // `maxLines` that cuts children of a row with `wrap` (MC4).
   const outside = instantiate(
     component(
       {
@@ -254,7 +254,7 @@ function layoutCases() {
   ];
 }
 
-// --- screenFromSource e a origem measured -----------------------------------------------------
+// --- screenFromSource and the measured origin -----------------------------------------------------
 
 const NODE = { type: 'type', props: 'props', children: 'children' };
 
@@ -427,7 +427,7 @@ const ALL: readonly WithMessages[] = [
 
 const codes = new Set(ALL.flatMap((r) => (r.messages ?? []).map((m) => m.code)));
 
-/** O texto sem os valores dos parâmetros (dados: nomes de nó, ids, caminhos e valores). */
+/** The text without the parameter values (data: node names, ids, paths and values). */
 function withoutParams(text: string, message: ModelMessage): string {
   let out = text;
   for (const value of Object.values(message.params))
@@ -435,8 +435,8 @@ function withoutParams(text: string, message: ModelMessage): string {
   return out;
 }
 
-describe('avisos do motor de desenho: messages ao lado de warnings', () => {
-  it('cada resultado traz messages com os mesmos textos de warnings, na mesma ordem', () => {
+describe('drawing engine warnings: messages next to warnings', () => {
+  it('each result carries messages with the same texts as warnings, in the same order', () => {
     for (const result of ALL) {
       expect(result.warnings.length).toBeGreaterThan(0);
       expect(result.messages).toBeDefined();
@@ -445,34 +445,34 @@ describe('avisos do motor de desenho: messages ao lado de warnings', () => {
   });
 
   it.each([
-    ['campo não informado', 'engine.fieldMissing'],
-    ['conteúdo maior que a caixa', 'engine.contentTooBig'],
-    ['fill dentro de hug', 'engine.fillInHug'],
-    ['fill dentro de hug (layout)', 'engine.fillInHugUsing'],
-    ['ícone desconhecido', 'engine.iconUnknown'],
-    ['tipo sem componente', 'engine.typeNoComponent'],
-    ['filhos ignorados', 'engine.childrenIgnored'],
-    ['conteúdo maior que a tela', 'engine.screenTooTall'],
-    ['texto medido com largura 0', 'engine.textZeroWidth'],
-    ['valor inválido', 'engine.invalidValue'],
-    ['repeat limitado', 'engine.repeatLimited'],
-    ['$lines instável', 'engine.linesUnstable'],
-    ['filhos fora de maxLines', 'engine.childrenOutsideMaxLines'],
-    ['nó inválido (origem e medida)', 'origins.draw.nodeInvalid'],
-    ['tipo ausente', 'origins.draw.typeMissing'],
-    ['tipo externo sem tipo de anotação', 'origins.draw.typeUnknown'],
-    ['propriedade desconhecida', 'origins.draw.unknownProp'],
-    ['valor que não é simples', 'origins.draw.notScalar'],
-    ['valor fora das opções', 'origins.draw.optionOutside'],
-    ['âncora inválida', 'origins.draw.anchorInvalid'],
-    ['margem inválida', 'origins.draw.marginInvalid'],
-    ['retângulo vazio', 'origins.draw.emptyRect'],
-    ['nó medido sem tipo de anotação', 'origins.draw.nodeUntyped'],
-  ])('produz o aviso "%s" (%s)', (_label, code) => {
+    ['field not provided', 'engine.fieldMissing'],
+    ['content larger than the box', 'engine.contentTooBig'],
+    ['fill inside hug', 'engine.fillInHug'],
+    ['fill inside hug (layout)', 'engine.fillInHugUsing'],
+    ['unknown icon', 'engine.iconUnknown'],
+    ['type without component', 'engine.typeNoComponent'],
+    ['ignored children', 'engine.childrenIgnored'],
+    ['content larger than the screen', 'engine.screenTooTall'],
+    ['text measured with width 0', 'engine.textZeroWidth'],
+    ['invalid value', 'engine.invalidValue'],
+    ['limited repeat', 'engine.repeatLimited'],
+    ['unstable $lines', 'engine.linesUnstable'],
+    ['children outside maxLines', 'engine.childrenOutsideMaxLines'],
+    ['invalid node (origin and measured)', 'origins.draw.nodeInvalid'],
+    ['missing type', 'origins.draw.typeMissing'],
+    ['external type without annotation type', 'origins.draw.typeUnknown'],
+    ['unknown property', 'origins.draw.unknownProp'],
+    ['value that is not scalar', 'origins.draw.notScalar'],
+    ['value outside the options', 'origins.draw.optionOutside'],
+    ['invalid anchor', 'origins.draw.anchorInvalid'],
+    ['invalid margin', 'origins.draw.marginInvalid'],
+    ['empty rectangle', 'origins.draw.emptyRect'],
+    ['measured node without annotation type', 'origins.draw.nodeUntyped'],
+  ])('produces the warning "%s" (%s)', (_label, code) => {
     expect(codes.has(code), code).toBe(true);
   });
 
-  it('em pt-BR o texto mostrado é o de hoje; em en-US não há português fora dos parâmetros', () => {
+  it('in pt-BR the text shown is the current one; in en-US there is no Portuguese outside the parameters', () => {
     for (const result of ALL) {
       for (const message of result.messages ?? []) {
         locale.value = 'pt-BR';
@@ -488,8 +488,8 @@ describe('avisos do motor de desenho: messages ao lado de warnings', () => {
   });
 });
 
-// Os erros que impedem a tradução da tela (`errorMessage`, ao lado de `error`).
-describe('erros da tradução da tela: errorMessage ao lado de error', () => {
+// The errors that prevent the screen translation (`errorMessage`, next to `error`).
+describe('screen translation errors: errorMessage next to error', () => {
   const lib = (): NonNullable<typeof sourceLibrary> => {
     if (sourceLibrary === undefined) throw new Error('biblioteca de origem não montada');
     return sourceLibrary;
@@ -498,23 +498,22 @@ describe('erros da tradução da tela: errorMessage ao lado de error', () => {
     screenFromSource(lib(), json, { system, measure: approximateMeasurer });
 
   it.each([
-    [
-      'origem não declarada',
-      () => run({}, 'nao-existe'),
-      'origins.error.systemUndeclared',
-    ],
-    ['largura ausente', () => run({ screen: { h: 400 } }), 'origins.error.widthInvalid'],
-    ['altura ausente', () => run({ screen: { w: 300 } }), 'origins.error.heightInvalid'],
-  ])('%s: tem código, texto igual a error e en-US sem português', (_l, make, code) => {
-    const result = make();
-    const message = result.errorMessage;
-    expect(message?.code).toBe(code);
-    expect(result.error).toBe(message?.text);
-    locale.value = 'pt-BR';
-    expect(message === undefined ? '' : messageText(message)).toBe(result.error);
-    locale.value = 'en-US';
-    const shown = message === undefined ? '' : messageText(message);
-    expect(withoutParams(shown, message as ModelMessage)).not.toMatch(PORTUGUESE);
-    expect(shown).not.toBe(result.error);
-  });
+    ['undeclared origin', () => run({}, 'nao-existe'), 'origins.error.systemUndeclared'],
+    ['missing width', () => run({ screen: { h: 400 } }), 'origins.error.widthInvalid'],
+    ['missing height', () => run({ screen: { w: 300 } }), 'origins.error.heightInvalid'],
+  ])(
+    '%s: has a code, text equal to error and en-US without Portuguese',
+    (_l, make, code) => {
+      const result = make();
+      const message = result.errorMessage;
+      expect(message?.code).toBe(code);
+      expect(result.error).toBe(message?.text);
+      locale.value = 'pt-BR';
+      expect(message === undefined ? '' : messageText(message)).toBe(result.error);
+      locale.value = 'en-US';
+      const shown = message === undefined ? '' : messageText(message);
+      expect(withoutParams(shown, message as ModelMessage)).not.toMatch(PORTUGUESE);
+      expect(shown).not.toBe(result.error);
+    },
+  );
 });

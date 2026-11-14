@@ -19,9 +19,9 @@ import { locale } from '../../src/store/settings';
 import { messageText } from '../../src/ui/modelMessage';
 import { issueText } from '../../src/ui/LibraryIssueList';
 
-// MB4 (#1359): os erros e avisos do componente, dos ícones e da declaração das origens têm código
-// e saem na língua da app. Em pt-BR o texto é igual ao `message`; em en-US não há palavra do
-// português fora dos parâmetros (nomes de chave, ids e caminhos são dados).
+// MB4 (#1359): the errors and warnings of the component, the icons and the origins declaration have
+// a code and come out in the app language. In pt-BR the text equals `message`; in en-US there is no
+// Portuguese word outside the parameters (key names, ids and paths are data).
 
 afterEach(() => {
   locale.value = 'pt-BR';
@@ -40,7 +40,7 @@ interface Coded {
 const asMessage = (issue: Coded): ModelMessage =>
   modelMessage(issue.code ?? 'raw', issue.params ?? {}, issue.message);
 
-/** O texto sem os valores dos parâmetros (dados: caminhos, ids, o texto de outro módulo). */
+/** The text without the parameter values (data: paths, ids, the text of another module). */
 function withoutParams(text: string, issue: Coded): string {
   let out = text;
   for (const value of Object.values(issue.params ?? {}))
@@ -63,7 +63,7 @@ function expectLocalized(issues: readonly Coded[]): void {
   }
 }
 
-// --- componente --------------------------------------------------------------------------
+// --- component --------------------------------------------------------------------------
 
 function validComponent(): Raw {
   return {
@@ -76,7 +76,7 @@ function validComponent(): Raw {
   };
 }
 
-/** Cada caso muda o componente válido para produzir problemas de um grupo diferente. */
+/** Each case changes the valid component to produce problems of a different group. */
 const COMPONENT_CASES: readonly ((c: Raw) => void)[] = [
   (c) => {
     c.format = 'x';
@@ -157,7 +157,7 @@ const COMPONENT_CASES: readonly ((c: Raw) => void)[] = [
       ],
     };
   },
-  // `$lines` e `sizing` por expressão (MC2).
+  // `$lines` and `sizing` by expression (MC2).
   (c) => {
     c.sizing = {
       width: { $size: 'width' },
@@ -174,7 +174,7 @@ const COMPONENT_CASES: readonly ((c: Raw) => void)[] = [
       ],
     };
   },
-  // Quebra de fileira (MC4): `lineGap`, `maxPerLine` e `maxLines` sem `wrap`.
+  // Row wrapping (MC4): `lineGap`, `maxPerLine` and `maxLines` without `wrap`.
   (c) => {
     c.template = {
       type: 'frame',
@@ -191,9 +191,9 @@ const COMPONENT_CASES: readonly ((c: Raw) => void)[] = [
   },
 ];
 
-describe('mensagens do componente', () => {
+describe('component messages', () => {
   it.each(COMPONENT_CASES.map((fix, i) => [i, fix] as const))(
-    'caso %i: todo problema tem código e sai na língua da app',
+    'case %i: every problem has a code and comes out in the app language',
     (_i, fix) => {
       const input = validComponent();
       fix(input);
@@ -203,7 +203,7 @@ describe('mensagens do componente', () => {
     },
   );
 
-  it('o aviso de família de fonte inválida tem código', () => {
+  it('the invalid font family warning has a code', () => {
     const input = validComponent();
     input.template = {
       type: 'frame',
@@ -214,7 +214,7 @@ describe('mensagens do componente', () => {
     if (parsed.ok) expectLocalized(parsed.warnings);
   });
 
-  it('JSON inválido usa library.invalidJson, com o mesmo texto', () => {
+  it('invalid JSON uses library.invalidJson, with the same text', () => {
     const parsed = parseComponentText('{ não é json');
     expect(parsed.ok).toBe(false);
     if (parsed.ok) return;
@@ -222,7 +222,7 @@ describe('mensagens do componente', () => {
     expect(parsed.issues[0]?.message).toMatch(/^JSON inválido: /);
   });
 
-  it('o validador da biblioteca repassa o código do componente', () => {
+  it('the library validator passes on the component code', () => {
     const input = validComponent();
     input.id = 'A b';
     const report = validateLibrary({
@@ -257,9 +257,9 @@ describe('mensagens do componente', () => {
   });
 });
 
-// --- ícones --------------------------------------------------------------------------------
+// --- icons --------------------------------------------------------------------------------
 
-describe('mensagens dos ícones', () => {
+describe('icon messages', () => {
   const BAD: readonly unknown[] = [
     3,
     {
@@ -287,7 +287,7 @@ describe('mensagens dos ícones', () => {
   ];
 
   it.each(BAD.map((b, i) => [i, b] as const))(
-    'caso %i: todo problema tem código e sai na língua da app',
+    'case %i: every problem has a code and comes out in the app language',
     (_i, input) => {
       const parsed = parseIconsText(JSON.stringify(input));
       expect(parsed.ok).toBe(false);
@@ -295,7 +295,7 @@ describe('mensagens dos ícones', () => {
     },
   );
 
-  it('JSON inválido usa library.invalidJson, com o mesmo texto', () => {
+  it('invalid JSON uses library.invalidJson, with the same text', () => {
     const parsed = parseIconsText('{');
     expect(parsed.ok).toBe(false);
     if (parsed.ok) return;
@@ -304,7 +304,7 @@ describe('mensagens dos ícones', () => {
   });
 });
 
-// --- declaração das origens (parseSpec) ------------------------------------------------
+// --- origins declaration (parseSpec) ------------------------------------------------
 
 function specWith(origins: unknown): Raw {
   return {
@@ -354,9 +354,9 @@ const ORIGIN_CASES: readonly unknown[] = [
   [{ system: 'a', node: { type: 't', props: 'p', children: 'c' } }],
 ];
 
-describe('mensagens da declaração das origens', () => {
+describe('origins declaration messages', () => {
   it.each(ORIGIN_CASES.map((o, i) => [i, o] as const))(
-    'caso %i: todo problema tem código e sai na língua da app',
+    'case %i: every problem has a code and comes out in the app language',
     (_i, origins) => {
       const parsed = parseSpec(specWith(origins));
       expect(parsed.ok).toBe(false);
@@ -377,10 +377,10 @@ describe('mensagens da declaração das origens', () => {
   );
 });
 
-// Os textos de `parseOrigins(raw).problems` (`${path}: ${message}`) ficam fixados em literais: a
-// refatoração dos problemas como dado (#1589, RM1) não muda letra nenhuma, nem para a biblioteca dos
-// componentes, que os mostra neste formato.
-// Os mesmos casos de `ORIGIN_CASES`, mais uma origem repetida e uma âncora inválida válidas de resto.
+// The texts of `parseOrigins(raw).problems` (`${path}: ${message}`) are pinned as literals: the
+// refactoring of the problems as data (#1589, RM1) does not change a single letter, not even for the
+// component library, which shows them in this format.
+// The same cases as `ORIGIN_CASES`, plus a repeated origin and an invalid anchor that are otherwise valid.
 const ORIGIN_TEXT_CASES: readonly (readonly [unknown, readonly string[]])[] = [
   [ORIGIN_CASES[0], ['origins: esperava uma lista']],
   [
@@ -423,7 +423,7 @@ const ORIGIN_TEXT_CASES: readonly (readonly [unknown, readonly string[]])[] = [
     ],
   ],
   [ORIGIN_CASES[4], ['origins[0].screen: obrigatório']],
-  // A chave desconhecida com `": "` no nome e a âncora com `"; use "` (o defeito da RM1).
+  // The unknown key with `": "` in the name and the anchor with `"; use "` (the RM1 defect).
   [
     [{ system: 'a', 'x: y': 1 }],
     [
@@ -493,7 +493,7 @@ const ORIGIN_TEXT_CASES: readonly (readonly [unknown, readonly string[]])[] = [
       'origins[0].examples[0].file: caminho inválido: use um caminho relativo à pasta da especialização, com "/", sem "." nem ".." e sem unidade (ex: components/button.json)',
     ],
   ],
-  // O índice inválido pode ser uma quebra de linha: o código segue o da variante (flag `s`).
+  // The invalid index can be a line break: the code follows the variant's (flag `s`).
   [
     [
       {
@@ -513,17 +513,17 @@ function ORIGIN_VALID_WITH_ANCHOR(anchor: string): Raw {
   };
 }
 
-describe('textos dos problemas das origens (parseOrigins)', () => {
+describe('origins problem texts (parseOrigins)', () => {
   it.each(ORIGIN_TEXT_CASES.map((c, i) => [i, c[0], c[1]] as const))(
-    'caso %i: o texto de cada problema não muda',
+    'case %i: the text of each problem does not change',
     (_i, origins, texts) => {
       expect(parseOrigins(origins).problems.map(originProblemText)).toEqual(texts);
     },
   );
 });
 
-describe('origem com valor do usuário no nome da chave ou na âncora (defeito da RM1)', () => {
-  it('a chave desconhecida com ": " no nome sai no caminho certo, com o código no emissor', () => {
+describe('origin with a user value in the key name or in the anchor (RM1 defect)', () => {
+  it('the unknown key with ": " in the name comes out on the right path, with the code at the emitter', () => {
     const parsed = parseSpec(specWith([{ system: 'a', 'x: y': 1 }]));
     expect(parsed.ok).toBe(false);
     if (parsed.ok) return;
@@ -540,7 +540,7 @@ describe('origem com valor do usuário no nome da chave ou na âncora (defeito d
     expect(messageText(asMessage(issue as Coded))).not.toMatch(PORTUGUESE);
   });
 
-  it('a âncora com "; use " no valor mantém os parâmetros de origins.anchorInvalid', () => {
+  it('the anchor with "; use " in the value keeps the origins.anchorInvalid parameters', () => {
     const parsed = parseSpec(specWith([ORIGIN_VALID_WITH_ANCHOR('a; use b')]));
     expect(parsed.ok).toBe(false);
     if (parsed.ok) return;
@@ -554,10 +554,10 @@ describe('origem com valor do usuário no nome da chave ou na âncora (defeito d
   });
 });
 
-// --- catálogo de componentes (o aviso do componente que não carregou) ----------------------
+// --- component catalog (the warning for the component that did not load) ----------------------
 
-describe('componente que não carregou', () => {
-  it('o motivo vira `detail` e sai traduzido; em pt-BR o texto é o de hoje', () => {
+describe('component that did not load', () => {
+  it('the reason becomes `detail` and comes out translated; in pt-BR the text is the current one', () => {
     const spec = parseSpec({
       format: 'mapping-spec',
       formatVersion: 15,
@@ -598,7 +598,7 @@ describe('componente que não carregou', () => {
   });
 });
 
-// --- o catálogo --------------------------------------------------------------------------
+// --- the catalog --------------------------------------------------------------------------
 
 const ORIGIN_CODED_PROBLEMS: ReadonlySet<string> = new Set([
   'origins.anchorInvalid',
@@ -606,15 +606,15 @@ const ORIGIN_CODED_PROBLEMS: ReadonlySet<string> = new Set([
   'origins.systemRepeated',
 ]);
 
-describe('catálogos component, iconsFile e origins', () => {
+describe('component, iconsFile and origins catalogs', () => {
   const ALL = { ...componentMessages, ...iconsFileMessages, ...originMessages };
 
-  it('os códigos estão no catálogo único do modelo', () => {
+  it('the codes are in the model single catalog', () => {
     for (const code of Object.keys(ALL))
       expect(MODEL_MESSAGE_TEMPLATES).toHaveProperty(code);
   });
 
-  it('cada modelo do catálogo `component` acha o próprio código pelo texto', () => {
+  it('each template of the `component` catalog finds its own code by the text', () => {
     for (const [code, template] of Object.entries(componentMessages)) {
       const params = Object.fromEntries(
         [...template.matchAll(/\{(\w+)\}/g)].map((m, i) => [m[1], `v${i}`]),
@@ -624,8 +624,8 @@ describe('catálogos component, iconsFile e origins', () => {
     }
   });
 
-  it('nenhum modelo do catálogo é órfão: o texto dele existe no parser', () => {
-    // Os erros das variáveis (`let`/`$var`) nascem em `variables.ts`, que o `parseComponent` chama.
+  it('no catalog template is orphaned: its text exists in the parser', () => {
+    // The variable errors (`let`/`$var`) originate in `variables.ts`, which `parseComponent` calls.
     const sources: readonly [Readonly<Record<string, string>>, string][] = [
       [
         componentMessages,
@@ -641,15 +641,15 @@ describe('catálogos component, iconsFile e origins', () => {
         .join('\n')
         .replace(/'\s*\+\s*'/g, '');
       for (const [code, template] of Object.entries(catalog)) {
-        // O parser monta este com a constante `COMPONENT_FORMAT`; o caso 0 acima o produz.
+        // The parser builds this one with the `COMPONENT_FORMAT` constant; case 0 above produces it.
         if (code === 'component.formatInvalid') continue;
-        // Os avisos de desenho (`origins.draw.*`) saem do catálogo por `templateMessage` (MB5), sem o
-        // texto no código; `engineMessages.test.ts` os produz.
-        // Os erros da tradução (`origins.error.*`, guarda da MB6) também.
+        // The drawing warnings (`origins.draw.*`) come out of the catalog through `templateMessage` (MB5),
+        // without the text in the code; `engineMessages.test.ts` produces them.
+        // The translation errors (`origins.error.*`, MB6 guard) too.
         if (code.startsWith('origins.draw.') || code.startsWith('origins.error.'))
           continue;
-        // Os três problemas com valor do usuário saem do catálogo por `codedProblem` (#1589), sem o
-        // texto no `origin.ts`; os literais de "textos dos problemas das origens" os produzem.
+        // The three problems with a user value come out of the catalog through `codedProblem` (#1589),
+        // without the text in `origin.ts`; the literals of "origins problem texts" produce them.
         if (ORIGIN_CODED_PROBLEMS.has(code)) continue;
         const parts = template
           .split(/\{\w+\}/)
