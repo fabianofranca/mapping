@@ -1,10 +1,10 @@
 #!/bin/bash
-# Hook de SessionStart das sessões do Claude Code na nuvem: instala as dependências
-# para os gates (npm run lint, typecheck, test, build) rodarem sem passo manual.
-# Só age em sessão remota (CLAUDE_CODE_REMOTE); localmente não faz nada. É
-# idempotente: `npm install` com o package-lock é um no-op rápido quando já está
-# tudo instalado. Roda síncrono: a sessão só começa com as dependências prontas,
-# o que uma sessão sem o dono (por exemplo, o desenvolvimento noturno) exige.
+# SessionStart hook of the Claude Code cloud sessions: installs the dependencies
+# so the gates (npm run lint, typecheck, test, build) run without a manual step.
+# It only acts in a remote session (CLAUDE_CODE_REMOTE); locally it does nothing. It is
+# idempotent: `npm install` with the package-lock is a quick no-op when everything is
+# already installed. It runs synchronously: the session only starts with the dependencies
+# ready, which a session without the owner (for example, the overnight development) requires.
 set -euo pipefail
 
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then

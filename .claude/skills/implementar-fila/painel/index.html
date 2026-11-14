@@ -725,8 +725,8 @@
     <div class="card">
       <h2>Issues created by the queue</h2>
       <p class="sub">
-        The bugs and roadmaps that the queue opens carry the line <code>Origem: etapa #n</code> in
-        the body.
+        The bugs and roadmaps that the queue opens carry the line
+        <code>Origem: etapa #n</code> in the body.
         <a
           href="https://github.com/fabianofranca/mapping/issues?q=is%3Aissue+is%3Aopen+%22Origem%3A+etapa%22"
           target="_blank"
@@ -866,8 +866,7 @@
       dash.calc('custoDia', {
         inputs: ['meta'],
         title: 'Cost per day and session kind',
-        description:
-          'Cost of the sessions per day (Brasília time) and per session kind.',
+        description: 'Cost of the sessions per day (Brasília time) and per session kind.',
         fn: (meta) => {
           const es = (asList((meta[0] || {}).sessions) || []).filter((e) => e && e.cost);
           const m = new Map();
@@ -1528,7 +1527,9 @@
           .reduce((a, r) => a + finite(r.sessoes), 0);
         const nota = byId('mp-custo-semdata');
         nota.hidden = sem === 0;
-        nota.textContent = sem ? sessoesTxt(sem) + ' without a date, outside the chart' : '';
+        nota.textContent = sem
+          ? sessoesTxt(sem) + ' without a date, outside the chart'
+          : '';
         if (!dated.length) {
           host.textContent = '—';
           renderChaves([], pal);
@@ -1580,7 +1581,7 @@
           lab.textContent = all ? 'finished' : 'real time';
         } else {
           tot.textContent = fmt(now - t(m.waitingSince));
-          lab.textContent = 'waiting for the owner\'s command (waiting time)';
+          lab.textContent = "waiting for the owner's command (waiting time)";
         }
         byId('mp-custo-hora').textContent = horaText();
         document.querySelectorAll('#mp .dur[data-s]').forEach((d) => {
