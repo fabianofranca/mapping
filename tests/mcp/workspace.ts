@@ -21,7 +21,7 @@ import { cadastroProject } from '../model/specFixtures';
 
 const bundle = resolve('dist-mcp/mapping-mcp.js');
 
-/** PNG de 1×1 pixel: o servidor só confere a existência do arquivo. */
+/** 1×1 pixel PNG: the server only checks that the file exists. */
 export const PNG_1X1 = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
   'base64',
@@ -29,7 +29,7 @@ export const PNG_1X1 = Buffer.from(
 
 type Doc = Record<string, unknown>;
 
-/** `Doc` com os arrays de itens, para os testes ajustarem o `mapping.json` antes de gravar. */
+/** `Doc` with the item arrays, so the tests can adjust `mapping.json` before writing. */
 function items(
   doc: Doc,
   key: 'layers' | 'containers' | 'markings' | 'annotations',
@@ -42,19 +42,19 @@ export function uuidFor(id: string, salt = ''): string {
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-8${h.slice(17, 20)}-${h.slice(20, 32)}`;
 }
 
-/** Os 8 primeiros caracteres hexadecimais do id (o código das referências, sem colisão aqui). */
+/** The first 8 hexadecimal characters of the id (the references' code, collision-free here). */
 export function codeOf(uuid: string): string {
   return uuid.replaceAll('-', '').slice(0, 8);
 }
 
-/** Ids do `cadastroProject` (`MF`, `AU`…) trocados por UUIDs estáveis, como os da app. */
+/** Ids of the `cadastroProject` (`MF`, `AU`…) replaced by stable UUIDs, like the app's. */
 export function withUuids(text: string, ids: Iterable<string>, salt = ''): string {
   let result = text;
   for (const id of ids) result = result.replaceAll(`"${id}"`, `"${uuidFor(id, salt)}"`);
   return result;
 }
 
-/** Ids que começam com os mesmos 8 caracteres hexadecimais: o código curto cresce para 12. */
+/** Ids that start with the same 8 hexadecimal characters: the short code grows to 12. */
 export const COLLIDING_IDS = {
   image: '99999999-0000-4000-8000-000000000001',
   first: 'aaaaaaaa-1111-4111-8111-111111111111',
@@ -64,7 +64,7 @@ export const COLLIDING_IDS = {
 
 function collidingProject(): Project {
   let p = createProject({
-    name: 'Colisão',
+    name: 'Collision',
     now: NOW,
     firstLayer: {
       id: 'cccccccc-0000-4000-8000-000000000001',
@@ -115,21 +115,21 @@ export function allIds(p: Project): Set<string> {
 }
 
 export interface Workspace {
-  /** Pasta temporária de tudo (fora da raiz): `fora/` e a raiz. */
+  /** Temporary folder holding everything (outside the root): `fora/` and the root. */
   readonly base: string;
   readonly root: string;
-  /** Ids originais do `cadastroProject` → UUIDs gravados. */
+  /** Original ids of the `cadastroProject` → written UUIDs. */
   readonly ids: Readonly<Record<string, string>>;
-  /** Os mesmos ids no projeto `unico`, cujos códigos não se repetem em nenhum outro projeto. */
+  /** The same ids in the `unico` project, whose codes repeat in no other project. */
   readonly uniqueIds: Readonly<Record<string, string>>;
-  /** Grava um projeto (com as cópias de `specs/` e a imagem) numa pasta da raiz. */
+  /** Writes a project (with the `specs/` copies and the image) into a folder of the root. */
   readonly projectDir: (name: string) => string;
 }
 
 /**
- * Pasta temporária com o projeto do roteiro 13.9 (`apps/cadastro`, ids em UUID), variações
- * dele (sem cópias das especializações, ilegível, de schema antigo, hostil) e armadilhas
- * de segurança: link simbólico para fora da raiz, projeto aninhado, pastas ignoradas.
+ * Temporary folder with the project of script 13.9 (`apps/cadastro`, UUID ids), variations
+ * of it (without specialization copies, unreadable, old schema, hostile) and security
+ * traps: symbolic link outside the root, nested project, ignored folders.
  */
 export function createWorkspace(): Workspace {
   const base = mkdtempSync(join(tmpdir(), 'mapping-mcp-'));
@@ -162,7 +162,7 @@ export function createWorkspace(): Workspace {
     }
   };
 
-  // O projeto principal: o Formulário fica trancado (as filhas herdam a trava de geometria).
+  // The main project: the Formulário is locked (the children inherit the geometry lock).
   write(
     join(root, 'apps', 'cadastro'),
     mappingText((doc) => {
@@ -170,7 +170,7 @@ export function createWorkspace(): Workspace {
     }),
     {},
   );
-  // Projeto dentro de um projeto, pastas ignoradas e uma pasta qualquer: nada disso é descoberto.
+  // A project inside a project, ignored folders and an arbitrary folder: none of it is discovered.
   write(join(root, 'apps', 'cadastro', 'aninhado'), mappingText(), {});
   write(join(root, 'apps', 'node_modules', 'lixo'), mappingText(), {});
   write(join(root, '.oculta'), mappingText(), {});
@@ -178,7 +178,7 @@ export function createWorkspace(): Workspace {
 
   write(join(root, 'sem-copias'), mappingText(), { specs: false, image: false });
 
-  // Os mesmos itens com outros ids: achar por código sem informar o projeto não é ambíguo.
+  // The same items with other ids: finding by code without giving the project is not ambiguous.
   const uniqueIds = Object.fromEntries(
     Object.keys(ids).map((id) => [id, uuidFor(id, 'unico:')]),
   );
@@ -188,14 +188,14 @@ export function createWorkspace(): Workspace {
     {},
   );
 
-  // Códigos curtos que colidem: a referência passa a ter 12 caracteres.
+  // Short codes that collide: the reference grows to 12 characters.
   mkdirSync(join(root, 'colisao', 'images'), { recursive: true });
   writeFileSync(join(root, 'colisao', 'mapping.json'), serialize(collidingProject()));
 
   mkdirSync(join(root, 'quebrado'));
-  writeFileSync(join(root, 'quebrado', 'mapping.json'), '{ isto não é JSON');
+  writeFileSync(join(root, 'quebrado', 'mapping.json'), '{ this is not JSON');
 
-  // Schema v5 (sem `revision` nem `platformRepos`): lido com migração em memória, nunca regravado.
+  // Schema v5 (without `revision` or `platformRepos`): read with in-memory migration, never rewritten.
   write(
     join(root, 'legado'),
     mappingText((doc) => {
@@ -206,7 +206,7 @@ export function createWorkspace(): Workspace {
     {},
   );
 
-  // `mapping.json` hostil: a imagem aponta para fora do projeto e `images/link.png` é um link simbólico.
+  // Hostile `mapping.json`: the image points outside the project and `images/link.png` is a symbolic link.
   const outside = join(base, 'fora');
   mkdirSync(join(outside, 'projeto-fora'), { recursive: true });
   writeFileSync(join(outside, 'segredo.png'), PNG_1X1);
@@ -229,7 +229,7 @@ export function createWorkspace(): Workspace {
     join(outside, 'segredo.png'),
     join(root, 'hostil-link', 'images', 'link.png'),
   );
-  // A cópia da especialização citada fica fora do projeto, mas é um JSON válido de especialização.
+  // The copy of the cited specialization sits outside the project, but it is a valid specialization JSON.
   writeFileSync(
     join(outside, 'spec-sdui.json'),
     specFiles(source).get('specs/sdui.json')!,
@@ -252,7 +252,7 @@ export function createWorkspace(): Workspace {
   };
 }
 
-/** Resultado de uma tool já decodificado. */
+/** Result of a tool, already decoded. */
 export interface Call<T = Record<string, unknown>> {
   readonly isError: boolean;
   readonly data: T;
@@ -264,26 +264,26 @@ export interface Connection {
     name: string,
     args?: Record<string, unknown>,
   ): Promise<Call<T>>;
-  /** Tudo o que o servidor escreveu no stderr até agora (avisos e diagnósticos). */
+  /** Everything the server has written to stderr so far (warnings and diagnostics). */
   stderr(): string;
   close(): Promise<void>;
 }
 
 export interface ConnectOptions {
-  /** Diretório de trabalho do servidor (de onde valem os `--root` relativos). */
+  /** The server's working directory (what relative `--root` values resolve against). */
   readonly cwd?: string;
   /**
-   * Arquivo de configuração dos ganchos de disco (`tests/mcp/fsHooks.mjs`): com ele, o
-   * servidor sobe com `node --import` do gancho. Só para os testes de concorrência.
+   * Configuration file of the disk hooks (`tests/mcp/fsHooks.mjs`): with it, the
+   * server starts with `node --import` of the hook. Only for the concurrency tests.
    */
   readonly fsHooks?: string;
-  /** Argumentos extras, depois das raízes (ex.: `--no-http`). */
+  /** Extra arguments, after the roots (e.g. `--no-http`). */
   readonly args?: readonly string[];
 }
 
 const FS_HOOKS = resolve('tests/mcp/fsHooks.mjs');
 
-/** Sobe o `dist-mcp/mapping-mcp.js` por stdio, como um cliente MCP faz. */
+/** Starts `dist-mcp/mapping-mcp.js` over stdio, as an MCP client does. */
 export async function connect(
   roots: readonly string[],
   options: ConnectOptions = {},

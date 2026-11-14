@@ -1,6 +1,6 @@
-// R25.83 a R25.86 (MF3, cor herdada): a biblioteca que o `scripts/testing/herdada.mjs` monta passa
-// no `validate_library` (stdio) sem erro e só com os avisos conhecidos, o `render_container` pinta a filha (o Text dentro
-// do Card) na cor que o Card oferece, e o Text solto na tela, no `default` dele.
+// R25.83 to R25.86 (MF3, inherited color): the library that `scripts/testing/herdada.mjs` builds passes
+// in `validate_library` (stdio) without errors and with only the known warnings, `render_container` paints the child (the Text inside
+// the Card) in the color the Card offers, and the loose Text on the screen, in its `default`.
 import { execFileSync } from 'node:child_process';
 import {
   cpSync,
@@ -56,7 +56,7 @@ beforeAll(async () => {
   const lib = join(root, 'm3-herdada');
   cpSync('libraries/material3-compose', lib, { recursive: true });
   execFileSync('node', [resolve('scripts/testing/herdada.mjs'), lib]);
-  // O projeto `telas` guarda a cópia da biblioteca em `specs/`, como a app faz ao aplicá-la.
+  // The `telas` project keeps the library copy in `specs/`, as the app does when applying it.
   const dir = join(root, 'telas');
   const specs = join(dir, 'specs', 'material3-compose');
   mkdirSync(specs, { recursive: true });
@@ -66,7 +66,7 @@ beforeAll(async () => {
   );
   if (!parsed.ok) throw new Error(`spec inválida: ${JSON.stringify(parsed)}`);
   let p = createProject({
-    name: 'Telas',
+    name: 'Screens',
     now: NOW,
     firstLayer: { id: LAYER, name: 'Camada 1', color: '#D32F2F' },
   });
@@ -98,17 +98,17 @@ const create = (
 ): Operation => ({
   op: 'create_marking',
   as: alias,
-  container: '$tela',
+  container: '$screen',
   rect,
   annotation: { type: `material3-compose/${type}`, values: {} },
 });
 
 const OPERATIONS: Operation[] = [
-  { op: 'add_container', as: '$tela', width: 340, height: 260, background: '#FFFFFF' },
+  { op: 'add_container', as: '$screen', width: 340, height: 260, background: '#FFFFFF' },
   create('$card', 'card', { x: 20, y: 20, width: 300, height: 120 }),
-  // O Text de dentro do Card (a filha) e o de fora (sem ancestral).
-  create('$dentro', 'text', { x: 30, y: 30, width: 200, height: 70 }),
-  create('$fora', 'text', { x: 20, y: 160, width: 200, height: 70 }),
+  // The Text inside the Card (the child) and the one outside (without an ancestor).
+  create('$inside', 'text', { x: 30, y: 30, width: 200, height: 70 }),
+  create('$outside', 'text', { x: 20, y: 160, width: 200, height: 70 }),
 ];
 
 async function setup() {
@@ -119,7 +119,7 @@ async function setup() {
 
 async function paint(project: BatchResult['project']): Promise<Raster> {
   const refs = new Refs({ ...loaded, project });
-  const tela = project.containers.find((c) => c.name === 'Telas' || c.file === null)!;
+  const tela = project.containers.find((c) => c.name === 'Screens' || c.file === null)!;
   const out = await renderContainer(roots, refs, tela, { zoom: 1 });
   return (await decodeImage(out.image.bytes)).raster;
 }
@@ -129,7 +129,7 @@ const pixel = (raster: Raster, x: number, y: number): number[] => {
   return [...raster.data.subarray(i, i + 3)];
 };
 
-/** Quantos pixels da região (inclusive) têm exatamente a cor (só o interior das letras). */
+/** How many pixels of the region (inclusive) have exactly the color (only the inside of the letters). */
 function count(
   raster: Raster,
   color: number[],
@@ -148,13 +148,13 @@ const INSIDE = { x0: 20, y0: 20, x1: 319, y1: 139 };
 const OUTSIDE = { x0: 0, y0: 150, x1: 339, y1: 259 };
 
 describe('herdada.mjs (R25.83 a R25.86)', () => {
-  it('a biblioteca montada passa no validate_library, sem erro nem aviso', async () => {
+  it('the built library passes validate_library, with no error or warning', async () => {
     const result = ok(
       await mcp.call<Validated>('validate_library', { path: 'm3-herdada' }),
     );
     expect(result.errors).toEqual([]);
-    // Provisório (decisão do dono pendente no bug #1774; curadoria na #1134): só os avisos
-    // `parameter outside the signature` do conjunto conhecido da Material 3; qualquer outro aviso falha.
+    // Provisional (owner decision pending in bug #1774; curation in #1134): only the
+    // `parameter outside the signature` warnings of the known Material 3 set; any other warning fails.
     expect(
       result.warnings.filter(
         (w) => !JSON.stringify(w).includes('parameter outside the signature'),
@@ -163,7 +163,7 @@ describe('herdada.mjs (R25.83 a R25.86)', () => {
     expect(result.valid).toBe(true);
   });
 
-  it('numa formatVersion 3 o provide e o $provided são erros de versão', () => {
+  it('in a formatVersion 3 the provide and the $provided are version errors', () => {
     const card = JSON.parse(
       readFileSync(join(root, 'm3-herdada/components/card.json'), 'utf8'),
     ) as object;
@@ -181,7 +181,7 @@ describe('herdada.mjs (R25.83 a R25.86)', () => {
     );
   });
 
-  it('no render_container o Text do Card sai azul e o solto sai verde', async () => {
+  it('in render_container the Card Text comes out blue and the loose one comes out green', async () => {
     const { project } = await setup();
     const raster = await paint(project);
     expect(raster.width).toBe(340);
@@ -195,7 +195,7 @@ describe('herdada.mjs (R25.83 a R25.86)', () => {
     expect(count(raster, BLUE, OUTSIDE)).toBe(0);
   });
 
-  it('propose_changes troca o ink do Card; aplicada, a filha muda de cor e o disco não guarda o desenho', async () => {
+  it('propose_changes changes the Card ink; once applied, the child changes color and the disk does not keep the drawing', async () => {
     const { project } = await setup();
     const dir = join(root, 'telas2');
     mkdirSync(join(dir, 'specs'), { recursive: true });
@@ -220,7 +220,7 @@ describe('herdada.mjs (R25.83 a R25.86)', () => {
       mcp,
       'telas2',
       [{ op: 'update_annotation', annotation, values: { ink: '#D32F2F' } }],
-      { title: 'Tinta do Card' },
+      { title: 'Card ink' },
     );
     expect(proposed.valid).toBe(true);
     expect(readFileSync(join(dir, 'mapping.json'), 'utf8')).toBe(before);

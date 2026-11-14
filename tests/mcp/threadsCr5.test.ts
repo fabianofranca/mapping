@@ -6,9 +6,9 @@ import { humanReplies, seedThread } from './threadSupport';
 import { createWorkspace } from './workspace';
 import type { Workspace } from './workspace';
 
-// Fase 5 do CR do MCP (#1050), em processo: a ordem das leituras de `wait_for_comment` (19), a
-// resposta de `post_message`/`propose_changes` quando o projeto não pode ser relido depois de
-// gravar (20), o filtro de `list_threads` (21), `invalid-proposal` (22) e o cancelamento (24).
+// Phase 5 of the MCP CR (#1050), in-process: the order of `wait_for_comment` reads (19), the
+// reply of `post_message`/`propose_changes` when the project cannot be reread after
+// writing (20), the `list_threads` filter (21), `invalid-proposal` (22) and cancellation (24).
 
 const hook = vi.hoisted(() => ({ afterBaseline: null as null | (() => void) }));
 
@@ -57,16 +57,16 @@ async function failure(
   return error as InstanceType<typeof ToolError>;
 }
 
-describe('wait_for_comment: a ordem das leituras (19)', () => {
-  it('uma mensagem gravada logo depois da leitura do baseline é devolvida na mesma espera', async () => {
+describe('wait_for_comment: the order of the reads (19)', () => {
+  it('a message written right after the baseline read is returned in the same wait', async () => {
     const t = seedThread(dir(), {
       anchor: { kind: 'marking', id: id('MF') },
       messages: [
-        { by: 'human', text: 'Pergunta' },
-        { by: 'agent', text: 'Resposta' },
+        { by: 'human', text: 'Question' },
+        { by: 'agent', text: 'Answer' },
       ],
     });
-    hook.afterBaseline = () => humanReplies(dir(), t.id, 'Chegou no meio', 200);
+    hook.afterBaseline = () => humanReplies(dir(), t.id, 'Arrived midway', 200);
     const result = (await threads.wait({ project: 'cadastro', timeoutSeconds: 4 })) as {
       changed: boolean;
       thread?: { awaiting: string };
@@ -76,20 +76,20 @@ describe('wait_for_comment: a ordem das leituras (19)', () => {
   });
 });
 
-describe('post_message e propose_changes: o projeto some depois de gravar (20)', () => {
-  it('post: a mensagem gravada vem como sucesso com aviso, não como erro', async () => {
+describe('post_message and propose_changes: the project disappears after writing (20)', () => {
+  it('post: the written message comes back as success with a warning, not as an error', async () => {
     const t = seedThread(dir(), {
       anchor: { kind: 'marking', id: id('MN') },
-      messages: [{ by: 'human', text: 'Pode responder?' }],
+      messages: [{ by: 'human', text: 'Can you reply?' }],
     });
     const mapping = join(dir(), 'mapping.json');
     const original = readFileSync(mapping, 'utf8');
     try {
-      // Depois de gravar a resposta, relê o projeto: o arquivo ilegível faz o `buildEnv` falhar.
-      writeFileSync(mapping, '{ não é json');
+      // After writing the reply, it rereads the project: the unreadable file makes `buildEnv` fail.
+      writeFileSync(mapping, '{ not json');
       const posted = (await threads.post({
         ref: t.id,
-        text: 'Sim',
+        text: 'Yes',
         after: t.messages[t.messages.length - 1]!.id,
         project: 'cadastro',
       })) as {
@@ -106,16 +106,16 @@ describe('post_message e propose_changes: o projeto some depois de gravar (20)',
   });
 });
 
-describe('list_threads: text ou anchor sem status/awaiting (21)', () => {
-  it('lista as abertas de qualquer awaiting, não só as que aguardam o agente', async () => {
+describe('list_threads: text or anchor without status/awaiting (21)', () => {
+  it('lists the open ones of any awaiting, not only those awaiting the agent', async () => {
     seedThread(dir(), {
       anchor: { kind: 'marking', id: id('MN') },
       messages: [
-        { by: 'human', text: 'Pergunta sobre zebrinha' },
-        { by: 'agent', text: 'Respondi' },
+        { by: 'human', text: 'Question about zebra' },
+        { by: 'agent', text: 'Answered' },
       ],
     });
-    const byText = (await threads.list({ project: 'cadastro', text: 'zebrinha' })) as {
+    const byText = (await threads.list({ project: 'cadastro', text: 'zebra' })) as {
       threads: { ref: string }[];
     };
     expect(byText.threads).toHaveLength(1);
@@ -126,11 +126,11 @@ describe('list_threads: text ou anchor sem status/awaiting (21)', () => {
   });
 });
 
-describe('proposta ilegível (22)', () => {
-  it('dá invalid-proposal, não proposal-not-found', async () => {
+describe('unreadable proposal (22)', () => {
+  it('gives invalid-proposal, not proposal-not-found', async () => {
     const proposalId = randomUUID();
     mkdirSync(join(dir(), 'proposals', proposalId), { recursive: true });
-    writeFileSync(join(dir(), 'proposals', proposalId, 'proposal.json'), '{ quebrado');
+    writeFileSync(join(dir(), 'proposals', proposalId, 'proposal.json'), '{ broken');
     const byId = await failure(() => resolveProposal(roots, proposalId, 'cadastro'));
     expect(byId.code).toBe('invalid-proposal');
     const byPrefix = await failure(() =>
@@ -140,8 +140,8 @@ describe('proposta ilegível (22)', () => {
   });
 });
 
-describe('wait_for_comment cancelada (24)', () => {
-  it('sai com o código cancelled', async () => {
+describe('wait_for_comment cancelled (24)', () => {
+  it('exits with the cancelled code', async () => {
     const controller = new AbortController();
     const waiting = failure(() =>
       threads.wait(

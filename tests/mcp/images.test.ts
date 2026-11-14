@@ -25,8 +25,8 @@ import {
 } from './imageFixtures';
 import type { Raster } from '../../mcp/image/raster';
 
-// Integração das tools de imagem: sobe o `dist-mcp/mapping-mcp.js` por stdio (com os codecs
-// WebAssembly embutidos) sobre um projeto com imagens PNG, JPEG e WebP geradas no teste.
+// Integration of the image tools: starts `dist-mcp/mapping-mcp.js` over stdio (with the codecs
+// WebAssembly embedded) over a project with PNG, JPEG and WebP images generated in the test.
 
 interface MarkingImageData {
   ref: string;
@@ -69,7 +69,7 @@ interface Rect {
 interface Returned<T> {
   isError: boolean;
   data: T;
-  /** A imagem devolvida (decodificada), se houver. */
+  /** The returned image (decoded), if any. */
   raster: Raster | null;
   mimeType: string | null;
   bytes: Uint8Array | null;
@@ -129,8 +129,8 @@ function errorCode(result: Returned<unknown>): string {
   return (result.data as { error: { code: string } }).error.code;
 }
 
-describe('get_marking_image: recorte', () => {
-  it('devolve só a marcação, nas dimensões e cores da imagem original', async () => {
+describe('get_marking_image: crop', () => {
+  it("returns only the marking, in the original image's dimensions and colors", async () => {
     const r = ok(await crop(IDS.png));
     expect(r.mimeType).toBe('image/png');
     expect(r.data).toMatchObject({
@@ -147,7 +147,7 @@ describe('get_marking_image: recorte', () => {
     expect(r.data.container.file).toBe(IMAGE_FILES.png);
     expect(r.data.container.background).toBeNull();
     expect([r.raster.width, r.raster.height]).toEqual([PARENT.width, PARENT.height]);
-    // PNG sem perdas: o pixel é exatamente o da imagem original, filhas incluídas (sem contorno).
+    // Lossless PNG: the pixel is exactly the original image's, children included (no outline).
     expect(pixel(r.raster, 20, 120)).toEqual([...SOLID.form, 255]);
     expect(pixel(r.raster, CHILD_A.x - PARENT.x + 5, CHILD_A.y - PARENT.y + 5)).toEqual([
       ...SOLID.a,
@@ -155,13 +155,13 @@ describe('get_marking_image: recorte', () => {
     ]);
   });
 
-  it('padding aumenta a região em volta, em pixels da imagem original', async () => {
+  it('padding grows the region around it, in original image pixels', async () => {
     const r = ok(await crop(IDS.png, { padding: 20 }));
     expect(r.data.region).toEqual({ x: 80, y: 30, width: 240, height: 190 });
     expect(r.data.padding).toBe(20);
     expect(r.data.markingInOutput).toEqual({ x: 20, y: 20, width: 200, height: 150 });
     expect([r.raster.width, r.raster.height]).toEqual([240, 190]);
-    // Dentro da margem aparece o que há em volta (o gradiente), e a marcação continua no lugar.
+    // Inside the margin appears what surrounds it (the gradient), and the marking stays in place.
     const outside = pixel(r.raster, 0, 0);
     expect(
       distance(outside, [
@@ -173,14 +173,14 @@ describe('get_marking_image: recorte', () => {
     expect(pixel(r.raster, 40, 140)).toEqual([...SOLID.form, 255]);
   });
 
-  it('padding maior que a imagem fica limitado às bordas', async () => {
+  it('padding larger than the image is clamped to the edges', async () => {
     const r = ok(await crop(IDS.png, { padding: 4000 }));
     expect(r.data.region).toEqual({ x: 0, y: 0, ...IMAGE_SIZE });
     expect([r.raster.width, r.raster.height]).toEqual([400, 300]);
     expect(r.data.markingInOutput).toEqual(PARENT);
   });
 
-  it('maxSize reduz o lado maior sem deformar e sem ampliar', async () => {
+  it('maxSize shrinks the longer side without distortion and without enlarging', async () => {
     const small = ok(await crop(IDS.png, { maxSize: 100 }));
     expect([small.raster.width, small.raster.height]).toEqual([100, 75]);
     expect(small.data.scale).toBeCloseTo(0.5);
@@ -192,7 +192,7 @@ describe('get_marking_image: recorte', () => {
     expect(same.data.scale).toBe(1);
   });
 
-  it('a marcação filha usa o próprio retângulo', async () => {
+  it('the child marking uses its own rectangle', async () => {
     const r = ok(
       await call<MarkingImageData>('get_marking_image', {
         ref: markingRef(IDS.png, 'childB'),
@@ -204,18 +204,18 @@ describe('get_marking_image: recorte', () => {
   });
 });
 
-describe('get_marking_image: contexto e filhas', () => {
-  it('context devolve a imagem inteira com a marcação contornada em magenta', async () => {
+describe('get_marking_image: context and children', () => {
+  it('context returns the whole image with the marking outlined in magenta', async () => {
     const r = ok(await crop(IDS.png, { mode: 'context' }));
     expect([r.raster.width, r.raster.height]).toEqual([400, 300]);
     expect(r.data.region).toEqual({ x: 0, y: 0, ...IMAGE_SIZE });
     expect(r.data.markingInOutput).toEqual(PARENT);
     expect(r.data.markingOutline).toEqual({ color: '#FF00FF', thickness: 2 });
-    // A borda de cima da marcação (y = 50 e 51) é magenta; o halo escuro fica por fora.
+    // The marking's top edge (y = 50 and 51) is magenta; the dark halo stays outside.
     expect(pixel(r.raster, 200, PARENT.y)).toEqual([255, 0, 255, 255]);
     expect(pixel(r.raster, PARENT.x, 120)).toEqual([255, 0, 255, 255]);
     expect(pixel(r.raster, 200, PARENT.y - 1)).toEqual([0, 0, 0, 255]);
-    // Fora do contorno e dentro dele, a imagem original.
+    // Outside the outline and inside it, the original image.
     expect(pixel(r.raster, 5, 5).slice(0, 3)).toEqual([
       Math.round((5 / 399) * 255),
       Math.round((5 / 299) * 255),
@@ -224,7 +224,7 @@ describe('get_marking_image: contexto e filhas', () => {
     expect(pixel(r.raster, 200, 100)).toEqual([...SOLID.form, 255]);
   });
 
-  it('context com maxSize mantém a espessura do contorno', async () => {
+  it('context with maxSize keeps the outline thickness', async () => {
     const r = ok(await crop(IDS.png, { mode: 'context', maxSize: 200 }));
     expect([r.raster.width, r.raster.height]).toEqual([200, 150]);
     expect(r.data.markingInOutput).toEqual({ x: 50, y: 25, width: 100, height: 75 });
@@ -233,7 +233,7 @@ describe('get_marking_image: contexto e filhas', () => {
     expect(pixel(r.raster, 100, 30)).toEqual([...SOLID.form, 255]);
   });
 
-  it('outlineChildren contorna as filhas com cores diferentes e devolve a legenda', async () => {
+  it('outlineChildren outlines the children in different colors and returns the legend', async () => {
     const r = ok(await crop(IDS.png, { outlineChildren: true }));
     const legend = r.data.childrenLegend!;
     expect(legend.map((l) => l.name).sort()).toEqual(['Campo A', 'Campo B']);
@@ -246,7 +246,7 @@ describe('get_marking_image: contexto e filhas', () => {
     const b = legend.find((l) => l.name === 'Campo B')!;
     expect(a.rect).toEqual(CHILD_A);
     expect(b.rect).toEqual(CHILD_B);
-    // O contorno de cada filha, na cor da legenda, sobre a borda do retângulo dela (no recorte).
+    // Each child's outline, in the legend color, over the edge of its rectangle (in the crop).
     const rgb = (hex: string) =>
       [1, 3, 5].map((i) => Number.parseInt(hex.slice(i, i + 2), 16));
     expect(
@@ -255,15 +255,15 @@ describe('get_marking_image: contexto e filhas', () => {
     expect(
       pixel(r.raster, CHILD_B.x - PARENT.x + 20, CHILD_B.y - PARENT.y).slice(0, 3),
     ).toEqual(rgb(b.color));
-    // Longe das bordas, o conteúdo continua intacto.
+    // Far from the edges, the content stays intact.
     expect(pixel(r.raster, CHILD_A.x - PARENT.x + 20, CHILD_A.y - PARENT.y + 20)).toEqual(
       [...SOLID.a, 255],
     );
-    // A marcação sem contorno de filhas não traz legenda.
+    // A marking without a children outline carries no legend.
     expect((await crop(IDS.png)).data.childrenLegend).toBeUndefined();
   });
 
-  it('outlineChildren no modo context contorna a marcação e as filhas', async () => {
+  it('outlineChildren in context mode outlines the marking and its children', async () => {
     const r = ok(await crop(IDS.png, { mode: 'context', outlineChildren: true }));
     const a = r.data.childrenLegend!.find((l) => l.name === 'Campo A')!;
     expect(pixel(r.raster, 200, PARENT.y)).toEqual([255, 0, 255, 255]);
@@ -271,7 +271,7 @@ describe('get_marking_image: contexto e filhas', () => {
     expect(pixel(r.raster, CHILD_A.x + 20, CHILD_A.y).slice(0, 3)).toEqual(rgb);
   });
 
-  it('marcação sem filhas devolve legenda vazia', async () => {
+  it('a marking without children returns an empty legend', async () => {
     const r = ok(
       await call<MarkingImageData>('get_marking_image', {
         ref: markingRef(IDS.png, 'childA'),
@@ -282,8 +282,8 @@ describe('get_marking_image: contexto e filhas', () => {
   });
 });
 
-describe('formatos', () => {
-  it('lê e devolve JPEG (padrão para origem JPEG) com cores próximas das originais', async () => {
+describe('formats', () => {
+  it('reads and returns JPEG (the default for a JPEG source) with colors close to the originals', async () => {
     const r = ok(await crop(IDS.jpeg));
     expect(r.mimeType).toBe('image/jpeg');
     expect(r.data.format).toBe('jpeg');
@@ -291,7 +291,7 @@ describe('formatos', () => {
     expect(distance(pixel(r.raster, 20, 120), [...SOLID.form])).toBeLessThanOrEqual(12);
   });
 
-  it('lê WebP e devolve PNG por padrão', async () => {
+  it('reads WebP and returns PNG by default', async () => {
     const r = ok(await crop(IDS.webp, { padding: 10 }));
     expect(r.mimeType).toBe('image/png');
     expect([r.raster.width, r.raster.height]).toEqual([220, 170]);
@@ -302,7 +302,7 @@ describe('formatos', () => {
     ['webp', 'image/webp'],
     ['jpeg', 'image/jpeg'],
     ['png', 'image/png'],
-  ] as const)('format %s muda a codificação da saída', async (format, mime) => {
+  ] as const)('format %s changes the output encoding', async (format, mime) => {
     const r = ok(await crop(IDS.png, { format }));
     expect(r.mimeType).toBe(mime);
     expect(r.data.format).toBe(format);
@@ -312,7 +312,7 @@ describe('formatos', () => {
 });
 
 describe('get_container_file', () => {
-  it('devolve o arquivo como está quando cabe em maxSize', async () => {
+  it('returns the file as it is when it fits in maxSize', async () => {
     const r = ok(
       await call<ImageFileData>('get_container_file', { ref: imageRef(IDS.png) }),
     );
@@ -329,7 +329,7 @@ describe('get_container_file', () => {
     ).toBe(true);
   });
 
-  it('get_image_file (antiga) ainda responde, com aviso, e devolve o mesmo que get_container_file', async () => {
+  it('get_image_file (old) still answers, with a warning, and returns the same as get_container_file', async () => {
     const current = ok(
       await call<ImageFileData>('get_container_file', { ref: imageRef(IDS.png) }),
     );
@@ -349,7 +349,7 @@ describe('get_container_file', () => {
     expect(old.data).toMatchObject({ format: 'png', width: 400, height: 300 });
   });
 
-  it('reduz a 1568 px por padrão, mantendo a proporção', async () => {
+  it('shrinks to 1568 px by default, keeping the aspect ratio', async () => {
     const r = ok(
       await call<ImageFileData>('get_container_file', { ref: imageRef(IDS.big) }),
     );
@@ -362,13 +362,13 @@ describe('get_container_file', () => {
       recoded: true,
     });
     expect(r.data.scale).toBeCloseTo(1568 / 3000);
-    // O gradiente cresce da esquerda para a direita e de cima para baixo.
+    // The gradient grows from left to right and from top to bottom.
     expect(pixel(r.raster, 0, 0)[0]).toBeLessThan(2);
     expect(pixel(r.raster, 1567, 0)[0]).toBeGreaterThan(253);
     expect(pixel(r.raster, 0, 1044)[1]).toBeGreaterThan(253);
   });
 
-  it('respeita maxSize e format', async () => {
+  it('respects maxSize and format', async () => {
     const r = ok(
       await call<ImageFileData>('get_container_file', {
         ref: imageRef(IDS.big),
@@ -380,7 +380,7 @@ describe('get_container_file', () => {
     expect([r.raster.width, r.raster.height]).toEqual([500, 333]);
   });
 
-  it('muda o formato mesmo sem reduzir', async () => {
+  it('changes the format even without shrinking', async () => {
     const r = ok(
       await call<ImageFileData>('get_container_file', {
         ref: imageRef(IDS.webp),
@@ -392,7 +392,7 @@ describe('get_container_file', () => {
     expect([r.raster.width, r.raster.height]).toEqual([400, 300]);
   });
 
-  it('devolve o JPEG e o WebP originais intactos', async () => {
+  it('returns the original JPEG and WebP intact', async () => {
     for (const key of ['jpeg', 'webp'] as const) {
       const r = ok(
         await call<ImageFileData>('get_container_file', { ref: imageRef(IDS[key]) }),
@@ -405,28 +405,28 @@ describe('get_container_file', () => {
   });
 });
 
-describe('arquivos problemáticos', () => {
-  it('imagem ausente', async () => {
+describe('problematic files', () => {
+  it('missing image', async () => {
     const r = await call('get_container_file', { ref: imageRef(IDS.missing) });
     expect(errorCode(r)).toBe('image-file-missing');
     expect(errorCode(await crop(IDS.missing))).toBe('image-file-missing');
   });
 
-  it('link simbólico para fora das raízes é tratado como inexistente', async () => {
+  it('a symbolic link outside the roots is treated as nonexistent', async () => {
     expect(
       errorCode(await call('get_container_file', { ref: imageRef(IDS.escape) })),
     ).toBe('image-file-missing');
   });
 
-  it('arquivo que não é imagem', async () => {
+  it('a file that is not an image', async () => {
     expect(errorCode(await crop(IDS.text))).toBe('unsupported-image');
   });
 
-  it('cabeçalho com pixels demais é recusado antes de decodificar', async () => {
+  it('a header with too many pixels is refused before decoding', async () => {
     expect(errorCode(await crop(IDS.bomb))).toBe('image-too-large');
   });
 
-  it('arquivo com dimensões diferentes das do projeto: ajusta as coordenadas e avisa', async () => {
+  it("a file with dimensions different from the project's: adjusts the coordinates and warns", async () => {
     const r = ok(await crop(IDS.mismatch));
     expect(r.data.warning).toMatch(/200×150.*400×300/);
     expect([r.raster.width, r.raster.height]).toEqual([100, 75]);
@@ -438,8 +438,8 @@ describe('arquivos problemáticos', () => {
   });
 });
 
-describe('container (sem arquivo)', () => {
-  it('get_container_file recusa com container-without-file e manda usar get_marking_image', async () => {
+describe('container (no file)', () => {
+  it('get_container_file refuses with container-without-file and says to use get_marking_image', async () => {
     const r = await call<{ error: { code: string; message: string } }>(
       'get_container_file',
       {
@@ -452,7 +452,7 @@ describe('container (sem arquivo)', () => {
     );
   });
 
-  it('get_marking_image: recorte liso com a cor de fundo, no tamanho da marcação', async () => {
+  it("get_marking_image: a plain crop with the background color, at the marking's size", async () => {
     const r = ok(await crop(IDS.bgContainer));
     expect(r.data).toMatchObject({
       mode: 'crop',
@@ -473,13 +473,13 @@ describe('container (sem arquivo)', () => {
     ]);
   });
 
-  it('get_marking_image no modo contexto: a imagem inteira com a marcação contornada', async () => {
+  it('get_marking_image in context mode: the whole image with the marking outlined', async () => {
     const r = ok(await crop(IDS.bgContainer, { mode: 'context' }));
     expect(r.data).toMatchObject({ mode: 'context', width: 400, height: 300 });
     expect(pixel(r.raster, 5, 5)).toEqual([0x10, 0x60, 0xa0, 255]);
   });
 
-  it('get_container traz file nulo e background, sem o campo bgContainer', async () => {
+  it('get_container returns a null file and background, without the bgContainer field', async () => {
     const container = await call<{
       file: string | null;
       bgContainer?: boolean;
@@ -496,8 +496,8 @@ describe('container (sem arquivo)', () => {
   });
 });
 
-describe('referências e argumentos', () => {
-  it('aceita a referência completa com o caminho legível', async () => {
+describe('references and arguments', () => {
+  it('accepts the full reference with the readable path', async () => {
     const first = ok(await crop(IDS.png));
     const r = ok(
       await call<MarkingImageData>('get_marking_image', {
@@ -508,7 +508,7 @@ describe('referências e argumentos', () => {
     expect(r.data.ref).toBe(first.data.ref);
   });
 
-  it('recusa referência do tipo errado', async () => {
+  it('refuses a reference of the wrong kind', async () => {
     expect(
       errorCode(await call('get_container_file', { ref: markingRef(IDS.png) })),
     ).toBe('wrong-kind');
@@ -517,7 +517,7 @@ describe('referências e argumentos', () => {
     );
   });
 
-  it('valida os argumentos', async () => {
+  it('validates the arguments', async () => {
     for (const args of [
       { maxSize: 10 },
       { maxSize: 100_000 },
@@ -533,7 +533,7 @@ describe('referências e argumentos', () => {
     }
   });
 
-  it('lista as duas tools', async () => {
+  it('lists the two tools', async () => {
     const { tools } = await mcp.client.listTools();
     const names = tools.map((t) => t.name);
     expect(names).toContain('get_marking_image');
@@ -543,11 +543,11 @@ describe('referências e argumentos', () => {
   });
 });
 
-describe('arquivo único', () => {
-  it('funciona copiado para uma pasta sem node_modules, só com o Node', async () => {
+describe('single file', () => {
+  it('works copied to a folder without node_modules, with Node alone', async () => {
     const tools = mkdtempSync(join(tmpdir(), 'mapping-mcp-tools-'));
     copyFileSync(resolve('dist-mcp/mapping-mcp.js'), join(tools, 'mapping-mcp.js'));
-    // Como em tools/ de um repositório "type": "module".
+    // As in tools/ of a "type": "module" repository.
     writeFileSync(join(tools, 'package.json'), '{ "type": "commonjs" }\n');
     const transport = new StdioClientTransport({
       command: process.execPath,
@@ -574,7 +574,7 @@ describe('arquivo único', () => {
   });
 });
 
-describe('url: servidor HTTP local de imagens', () => {
+describe('url: local HTTP image server', () => {
   const URL_FORMAT =
     /^http:\/\/127\.0\.0\.1:\d+\/[0-9a-f]{32}\/[0-9a-f]{32}\.(png|jpg|webp)$/;
 
@@ -587,7 +587,7 @@ describe('url: servidor HTTP local de imagens', () => {
     };
   }
 
-  it('get_marking_image devolve url e markdown que entregam os mesmos bytes', async () => {
+  it('get_marking_image returns a url and markdown that deliver the same bytes', async () => {
     const r = ok(await crop(IDS.png));
     const url = r.data.url!;
     expect(url).toMatch(URL_FORMAT);
@@ -599,7 +599,7 @@ describe('url: servidor HTTP local de imagens', () => {
     expect(Buffer.from(got.bytes).equals(Buffer.from(r.bytes!))).toBe(true);
   });
 
-  it('a extensão segue o formato devolvido', async () => {
+  it('the extension follows the returned format', async () => {
     const j = ok(await crop(IDS.png, { format: 'jpeg' }));
     expect(j.data.url!.endsWith('.jpg')).toBe(true);
     const w = ok(await crop(IDS.png, { format: 'webp' }));
@@ -607,7 +607,7 @@ describe('url: servidor HTTP local de imagens', () => {
     expect((await fetched(w.data.url!)).type).toBe('image/webp');
   });
 
-  it('get_container_file devolve url e markdown com o nome do arquivo', async () => {
+  it('get_container_file returns a url and markdown with the file name', async () => {
     const r = ok(
       await call<ImageFileData>('get_container_file', { ref: imageRef(IDS.png) }),
     );
@@ -618,14 +618,14 @@ describe('url: servidor HTTP local de imagens', () => {
     expect(Buffer.from(got.bytes).equals(Buffer.from(r.bytes!))).toBe(true);
   });
 
-  it('o container também tem url', async () => {
+  it('the container has a url too', async () => {
     const r = ok(await crop(IDS.bgContainer));
     expect(r.data.url).toMatch(URL_FORMAT);
     const got = await fetched(r.data.url!);
     expect(Buffer.from(got.bytes).equals(Buffer.from(r.bytes!))).toBe(true);
   });
 
-  it('--no-http: sem url nem markdown', async () => {
+  it('--no-http: no url or markdown', async () => {
     const off = await connect([ws.root], { args: ['--no-http'] });
     try {
       const result = await off.client.callTool({

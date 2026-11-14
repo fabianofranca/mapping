@@ -34,9 +34,9 @@ import {
 } from './proposalSupport';
 import { connect, type Connection } from './workspace';
 
-// `revise_proposal` por stdio no bundle real (etapa #644, CP2): corrige a proposta aberta na
-// mesma proposta. Cada caso falhou antes da tool existir (a tool não era registrada). Os casos
-// de concorrência usam o gancho de disco (`fsHooks.mjs`), que roda dentro do servidor.
+// `revise_proposal` over stdio in the real bundle (stage #644, CP2): fixes the open proposal in
+// the same proposal. Each case failed before the tool existed (the tool was not registered). The
+// concurrency cases use the disk hook (`fsHooks.mjs`), which runs inside the server.
 
 let base: string;
 let root: string;
@@ -86,7 +86,7 @@ const revise = (ref: string, args: Record<string, unknown>) =>
 
 const markingRef = (name: string) => {
   const m = readProject(dir()).markings.find((x) => x.name === name);
-  if (!m) throw new Error(`sem marcação ${name}`);
+  if (!m) throw new Error(`no marking ${name}`);
   return `m/${m.id.replaceAll('-', '').slice(0, 8)}`;
 };
 const markingId = (name: string) =>
@@ -99,7 +99,7 @@ function changeOf(p: Proposal, name: string, field: string | null): Change {
       return x.kind === 'create' && (x.to as { name?: string }).name === name;
     return x.kind === 'update' && x.field === field && x.entityId === markingId(name);
   });
-  if (!c) throw new Error(`sem mudança ${name}.${field}`);
+  if (!c) throw new Error(`no change ${name}.${field}`);
   return c;
 }
 
@@ -109,23 +109,23 @@ const rename = (name: string, to: string) => ({
   name: to,
 });
 
-/** A proposta de teste: dois nomes trocados e uma marcação nova (um id de mudança por efeito). */
+/** The test proposal: two renamed names and a new marking (one change id per effect). */
 async function open(extra: unknown[] = []) {
   const proposed = await propose(
     mcp,
     'loja',
     [
-      rename('Título', 'Título novo'),
-      rename('Botão', 'Botão novo'),
+      rename('Title', 'New title'),
+      rename('Button', 'New button'),
       {
         op: 'create_marking',
-        container: 'Tela',
+        container: 'Screen',
         name: 'Extra',
         rect: { x: 50, y: 50, width: 100, height: 40 },
       },
       ...extra,
     ],
-    { title: 'Corrigível' },
+    { title: 'Fixable' },
   );
   const p = readProposal(dir(), proposed.proposal.id);
   return {
@@ -133,8 +133,8 @@ async function open(extra: unknown[] = []) {
     id: proposed.proposal.id,
     ref: proposed.proposal.ref,
     p,
-    title: changeOf(p, 'Título', 'name').id,
-    button: changeOf(p, 'Botão', 'name').id,
+    title: changeOf(p, 'Title', 'name').id,
+    button: changeOf(p, 'Button', 'name').id,
     extra: changeOf(p, 'Extra', null).id,
   };
 }
@@ -153,11 +153,11 @@ beforeAll(async () => {
   }
   cpSync('tests/fixtures/material3', join(root, 'lib', 'material3'), { recursive: true });
   mcp = await connect([root], { fsHooks: hooks });
-  ok(await mcp.call('create_project', { path: 'loja', name: 'Loja' }));
+  ok(await mcp.call('create_project', { path: 'loja', name: 'Shop' }));
   const rect = (x: number) => ({ x, y: 10, width: 80, height: 40 });
   const seed = await propose(mcp, 'loja', [
-    { op: 'add_container', as: '$t', file: 'fontes/tela.png', name: 'Tela' },
-    ...['Título', 'Botão', 'Aplicável', 'Removível', 'Congelável'].map((name, i) => ({
+    { op: 'add_container', as: '$t', file: 'fontes/tela.png', name: 'Screen' },
+    ...['Title', 'Button', 'Applicable', 'Removable', 'Freezable'].map((name, i) => ({
       op: 'create_marking',
       container: '$t',
       name,
@@ -172,11 +172,11 @@ afterAll(async () => {
   await mcp?.close();
 });
 
-describe('revise_proposal: troca, retirada e o que fica igual', () => {
-  it('troca um valor e retira outra mudança: mesmo id, formatVersion 5, revision + 1', async () => {
+describe('revise_proposal: swap, withdrawal and what stays the same', () => {
+  it('swaps one value and withdraws another change: same id, formatVersion 5, revision + 1', async () => {
     const t = await open();
     reviewDecide(dir(), t.id, { level: 'change', id: t.title }, 'rejected');
-    reviewNote(dir(), t.id, { level: 'change', id: t.title }, 'Não é esse nome.');
+    reviewNote(dir(), t.id, { level: 'change', id: t.title }, 'Not that name.');
     reviewDecide(dir(), t.id, { level: 'change', id: t.button }, 'accepted');
     reviewDecide(dir(), t.id, { level: 'change', id: t.extra }, 'rejected');
     const before = readProposal(dir(), t.id);
@@ -184,7 +184,7 @@ describe('revise_proposal: troca, retirada e o que fica igual', () => {
 
     const result = ok(
       await revise(t.ref, {
-        operations: [rename('Título', 'Título certo')],
+        operations: [rename('Title', 'Right title')],
         drop: [t.extra],
       }),
     );
@@ -197,35 +197,35 @@ describe('revise_proposal: troca, retirada e o que fica igual', () => {
     });
     expect(result.changed.map((c) => c.id)).toEqual([t.title]);
     expect(result.dropped.map((c) => c.id)).toEqual([t.extra]);
-    expect(result.changed[0]!.summary).toContain('Título');
+    expect(result.changed[0]!.summary).toContain('Right title');
 
     const after = readProposal(dir(), t.id);
     expect(after.id).toBe(t.id);
     expect(after.formatVersion).toBe(5);
     expect(after.revision).toBe(before.revision + 1);
     expect(after.changes.map((c) => c.id)).toEqual([t.title, t.button]);
-    expect(after.changes[0]).toMatchObject({ id: t.title, to: 'Título certo' });
-    // A trocada volta a sem decisão e mantém a nota; a intocada mantém a decisão.
+    expect(after.changes[0]).toMatchObject({ id: t.title, to: 'Right title' });
+    // The swapped one goes back to undecided and keeps the note; the untouched one keeps its decision.
     expect(after.decisions[t.title]).toBeUndefined();
     expect(after.decisions[t.button]).toEqual(before.decisions[t.button]);
     expect(after.notes).toEqual(before.notes);
     expect(after.revisions).toHaveLength(1);
     expect(after.revisions![0]).toMatchObject({
-      changed: { [t.title]: { to: 'Título novo', state: 'rejected' } },
+      changed: { [t.title]: { to: 'New title', state: 'rejected' } },
       added: [],
     });
     expect(after.revisions![0]!.dropped.map((d) => d.change.id)).toEqual([t.extra]);
-    // O agente nunca grava o projeto.
+    // The agent never writes the project.
     expect(hashOf(mappingPath())).toBe(mappingHash);
   });
 
-  it('acrescenta uma mudança nova com id nunca usado e sem decisão', async () => {
+  it('adds a new change with a never-used id and no decision', async () => {
     const t = await open();
     reviewDecide(dir(), t.id, { level: 'change', id: t.extra }, 'rejected');
     ok(await revise(t.ref, { drop: [t.extra] }));
     const second = ok(
       await revise(t.ref, {
-        operations: [rename('Congelável', 'Outro nome')],
+        operations: [rename('Freezable', 'Another name')],
       }),
     );
     expect(second.counts).toEqual({ changed: 0, added: 1, dropped: 0 });
@@ -237,11 +237,11 @@ describe('revise_proposal: troca, retirada e o que fica igual', () => {
     expect(p.revisions).toHaveLength(2);
   });
 
-  it('dryRun: a mesma resposta, sem gravar nada', async () => {
+  it('dryRun: the same response, without writing anything', async () => {
     const t = await open();
     reviewDecide(dir(), t.id, { level: 'change', id: t.title }, 'rejected');
     const hash = hashOf(proposalPath(t.id));
-    const args = { operations: [rename('Título', 'Só prévia')], drop: [t.extra] };
+    const args = { operations: [rename('Title', 'Preview only')], drop: [t.extra] };
     const preview = ok(await revise(t.ref, { ...args, dryRun: true }));
     expect(hashOf(proposalPath(t.id))).toBe(hash);
     expect(preview).toMatchObject({ revised: false, dryRun: true });
@@ -254,25 +254,25 @@ describe('revise_proposal: troca, retirada e o que fica igual', () => {
 });
 
 describe('revise_proposal: recusas', () => {
-  it('change-frozen: a mudança aceita não é trocada e o arquivo não muda', async () => {
+  it('change-frozen: the accepted change is not swapped and the file does not change', async () => {
     const t = await open();
     reviewDecide(dir(), t.id, { level: 'change', id: t.title }, 'accepted');
     const hash = hashOf(proposalPath(t.id));
     const error = errorOf(
-      await revise(t.ref, { operations: [rename('Título', 'Não pode')] }),
+      await revise(t.ref, { operations: [rename('Title', 'Not allowed')] }),
     );
     expect(error.code).toBe('change-frozen');
     expect(error.changeIds).toEqual([t.title]);
     expect(String(error.hint)).toContain('supersedes');
     expect(hashOf(proposalPath(t.id))).toBe(hash);
-    // Retirar a aceita também.
+    // Withdrawing the accepted one too.
     expect(errorOf(await revise(t.ref, { drop: [t.title] })).code).toBe('change-frozen');
     expect(hashOf(proposalPath(t.id))).toBe(hash);
   });
 
-  it('proposal-applied: com algo aplicado o caminho é o supersedes', async () => {
-    const t = await open([rename('Aplicável', 'Aplicada')]);
-    const applyId = changeOf(t.p, 'Aplicável', 'name').id;
+  it('proposal-applied: with something applied the way is supersedes', async () => {
+    const t = await open([rename('Applicable', 'Applied')]);
+    const applyId = changeOf(t.p, 'Applicable', 'name').id;
     reviewDecide(dir(), t.id, { level: 'change', id: applyId }, 'accepted');
     applyAcceptedOnDisk(dir(), t.id);
     expect(readProposal(dir(), t.id).status).toBe('open');
@@ -300,17 +300,17 @@ describe('revise_proposal: recusas', () => {
     expect(hashOf(proposalPath(t.id))).toBe(hash);
   });
 
-  it('no-changes: o lote repete o que a proposta já tem', async () => {
+  it('no-changes: the batch repeats what the proposal already has', async () => {
     const t = await open();
     const hash = hashOf(proposalPath(t.id));
     const error = errorOf(
-      await revise(t.ref, { operations: [rename('Título', 'Título novo')] }),
+      await revise(t.ref, { operations: [rename('Title', 'New title')] }),
     );
     expect(error.code).toBe('no-changes');
     expect(hashOf(proposalPath(t.id))).toBe(hash);
   });
 
-  it('lote com erro não grava nada e traz os erros por operação', async () => {
+  it('a batch with an error writes nothing and brings the errors per operation', async () => {
     const t = await open();
     const hash = hashOf(proposalPath(t.id));
     const result = ok(
@@ -323,7 +323,7 @@ describe('revise_proposal: recusas', () => {
     expect(hashOf(proposalPath(t.id))).toBe(hash);
   });
 
-  it('read-only: mapping.json de schema mais novo', async () => {
+  it('read-only: mapping.json with a newer schema', async () => {
     const t = await open();
     const original = readFileSync(mappingPath(), 'utf8');
     const doc = JSON.parse(original) as { schemaVersion: number };
@@ -335,7 +335,7 @@ describe('revise_proposal: recusas', () => {
     }
   });
 
-  it('revise-unsupported: pacote de biblioteca novo numa revisão', async () => {
+  it('revise-unsupported: new library package in a revision', async () => {
     const t = await open();
     const hash = hashOf(proposalPath(t.id));
     const error = errorOf(
@@ -349,11 +349,11 @@ describe('revise_proposal: recusas', () => {
     expect(hashOf(proposalPath(t.id))).toBe(hash);
   });
 
-  it('proposal-not-applicable: o projeto perdeu o item de uma mudança', async () => {
-    const t = await open([rename('Removível', 'Renomeada')]);
-    const stale = changeOf(t.p, 'Removível', 'name').id;
+  it('proposal-not-applicable: the project lost the item of a change', async () => {
+    const t = await open([rename('Removable', 'Renamed')]);
+    const stale = changeOf(t.p, 'Removable', 'name').id;
     const removal = await propose(mcp, 'loja', [
-      { op: 'delete_marking', marking: markingRef('Removível') },
+      { op: 'delete_marking', marking: markingRef('Removable') },
     ]);
     acceptAllAndApply(dir(), removal.proposal.id);
     const hash = hashOf(proposalPath(t.id));
@@ -362,13 +362,13 @@ describe('revise_proposal: recusas', () => {
     expect(error.changeIds).toEqual([stale]);
     expect(String(error.hint)).toContain('drop');
     expect(hashOf(proposalPath(t.id))).toBe(hash);
-    // Retirando a mudança envolvida a revisão passa.
+    // Withdrawing the involved change, the revision passes.
     ok(await revise(t.ref, { drop: [stale] }));
   });
 });
 
-describe('revise_proposal: concorrência', () => {
-  /** O arquivo que a app gravaria: a proposta atual com a mudança aceita (`revision + 1`). */
+describe('revise_proposal: concurrency', () => {
+  /** The file the app would write: the current proposal with the accepted change (`revision + 1`). */
   function stageAccepted(id: string, changeId: string): string {
     const p = readProposal(dir(), id);
     const staged = join(base, `aceita-${id}.json`);
@@ -396,12 +396,12 @@ describe('revise_proposal: concorrência', () => {
       ],
     });
 
-  it('a app aceita a mudança que seria trocada: recalcula e recusa com change-frozen', async () => {
+  it('the app accepts the change that would be swapped: recomputes and refuses with change-frozen', async () => {
     const t = await open();
     armAppAccepts(t.id, stageAccepted(t.id, t.title));
     let result;
     try {
-      result = await revise(t.ref, { operations: [rename('Título', 'Corrida')] });
+      result = await revise(t.ref, { operations: [rename('Title', 'Race')] });
     } finally {
       disarm();
     }
@@ -413,12 +413,12 @@ describe('revise_proposal: concorrência', () => {
     expect(after.decisions[t.title]?.state).toBe('accepted');
   });
 
-  it('a app aceita outra mudança: relê, recalcula e grava sem perder a decisão dela', async () => {
+  it('the app accepts another change: rereads, recomputes and writes without losing its decision', async () => {
     const t = await open();
     armAppAccepts(t.id, stageAccepted(t.id, t.button));
     let result;
     try {
-      result = await revise(t.ref, { operations: [rename('Título', 'Corrida 2')] });
+      result = await revise(t.ref, { operations: [rename('Title', 'Race 2')] });
     } finally {
       disarm();
     }
@@ -426,11 +426,11 @@ describe('revise_proposal: concorrência', () => {
     expect(done.counts.changed).toBe(1);
     const after = readProposal(dir(), t.id);
     expect(after.decisions[t.button]?.state).toBe('accepted');
-    expect(after.changes.find((c) => c.id === t.title)?.to).toBe('Corrida 2');
+    expect(after.changes.find((c) => c.id === t.title)?.to).toBe('Race 2');
     expect(after.revision).toBe(2);
   });
 
-  it('o mapping.json muda durante o cálculo: revision-conflict e nada gravado', async () => {
+  it('the mapping.json changes during the computation: revision-conflict and nothing written', async () => {
     const t = await open();
     const hash = hashOf(proposalPath(t.id));
     arm({
@@ -458,12 +458,12 @@ describe('revise_proposal: concorrência', () => {
 describe('revise_proposal: imagens', () => {
   const swap = (file: string) => ({
     op: 'replace_container',
-    container: 'Tela',
+    container: 'Screen',
     file,
     confirmAspectChange: true,
   });
 
-  it('a troca de arquivo nova grava a imagem sem sobrescrever; a da troca retirada sai', async () => {
+  it('the new file swap writes the image without overwriting; the image of the withdrawn swap goes away', async () => {
     const first = await propose(mcp, 'loja', [swap('fontes/a.png')], { title: 'Imagem' });
     const id = first.proposal.id;
     const before = imagesOf(id);
@@ -477,7 +477,7 @@ describe('revise_proposal: imagens', () => {
     );
     expect(result.counts.changed).toBe(1);
     const after = imagesOf(id);
-    // A nova tem outro nome (o da antiga estava ocupado) e a antiga saiu da pasta.
+    // The new one has another name (the old one's was taken) and the old one left the folder.
     expect(after).toHaveLength(1);
     expect(after[0]).not.toBe(before[0]);
     expect(existsSync(join(proposalFolder(id), 'images', before[0]!))).toBe(false);
@@ -491,7 +491,7 @@ describe('revise_proposal: imagens', () => {
     expect(file).toBe(`images/${after[0]}`);
   });
 
-  it('retirar a troca de arquivo apaga a imagem; falha ao apagar vira aviso no stderr', async () => {
+  it('withdrawing the file swap deletes the image; a failure to delete becomes a warning on stderr', async () => {
     const first = await propose(mcp, 'loja', [swap('fontes/b.png')], {
       title: 'Imagem 2',
     });
@@ -505,28 +505,28 @@ describe('revise_proposal: imagens', () => {
     } finally {
       disarm();
     }
-    // A revisão vale mesmo com a falha; o arquivo fica e o aviso vai para o stderr.
+    // The revision holds even with the failure; the file stays and the warning goes to stderr.
     expect(ok(result).counts.dropped).toBeGreaterThan(0);
     expect(readProposal(dir(), id).changes.some((c) => c.entity === 'image')).toBe(false);
     expect(imagesOf(id)).toEqual([name]);
     expect(mcp.stderr()).toContain(name);
 
-    // Sem falha, a próxima revisão limpa o que sobrou.
+    // Without a failure, the next revision cleans up what was left.
     const third = ok(
-      await revise(first.proposal.ref, { operations: [rename('Título', 'Limpa')] }),
+      await revise(first.proposal.ref, { operations: [rename('Title', 'Clean')] }),
     );
     expect(third.revised).toBe(true);
     expect(imagesOf(id)).toEqual([]);
   });
 });
 
-describe('leituras depois da revisão', () => {
-  it('get_proposal, get_proposal_review e list_proposals mostram a revisão', async () => {
+describe('reads after the revision', () => {
+  it('get_proposal, get_proposal_review e list_proposals show the revision', async () => {
     const t = await open();
     reviewDecide(dir(), t.id, { level: 'change', id: t.title }, 'rejected');
     reviewNote(dir(), t.id, { level: 'change', id: t.title }, 'Nome errado.');
     reviewDecide(dir(), t.id, { level: 'change', id: t.extra }, 'rejected');
-    reviewNote(dir(), t.id, { level: 'change', id: t.extra }, 'Não precisa.');
+    reviewNote(dir(), t.id, { level: 'change', id: t.extra }, 'Not needed.');
 
     const beforeReview = ok(
       await mcp.call<Record<string, unknown>>('get_proposal_review', {
@@ -539,7 +539,7 @@ describe('leituras depois da revisão', () => {
 
     ok(
       await revise(t.ref, {
-        operations: [rename('Título', 'Título certo')],
+        operations: [rename('Title', 'Right title')],
         drop: [t.extra],
       }),
     );
@@ -562,7 +562,7 @@ describe('leituras depois da revisão', () => {
     const title = got.changes.find((c) => c.id === t.title)!;
     expect(title.revised).toMatchObject({
       kind: 'changed',
-      previous: { to: 'Título novo', state: 'rejected' },
+      previous: { to: 'New title', state: 'rejected' },
     });
     expect(got.changes.find((c) => c.id === t.button)!.revised).toBeUndefined();
 
@@ -577,7 +577,7 @@ describe('leituras depois da revisão', () => {
     expect(review.revisable).toBe(true);
     expect(review.rejected).toEqual([]);
     expect(review.awaitingUser.map((a) => a.change)).toEqual([t.title]);
-    const lifted = review.notes.find((n) => n.text === 'Não precisa.');
+    const lifted = review.notes.find((n) => n.text === 'Not needed.');
     expect(lifted?.fromDroppedChange?.id).toBe(t.extra);
 
     const listed = ok(
@@ -594,10 +594,10 @@ describe('leituras depois da revisão', () => {
     ).toBeDefined();
   });
 
-  it('get_proposal só mostra revised em mudança sem decisão (a mesma regra da marca na app)', async () => {
+  it('get_proposal only shows revised on an undecided change (the same rule as the mark in the app)', async () => {
     const t = await open();
     reviewDecide(dir(), t.id, { level: 'change', id: t.title }, 'rejected');
-    ok(await revise(t.ref, { operations: [rename('Título', 'Título certo')] }));
+    ok(await revise(t.ref, { operations: [rename('Title', 'Right title')] }));
 
     type Got = { changes: { id: string; revised?: unknown }[] };
     const read = async () =>
@@ -608,9 +608,9 @@ describe('leituras depois da revisão', () => {
     expect((await read()).changes.find((c) => c.id === t.title)!.revised).toBeUndefined();
   });
 
-  it('com algo aplicado, a revisão não cabe: revisable false e a dica aponta supersedes', async () => {
-    const t = await open([rename('Congelável', 'Aplicada')]);
-    const applyId = changeOf(t.p, 'Congelável', 'name').id;
+  it('with something applied, the revision does not fit: revisable false and the hint points to supersedes', async () => {
+    const t = await open([rename('Freezable', 'Applied')]);
+    const applyId = changeOf(t.p, 'Freezable', 'name').id;
     reviewDecide(dir(), t.id, { level: 'change', id: applyId }, 'accepted');
     reviewDecide(dir(), t.id, { level: 'change', id: t.title }, 'rejected');
     applyAcceptedOnDisk(dir(), t.id);

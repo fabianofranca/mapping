@@ -18,9 +18,9 @@ const GREEN = [0, 255, 0];
 const BLUE = [0, 0, 255];
 const YELLOW = [255, 255, 0];
 
-describe('orientação EXIF', () => {
-  it('orient aplica as 8 orientações EXIF (cantos da imagem de quadrantes)', () => {
-    // Original 4×2: vermelho e verde em cima, azul e amarelo embaixo.
+describe('EXIF orientation', () => {
+  it('orient applies the 8 EXIF orientations (corners of the quadrant image)', () => {
+    // Original 4×2: red and green on top, blue and yellow at the bottom.
     const source = quadrants(4, 2);
     const corners = (o: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8) => {
       const p = orient(source, o);
@@ -61,7 +61,7 @@ describe('orientação EXIF', () => {
       topRight: BLUE,
       bottomLeft: GREEN,
     });
-    // 6: girar 90° no sentido horário.
+    // 6: rotate 90° clockwise.
     expect(corners(6)).toEqual({
       size: [2, 4],
       topLeft: BLUE,
@@ -74,7 +74,7 @@ describe('orientação EXIF', () => {
       topRight: GREEN,
       bottomLeft: BLUE,
     });
-    // 8: girar 90° no sentido anti-horário.
+    // 8: rotate 90° counterclockwise.
     expect(corners(8)).toEqual({
       size: [2, 4],
       topLeft: GREEN,
@@ -85,7 +85,7 @@ describe('orientação EXIF', () => {
 });
 
 describe('decodeImage', () => {
-  it('aplica a orientação EXIF do JPEG (as coordenadas das marcações são da imagem girada)', async () => {
+  it("applies the JPEG's EXIF orientation (the markings' coordinates belong to the rotated image)", async () => {
     const plain = await decodeImage(await encodeJpegWithExif(quadrants(300, 200)));
     expect([plain.raster.width, plain.raster.height, plain.orientation]).toEqual([
       300, 200, 1,
@@ -94,15 +94,15 @@ describe('decodeImage', () => {
     expect([rotated.raster.width, rotated.raster.height, rotated.orientation]).toEqual([
       200, 300, 6,
     ]);
-    // Girada no sentido horário: o canto de cima à esquerda era o de baixo à esquerda (azul).
+    // Rotated clockwise: the top-left corner was the bottom-left one (blue).
     const [r, g, b] = pixelAt(rotated.raster, 10, 10);
     expect(b).toBeGreaterThan(200);
     expect(r! + g!).toBeLessThan(60);
   });
 
-  it('lê um Buffer do pool do Node (o slice de um Buffer não copia)', async () => {
+  it('reads a Buffer from the Node pool (a Buffer slice does not copy)', async () => {
     const png = await encodePng(quadrants(8, 8));
-    // Buffer pequeno: fica no pool compartilhado, com outros bytes antes e depois.
+    // Small Buffer: it sits in the shared pool, with other bytes before and after it.
     const pooled = Buffer.from(png);
     expect(pooled.buffer.byteLength).toBeGreaterThan(pooled.byteLength);
     const { raster } = await decodeImage(pooled);
@@ -110,8 +110,8 @@ describe('decodeImage', () => {
   });
 });
 
-describe('prepareImage (as decisões de otimização da app)', () => {
-  it('PNG vira WebP sem perdas com os mesmos pixels', async () => {
+describe("prepareImage (the app's optimization decisions)", () => {
+  it('PNG becomes lossless WebP with the same pixels', async () => {
     const source = quadrants(64, 32);
     const result = await prepareImage(await encodePng(source), 'tela.png');
     expect(result).toMatchObject({
@@ -125,7 +125,7 @@ describe('prepareImage (as decisões de otimização da app)', () => {
     expect(Buffer.from(back.data).equals(Buffer.from(source.data))).toBe(true);
   });
 
-  it('reduz o lado maior a 2560 px', async () => {
+  it('shrinks the longer side to 2560 px', async () => {
     const result = await prepareImage(
       await encodePng(quadrants(3000, 1000)),
       'larga.png',
@@ -135,7 +135,7 @@ describe('prepareImage (as decisões de otimização da app)', () => {
     expect(webpSize(result.data)).toEqual({ width: 2560, height: 853 });
   });
 
-  it('JPEG com orientação EXIF 6 é girado (largura e altura trocam) e recodificado', async () => {
+  it('a JPEG with EXIF orientation 6 is rotated (width and height swap) and re-encoded', async () => {
     const jpeg = await encodeJpegWithExif(quadrants(300, 200), 6);
     const result = await prepareImage(jpeg, 'foto.jpg');
     expect(result).toMatchObject({
@@ -145,13 +145,13 @@ describe('prepareImage (as decisões de otimização da app)', () => {
       optimized: true,
     });
     const { raster: back } = await decodeImage(result.data);
-    // Girada no sentido horário: o canto de cima à esquerda era o de baixo à esquerda (azul).
+    // Rotated clockwise: the top-left corner was the bottom-left one (blue).
     const [r, g, b] = pixelAt(back, 10, 10);
     expect(b).toBeGreaterThan(200);
     expect(r! + g!).toBeLessThan(60);
   });
 
-  it('sem redução nem rotação, guarda o original se o WebP não ficar menor', async () => {
+  it('with no shrinking or rotation, keeps the original if the WebP does not come out smaller', async () => {
     const tiny = await encodeWebpFixture(quadrants(16, 16), 0.1);
     const result = await prepareImage(tiny, 'mini.webp');
     if (result.optimized) {
@@ -162,7 +162,7 @@ describe('prepareImage (as decisões de otimização da app)', () => {
     }
   });
 
-  it('recusa o que não é PNG, JPEG nem WebP', async () => {
+  it('refuses what is not PNG, JPEG or WebP', async () => {
     const gif = Buffer.from('GIF89a\u0001\u0000\u0001\u0000', 'binary');
     await expect(prepareImage(gif, 'a.gif')).rejects.toBeInstanceOf(ToolError);
     await expect(prepareImage(gif, 'a.gif')).rejects.toMatchObject({

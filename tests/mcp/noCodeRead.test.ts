@@ -8,12 +8,12 @@ import { DS_BUTTON_KT, createCodeWorkspace, type CodeWorkspace } from './codeWor
 import { mcpSources } from './sources';
 import { codeOf } from './workspace';
 
-// Etapa 3b.4, decisão 7: o servidor confere se o arquivo de código existe, mas NUNCA o lê nem
-// o grava. Duas garantias:
-// 1. dinâmica: durante as tools que resolvem o `path` do `code` dos tipos, toda chamada ao `node:fs/promises` e
-//    ao `node:fs` com caminho fora das raízes (onde está o código do app) é só `stat`/`realpath`;
-// 2. estática: só os módulos conhecidos importam `node:fs`, e o da conferência importa apenas
-//    `realpath` e `stat`.
+// Stage 3b.4, decision 7: the server checks whether the code file exists, but NEVER reads or
+// writes it. Two guarantees:
+// 1. dynamic: during the tools that resolve the `path` of the types' `code`, every call to `node:fs/promises` and
+//    `node:fs` with a path outside the roots (where the app code lives) is only `stat`/`realpath`;
+// 2. static: only the known modules import `node:fs`, and the checking one imports only
+//    `realpath` and `stat`.
 
 interface FsCall {
   readonly fn: string;
@@ -22,7 +22,7 @@ interface FsCall {
 
 const fsCalls = vi.hoisted(() => [] as { fn: string; target: string }[]);
 
-/** Embrulha cada função do módulo para registrar o nome e o primeiro argumento (o caminho). */
+/** Wraps each function of the module to record the name and the first argument (the path). */
 function spy(actual: Record<string, unknown>): Record<string, unknown> {
   const wrapped: Record<string, unknown> = {};
   for (const [name, value] of Object.entries(actual)) {
@@ -74,14 +74,14 @@ async function call(name: string, args: Record<string, unknown>): Promise<unknow
   return JSON.parse(text);
 }
 
-/** Chamadas que tocam fora das raízes, onde fica o código do app. */
+/** Calls that touch outside the roots, where the app code lives. */
 const outsideRoots = (calls: readonly FsCall[]) =>
   calls.filter(
     (c) => c.target !== '' && c.target !== ws.root && !c.target.startsWith(`${ws.root}/`),
   );
 
-describe('o servidor não abre arquivos de código (dinâmico)', () => {
-  it('get_marking, get_annotation, get_code_hints, find_by_code e get_project só conferem a existência', async () => {
+describe('the server does not open code files (dynamic)', () => {
+  it('get_marking, get_annotation, get_code_hints, find_by_code and get_project only check existence', async () => {
     const form = (project: string) => `mapping://${project}/m/${codeOf(ws.ids.MF!)}`;
     fsCalls.length = 0;
 
@@ -100,16 +100,16 @@ describe('o servidor não abre arquivos de código (dinâmico)', () => {
     });
 
     const outside = outsideRoots(fsCalls);
-    // O espião funciona: a existência dos arquivos de código foi mesmo conferida...
+    // The spy works: the existence of the code files was indeed checked...
     const checked = outside.filter((c) => c.target.endsWith('DSButton.kt'));
     expect(checked.map((c) => c.fn)).toEqual(
       expect.arrayContaining(['realpath', 'stat']),
     );
-    // ...e nada além de `stat` e `realpath` tocou o que está fora das raízes.
+    // ...and nothing besides `stat` and `realpath` touched what is outside the roots.
     const used = [...new Set(outside.map((c) => c.fn))].sort();
     expect(used).toEqual(['realpath', 'stat']);
 
-    // Também nenhum arquivo foi criado ou alterado fora das raízes.
+    // Also, no file was created or changed outside the roots.
     const writes = fsCalls.filter((c) =>
       /write|append|rename|rm|unlink|mkdir|copy|truncate|link|symlink|chmod|open/i.test(
         c.fn,
@@ -118,7 +118,7 @@ describe('o servidor não abre arquivos de código (dinâmico)', () => {
     expect(writes).toEqual([]);
   });
 
-  it('plan_signature_import recusa um signatureFile que não é .json sem abri-lo (nem conferir)', async () => {
+  it('plan_signature_import refuses a signatureFile that is not .json without opening it (nor checking)', async () => {
     const kt = join(ws.repo, DS_BUTTON_KT);
     for (const signatureFile of [kt, 'DSButton.kt', 'ficha.json.kt']) {
       fsCalls.length = 0;
@@ -134,12 +134,12 @@ describe('o servidor não abre arquivos de código (dinâmico)', () => {
       const text = (result.content as { text: string }[])[0]!.text;
       expect(result.isError).toBe(true);
       expect(JSON.parse(text).error.code).toBe('signature-invalid');
-      // Recusado pela extensão, antes de qualquer chamada ao disco.
+      // Refused by the extension, before any call to the disk.
       expect(fsCalls).toEqual([]);
     }
   });
 
-  it('plan_signature_import recusa um signatureFile .json que é link simbólico para código, sem lê-lo', async () => {
+  it('plan_signature_import refuses a .json signatureFile that is a symbolic link to code, without reading it', async () => {
     const link = join(ws.root, 'ficha-link.json');
     const real = join(ws.root, 'Real.kt');
     writeFileSync(real, 'fun Button() {}');
@@ -163,32 +163,32 @@ describe('o servidor não abre arquivos de código (dinâmico)', () => {
     ).toEqual([]);
   });
 
-  it('o arquivo que escapa do diretório de trabalho nem é tocado', async () => {
+  it('the file that escapes the working directory is not even touched', async () => {
     fsCalls.length = 0;
     await call('get_marking', { ref: `mapping://escapa/m/${codeOf(ws.ids.MC!)}` });
-    // O `localPath` de `escapa` leva o arquivo do Button para `base/`, fora do repositório.
+    // The `localPath` of `escapa` takes the Button file to `base/`, outside the repository.
     const escaped = `${ws.base}/${DS_BUTTON_KT}`;
     expect(fsCalls.filter((c) => c.target === escaped)).toEqual([]);
     expect(fsCalls.filter((c) => c.target.endsWith('DSButton.kt'))).toEqual([]);
   });
 });
 
-describe('o servidor não abre arquivos de código (estático)', () => {
+describe('the server does not open code files (static)', () => {
   const dir = join(process.cwd(), 'mcp');
-  // Recursivo: um módulo novo em `mcp/image/` ou outra subpasta também entra na conferência.
+  // Recursive: a new module in `mcp/image/` or another subfolder is also included in the check.
   const sources = mcpSources();
   const FS_IMPORT = /from\s+['"](?:node:)?fs(?:\/promises)?['"]/;
 
-  it('só os módulos conhecidos importam node:fs', () => {
+  it('only the known modules import node:fs', () => {
     const importers = sources
       .filter(({ text }) => FS_IMPORT.test(text))
       .map(({ file }) => file);
-    // Quem entra aqui lê/grava `mapping.json`, `specs/`, imagens, `proposals/` ou arquivos de
-    // especialização (`validate_specialization`) e de pacotes de biblioteca (`library.ts`: só `.json`
-    // e `.md` são lidos; o resto é listado) ou o `.md` do documento externo de um tipo
-    // (`docFiles.ts`, confinado ao diretório de trabalho pelo mesmo conferidor) ou o `.json` de um lote
-    // (`operationsFile.ts`, dentro das raízes), nunca código. Um módulo novo
-    // que precise do disco entra nesta lista de propósito, depois de conferir que não toca em código.
+    // Whoever is listed here reads/writes `mapping.json`, `specs/`, images, `proposals/` or
+    // specialization files (`validate_specialization`) and library packages (`library.ts`: only `.json`
+    // and `.md` are read; the rest is listed) or the `.md` of a type's external document
+    // (`docFiles.ts`, confined to the working directory by the same checker) or the `.json` of a batch
+    // (`operationsFile.ts`, inside the roots), never code. A new module
+    // that needs the disk joins this list on purpose, after checking that it does not touch code.
     expect(importers).toEqual([
       'changes.ts',
       'codeFiles.ts',
@@ -205,7 +205,7 @@ describe('o servidor não abre arquivos de código (estático)', () => {
     ]);
   });
 
-  it('o módulo da conferência usa só stat e realpath', () => {
+  it('the checking module uses only stat and realpath', () => {
     const text = readFileSync(join(dir, 'codeFiles.ts'), 'utf8');
     const imports = [
       ...text.matchAll(/import\s*\{([^}]*)\}\s*from\s*['"]node:fs[^'"]*['"]/g),
@@ -216,13 +216,13 @@ describe('o servidor não abre arquivos de código (estático)', () => {
       .map((n) => n.trim())
       .sort();
     expect(names).toEqual(['realpath', 'stat']);
-    // Nenhuma função de leitura, abertura ou escrita é citada no módulo.
+    // No read, open or write function is mentioned in the module.
     expect(text).not.toMatch(
       /\b(readFile|readdir|readlink|open|createReadStream|createWriteStream|writeFile|appendFile|opendir|copyFile)\b/,
     );
   });
 
-  it('os módulos que montam as visões de código não importam o disco', () => {
+  it('the modules that build the code views do not import the disk', () => {
     for (const file of ['codeViews.ts', 'findByCode.ts', 'views.ts', 'tools.ts']) {
       expect(readFileSync(join(dir, file), 'utf8'), file).not.toMatch(
         /node:fs|from\s+['"]fs['"]/,

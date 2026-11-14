@@ -25,10 +25,10 @@ import { Roots } from '../../mcp/paths';
 import { findProject, loadProject } from '../../mcp/projects';
 import { NOW } from '../model/fixtures';
 
-// Etapa #965, fase 2 (CRM-MCP2): defeitos low de `mcp/batch.ts` e `mcp/changes.ts` (achados 10 a
-// 13 do CR do MCP). Cada caso falhou antes da correção.
+// Stage #965, phase 2 (CRM-MCP2): low defects of `mcp/batch.ts` and `mcp/changes.ts` (findings 10 to
+// 13 of the MCP CR). Each case failed before the fix.
 
-// Conta as leituras de `mapping.json` (achado 13) sem mudar o resultado.
+// Counts the reads of `mapping.json` (finding 13) without changing the result.
 const mappingReads = vi.hoisted(() => ({ count: 0 }));
 vi.mock('node:fs/promises', async (importOriginal) => {
   const original = await importOriginal<typeof import('node:fs/promises')>();
@@ -76,13 +76,13 @@ let roots: Roots;
 
 beforeAll(() => {
   base = mkdtempSync(join(tmpdir(), 'mapping-batchfixes-'));
-  const dir = join(base, 'telas');
+  const dir = join(base, 'screens');
   const lib = join(dir, 'specs', 'lib');
   mkdirSync(lib, { recursive: true });
   mkdirSync(join(dir, 'images'), { recursive: true });
   writeFileSync(join(lib, 'lib.spec.json'), JSON.stringify(spec));
   const parsed = parseSpecText(JSON.stringify(spec));
-  if (!parsed.ok) throw new Error(`spec inválida: ${JSON.stringify(parsed)}`);
+  if (!parsed.ok) throw new Error(`invalid spec: ${JSON.stringify(parsed)}`);
   let p = createProject({
     name: 'Telas',
     now: NOW,
@@ -103,18 +103,18 @@ beforeAll(() => {
 afterAll(() => rmSync(base, { recursive: true, force: true }));
 
 const io = {
-  readSource: () => Promise.reject(new Error('sem arquivos')),
-  readSpecInput: () => Promise.reject(new Error('sem arquivos')),
+  readSource: () => Promise.reject(new Error('no files')),
+  readSpecInput: () => Promise.reject(new Error('no files')),
   takenImageFiles: new Set<string>(),
   now: () => new Date(NOW),
 };
 
 async function run(operations: unknown[]) {
-  const loaded = await loadProject(roots, await findProject(roots, 'telas'));
+  const loaded = await loadProject(roots, await findProject(roots, 'screens'));
   return runBatch(loaded, operations as Operation[], io);
 }
 
-describe('achado 10: update_arrow na revisão', () => {
+describe('finding 10: update_arrow in the review', () => {
   const A = 'aaaaaaaa-0000-4000-8000-00000000000a';
   const B = 'bbbbbbbb-0000-4000-8000-00000000000b';
   const ARROW = 'eeeeeeee-0000-4000-8000-00000000000e';
@@ -126,8 +126,8 @@ describe('achado 10: update_arrow na revisão', () => {
     return createArrow(next, { id: ARROW, from: A, to: B });
   };
 
-  it('seta criada pela própria proposta (a revisão parte do proposto) não avisa', async () => {
-    const location = await findProject(roots, 'telas');
+  it('an arrow created by the proposal itself (the review starts from the proposed) does not warn', async () => {
+    const location = await findProject(roots, 'screens');
     const prepared = await prepareBatch(
       roots,
       location,
@@ -138,15 +138,15 @@ describe('achado 10: update_arrow na revisão', () => {
     expect(prepared.result.deprecations).toEqual([]);
   });
 
-  it('seta que já está no projeto lido continua avisando', async () => {
-    const dir = join(base, 'telas');
+  it('an arrow that is already in the read project still warns', async () => {
+    const dir = join(base, 'screens');
     const text = readFileSync(join(dir, 'mapping.json'), 'utf8');
-    const loaded = await loadProject(roots, await findProject(roots, 'telas'));
+    const loaded = await loadProject(roots, await findProject(roots, 'screens'));
     writeFileSync(join(dir, 'mapping.json'), serialize(withArrow(loaded.project)));
     try {
       const prepared = await prepareBatch(
         roots,
-        await findProject(roots, 'telas'),
+        await findProject(roots, 'screens'),
         [{ op: 'update_arrow', arrow: ARROW, name: 'explica' }] as Operation[],
         { now: () => Date.parse(NOW) },
       );
@@ -159,10 +159,10 @@ describe('achado 10: update_arrow na revisão', () => {
   });
 });
 
-describe('achado 11: apelido da operação igual a um _as de linha', () => {
+describe('finding 11: operation alias equal to a row _as', () => {
   const marking = (extra: object) => ({
     op: 'create_marking',
-    container: '$tela',
+    container: '$screen',
     rect: { x: 10, y: 10, width: 50, height: 50 },
     annotation: {
       type: 'lib/modelo',
@@ -172,19 +172,19 @@ describe('achado 11: apelido da operação igual a um _as de linha', () => {
   });
   const screen = {
     op: 'add_container',
-    as: '$tela',
+    as: '$screen',
     width: 400,
     height: 300,
     background: '#FFFFFF',
   };
 
-  it('o as da operação repetido num _as da mesma operação dá duplicate-alias', async () => {
+  it('the operation as repeated in an _as of the same operation gives duplicate-alias', async () => {
     const result = await run([screen, marking({ as: '$r1' })]);
     expect(result.errors.map((e) => e.code)).toEqual(['duplicate-alias']);
     expect(result.errors[0]!.index).toBe(1);
   });
 
-  it('o annotationAs igual a um _as também', async () => {
+  it('the annotationAs equal to an _as too', async () => {
     const result = await run([screen, marking({ annotationAs: '$r1' })]);
     expect(result.errors.map((e) => e.code)).toEqual(['duplicate-alias']);
   });
@@ -192,35 +192,35 @@ describe('achado 11: apelido da operação igual a um _as de linha', () => {
   it('apelidos diferentes seguem funcionando', async () => {
     const result = await run([screen, marking({ as: '$m', annotationAs: '$a' })]);
     expect(result.errors).toEqual([]);
-    expect([...result.aliases.keys()].sort()).toEqual(['$a', '$m', '$r1', '$tela']);
+    expect([...result.aliases.keys()].sort()).toEqual(['$a', '$m', '$r1', '$screen']);
   });
 });
 
-describe('achado 13: mapping.json lido uma vez por chamada', () => {
+describe('finding 13: mapping.json read once per call', () => {
   beforeEach(() => {
     mappingReads.count = 0;
   });
 
-  it('prepareBatch lê o mapping.json uma só vez e o hash é do texto usado', async () => {
-    const location = await findProject(roots, 'telas');
+  it('prepareBatch reads the mapping.json only once and the hash is of the text used', async () => {
+    const location = await findProject(roots, 'screens');
     mappingReads.count = 0;
     const prepared = await prepareBatch(roots, location, [], {
       now: () => Date.parse(NOW),
     });
     expect(mappingReads.count).toBe(1);
-    const text = readFileSync(join(base, 'telas', 'mapping.json'), 'utf8');
+    const text = readFileSync(join(base, 'screens', 'mapping.json'), 'utf8');
     expect(prepared.baseHash).toBe(sha256(text));
   });
 });
 
 describe('mapping.json grande demais', () => {
-  it('prepareBatch recusa com file-too-large antes de ler o arquivo', async () => {
+  it('prepareBatch refuses with file-too-large before reading the file', async () => {
     const big = join(base, 'grande');
     mkdirSync(big);
     writeFileSync(join(big, 'mapping.json'), '{}');
     truncateSync(join(big, 'mapping.json'), 64 * 1024 * 1024 + 1);
-    const both = new Roots([join(base, 'telas'), big]);
-    const location = { ...(await findProject(roots, 'telas')), dir: big };
+    const both = new Roots([join(base, 'screens'), big]);
+    const location = { ...(await findProject(roots, 'screens')), dir: big };
     await expect(
       prepareBatch(both, location, [], { now: () => Date.parse(NOW) }),
     ).rejects.toMatchObject({ code: 'file-too-large' });

@@ -3,10 +3,10 @@ import { buildCatalog } from '../../src/model/catalog';
 import { loadSpecComponents } from '../../src/model';
 import { testSpec, SPEC_FILE } from '../model/componentFixtures';
 
-// O MCP segue com o texto pt-BR de sempre (#945): o código e os parâmetros são um acréscimo
-// do modelo para a interface; `problems` (lido por mcp/) continua uma lista de texto.
-describe('texto das mensagens do modelo lido pelo MCP', () => {
-  it('problems segue em texto pt-BR, pareado com problemMessages', () => {
+// The MCP keeps the usual message text (#945): the code and the parameters are an addition
+// of the model for the interface; `problems` (read by mcp/) remains a list of text.
+describe('text of the model messages read by the MCP', () => {
+  it('problems stays as plain text, paired with problemMessages', () => {
     const loaded = loadSpecComponents(testSpec(), SPEC_FILE, 1, () => undefined);
     expect(loaded.problems.length).toBeGreaterThan(0);
     expect(loaded.problems.every((p) => typeof p === 'string')).toBe(true);
@@ -14,7 +14,7 @@ describe('texto das mensagens do modelo lido pelo MCP', () => {
     expect(loaded.problemMessages.map((m) => m.text)).toEqual(loaded.problems);
   });
 
-  it('buildCatalog existe para o MCP e a interface', () => {
+  it('buildCatalog exists for the MCP and the interface', () => {
     expect(typeof buildCatalog).toBe('function');
   });
 });

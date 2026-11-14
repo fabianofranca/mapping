@@ -25,10 +25,10 @@ import { Roots } from '../../mcp/paths';
 import { findProject, loadProject, type LoadedProject } from '../../mcp/projects';
 import { NOW } from '../model/fixtures';
 
-// O catálogo de componentes do lote acompanha as especializações do lote (etapa Fonte e
-// preview, FP2; bug #746): depois de apply/update/remove_specialization, create_marking vê o
-// componente da versão que a operação acabou de ler (preview, minSize, rect opcional), e avisa
-// quando o tipo declara componente que o lote não achou.
+// The component catalog of the batch follows the specializations of the batch (Source and
+// preview stage, FP2; bug #746): after apply/update/remove_specialization, create_marking sees the
+// component of the version the operation just read (preview, minSize, optional rect), and warns
+// when the type declares a component that the batch did not find.
 
 const LIBRARY = resolve('tests/fixtures/material3');
 const PHOTO = 'bbbbbbbb-0000-4000-8000-000000000001';
@@ -41,11 +41,11 @@ function material3Spec(version: number): string {
   const parsed = parseSpecText(
     readFileSync(join(LIBRARY, 'material3.spec.json'), 'utf8'),
   );
-  if (!parsed.ok) throw new Error('material3 inválida');
+  if (!parsed.ok) throw new Error('invalid material3');
   return JSON.stringify({ ...parsed.spec, version }, null, 2);
 }
 
-/** Cópia da biblioteca Material 3 numa pasta, na versão pedida. */
+/** Copy of the Material 3 library in a folder, in the requested version. */
 function writeLibrary(dir: string, version: number): void {
   cpSync(LIBRARY, dir, { recursive: true });
   writeFileSync(join(dir, 'material3.spec.json'), material3Spec(version));
@@ -60,7 +60,7 @@ function baseProject(): Project {
   return addContainer(p, { id: PHOTO, file: 'images/foto.png', width: 400, height: 300 });
 }
 
-/** Projeto em pasta, sem a biblioteca (`withLibrary` false) ou com a v1 aplicada. */
+/** Project in a folder, without the library (`withLibrary` false) or with v1 applied. */
 async function openProject(name: string, withLibrary: boolean): Promise<LoadedProject> {
   const dir = join(base, name);
   mkdirSync(join(dir, 'specs'), { recursive: true });
@@ -68,7 +68,7 @@ async function openProject(name: string, withLibrary: boolean): Promise<LoadedPr
   if (withLibrary) {
     cpSync(join(base, 'lib1'), join(dir, 'specs', 'material3'), { recursive: true });
     const parsed = parseSpecText(material3Spec(1));
-    if (!parsed.ok) throw new Error('material3 inválida');
+    if (!parsed.ok) throw new Error('invalid material3');
     p = applySpecialization(p, parsed.spec, { packageSpecName: 'material3.spec.json' });
   }
   writeFileSync(join(dir, 'mapping.json'), serialize(p));
@@ -87,7 +87,7 @@ afterAll(() => {
 });
 
 const io = {
-  readSource: () => Promise.reject(new Error('sem arquivos')),
+  readSource: () => Promise.reject(new Error('no files')),
   readSpecInput: (path: string) => readSpecInput(roots, path),
   takenImageFiles: new Set<string>(),
   now: () => new Date(NOW),
@@ -115,8 +115,8 @@ function buttonOf(result: BatchResult) {
   };
 }
 
-describe('create_marking com values parciais (preview completa o resto)', () => {
-  it('(a) caminho simples: a biblioteca já aplicada ao abrir', async () => {
+describe('create_marking with partial values (preview fills in the rest)', () => {
+  it('(a) simple path: the library already applied on open', async () => {
     const result = await run(await openProject('simples', true), [BUTTON]);
     expect(result.errors).toEqual([]);
     const { annotation, issues } = buttonOf(result);
@@ -147,18 +147,18 @@ describe('create_marking com values parciais (preview completa o resto)', () => 
   });
 });
 
-describe('o catálogo do lote acompanha apply/update/remove_specialization', () => {
-  it('depois de apply_specialization, sem rect usa o tamanho inicial do componente', async () => {
+describe('the batch catalog follows apply/update/remove_specialization', () => {
+  it('after apply_specialization, without rect uses the initial component size', async () => {
     const result = await run(await openProject('aplica-sem-rect', false), [
       { op: 'apply_specialization', file: join(base, 'lib1') },
       BUTTON,
     ]);
     expect(result.errors).toEqual([]);
-    // O botão tem `sizing.width` `hug`: nasce no tamanho medido do `preview` (MC3), 83 × 40.
+    // The button has `sizing.width` `hug`: it is born with the measured size of the `preview` (MC3), 83 × 40.
     expect(buttonOf(result).marking.rect).toMatchObject({ width: 83, height: 40 });
   });
 
-  it('depois de update_specialization, um rect menor que o minSize é recusado com o mínimo', async () => {
+  it('after update_specialization, a rect smaller than the minSize is refused with the minimum', async () => {
     const result = await run(await openProject('atualiza-min', true), [
       { op: 'update_specialization', file: join(base, 'lib2') },
       {
@@ -176,7 +176,7 @@ describe('o catálogo do lote acompanha apply/update/remove_specialization', () 
     });
   });
 
-  it('depois de remove_specialization o tipo não existe mais', async () => {
+  it('after remove_specialization the type no longer exists', async () => {
     const result = await run(await openProject('remove', true), [
       { op: 'remove_specialization', specId: 'material3', mode: 'delete' },
       BUTTON,
@@ -185,8 +185,8 @@ describe('o catálogo do lote acompanha apply/update/remove_specialization', () 
   });
 });
 
-describe('create_annotation com type numa marcação existente', () => {
-  it('só os default do tipo: sem o preview do componente', async () => {
+describe('create_annotation with type on an existing marking', () => {
+  it('only the type defaults: without the component preview', async () => {
     const result = await run(await openProject('anota', true), [
       {
         op: 'create_marking',
@@ -210,7 +210,7 @@ describe('create_annotation com type numa marcação existente', () => {
   });
 });
 
-describe('nota quando o tipo declara componente e o lote não o acha', () => {
+describe('notice when the type declares a component and the batch does not find it', () => {
   const MARKING: Operation = {
     op: 'create_marking',
     as: '$btn',
@@ -230,11 +230,11 @@ describe('nota quando o tipo declara componente e o lote não o acha', () => {
     expect(note?.message).toMatch(
       /^type material3\/m3-button declares a component, but missing file \(.*m3-button\.json\): the annotation was created without the preview and without the minimum size$/,
     );
-    // A anotação existe, só com os default.
+    // The annotation exists, with only the defaults.
     expect(buttonOf(result).annotation.values).not.toHaveProperty('label', 'Label');
   });
 
-  it('componente carregado: sem nota', async () => {
+  it('component loaded: no notice', async () => {
     const result = await run(await openProject('com-botao', true), [MARKING]);
     expect(result.deprecations.filter((d) => d.code === 'ignored-argument')).toEqual([]);
   });

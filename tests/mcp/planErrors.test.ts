@@ -27,9 +27,9 @@ import { Roots } from '../../mcp/paths';
 import { findProject, loadProject, type LoadedProject } from '../../mcp/projects';
 import { NOW } from '../model/fixtures';
 
-// Erros do `plan_changes` com os fatos do modelo (`ModelError.data`): `rect-too-small` diz o
-// tamanho recebido e o mínimo; `image-overlap` diz com qual container há sobreposição, pela
-// referência; o detalhe não é cortado quando tem `: `.
+// `plan_changes` errors with the model's facts (`ModelError.data`): `rect-too-small` says the
+// received size and the minimum; `image-overlap` says which container it overlaps, by
+// reference; the detail is not cut when it contains `: `.
 
 const LIBRARY = resolve('tests/fixtures/material3');
 const PHOTO = 'bbbbbbbb-0000-4000-8000-000000000001';
@@ -42,7 +42,7 @@ beforeAll(async () => {
   const parsed = parseSpecText(
     readFileSync(join(LIBRARY, 'material3.spec.json'), 'utf8'),
   );
-  if (!parsed.ok) throw new Error('material3 inválida');
+  if (!parsed.ok) throw new Error('invalid material3');
   let p = createProject({
     name: 'Telas',
     now: NOW,
@@ -51,12 +51,12 @@ beforeAll(async () => {
   p = addContainer(p, { id: PHOTO, file: 'images/foto.png', width: 200, height: 100 });
   p = applySpecialization(p, parsed.spec, { packageSpecName: 'material3.spec.json' });
   base = mkdtempSync(join(tmpdir(), 'mapping-plan-errors-'));
-  const dir = join(base, 'telas');
+  const dir = join(base, 'screens');
   mkdirSync(join(dir, 'specs'), { recursive: true });
   cpSync(LIBRARY, join(dir, 'specs', 'material3'), { recursive: true });
   writeFileSync(join(dir, 'mapping.json'), serialize(p));
   const roots = new Roots([base]);
-  loaded = await loadProject(roots, await findProject(roots, 'telas'));
+  loaded = await loadProject(roots, await findProject(roots, 'screens'));
 });
 
 afterAll(() => {
@@ -64,8 +64,8 @@ afterAll(() => {
 });
 
 const io = {
-  readSource: () => Promise.reject(new Error('sem arquivos')),
-  readSpecInput: () => Promise.reject(new Error('sem arquivos')),
+  readSource: () => Promise.reject(new Error('no files')),
+  readSpecInput: () => Promise.reject(new Error('no files')),
   takenImageFiles: new Set<string>(),
   now: () => new Date(NOW),
 };
@@ -85,7 +85,7 @@ const ENTRAR: Operation = {
 const SAIR: Operation = { ...ENTRAR, as: '$b', name: 'Sair' } as Operation;
 
 describe('rect-too-small', () => {
-  it('create_marking 5×3 sem componente: recebido, mínimo e dica', async () => {
+  it('create_marking 5×3 without a component: received, minimum and hint', async () => {
     const result = await run([
       {
         op: 'create_marking',
@@ -101,7 +101,7 @@ describe('rect-too-small', () => {
     expect(result.errors[0]?.hint).toMatch(/width.*height/);
   });
 
-  it('update_marking com rect pequeno traz o mesmo detalhe', async () => {
+  it('update_marking with a small rect brings the same detail', async () => {
     const made = await run([
       {
         op: 'create_marking',
@@ -128,7 +128,7 @@ describe('rect-too-small', () => {
     });
   });
 
-  it('abaixo do minSize do componente: o recebido, o mínimo e o minSize', async () => {
+  it('below the component minSize: the received, the minimum and the minSize', async () => {
     const result = await run([
       ENTRAR,
       {
@@ -148,13 +148,13 @@ describe('rect-too-small', () => {
   });
 });
 
-/** `mapping://telas/i/<código>` do container, como o MCP o devolve. */
+/** `mapping://screens/i/<code>` of the container, as the MCP returns it. */
 function containerRef(project: Project, id: string): string {
-  return formatRef({ project: 'telas', kind: 'i', code: shortCode(project, 'i', id) });
+  return formatRef({ project: 'screens', kind: 'i', code: shortCode(project, 'i', id) });
 }
 
 describe('image-overlap', () => {
-  it('update_container que cresce sobre outro diz qual, pela referência', async () => {
+  it('update_container that grows over another says which, by reference', async () => {
     const setup = await run([ENTRAR, SAIR]);
     const [entrar, sair] = setup.created;
     const result = await runBatch(
@@ -165,14 +165,14 @@ describe('image-overlap', () => {
     expect(result.errors).toHaveLength(1);
     const error = result.errors[0]!;
     expect(error.code).toBe('image-overlap');
-    // Só a URL do outro container (sem o nome entre parênteses), nunca a do que cresce.
+    // Only the URL of the other container (without the name in parentheses), never that of the one that grows.
     expect(error.detail).toBe(
       `overlaps the container ${containerRef(setup.project, sair!.id)}`,
     );
     expect(String(error.hint)).toMatch(/x.*y.*scale/);
   });
 
-  it('mover um container sobre outro cita o outro, não o que se move', async () => {
+  it('moving a container over another cites the other, not the one that moves', async () => {
     const setup = await run([ENTRAR, SAIR]);
     const entrar = setup.project.containers.find((c) => c.name === 'Entrar')!;
     const result = await runBatch(
@@ -196,13 +196,13 @@ describe('image-overlap', () => {
   });
 });
 
-describe('detalhe com ": " dentro', () => {
-  it('modelToolError guarda tudo depois do primeiro ": "', () => {
+describe('detail with ": " inside', () => {
+  it('modelToolError keeps everything after the first ": "', () => {
     const error = modelToolError(new ModelError('not-found', 'a: b: c'));
     expect(error.toJSON().error).toMatchObject({ detail: 'a: b: c' });
   });
 
-  it('os dois códigos têm dica no registro', () => {
+  it('both codes have a hint in the registry', () => {
     expect(MODEL_ERROR_HINTS['rect-too-small']).toBeDefined();
     expect(MODEL_ERROR_HINTS['image-overlap']).toBeDefined();
   });

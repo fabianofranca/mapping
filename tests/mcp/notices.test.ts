@@ -5,9 +5,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { acceptAllAndApply, ok, propose } from './proposalSupport';
 import { connect, type Connection } from './workspace';
 
-// Avisos da especialização no MCP (etapa #486, AV4, decisão 11): `get_specialization` devolve
-// os `notices`; `plan_changes` e `propose_changes` trazem a chave `notices` ao lado de `issues`,
-// com os avisos que o lote cria. Aviso só informa: nada é bloqueado.
+// Specialization notices in the MCP (stage #486, AV4, decision 11): `get_specialization` returns
+// the `notices`; `plan_changes` and `propose_changes` carry the `notices` key next to `issues`,
+// with the notices the batch creates. A notice only informs: nothing is blocked.
 
 interface NoticeEntry {
   annotation: string;
@@ -27,7 +27,7 @@ const SPEC = {
   format: 'mapping-spec',
   formatVersion: 10,
   id: 'avisos',
-  name: 'Avisos',
+  name: 'Notices',
   version: 1,
   layers: [
     {
@@ -38,13 +38,13 @@ const SPEC = {
         {
           id: 'old',
           name: 'Old',
-          notices: [{ kind: 'removed', message: 'Saiu do contrato.' }],
+          notices: [{ kind: 'removed', message: 'Left the contract.' }],
           fields: [{ key: 'a', type: 'string' }],
         },
         {
           id: 'box',
           name: 'Box',
-          notices: [{ kind: 'pending', message: 'Falta no SDK.' }],
+          notices: [{ kind: 'pending', message: 'Missing in the SDK.' }],
           fields: [
             {
               key: 'style',
@@ -58,7 +58,7 @@ const SPEC = {
                 {
                   key: 'c',
                   type: 'string',
-                  notices: [{ kind: 'diverges', message: 'Fontes discordam.' }],
+                  notices: [{ kind: 'diverges', message: 'Sources disagree.' }],
                 },
                 { key: 'd', type: 'string' },
               ],
@@ -108,7 +108,7 @@ const plan = async (operations: unknown[]) =>
   ok(await mcp.call<Planned>('plan_changes', { project, operations }));
 
 describe('get_specialization', () => {
-  it('devolve os notices de tipo, campo e coluna', async () => {
+  it('returns the notices of type, field and column', async () => {
     const view = ok(
       await mcp.call<{
         spec: {
@@ -129,34 +129,34 @@ describe('get_specialization', () => {
     const types = view.spec.layers[0]!.annotationTypes;
     const box = types.find((t) => t.id === 'box')!;
     expect(types.find((t) => t.id === 'old')!.notices).toEqual([
-      { kind: 'removed', message: 'Saiu do contrato.' },
+      { kind: 'removed', message: 'Left the contract.' },
     ]);
-    expect(box.notices).toEqual([{ kind: 'pending', message: 'Falta no SDK.' }]);
+    expect(box.notices).toEqual([{ kind: 'pending', message: 'Missing in the SDK.' }]);
     expect(box.fields.find((f) => f.key === 'style')!.notices).toEqual([
       { kind: 'deprecated', message: 'Use variant.' },
     ]);
     expect(box.fields.find((f) => f.key === 'rows')!.columns![0]!.notices).toEqual([
-      { kind: 'diverges', message: 'Fontes discordam.' },
+      { kind: 'diverges', message: 'Sources disagree.' },
     ]);
   });
 });
 
-describe('plan_changes: a chave notices', () => {
-  it('anotação de tipo com aviso: um aviso do tipo', async () => {
+describe('plan_changes: the notices key', () => {
+  it('an annotation of a type with a notice: one notice of the type', async () => {
     const result = await plan(marking({ type: 'avisos/old' }));
     expect(result.valid).toBe(true);
     expect(result.notices?.new).toEqual([
       expect.objectContaining({
         type: 'old',
         kind: 'removed',
-        message: 'Saiu do contrato.',
+        message: 'Left the contract.',
       }),
     ]);
     expect(result.notices!.new[0]!.annotation).toMatch(/^mapping:\/\/avisos\/a\//);
     expect(result.notices!.new[0]).not.toHaveProperty('key');
   });
 
-  it('valor num campo com aviso: o do tipo e o do campo, do mais grave ao menos', async () => {
+  it("a value in a field with a notice: the type's and the field's, from most to least severe", async () => {
     const result = await plan(
       marking({ type: 'avisos/box', values: { style: 'legacy' } }),
     );
@@ -166,7 +166,7 @@ describe('plan_changes: a chave notices', () => {
     ]);
   });
 
-  it('valor numa coluna com aviso: traz key e column', async () => {
+  it('a value in a column with a notice: carries key and column', async () => {
     const result = await plan(
       marking({ type: 'avisos/box', values: { rows: [{ c: '1' }] } }),
     );
@@ -175,11 +175,11 @@ describe('plan_changes: a chave notices', () => {
       type: 'box',
       key: 'rows',
       column: 'c',
-      message: 'Fontes discordam.',
+      message: 'Sources disagree.',
     });
   });
 
-  it('lote que não toca em nada com aviso: new vazio, issues intacto', async () => {
+  it('a batch that touches nothing with a notice: empty new, issues intact', async () => {
     const result = await plan(marking({ type: 'avisos/plain', values: { x: 'ok' } }));
     expect(result.valid).toBe(true);
     expect(result.notices).toEqual({ new: [] });
@@ -187,8 +187,8 @@ describe('plan_changes: a chave notices', () => {
   });
 });
 
-describe('propose_changes: a mesma chave', () => {
-  it('devolve notices e a proposta continua gravada e aceitável', async () => {
+describe('propose_changes: the same key', () => {
+  it('returns notices and the proposal stays written and acceptable', async () => {
     const proposed = await propose(mcp, project, marking({ type: 'avisos/old' }));
     expect(proposed.valid).toBe(true);
     const notices = (proposed as unknown as Planned).notices;
@@ -196,7 +196,7 @@ describe('propose_changes: a mesma chave', () => {
   });
 });
 
-describe('validate_specialization e a formatVersion 10', () => {
+describe('validate_specialization and formatVersion 10', () => {
   interface Validated {
     valid: boolean;
     errors: string[];
@@ -208,13 +208,13 @@ describe('validate_specialization e a formatVersion 10', () => {
       }),
     );
 
-  it('aceita notices na v10', async () => {
+  it('accepts notices in v10', async () => {
     const result = await validate(10);
     expect(result.valid).toBe(true);
     expect(result.errors).toEqual([]);
   });
 
-  it('recusa notices na v9 com o caminho exato', async () => {
+  it('refuses notices in v9 with the exact path', async () => {
     const result = await validate(9);
     expect(result.valid).toBe(false);
     expect(result.errors).toEqual(

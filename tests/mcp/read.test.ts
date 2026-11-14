@@ -19,8 +19,9 @@ import {
   type Workspace,
 } from './workspace';
 
-// Integração: sobe o `dist-mcp/mapping-mcp.js` por stdio, com o cliente do SDK MCP, sobre uma
-// pasta temporária com o projeto do roteiro 13.9 (tela de cadastro) e variações dele.
+// Integration: starts `dist-mcp/mapping-mcp.js` over stdio, with the MCP SDK client, on a
+// temporary folder with the project of script 13.9 (sign-up screen) and variations of it.
+// The project, marking and layer names come from the `workspace.ts` fixture (`cadastro`, `Formulário`…) and stay as they are.
 
 interface Row {
   ref: string;
@@ -117,7 +118,7 @@ function errorCode(result: Call): string {
   return (result.data as unknown as ErrorData).error.code;
 }
 
-/** Referência completa de uma marcação do `cadastroProject` (`MF`, `MN`…), pelo id original: só a URL. */
+/** Full reference of a marking of the `cadastroProject` (`MF`, `MN`…), by the original id: just the URL. */
 function markingRef(key: string): string {
   return `mapping://cadastro/m/${codeOf(ws.ids[key]!)}`;
 }
@@ -128,8 +129,8 @@ async function listRows(args: Record<string, unknown> = {}): Promise<RowList> {
 
 const names = (list: RowList) => list.markings.map((m) => m.name);
 
-describe('list_projects e descoberta', () => {
-  it('acha os projetos em qualquer profundidade e ignora o que não é projeto', async () => {
+describe('list_projects and discovery', () => {
+  it('finds the projects at any depth and ignores what is not a project', async () => {
     const data = ok(await mcp.call('list_projects'));
     const projects = data.projects as { name: string; path: string; error?: unknown }[];
     expect(projects.map((p) => p.path)).toEqual([
@@ -147,10 +148,10 @@ describe('list_projects e descoberta', () => {
     expect(data.missingRoots).toEqual([]);
   });
 
-  it('resume cada projeto: contagens, revisão e especializações', async () => {
+  it('summarizes each project: counts, revision and specializations', async () => {
     const data = ok(await mcp.call('list_projects'));
-    const cadastro = (data.projects as Record<string, unknown>[])[0]!;
-    expect(cadastro).toMatchObject({
+    const signup = (data.projects as Record<string, unknown>[])[0]!;
+    expect(signup).toMatchObject({
       name: 'cadastro',
       projectName: 'Teste',
       schemaVersion: 20,
@@ -164,21 +165,21 @@ describe('list_projects e descoberta', () => {
     expect(cadastro.dir).toBe(realpathSync(ws.projectDir('apps/cadastro')));
   });
 
-  it('um projeto ilegível aparece com o motivo, sem esconder os outros', async () => {
+  it('an unreadable project appears with the reason, without hiding the others', async () => {
     const data = ok(await mcp.call('list_projects'));
-    const quebrado = (data.projects as { name: string; error?: { code: string } }[]).find(
-      (p) => p.name === 'quebrado',
+    const broken = (data.projects as { name: string; error?: { code: string } }[]).find(
+      (p) => p.name === 'broken',
     );
-    expect(quebrado?.error?.code).toBe('invalid-project');
+    expect(broken?.error?.code).toBe('invalid-project');
   });
 
-  it('informa a raiz que não existe', async () => {
-    const other = await connect([join(ws.base, 'nao-existe')]);
+  it('reports the root that does not exist', async () => {
+    const other = await connect([join(ws.base, 'does-not-exist')]);
     try {
       const data = ok(await other.call('list_projects'));
       expect(data).toMatchObject({
         projects: [],
-        missingRoots: [join(ws.base, 'nao-existe')],
+        missingRoots: [join(ws.base, 'does-not-exist')],
       });
     } finally {
       await other.close();
@@ -187,7 +188,7 @@ describe('list_projects e descoberta', () => {
 });
 
 describe('get_project', () => {
-  it('resume containers, camadas, especializações e pendências', async () => {
+  it('summarizes containers, layers, specializations and pending items', async () => {
     const data = ok(await mcp.call('get_project', { project: 'cadastro' }));
     expect(data).toMatchObject({
       name: 'cadastro',
@@ -233,9 +234,9 @@ describe('get_project', () => {
     });
   });
 
-  it('marca a cópia ausente da especialização e a migração do schema', async () => {
-    const semCopias = ok(await mcp.call('get_project', { project: 'sem-copias' }));
-    expect(semCopias.specializations).toEqual([
+  it('marks the missing copy of the specialization and the schema migration', async () => {
+    const noCopies = ok(await mcp.call('get_project', { project: 'sem-copias' }));
+    expect(noCopies.specializations).toEqual([
       expect.objectContaining({ id: 'sdui', available: false, problem: 'missing' }),
       expect.objectContaining({
         id: 'modelo-dados',
@@ -243,21 +244,21 @@ describe('get_project', () => {
         problem: 'missing',
       }),
     ]);
-    const legado = ok(await mcp.call('get_project', { project: 'legado' }));
-    expect(legado).toMatchObject({ schemaVersion: 20, revision: 0, migratedFrom: 5 });
+    const legacy = ok(await mcp.call('get_project', { project: 'legado' }));
+    expect(legacy).toMatchObject({ schemaVersion: 20, revision: 0, migratedFrom: 5 });
   });
 
-  it('ler nunca regrava o mapping.json (nem o de schema antigo)', () => {
+  it('reading never rewrites mapping.json (not even the old-schema one)', () => {
     const text = readFileSync(join(ws.projectDir('legado'), 'mapping.json'), 'utf8');
     expect(JSON.parse(text)).toMatchObject({ schemaVersion: 5 });
   });
 
-  it('aceita o nome da pasta, o caminho relativo e o absoluto', async () => {
+  it('accepts the folder name, the relative path and the absolute one', async () => {
     for (const project of ['cadastro', 'apps/cadastro', ws.projectDir('apps/cadastro')]) {
       const data = ok(await mcp.call('get_project', { project }));
       expect(data.name).toBe('cadastro');
     }
-    expect(errorCode(await mcp.call('get_project', { project: 'nao-existe' }))).toBe(
+    expect(errorCode(await mcp.call('get_project', { project: 'does-not-exist' }))).toBe(
       'project-not-found',
     );
     expect(errorCode(await mcp.call('get_project', { project: 'so-uma-pasta' }))).toBe(
@@ -267,7 +268,7 @@ describe('get_project', () => {
 });
 
 describe('list_markings', () => {
-  it('lista as marcações em profundidade, com referência, retângulo e trava', async () => {
+  it('lists the markings in depth, with reference, rectangle and lock', async () => {
     const list = await listRows();
     expect(list).toMatchObject({ total: 6, returned: 6, offset: 0 });
     expect(names(list)).toEqual([
@@ -294,7 +295,7 @@ describe('list_markings', () => {
     expect(list.markings.every((m) => REF.test(m.ref))).toBe(true);
   });
 
-  it('container aceita a referência completa de get_project; a de outro projeto não casa', async () => {
+  it('container accepts the full reference from get_project; one from another project does not match', async () => {
     const project = ok(
       await mcp.call<{ containers: { ref: string }[] }>('get_project', {
         project: 'cadastro',
@@ -313,7 +314,7 @@ describe('list_markings', () => {
     ).toBe('not-found');
   });
 
-  it('filtra por camada, tipo de anotação e incompletas', async () => {
+  it('filters by layer, annotation type and incomplete ones', async () => {
     expect(names(await listRows({ layer: 'Eventos' }))).toEqual(['E-mail', 'Cadastrar']);
     expect(names(await listRows({ layer: 'eventos' }))).toEqual(['E-mail', 'Cadastrar']);
     expect(names(await listRows({ layer: ws.ids.LM }))).toEqual(['Formulário']);
@@ -326,9 +327,9 @@ describe('list_markings', () => {
     expect(names(await listRows({ annotationType: 'sdui/onClick' }))).toEqual([
       'Cadastrar',
     ]);
-    const incompletas = await listRows({ incomplete: true });
-    expect(names(incompletas)).toEqual(['Título']);
-    expect(incompletas.markings[0]).toMatchObject({ incomplete: 1 });
+    const incomplete = await listRows({ incomplete: true });
+    expect(names(incomplete)).toEqual(['Título']);
+    expect(incomplete.markings[0]).toMatchObject({ incomplete: 1 });
     expect(
       names(await listRows({ layer: 'Eventos', annotationType: 'onChange' })),
     ).toEqual(['E-mail']);
@@ -337,7 +338,7 @@ describe('list_markings', () => {
     ).toEqual([]);
   });
 
-  it('busca texto no nome, nas chaves e nos valores, sem acento nem maiúsculas', async () => {
+  it('searches text in the name, keys and values, accent- and case-insensitive', async () => {
     expect(names(await listRows({ text: 'titulo' }))).toEqual(['Título']);
     expect(names(await listRows({ text: 'ANA@EXEMPLO' }))).toEqual(['Formulário']);
     expect(names(await listRows({ text: 'usuarios' }))).toEqual([
@@ -347,11 +348,11 @@ describe('list_markings', () => {
     expect(names(await listRows({ text: 'input_idade' }))).toEqual(['Idade']);
     expect(names(await listRows({ text: 'age' }))).toEqual(['Formulário']);
     expect(names(await listRows({ text: 'xyz-nada' }))).toEqual([]);
-    // O nome da imagem não conta: todas as marcações estão em `cadastro.png`.
+    // The image name does not count: all the markings are in `cadastro.png`.
     expect(names(await listRows({ text: 'cadastro.png' }))).toEqual([]);
   });
 
-  it('filtra por container (e pelo filtro antigo image, com aviso) e pagina', async () => {
+  it('filters by container (and by the old image filter, with a warning) and paginates', async () => {
     for (const container of [
       'cadastro.png',
       'images/cadastro.png',
@@ -379,7 +380,7 @@ describe('list_markings', () => {
     expect(second.truncated).toBeUndefined();
   });
 
-  it('erra com camada ou container desconhecido', async () => {
+  it('errors on an unknown layer or container', async () => {
     expect(
       errorCode(await mcp.call('list_markings', { project: 'cadastro', layer: 'X' })),
     ).toBe('not-found');
@@ -390,7 +391,7 @@ describe('list_markings', () => {
 });
 
 describe('get_marking', () => {
-  it('mostra o Cadastrar: anotações por camada, vínculos e referências', async () => {
+  it('shows the Cadastrar marking: annotations by layer, links and references', async () => {
     const data = ok(
       await mcp.call<MarkingData>('get_marking', { ref: markingRef('MC') }),
     );
@@ -456,11 +457,11 @@ describe('get_marking', () => {
     ]);
   });
 
-  it('resolve as referências de saída do Nome e os backlinks da User', async () => {
-    const nome = ok(
+  it('resolves the outgoing references of Nome and the backlinks of User', async () => {
+    const nameMarking = ok(
       await mcp.call<MarkingData>('get_marking', { ref: markingRef('MN') }),
     );
-    const input = nome.layers.find((l) => l.layer.name === 'Componentes')!
+    const input = nameMarking.layers.find((l) => l.layer.name === 'Componentes')!
       .annotations[0]!;
     expect(input.refs).toEqual([
       {
@@ -509,7 +510,7 @@ describe('get_marking', () => {
     expect(form.lock).toEqual({ locked: true, geometryLocked: true, source: 'self' });
   });
 
-  it('mostra a pendência do Título', async () => {
+  it('shows the pending item of Título', async () => {
     const data = ok(
       await mcp.call<MarkingData>('get_marking', { ref: markingRef('MT') }),
     );
@@ -521,7 +522,7 @@ describe('get_marking', () => {
   });
 });
 
-describe('get_annotation, get_container e resolve', () => {
+describe('get_annotation, get_container and resolve', () => {
   async function annotationRefOf(
     marking: string,
     name: string,
@@ -536,7 +537,7 @@ describe('get_annotation, get_container e resolve', () => {
     return found!.ref;
   }
 
-  it('get_annotation devolve a anotação com a marcação e as referências', async () => {
+  it('get_annotation returns the annotation with the marking and the references', async () => {
     const ref = await annotationRefOf('ME', 'E-mail', 'Input input_email');
     const data = ok(await mcp.call<AnnotationData>('get_annotation', { ref }));
     expect(data).toMatchObject({
@@ -561,7 +562,7 @@ describe('get_annotation, get_container e resolve', () => {
     expect(data.issues).toBeUndefined();
   });
 
-  it('get_annotation de uma livre devolve os pares', async () => {
+  it('get_annotation of a free-form one returns the pairs', async () => {
     const ref = await annotationRefOf('MF', 'Formulário', 'User');
     const data = ok(await mcp.call<AnnotationData>('get_annotation', { ref }));
     expect(data).toMatchObject({
@@ -572,7 +573,7 @@ describe('get_annotation, get_container e resolve', () => {
     expect(data.entries?.map((e) => e.key)).toEqual(['name', 'age']);
   });
 
-  it('get_container traz o arquivo, o caminho absoluto e as marcações de primeiro nível', async () => {
+  it('get_container brings the file, the absolute path and the top-level markings', async () => {
     const data = ok(
       await mcp.call('get_container', {
         ref: `mapping://cadastro/i/${codeOf(ws.ids.I1!)}`,
@@ -592,7 +593,7 @@ describe('get_annotation, get_container e resolve', () => {
     });
   });
 
-  it('get_image continua respondendo, com aviso de que é antiga', async () => {
+  it('get_image still answers, with a warning that it is old', async () => {
     const ref = `mapping://cadastro/i/${codeOf(ws.ids.I1!)}`;
     const old = ok(await mcp.call('get_image', { ref }));
     const current = ok(await mcp.call('get_container', { ref }));
@@ -606,7 +607,7 @@ describe('get_annotation, get_container e resolve', () => {
     expect({ ...old, warnings: undefined }).toEqual({ ...current, warnings: undefined });
   });
 
-  it('get_container avisa quando o arquivo não existe', async () => {
+  it('get_container warns when the file does not exist', async () => {
     const data = ok(
       await mcp.call('get_container', {
         project: 'sem-copias',
@@ -616,7 +617,7 @@ describe('get_annotation, get_container e resolve', () => {
     expect(data).toMatchObject({ exists: false, path: null });
   });
 
-  it('resolve descobre o tipo do item', async () => {
+  it('resolve discovers the type of the item', async () => {
     const code = codeOf(ws.ids.MN!);
     const marking = ok(await mcp.call('resolve', { ref: code, project: 'cadastro' }));
     expect(marking).toMatchObject({
@@ -642,17 +643,17 @@ describe('get_annotation, get_container e resolve', () => {
   });
 });
 
-describe('formatos de referência', () => {
-  const nome = () => ws.ids.MN!;
+describe('reference formats', () => {
+  const nameId = () => ws.ids.MN!;
 
-  it('aceita a referência completa, m/código com project, o id completo e o id sem hífens', async () => {
+  it('accepts the full reference, m/code with project, the full id and the id without hyphens', async () => {
     const forms: Record<string, unknown>[] = [
       { ref: markingRef('MN') },
-      { ref: `m/${codeOf(nome())}`, project: 'cadastro' },
-      { ref: `m/${codeOf(nome()).toUpperCase()}`, project: 'cadastro' },
-      { ref: nome(), project: 'cadastro' },
-      { ref: nome().replaceAll('-', ''), project: 'cadastro' },
-      { ref: `mapping://cadastro/m/${codeOf(nome())}` },
+      { ref: `m/${codeOf(nameId())}`, project: 'cadastro' },
+      { ref: `m/${codeOf(nameId()).toUpperCase()}`, project: 'cadastro' },
+      { ref: nameId(), project: 'cadastro' },
+      { ref: nameId().replaceAll('-', ''), project: 'cadastro' },
+      { ref: `mapping://cadastro/m/${codeOf(nameId())}` },
     ];
     for (const args of forms) {
       const data = ok(await mcp.call<MarkingData>('get_marking', args));
@@ -660,10 +661,10 @@ describe('formatos de referência', () => {
     }
   });
 
-  it('recusa o formato antigo (caminho entre parênteses, projeto sem codificar) com a hint', async () => {
+  it('refuses the old format (path in parentheses, uncoded project) with the hint', async () => {
     for (const ref of [
-      `mapping://cadastro/m/${codeOf(nome())} (qualquer coisa › outra)`,
-      `mapping://Meu Projeto/m/${codeOf(nome())}`,
+      `mapping://cadastro/m/${codeOf(nameId())} (anything › other)`,
+      `mapping://My Project/m/${codeOf(nameId())}`,
     ]) {
       const result = await mcp.call('get_marking', { ref });
       expect(errorCode(result), ref).toBe('invalid-ref');
@@ -677,8 +678,8 @@ describe('formatos de referência', () => {
     }
   });
 
-  it('recusa referência inválida, de outro tipo ou de outro projeto', async () => {
-    expect(errorCode(await mcp.call('get_marking', { ref: 'isto não é ref!' }))).toBe(
+  it('refuses an invalid reference, one of another kind or of another project', async () => {
+    expect(errorCode(await mcp.call('get_marking', { ref: 'this is not a ref!' }))).toBe(
       'invalid-ref',
     );
     expect(
@@ -687,20 +688,20 @@ describe('formatos de referência', () => {
     expect(
       errorCode(
         await mcp.call('get_annotation', {
-          ref: `m/${codeOf(nome())}`,
+          ref: `m/${codeOf(nameId())}`,
           project: 'cadastro',
         }),
       ),
     ).toBe('wrong-kind');
     expect(
       errorCode(
-        await mcp.call('get_marking', { ref: `m/${codeOf(nome())}`, project: 'unico' }),
+        await mcp.call('get_marking', { ref: `m/${codeOf(nameId())}`, project: 'unico' }),
       ),
     ).toBe('not-found');
     expect(
       errorCode(
         await mcp.call('get_marking', {
-          ref: `mapping://cadastro/m/${codeOf(nome())}`,
+          ref: `mapping://cadastro/m/${codeOf(nameId())}`,
           project: 'legado',
         }),
       ),
@@ -712,7 +713,7 @@ describe('formatos de referência', () => {
     ).toBe('not-found');
   });
 
-  it('sem projeto, procura em todos e acha o item que só existe num deles', async () => {
+  it('without a project, searches all of them and finds the item that exists in only one', async () => {
     const code = codeOf(ws.uniqueIds.MN!);
     const data = ok(await mcp.call('resolve', { ref: `m/${code}` }));
     expect(data).toMatchObject({
@@ -723,8 +724,8 @@ describe('formatos de referência', () => {
     expect(data.ref).toBe(`mapping://unico/m/${code}`);
   });
 
-  it('o mesmo código em mais de um projeto é ambíguo e lista as candidatas', async () => {
-    const result = await mcp.call('get_marking', { ref: `m/${codeOf(nome())}` });
+  it('the same code in more than one project is ambiguous and lists the candidates', async () => {
+    const result = await mcp.call('get_marking', { ref: `m/${codeOf(nameId())}` });
     expect(errorCode(result)).toBe('ambiguous-ref');
     const { error } = result.data as unknown as ErrorData;
     expect((error.candidates as { ref: string }[]).map((c) => c.ref)).toContain(
@@ -732,7 +733,7 @@ describe('formatos de referência', () => {
     );
   });
 
-  it('códigos que colidem crescem para 12 caracteres e o curto devolve as candidatas', async () => {
+  it('colliding codes grow to 12 characters and the short one returns the candidates', async () => {
     const list = ok(await mcp.call<RowList>('list_markings', { project: 'colisao' }));
     const refs = list.markings.map((m) => m.ref.split(' ')[0]!);
     expect(refs).toEqual([
@@ -751,7 +752,7 @@ describe('formatos de referência', () => {
 });
 
 describe('get_specialization', () => {
-  it('devolve o JSON completo da especialização aplicada', async () => {
+  it('returns the full JSON of the applied specialization', async () => {
     const data = ok(
       await mcp.call('get_specialization', { project: 'cadastro', specId: 'sdui' }),
     );
@@ -768,7 +769,7 @@ describe('get_specialization', () => {
     ]);
   });
 
-  it('com plataformas traz o codeHint; sem plataformas, não', async () => {
+  it('with platforms it brings the codeHint; without platforms, not', async () => {
     const withPlatforms = ok(
       await mcp.call('get_specialization', { project: 'cadastro', specId: 'sdui' }),
     );
@@ -784,7 +785,7 @@ describe('get_specialization', () => {
     expect(without).not.toHaveProperty('codeHint');
   });
 
-  it('erra se não está aplicada ou se a cópia está ausente', async () => {
+  it('errors if it is not applied or if the copy is missing', async () => {
     expect(
       errorCode(
         await mcp.call('get_specialization', { project: 'cadastro', specId: 'x' }),
@@ -798,8 +799,8 @@ describe('get_specialization', () => {
   });
 });
 
-describe('segurança de caminhos', () => {
-  it('recusa .. e caminhos absolutos fora das raízes', async () => {
+describe('path safety', () => {
+  it('refuses .. and absolute paths outside the roots', async () => {
     for (const project of [
       '../fora/projeto-fora',
       'apps/../../fora/projeto-fora',
@@ -811,7 +812,7 @@ describe('segurança de caminhos', () => {
     }
   });
 
-  it('não segue links simbólicos para fora, nem na descoberta nem por caminho', async () => {
+  it('does not follow symbolic links outside, neither in discovery nor by path', async () => {
     const list = ok(await mcp.call('list_projects'));
     expect((list.projects as { name: string }[]).map((p) => p.name)).not.toContain(
       'projeto-fora',
@@ -824,7 +825,7 @@ describe('segurança de caminhos', () => {
     );
   });
 
-  it('a cópia da especialização citada fora do projeto não é lida', async () => {
+  it('the specialization copy cited outside the project is not read', async () => {
     const data = ok(await mcp.call('get_project', { project: 'hostil-spec' }));
     expect((data.specializations as Record<string, unknown>[])[0]).toMatchObject({
       id: 'sdui',
@@ -833,9 +834,9 @@ describe('segurança de caminhos', () => {
     });
   });
 
-  it('um mapping.json hostil não faz o servidor ler fora das raízes', async () => {
+  it('a hostile mapping.json does not make the server read outside the roots', async () => {
     const image = `i/${codeOf(ws.ids.I1!)}`;
-    // `file` com `..` apontando para um arquivo que existe, e `images/link.png` link para fora.
+    // `file` with `..` pointing to a file that exists, and `images/link.png` a link to outside.
     for (const project of ['hostil', 'hostil-link']) {
       const data = ok(await mcp.call('get_container', { project, ref: image }));
       expect(data, project).toMatchObject({ exists: false, path: null });
@@ -844,30 +845,30 @@ describe('segurança de caminhos', () => {
 });
 
 describe('create_project', () => {
-  it('cria o projeto com mapping.json e .gitignore, sem images/ (como a app), e ele já é descoberto', async () => {
+  it('creates the project with mapping.json and .gitignore, without images/ (like the app), and it is already discovered', async () => {
     const created = ok(
-      await mcp.call('create_project', { path: 'novos/loja', name: ' Loja ' }),
+      await mcp.call('create_project', { path: 'fresh/shop', name: ' Shop ' }),
     );
     expect(created).toMatchObject({
       created: true,
-      name: 'loja',
-      path: 'novos/loja',
-      projectName: 'Loja',
+      name: 'shop',
+      path: 'fresh/shop',
+      projectName: 'Shop',
       schemaVersion: 20,
       revision: 0,
-      // A "Camada 1" e a camada Notas da biblioteca embutida (aplicada por padrão).
+      // "Camada 1" and the Notas layer of the bundled library (applied by default).
       counts: { containers: 0, markings: 0, annotations: 0, layers: 2 },
     });
-    const dir = ws.projectDir('novos/loja');
+    const dir = ws.projectDir('fresh/shop');
     expect(readFileSync(join(dir, '.gitignore'), 'utf8')).toBe('backups/\n');
-    // A app só cria `images/` ao gravar a primeira imagem; o servidor faz o mesmo (M2).
+    // The app only creates `images/` when writing the first image; the server does the same (M2).
     expect(existsSync(join(dir, 'images'))).toBe(false);
     const parsed = deserialize(readFileSync(join(dir, 'mapping.json'), 'utf8'));
     expect(parsed.ok && parsed.project.layers.map((l) => l.name)).toEqual([
       'Camada 1',
       'Notas',
     ]);
-    // O pacote da biblioteca de notas, gravado junto com o mapping.json.
+    // The notes library package, written along with mapping.json.
     for (const file of [
       'notas.spec.json',
       join('components', 'nota.json'),
@@ -876,30 +877,30 @@ describe('create_project', () => {
       expect(existsSync(join(dir, 'specs', 'notas', file)), file).toBe(true);
     }
 
-    const project = ok(await mcp.call('get_project', { project: 'loja' }));
-    expect(project).toMatchObject({ projectName: 'Loja', containers: [] });
+    const project = ok(await mcp.call('get_project', { project: 'shop' }));
+    expect(project).toMatchObject({ projectName: 'Shop', containers: [] });
   });
 
-  it('recusa nome vazio, projeto existente e projeto dentro de outro', async () => {
+  it('refuses an empty name, an existing project and a project inside another', async () => {
     expect(
-      errorCode(await mcp.call('create_project', { path: 'vazio', name: '  ' })),
+      errorCode(await mcp.call('create_project', { path: 'empty', name: '  ' })),
     ).toBe('invalid-name');
     expect(
       errorCode(await mcp.call('create_project', { path: 'apps/cadastro', name: 'X' })),
     ).toBe('already-exists');
     expect(
       errorCode(
-        await mcp.call('create_project', { path: 'apps/cadastro/novo', name: 'X' }),
+        await mcp.call('create_project', { path: 'apps/cadastro/nested', name: 'X' }),
       ),
     ).toBe('nested-project');
   });
 
-  it('recusa .., absoluto fora das raízes e link simbólico para fora', async () => {
+  it('refuses .., an absolute path outside the roots and a symbolic link to outside', async () => {
     for (const path of [
-      '../invasor',
-      'a/../../invasor',
-      join(ws.base, 'invasor'),
-      'escape/invasor',
+      '../intruder',
+      'a/../../intruder',
+      join(ws.base, 'intruder'),
+      'escape/intruder',
     ]) {
       expect(errorCode(await mcp.call('create_project', { path, name: 'X' })), path).toBe(
         'outside-roots',
@@ -908,7 +909,7 @@ describe('create_project', () => {
   });
 });
 
-describe('várias raízes', () => {
+describe('several roots', () => {
   let second: string;
   let multi: Connection;
 
@@ -921,7 +922,7 @@ describe('várias raízes', () => {
     await multi.close();
   });
 
-  it('projetos homônimos pedem o caminho; com ele, o servidor responde', async () => {
+  it('projects with the same name ask for the path; with it, the server answers', async () => {
     const result = await multi.call('get_project', { project: 'cadastro' });
     expect(errorCode(result)).toBe('ambiguous-project');
     const { error } = result.data as unknown as ErrorData;
@@ -932,29 +933,29 @@ describe('várias raízes', () => {
     expect(byDir.root).toBe(second);
   });
 
-  it('create_project pede a raiz quando há mais de uma e o caminho é relativo', async () => {
+  it('create_project asks for the root when there is more than one and the path is relative', async () => {
     expect(
-      errorCode(await multi.call('create_project', { path: 'novo', name: 'N' })),
+      errorCode(await multi.call('create_project', { path: 'newproj', name: 'N' })),
     ).toBe('root-required');
     const created = ok(
-      await multi.call('create_project', { path: 'novo', name: 'N', root: second }),
+      await multi.call('create_project', { path: 'newproj', name: 'N', root: second }),
     );
     expect(created.root).toBe(second);
   });
 });
 
-describe('`root` do create_project (raízes relativas, como no .mcp.json)', () => {
-  // O servidor sobe com o diretório de trabalho em `ws.base` e as raízes como um `.mcp.json`
-  // as escreveria: relativas a ele. Duas delas têm o mesmo nome de pasta (`mapeamentos`).
+describe('`root` of create_project (relative roots, as in .mcp.json)', () => {
+  // The server starts with the working directory at `ws.base` and the roots as a `.mcp.json`
+  // would write them: relative to it. Two of them have the same folder name (`mappings`).
   let rel: Connection;
-  const design = () => join(ws.base, 'design', 'mapeamentos');
-  const outro = () => join(ws.base, 'outro', 'mapeamentos');
+  const design = () => join(ws.base, 'design', 'mappings');
+  const otherDir = () => join(ws.base, 'other', 'mappings');
 
   beforeAll(async () => {
     mkdirSync(design(), { recursive: true });
-    mkdirSync(outro(), { recursive: true });
-    symlinkSync(design(), join(ws.base, 'atalho'), 'dir');
-    rel = await connect(['raiz', 'design/mapeamentos', 'outro/mapeamentos'], {
+    mkdirSync(otherDir(), { recursive: true });
+    symlinkSync(design(), join(ws.base, 'shortcut'), 'dir');
+    rel = await connect(['raiz', 'design/mappings', 'other/mappings'], {
       cwd: ws.base,
     });
   });
@@ -965,11 +966,11 @@ describe('`root` do create_project (raízes relativas, como no .mcp.json)', () =
   const create = (path: string, root: string) =>
     rel.call('create_project', { path, name: 'N', root });
 
-  it('aceita o caminho como no --root: relativo, com ./, com barra final e absoluto (M1)', async () => {
+  it('accepts the path as in --root: relative, with ./, with a trailing slash and absolute (M1)', async () => {
     for (const [path, root] of [
-      ['rel-a', 'design/mapeamentos'],
-      ['rel-b', './design/mapeamentos'],
-      ['rel-c', 'design/mapeamentos/'],
+      ['rel-a', 'design/mappings'],
+      ['rel-b', './design/mappings'],
+      ['rel-c', 'design/mappings/'],
       ['rel-d', design()],
     ] as const) {
       const created = ok(await create(path, root));
@@ -978,44 +979,42 @@ describe('`root` do create_project (raízes relativas, como no .mcp.json)', () =
     }
   });
 
-  it('aceita um link simbólico para a raiz e o nome da pasta, se ele for único (M1)', async () => {
-    expect(ok(await create('rel-e', 'atalho')).root).toBe(design());
+  it('accepts a symbolic link to the root and the folder name, if it is unique (M1)', async () => {
+    expect(ok(await create('rel-e', 'shortcut')).root).toBe(design());
     expect(ok(await create('rel-f', 'raiz')).root).toBe(ws.root);
     rmSync(join(ws.root, 'rel-f'), { recursive: true });
   });
 
-  it('nome de pasta que casa com mais de uma raiz pede o caminho (Q1)', async () => {
-    const result = await create('rel-g', 'mapeamentos');
+  it('a folder name that matches more than one root asks for the path (Q1)', async () => {
+    const result = await create('rel-g', 'mappings');
     expect(errorCode(result)).toBe('unknown-root');
     const { error } = result.data as unknown as ErrorData;
     expect(error.message).toContain('use the path');
-    expect(error.roots).toEqual([ws.root, design(), outro()]);
+    expect(error.roots).toEqual([ws.root, design(), otherDir()]);
     expect(existsSync(join(design(), 'rel-g'))).toBe(false);
-    expect(existsSync(join(outro(), 'rel-g'))).toBe(false);
+    expect(existsSync(join(otherDir(), 'rel-g'))).toBe(false);
   });
 
-  it('raiz desconhecida continua unknown-root', async () => {
-    expect(errorCode(await create('rel-h', 'nao/existe'))).toBe('unknown-root');
+  it('an unknown root is still unknown-root', async () => {
+    expect(errorCode(await create('rel-h', 'no/such'))).toBe('unknown-root');
   });
 
-  it('path absoluto em outra raiz que não a indicada é invalid-arguments (M12)', async () => {
-    const inOther = join(outro(), 'abs-a');
-    expect(errorCode(await create(inOther, 'design/mapeamentos'))).toBe(
-      'invalid-arguments',
-    );
+  it('an absolute path in a root other than the indicated one is invalid-arguments (M12)', async () => {
+    const inOther = join(otherDir(), 'abs-a');
+    expect(errorCode(await create(inOther, 'design/mappings'))).toBe('invalid-arguments');
     expect(existsSync(inOther)).toBe(false);
-    // Dentro da raiz indicada: cria.
+    // Inside the indicated root: creates it.
     const inDesign = join(design(), 'abs-b');
-    expect(ok(await create(inDesign, 'design/mapeamentos')).root).toBe(design());
-    // Fora de todas as raízes: a segurança fala primeiro.
-    expect(errorCode(await create(join(ws.base, 'abs-c'), 'design/mapeamentos'))).toBe(
+    expect(ok(await create(inDesign, 'design/mappings')).root).toBe(design());
+    // Outside all the roots: security speaks first.
+    expect(errorCode(await create(join(ws.base, 'abs-c'), 'design/mappings'))).toBe(
       'outside-roots',
     );
   });
 });
 
-describe('recursos e instruções', () => {
-  it('serve a documentação como recursos', async () => {
+describe('resources and instructions', () => {
+  it('serves the documentation as resources', async () => {
     const { resources } = await mcp.client.listResources();
     expect(resources.map((r) => r.uri).sort()).toEqual([
       'mapping-docs://AGENT-GUIDE.md',
@@ -1041,7 +1040,7 @@ describe('recursos e instruções', () => {
     }
   });
 
-  it('anuncia as tools de leitura, de imagem e de escrita e as instruções apontam o guia', async () => {
+  it('announces the read, image and write tools and the instructions point to the guide', async () => {
     const { tools } = await mcp.client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual([
       'create_project',
@@ -1085,7 +1084,7 @@ describe('recursos e instruções', () => {
     ]);
     const readOnly = tools.filter((t) => t.annotations?.readOnlyHint).map((t) => t.name);
     expect(readOnly).not.toContain('create_project');
-    // As únicas tools que gravam algo: o projeto vazio, as propostas e as conversas (nunca o mapping.json).
+    // The only tools that write anything: the empty project, the proposals and the conversations (never mapping.json).
     const writers = tools.filter((t) => !t.annotations?.readOnlyHint).map((t) => t.name);
     expect(writers.sort()).toEqual([
       'create_project',
@@ -1095,9 +1094,9 @@ describe('recursos e instruções', () => {
       'revise_proposal',
       'withdraw_proposal',
     ]);
-    // plan_changes só valida: nada é gravado, nem proposta.
+    // plan_changes only validates: nothing is written, not even a proposal.
     expect(readOnly).toContain('plan_changes');
-    // As tools de código e de origem só leem (a de código só confere a existência de arquivos).
+    // The code and origin tools only read (the code one only checks that files exist).
     expect(readOnly).toEqual(
       expect.arrayContaining([
         'get_code_hints',

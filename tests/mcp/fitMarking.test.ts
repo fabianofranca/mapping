@@ -38,9 +38,9 @@ import {
 } from './proposalSupport';
 import { connect, type Connection } from './workspace';
 
-// MC3 (decisões 14 a 18 da #898): `fit_marking` no MCP. O servidor nunca grava o projeto, então "direto"
-// é a prévia (`plan_changes`) e o lote (`runBatch`); a proposta leva o ajuste para a revisão como a
-// mudança de Posição de sempre.
+// MC3 (decisions 14 to 18 of #898): `fit_marking` in the MCP. The server never writes the project, so "direct"
+// is the preview (`plan_changes`) and the batch (`runBatch`); the proposal takes the fit to the review as the
+// usual Position change.
 
 const IMAGE = 'bbbbbbbb-0000-4000-8000-000000000001';
 const LAYER = 'cccccccc-0000-4000-8000-000000000001';
@@ -54,10 +54,10 @@ let roots: Roots;
 let loaded: LoadedProject;
 let mcp: Connection;
 
-/** Um botão curto (cabe no `minSize`), um com rótulo longo e trancado, e um sem eixo ajustável. */
+/** A short button (fits in the `minSize`), one with a long label that is locked, and one without an adjustable axis. */
 function project(): Project {
   let p = createProject({
-    name: 'Telas',
+    name: 'Screens',
     now: NOW,
     firstLayer: { id: LAYER, name: 'Camada 1', color: '#D32F2F' },
   });
@@ -112,8 +112,8 @@ afterAll(async () => {
 });
 
 const io = {
-  readSource: () => Promise.reject(new Error('sem arquivos')),
-  readSpecInput: () => Promise.reject(new Error('sem arquivos')),
+  readSource: () => Promise.reject(new Error('no files')),
+  readSpecInput: () => Promise.reject(new Error('no files')),
   takenImageFiles: new Set<string>(),
   now: () => new Date(NOW),
 };
@@ -127,8 +127,8 @@ const fit = (marking = BUTTON): Operation =>
 const relabel = (label: string, annotation = BUTTON_A): Operation =>
   ({ op: 'update_annotation', annotation, values: { label } }) as Operation;
 
-describe('fit_marking no lote', () => {
-  it('depois de mudar o rótulo, ajusta a altura; o resumo diz o retângulo antes e depois', async () => {
+describe('fit_marking in the batch', () => {
+  it('after changing the label, fits the height; the summary gives the rectangle before and after', async () => {
     const result = await run([relabel(LONG_LABEL), fit()]);
     expect(result.errors).toEqual([]);
     const rect = rectOf(result, BUTTON);
@@ -141,24 +141,24 @@ describe('fit_marking no lote', () => {
     expect(result.invariantIssues).toEqual([]);
   });
 
-  it('só mudar o valor não muda o retângulo (nada se ajusta sozinho)', async () => {
+  it('just changing the value does not change the rectangle (nothing fits by itself)', async () => {
     const result = await run([relabel(LONG_LABEL)]);
     expect(rectOf(result, BUTTON)).toMatchObject({ width: 120, height: 40 });
   });
 
-  it('nada a mudar: o resumo diz isso e o projeto é o mesmo', async () => {
+  it('nothing to change: the summary says so and the project is the same', async () => {
     const result = await run([fit()]);
     expect(result.errors).toEqual([]);
     expect(result.steps[0]!.description).toContain('nothing changes');
     expect(result.project.markings).toEqual(loaded.project.markings);
   });
 
-  it('ajustar duas vezes: a segunda não muda nada', async () => {
+  it('fitting twice: the second changes nothing', async () => {
     const result = await run([relabel(LONG_LABEL), fit(), fit()]);
     expect(result.steps[2]!.description).toContain('nothing changes');
   });
 
-  it('os erros: not-fittable (com a dica), locked e referência desconhecida', async () => {
+  it('the errors: not-fittable (with the hint), locked and unknown reference', async () => {
     const plain = await run([fit(PLAIN)]);
     expect(plain.errors[0]).toMatchObject({
       index: 0,
@@ -173,7 +173,7 @@ describe('fit_marking no lote', () => {
     expect(missing.errors[0]!.op).toBe('fit_marking');
   });
 
-  it('um apelido de uma marcação criada no mesmo lote vale', async () => {
+  it('an alias of a marking created in the same batch is valid', async () => {
     const result = await run([
       {
         op: 'create_marking',
@@ -190,7 +190,7 @@ describe('fit_marking no lote', () => {
   });
 });
 
-describe('create_marking sem rect: nasce no tamanho medido (decisão 16)', () => {
+describe('create_marking without rect: born with the measured size (decision 16)', () => {
   const create = (
     annotation: Record<string, unknown>,
     extra: Record<string, unknown> = {},
@@ -205,7 +205,7 @@ describe('create_marking sem rect: nasce no tamanho medido (decisão 16)', () =>
   const created = (result: BatchResult) =>
     rectOf(result, (result.aliases.get('$novo') as { id: string }).id);
 
-  it('com o rótulo longo nos values, a altura já é a do conteúdo', async () => {
+  it('with the long label in the values, the height is already the content height', async () => {
     const result = await run([create({ values: { label: LONG_LABEL } })]);
     expect(result.errors).toEqual([]);
     const rect = created(result);
@@ -213,20 +213,20 @@ describe('create_marking sem rect: nasce no tamanho medido (decisão 16)', () =>
     expect(rect.height).toBeGreaterThanOrEqual(76);
   });
 
-  it('com o rótulo curto, o tamanho de sempre', async () => {
+  it('with the short label, the usual size', async () => {
     const result = await run([create({ values: { label: 'Ok' } })]);
     expect(created(result)).toMatchObject({ width: 120, height: 40 });
   });
 
-  it('com rect dado, ele manda', async () => {
+  it('with a given rect, it wins', async () => {
     const rect = { x: 300, y: 300, width: 120, height: 40 };
     const result = await run([create({ values: { label: LONG_LABEL } }, { rect })]);
     expect(created(result)).toEqual(rect);
   });
 });
 
-describe('plan_changes: a prévia direta do fit_marking', () => {
-  it('valida, resume o retângulo antes e depois e não grava nada', async () => {
+describe('plan_changes: the direct preview of fit_marking', () => {
+  it('validates, summarizes the rectangle before and after and writes nothing', async () => {
     const plan = await planChanges(
       roots,
       loaded.location,
@@ -241,7 +241,7 @@ describe('plan_changes: a prévia direta do fit_marking', () => {
     expect(again.valid).toBe(false);
   });
 
-  it('pelo cliente stdio: a mesma prévia e o erro not-fittable', async () => {
+  it('through the stdio client: the same preview and the not-fittable error', async () => {
     const plan = ok(
       await mcp.call<{ valid: boolean; summary: string[] }>('plan_changes', {
         project: 'telas',
@@ -259,12 +259,12 @@ describe('plan_changes: a prévia direta do fit_marking', () => {
   });
 });
 
-describe('fit_marking numa proposta (decisão 18)', () => {
+describe('fit_marking in a proposal (decision 18)', () => {
   const dir = () => join(base, 'telas');
 
-  it('a revisão mostra o valor e a Posição com a altura nova; dá para aceitar só um', async () => {
+  it('the review shows the value and the Position with the new height; accepting only one is possible', async () => {
     const proposed = await propose(mcp, 'telas', [relabel(LONG_LABEL), fit()], {
-      title: 'Rótulo novo no botão',
+      title: 'New label on the button',
     });
     expect(proposed.valid).toBe(true);
     const proposal = readProposal(dir(), proposed.proposal.id);
@@ -278,11 +278,11 @@ describe('fit_marking numa proposta (decisão 18)', () => {
       from: { x: 20, y: 20, width: 120, height: 40 },
     });
     expect((rect.to as { height: number }).height).toBeGreaterThanOrEqual(76);
-    // A revisão da app: a Posição é a mudança de geometria de sempre (sem tipo novo).
+    // The app review: the Position is the usual geometry change (no new type).
     expect(changeType(rect)).toBe('moved');
     expect(rect.field).toBe('rect');
 
-    // Aceitar só o valor: o rótulo muda, o retângulo não.
+    // Accept only the value: the label changes, the rectangle does not.
     reviewDecide(
       dir(),
       proposed.proposal.id,
@@ -303,8 +303,8 @@ describe('fit_marking numa proposta (decisão 18)', () => {
     });
   });
 
-  it('aceitar tudo aplica o valor e o ajuste', async () => {
-    const proposed = await propose(mcp, 'telas', [fit()], { title: 'Ajustar ao rótulo' });
+  it('accepting everything applies the value and the fit', async () => {
+    const proposed = await propose(mcp, 'telas', [fit()], { title: 'Fit to the label' });
     const applied = acceptAllAndApply(dir(), proposed.proposal.id);
     expect(
       applied.markings.find((m) => m.id === BUTTON)!.rect.height,

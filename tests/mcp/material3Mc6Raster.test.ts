@@ -1,6 +1,7 @@
-// MC6 (#1034, etapa #898): os números do R17.32 e do R17.33 (`docs/TESTING.md`) saem do raster do MCP com a
-// Roboto embutida: o snackbar de 1, 2 e 3 linhas mede 48, 68 e 81 e o texto ocupa uma, duas e três linhas; os
-// botões do alert-dialog em duas linhas ficam com o confirmar acima, os dois à direita.
+// MC6 (#1034, stage #898): the numbers of R17.32 and R17.33 (`docs/TESTING.md`) come out of the MCP raster with the
+// embedded Roboto: the 1-, 2- and 3-line snackbar measures 48, 68 and 81 and the text takes one, two and three lines; the
+// alert-dialog buttons on two lines have the confirm one above, both on the right. The Portuguese sample texts below
+// stay as they are: the wrapping and heights asserted depend on their measured widths.
 import { describe, expect, it } from 'vitest';
 import { createRaster, type Raster } from '../../mcp/image/raster';
 import { paintScene } from '../../mcp/image/sceneRaster';
@@ -18,11 +19,11 @@ const catalog = buildCatalog(files);
 
 type Mode = 'light' | 'dark';
 
-/** Instancia o componente no tamanho ajustado, com a fonte do MCP, e pinta sobre branco a zoom 1. */
+/** Instantiates the component at the adjusted size, with the MCP font, and paints over white at zoom 1. */
 function render(id: string, values: Record<string, string>, mode: Mode) {
   const entry = findEntry(catalog, id);
   const library = catalog.library;
-  if (entry?.component == null || library === null) throw new Error(`sem ${id}`);
+  if (entry?.component == null || library === null) throw new Error(`no ${id}`);
   const options = {
     measure,
     tokens: resolveTokens(library.tokens, {}, mode),
@@ -46,7 +47,7 @@ function render(id: string, values: Record<string, string>, mode: Mode) {
   return { raster, size, warnings: drawing.warnings };
 }
 
-/** O retângulo envolvente dos pixels a até 25 por canal de `color`, dentro de `band` (ou do raster inteiro). */
+/** The bounding rectangle of the pixels within 25 per channel of `color`, inside `band` (or the whole raster). */
 function inkBox(
   raster: Raster,
   color: string,
@@ -78,7 +79,7 @@ const near = (actual: number, expected: number, tolerance: number): void => {
   ).toBeLessThanOrEqual(tolerance);
 };
 
-describe('R17.32: snackbar de 1, 2 e 3 linhas no raster do MCP', () => {
+describe('R17.32: 1-, 2- and 3-line snackbar in the MCP raster', () => {
   const MESSAGES: [string, number, number][] = [
     ['Arquivo salvo.', 48, 12],
     ['O arquivo foi salvo e a cópia ficou guardada na pasta Documentos.', 68, 33],
@@ -90,7 +91,7 @@ describe('R17.32: snackbar de 1, 2 e 3 linhas no raster do MCP', () => {
   ];
 
   it.each(MESSAGES)(
-    '%#: a altura %s é %s e a tinta tem ≈ %s de altura',
+    '%#: the message %s has height %s and the ink is ≈ %s tall',
     (message, height, ink) => {
       for (const mode of ['light', 'dark'] as const) {
         const { size, warnings } = render('snackbar', { message }, mode);
@@ -105,7 +106,7 @@ describe('R17.32: snackbar de 1, 2 e 3 linhas no raster do MCP', () => {
   );
 });
 
-describe('R17.33: os botões do alert-dialog em duas linhas no raster do MCP', () => {
+describe('R17.33: the alert-dialog buttons on two lines in the MCP raster', () => {
   const values = {
     style: 'standard',
     title: 'Descartar rascunho?',
@@ -118,7 +119,7 @@ describe('R17.33: os botões do alert-dialog em duas linhas no raster do MCP', (
     ['light', '#6750A4', 174],
     ['dark', '#D0BCFF', 171],
   ] as const)(
-    'o confirmar fica acima do dispensar, os dois à direita (%s)',
+    'the confirm button sits above the dismiss one, both on the right (%s)',
     (mode, primary, confirmWidth) => {
       const { raster, size, warnings } = render('alert-dialog', values, mode);
       expect([size.width, size.height]).toEqual([312, 248]);

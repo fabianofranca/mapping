@@ -26,9 +26,9 @@ import { Roots } from '../../mcp/paths';
 import { findProject, loadProject, type LoadedProject } from '../../mcp/projects';
 import { NOW } from '../model/fixtures';
 
-// Etapa #1087 (EL1): `create_marking` sem `rect` nasce em lugar livre (a mesma colocação da app),
-// no lote e nas duas portas (`plan_changes` e `propose_changes`, que usam o mesmo lote preparado).
-// O tipo flutuante e o caminho `near` continuam como antes.
+// Stage #1087 (EL1): `create_marking` without `rect` is born in free space (the same placement as the app),
+// in the batch and through both doors (`plan_changes` and `propose_changes`, which use the same prepared batch).
+// The floating type and the `near` path stay as before.
 
 const LIBRARY = resolve('tests/fixtures/material3');
 const PHOTO = 'bbbbbbbb-0000-4000-8000-000000000001';
@@ -43,26 +43,26 @@ function project(): Project {
   const parsed = parseSpecText(
     readFileSync(join(LIBRARY, 'material3.spec.json'), 'utf8'),
   );
-  if (!parsed.ok) throw new Error('material3 inválida');
+  if (!parsed.ok) throw new Error('material3 is invalid');
   const spec = parsed.spec;
   let p = createProject({
-    name: 'Telas',
+    name: 'Screens',
     now: NOW,
     firstLayer: { id: LAYER, name: 'Camada 1', color: '#D32F2F' },
   });
-  p = addContainer(p, { id: PHOTO, file: 'images/foto.png', width: 200, height: 100 });
+  p = addContainer(p, { id: PHOTO, file: 'images/photo.png', width: 200, height: 100 });
   return applySpecialization(p, spec, { packageSpecName: 'material3.spec.json' });
 }
 
 beforeAll(async () => {
   base = mkdtempSync(join(tmpdir(), 'mapping-container-'));
-  const dir = join(base, 'telas');
+  const dir = join(base, 'screens');
   mkdirSync(join(dir, 'specs'), { recursive: true });
   cpSync(LIBRARY, join(dir, 'specs', 'material3'), { recursive: true });
   writeFileSync(join(dir, 'mapping.json'), serialize(project()));
   roots = new Roots([base]);
-  loaded = await loadProject(roots, await findProject(roots, 'telas'));
-  // Projeto com a biblioteca de notas (tipo `nota`, flutuante), com a pasta `specs/notas/` ao lado.
+  loaded = await loadProject(roots, await findProject(roots, 'screens'));
+  // Project with the notes library (type `nota`, floating), with the `specs/notas/` folder beside it.
   const notesDir = join(base, 'notas');
   for (const [path, text] of NOTES_FILES) {
     const file = join(notesDir, 'specs', 'notas', ...path.split('/'));
@@ -70,7 +70,7 @@ beforeAll(async () => {
     writeFileSync(file, text);
   }
   const bare = createProject({
-    name: 'Notas',
+    name: 'Notes',
     now: NOW,
     firstLayer: { id: LAYER, name: 'Camada 1', color: '#D32F2F' },
   });
@@ -86,8 +86,8 @@ afterAll(() => {
 });
 
 const io = {
-  readSource: () => Promise.reject(new Error('sem arquivos')),
-  readSpecInput: () => Promise.reject(new Error('sem arquivos')),
+  readSource: () => Promise.reject(new Error('no files')),
+  readSpecInput: () => Promise.reject(new Error('no files')),
   takenImageFiles: new Set<string>(),
   now: () => new Date(NOW),
 };
@@ -101,8 +101,8 @@ function run(
 
 const SCREEN: Operation = {
   op: 'add_container',
-  as: '$tela',
-  name: 'Entrar',
+  as: '$screen',
+  name: 'Sign in',
   width: 390,
   height: 844,
   background: '#FFEBEE',
@@ -112,7 +112,7 @@ const button = (as: string, extra: Partial<Operation> = {}): Operation =>
   ({
     op: 'create_marking',
     as,
-    container: '$tela',
+    container: '$screen',
     annotation: { type: 'material3/m3-button' },
     ...extra,
   }) as Operation;
@@ -130,8 +130,8 @@ const overlap = (
   a.y < b.y + b.height &&
   b.y < a.y + a.height;
 
-describe('create_marking sem rect: lugar livre', () => {
-  it('dois componentes iguais no mesmo container, no mesmo lote: lado a lado, os dois sem pai', async () => {
+describe('create_marking without rect: free space', () => {
+  it('two equal components in the same container, in the same batch: side by side, both without a parent', async () => {
     const batch = [SCREEN, button('$a'), button('$b')];
     const result = await run(batch);
     expect(result.errors).toEqual([]);
@@ -142,14 +142,14 @@ describe('create_marking sem rect: lugar livre', () => {
     expect(a.parentId).toBeNull();
     expect(b.parentId).toBeNull();
     expect(result.invariantIssues).toEqual([]);
-    // O primeiro nasce no centro do container (390 × 844), no tamanho medido do rótulo (`sizing.width`
-    // `hug`, MC3): 83 de largura, não os 120 do `size`.
+    // The first is born at the center of the container (390 × 844), at the measured size of the label (`sizing.width`
+    // `hug`, MC3): 83 wide, not the 120 of `size`.
     expect(a.rect).toEqual({ x: 154, y: 402, width: 83, height: 40 });
     expect(b.rect.width).toBe(83);
     expect(b.rect.height).toBe(40);
   });
 
-  it('plan_changes e propose_changes usam o mesmo lote preparado: os mesmos retângulos', async () => {
+  it('plan_changes and propose_changes use the same prepared batch: the same rectangles', async () => {
     const batch = [SCREEN, button('$a'), button('$b')];
     const result = await run(batch);
     const plan = await planChanges(roots, loaded.location, batch, () => Date.parse(NOW));
@@ -166,45 +166,47 @@ describe('create_marking sem rect: lugar livre', () => {
     }
   });
 
-  it('tipo flutuante sem near nem rect, com obstáculo no centro do canvas: nasce centrado em (0, 0), como hoje', async () => {
+  it('floating type without near or rect, with an obstacle at the canvas center: born centered at (0, 0), as today', async () => {
     const result = await run(
       [
         {
           op: 'create_marking',
-          as: '$obstaculo',
+          as: '$obstacle',
           rect: { x: -100, y: -100, width: 200, height: 200 },
         } as Operation,
         {
           op: 'create_marking',
-          as: '$nota',
+          as: '$note',
           annotation: { type: 'notas/nota' },
         } as Operation,
       ],
       notes,
     );
     expect(result.errors).toEqual([]);
-    const note = marking(result, '$nota');
+    const note = marking(result, '$note');
     expect(note).toMatchObject({ floating: true, containerId: null, parentId: null });
-    // A nota mede 240 × 120: centrada em (0, 0), por cima do obstáculo, sem buscar lugar.
+    // The note measures 240 × 120: centered at (0, 0), on top of the obstacle, without looking for a place.
     expect(note.rect).toEqual({ x: -120, y: -60, width: 240, height: 120 });
   });
 
-  it('o caminho near continua igual: a nota vai para a margem do container, sem cobri-lo', async () => {
+  it('the near path stays the same: the note goes to the container margin, without covering it', async () => {
     const result = await run(
       [
         SCREEN,
         {
           op: 'create_marking',
-          as: '$nota',
+          as: '$note',
           annotation: { type: 'notas/nota' },
-          near: '$tela',
+          near: '$screen',
         } as Operation,
       ],
       notes,
     );
     expect(result.errors).toEqual([]);
-    const note = marking(result, '$nota');
-    const screen = result.project.containers.find((c) => c.id === idOf(result, '$tela'))!;
+    const note = marking(result, '$note');
+    const screen = result.project.containers.find(
+      (c) => c.id === idOf(result, '$screen'),
+    )!;
     expect(
       overlap(note.rect, {
         x: screen.placement.x,

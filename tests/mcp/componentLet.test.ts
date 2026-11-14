@@ -1,6 +1,6 @@
-// Variáveis do componente (formatVersion 4, etapa #1504, VL1): o MCP aceita `let` e `$var` no
-// `validate_library` (servidor real, por stdio) e o `render_marking` de um componente com variáveis
-// sai igual ao do mesmo componente escrito à mão sem elas. Os erros dizem o nome e o caminho do uso.
+// Component variables (formatVersion 4, stage #1504, VL1): the MCP accepts `let` and `$var` in
+// `validate_library` (real server, over stdio) and the `render_marking` of a component with variables
+// comes out the same as that of the same component written by hand without them. The errors give the name and the path of the use.
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -49,7 +49,7 @@ const BLUE = '#1976D2';
 
 type Doc = Record<string, unknown>;
 
-/** O mesmo componente escrito à mão, sem `let` nem `$var`. */
+/** The same component written by hand, without `let` or `$var`. */
 function byHand(): Doc {
   return {
     format: 'mapping-component',
@@ -123,7 +123,7 @@ let mcp: Connection;
 
 const LET_SCRIPT = 'scripts/testing/let.mjs';
 
-/** Grava `components/card.json` em `lib`: o dado, ou (`null`) o do `let.mjs` com o caso de erro, se houver. */
+/** Writes `components/card.json` in `lib`: the given one, or (`null`) the one from `let.mjs` with the error case, if any. */
 function writeCard(lib: string, card: Doc | null, kind?: string): void {
   mkdirSync(join(lib, 'components'), { recursive: true });
   if (card !== null) {
@@ -135,7 +135,7 @@ function writeCard(lib: string, card: Doc | null, kind?: string): void {
   execFileSync(process.execPath, args);
 }
 
-/** Um projeto em `<base>/<name>` com a biblioteca `lib` de um tipo `card`. */
+/** A project at `<base>/<name>` with the `lib` library of a `card` type. */
 function writeProject(name: string, card: Doc | null): void {
   const dir = join(base, name);
   const lib = join(dir, 'specs', 'lib');
@@ -143,7 +143,7 @@ function writeProject(name: string, card: Doc | null): void {
   writeFileSync(join(lib, 'lib.spec.json'), JSON.stringify(SPEC));
   writeCard(lib, card);
   const parsed = parseSpecText(readFileSync(join(lib, 'lib.spec.json'), 'utf8'));
-  if (!parsed.ok) throw new Error(`spec inválida: ${JSON.stringify(parsed)}`);
+  if (!parsed.ok) throw new Error(`invalid spec: ${JSON.stringify(parsed)}`);
   let p = createProject({
     name,
     now: NOW,
@@ -153,27 +153,27 @@ function writeProject(name: string, card: Doc | null): void {
   writeFileSync(join(dir, 'mapping.json'), serialize(p));
 }
 
-/** Uma cópia da biblioteca `lib` com o card do `let.mjs` (e o caso de erro), para o `validate_library`. */
+/** A copy of the `lib` library with the card from `let.mjs` (and the error case), for `validate_library`. */
 function writeLibrary(name: string, kind?: string): void {
-  const lib = join(base, 'bibliotecas', name);
+  const lib = join(base, 'libraries', name);
   mkdirSync(lib, { recursive: true });
   writeFileSync(join(lib, 'lib.spec.json'), JSON.stringify(SPEC));
   writeCard(lib, null, kind);
 }
 
 const io = {
-  readSource: () => Promise.reject(new Error('sem arquivos')),
-  readSpecInput: () => Promise.reject(new Error('sem arquivos')),
+  readSource: () => Promise.reject(new Error('no files')),
+  readSpecInput: () => Promise.reject(new Error('no files')),
   takenImageFiles: new Set<string>(),
   now: () => new Date(NOW),
 };
 
 const OPERATIONS: Operation[] = [
-  { op: 'add_container', as: '$tela', width: 340, height: 160, background: '#FFFFFF' },
+  { op: 'add_container', as: '$screen', width: 340, height: 160, background: '#FFFFFF' },
   {
     op: 'create_marking',
     as: '$card',
-    container: '$tela',
+    container: '$screen',
     rect: { x: 20, y: 20, width: 300, height: 120 },
     annotation: { type: 'lib/card', values: {} },
   },
@@ -202,9 +202,9 @@ const hex = (r: Raster, x: number, y: number): string => {
 
 beforeAll(async () => {
   base = mkdtempSync(join(tmpdir(), 'mapping-let-'));
-  writeProject('com-let', null);
-  writeProject('sem-let', byHand());
-  writeLibrary('valida');
+  writeProject('with-let', null);
+  writeProject('without-let', byHand());
+  writeLibrary('valid');
   for (const kind of ['indefinida', 'ciclo', 'tipo', 'nome', 'v3'])
     writeLibrary(kind, kind);
   mcp = await connect([base]);
@@ -221,10 +221,10 @@ interface Validated {
   warnings: { message: string }[];
 }
 
-describe('validate_library com let e $var (servidor real)', () => {
-  it('aceita a biblioteca com variáveis, sem erro nem aviso (nível 3)', async () => {
+describe('validate_library with let and $var (real server)', () => {
+  it('accepts the library with variables, without error or warning (level 3)', async () => {
     const result = ok(
-      await mcp.call<Validated>('validate_library', { path: 'bibliotecas/valida' }),
+      await mcp.call<Validated>('validate_library', { path: 'libraries/valid' }),
     );
     expect(result.errors).toEqual([]);
     expect(result.warnings).toEqual([]);
@@ -240,9 +240,9 @@ describe('validate_library com let e $var (servidor real)', () => {
       'template.children[0].children[0].gap.$var(gap).$mul[0]',
       'must be a number',
     ],
-  ])('%s: o erro e o caminho do uso', async (name, path, message) => {
+  ])('%s: the error and the path of the use', async (name, path, message) => {
     const result = ok(
-      await mcp.call<Validated>('validate_library', { path: `bibliotecas/${name}` }),
+      await mcp.call<Validated>('validate_library', { path: `libraries/${name}` }),
     );
     expect(result.valid).toBe(false);
     expect(result.errors).toEqual([
@@ -250,9 +250,9 @@ describe('validate_library com let e $var (servidor real)', () => {
     ]);
   });
 
-  it('v3: cada let e $var é só permitido com formatVersion 4', async () => {
+  it('v3: let and $var are only allowed with formatVersion 4', async () => {
     const result = ok(
-      await mcp.call<Validated>('validate_library', { path: 'bibliotecas/v3' }),
+      await mcp.call<Validated>('validate_library', { path: 'libraries/v3' }),
     );
     expect(result.valid).toBe(false);
     const paths = result.errors.map((e) => e.path);
@@ -263,11 +263,11 @@ describe('validate_library com let e $var (servidor real)', () => {
   });
 });
 
-describe('get_component de um componente com let e $var', () => {
-  it('mostra o arquivo como está, com let e $var (a troca é só na leitura do desenho)', async () => {
+describe('get_component of a component with let and $var', () => {
+  it('shows the file as it is, with let and $var (the substitution is only when reading the drawing)', async () => {
     const got = ok(
       await mcp.call<{ component: { template: Doc } | null }>('get_component', {
-        path: 'bibliotecas/valida',
+        path: 'libraries/valid',
         type: 'card',
       }),
     );
@@ -277,29 +277,29 @@ describe('get_component de um componente com let e $var', () => {
   });
 });
 
-describe('render_marking de um componente com let e $var', () => {
-  it('o PNG é igual ao do componente escrito sem variáveis', async () => {
-    const withVars = await render('com-let');
-    const without = await render('sem-let');
+describe('render_marking of a component with let and $var', () => {
+  it('the PNG equals that of the component written without variables', async () => {
+    const withVars = await render('with-let');
+    const without = await render('without-let');
     expect(withVars.out.json).toMatchObject({ width: 300, height: 120 });
     expect(
       Buffer.from(withVars.out.image.bytes).equals(Buffer.from(without.out.image.bytes)),
     ).toBe(true);
   });
 
-  it('o $index é o da linha do uso, o de dentro esconde o de fora e $size vale o da instância', async () => {
-    const { raster } = await render('com-let');
-    // os quadrados de 20 a partir de (20, 20), vão 10: vermelho, vermelho, azul, azul
+  it('the $index is that of the use row, the inner one hides the outer one and $size is the instance one', async () => {
+    const { raster } = await render('with-let');
+    // the 20 px squares from (20, 20), gap 10: red, red, blue, blue
     expect([30, 60, 90, 120].map((x) => hex(raster, x, 30))).toEqual([
       'D32F2F',
       'D32F2F',
       '1976D2',
       '1976D2',
     ]);
-    expect(hex(raster, 45, 30)).toBe('FFFFFF'); // o vão de 10 (a variável gap)
-    expect(hex(raster, 200, 40)).toBe('2E7D32'); // a tone do quadro de dentro
-    expect(hex(raster, 260, 40)).toBe('FF9800'); // a tone da raiz
-    expect(hex(raster, 100, 105)).toBe('6A1B9A'); // a barra: metade de 300
+    expect(hex(raster, 45, 30)).toBe('FFFFFF'); // the gap of 10 (the gap variable)
+    expect(hex(raster, 200, 40)).toBe('2E7D32'); // the tone of the inner frame
+    expect(hex(raster, 260, 40)).toBe('FF9800'); // the tone of the root
+    expect(hex(raster, 100, 105)).toBe('6A1B9A'); // the bar: half of 300
     expect(hex(raster, 160, 105)).toBe('FFFFFF');
   });
 });

@@ -1,4 +1,4 @@
-// CF7: validate_library com o conjunto de ícones (`icons`, arquivo `mapping-icons`).
+// CF7: validate_library with the icon set (`icons`, `mapping-icons` file).
 import {
   cpSync,
   mkdirSync,
@@ -36,7 +36,7 @@ beforeAll(async () => {
   const root = join(base, 'raiz');
   mkdirSync(root, { recursive: true });
   cpSync(ICONS, join(root, 'ok'), { recursive: true });
-  // Arquivo de ícones errado: o nome "check" some do conjunto.
+  // Wrong icons file: the name "check" vanishes from the set.
   cpSync(ICONS, join(root, 'errado'), { recursive: true });
   const file = join(root, 'errado', 'icons', 'set.json');
   const set = JSON.parse(readFileSync(file, 'utf8')) as {
@@ -45,7 +45,7 @@ beforeAll(async () => {
   set.icons.Check = set.icons.check;
   delete set.icons.check;
   writeFileSync(file, JSON.stringify(set));
-  // Nome literal fora do conjunto.
+  // Literal name outside the set.
   cpSync(ICONS, join(root, 'literal'), { recursive: true });
   const comp = join(root, 'literal', 'components', 'badge.json');
   const badge = JSON.parse(readFileSync(comp, 'utf8')) as {
@@ -61,8 +61,8 @@ afterAll(async () => {
   rmSync(base, { recursive: true, force: true });
 });
 
-describe('validate_library com icons', () => {
-  it('aprova o pacote de teste, sem erros nem avisos, e resume o arquivo de ícones', async () => {
+describe('validate_library with icons', () => {
+  it('approves the test package, with no errors or warnings, and summarizes the icons file', async () => {
     const result = ok(await mcp.call<Validated>('validate_library', { path: 'ok' }));
     expect(result.errors).toEqual([]);
     expect(result.warnings).toEqual([]);
@@ -74,7 +74,7 @@ describe('validate_library com icons', () => {
     });
   });
 
-  it('com o arquivo de ícones errado devolve o erro do arquivo', async () => {
+  it("with the wrong icons file it returns the file's error", async () => {
     const result = ok(await mcp.call<Validated>('validate_library', { path: 'errado' }));
     expect(result.valid).toBe(false);
     expect(result.errors.map((e) => `${e.file} ${e.path}: ${e.message}`)).toContain(
@@ -82,7 +82,7 @@ describe('validate_library com icons', () => {
     );
   });
 
-  it('recusa um nome literal que não está no conjunto', async () => {
+  it('refuses a literal name that is not in the set', async () => {
     const result = ok(await mcp.call<Validated>('validate_library', { path: 'literal' }));
     expect(result.valid).toBe(false);
     expect(result.errors).toEqual([

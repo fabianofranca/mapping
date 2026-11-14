@@ -1,10 +1,10 @@
 import { encodeImage } from '../../mcp/image/codecs';
 import type { Raster } from '../../mcp/image/raster';
 
-// Imagens de fixture geradas na hora (PNG, JPEG com EXIF e WebP), com conteúdo conhecido.
-// Os quadrantes coloridos mostram para onde a imagem girou.
+// Fixture images generated on the fly (PNG, JPEG with EXIF and WebP), with known content.
+// The colored quadrants show where the image was rotated to.
 
-/** Raster de teste: cada quadrante com uma cor, para conferir a rotação. */
+/** Test raster: each quadrant with its own color, to check the rotation. */
 export function quadrants(width: number, height: number): Raster {
   const data = new Uint8ClampedArray(width * height * 4);
   const colors = [
@@ -34,14 +34,14 @@ export async function encodePng(p: Raster): Promise<Buffer> {
   return Buffer.from(await encodeImage(p, 'png'));
 }
 
-/** JPEG (mozjpeg) e, com `orientation`, um segmento APP1 Exif com a tag de orientação. */
+/** JPEG (mozjpeg) and, with `orientation`, an APP1 Exif segment with the orientation tag. */
 export async function encodeJpegWithExif(
   p: Raster,
   orientation?: number,
 ): Promise<Buffer> {
   const jpeg = Buffer.from(await encodeImage(p, 'jpeg', { quality: 90 }));
   if (orientation === undefined) return jpeg;
-  // TIFF big-endian: cabeçalho, IFD0 com uma entrada (0x0112, SHORT, 1, valor).
+  // Big-endian TIFF: header, IFD0 with one entry (0x0112, SHORT, 1, value).
   const tiff = Buffer.from([
     0x4d,
     0x4d,
@@ -87,11 +87,11 @@ export async function encodeWebpFixture(p: Raster, quality: number): Promise<Buf
   );
 }
 
-/** Largura e altura de um WebP (VP8, VP8L ou VP8X), lidas do cabeçalho. */
+/** Width and height of a WebP (VP8, VP8L or VP8X), read from the header. */
 export function webpSize(bytes: Uint8Array): { width: number; height: number } {
   const b = Buffer.from(bytes);
   if (b.toString('ascii', 0, 4) !== 'RIFF' || b.toString('ascii', 8, 12) !== 'WEBP') {
-    throw new Error('não é WebP');
+    throw new Error('not a WebP');
   }
   const kind = b.toString('ascii', 12, 16);
   if (kind === 'VP8L') {

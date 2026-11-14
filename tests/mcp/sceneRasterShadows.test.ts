@@ -1,5 +1,5 @@
-// MF2 no PNG do MCP: a lista de sombras (a primeira por cima), `shadow.spread` (forma, raios e
-// negativo) e o contorno com vão arredondado (`stroke.gaps`).
+// MF2 in the MCP PNG: the shadow list (the first on top), `shadow.spread` (shape, radii and
+// negative) and the outline with a rounded gap (`stroke.gaps`).
 import { describe, expect, it } from 'vitest';
 import { approximateMeasurer } from '../../src/model';
 import { baseNode, type SceneNode, type Shadow } from '../../src/model/components/scene';
@@ -27,7 +27,7 @@ function paint(raster: Raster, root: SceneNode): void {
   });
 }
 
-/** Um retângulo de 20×20 em (20,20), sem preenchimento: só a sombra aparece. */
+/** A 20×20 rectangle at (20,20), without fill: only the shadow shows. */
 const ghost = (effects: Shadow[], radius = 0): SceneNode => ({
   ...baseNode({ id: 'r', name: 'r', width: 20, height: 20, effects }),
   type: 'rect',
@@ -42,8 +42,8 @@ const sharp = (color: string, spread?: number, x = 0, y = 0): Shadow => ({
   ...(spread === undefined ? {} : { spread }),
 });
 
-describe('shadow.spread no raster', () => {
-  it('o spread cresce a forma da sombra em cada lado', () => {
+describe('shadow.spread in the raster', () => {
+  it('the spread grows the shadow shape on each side', () => {
     const raster = canvas(60, 60);
     paint(raster, ghost([sharp('#ff0000', 4)]));
     expect(pixel(raster, 17, 30)).toEqual([255, 0, 0, 255]);
@@ -52,10 +52,10 @@ describe('shadow.spread no raster', () => {
     expect(pixel(raster, 45, 30)).toEqual(WHITE);
   });
 
-  it('o raio do canto cresce com o spread (canto de raio 4 + 4 = 8)', () => {
+  it('the corner radius grows with the spread (corner of radius 4 + 4 = 8)', () => {
     const raster = canvas(60, 60);
     paint(raster, ghost([sharp('#ff0000', 4)], 4));
-    // A forma da sombra vai de (16,16) a (44,44): o canto reto estaria em (16,16).
+    // The shadow shape goes from (16,16) to (44,44): the square corner would be at (16,16).
     expect(pixel(raster, 17, 17)).toEqual(WHITE);
     expect(pixel(raster, 24, 24)).toEqual([255, 0, 0, 255]);
   });
@@ -67,7 +67,7 @@ describe('shadow.spread no raster', () => {
     expect(pixel(raster, 25, 30)).toEqual([255, 0, 0, 255]);
   });
 
-  it('sem spread a sombra é a forma do nó', () => {
+  it('without spread the shadow is the node shape', () => {
     const raster = canvas(60, 60);
     paint(raster, ghost([sharp('#ff0000', undefined, 2, 0)]));
     expect(pixel(raster, 21, 30)).toEqual(WHITE);
@@ -75,14 +75,14 @@ describe('shadow.spread no raster', () => {
   });
 });
 
-describe('lista de sombras no raster', () => {
-  it('a primeira sombra da lista fica por cima da segunda', () => {
+describe('shadow list in the raster', () => {
+  it('the first shadow in the list is on top of the second', () => {
     const raster = canvas(60, 60);
     paint(raster, ghost([sharp('#ff0000', 4), sharp('#0000ff', 4)]));
     expect(pixel(raster, 17, 30)).toEqual([255, 0, 0, 255]);
   });
 
-  it('as duas aparecem onde não se cobrem', () => {
+  it('both show where they do not overlap', () => {
     const raster = canvas(60, 60);
     paint(raster, ghost([sharp('#ff0000', 2), sharp('#0000ff', 6)]));
     expect(pixel(raster, 19, 30)).toEqual([255, 0, 0, 255]);
@@ -90,7 +90,7 @@ describe('lista de sombras no raster', () => {
   });
 });
 
-describe('contorno com vão (stroke.gaps) no raster', () => {
+describe('outline with a gap (stroke.gaps) in the raster', () => {
   const outlined = (): SceneNode => ({
     ...baseNode({ id: 'o', name: 'o', width: 40, height: 24 }),
     type: 'rect',
@@ -104,15 +104,15 @@ describe('contorno com vão (stroke.gaps) no raster', () => {
     },
   });
 
-  it('o lado de cima some no trecho do vão e fica fora dele', () => {
+  it('the top side disappears in the gap span and stays outside it', () => {
     const raster = canvas(60, 50);
     paint(raster, outlined());
-    expect(pixel(raster, 10 + 22, 10)).toEqual(WHITE); // no vão
-    expect(pixel(raster, 10 + 34, 10)).toEqual([255, 0, 0, 255]); // depois do vão
-    expect(pixel(raster, 10 + 10, 10)).toEqual([255, 0, 0, 255]); // antes do vão
+    expect(pixel(raster, 10 + 22, 10)).toEqual(WHITE); // in the gap
+    expect(pixel(raster, 10 + 34, 10)).toEqual([255, 0, 0, 255]); // after the gap
+    expect(pixel(raster, 10 + 10, 10)).toEqual([255, 0, 0, 255]); // before the gap
   });
 
-  it('os quatro cantos seguem o raio e os outros lados ficam inteiros', () => {
+  it('the four corners follow the radius and the other sides stay whole', () => {
     const raster = canvas(60, 50);
     paint(raster, outlined());
     expect(pixel(raster, 10, 10)).toEqual(WHITE); // o canto reto ficaria aqui
@@ -121,12 +121,12 @@ describe('contorno com vão (stroke.gaps) no raster', () => {
     expect(pixel(raster, 10, 22)).toEqual([255, 0, 0, 255]); // lado esquerdo
     expect(pixel(raster, 49, 22)).toEqual([255, 0, 0, 255]); // lado direito
     expect(pixel(raster, 30, 33)).toEqual([255, 0, 0, 255]); // embaixo
-    expect(pixel(raster, 10 + 40 - k - 1, 10 + 24 - k - 1)[1]).toBeLessThan(200); // canto de baixo
+    expect(pixel(raster, 10 + 40 - k - 1, 10 + 24 - k - 1)[1]).toBeLessThan(200); // bottom corner
   });
 });
 
-describe('lista de sombras em nó que não é frame, rect nem ellipse', () => {
-  it('desenha só a primeira sombra, como a app', () => {
+describe('shadow list on a node that is not a frame, rect or ellipse', () => {
+  it('draws only the first shadow, like the app', () => {
     const line: SceneNode = {
       ...baseNode({
         id: 'p',

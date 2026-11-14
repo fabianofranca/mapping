@@ -6,9 +6,9 @@ import type { Annotation, Project } from '../../src/model';
 import { acceptAllAndApply, ok, propose, readProject } from './proposalSupport';
 import { codeOf, connect, type Connection } from './workspace';
 
-// Etapa #679 (CF2): o `ref` para a anotação inteira no MCP. O lote aceita
-// `{ "annotation": "<ref|id|$apelido>" }` sozinho (campo e célula); `get_annotation` e
-// `get_marking` mostram o `ref` e o backlink; `get_code_hints` expande os alvos (`targets`).
+// Stage #679 (CF2): the `ref` to the whole annotation in the MCP. The batch accepts
+// `{ "annotation": "<ref|id|$alias>" }` alone (field and cell); `get_annotation` and
+// `get_marking` show the `ref` and the backlink; `get_code_hints` expands the targets (`targets`).
 
 interface Planned {
   valid: boolean;
@@ -25,7 +25,7 @@ const SPEC = {
   layers: [
     {
       id: 'componentes',
-      name: 'Componentes',
+      name: 'Components',
       color: '#1565C0',
       annotationTypes: [
         {
@@ -33,7 +33,7 @@ const SPEC = {
           name: 'Item',
           labelField: 'titulo',
           allowedChildren: [{ layer: 'eventos' }],
-          childRoles: [{ id: 'click', name: 'Clique' }],
+          childRoles: [{ id: 'click', name: 'Click' }],
           code: { web: { symbol: 'Item', params: { titulo: 'title' } } },
           fields: [
             { key: 'titulo', type: 'string' },
@@ -46,19 +46,19 @@ const SPEC = {
         },
         {
           id: 'outro',
-          name: 'Outro',
+          name: 'Other',
           fields: [{ key: 'titulo', type: 'string' }],
         },
       ],
     },
     {
       id: 'eventos',
-      name: 'Eventos',
+      name: 'Events',
       color: '#E53935',
       annotationTypes: [
         {
           id: 'replace-plugins',
-          name: 'Substituir plugins',
+          name: 'Replace plugins',
           labelField: 'titulo',
           code: { web: { symbol: 'replacePlugins', params: { plugins: 'plugins' } } },
           fields: [
@@ -135,11 +135,11 @@ const item = (as: string, ann: string, title: string, x: number) => ({
   annotation: { type: 'sdui/item', values: { titulo: title } },
 });
 
-describe('lote: ref para a anotação inteira', () => {
-  it('campo e célula com { annotation: "$p1" } sozinho gravam { annotationId }', async () => {
+describe('batch: ref to the whole annotation', () => {
+  it('field and cell with { annotation: "$p1" } alone write { annotationId }', async () => {
     const operations = [
-      item('$m1', '$p1', 'Alvo A', 0),
-      item('$m2', '$p2', 'Alvo B', 200),
+      item('$m1', '$p1', 'Target A', 0),
+      item('$m2', '$p2', 'Target B', 200),
       {
         op: 'create_marking',
         as: '$m3',
@@ -161,8 +161,8 @@ describe('lote: ref para a anotação inteira', () => {
     const planned = await plan(operations);
     expect(planned.valid, JSON.stringify(planned.errors)).toBe(true);
     const p = await apply(operations);
-    const a = byTitle(p, 'Alvo A');
-    const b = byTitle(p, 'Alvo B');
+    const a = byTitle(p, 'Target A');
+    const b = byTitle(p, 'Target B');
     const event = byTitle(p, 'Evento 1');
     expect(event.values!.unico).toEqual({ annotationId: a.id });
     const rows = event.values!.plugins as { item: unknown }[];
@@ -173,36 +173,36 @@ describe('lote: ref para a anotação inteira', () => {
   });
 
   it('o formato gravado { annotationId } continua aceito', async () => {
-    const first = await apply([item('$m1', '$p1', 'Alvo G', 0)]);
-    const target = byTitle(first, 'Alvo G');
+    const first = await apply([item('$m1', '$p1', 'Target G', 0)]);
+    const target = byTitle(first, 'Target G');
     const p = await apply([
       {
         op: 'create_marking',
         rect: { ...rect, x: 400 },
         annotation: {
           type: 'sdui/replace-plugins',
-          values: { titulo: 'Gravado', unico: { annotationId: target.id } },
+          values: { titulo: 'Saved', unico: { annotationId: target.id } },
         },
       },
     ]);
-    expect(byTitle(p, 'Gravado').values!.unico).toEqual({ annotationId: target.id });
+    expect(byTitle(p, 'Saved').values!.unico).toEqual({ annotationId: target.id });
   });
 
-  it('alvo de tipo que o campo não aceita: ref-not-accepted na operação certa', async () => {
+  it('target of a type the field does not accept: ref-not-accepted on the right operation', async () => {
     const planned = await plan([
       {
         op: 'create_marking',
         as: '$m1',
         rect,
         annotationAs: '$p1',
-        annotation: { type: 'sdui/outro', values: { titulo: 'Fora' } },
+        annotation: { type: 'sdui/outro', values: { titulo: 'Outside' } },
       },
       {
         op: 'create_marking',
         rect: { ...rect, x: 300 },
         annotation: {
           type: 'sdui/replace-plugins',
-          values: { titulo: 'Ruim', unico: { annotation: '$p1' } },
+          values: { titulo: 'Bad', unico: { annotation: '$p1' } },
         },
       },
     ]);
@@ -234,28 +234,28 @@ interface View {
 }
 
 describe('leituras', () => {
-  it('get_annotation da origem mostra o ref com o rótulo; get_marking do alvo, o backlink', async () => {
+  it('get_annotation of the source shows the ref with the label; get_marking of the target, the backlink', async () => {
     const operations = [
-      item('$m1', '$p1', 'Alvo L', 0),
+      item('$m1', '$p1', 'Target L', 0),
       {
         op: 'create_marking',
         rect: { ...rect, x: 400 },
         annotation: {
           type: 'sdui/replace-plugins',
-          values: { titulo: 'Origem L', plugins: [{ item: { annotation: '$p1' } }] },
+          values: { titulo: 'Source L', plugins: [{ item: { annotation: '$p1' } }] },
         },
       },
     ];
     const p = await apply(operations);
-    const target = byTitle(p, 'Alvo L');
-    const origin = byTitle(p, 'Origem L');
+    const target = byTitle(p, 'Target L');
+    const origin = byTitle(p, 'Source L');
     const fromOrigin = ok(await mcp.call<View>('get_annotation', { ref: aRef(origin) }));
     expect(fromOrigin.refs).toEqual([
       expect.objectContaining({
         field: 'plugins[1].item',
         row: 0,
         column: 'item',
-        to: 'Alvo L',
+        to: 'Target L',
         target: expect.objectContaining({ kind: 'annotation' }),
       }),
     ]);
@@ -267,23 +267,23 @@ describe('leituras', () => {
     expect(marking.layers[0]!.annotations[0]!.backlinks).toEqual([
       expect.objectContaining({
         from: aRef(origin),
-        fromLabel: 'Substituir plugins Origem L',
-        fields: [{ field: 'plugins[1].item', row: 0, column: 'item', to: 'Alvo L' }],
+        fromLabel: 'Replace plugins Source L',
+        fields: [{ field: 'plugins[1].item', row: 0, column: 'item', to: 'Target L' }],
       }),
     ]);
   });
 
-  it('refs: row/column de uma célula (0-based) e null de um campo; field segue 1-based', async () => {
+  it('refs: row/column of a cell (0-based) and null for a field; field stays 1-based', async () => {
     const p = await apply([
-      item('$m1', '$p1', 'Alvo R1', 0),
-      item('$m2', '$p2', 'Alvo R2', 200),
+      item('$m1', '$p1', 'Target R1', 0),
+      item('$m2', '$p2', 'Target R2', 200),
       {
         op: 'create_marking',
         rect: { ...rect, x: 400 },
         annotation: {
           type: 'sdui/replace-plugins',
           values: {
-            titulo: 'Origem R',
+            titulo: 'Source R',
             unico: { annotation: '$p1' },
             plugins: [{ item: { annotation: '$p1' } }, { item: { annotation: '$p2' } }],
           },
@@ -291,7 +291,7 @@ describe('leituras', () => {
       },
     ]);
     const view = ok(
-      await mcp.call<View>('get_annotation', { ref: aRef(byTitle(p, 'Origem R')) }),
+      await mcp.call<View>('get_annotation', { ref: aRef(byTitle(p, 'Source R')) }),
     );
     expect(view.refs!.map((r) => [r.field, r.row, r.column])).toEqual([
       ['unico', null, null],
@@ -300,17 +300,17 @@ describe('leituras', () => {
     ]);
   });
 
-  it('backlinks: uma entrada por origem, com os fields na ordem dos campos', async () => {
+  it('backlinks: one entry per source, with the fields in field order', async () => {
     const p = await apply([
-      item('$m1', '$p1', 'Alvo G1', 0),
-      item('$m2', '$p2', 'Alvo G2', 200),
+      item('$m1', '$p1', 'Target G1', 0),
+      item('$m2', '$p2', 'Target G2', 200),
       {
         op: 'create_marking',
         rect: { ...rect, x: 400 },
         annotation: {
           type: 'sdui/replace-plugins',
           values: {
-            titulo: 'Origem G1',
+            titulo: 'Source G1',
             unico: { annotation: '$p2' },
             plugins: [{ item: { annotation: '$p1' } }, { item: { annotation: '$p2' } }],
           },
@@ -321,29 +321,29 @@ describe('leituras', () => {
         rect: { ...rect, x: 600 },
         annotation: {
           type: 'sdui/replace-plugins',
-          values: { titulo: 'Origem G2', unico: { annotation: '$p2' } },
+          values: { titulo: 'Source G2', unico: { annotation: '$p2' } },
         },
       },
     ]);
-    const target = byTitle(p, 'Alvo G2');
+    const target = byTitle(p, 'Target G2');
     const view = ok(await mcp.call<View>('get_annotation', { ref: aRef(target) }));
     expect(view.backlinks).toEqual([
       expect.objectContaining({
-        from: aRef(byTitle(p, 'Origem G1')),
+        from: aRef(byTitle(p, 'Source G1')),
         fields: [
-          { field: 'unico', row: null, column: null, to: 'Alvo G2' },
-          { field: 'plugins[2].item', row: 1, column: 'item', to: 'Alvo G2' },
+          { field: 'unico', row: null, column: null, to: 'Target G2' },
+          { field: 'plugins[2].item', row: 1, column: 'item', to: 'Target G2' },
         ],
       }),
       expect.objectContaining({
-        from: aRef(byTitle(p, 'Origem G2')),
-        fields: [{ field: 'unico', row: null, column: null, to: 'Alvo G2' }],
+        from: aRef(byTitle(p, 'Source G2')),
+        fields: [{ field: 'unico', row: null, column: null, to: 'Target G2' }],
       }),
     ]);
   });
 });
 
-describe('lote: add_container com beside', () => {
+describe('batch: add_container with beside', () => {
   const container = (as: string, name: string, height: number, extra = {}) => ({
     op: 'add_container',
     as,
@@ -354,32 +354,32 @@ describe('lote: add_container com beside', () => {
     ...extra,
   });
 
-  it('beside "$tela" dá ao "depois" a escala da tela', async () => {
+  it('beside "$screen" gives the "after" the scale of the screen', async () => {
     const p = await apply([
-      container('$tela', 'Tela BS', 844),
-      container('$depois', 'Depois BS', 300, { beside: '$tela' }),
+      container('$screen', 'Screen BS', 844),
+      container('$after', 'After BS', 300, { beside: '$screen' }),
     ]);
-    const tela = p.containers.find((c) => c.name === 'Tela BS')!;
-    const depois = p.containers.find((c) => c.name === 'Depois BS')!;
+    const tela = p.containers.find((c) => c.name === 'Screen BS')!;
+    const depois = p.containers.find((c) => c.name === 'After BS')!;
     expect(depois.placement.scale).toBe(tela.placement.scale);
     expect(depois.placement.y).toBe(tela.placement.y);
     expect(depois.placement.x).toBeGreaterThan(tela.placement.x);
   });
 
-  it('sem beside as escalas seguem diferentes (regra padrão)', async () => {
+  it('without beside the scales stay different (default rule)', async () => {
     const p = await apply([
-      container('$tela', 'Tela SB', 844),
-      container('$depois', 'Depois SB', 300),
+      container('$screen', 'Screen SB', 844),
+      container('$after', 'After SB', 300),
     ]);
-    const tela = p.containers.find((c) => c.name === 'Tela SB')!;
-    const depois = p.containers.find((c) => c.name === 'Depois SB')!;
+    const tela = p.containers.find((c) => c.name === 'Screen SB')!;
+    const depois = p.containers.find((c) => c.name === 'After SB')!;
     expect(depois.placement.scale).not.toBe(tela.placement.scale);
   });
 
-  it('beside com center é invalid-arguments', async () => {
+  it('beside with center is invalid-arguments', async () => {
     const planned = await plan([
-      container('$tela', 'Tela BC', 844),
-      container('$depois', 'Depois BC', 300, { beside: '$tela', center: { x: 0, y: 0 } }),
+      container('$screen', 'Screen BC', 844),
+      container('$after', 'After BC', 300, { beside: '$screen', center: { x: 0, y: 0 } }),
     ]);
     expect(planned.valid).toBe(false);
     expect(planned.errors![0]).toMatchObject({ index: 1, code: 'invalid-arguments' });
@@ -415,12 +415,12 @@ interface Hints {
 }
 
 describe('get_code_hints: targets', () => {
-  it('um alvo por linha, na ordem, expandido, com eventos e filhas; types inclui os alvos', async () => {
+  it('one target per row, in order, expanded, with events and children; types includes the targets', async () => {
     const operations = [
       {
         op: 'add_container',
-        as: '$depois',
-        name: 'Tela (depois)',
+        as: '$after',
+        name: 'Screen (after)',
         width: 400,
         height: 300,
         background: '#FFFFFF',
@@ -428,26 +428,26 @@ describe('get_code_hints: targets', () => {
       {
         op: 'create_marking',
         as: '$m1',
-        container: '$depois',
+        container: '$after',
         rect: { x: 10, y: 10, width: 180, height: 100 },
         annotationAs: '$p1',
-        annotation: { type: 'sdui/item', values: { titulo: 'Primeiro' } },
+        annotation: { type: 'sdui/item', values: { titulo: 'First' } },
       },
       {
         op: 'create_marking',
         as: '$filha',
-        container: '$depois',
+        container: '$after',
         rect: { x: 20, y: 20, width: 60, height: 30 },
         annotationAs: '$pf',
-        annotation: { type: 'sdui/item', values: { titulo: 'Dentro' } },
+        annotation: { type: 'sdui/item', values: { titulo: 'Inside' } },
       },
       {
         op: 'create_marking',
         as: '$m2',
-        container: '$depois',
+        container: '$after',
         rect: { x: 200, y: 10, width: 180, height: 100 },
         annotationAs: '$p2',
-        annotation: { type: 'sdui/item', values: { titulo: 'Segundo' } },
+        annotation: { type: 'sdui/item', values: { titulo: 'Second' } },
       },
       {
         op: 'create_annotation',
@@ -455,7 +455,7 @@ describe('get_code_hints: targets', () => {
         type: 'sdui/replace-plugins',
         owner: '$p2',
         role: 'click',
-        values: { titulo: 'Clique do segundo' },
+        values: { titulo: 'Click of the second' },
       },
       {
         op: 'create_marking',
@@ -465,14 +465,14 @@ describe('get_code_hints: targets', () => {
         annotation: {
           type: 'sdui/replace-plugins',
           values: {
-            titulo: 'Evento T',
+            titulo: 'Event T',
             plugins: [{ item: { annotation: '$p2' } }, { item: { annotation: '$p1' } }],
           },
         },
       },
     ];
     const p = await apply(operations);
-    const event = byTitle(p, 'Evento T');
+    const event = byTitle(p, 'Event T');
     const hints = ok(
       await mcp.call<Hints>('get_code_hints', {
         ref: mRef(event.markingId),
@@ -481,38 +481,38 @@ describe('get_code_hints: targets', () => {
     );
     const root = hints.tree.annotations![0]!;
     expect(root.targets!.map((t) => [t.field, t.row, t.column, t.label])).toEqual([
-      ['plugins', 0, 'item', 'Segundo'],
-      ['plugins', 1, 'item', 'Primeiro'],
+      ['plugins', 0, 'item', 'Second'],
+      ['plugins', 1, 'item', 'First'],
     ]);
     const [segundo, primeiro] = root.targets!;
     expect(segundo!.annotation).toMatchObject({
       type: 'sdui/item',
-      label: 'Segundo',
-      values: { titulo: 'Segundo' },
-      args: [{ field: 'titulo', value: 'Segundo' }],
+      label: 'Second',
+      values: { titulo: 'Second' },
+      args: [{ field: 'titulo', value: 'Second' }],
     });
-    // eventos do item, no papel deles
+    // the item events, in their role
     expect(segundo!.annotation!.linked).toEqual([
       expect.objectContaining({
         type: 'sdui/replace-plugins',
-        label: 'Clique do segundo',
+        label: 'Click of the second',
         parentRole: 'click',
       }),
     ]);
-    // a marcação do alvo tem uma filha com o próprio componente
+    // the target marking has a child with its own component
     expect(primeiro!.children).toHaveLength(1);
-    expect(primeiro!.children![0]!.annotations![0]).toMatchObject({ label: 'Dentro' });
-    // compatibilidade: values da origem continuam com o rótulo
+    expect(primeiro!.children![0]!.annotations![0]).toMatchObject({ label: 'Inside' });
+    // compatibility: the source values still carry the label
     expect(root.values).toMatchObject({
-      plugins: [{ item: 'Segundo' }, { item: 'Primeiro' }],
+      plugins: [{ item: 'Second' }, { item: 'First' }],
     });
     expect(root.args).toEqual([
       {
         field: 'plugins',
         name: 'plugins',
         value: [
-          { nota: null, item: 'Segundo' },
-          { nota: null, item: 'Primeiro' },
+          { nota: null, item: 'Second' },
+          { nota: null, item: 'First' },
         ],
       },
     ]);
@@ -522,21 +522,21 @@ describe('get_code_hints: targets', () => {
     ]);
   });
 
-  it('alvo que aponta de volta (A → B → A): a segunda vez vem só com o rótulo', async () => {
+  it('target that points back (A → B → A): the second time comes only with the label', async () => {
     const first = await apply([
-      item('$m1', '$p1', 'Item volta', 0),
+      item('$m1', '$p1', 'Item loop', 0),
       {
         op: 'create_marking',
         rect: { ...rect, x: 300 },
         annotationAs: '$e1',
         annotation: {
           type: 'sdui/replace-plugins',
-          values: { titulo: 'Evento volta', plugins: [{ item: { annotation: '$p1' } }] },
+          values: { titulo: 'Event loop', plugins: [{ item: { annotation: '$p1' } }] },
         },
       },
     ]);
-    const event = byTitle(first, 'Evento volta');
-    const itemAnn = byTitle(first, 'Item volta');
+    const event = byTitle(first, 'Event loop');
+    const itemAnn = byTitle(first, 'Item loop');
     await apply([
       {
         op: 'update_annotation',
@@ -551,26 +551,26 @@ describe('get_code_hints: targets', () => {
       }),
     );
     const [target] = hints.tree.annotations![0]!.targets!;
-    expect(target!.annotation!.label).toBe('Item volta');
+    expect(target!.annotation!.label).toBe('Item loop');
     const [back] = target!.annotation!.targets!;
     expect(back).toMatchObject({
       field: 'origem',
       row: null,
       column: null,
-      label: 'Evento volta',
+      label: 'Event loop',
       repeated: true,
     });
     expect(back!.annotation).toBeUndefined();
   });
 
-  it('ciclo pela hierarquia (filha que aponta para a dona): termina com nó repeated', async () => {
+  it('cycle through the hierarchy (child that points to the owner): ends with a repeated node', async () => {
     const created = await apply([
       {
         op: 'create_marking',
         as: '$mp',
         rect: { x: 0, y: 1000, width: 200, height: 100 },
         annotationAs: '$ap',
-        annotation: { type: 'sdui/item', values: { titulo: 'Dona A' } },
+        annotation: { type: 'sdui/item', values: { titulo: 'Owner A' } },
       },
       {
         op: 'create_marking',
@@ -578,20 +578,20 @@ describe('get_code_hints: targets', () => {
         annotationAs: '$ac',
         annotation: {
           type: 'sdui/replace-plugins',
-          values: { titulo: 'Filha A', unico: { annotation: '$ap' } },
+          values: { titulo: 'Child A', unico: { annotation: '$ap' } },
         },
       },
     ]);
     const hints = ok(
       await mcp.call<Hints>('get_code_hints', {
-        ref: mRef(byTitle(created, 'Dona A').markingId),
+        ref: mRef(byTitle(created, 'Owner A').markingId),
         platform: 'web',
       }),
     );
     expect(JSON.stringify(hints)).toContain('"repeated":true');
   });
 
-  it('ciclo pelo vínculo dona/filha (ref inteiro para a dona): termina com nó repeated', async () => {
+  it('cycle through the owner/child link (whole ref to the owner): ends with a repeated node', async () => {
     const created = await apply([
       {
         op: 'create_marking',
@@ -606,7 +606,7 @@ describe('get_code_hints: targets', () => {
         type: 'sdui/replace-plugins',
         owner: '$ap',
         role: 'click',
-        values: { titulo: 'Vinculada B', unico: { annotation: '$ap' } },
+        values: { titulo: 'Linked B', unico: { annotation: '$ap' } },
       },
     ]);
     const hints = ok(
@@ -618,10 +618,10 @@ describe('get_code_hints: targets', () => {
     expect(JSON.stringify(hints)).toContain('"repeated":true');
   });
 
-  it('ref de campo (key) não é expandido', async () => {
+  it('field ref (key) is not expanded', async () => {
     const hints = ok(
       await mcp.call<Hints>('get_code_hints', {
-        ref: mRef(byTitle(readProject(dir), 'Evento T').markingId),
+        ref: mRef(byTitle(readProject(dir), 'Event T').markingId),
         platform: 'web',
       }),
     );
@@ -632,10 +632,10 @@ describe('get_code_hints: targets', () => {
 });
 
 describe('o lote do AGENT-GUIDE', () => {
-  it('o lote de "Conteúdo fora da imagem", como está escrito, é válido, aplica e chega ao get_code_hints', async () => {
+  it('the batch of "Content outside the image", as written, is valid, applies and reaches get_code_hints', async () => {
     const guide = readFileSync('docs/AGENT-GUIDE.md', 'utf8');
     const block = /### Content outside the image[^]*?```json\n([^]*?)```/.exec(guide);
-    expect(block, 'bloco json do guia').not.toBeNull();
+    expect(block, 'json block of the guide').not.toBeNull();
     const operations = JSON.parse(block![1]!) as unknown[];
     const planned = await plan(operations);
     expect(planned.valid, JSON.stringify(planned.errors)).toBe(true);

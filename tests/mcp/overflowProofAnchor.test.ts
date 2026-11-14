@@ -17,8 +17,8 @@ import { findProject, loadProject } from '../../mcp/projects';
 import { createServer } from '../../mcp/server';
 import { NOW } from '../model/fixtures';
 
-// Achado 5 do CL2: o desenho do seguidor lê o alvo por `$anchor.*`; quando só o ALVO muda no lote,
-// o seguidor entra na prova de desenho (antes ficava de fora e o `component-overflow` sumia).
+// CL2 finding 5: the follower's drawing reads the target through `$anchor.*`; when only the TARGET changes in the batch,
+// the follower enters the drawing proof (before it was left out and the `component-overflow` disappeared).
 
 const LAYER = 'cccccccc-0000-4000-8000-000000000001';
 const PHOTO = 'bbbbbbbb-0000-4000-8000-000000000001';
@@ -35,22 +35,22 @@ const spec = {
       name: 'UI',
       color: '#6750A4',
       annotationTypes: [
-        { id: 'seta', name: 'Seta', component: 'components/seta.json', fields: [] },
+        { id: 'arrow', name: 'Arrow', component: 'components/arrow.json', fields: [] },
       ],
     },
   ],
 };
 
-/** Uma barra com a largura da âncora (30 sem âncora) numa fileira de 120: estoura se o alvo for largo. */
-const setaComponent = {
+/** A bar with the anchor's width (30 without an anchor) in a row of 120: it overflows if the target is wide. */
+const arrowComponent = {
   format: 'mapping-component',
   formatVersion: 4,
-  id: 'seta',
-  name: 'seta',
+  id: 'arrow',
+  name: 'arrow',
   size: { width: 120, height: 40 },
   template: {
     type: 'frame',
-    name: 'seta',
+    name: 'arrow',
     layout: { type: 'row' },
     children: [
       {
@@ -70,15 +70,15 @@ let targetId = '';
 
 beforeAll(async () => {
   base = mkdtempSync(join(tmpdir(), 'mapping-overflow-anchor-'));
-  const dir = join(base, 'telas');
+  const dir = join(base, 'screens');
   const lib = join(dir, 'specs', 'lib');
   mkdirSync(join(lib, 'components'), { recursive: true });
   mkdirSync(join(dir, 'images'), { recursive: true });
   writeFileSync(join(lib, 'lib.spec.json'), JSON.stringify(spec));
-  writeFileSync(join(lib, 'components', 'seta.json'), JSON.stringify(setaComponent));
+  writeFileSync(join(lib, 'components', 'arrow.json'), JSON.stringify(arrowComponent));
   writeFileSync(join(dir, 'images', 'foto.png'), Buffer.from([0]));
   const parsed = parseSpecText(JSON.stringify(spec));
-  if (!parsed.ok) throw new Error(`spec inválida: ${JSON.stringify(parsed)}`);
+  if (!parsed.ok) throw new Error(`invalid spec: ${JSON.stringify(parsed)}`);
   let p = createProject({
     name: 'Telas',
     now: NOW,
@@ -88,7 +88,7 @@ beforeAll(async () => {
   p = applySpecialization(p, parsed.spec, { packageSpecName: 'lib.spec.json' });
   writeFileSync(join(dir, 'mapping.json'), serialize(p));
   const roots = new Roots([base]);
-  const loaded = await loadProject(roots, await findProject(roots, 'telas'));
+  const loaded = await loadProject(roots, await findProject(roots, 'screens'));
   const result = await runBatch(
     loaded,
     [
@@ -100,16 +100,16 @@ beforeAll(async () => {
       },
       {
         op: 'create_marking',
-        as: '$seta',
+        as: '$arrow',
         container: PHOTO,
         rect: { x: 300, y: 300, width: 120, height: 40 },
-        annotation: { type: 'lib/seta' },
+        annotation: { type: 'lib/arrow' },
         anchor: { to: '$alvo' },
       },
     ],
     {
-      readSource: () => Promise.reject(new Error('sem arquivos')),
-      readSpecInput: () => Promise.reject(new Error('sem arquivos')),
+      readSource: () => Promise.reject(new Error('no files')),
+      readSpecInput: () => Promise.reject(new Error('no files')),
       takenImageFiles: new Set<string>(),
       now: () => new Date(NOW),
     },
@@ -133,7 +133,7 @@ async function overflowsAfterResizingTarget(width: number): Promise<string[]> {
   const result = await client.callTool({
     name: 'plan_changes',
     arguments: {
-      project: 'telas',
+      project: 'screens',
       operations: [
         {
           op: 'update_marking',
@@ -153,12 +153,12 @@ async function overflowsAfterResizingTarget(width: number): Promise<string[]> {
   );
 }
 
-describe('prova de desenho: só o alvo da âncora muda', () => {
-  it('alargar o alvo para 300 faz o seguidor avisar component-overflow', async () => {
+describe('drawing proof: only the anchor target changes', () => {
+  it('widening the target to 300 makes the follower warn component-overflow', async () => {
     expect(await overflowsAfterResizingTarget(300)).toEqual(['component-overflow']);
   });
 
-  it('o alvo de 60 não faz o seguidor estourar', async () => {
+  it('a target of 60 does not make the follower overflow', async () => {
     expect(await overflowsAfterResizingTarget(60)).toEqual([]);
   });
 });
