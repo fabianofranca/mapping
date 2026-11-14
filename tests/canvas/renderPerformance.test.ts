@@ -265,7 +265,7 @@ interface LayoutKeys {
   grid: number;
   /** `weight` on a template node (not the font's `weight`, which lives in `font`). */
   weight: number;
-  /** `"max-content"` em `width`, `height` ou `sizing`. */
+  /** `"max-content"` in `width`, `height` or `sizing`. */
   maxContent: number;
   /** Components in `formatVersion` 4, the only one where the new keys apply. */
   v4Files: number;
@@ -315,14 +315,14 @@ function layoutKeysOf(dir: string): LayoutKeys {
 /** The whole-screen budgets only apply to the new layout (decision 23 of #1078): checks before measuring. */
 function expectNewLayout(): void {
   const keys = layoutKeysOf(MATERIAL3_DIR);
-  expect(keys.v4Files, 'componentes na formatVersion 4').toBe(15);
+  expect(keys.v4Files, 'components in formatVersion 4').toBe(15);
   expect(keys.alignedNone, 'none alinhado').toBeGreaterThan(0);
   expect(keys.grid, 'grid').toBeGreaterThan(0);
   expect(keys.weight, 'weight').toBeGreaterThan(0);
   expect(keys.maxContent, 'max-content').toBeGreaterThan(0);
 }
 
-describe('desenho de componentes (Material 3)', () => {
+describe('component drawing (Material 3)', () => {
   const library = loadMaterial3();
   const typeOf = new Map(library.types.map((type) => [type.id, type]));
 
@@ -331,7 +331,7 @@ describe('desenho de componentes (Material 3)', () => {
     const drawings = new Map<string, LayerDrawing>();
     for (const instance of M3_SCREEN.instances) {
       const component = typeOf.get(instance.typeId)?.component;
-      if (!component) throw new Error(`fixture: sem componente ${instance.typeId}`);
+      if (!component) throw new Error(`fixture: no component ${instance.typeId}`);
       const { root } = instantiate(component, instance.values, instance.box, {
         measure: approximateMeasurer,
         idPrefix: instance.id,
@@ -358,7 +358,7 @@ describe('desenho de componentes (Material 3)', () => {
   function drawnFixture(id: string, values: Record<string, string | number> = {}) {
     const type = typeOf.get(id);
     const component = type?.component;
-    if (!type || !component) throw new Error(`fixture: sem componente ${id}`);
+    if (!type || !component) throw new Error(`fixture: no component ${id}`);
     const { root, warnings } = instantiate(
       component,
       { ...initialValues(type), ...values },
@@ -436,7 +436,7 @@ describe('desenho de componentes (Material 3)', () => {
     const screen = counted();
     for (const instance of M3_SCREEN.instances) {
       const component = typeOf.get(instance.typeId)?.component;
-      if (!component) throw new Error(`fixture: sem componente ${instance.typeId}`);
+      if (!component) throw new Error(`fixture: no component ${instance.typeId}`);
       instantiate(component, instance.values, instance.box, {
         measure: screen.measure,
         idPrefix: instance.id,
@@ -461,7 +461,7 @@ describe('desenho de componentes (Material 3)', () => {
               .root,
             warnings: [],
           });
-        for (let i = 0; i < 20; i++) once(); // Aquecimento (JIT e primeiro uso do Konva).
+        for (let i = 0; i < 20; i++) once(); // Warm-up (JIT and first use of Konva).
         const runs = 60;
         const start = performance.now();
         for (let i = 0; i < runs; i++) once();
@@ -488,7 +488,7 @@ describe('desenho de componentes (Material 3)', () => {
         layer.destroy();
         return elapsed;
       };
-      for (let i = 0; i < 5; i++) once(); // Aquecimento.
+      for (let i = 0; i < 5; i++) once(); // Warm-up.
       const times = Array.from({ length: 15 }, once);
       const median = [...times].sort((a, b) => a - b)[7] ?? Number.NaN;
       expectBelow(median, RENDER_BUDGET_MS);
@@ -671,7 +671,7 @@ describe('intrinsic nested in 3 levels', () => {
     const columns = nodes.filter((n) => n.name === 'coluna');
     const outer = nodes.find((n) => n.name === 'externa');
     expect(columns).toHaveLength(4);
-    // Palavras mais largas a 14 px (7,7 por caractere): "bbbbbbbb" (61,6) e "yy" (15,4) + gap 4.
+    // Widest words at 14 px (7.7 per character): "bbbbbbbb" (61.6) and "yy" (15.4) + gap 4.
     const column = 61.6 + 4 + 15.4;
     expect(columns.every((n) => Math.abs(n.width - column) < 1e-6)).toBe(true);
     expect(outer?.width).toBeCloseTo(4 * column + 3 * 8, 6);
@@ -690,7 +690,7 @@ describe('intrinsic nested in 3 levels', () => {
   });
 
   budgetIt(
-    `row max-content › 4 column min-content › 3 row × 2 textos (instanciar e desenhar) cabe em ${NESTED_BUDGET_MS} ms`,
+    `row max-content › 4 column min-content › 3 row × 2 texts (instantiate and draw) fits in ${NESTED_BUDGET_MS} ms`,
     BATCHES_OPTIONS,
     () => {
       const run = (): void => {
@@ -746,7 +746,7 @@ describe('redoing markings with a remote image', () => {
       });
       layer.render(drawings, () => true, placements);
       const median = (run: () => void): number => {
-        for (let i = 0; i < 5; i++) run(); // Aquecimento.
+        for (let i = 0; i < 5; i++) run(); // Warm-up.
         const times = Array.from({ length: 15 }, () => {
           const start = performance.now();
           run();
@@ -905,18 +905,18 @@ describe('components screen inside the CanvasController (Material 3)', () => {
   });
 
   budgetIt(
-    `o quadro inteiro (21 desenhos reinstanciados e refeitos) cabe em ${FULL_FRAME_BUDGET_MS} ms`,
+    `the whole frame (21 drawings re-instantiated and redone) fits in ${FULL_FRAME_BUDGET_MS} ms`,
     BUDGET_OPTIONS,
     () => {
       expectNewLayout();
       const { controller, sources } = setup();
       const whole = (): number => {
         const start = performance.now();
-        sources.fontsEpoch.value++; // Reinstancia todos os desenhos.
+        sources.fontsEpoch.value++; // Re-instantiates all the drawings.
         flush();
         return performance.now() - start;
       };
-      for (let i = 0; i < 4; i++) whole(); // Aquecimento.
+      for (let i = 0; i < 4; i++) whole(); // Warm-up.
       expectBelow(medianOf(15, whole), FULL_FRAME_BUDGET_MS);
       controller.destroy();
     },
@@ -1184,11 +1184,11 @@ describe('Proposed view with 60 new components', () => {
         review.setView('current');
         flush();
         const start = performance.now();
-        review.setView('proposed'); // Reinstancia as 60 cenas (a Atual descartou o cache delas).
+        review.setView('proposed'); // Re-instantiates the 60 scenes (Current discarded their cache).
         flush();
         return performance.now() - start;
       };
-      for (let i = 0; i < 3; i++) toggle(); // Aquecimento.
+      for (let i = 0; i < 3; i++) toggle(); // Warm-up.
       expectBelow(medianOf(11, toggle), FULL_FRAME_BUDGET_MS);
       controller.destroy();
     },
@@ -1253,7 +1253,7 @@ describe('drag frame with the whole project in view (2,000 markings)', () => {
         return s.flush();
       };
       move(); // The frame that takes the nodes to the drag group does not count.
-      for (let i = 0; i < 3; i++) move(); // Aquecimento.
+      for (let i = 0; i < 3; i++) move(); // Warm-up.
       const times = Array.from({ length: 15 }, move);
       s.actions.cancelGesture();
       s.flush();
@@ -1288,7 +1288,7 @@ describe('first frame in Fit all (2,000 markings)', () => {
 // fit in the goal of decision 10 (33 ms; jsdom, median of 15).
 describe('pan and zoom with 2,000 markings and 1,000 named arrows', () => {
   budgetIt(
-    'cabem em 33 ms, de longe e aproximados',
+    'fit in 33 ms, from afar and zoomed in',
     { ...BUDGET_OPTIONS, timeout: 120_000 },
     () => {
       const base = wholeProject(2000);
@@ -1330,7 +1330,7 @@ describe('edit frame with the whole project in view (2,000 markings)', () => {
         s.actions.renameMarking(target.id, `Nome ${step++}`);
         return s.flush();
       };
-      for (let i = 0; i < 3; i++) edit(); // Aquecimento.
+      for (let i = 0; i < 3; i++) edit(); // Warm-up.
       const times = Array.from({ length: 15 }, edit);
       const median = [...times].sort((a, b) => a - b)[7] ?? Number.NaN;
       expectBelow(median, EDIT_FRAME_CEILING_MS);

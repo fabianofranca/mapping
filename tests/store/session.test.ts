@@ -130,7 +130,7 @@ describe('project session', () => {
   });
 
   describe('truly free name when importing and replacing', () => {
-    it('apagar o container, importar outro foo.png e desfazer: a original volta intacta', async () => {
+    it('delete the container, import another foo.png and undo: the original comes back intact', async () => {
       const root = new MemoryDirectory('p');
       session = start(root);
       await session.addImages([file('foo.png', '400x300')]);
@@ -231,7 +231,7 @@ describe('project session', () => {
     ]);
   });
 
-  describe('trocar imagem', () => {
+  describe('swap image', () => {
     async function withImage(content = '400x300') {
       const root = new MemoryDirectory('p');
       const s = start(root);
@@ -374,7 +374,7 @@ describe('project session', () => {
       return { root, s };
     }
     const bump = (s: ProjectSession, n: number) => {
-      for (let i = 0; i < n; i++) s.actions.renameProject(`nome ${i}`);
+      for (let i = 0; i < n; i++) s.actions.renameProject(`name ${i}`);
     };
 
     it('keeps the content while undo would still restore the image', async () => {
@@ -480,7 +480,7 @@ describe('project session', () => {
     const root = new MemoryDirectory('p');
     session = start(root);
     await session.addImages([file('bad.jpg', 'bad')]);
-    session.actions.renameProject('Outro nome');
+    session.actions.renameProject('Other name');
     root.failWrites = new Error('no permission');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(reportedErrors.value.map((e) => [e.context, e.message])).toEqual([
@@ -494,7 +494,7 @@ describe('project session', () => {
   it('with a write error shows the status and tries again', async () => {
     const root = new MemoryDirectory('p');
     session = start(root);
-    session.actions.renameProject('Outro nome');
+    session.actions.renameProject('Other name');
     root.failWrites = new Error('no permission');
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(session.saveStatus.value).toBe('error');
@@ -502,7 +502,7 @@ describe('project session', () => {
     root.failWrites = null;
     await session.flush();
     expect(session.saveStatus.value).toBe('saved');
-    expect((await savedProject(root)).project.name).toBe('Outro nome');
+    expect((await savedProject(root)).project.name).toBe('Other name');
   });
 
   it('a cleanup failure after mapping.json is not a write error (phase 5.2)', async () => {
@@ -531,7 +531,7 @@ describe('project session', () => {
 
     // The next write bumps only one revision and tries the removal again.
     remove.mockRestore();
-    session.actions.renameProject('Outro nome');
+    session.actions.renameProject('Other name');
     await session.flush();
     expect(session.saveStatus.value).toBe('saved');
     expect((await savedProject(root)).revision).toBe(revision + 2);
@@ -552,7 +552,7 @@ describe('project session', () => {
     expect(root.dirs.size).toBe(0);
   });
 
-  it('collectFiles grava o pendente e junta mapping e imagens existentes', async () => {
+  it('collectFiles writes the pending one and joins the mapping and existing images', async () => {
     const root = new MemoryDirectory('p');
     session = start(root);
     await session.addImages([file('a.jpg', '400x300')]);
@@ -649,7 +649,7 @@ describe('project session', () => {
     });
   });
 
-  it('collectFiles lista as imagens ausentes no armazenamento', async () => {
+  it('collectFiles lists the images missing from the storage', async () => {
     const root = new MemoryDirectory('p');
     session = start(root, sampleProject());
     // pt-BR kept: shared fixture data asserted by tests/model (sampleProject images 'images/frente.jpg' and 'images/lateral.jpg')
@@ -706,12 +706,12 @@ describe('project session', () => {
       const root = new MemoryDirectory('p');
       root.put('images/lateral.jpg', 'jpg');
       session = startTracking(root, sampleProject()).session;
-      const result = await session.replaceImage('I1', file('nova.jpg', '4000x3000'), () =>
+      const result = await session.replaceImage('I1', file('new.jpg', '4000x3000'), () =>
         Promise.resolve(true),
       );
       expect(result).toBe('replaced');
       expect((await savedProject(root)).containers.find((i) => i.id === 'I1')?.file).toBe(
-        'images/nova.jpg',
+        'images/new.jpg',
       );
     });
 
@@ -791,7 +791,7 @@ describe('project session', () => {
     });
   });
 
-  it('fechar grava o que estiver pendente', async () => {
+  it('closing writes whatever is pending', async () => {
     const root = new MemoryDirectory('p');
     const s = start(root);
     s.actions.renameProject('Closed');
@@ -1060,7 +1060,7 @@ describe('project session', () => {
       expect(await session.flush()).toEqual({ ok: true });
       expect(h.onChanged).not.toHaveBeenCalled();
 
-      session.actions.renameProject('Outro');
+      session.actions.renameProject('Other');
       expect(await session.flush()).toEqual({ ok: true });
       expect(h.onChanged).toHaveBeenCalledTimes(1);
     });
@@ -1171,7 +1171,7 @@ describe('project session', () => {
       await session.resolveConflict('reload');
       expect(session.store.project.value?.project.name).toBe('From outside');
 
-      session.actions.renameProject('Depois');
+      session.actions.renameProject('Afterwards');
       await session.flush();
       expect(log.filter((entry) => entry.startsWith('backup'))).toEqual([]);
       expect(root.dirs.has('backups')).toBe(false);
@@ -1188,7 +1188,7 @@ describe('project session', () => {
       expect(await root.read('mapping.json')).toBe(v1Text);
       expect(session.backupSaved.value).toBeNull();
 
-      // A pasta backups/ criada na tentativa herdou a falha (memoryFs).
+      // The backups/ folder created in the attempt inherited the failure (memoryFs).
       root.failWrites = null;
       const backups = root.dirs.get('backups');
       if (backups) backups.failWrites = null;
@@ -1346,7 +1346,7 @@ describe('project session', () => {
     it('project already at the current version does not generate a backup', async () => {
       const root = new MemoryDirectory('p');
       session = start(root);
-      session.actions.renameProject('Outro');
+      session.actions.renameProject('Other');
       await session.flush();
       expect(root.dirs.has('backups')).toBe(false);
       expect(session.backupSaved.value).toBeNull();

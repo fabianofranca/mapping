@@ -131,7 +131,7 @@ describe('store: localPath of docRepos', () => {
 
   it('model errors come back as ActionResult', () => {
     const { store, actions } = setup(withDocRepo);
-    expect(actions.setDocRepo('outro', '../x')).toEqual({
+    expect(actions.setDocRepo('other', '../x')).toEqual({
       ok: false,
       error: 'unknown-doc-repo',
     });

@@ -299,7 +299,7 @@ describe('ProposalStore: folder check', () => {
     expect(kinds()).toEqual([]);
   });
 
-  it('session.sync() confere as propostas junto com o mapping.json', async () => {
+  it('session.sync() checks the proposals together with mapping.json', async () => {
     const { session, root } = await openHarness({ skipProposals: true });
     expect(session.proposals.list.value).toEqual([]);
     writeOutside(root, richScenario().proposal);
@@ -351,7 +351,7 @@ describe('ProposalStore: cycle and full check (stage #1777)', () => {
 
   it('a new folder in proposals/ appears in the cycle, next to the skipped final ones', async () => {
     const { session, root } = await withFinal('applied');
-    writeOutside(root, { ...richScenario('P2').proposal, title: 'Nova' });
+    writeOutside(root, { ...richScenario('P2').proposal, title: 'New' });
     expect(await session.proposals.scan(cycle)).toEqual({ ...none, added: ['P2'] });
     expect(session.proposals.list.value.map((p) => p.id).sort()).toEqual(['P1', 'P2']);
   });
@@ -414,7 +414,7 @@ describe('ProposalStore: cycle and full check (stage #1777)', () => {
   });
 });
 
-describe('ProposalStore.remove: apagar proposta fechada (fase 9.2)', () => {
+describe('ProposalStore.remove: delete a closed proposal (fase 9.2)', () => {
   const closed = (id: string, status: Proposal['status']): Proposal => ({
     ...richScenario(id).proposal,
     status,
@@ -440,7 +440,7 @@ describe('ProposalStore.remove: apagar proposta fechada (fase 9.2)', () => {
     });
     expect(session.proposals.notices.value).toEqual([]);
     expect(session.proposals.get('P1')).toBeNull();
-    // A outra proposta segue intacta.
+    // The other proposal stays intact.
     expect(await diskProposal(root, 'P2')).toMatchObject({ id: 'P2' });
   });
 
@@ -617,7 +617,7 @@ describe('export proposals', () => {
 describe('apply accepted only completes if mapping.json was written (phase 5.2)', () => {
   const files = { [NEW_IMAGE_PATH]: 'WEBP' };
 
-  /** Tudo aceito, pronto para aplicar. */
+  /** Everything accepted, ready to apply. */
   async function readyToApply(): Promise<Harness> {
     const { proposal } = richScenario();
     const h = await openHarness({ proposals: [proposal], files });
@@ -672,7 +672,7 @@ describe('apply accepted only completes if mapping.json was written (phase 5.2)'
     expect((await diskProposal(h.root)).status).toBe('applied');
   });
 
-  it('erro de armazenamento ao gravar o mapping.json: save-failed e nada aplicado', async () => {
+  it('storage error when writing mapping.json: save-failed and nothing applied', async () => {
     const h = await readyToApply();
     const save = vi
       .spyOn(h.storage, 'saveMapping')
@@ -903,7 +903,7 @@ describe('apply accepted only completes if mapping.json was written (phase 5.2)'
   });
 });
 
-describe('aplicar: falhas de armazenamento no before (itens 39 e 40)', () => {
+describe('apply: storage failures in before (items 39 and 40)', () => {
   /** A proposal with two new images, all accepted. */
   async function twoImages(): Promise<Harness> {
     const base = sampleProject();

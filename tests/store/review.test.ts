@@ -31,7 +31,7 @@ import {
   type Harness,
 } from './proposalHarness';
 
-// pt-BR kept: shared fixture data asserted by tests/components (sampleProject names 'Porta dianteira' and 'images/frente.jpg', and the proposal image path 'images/nova.webp' of proposalHarness)
+// pt-BR kept: shared fixture data asserted by tests/components (sampleProject names 'Porta dianteira' and 'images/frente.jpg', and the proposal image path 'images/newer.webp' of proposalHarness)
 beforeEach(() => localStorage.clear());
 afterEach(() => {
   clearReportedErrors();
@@ -106,13 +106,13 @@ describe('opening the review', () => {
         { ...proposal, id: 'S', status: 'superseded' },
       ],
     });
-    expect(review.open('nada')).toEqual({ ok: false, error: 'unknown-proposal' });
+    expect(review.open('missing')).toEqual({ ok: false, error: 'unknown-proposal' });
     expect(review.open('W')).toEqual({ ok: false, error: 'withdrawn' });
     expect(review.open('S').ok).toBe(true);
   });
 });
 
-describe('decidir', () => {
+describe('decide', () => {
   it('writes immediately, with the three states in the levels and the "partial" one', async () => {
     const { proposal, ids } = richScenario();
     const { root, review } = await openHarness({ proposals: [proposal] });
@@ -309,14 +309,14 @@ describe('notas', () => {
       ok: false,
       error: 'unknown-target',
     });
-    expect(await review.editNote('nada', 'x')).toEqual({
+    expect(await review.editNote('missing', 'x')).toEqual({
       ok: false,
       error: 'unknown-note',
     });
   });
 });
 
-describe('conflitos', () => {
+describe('conflicts', () => {
   it('are recomputed against the current project on open; the new ones only appear on the first opening after the edit', async () => {
     const { proposal, ids } = richScenario();
     const { session, review } = await openHarness({ proposals: [proposal] });
@@ -509,7 +509,7 @@ describe('X on the review list notices', () => {
     expect(review.staleNotice.value.size).toBe(0);
     // The dismissed conflict stays new for the rest (the rule does not change).
     expect(review.newConflicts.value).toEqual(new Set([ids.name]));
-    // Recarga externa com outro conflito: o aviso volta.
+    // External reload with another conflict: the notice comes back.
     root.put(
       'mapping.json',
       serialize({
@@ -602,7 +602,7 @@ describe('apply in progress: the review holds the re-evaluation', () => {
     expect(review.derived.conflictIds.value.size).toBe(0);
     expect(review.newConflicts.value.size).toBe(0);
     release();
-    // Solto: o conflito real, ao vivo e novo.
+    // Released: the real conflict, live and new.
     expect(review.derived.conflictIds.value).toEqual(new Set([ids.name]));
     expect(review.derived.situation.value.get(ids.name)?.conflict).toBe(true);
     expect(review.newConflicts.value).toEqual(new Set([ids.name]));
@@ -639,7 +639,7 @@ describe('apply in progress: the review holds the re-evaluation', () => {
     // Outside, the name goes back to the one of proposal A: live, A has no conflict anymore.
     root.put('mapping.json', serialize({ ...base, revision: 4 }));
     expect(await session.sync()).toBe('reloaded');
-    // A, ainda segurada: o retrato dela volta.
+    // A, still held: its snapshot comes back.
     review.open('P1');
     expect(review.derived.conflictIds.value).toEqual(new Set([ids.name]));
     release();
@@ -1078,7 +1078,7 @@ describe('new and superseded proposal', () => {
       }),
       { id: 'OLD', title: 'v1' },
     );
-    const nova = propose(
+    const newer = propose(
       base,
       setMarkingRect(renameMarking(base, 'M1', 'Door B'), 'M2', {
         x: 1210,
@@ -1097,7 +1097,7 @@ describe('new and superseded proposal', () => {
           status: 'superseded',
           decisions: { [nameOld]: { state: 'accepted', at: '2026-10-09T13:00:00.000Z' } },
         },
-        nova,
+        newer,
       ],
     });
     expect(review.open('OLD').ok).toBe(true);
@@ -1173,7 +1173,7 @@ describe('navigation through pending items and conflicts', () => {
   });
 });
 
-describe('aplicar aceitas', () => {
+describe('apply accepted', () => {
   const files = { [NEW_IMAGE_PATH]: 'WEBP' };
 
   it('one undo entry, image moved and proposal updated; undo and redo carry the proposal along', async () => {
@@ -1198,9 +1198,9 @@ describe('aplicar aceitas', () => {
     expect(session.store.canUndo.value).toBe(true);
     expect((await projectOnDisk(h)).containers.map((i) => i.id)).toContain('I3');
     // Image moved: the one in images/ exists and the one in the proposal is gone.
-    expect(await root.read('images/nova.webp')).toBe('WEBP');
+    expect(await root.read('images/newer.webp')).toBe('WEBP');
     expect(await root.read(NEW_IMAGE_PATH)).toBeNull();
-    // Proposta: aplicada, com a data, e fechada.
+    // Proposal: applied, with the date, and closed.
     const applied = await diskProposal(root);
     expect(Object.keys(applied.applied).sort()).toEqual(Object.values(ids).sort());
     expect(applied.status).toBe('applied');
@@ -1217,7 +1217,7 @@ describe('aplicar aceitas', () => {
     expect(undone.status).toBe('open');
     expect(Object.keys(undone.decisions)).toHaveLength(5);
     expect(await root.read(NEW_IMAGE_PATH)).toBe('WEBP');
-    expect(await root.read('images/nova.webp')).toBeNull();
+    expect(await root.read('images/newer.webp')).toBeNull();
     expect(review.derived.counts.value.acceptedPending).toBe(5);
     expect(session.store.canUndo.value).toBe(false);
     expect(session.store.canRedo.value).toBe(true);
@@ -1229,7 +1229,7 @@ describe('aplicar aceitas', () => {
     const redone = await diskProposal(root);
     expect(Object.keys(redone.applied)).toHaveLength(5);
     expect(redone.status).toBe('applied');
-    expect(await root.read('images/nova.webp')).toBe('WEBP');
+    expect(await root.read('images/newer.webp')).toBe('WEBP');
     expect(await root.read(NEW_IMAGE_PATH)).toBeNull();
     expect(session.store.project.value?.containers.map((i) => i.id)).toContain('I3');
   });
@@ -1251,7 +1251,7 @@ describe('aplicar aceitas', () => {
       undecided: 3,
       acceptedPending: 0,
     });
-    // A imagem continua esperando na proposta.
+    // The image keeps waiting in the proposal.
     expect(await root.read(NEW_IMAGE_PATH)).toBe('WEBP');
 
     // Changes already applied do not change decision.
@@ -1334,7 +1334,7 @@ describe('aplicar aceitas', () => {
     expect(result).toEqual({ ok: false, error: 'image-missing', path: NEW_IMAGE_PATH });
     expect(session.store.project.value).toBe(before);
     expect((await diskProposal(root)).applied).toEqual({});
-    expect(await root.read('images/nova.webp')).toBeNull();
+    expect(await root.read('images/newer.webp')).toBeNull();
   });
 
   it('does not overwrite the file of a project image (swap with the same name)', async () => {
@@ -1367,9 +1367,9 @@ describe('aplicar aceitas', () => {
   });
 
   it.each([
-    ['a loose file in images/', 'images/nova.webp'],
+    ['a loose file in images/', 'images/newer.webp'],
     ['a file that only differs in case', 'images/NOVA.webp'],
-  ])('target occupied by %s: image-exists, sem gravar nada', async (_name, occupied) => {
+  ])('target occupied by %s: image-exists, writing nothing', async (_name, occupied) => {
     const { proposal } = richScenario();
     const { review, session, root } = await openHarness({
       proposals: [proposal],
@@ -1382,7 +1382,7 @@ describe('aplicar aceitas', () => {
     expect(result).toMatchObject({
       ok: false,
       error: 'image-exists',
-      path: 'images/nova.webp',
+      path: 'images/newer.webp',
     });
     expect(await root.read(occupied)).toBe('USER FILE');
     expect(await root.read(NEW_IMAGE_PATH)).toBe('WEBP');
@@ -1394,26 +1394,26 @@ describe('aplicar aceitas', () => {
     const { proposal } = richScenario();
     const { review, session, root } = await openHarness({
       proposals: [proposal],
-      files: { [NEW_IMAGE_PATH]: 'WEBP', 'images/nova.webp': 'OLD FILE' },
+      files: { [NEW_IMAGE_PATH]: 'WEBP', 'images/newer.webp': 'OLD FILE' },
       project: addContainer(sampleProject(), {
         id: 'IX',
-        file: 'images/nova.webp',
+        file: 'images/newer.webp',
         width: 100,
         height: 100,
       }),
     });
     session.actions.removeContainer('IX');
     await session.flush();
-    expect(await root.read('images/nova.webp')).toBeNull();
+    expect(await root.read('images/newer.webp')).toBeNull();
     review.open('P1');
     await review.decide({ level: 'proposal', id: null }, 'accepted');
     const result = await review.apply();
     expect(result).toMatchObject({ ok: false, error: 'image-exists' });
-    expect(await root.read('images/nova.webp')).toBeNull();
+    expect(await root.read('images/newer.webp')).toBeNull();
     review.close();
     session.store.undo();
     await session.flush();
-    expect(await root.read('images/nova.webp')).toBe('OLD FILE');
+    expect(await root.read('images/newer.webp')).toBe('OLD FILE');
   });
 
   it('nothing accepted: applying creates no undo entry nor writes the proposal', async () => {
@@ -1588,15 +1588,15 @@ describe('delete proposal (phase 9.2)', () => {
     expect(await root.read(NEW_IMAGE_PATH)).toBeNull();
     // The file copied to images/ follows the session's normal cleanup: the mapping.json
     // written no longer cites it, so it left.
-    expect(await root.read('images/nova.webp')).toBeNull();
+    expect(await root.read('images/newer.webp')).toBeNull();
 
     expect(session.store.redo()).toBe(true);
     await session.proposals.settled();
     const redone = await projectOnDisk(h);
     expect(redone.containers.map((i) => i.id)).toContain('I3');
-    // mapping.json cites images/nova.webp and the file is there (restored from the trash).
-    expect(redone.containers.find((i) => i.id === 'I3')?.file).toBe('images/nova.webp');
-    expect(await root.read('images/nova.webp')).toBe('WEBP');
+    // mapping.json cites images/newer.webp and the file is there (restored from the trash).
+    expect(redone.containers.find((i) => i.id === 'I3')?.file).toBe('images/newer.webp');
+    expect(await root.read('images/newer.webp')).toBe('WEBP');
     expect(root.dirs.get('proposals')?.dirs.has('P1') ?? false).toBe(false);
     expect(await session.proposals.scan()).toEqual({
       added: [],
@@ -1633,7 +1633,7 @@ describe('delete proposal (phase 9.2)', () => {
     await session.proposals.settled();
     await session.flush();
     expect(session.store.project.value?.containers.map((i) => i.id)).toContain('I3');
-    expect(await root.read('images/nova.webp')).toBe('WEBP');
+    expect(await root.read('images/newer.webp')).toBe('WEBP');
     expect(root.dirs.get('proposals')?.dirs.has('P1') ?? false).toBe(false);
     expect(reportedErrors.value).toEqual([]);
   });

@@ -509,7 +509,7 @@ describe('catalog of the Proposed view: fonts after revise_proposal', () => {
   });
 });
 
-describe('imagens remotas no Proposto (RI3)', () => {
+describe('remote images in the Proposed view (RI3)', () => {
   it('the origin of the package created by the proposal only enters the Proposed view', async () => {
     const imageText = {
       format: 'mapping-component',
