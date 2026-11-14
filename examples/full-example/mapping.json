@@ -917,7 +917,7 @@
       "values": {
         "id": "title_signup",
         "content": "Create your account",
-        "style": "titulo",
+        "style": "title",
         "data": null
       },
       "entries": []
@@ -1112,7 +1112,7 @@
       "values": {
         "id": "title_login",
         "content": "Sign in to your account",
-        "style": "titulo",
+        "style": "title",
         "data": null
       },
       "entries": []
