@@ -1,33 +1,33 @@
-# CR do canvas e do store — 2026-11-09 (épico `epic/cr-canvas-store`, PR #1238, MCP 0.28.12, schema v18)
+# CR of the canvas and the store — 2026-11-09 (epic `epic/cr-canvas-store`, PR #1238, MCP 0.28.12, schema v18)
 
 ## Corrigido
 
-- Canvas: ao rejeitar a remoção proposta da marcação selecionada, o risco da etiqueta do nome some no mesmo quadro (antes ficava até um pan ou outra seleção), e o risco não passa mais da largura da etiqueta quando o nome é longo e aparece cortado.
-- Canvas: o selo "Veio de <nome>" deixa de sair cortado no primeiro desenho (a largura passa a ser medida com a fonte do tema).
-- Canvas: o clique curto do botão do meio não seleciona, não limpa a seleção nem põe o pino do Comentar.
-- Canvas: soltar o Espaço com o foco num campo não deixa mais o arrasto preso no pan; o Espaço também não é cancelado em links e botões.
-- Canvas: Ctrl+clique abre o menu de contexto (no macOS), sem virar um clique de seleção.
-- Componentes: o texto rico com contorno (`stroke`) tem preenchimento e contorno, como o texto simples, em vez de sair oco.
-- Componentes: a imagem embutida (`data:`) respeita o ajuste do preenchimento (`cover`, `contain`, `fill`; padrão `cover`) em vez de esticar, e não é decodificada de novo a cada desenho.
-- Componentes: um quadro sem preenchimento nem traço mostra a sombra (ela vai para o primeiro filho).
-- Catálogo: as imagens dos exemplos saem com as imagens embutidas (antes saíam com o reservado) e a galeria guarda uma imagem por exemplo, sem acumular as de épocas antigas.
-- Componentes: com mais de 64 imagens remotas à vista, elas não piscam mais nem são baixadas de novo em ciclo.
-- Catálogo e Playground: os avisos do desenho aparecem no idioma da app (antes saíam sempre em português); o texto e as cores da caixa de tipo sem componente vêm do tema.
-- Projeto: um arquivo migrado que outro programa regrava no schema atual antes da primeira edição não gera mais um "backup do original" obsoleto nem o aviso de backup.
-- Janelas: o Detalhes recolhido na janela compacta só vale na primeira visita; reaberto, não recolhe de novo ao trocar de projeto.
-- Desfazer/refazer: uma falha imediata do efeito ligado à proposta (não só a assíncrona) devolve o passo e mostra o erro.
-- Diagnóstico: a URL de imagem inválida (`data:`, `file:` etc.) aparece com o esquema (e só o tipo no `data:`), em vez de `null…`.
-- Propostas: o Diagnóstico das propostas atualiza quando o problema muda (um arquivo quebrado que some e outro que quebra, ou o mesmo arquivo com outro erro), mesmo com o número de problemas igual.
-- Propostas: uma falha de disco ao aplicar (ler a imagem ou o pacote, copiar a imagem) mostra o erro de gravação e tira as imagens já copiadas, em vez de falhar sem aviso e deixá-las soltas; se o projeto mudou durante uma gravação que falhou, as cópias que ele cita ficam.
-- Comentários: a conversa escolhida (ou o rascunho de conversa nova) não volta sozinha ao clicar num item e depois no vazio; o texto não enviado continua guardado e reaparece ao abrir o rascunho no mesmo ponto.
-- Comentários: ao reposicionar um rascunho de conversa já aberto (Comentar e clique em outro ponto), o foco vai ao compositor, em vez de o texto digitado ir ao canvas.
-- Comentários: as marcações de "lida" não se perdem quando o Mapping está aberto em duas abas, e o aparelho guarda as 20 cópias de projeto mais recentes.
-- Catálogo: a especialização cujo catálogo falhou ao carregar é tentada de novo no próximo pedido (antes ficava sem catálogo até trocar o projeto).
+- Canvas: when the proposed removal of the selected marking is rejected, the strikethrough on the name label disappears in the same frame (before it stayed until a pan or another selection), and the strikethrough no longer goes past the label's width when the name is long and shown truncated.
+- Canvas: the "Came from <name>" badge no longer comes out truncated on the first draw (the width is now measured with the theme's font).
+- Canvas: a short middle-button click does not select, does not clear the selection and does not place the Comment pin.
+- Canvas: releasing Space with focus in a field no longer leaves the drag stuck in pan; Space is also not canceled on links and buttons.
+- Canvas: Ctrl+click opens the context menu (on macOS), without turning into a selection click.
+- Components: rich text with an outline (`stroke`) has fill and outline, like plain text, instead of coming out hollow.
+- Components: the embedded image (`data:`) respects the fill fit (`cover`, `contain`, `fill`; default `cover`) instead of stretching, and is not decoded again on every draw.
+- Components: a frame with no fill or stroke shows the shadow (it goes to the first child).
+- Catalog: the example images come out with the embedded images (before they came out with the placeholder) and the gallery keeps one image per example, without accumulating those from old times.
+- Components: with more than 64 remote images in view, they no longer flicker or get downloaded again in a cycle.
+- Catalog and Playground: the drawing notices appear in the app's language (before they always came out in Portuguese); the text and colors of the box for a type without a component come from the theme.
+- Project: a migrated file that another program rewrites in the current schema before the first edit no longer generates an obsolete "backup of the original" or the backup notice.
+- Windows: Details collapsed in the compact window only applies on the first visit; when reopened, it does not collapse again when switching projects.
+- Undo/redo: an immediate failure of the effect tied to the proposal (not only the asynchronous one) returns the step and shows the error.
+- Diagnostics: an invalid image URL (`data:`, `file:` etc.) appears with the scheme (and only the type for `data:`), instead of `null…`.
+- Proposals: the proposals Diagnostics updates when the problem changes (a broken file that goes away and another that breaks, or the same file with another error), even with the same number of problems.
+- Proposals: a disk failure on apply (reading the image or the package, copying the image) shows the write error and removes the images already copied, instead of failing without a notice and leaving them loose; if the project changed during a write that failed, the copies it cites stay.
+- Comments: the chosen conversation (or the draft of a new conversation) no longer comes back by itself when clicking on an item and then on empty space; the unsent text stays saved and reappears when the draft is opened at the same point.
+- Comments: when repositioning an already open conversation draft (Comment and a click on another point), focus goes to the composer, instead of the typed text going to the canvas.
+- Comments: the "read" marks are not lost when Mapping is open in two tabs, and the device keeps the 20 most recent project copies.
+- Catalog: a specialization whose catalog failed to load is tried again on the next request (before it stayed without a catalog until the project changed).
 
 ## Alterado
 
-- Canvas: menos trabalho por quadro e por gesto: arrastar não recalcula mais a lista de imagens a carregar, medir o tamanho do canvas sem mudança não agenda quadro à toa, a hachura da marcação removida desenha só a parte visível e o selo de chegada não força o layout da página a cada quadro. O desenho não muda.
-- Visualizador embutível (`mapping-viewer`): o `ScreenRenderer` recebe os textos da caixa de tipo ausente e dos avisos do chamador (`labels`); o `createViewer` passa os dele, em português, como antes. Quem cria um `ScreenRenderer` direto precisa passar `labels` (há `VIEWER_LABELS` para o padrão).
-- Store: desfazer, refazer e cada edição notificam os painéis uma vez só; a faixa e a barra de status não recalculam os conflitos das propostas a cada edição; a conferência de arquivos externos lê imagens, propostas e conversas em paralelo; a seleção por retângulo e a troca de seleção não crescem de forma quadrática. O comportamento não muda.
-- Revisão: segurar a seta para percorrer as mudanças grava o ponto de retomada no máximo uma vez por quadro (antes, a cada tecla), e a revisão fechada o grava na hora; a lista de arquivos de pacote de cada proposta é lida uma vez.
-- Store: as conversas só republicam a lista quando algo mudou; o posicionamento de perspectivas confere a sobreposição de imagens uma vez por raiz; as leituras de componentes e fontes rodam em paralelo; a sincronia de fontes, o rastreio de pendências e a fila serial dos catálogos, propostas e conversas saem de helpers comuns. O comportamento não muda.
+- Canvas: less work per frame and per gesture: dragging no longer recalculates the list of images to load, measuring the canvas size without a change does not schedule a frame for nothing, the hatching of the removed marking draws only the visible part and the arrival badge does not force the page layout on every frame. The drawing does not change.
+- Embeddable viewer (`mapping-viewer`): the `ScreenRenderer` receives the texts of the missing-type box and of the caller's notices (`labels`); `createViewer` passes its own, in Portuguese, as before. Whoever creates a `ScreenRenderer` directly must pass `labels` (there is `VIEWER_LABELS` for the default).
+- Store: undo, redo and each edit notify the panels only once; the banner and the status bar do not recalculate the proposal conflicts on every edit; the external files check reads images, proposals and conversations in parallel; selection by rectangle and selection switching no longer grow quadratically. The behavior does not change.
+- Review: holding the arrow key to walk through the changes saves the resume point at most once per frame (before, on every key), and the closed review saves it at once; the list of package files of each proposal is read once.
+- Store: conversations only republish the list when something changed; perspective positioning checks image overlap once per root; the reads of components and fonts run in parallel; the font sync, the pending-item tracking and the serial queue of catalogs, proposals and conversations come from common helpers. The behavior does not change.

@@ -1,9 +1,9 @@
-# Enquadrar a seleção e o Card que mudou de lugar no R25 — 2026-11-08 (épico `epic/enquadrar-selecao`, PR #1088, MCP 0.28.5 sem mudança, schema v18)
+# Fit selection and the Card that moved in R25 — 2026-11-08 (epic `epic/enquadrar-selecao`, PR #1088, MCP 0.28.5 no change, schema v18)
 
 ## Adicionado
 
-- **Enquadrar seleção** (`Shift+2`, botão na barra do canvas): dá zoom e centra a vista nos itens selecionados.
+- **Fit selection** (`Shift+2`, button in the canvas bar): zooms and centers the view on the selected items.
 
 ## Alterado
 
-- Roteiros de teste (`docs/TESTING.md`): o R25 enquadra cada peça pela Árvore e `Shift+2`, sem setas nem arrasto; o R25.1 e o R25.2 usam `scripts/testing/fiel.mjs`; o R25.8 avisa que o Card é adotado pelo Navigation bar e o devolve ao lugar; novos passos R12.10d e R12.10e para **Enquadrar seleção**; a receita da nuvem confere o disco a cada passo.
+- Test scripts (`docs/TESTING.md`): R25 frames each piece through the Tree and `Shift+2`, without arrows or dragging; R25.1 and R25.2 use `scripts/testing/fiel.mjs`; R25.8 warns that the Card is adopted by the Navigation bar and puts it back in place; new steps R12.10d and R12.10e for **Fit selection**; the cloud recipe checks the disk at every step.

@@ -1,9 +1,9 @@
-# Textos da interface, linha de aviso e guia acertados — 2026-11-05 (épico `epic/textos-e-avisos`, PR #530, MCP 0.16.0, schema v13)
+# Interface texts, notice row and guide fixed — 2026-11-05 (epic `epic/textos-e-avisos`, PR #530, MCP 0.16.0, schema v13)
 
 ## Corrigido
 
-- Especializações: o texto da biblioteca diz "`formatVersion` 4 em diante", sem versão máxima, em vez de "versão 4 a 7".
-- Detalhes da marcação: a dica de Posição e Tamanho depende do espaço. Marcação de container: "Em pixels do container"; marcação do canvas: "Em unidades do canvas" (antes dizia "pixels da imagem original" nos dois casos).
-- Linha de aviso dos Detalhes: com a mensagem longa, o ícone fica na coluna da esquerda, alinhado à primeira linha, e a mensagem quebra na própria coluna (antes o ícone ficava sozinho acima dela).
-- Aviso de campo vazio: os Detalhes continuam mostrando o aviso de um campo ainda vazio; a ajuda e o `SPEC-FORMAT.md` agora dizem isso, e que a janela Avisos e a contagem só contam o campo com valor.
-- Guia de testes (`docs/TESTING.md`): passos e apêndices que não batiam com a app (atalhos do R11.9, **Continuar** no R13.1, Árvore no R14.1, **Envolver** no R12.8, "Adicionar no canvas" no R12.12, apêndices A e B, R18.4 e R18.6), com um teste que confere a lista de atalhos do guia contra as janelas da app.
+- Specializations: the library text says "`formatVersion` 4 onward", with no maximum version, instead of "version 4 to 7".
+- Marking details: the Position and Size hint depends on the space. Container marking: "In container pixels"; canvas marking: "In canvas units" (before it said "original image pixels" in both cases).
+- Details notice row: with a long message, the icon stays in the left column, aligned with the first line, and the message wraps in its own column (before the icon stayed alone above it).
+- Empty-field notice: Details still shows the notice for a field that is still empty; the help and `SPEC-FORMAT.md` now say so, and that the Notices window and the count only count a field with a value.
+- Test guide (`docs/TESTING.md`): steps and appendices that did not match the app (R11.9 shortcuts, **Continue** in R13.1, Tree in R14.1, **Wrap** in R12.8, "Add to canvas" in R12.12, appendices A and B, R18.4 and R18.6), with a test that checks the guide's shortcut list against the app's windows.

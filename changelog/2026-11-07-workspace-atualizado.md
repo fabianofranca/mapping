@@ -1,14 +1,14 @@
-# Workspace atualizado — 2026-11-07 (épico `epic/workspace-atualizado`, PR #710, MCP 0.24.1, schema v15)
+# Workspace updated — 2026-11-07 (epic `epic/workspace-atualizado`, PR #710, MCP 0.24.1, schema v15)
 
 ## Adicionado
 
-- Cada release do MCP traz também o `setup.sh`, a skill `spec-author` e as regras do workspace (o bloco do `AGENTS.md` entre `mapping:begin` e `mapping:end`), cada um com `sha256`.
-- O `setup.sh` do workspace se atualiza sozinho (`--no-self-update` desliga) e mantém as regras do `AGENTS.md`: troca só o bloco entre os marcadores, preserva a sua seção "Para que servem" e guarda um backup quando migra um `AGENTS.md` antigo. Rodar de novo não muda nada.
-- O `setup.sh` confere o `sha256` de todos os arquivos da release antes de trocar qualquer um: se um não bate, ele para com erro e nada na pasta muda.
-- Quem ainda tem o `setup.sh` antigo se atualiza uma vez com `curl -fsSL https://github.com/fabianofranca/mapping/releases/latest/download/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh`.
+- Each MCP release also brings the `setup.sh`, the `spec-author` skill and the workspace rules (the `AGENTS.md` block between `mapping:begin` and `mapping:end`), each with a `sha256`.
+- The workspace's `setup.sh` updates itself (`--no-self-update` turns it off) and maintains the `AGENTS.md` rules: it replaces only the block between the markers, preserves your "Para que servem" section and keeps a backup when it migrates an old `AGENTS.md`. Running it again changes nothing.
+- The `setup.sh` checks the `sha256` of all the release files before replacing any of them: if one does not match, it stops with an error and nothing in the folder changes.
+- Whoever still has the old `setup.sh` updates once with `curl -fsSL https://github.com/fabianofranca/mapping/releases/latest/download/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh`.
 
 ## Alterado
 
 ## Corrigido
 
-- A skill `spec-author` do workspace vem da mesma versão do servidor, e a cópia em `.claude/skills/` (onde link não existe) passa a ser atualizada a cada execução do `setup.sh`.
+- The workspace's `spec-author` skill comes from the same version as the server, and the copy in `.claude/skills/` (where links do not exist) is now updated on every run of `setup.sh`.

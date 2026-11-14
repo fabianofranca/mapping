@@ -1,6 +1,6 @@
-# Impacto nas issues roadmap — 2026-11-08 (épico `epic/impacto-roadmap`, PR #858, MCP 0.28.0, schema v18)
+# Impact on roadmap issues — 2026-11-08 (epic `epic/impacto-roadmap`, PR #858, MCP 0.28.0, schema v18)
 
 ## Alterado
 
-- Toda issue `roadmap` nasce com um rótulo de impacto, `impact: high`, `impact: medium` ou `impact: low`, e a linha `Impacto: <nível> — <porquê>` no corpo, como todo `bug` nasce com a severidade. O critério é o quanto o item muda o uso da ferramenta e ajuda a função dela, contando também o custo recorrente do fluxo de entrega; o tamanho do trabalho não conta. O rótulo fica quando a `roadmap` vira `ready` e `in-progress`; o `bug` leva só a severidade, e a `roadmap` que vira `bug` troca um rótulo pelo outro.
-- As issues abertas foram acertadas: a #833 recebeu `impact: medium` e a #538, que é `bug`, perdeu o `impact: low`.
+- Every `roadmap` issue is born with an impact label, `impact: high`, `impact: medium` or `impact: low`, and the line `Impacto: <nível> — <porquê>` in the body, just as every `bug` is born with the severity. The criterion is how much the item changes the use of the tool and helps its purpose, also counting the recurring cost of the delivery flow; the size of the work does not count. The label stays when the `roadmap` becomes `ready` and `in-progress`; the `bug` carries only the severity, and the `roadmap` that becomes a `bug` swaps one label for the other.
+- The open issues were adjusted: #833 received `impact: medium` and #538, which is a `bug`, lost `impact: low`.

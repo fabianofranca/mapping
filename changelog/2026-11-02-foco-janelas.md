@@ -1,5 +1,5 @@
-# Foco nas janelas — 2026-11-02 (épico `epic/foco-janelas`, PR #315, MCP 0.12.0, schema v13)
+# Focus on windows — 2026-11-02 (epic `epic/foco-janelas`, PR #315, MCP 0.12.0, schema v13)
 
 ## Corrigido
 
-- Fechar uma janela de ferramenta (Árvore, Camadas, Detalhes, Catálogo e as da janela inferior), pelo X, pelo atalho ou pela faixa, não deixa mais o foco do teclado perdido: ele volta a quem abriu a janela, ou ao botão dela na faixa, ou ao canvas. Trocar de aba da janela inferior também mantém o foco na aba.
+- Closing a tool window (Tree, Layers, Details, Catalog and those of the bottom window), by the X, by the shortcut or by the bar, no longer leaves keyboard focus lost: it returns to whoever opened the window, or to its button in the bar, or to the canvas. Switching tabs in the bottom window also keeps focus on the tab.

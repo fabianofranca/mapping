@@ -1,16 +1,16 @@
-# Desempenho do canvas — 2026-11-10 (épico `epic/canvas-desempenho`, PR #1436, MCP 0.30.0, schema v18)
+# Canvas performance — 2026-11-10 (epic `epic/canvas-desempenho`, PR #1436, MCP 0.30.0, schema v18)
 
 ## Alterado
 
-- Abrir mais rápido com o projeto grande: as partes de cada marcação (halo, selo, alerta, nome) e os desenhos de componente só são criados quando aparecem na tela.
+- Faster opening with a large project: the parts of each marking (halo, badge, alert, name) and the component drawings are only created when they appear on screen.
 
-- De longe, a seta curta (menos de 24 px na tela) aparece só com o traço, sem halo, ponta nem rótulo, e a que liga duas marcações invisíveis não aparece; a seta selecionada e as ligadas a uma marcação selecionada ou sob o mouse ficam inteiras. A seta fora da área visível também deixa de ser desenhada. Aproximado, nada muda.
+- From afar, the short arrow (less than 24 px on screen) appears with the stroke only, without halo, head or label, and the one linking two invisible markings does not appear; the selected arrow and those linked to a selected marking or under the mouse stay whole. An arrow outside the visible area is also no longer drawn. Zoomed in, nothing changes.
 
-- Projeto grande (2.000 marcações, 1.000 setas, Chromium): editar leva ~10 ms, pan ~21 ms e zoom ~31 ms por quadro; abrir em Enquadrar tudo leva ~128 ms. Números e metas em `docs/ARCHITECTURE.md`, "Desempenho".
+- Large project (2,000 markings, 1,000 arrows, Chromium): editing takes ~10 ms, pan ~21 ms and zoom ~31 ms per frame; opening in Fit all takes ~128 ms. Numbers and targets in `docs/ARCHITECTURE.md`, "Performance".
 
 ## Corrigido
 
-- Abrir e fechar projetos grandes várias vezes na mesma aba deixava formas do canvas na memória e deixava cada abertura mais lenta.
-- A coluna do campo de referência (ex.: `item`) das tabelas de alvos não encolhe mais a 40 px com os Detalhes estreitos (900 px): o rótulo do alvo cabe em uma linha, sem barra horizontal (a coluna ganha um piso e os campos de texto da tabela cedem um pouco).
-- O roteiro R12.30 esperava `data-arrows` menor que 1000 no zoom mínimo do projeto grande, mas nele todas as setas ligam ao menos uma marcação visível; o guia agora descreve o que a app faz.
-- O teste de tooling das vagas do painel (`queueSlots`) ganhou folga de tempo e não estoura mais por timeout no CI sob carga.
+- Opening and closing large projects several times in the same tab left canvas shapes in memory and made each opening slower.
+- The column of the reference field (e.g. `item`) of the target tables no longer shrinks to 40 px with narrow Details (900 px): the target label fits on one line, without a horizontal bar (the column gets a floor and the table's text fields give up a little).
+- Script R12.30 expected `data-arrows` below 1000 at the large project's minimum zoom, but in it every arrow links at least one visible marking; the guide now describes what the app does.
+- The tooling test of the panel's slots (`queueSlots`) gained time slack and no longer blows up on timeout in CI under load.

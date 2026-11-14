@@ -1,6 +1,6 @@
-# Barra do canvas estreita — 2026-11-10 (épico `epic/barra-canvas-estreita`, PR #1373, MCP 0.28.15, schema v18)
+# Narrow canvas bar — 2026-11-10 (epic `epic/barra-canvas-estreita`, PR #1373, MCP 0.28.15, schema v18)
 
 ## Alterado
 
-- Na barra do canvas estreita (900×720 com as janelas abertas), dentro e fora da revisão, os trechos do meio do caminho recolhem num **…**: "Canvas › … › Cadastrar", com a seleção em letras. O **…** abre, pelo mouse ou pelo Enter, o caminho inteiro com os nomes completos; cada nível seleciona o seu e o Esc devolve o foco ao **…**. Na barra larga o caminho é o de sempre.
-- Na revisão estreita, os controles que somem da barra do canvas (Conversas, Visualizar, Mostrar no canvas, Enquadrar tudo e Enquadrar seleção) ficam num **⋯** no fim da barra, com o selo e o ponto das conversas; o menu faz o mesmo que cada botão e o painel **Mostrar no canvas** abre ancorado no **⋯**. Para caber, a seleção no caminho mostra menos letras nessa barra.
+- In the narrow canvas bar (900×720 with the windows open), inside and outside the review, the middle parts of the path collapse into a **…**: "Canvas › … › Cadastrar", with the selection in letters. The **…** opens, by mouse or Enter, the whole path with the full names; each level selects its own and Esc returns focus to the **…**. In the wide bar the path is as usual.
+- In the narrow review, the controls that disappear from the canvas bar (Conversations, View, Show on canvas, Fit all and Fit selection) go into a **⋯** at the end of the bar, with the conversations' badge and dot; the menu does the same as each button and the **Show on canvas** panel opens anchored to the **⋯**. To fit, the selection in the path shows fewer letters in that bar.

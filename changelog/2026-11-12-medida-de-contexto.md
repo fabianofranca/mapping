@@ -1,10 +1,10 @@
-# Medida de contexto pelo transcript — 2026-11-12 (épico `epic/medida-de-contexto`, PR #1709, MCP 0.36.0 sem mudança, schema v18)
+# Context measurement through the transcript — 2026-11-12 (epic `epic/medida-de-contexto`, PR #1709, MCP 0.36.0 unchanged, schema v18)
 
 ## Corrigido
 
-- O teto de contexto da fase (300 mil) passa a funcionar: a sessão mede o contexto com `node scripts/ci/contextUsage.mjs`, que lê o uso da última chamada ao modelo no transcript local da própria sessão e acompanha o turno em curso. Antes, a medida era o `used_tokens` do `get_session`, que só muda no fim de um turno e valia 0 durante toda a fase; por isso nenhuma fase passava a vez, e o contexto chegou a 473 mil.
-- O aviso final da fase traz a linha `Contexto: <mil> mil` (ou `Contexto: sem medida (<motivo>)`), medida logo antes do aviso.
-- O testador mede o contexto antes de cada lote e antes do aviso, registra a linha `Contexto por lote: …` em "O que atrapalhou" e termina o aviso ao coordenador com `; contexto <mil> mil`. Nada muda acima do teto: o registro sem segurar da rodada continua.
-- O coordenador mede o próprio contexto pelo script (`pct` com `--max`) na conferência de reserva e na troca de sessão, e a supervisão da fila mede a base e os ~50% do mesmo jeito.
-- Ao arquivar cada filha, o coordenador só lê o `get_session` dela com o turno terminado (`status_bucket` diferente de `working`) e compara o contexto lido com o do aviso: fora de 0 a 15 mil de diferença, o `log` da fila registra "medida de contexto divergente" e a etapa segue.
-- Os tetos não mudam (300 mil da fase e do testador, 35% do coordenador, ~50% da supervisão), nem o `painel.py`, o `docs/PROCESS.md` e o `CLAUDE.md`.
+- The phase's context ceiling (300 thousand) now works: the session measures the context with `node scripts/ci/contextUsage.mjs`, which reads the usage of the last model call in the session's own local transcript and follows the turn in progress. Before, the measure was the `used_tokens` of `get_session`, which only changes at the end of a turn and was 0 throughout the phase; so no phase ever handed over, and the context reached 473 thousand.
+- The phase's final notice carries the line `Contexto: <mil> mil` (or `Contexto: sem medida (<motivo>)`), measured right before the notice.
+- The tester measures the context before each batch and before the notice, records the line `Contexto por lote: …` in "What got in the way" and ends the notice to the coordinator with `; contexto <mil> mil`. Nothing changes above the ceiling: recording without holding the round continues.
+- The coordinator measures its own context with the script (`pct` with `--max`) at the fallback check and at the session handoff, and the queue supervision measures the base and the ~50% the same way.
+- When archiving each child, the coordinator reads its `get_session` only with the turn finished (`status_bucket` other than `working`) and compares the context read with the one in the notice: outside a difference of 0 to 15 thousand, the queue `log` records "medida de contexto divergente" and the stage goes on.
+- The ceilings do not change (300 thousand for the phase and the tester, 35% for the coordinator, ~50% for the supervision), nor do `painel.py`, `docs/PROCESS.md` and `CLAUDE.md`.

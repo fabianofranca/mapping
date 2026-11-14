@@ -1,15 +1,15 @@
-# Vínculo na mesma camada — 2026-11-07 (épico `epic/vinculo-mesma-camada`, PR #703, MCP 0.24.0, schema v15)
+# Link in the same layer — 2026-11-07 (epic `epic/vinculo-mesma-camada`, PR #703, MCP 0.24.0, schema v15)
 
 ## Adicionado
 
-- Vínculo na mesma camada: um tipo cuja especialização declara (`formatVersion` 13) pode ter dona da própria camada, inclusive do mesmo tipo (um evento dono de outros eventos, cada filho no papel em que se liga, como Sucesso e Falha). `allowedChildren` aceita a cláusula `{ layer }` da camada do próprio tipo e o id de um tipo da mesma camada. A anotação livre continua só com dona de outra camada, e o ciclo continua barrado. Schema v15 do `mapping.json`, sem mudança de dados.
-- Guia do agente e skill `spec-author`: o "quando" é papel também entre eventos (encadeamento por papel, com um lote de exemplo), e o anti-padrão `chainedAfter` e `trigger` como campos do tipo.
+- Link in the same layer: a type whose specialization declares it (`formatVersion` 13) can have an owner in its own layer, even of the same type (an event that owns other events, each child in the role in which it links, like Success and Failure). `allowedChildren` accepts the `{ layer }` clause for the type's own layer and the id of a type in the same layer. The free annotation still only has an owner in another layer, and the cycle is still barred. Schema v15 of `mapping.json`, with no data change.
+- Agent guide and `spec-author` skill: the "when" is a role also between events (chaining by role, with an example batch), and the anti-pattern `chainedAfter` and `trigger` as fields of the type.
 
 ## Alterado
 
-- App: a dica e o estado vazio do campo **Vinculada a** dizem que, na anotação tipada, a dona pode ser da mesma camada quando o tipo dela aceita o vínculo; na livre, continua só outra camada. O campo mostra o valor escolhido por inteiro (`Camada: Nome`) ao passar o mouse, porque o texto visível pode cortar quando os candidatos começam igual.
-- MCP: o texto do erro `invalid-annotation-parent` diz que a dona pode ser de outra camada ou, na anotação tipada, de um tipo que aceite o vínculo, inclusive na mesma camada.
+- App: the hint and the empty state of the **Linked to** field say that, in a typed annotation, the owner can be in the same layer when its type accepts the link; in a free one, it is still only another layer. The field shows the chosen value in full (`Layer: Name`) on hover, because the visible text can be cut off when the candidates start the same way.
+- MCP: the text of the `invalid-annotation-parent` error says the owner can be in another layer or, in a typed annotation, of a type that accepts the link, including in the same layer.
 
 ## Corrigido
 
-- MCP: a célula `ref` de uma tabela aceita o mesmo valor do campo `ref`, inclusive apelidos do mesmo lote (#677).
+- MCP: the `ref` cell of a table accepts the same value as the `ref` field, including aliases from the same batch (#677).

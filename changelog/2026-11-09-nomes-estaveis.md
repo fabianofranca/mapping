@@ -1,8 +1,8 @@
-# Nomes acessíveis estáveis — 2026-11-09 (épico `epic/nomes-estaveis`, PR #1140, MCP 0.28.6 sem mudança, schema v18)
+# Stable accessible names — 2026-11-09 (epic `epic/nomes-estaveis`, PR #1140, MCP 0.28.6 unchanged, schema v18)
 
 ## Corrigido
 
-- Os botões de janela da faixa lateral (Árvore, Camadas, Detalhes, Lista, Propostas, Diagnóstico, Comentários…) têm sempre o mesmo nome para o leitor de tela, o título da janela: o estado aberto ou fechado é dito só pelo "pressionado", e não mais por "Mostrar …" e "Esconder …". O aviso de propostas novas, de erro novo e de conversas abertas continua depois do nome.
-- Na tela inicial, os botões de cada projeto recente passam a dizer de qual projeto são ("Abrir Loja", "Excluir Loja", "Remover da lista: Loja") e a descrever a linha (origem, pasta e último uso): linhas de mesmo nome não se confundem mais para quem usa leitor de tela. Nada muda na tela.
-- Fechar a faixa de imagens remotas por **Agora não** ou **Permitir estas** devolve o foco do teclado a quem o tinha (por exemplo, o campo **URL da imagem**), ou ao canvas se esse campo saiu; antes o foco se perdia no início da página.
-- O foco volta ao campo **URL da imagem** depois de **Agora não** ou **Permitir estas** também quando a URL passa de 60 caracteres e o campo troca entre uma e várias linhas; antes ele ia ao canvas.
+- The window buttons of the side strip (Tree, Layers, Details, List, Proposals, Diagnostics, Comments…) always have the same name for the screen reader, the window title: the open or closed state is conveyed only by "pressed", and no longer by "Show …" and "Hide …". The notice of new proposals, new error and open conversations still comes after the name.
+- On the home screen, the buttons of each recent project now say which project they belong to ("Open Loja", "Delete Loja", "Remove from list: Loja") and describe the row (source, folder and last use): rows with the same name are no longer confused by screen reader users. Nothing changes on screen.
+- Closing the remote images strip with **Not now** or **Allow these** returns keyboard focus to whoever had it (for example, the **Image URL** field), or to the canvas if that field is gone; before, focus was lost to the start of the page.
+- Focus also returns to the **Image URL** field after **Not now** or **Allow these** when the URL goes past 60 characters and the field switches between one and several lines; before, it went to the canvas.

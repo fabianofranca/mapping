@@ -1,5 +1,5 @@
-# Download do setup.sh — 2026-11-08 (épico `epic/setup-download`, PR #880, MCP 0.28.2 sem mudança, schema v18)
+# setup.sh download — 2026-11-08 (epic `epic/setup-download`, PR #880, MCP 0.28.2 no change, schema v18)
 
 ## Corrigido
 
-- O `setup.sh` do workspace mostra o motivo quando não consegue baixar (código HTTP), tenta de novo em falhas passageiras e, se o download direto da release falhar, usa a API de assets do GitHub antes de desistir. Quem já tem um `setup.sh` antigo continua com a falha até conseguir um download: o conserto só chega com o script novo (pela autoatualização ou pela linha de transição do `README.md` do workspace) e depois de uma release que o traga; para o 504 do GitHub, o contorno com `gh release download` está em "Se o GitHub não responder", no `README.md` do workspace.
+- The workspace's `setup.sh` shows the reason when it cannot download (HTTP code), retries on transient failures and, if the direct download of the release fails, uses the GitHub assets API before giving up. Whoever already has an old `setup.sh` keeps hitting the failure until a download succeeds: the fix only arrives with the new script (through self-update or the transition line in the workspace's `README.md`) and after a release that brings it; for GitHub's 504, the workaround with `gh release download` is in "Se o GitHub não responder", in the workspace's `README.md`.

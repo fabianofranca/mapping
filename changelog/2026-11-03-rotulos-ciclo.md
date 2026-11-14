@@ -1,5 +1,5 @@
-# Rótulos de ciclo — 2026-11-03 (épico `epic/rotulos-ciclo`, PR #367, MCP 0.13.0, schema v13)
+# Cycle labels — 2026-11-03 (epic `epic/rotulos-ciclo`, PR #367, MCP 0.13.0, schema v13)
 
 ## Alterado
 
-- O planejamento ganha o rótulo `pronta` (etapa detalhada, pronta para desenvolver) e o `etapa` passa a se chamar `em-andamento`: o ciclo é `roadmap` → `pronta` → `em-andamento`, e as concluídas são as issues fechadas com `em-andamento`.
+- Planning gains the `pronta` label (a detailed stage, ready to develop) and `etapa` is renamed `em-andamento`: the cycle is `roadmap` → `pronta` → `em-andamento`, and the completed ones are the issues closed with `em-andamento`.

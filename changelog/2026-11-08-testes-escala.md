@@ -1,13 +1,13 @@
-# Testes de escala — 2026-11-08 (épico `epic/testes-escala`, PR #1072, MCP 0.28.5, schema v18)
+# Scale tests — 2026-11-08 (epic `epic/testes-escala`, PR #1072, MCP 0.28.5, schema v18)
 
 ## Adicionado
 
-- `npm run test:scale` mede a mesma operação do modelo com 1.250 e 5.000 marcações e exige que o tempo cresça menos de 5× (um crescimento quadrático seria ~16×); roda no CI depois dos orçamentos de desempenho. A fase seguinte acrescentou a sessão (gravar e abrir), o estado derivado do editor, as tools de leitura do MCP em processo (`get_project`, `list_markings`, `get_marking`, `get_annotation`, `find_by_code`, `find_by_source`, `list_threads`) e o visualizador (montar a cena e atualizar uma instância), até 5.000 marcações. Sem mudança no uso da app nem das tools do MCP.
+- `npm run test:scale` measures the same model operation with 1,250 and 5,000 markings and requires the time to grow less than 5× (quadratic growth would be ~16×); it runs in CI after the performance budgets. The next phase added the session (save and open), the derived editor state, the in-process MCP read tools (`get_project`, `list_markings`, `get_marking`, `get_annotation`, `find_by_code`, `find_by_source`, `list_threads`) and the viewer (building the scene and updating an instance), up to 5,000 markings. No change in how the app or the MCP tools are used.
 
 ## Alterado
 
-- O CI passa a provar o crescimento linear do projeto grande, até 5.000 marcações: ler, gravar, validar, montar a lista, o estado derivado, as consultas do MCP e o visualizador têm de crescer menos de 5× quando o projeto cresce 4×. A versão do MCP sobe para 0.28.5 porque o épico mexeu em código de `src/model/` que vai na release (abaixo).
+- CI now proves linear growth for the large project, up to 5,000 markings: reading, saving, validating, building the list, the derived state, the MCP queries and the viewer must grow less than 5× when the project grows 4×. The MCP version goes up to 0.28.5 because the epic touched code in `src/model/` that ships in the release (below).
 
 ## Corrigido
 
-- A lista (`buildListing`) e a janela de pendências (`buildIncompleteList`) percorriam todas as marcações da raiz para cada container (custo proporcional a containers × raízes); agora agrupam as raízes por container numa passada só. Em projetos com muitos containers a lista e as pendências abrem mais rápido; o resultado é o mesmo.
+- The list (`buildListing`) and the pending-items window (`buildIncompleteList`) walked all the root markings for each container (cost proportional to containers × roots); they now group the roots by container in a single pass. In projects with many containers the list and the pending items open faster; the result is the same.

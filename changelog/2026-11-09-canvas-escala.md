@@ -1,7 +1,7 @@
-# Canvas em projeto grande — 2026-11-09 (épico `epic/canvas-escala`, PR #1195, MCP 0.28.11 sem versão nova, schema v18)
+# Canvas in a large project — 2026-11-09 (epic `epic/canvas-escala`, PR #1195, MCP 0.28.11 with no new version, schema v18)
 
 ## Alterado
 
-- Com o projeto grande à vista, arrastar, editar e navegar no canvas ficam mais rápidos: no projeto de 2.000 marcações, o quadro de um arrasto cai de dezenas de milissegundos para poucos, e editar um nome redesenha só a camada das marcações e as sobreposições. Abrir um projeto grande já aproximado também fica mais rápido, porque o canvas só prepara o desenho das marcações que aparecem na tela.
-- De longe, a marcação pequena aparece só com a borda (sem halo, linha dupla, selo "a revisar" nem ⚠) e a quase invisível, menor que 2 px, não aparece; a selecionada, a que está sob o mouse e a com marca da revisão aparecem sempre completas. Aproximado, nada muda.
-- Durante um arrasto (mover, redimensionar, mexer na rota ou na ponta de uma seta), só o que se move é redesenhado: o custo de cada quadro deixa de depender do tamanho do projeto. O que se arrasta aparece por cima de tudo até soltar (inclusive das marcações flutuantes e dos desenhos de componente que não se movem); ao soltar ou cancelar, tudo volta ao lugar de antes.
+- With the large project in view, dragging, editing and navigating on the canvas get faster: in the 2,000-marking project, the frame of a drag drops from tens of milliseconds to a few, and editing a name redraws only the markings layer and the overlays. Opening an already zoomed-in large project also gets faster, because the canvas only prepares the drawing of the markings that appear on screen.
+- From afar, a small marking appears with only its border (no halo, double line, "to review" badge or ⚠) and an almost invisible one, smaller than 2 px, does not appear; the selected one, the one under the mouse and the one with a review mark always appear in full. Zoomed in, nothing changes.
+- During a drag (moving, resizing, changing the route or the tip of an arrow), only what moves is redrawn: the cost of each frame no longer depends on the size of the project. What is being dragged appears on top of everything until released (including the floating markings and the component drawings that do not move); on release or cancel, everything goes back to where it was.

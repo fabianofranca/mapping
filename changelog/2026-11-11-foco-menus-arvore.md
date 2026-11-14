@@ -1,5 +1,5 @@
-# Foco do teclado depois dos menus da Árvore — 2026-11-11 (épico `epic/foco-menus-arvore`, PR #1547, MCP sem mudança, schema v18)
+# Keyboard focus after the Tree menus — 2026-11-11 (epic `epic/foco-menus-arvore`, PR #1547, MCP unchanged, schema v18)
 
 ## Corrigido
 
-- Depois de **Envolver** e de **Mover para a frente** nos menus ⋯ da Árvore, o foco do teclado volta ao ⋯ de origem (ou, se a linha sumiu, ao botão da faixa ou ao canvas) e não vai mais para o `body`.
+- After **Wrap** and **Move forward** in the ⋯ menus of the Tree, the keyboard focus goes back to the originating ⋯ (or, if the row is gone, to the strip button or to the canvas) and no longer goes to the `body`.

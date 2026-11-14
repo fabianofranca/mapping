@@ -1,6 +1,6 @@
-# Defeitos corrigidos na própria etapa — 2026-11-05 (épico `epic/correcao-na-etapa`, PR #586, MCP 0.18.0, schema v14)
+# Defects fixed in the stage itself — 2026-11-05 (epic `epic/correcao-na-etapa`, PR #586, MCP 0.18.0, schema v14)
 
 ## Alterado
 
-- Defeito achado durante a implementação de uma etapa (pela fase, pelo testador ou no fechamento) passa a ser corrigido na própria etapa, sem virar issue `bug`, quando não pede decisão do dono. Vira issue só o que pede decisão (produto, mudança de decisão, schema ou formato, correção do tamanho de uma etapa), o que é de perda de dados, integridade do `mapping.json` ou segurança (que chama o dono na hora) e o que aparece depois da fase de correção.
-- A fase de correção abre também sem ❌, quando há defeito pendente das fases ou observação do relato que é defeito, e o reteste cobre os passos que as correções afetam.
+- A defect found while implementing a stage (by the phase, by the tester or at closing) is now fixed in the stage itself, without becoming a `bug` issue, when it does not need an owner decision. Only these become an issue: what needs a decision (product, change of a decision, schema or format, fixing the size of a stage), what concerns data loss, `mapping.json` integrity or security (which calls the owner right away) and what shows up after the fix phase.
+- The fix phase also opens without ❌, when there is a pending defect from the phases or a report observation that is a defect, and the retest covers the steps that the fixes affect.

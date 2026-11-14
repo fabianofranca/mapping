@@ -1,9 +1,9 @@
-# Desempate estável — 2026-11-06 (épico `epic/desempate-estavel`, PR #621, MCP 0.22.0, schema v14)
+# Stable tie-breaking — 2026-11-06 (epic `epic/desempate-estavel`, PR #621, MCP 0.22.0, schema v14)
 
 ## Corrigido
 
-- Reordenar uma marcação (a **Ordem** dos Detalhes ou o `move_marking` do MCP) não troca mais pai e filho de mesmo retângulo, nem a mãe entre candidatas de mesma área, no gesto seguinte: nos empates o assentar da hierarquia prefere a relação atual, e a ordem do array só decide o empate novo.
-- Uma proposta com reordenação (`move_marking`) no lote aplica os mesmos pais e a mesma ordem entre irmãs que a revisão (visão **Proposto**) e o `membership` mostraram, também quando há retângulos iguais (o `wrap_items`). Fica de fora só uma família rara, documentada como limite conhecido (#625): um empate entre marcações que já existiam, decidido no lote por um passo que a proposta não registra, segue a relação da base; confira com `get_marking` depois de aplicar.
-- A revisão não mostra mais uma mudança de posição a mais quando duas marcações novas entram no mesmo lugar.
-- O **Envolver** (e o `wrap_items` do MCP) põe a nova na cadeia certa depois de reordenar marcações de mesmo retângulo: ela fica filha do pai que as selecionadas tinham e mãe direta delas, em vez de entrar no meio da cadeia.
-- Uma proposta com duas mudanças de posição para a mesma marcação não duplica mais essa marcação nem perde uma irmã ao aplicar: vale a última.
+- Reordering a marking (the **Order** in Details or the MCP `move_marking`) no longer swaps parent and child of the same rectangle, nor the parent among candidates of the same area, on the next gesture: in ties the hierarchy settle prefers the current relation, and the array order only decides the new tie.
+- A proposal with a reordering (`move_marking`) in the batch applies the same parents and the same order among siblings that the review (the **Proposed** view) and the `membership` showed, also when there are equal rectangles (`wrap_items`). Only one rare family is left out, documented as a known limit (#625): a tie between markings that already existed, decided in the batch by a step the proposal does not record, follows the base's relation; check with `get_marking` after applying.
+- The review no longer shows an extra position change when two new markings enter at the same place.
+- **Wrap** (and the MCP `wrap_items`) puts the new one in the right chain after reordering markings of the same rectangle: it becomes a child of the parent the selected ones had and the direct parent of them, instead of entering in the middle of the chain.
+- A proposal with two position changes for the same marking no longer duplicates that marking or loses a sibling when applied: the last one wins.

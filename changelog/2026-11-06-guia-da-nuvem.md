@@ -1,7 +1,7 @@
-# Guia da nuvem — 2026-11-06 (épico `epic/guia-da-nuvem`, PR #612, MCP 0.19.0, schema v14)
+# Cloud guide — 2026-11-06 (epic `epic/guia-da-nuvem`, PR #612, MCP 0.19.0, schema v14)
 
 ## Corrigido
 
-- Guia de testes: a janela da receita da nuvem (`cloud-up.sh` e receita 2 do apêndice A) passa de 1600 × 1000 para 1600 × 1200, com viewport acima do mínimo da app (900 × 860); o item 6 dos "Primeiros 10 minutos" registra `innerWidth` e `innerHeight`.
-- Guia de testes: a linha do R19 em "Dependências" diz de que passos o R19.19 depende numa rodada dirigida (R19.1, R19.5, R19.6 e R19.13).
-- Guia de testes: o R9.5 concorda com o R9.6 (o **Arrumar** diminui a altura do Row e a largura dos botões).
+- Test guide: the cloud recipe window (`cloud-up.sh` and recipe 2 of appendix A) goes from 1600 × 1000 to 1600 × 1200, with a viewport above the app's minimum (900 × 860); item 6 of the "First 10 minutes" records `innerWidth` and `innerHeight`.
+- Test guide: the R19 row in "Dependencies" says which steps R19.19 depends on in a directed round (R19.1, R19.5, R19.6 and R19.13).
+- Test guide: R9.5 agrees with R9.6 (**Arrange** reduces the Row's height and the buttons' width).

@@ -1,13 +1,13 @@
-# Correções na edição — 2026-11-09 (épico `epic/correcoes-edicao`, PR #1113, MCP 0.28.5 sem mudança, schema v18)
+# Fixes in editing — 2026-11-09 (epic `epic/correcoes-edicao`, PR #1113, MCP 0.28.5 unchanged, schema v18)
 
 ## Corrigido
 
-- O campo de texto de várias linhas passa a mostrar o valor atual da anotação: depois de desfazer ou de uma recarga por mudança externa, ele não segue com o texto velho, e sair do campo sem editar não grava o texto velho por cima.
-- No campo de texto de várias linhas, o cursor não pula mais para o fim a cada tecla digitada, e o foco não volta ao campo depois de sair dele.
-- Os diálogos só fecham com o clique inteiro no fundo: selecionar texto arrastando para fora da caixa e soltar sobre o fundo não fecha mais o diálogo nem descarta o que foi digitado.
-- Com uma perspectiva aberta, a caixa de camada da Lista, o "Mostrar a camada" dos painéis da marcação e da seta, "Ir para a anotação" e o chip de citação de camada passam a mudar as camadas escondidas da própria perspectiva (com desfazer), como já fazia a janela Camadas; antes mexiam nas escondidas da Principal e a camada não aparecia.
-- Apagar uma conversa que falha ao gravar (permissão ou arquivo alterado por fora) agora mostra o erro: no diálogo de confirmação, que fica aberto, ou como aviso quando a conversa é só sua; antes a conversa continuava na lista sem aviso.
-- Um layout de janelas guardado malformado no navegador (por exemplo, a lista de janelas abertas com outro tipo de valor) não deixa mais a app em branco: o campo inválido cai no padrão (Árvore, Camadas e Detalhes).
-- Soltar um arquivo fora de onde a app o importa (painéis, tela inicial, canvas somente leitura ou ocupado, revisão de proposta) não faz mais o navegador abrir o arquivo na aba e fechar o editor.
-- Shift+Enter num campo de uma linha com o texto ainda não confirmado não perde mais a quebra: "Linha 1" + Shift+Enter + "Linha 2" fica nas duas linhas.
-- Com uma perspectiva aberta, "Mostrar todas" nos Detalhes (aviso de todas as camadas escondidas) tira as camadas escondidas da perspectiva, com desfazer; antes não fazia nada.
+- The multi-line text field now shows the annotation's current value: after an undo or a reload from an external change, it does not keep the old text, and leaving the field without editing does not write the old text over it.
+- In the multi-line text field, the cursor no longer jumps to the end on every typed key, and focus does not return to the field after leaving it.
+- Dialogs only close on a full click on the backdrop: selecting text by dragging outside the box and releasing over the backdrop no longer closes the dialog or discards what was typed.
+- With a perspective open, the layer checkbox in the List, "Show layer" in the marking and arrow panels, "Go to annotation" and the layer citation chip now change the hidden layers of the perspective itself (with undo), as the Layers window already did; before, they changed the hidden ones of the Main perspective and the layer did not appear.
+- Deleting a conversation that fails to save (permission or a file changed externally) now shows the error: in the confirmation dialog, which stays open, or as a notice when the conversation is only yours; before, the conversation stayed in the list without a notice.
+- A malformed window layout saved in the browser (for example, the list of open windows with a value of another type) no longer leaves the app blank: the invalid field falls back to the default (Tree, Layers and Details).
+- Dropping a file outside where the app imports it (panels, home screen, read-only or busy canvas, proposal review) no longer makes the browser open the file in the tab and close the editor.
+- Shift+Enter in a one-line field with text not yet confirmed no longer loses the break: "Line 1" + Shift+Enter + "Line 2" stays on both lines.
+- With a perspective open, "Show all" in Details (the notice of all layers hidden) removes the hidden layers from the perspective, with undo; before, it did nothing.

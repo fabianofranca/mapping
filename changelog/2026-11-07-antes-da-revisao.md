@@ -1,6 +1,6 @@
-# Antes da revisão legível — 2026-11-07 (épico `epic/antes-da-revisao`, PR #708, MCP 0.24.0, schema v15)
+# Readable before-the-revision — 2026-11-07 (epic `epic/antes-da-revisao`, PR #708, MCP 0.24.0, schema v15)
 
 ## Corrigido
 
-- O "Antes da revisão" de uma mudança trocada pelo agente mostra o que ele tinha proposto campo a campo, só o que mudou (os campos da anotação pelo nome na especialização, os pares pela chave; tabela pelas linhas e referência pelo alvo), sem JSON.
-- O popover da revisão não cobre mais a barra da revisão (Aceitar tudo, Aplicar aceitas): se não cabe nem embaixo nem em cima, abre do lado com mais espaço, com rolagem.
+- The "Before the revision" of a change replaced by the agent shows what it had proposed field by field, only what changed (annotation fields by their name in the specialization, pairs by key; table by rows and reference by target), without JSON.
+- The review popover no longer covers the review bar (Accept all changes, Apply accepted): if it fits neither below nor above, it opens to the side with more room, with scrolling.

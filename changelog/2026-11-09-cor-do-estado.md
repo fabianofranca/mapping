@@ -1,10 +1,10 @@
-# Cor do estado da conversa — 2026-11-09 (épico `epic/cor-do-estado`, PR #1304, MCP 0.28.12, schema v18)
+# Conversation state color — 2026-11-09 (epic `epic/cor-do-estado`, PR #1304, MCP 0.28.12, schema v18)
 
 ## Alterado
 
-- O selo de estado da conversa tem a mesma cor do pino do canvas na janela **Comentários** e na seção **Conversas** dos Detalhes: laranja em "aguardando você", ciano em "aguardando agente" e cinza em "resolvida", nos temas claro e escuro, com texto acima de 4,5:1 sobre o fundo do selo.
+- The conversation state badge has the same color as the canvas pin in the **Comments** window and in the **Conversations** section of Details: orange for "waiting for you", cyan for "waiting for agent" and gray for "resolved", in the light and dark themes, with text above 4.5:1 over the badge background.
 
 ## Corrigido
 
-- Roteiro R22.6 (`docs/TESTING.md`): o clique do **Comentar** vai num ponto vazio que não depende do zoom, e o passo diz que o **Comentar** sobre um item ancora a conversa nele, sem pino tracejado nem `draft`.
-- As opções do seletor **Modo do desenho** (**Configurações** e **Detalhes** do container) aparecem como "Claro" e "Escuro" em pt-BR (e "Light" e "Dark" em en-US), em vez de `light` e `dark`; o valor gravado no `mapping.json` continua o mesmo.
+- Script R22.6 (`docs/TESTING.md`): the **Comment** click goes on an empty point that does not depend on zoom, and the step says that **Comment** on an item anchors the conversation to it, with no dashed pin and no `draft`.
+- The options of the **Drawing mode** selector (**Settings** and the container's **Details**) appear as "Claro" and "Escuro" in pt-BR (and "Light" and "Dark" in en-US), instead of `light` and `dark`; the value saved in `mapping.json` stays the same.

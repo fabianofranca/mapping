@@ -1,11 +1,11 @@
-# Fila sem espera — 2026-11-09 (épico `epic/fila-sem-espera`, PR #1366, MCP 0.28.15 sem mudança, schema v18)
+# Queue without waiting — 2026-11-09 (epic `epic/fila-sem-espera`, PR #1366, MCP 0.28.15 unchanged, schema v18)
 
 ## Alterado
 
-- Fila (`implementar-fila`): a versão do MCP é provisória ao abrir o épico e escolhida no fechamento (a próxima livre na `origin/main`); só a etapa `em andamento` ocupa vaga do `paralelo`; a correção que depende de código de outro épico vira um `bug` `ready` com `Depende de`, que a própria fila roda; o "Fim" confere os `bug` dela; as issues do que ficou para depois e o comentário de fechamento saem por um subagente durante o CI (PR #1366).
-- Skill novo na `main` durante a fila: grande (mais de 30 linhas ou seções de regra) vira troca de sessão, depois de conferir a linhagem; pequeno vira releitura do `SKILL.md` inteiro com prova no `log` do painel.
-- `detalhar-backlog`: exige `Depende de` sobre as `ready` e `in-progress` que mexem nos mesmos arquivos.
-- Painel da fila: sem a tabela "Bugs e roadmaps por etapa", o dataset `issues` e o subcomando `painel.py issue`; no lugar, o cartão "Issues criadas pela fila" com o link da busca `Origem: etapa`.
-- `implementar-fila`: com a versão do MCP trocada no fechamento, a rc do número antigo fica solta e o número novo ganha uma rc pelo workflow MCP pre-release; sem o id do comentário de fechamento, o resultado da Release vai num comentário novo; o "Fim" deixa de esperar o `bug` da própria fila que depende de outra etapa.
-- `detalhar-backlog`: não acrescenta `Depende de` quando a dependência (direta ou transitiva) fecharia um ciclo.
-- `docs/FLOW.md` e `docs/PROCESS.md`: a troca de sessão é por contexto ou por skill novo grande, e o gatilho do passo "Versão do MCP" volta a dizer "o que vai na release".
+- Queue (`implementar-fila`): the MCP version is provisional when the epic opens and chosen at closing (the next free one on `origin/main`); only the `em andamento` stage takes a `paralelo` slot; a fix that depends on code from another epic becomes a `ready` `bug` with `Depende de`, which the queue itself runs; the "Fim" step checks its own `bug`s; the issues for what was left for later and the closing comment are produced by a subagent during CI (PR #1366).
+- New skill on `main` during the queue: a big one (more than 30 lines or rule sections) becomes a session handoff, after checking the lineage; a small one becomes a reread of the whole `SKILL.md` with proof in the panel's `log`.
+- `detalhar-backlog`: requires `Depende de` on the `ready` and `in-progress` issues that touch the same files.
+- Queue panel: no more "Bugs e roadmaps por etapa" table, `issues` dataset and `painel.py issue` subcommand; in their place, the "Issues criadas pela fila" card with the link to the `Origem: etapa` search.
+- `implementar-fila`: with the MCP version changed at closing, the rc of the old number is left loose and the new number gets an rc through the MCP pre-release workflow; without the closing comment id, the Release result goes in a new comment; the "Fim" step stops waiting for the queue's own `bug` that depends on another stage.
+- `detalhar-backlog`: does not add `Depende de` when the dependency (direct or transitive) would close a cycle.
+- `docs/FLOW.md` and `docs/PROCESS.md`: the session handoff is by context or by a big new skill, and the trigger of the "Versão do MCP" step goes back to saying "what goes in the release".

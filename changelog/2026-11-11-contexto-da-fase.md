@@ -1,13 +1,13 @@
-# Teto de contexto da fase — 2026-11-11 (épico `epic/contexto-da-fase`, PR #1655, MCP 0.35.0 sem mudança, schema v18)
+# Phase context ceiling — 2026-11-11 (epic `epic/contexto-da-fase`, PR #1655, MCP 0.35.0 unchanged, schema v18)
 
 ## Adicionado
 
-- `docs/FLOW.md`, "Para a sessão da fase", item 3: o sub-item **Teto de contexto da fase**. A sessão da fase (e a de correção) confere o próprio contexto (`context_usage.used_tokens` do `get_session` sem `session_id`) antes de mandar tarefa nova a um subagente e antes dos gates; acima de 300 mil e antes de abrir o PR, ela espera os subagentes, faz commit `WIP <código>: passagem por contexto` e push, comenta a passagem na sub-issue (`Passagem da fase <código> (contexto <n> mil):`) e pede a troca ao coordenador. Depois do PR aberto não há troca.
-- Skill `implementar-fila`, "3. Por etapa": o parágrafo **Fase que passa a vez por contexto**. O coordenador cria a sucessora (mesmos `model`, `effort` e `source_revision`, título com ` · retomada <k>`, mensagem da fase com a linha `Retomada por contexto (<k> de 3)`), grava `child=`, `session … kind=fase label=<código>` e o log no painel, e arquiva a anterior com o custo gravado antes. No máximo 2 trocas por fase: a sessão `3 de 3` não troca.
-- `tests/tooling/queuePhaseContext.test.ts`: teste de texto que confere essas regras.
+- `docs/FLOW.md`, "Para a sessão da fase", item 3: the sub-item **Teto de contexto da fase**. The phase session (and the fix one) checks its own context (`context_usage.used_tokens` of `get_session` without `session_id`) before sending a new task to a subagent and before the gates; above 300 thousand and before opening the PR, it waits for the subagents, makes a `WIP <código>: passagem por contexto` commit and push, comments the handoff on the sub-issue (`Passagem da fase <código> (contexto <n> mil):`) and asks the coordinator for the swap. After the PR is open there is no swap.
+- Skill `implementar-fila`, "3. Por etapa": the paragraph **Fase que passa a vez por contexto**. The coordinator creates the successor (same `model`, `effort` and `source_revision`, title with ` · retomada <k>`, phase message with the line `Retomada por contexto (<k> de 3)`), writes `child=`, `session … kind=fase label=<código>` and the log in the panel, and archives the previous one with the cost written first. At most 2 swaps per phase: the `3 de 3` session does not swap.
+- `tests/tooling/queuePhaseContext.test.ts`: a text test that checks these rules.
 
 ## Alterado
 
-- `docs/FLOW.md`, "Orquestrador — passo a passo", parágrafo "Limites": o orquestrador de uma etapa só responde ao pedido de troca da fase do mesmo jeito (cria a sucessora e arquiva a anterior).
-- Skill `implementar-fila`, "Arquivar as sessões" › "O que não se arquiva": a filha que passou a vez por contexto se arquiva ao criar a sucessora.
-- Nada muda na app, no servidor MCP, no schema, no `docs/PROCESS.md`, no `CLAUDE.md` nem no `painel.py`.
+- `docs/FLOW.md`, "Orquestrador — passo a passo", paragraph "Limites": the orchestrator of a stage answers the phase's swap request only in the same way (creates the successor and archives the previous one).
+- Skill `implementar-fila`, "Arquivar as sessões" › "O que não se arquiva": the child that passed the turn by context is archived when the successor is created.
+- Nothing changes in the app, in the MCP server, in the schema, in `docs/PROCESS.md`, in `CLAUDE.md` or in `painel.py`.

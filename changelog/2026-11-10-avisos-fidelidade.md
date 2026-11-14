@@ -1,11 +1,11 @@
-# Avisos de fidelidade — 2026-11-10 (épico `epic/avisos-fidelidade`, PR #1510, MCP 0.32.0, schema v18)
+# Fidelity notices — 2026-11-10 (epic `epic/avisos-fidelidade`, PR #1510, MCP 0.32.0, schema v18)
 
 ## Adicionado
 
-- O `docs/SPEC-FORMAT.md` ganha a subseção "Avisos de fidelidade e origens do aviso": o critério do que vira aviso, o `ref` (o doc do tipo), o prefixo `<plataforma>: ` na `message`, as duas origens (gerado por ferramenta × curado à mão) e como a app mostra as duas (a mesma lista na janela Avisos; a origem só nos Detalhes).
-- A skill `spec-author` e o `docs/AGENT-GUIDE.md` trazem a regra: passar cada diferença do doc pelo critério, ignorar os avisos com prefixo de outra plataforma e contar ao usuário o que for `diverges`.
-- O `get_code_hints` (MCP 0.32.0) traz `notices` em cada tipo de `types` que tem aviso: os do tipo, dos campos e das colunas `table`, por gravidade, com `kind`, `message`, `since?`, `ref?` e o lugar (`key?`, `column?`). Tipos sem `code` na plataforma (`unmappedTypes`) não trazem avisos, e o filtro por plataforma é do agente (prefixo da `message`). Sem aviso na especialização, a saída não muda.
+- `docs/SPEC-FORMAT.md` gains the subsection "Avisos de fidelidade e origens do aviso": the criterion for what becomes a notice, the `ref` (the type's doc), the `<platform>: ` prefix in the `message`, the two origins (tool-generated × hand-curated) and how the app shows both (the same list in the Notices window; the origin only in Details).
+- The `spec-author` skill and `docs/AGENT-GUIDE.md` carry the rule: run each difference in the doc through the criterion, ignore notices with another platform's prefix and tell the user whatever is `diverges`.
+- `get_code_hints` (MCP 0.32.0) brings `notices` in each type of `types` that has a notice: those of the type, of the fields and of the `table` columns, by severity, with `kind`, `message`, `since?`, `ref?` and the place (`key?`, `column?`). Types without `code` on the platform (`unmappedTypes`) bring no notices, and filtering by platform is the agent's job (prefix of the `message`). With no notice in the specialization, the output does not change.
 
 ## Alterado
 
-- A regra de regravar avisos vale para a origem de cada um: a ferramenta regrava os do `ref` dela, e o aviso curado à mão só sai quando o autor revê o doc e a diferença sumiu (antes, os textos diziam para regravar todos a cada rodada).
+- The rule for rewriting notices applies to the origin of each one: the tool rewrites those of its own `ref`, and a hand-curated notice only goes away when the author reviews the doc and the difference is gone (before, the texts said to rewrite all of them every round).

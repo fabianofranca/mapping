@@ -1,16 +1,16 @@
-# Imagens remotas — 2026-11-01 (épico `epic/imagens-remotas`, MCP 0.11.0, schema v13)
+# Remote images — 2026-11-01 (epic `epic/imagens-remotas`, MCP 0.11.0, schema v13)
 
 ## Adicionado
 
-- Nó `image` nos componentes (componente `formatVersion` 3; as versões 1 e 2 continuam aceitas): um componente pode exibir uma imagem por URL `https://`, ligada a um campo `string`.
-- Consentimento por origem: uma faixa acima do canvas lista as origens novas e só pede a imagem à rede depois de "Permitir estas"; o padrão é "Agora não".
-- Configurações › Privacidade: origens permitidas com Revogar e interruptores (desligados por padrão) para qualquer origem, `http:`, rede local e servidores sem CORS.
-- Visualizador embutível 0.3.0 com a opção `remoteImages` (desligada por padrão) e `allowOrigin`.
-- Roteiro de teste R15 e um exemplo de biblioteca com componente de avatar.
+- `image` node in components (component `formatVersion` 3; versions 1 and 2 are still accepted): a component can display an image from an `https://` URL, bound to a `string` field.
+- Consent per origin: a bar above the canvas lists the new origins and only requests the image from the network after "Allow these"; the default is "Not now".
+- Settings › Privacy: allowed origins with Revoke, and switches (off by default) for any origin, `http:`, local network and servers without CORS.
+- Embeddable viewer 0.3.0 with the `remoteImages` option (off by default) and `allowOrigin`.
+- Test script R15 and a library example with an avatar component.
 
 ## Alterado
 
-- A CSP do `index.html` passa a liberar `https:` e `http:` em `img-src`, com Trusted Types e `no-referrer`; `connect-src` continua `'none'`.
-- A imagem nunca é gravada (projeto, zip, IndexedDB ou cache): só a URL fica no `mapping.json`.
-- O MCP nunca baixa imagens: desenha o reservado e devolve a URL como texto.
-- Imagens que falham ou são bloqueadas aparecem no Diagnóstico e ficam no reservado.
+- The `index.html` CSP now allows `https:` and `http:` in `img-src`, with Trusted Types and `no-referrer`; `connect-src` stays `'none'`.
+- The image is never saved (project, zip, IndexedDB or cache): only the URL stays in `mapping.json`.
+- The MCP never downloads images: it draws the placeholder and returns the URL as text.
+- Images that fail or are blocked appear in Diagnostics and stay in the placeholder.
