@@ -1,42 +1,42 @@
-# Formato da especialização (`formatVersion` 1 a 16)
+# Specialization format (`formatVersion` 1 to 16)
 
-O formato do arquivo que define camadas e tipos de anotação (e, na `formatVersion` 2, as plataformas de código e o código de instanciação dos tipos; na 3, as origens externas; na 4, a **biblioteca**: componentes, documentos, exemplos, fontes, origens executáveis e o contrato de versão; na 5, o repositório de cada plataforma; na 6, os tamanhos prontos de container; na 7, o tipo flutuante; na 8, as sugestões de texto; na 9, as variantes do código; na 10, os avisos; na 11, os filhos por camada e grupo, os papéis no vínculo e o documento em repositório externo; na 12, os passos de migração dos papéis; na 13, os filhos da própria camada; na 14, a anotação inteira como alvo de um `ref`; na 15, os tokens de design; na 16, as assinaturas e os modelos de campo). A página "Ajuda → Especializações" da app é uma versão resumida deste documento (um teste garante que os títulos das seções e os blocos de código coincidem).
+The format of the file that defines layers and annotation types (and, in `formatVersion` 2, the code platforms and the instantiation code of the types; in 3, the external sources; in 4, the **library**: components, documents, examples, fonts, executable origins and the version contract; in 5, the repository of each platform; in 6, the ready-made container sizes; in 7, the floating type; in 8, the text suggestions; in 9, the code variants; in 10, the notices; in 11, the children by layer and group, the link roles and the document in an external repository; in 12, the role migration steps; in 13, the children of the layer itself; in 14, the whole annotation as the target of a `ref`; in 15, the design tokens; in 16, the signatures and the field models). The "Help → Specializations" page of the app is a condensed version of this document (a test guarantees that the section titles and the code blocks match).
 
-## O que é uma especialização
+## What a specialization is
 
-Uma **especialização** é um arquivo JSON que define **camadas obrigatórias** e os **tipos de anotação** que podem ser criados nelas. Ex: a especialização **SDUI** traz a camada Componentes (Button, Input…) e a camada Eventos (onClick, onHold…). Ao criar um Button, as chaves já vêm definidas e só falta preencher os valores.
+A **specialization** is a JSON file that defines **mandatory layers** and the **annotation types** that can be created in them. E.g. the **SDUI** specialization brings the Components layer (Button, Input…) and the Events layer (onClick, onHold…). When you create a Button, the keys are already defined and only the values are left to fill in.
 
-- Um projeto pode aplicar **várias** especializações, a qualquer momento.
-- Uma especialização **não cita outra pelo nome**. A ligação entre elas é feita por **referências fortes** (tipo `ref`) que escolhem os alvos por **etiquetas**.
-- Camadas da especialização só aceitam anotações **tipadas**, sem chaves extras. Camadas criadas pelo usuário continuam livres.
-- A especialização aplicada é **copiada** para `specs/<id>.json` dentro do projeto, que fica autocontido. A cópia mantém a `formatVersion` com que foi aplicada.
-- A `formatVersion` 12 é a 11 mais três **passos de migração dos papéis**, em `migrations`: `rename-role`, `remove-role` e `set-role` (ver "Contrato de versão" e "Papéis no vínculo (childRoles)"). Antes dela, tirar um papel de `childRoles` deixava `parentRole` das anotações apontando para um papel que não existe mais; a 12 trata essa troca como **quebra** e a cobre com um passo que renomeia, remove ou preenche o papel nas anotações do projeto. A 12 é aditiva: as versões 1 a 11 continuam aceitas sem mudança, e cada passo novo numa versão anterior é o erro `só é permitido com formatVersion 12`, no caminho exato. Só sobe para a 12 a especialização que declara algum desses passos. Uma v11 que remove ou torna obrigatório o papel de um tipo, sem o passo, é recusada na atualização até subir para a 12 com ele.
-- A `formatVersion` 13 é a 12 mais os **filhos da própria camada**: `allowedChildren` passa a aceitar a cláusula `{ layer }` com a camada do próprio dono e o id de um tipo da mesma camada, inclusive o do próprio tipo (ver "Filhos por camada e grupo"). Com isso um evento pode ser dono de outros eventos, cada filho no papel em que se liga (`childRoles`), e a anotação **tipada** pode ter dona da mesma camada no projeto (schema v15; a **livre** continua só com dona de outra camada, e o ciclo continua barrado). A 13 é aditiva: as versões 1 a 12 continuam aceitas sem mudança, e a camada ou o tipo da própria camada em `allowedChildren` numa versão anterior continua sendo o erro de sempre (`filhos devem estar em outra camada`). Só sobe para a 13 a especialização que declara um filho da própria camada.
-- A `formatVersion` 14 é a 13 mais a **anotação inteira como alvo**: o `accepts` de um campo ou coluna `ref` ganha `annotations`, uma lista de ids de tipo ou cláusulas `{ layer, groups? }` da **mesma especialização**, com a mesma sintaxe e o mesmo resolvedor do `allowedChildren` (ver "Referências e etiquetas"). A 14 é aditiva: as versões 1 a 13 continuam aceitas sem mudança, e `annotations` numa versão anterior é o erro `só é permitido com formatVersion 14`, no caminho `…accepts.annotations`. Só sobe para a 14 a especialização que declara `accepts.annotations`.
-- A `formatVersion` 15 é a 14 mais os **tokens de design**: a chave `tokens` na raiz declara valores nomeados (cores, raios, espaçamentos, famílias de fonte), simples ou por modo (`light`/`dark`), que os componentes de formato 4 leem com `{ "$token": "nome" }` (ver "Tokens de design"). A 15 também traz o **conjunto de ícones**: a chave `icons` na raiz aponta para um arquivo `.json` do pacote com os ícones, que o nó `icon` dos componentes de formato 4 lê (ver "Conjunto de ícones"). A 15 é aditiva: as versões 1 a 14 continuam aceitas sem mudança, e `tokens` ou `icons` numa versão anterior é o erro `só é permitido com formatVersion 15`, no caminho da chave. A 15 traz ainda `structural` no tipo de anotação: `structural: true` marca o tipo que **agrupa e não desenha** (um grupo, uma seção). Ele não tem `component` (`structural` junto com `component` é erro de validação, no caminho `structural`), a marcação dele não mostra o cabeçalho com o nome no canvas, o contorno aparece só com o mouse ou selecionada (como o de quem tem desenho) e ela não conta como "sem componente" em nenhuma pendência; `structural` numa versão anterior é o erro `só é permitido com formatVersion 15`, no caminho `…annotationTypes[n].structural`. A 15 traz também a **origem medida**: `origins[].kind` (`tree`, o padrão, ou `measured`; ver "Origens (sources)"); `kind` numa versão anterior é o erro `só é permitido com formatVersion 15`, no caminho `origins[n].kind`. Só sobe para a 15 a especialização que declara `tokens`, `icons`, `structural` ou `kind: "measured"`.
-- A `formatVersion` 16 é a 15 mais as **assinaturas e os modelos de campo**: o `code` de cada plataforma (e cada caso de `variants`) passa a poder citar a **ficha de assinatura** do que se chama (`signature`, formato `mapping-signature`, ver `docs/SIGNATURE-FORMAT.md`), deixar parâmetros de fora de propósito (`ignore`), ligar parâmetros a fábricas (`calls`) e formatar o valor (`formats`); `params` passa a aceitar o caminho `colors.containerColor` e o posicional `#0`; as `sources` do tipo aceitam `signature`; e a raiz ganha `fieldModels` (ver "Assinaturas e modelos de campo"). A 16 é aditiva: as versões 1 a 15 continuam aceitas sem mudança, e cada chave nova numa versão anterior é o erro `só é permitido com formatVersion 16`, no caminho exato da chave. Antes da 16, os valores de `params` com `.` ou `#0` são texto opaco, como sempre foram. Só sobe para a 16 a especialização que declara `fieldModels`, `signature`, `ignore`, `calls` ou `formats`, ou um caminho ou posicional em `params`.
-- A `formatVersion` 2 é a 1 mais o código de instanciação (plataformas e `code`: como se cria uma instância de cada tipo). A importação aceita as versões 1 a 16; uma especialização v1 é uma v2 sem plataformas e sem `code` (ver "Plataformas e code").
-- A `formatVersion` 3 é a 2 mais `sources`: a que elementos de um sistema externo cada tipo corresponde e de que propriedade de origem vem cada campo (ver "Origens (sources)").
-- A `formatVersion` 4 é a 3 mais a **biblioteca**: o tipo aponta para um componente (`component`), um documento (`doc`) e exemplos (`examples`); a raiz ganha `fonts`, `origins` e `migrations`; as `sources` ganham `path`, `slot` e `ignore` (ver "Origens (sources)", "Biblioteca: o pacote", "Contrato de versão" e "Validação da biblioteca"). As versões 1, 2 e 3 continuam aceitas sem mudança: cada chave da v4 numa versão anterior é o erro `só é permitido com formatVersion 4`, no caminho exato.
-- A `formatVersion` 5 é a 4 mais `repo` nas plataformas: o repositório da biblioteca em cada plataforma (`url`, `urlTemplate`, `ref`), de onde vêm o link e a revisão do arquivo de cada `symbol` (ver "Plataformas e code"). As versões 1 a 4 continuam aceitas sem mudança: `repo` numa versão anterior é o erro `só é permitido com formatVersion 5`, no caminho exato.
-- A `formatVersion` 6 é a 5 mais `containers`: a lista de **tamanhos prontos de container** que o diálogo **Novo container** oferece quando a especialização está aplicada (ver "Containers (tamanhos prontos)"). A 6 é aditiva: as versões 1 a 5 continuam aceitas sem mudança, e `containers` numa versão anterior é o erro `só é permitido com formatVersion 6`, no caminho exato. O núcleo da app não traz tamanhos de dispositivo; só **Personalizado** e **Tamanho da seleção**.
-- A `formatVersion` 7 é a 6 mais `floating` no tipo de anotação (o tipo cuja instância é uma **marcação flutuante**, um comentário solto sobre o canvas: ver "Tipo flutuante"), `appliesTo` no tipo (a que a anotação se aplica: marcação, seta ou ambas: ver "Onde o tipo se aplica") e `ref` como tipo de coluna de `table` (uma lista de referências como dado: ver "Tipos de valor"). A 7 é aditiva: as versões 1 a 6 continuam aceitas sem mudança, e cada chave da 7 numa versão anterior é o erro `só é permitido com formatVersion 7`, no caminho exato.
-- A `formatVersion` 8 é a 7 mais `suggestions` e `linkedRef` em campo e coluna `string` (vocabulário sugerido ao digitar, sem restringir o valor, e os alvos mapeados na mesma lista: ver "Sugestões de texto" e "Alvos mapeados na lista (`linkedRef`)"). A 8 é aditiva: as versões 1 a 7 continuam aceitas sem mudança, e `suggestions` ou `linkedRef` numa versão anterior é o erro `só é permitido com formatVersion 8`, no caminho exato.
-- A `formatVersion` 9 é a 8 mais `variants` na entrada de `code`: o campo `enum` do tipo que escolhe a variante do código de instanciação, como o `style` de um botão que em Compose troca o composable (`Button`, `OutlinedButton`, `TextButton`; ver "Variantes do código (`variants`)"). A 9 é aditiva: as versões 1 a 8 continuam aceitas sem mudança, e `variants` numa versão anterior é o erro `só é permitido com formatVersion 9`, no caminho exato. Só sobe para a 9 a especialização que usa `variants`.
-- A `formatVersion` 10 é a 9 mais `notices` no tipo, no campo e na coluna de `table`: avisos curtos que dizem a quem usa a especialização que algo diverge entre as fontes, está pendente, obsoleto ou removido (ver "Avisos (notices)"). A 10 é aditiva: as versões 1 a 9 continuam aceitas sem mudança, e `notices` numa versão anterior é o erro `só é permitido com formatVersion 10`, no caminho exato. Só sobe para a 10 a especialização que usa `notices`.
-- A `formatVersion` 11 é a 10 mais três recursos, todos opcionais: `allowedChildren` que aceita, além de ids de tipo, uma **cláusula** `{ layer, groups? }` que cobre uma camada inteira ou só os **grupos** dela (`groups` na camada e no tipo: ver "Filhos por camada e grupo"); `childRoles` e `childRolesLabel` no tipo dono, os **papéis** em que um filho se liga a ele (ver "Papéis no vínculo (childRoles)"); e `docRepos` na raiz com o `doc` do tipo como objeto `{ repo, path }`, o documento que vive em **outro repositório** (ver "Documento em repositório externo (docRepos)"). A 11 é aditiva: as versões 1 a 10 continuam aceitas sem mudança, e cada chave da 11 numa versão anterior é o erro `só é permitido com formatVersion 11`, no caminho exato. Só sobe para a 11 a especialização que usa alguma dessas chaves; o `doc` como texto (o arquivo do pacote) continua valendo desde a 4.
+- A project can apply **several** specializations, at any time.
+- A specialization **does not cite another by name**. The link between them is made by **strong references** (type `ref`) that pick their targets by **tags**.
+- The layers of a specialization only accept **typed** annotations, with no extra keys. Layers created by the user remain free.
+- The applied specialization is **copied** to `specs/<id>.json` inside the project, which stays self-contained. The copy keeps the `formatVersion` it was applied with.
+- `formatVersion` 12 is 11 plus three **role migration steps**, in `migrations`: `rename-role`, `remove-role` and `set-role` (see "Version contract" and "Link roles (childRoles)"). Before it, removing a role from `childRoles` left the annotations' `parentRole` pointing to a role that no longer exists; 12 treats that change as **breaking** and covers it with a step that renames, removes or fills in the role in the project's annotations. Version 12 is additive: versions 1 to 11 are still accepted unchanged, and each new step in an earlier version is the error `only allowed with formatVersion 12`, at the exact path. Only a specialization that declares one of these steps moves up to 12. A v11 that removes a type's role, or makes it required, without the step is rejected on update until it moves up to 12 with it.
+- `formatVersion` 13 is 12 plus the **children of the layer itself**: `allowedChildren` now accepts the `{ layer }` clause with the owner's own layer and the id of a type in the same layer, including the type's own id (see "Children by layer and group"). With that, an event can own other events, each child in the role it links with (`childRoles`), and the **typed** annotation can have an owner in the same layer in the project (schema v15; the **free** one still only has an owner in another layer, and the cycle is still barred). Version 13 is additive: versions 1 to 12 are still accepted unchanged, and the layer or a type of the layer itself in `allowedChildren` in an earlier version is still the usual error (`children must be in another layer`). Only a specialization that declares a child of its own layer moves up to 13.
+- `formatVersion` 14 is 13 plus the **whole annotation as a target**: the `accepts` of a `ref` field or column gains `annotations`, a list of type ids or `{ layer, groups? }` clauses of the **same specialization**, with the same syntax and the same resolver as `allowedChildren` (see "References and tags"). Version 14 is additive: versions 1 to 13 are still accepted unchanged, and `annotations` in an earlier version is the error `only allowed with formatVersion 14`, at the path `…accepts.annotations`. Only a specialization that declares `accepts.annotations` moves up to 14.
+- `formatVersion` 15 is 14 plus the **design tokens**: the `tokens` key at the root declares named values (colors, radii, spacings, font families), simple or per mode (`light`/`dark`), which format 4 components read with `{ "$token": "name" }` (see "Design tokens"). Version 15 also brings the **icon set**: the `icons` key at the root points to a `.json` file in the package with the icons, which the `icon` node of format 4 components reads (see "Icon set"). Version 15 is additive: versions 1 to 14 are still accepted unchanged, and `tokens` or `icons` in an earlier version is the error `only allowed with formatVersion 15`, at the path of the key. Version 15 also brings `structural` on the annotation type: `structural: true` marks the type that **groups and does not draw** (a group, a section). It has no `component` (`structural` together with `component` is a validation error, at the path `structural`), its marking does not show the header with the name on the canvas, the outline appears only on mouse hover or when selected (like that of one that has a drawing) and it does not count as "without component" in any pending item; `structural` in an earlier version is the error `only allowed with formatVersion 15`, at the path `…annotationTypes[n].structural`. Version 15 also brings the **measured origin**: `origins[].kind` (`tree`, the default, or `measured`; see "Sources (sources)"); `kind` in an earlier version is the error `only allowed with formatVersion 15`, at the path `origins[n].kind`. Only a specialization that declares `tokens`, `icons`, `structural` or `kind: "measured"` moves up to 15.
+- `formatVersion` 16 is 15 plus the **signatures and the field models**: the `code` of each platform (and each case of `variants`) can now cite the **signature sheet** of what it calls (`signature`, format `mapping-signature`, see `docs/SIGNATURE-FORMAT.md`), leave parameters out on purpose (`ignore`), link parameters to factories (`calls`) and format the value (`formats`); `params` now accepts the path `colors.containerColor` and the positional `#0`; the type's `sources` accept `signature`; and the root gains `fieldModels` (see "Signatures and field models"). Version 16 is additive: versions 1 to 15 are still accepted unchanged, and each new key in an earlier version is the error `only allowed with formatVersion 16`, at the exact path of the key. Before 16, `params` values with `.` or `#0` are opaque text, as they always were. Only a specialization that declares `fieldModels`, `signature`, `ignore`, `calls` or `formats`, or a path or positional in `params`, moves up to 16.
+- `formatVersion` 2 is 1 plus the instantiation code (platforms and `code`: how to create an instance of each type). Import accepts versions 1 to 16; a v1 specialization is a v2 without platforms and without `code` (see "Platforms and code").
+- `formatVersion` 3 is 2 plus `sources`: which elements of an external system each type corresponds to and which source property each field comes from (see "Sources (sources)").
+- `formatVersion` 4 is 3 plus the **library**: the type points to a component (`component`), a document (`doc`) and examples (`examples`); the root gains `fonts`, `origins` and `migrations`; the `sources` gain `path`, `slot` and `ignore` (see "Sources (sources)", "Library: the package", "Version contract" and "Library validation"). Versions 1, 2 and 3 are still accepted unchanged: each v4 key in an earlier version is the error `only allowed with formatVersion 4`, at the exact path.
+- `formatVersion` 5 is 4 plus `repo` on the platforms: the library's repository on each platform (`url`, `urlTemplate`, `ref`), which provides the link and the revision of the file of each `symbol` (see "Platforms and code"). Versions 1 to 4 are still accepted unchanged: `repo` in an earlier version is the error `only allowed with formatVersion 5`, at the exact path.
+- `formatVersion` 6 is 5 plus `containers`: the list of **ready-made container sizes** that the **New container** dialog offers when the specialization is applied (see "Containers (preset sizes)"). Version 6 is additive: versions 1 to 5 are still accepted unchanged, and `containers` in an earlier version is the error `only allowed with formatVersion 6`, at the exact path. The app core has no device sizes; only **Custom** and **Selection size**.
+- `formatVersion` 7 is 6 plus `floating` on the annotation type (the type whose instance is a **floating marking**, a loose comment over the canvas: see "Floating type"), `appliesTo` on the type (what the annotation applies to: marking, arrow or both: see "Where the type applies") and `ref` as a column type of `table` (a list of references as data: see "Value types"). Version 7 is additive: versions 1 to 6 are still accepted unchanged, and each key of 7 in an earlier version is the error `only allowed with formatVersion 7`, at the exact path.
+- `formatVersion` 8 is 7 plus `suggestions` and `linkedRef` on a `string` field and column (a vocabulary suggested while typing, without restricting the value, and the mapped targets in the same list: see "Text suggestions" and "Mapped targets in the list (`linkedRef`)"). Version 8 is additive: versions 1 to 7 are still accepted unchanged, and `suggestions` or `linkedRef` in an earlier version is the error `only allowed with formatVersion 8`, at the exact path.
+- `formatVersion` 9 is 8 plus `variants` in the `code` entry: the `enum` field of the type that chooses the variant of the instantiation code, such as the `style` of a button that in Compose switches the composable (`Button`, `OutlinedButton`, `TextButton`; see "Code variants (`variants`)"). Version 9 is additive: versions 1 to 8 are still accepted unchanged, and `variants` in an earlier version is the error `only allowed with formatVersion 9`, at the exact path. Only a specialization that uses `variants` moves up to 9.
+- `formatVersion` 10 is 9 plus `notices` on the type, on the field and on the `table` column: short notices that tell whoever uses the specialization that something diverges between the sources, is pending, obsolete or removed (see "Notices (notices)"). Version 10 is additive: versions 1 to 9 are still accepted unchanged, and `notices` in an earlier version is the error `only allowed with formatVersion 10`, at the exact path. Only a specialization that uses `notices` moves up to 10.
+- `formatVersion` 11 is 10 plus three features, all optional: `allowedChildren` that accepts, besides type ids, a **clause** `{ layer, groups? }` that covers a whole layer or only its **groups** (`groups` on the layer and on the type: see "Children by layer and group"); `childRoles` and `childRolesLabel` on the owner type, the **roles** in which a child links to it (see "Link roles (childRoles)"); and `docRepos` at the root with the type's `doc` as an object `{ repo, path }`, the document that lives in **another repository** (see "Document in an external repository (docRepos)"). Version 11 is additive: versions 1 to 10 are still accepted unchanged, and each key of 11 in an earlier version is the error `only allowed with formatVersion 11`, at the exact path. Only a specialization that uses one of these keys moves up to 11; `doc` as text (the package file) is still valid since 4.
 
-Arquivos de apoio:
+Supporting files:
 
-- `docs/spec.schema.json`: JSON Schema (draft 2020-12). Valida só a **estrutura**; as regras entre elementos (ids únicos, `allowedChildren` com as cláusulas e os `groups`, `requiresOwner`, `childRoles`, o `repo` de `docRepos`, `labelField`, `rowLabel`, `default` compatível, plataformas declaradas, chaves de `params` e `values`, `sources` só a partir da versão 3, `values` das origens só em `enum` e com destinos nas `options`, `path`/`slot`/`ignore` só em sistema declarado em `origins`, `examples` em um modo só, os passos de `migrations` coerentes com os tipos e campos) só são verificadas pelo validador da app (`src/model/spec.ts`, que é a fonte da verdade).
-- `docs/component.schema.json`: JSON Schema do arquivo de componente (`docs/COMPONENT-FORMAT.md`).
-- `examples/specs/sdui.json` (`formatVersion` 12) e `examples/specs/modelo-de-dados.json` (`formatVersion` 1): exemplos completos.
-- `examples/libraries/sdui-backend/`: o exemplo de **origem executável** (v9, 6 tipos): `origins` com `booleans`, `background.values` e raízes com `anchor`, `margin` e `scrim`; `sources` de tipo (`slot`, `ignore`, `id`) e de campo e coluna (`path`, `values`); exemplos do sistema externo (`examples[].system` e `file`) e a tela de exemplo; e `migrations` com os seis passos. É o exemplo de `origins`, `sources` e `migrations`.
-- `examples/libraries/sdui-backend/`: um pacote de biblioteca pequeno com a origem executável (`origins`, `sources` e `migrations`, com a tela de exemplo de um sistema externo fictício; ver "Biblioteca: o pacote"). O que cada exemplo mostra está em `examples/README.md`.
-- `libraries/material3-compose/`: biblioteca **pronta para uso** (v9, não embutida: aplicada pela pasta ou pelo zip) do Material 3 para Jetpack Compose, com o composable de cada tipo no `code` e `variants` onde a variante troca o símbolo; fixada no `compose.material3` 1.4.0.
-- `libraries/kotlin/`: biblioteca **pronta para uso** (v8, não embutida: a pessoa a aplica pela pasta ou pelo zip) das declarações Kotlin, com onze tipos de classe, objeto e interface, cada um com componente e documento; as propriedades são alvos de referência com a etiqueta `data-field`. As pastas de `libraries/` estão em [`libraries/README.md`](../libraries/README.md).
+- `docs/spec.schema.json`: JSON Schema (draft 2020-12). It validates only the **structure**; the rules between elements (unique ids, `allowedChildren` with the clauses and the `groups`, `requiresOwner`, `childRoles`, the `repo` of `docRepos`, `labelField`, `rowLabel`, compatible `default`, declared platforms, keys of `params` and `values`, `sources` only from version 3, `values` of the origins only on `enum` and with targets in the `options`, `path`/`slot`/`ignore` only on a system declared in `origins`, `examples` in one mode only, the `migrations` steps consistent with the types and fields) are only checked by the app's validator (`src/model/spec.ts`, which is the source of truth).
+- `docs/component.schema.json`: JSON Schema of the component file (`docs/COMPONENT-FORMAT.md`).
+- `examples/specs/sdui.json` (`formatVersion` 12) and `examples/specs/modelo-de-dados.json` (`formatVersion` 1): complete examples.
+- `examples/libraries/sdui-backend/`: the **executable origin** example (v9, 6 types): `origins` with `booleans`, `background.values` and roots with `anchor`, `margin` and `scrim`; type `sources` (`slot`, `ignore`, `id`) and field and column `sources` (`path`, `values`); examples of the external system (`examples[].system` and `file`) and the example screen; and `migrations` with the six steps. It is the example of `origins`, `sources` and `migrations`.
+- `examples/libraries/sdui-backend/`: a small library package with the executable origin (`origins`, `sources` and `migrations`, with the example screen of a fictional external system; see "Library: the package"). What each example shows is in `examples/README.md`.
+- `libraries/material3-compose/`: **ready-to-use** library (v9, not embedded: applied from the folder or the zip) of Material 3 for Jetpack Compose, with the composable of each type in `code` and `variants` where the variant switches the symbol; pinned to `compose.material3` 1.4.0.
+- `libraries/kotlin/`: **ready-to-use** library (v8, not embedded: the person applies it from the folder or the zip) of the Kotlin declarations, with eleven class, object and interface types, each with a component and a document; the properties are reference targets with the `data-field` tag. The folders of `libraries/` are in [`libraries/README.md`](../libraries/README.md).
 
-## Formato do arquivo
+## File format
 
 ```json
 {
@@ -45,11 +45,11 @@ Arquivos de apoio:
   "id": "sdui",
   "name": "SDUI",
   "version": 1,
-  "description": "opcional",
+  "description": "optional",
   "layers": [
     {
       "id": "componentes",
-      "name": "Componentes",
+      "name": "Components",
       "color": "#1E88E5",
       "annotationTypes": [
         {
@@ -79,70 +79,70 @@ Arquivos de apoio:
 }
 ```
 
-Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `16`), `id`, `name` e `version` (inteiro ≥ 1) são obrigatórios; `description`, `platforms` (a partir da versão 2, com `repo` na 5), `containers` (a partir da versão 6), `docRepos` (a partir da versão 11) e, a partir da versão 4, `fonts`, `origins` e `migrations` são opcionais, e `tokens` (a partir da versão 15) e `fieldModels` (a partir da versão 16) também. Cada camada tem `id` (único), `name`, `color` (`#RRGGBB`) e `annotationTypes`, e, a partir da versão 11, `groups` opcional (ver "Filhos por camada e grupo"). A importação ainda aceita arquivos antigos com `"mapeador-spec"`.
+At the root: `format` (always `"mapping-spec"`), `formatVersion` (`1` to `16`), `id`, `name` and `version` (integer ≥ 1) are required; `description`, `platforms` (from version 2, with `repo` in 5), `containers` (from version 6), `docRepos` (from version 11) and, from version 4, `fonts`, `origins` and `migrations` are optional, and so are `tokens` (from version 15) and `fieldModels` (from version 16). Each layer has `id` (unique), `name`, `color` (`#RRGGBB`) and `annotationTypes`, and, from version 11, optional `groups` (see "Children by layer and group"). Import still accepts old files with `"mapeador-spec"`.
 
-### Tipo de anotação
+### Annotation type
 
-| Propriedade       | Obrigatória | Descrição                                                                                                                                                                                                                |
-| ----------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `id`              | sim         | Único **na especialização inteira**.                                                                                                                                                                                     |
-| `name`            | sim         | Nome exibido (ex: "Button").                                                                                                                                                                                             |
-| `description`     | não         | Texto de ajuda.                                                                                                                                                                                                          |
-| `labelField`      | não         | Chave de um campo `string` cujo valor é o **rótulo da instância** quando o `name` da anotação está vazio.                                                                                                                |
-| `requiresOwner`   | não         | Padrão `false`. A anotação precisa ter exatamente um dono (ver "Relações").                                                                                                                                              |
-| `allowedChildren` | não         | Os tipos que podem ser **vinculados** a este: ids de tipo e, a partir da `formatVersion` 11, cláusulas `{ layer, groups? }`; a partir da 13, também da camada do próprio dono (ver "Filhos por camada e grupo").         |
-| `groups`          | não         | A partir da `formatVersion` 11. Ids dos grupos da **própria camada** a que o tipo pertence (ver "Filhos por camada e grupo").                                                                                            |
-| `childRoles`      | não         | A partir da `formatVersion` 11. Os papéis em que um filho se liga a este tipo (ver "Papéis no vínculo (childRoles)").                                                                                                    |
-| `childRolesLabel` | não         | A partir da `formatVersion` 11. O nome do seletor de papel, com `childRoles` (padrão "Papel").                                                                                                                           |
-| `fields`          | sim         | Lista de campos (pode ser vazia).                                                                                                                                                                                        |
-| `code`            | não         | A partir da `formatVersion` 2. Como se cria uma instância do tipo, por plataforma declarada (ver "Plataformas e code").                                                                                                  |
-| `sources`         | não         | A partir da `formatVersion` 3. Elementos de origem a que o tipo corresponde (ver "Origens (sources)").                                                                                                                   |
-| `component`       | não         | A partir da `formatVersion` 4. Caminho do arquivo `.json` do componente que desenha o tipo (ver "Biblioteca: o pacote").                                                                                                 |
-| `doc`             | não         | A partir da `formatVersion` 4. Caminho do documento `.md` do tipo (ver "Biblioteca: o pacote"); na 11, também `{ repo, path }`, um documento em repositório externo (ver "Documento em repositório externo (docRepos)"). |
-| `examples`        | não         | A partir da `formatVersion` 4. Exemplos nomeados do tipo: valores dos campos ou o JSON de um sistema externo.                                                                                                            |
-| `floating`        | não         | A partir da `formatVersion` 7. Padrão `false`. A instância é uma marcação flutuante (ver "Tipo flutuante").                                                                                                              |
-| `appliesTo`       | não         | A partir da `formatVersion` 7. `["marking"]`, `["arrow"]` ou os dois; padrão `["marking"]` (ver "Onde o tipo se aplica").                                                                                                |
-| `structural`      | não         | A partir da `formatVersion` 15. Padrão `false`. `true`: o tipo agrupa e não desenha (sem `component`); a marcação não mostra o nome e o contorno só aparece com o mouse ou selecionada.                                  |
-| `notices`         | não         | A partir da `formatVersion` 10. Avisos sobre o tipo (ver "Avisos (notices)").                                                                                                                                            |
+| Property          | Required | Description                                                                                                                                                                                                       |
+| ----------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`              | yes      | Unique **across the whole specialization**.                                                                                                                                                                       |
+| `name`            | yes      | Displayed name (e.g. "Button").                                                                                                                                                                                   |
+| `description`     | no       | Help text.                                                                                                                                                                                                        |
+| `labelField`      | no       | Key of a `string` field whose value is the **instance label** when the annotation's `name` is empty.                                                                                                              |
+| `requiresOwner`   | no       | Default `false`. The annotation must have exactly one owner (see "Relations").                                                                                                                                    |
+| `allowedChildren` | no       | The types that can be **linked** to this one: type ids and, from `formatVersion` 11, `{ layer, groups? }` clauses; from 13, also from the owner's own layer (see "Children by layer and group").                  |
+| `groups`          | no       | From `formatVersion` 11. Ids of the groups of the **type's own layer** that the type belongs to (see "Children by layer and group").                                                                              |
+| `childRoles`      | no       | From `formatVersion` 11. The roles in which a child links to this type (see "Link roles (childRoles)").                                                                                                           |
+| `childRolesLabel` | no       | From `formatVersion` 11. The name of the role selector, with `childRoles` (default "Role").                                                                                                                       |
+| `fields`          | yes      | List of fields (can be empty).                                                                                                                                                                                    |
+| `code`            | no       | From `formatVersion` 2. How to create an instance of the type, per declared platform (see "Platforms and code").                                                                                                  |
+| `sources`         | no       | From `formatVersion` 3. Source elements the type corresponds to (see "Sources (sources)").                                                                                                                        |
+| `component`       | no       | From `formatVersion` 4. Path of the `.json` component file that draws the type (see "Library: the package").                                                                                                      |
+| `doc`             | no       | From `formatVersion` 4. Path of the type's `.md` document (see "Library: the package"); in 11, also `{ repo, path }`, a document in an external repository (see "Document in an external repository (docRepos)"). |
+| `examples`        | no       | From `formatVersion` 4. Named examples of the type: field values or the JSON of an external system.                                                                                                               |
+| `floating`        | no       | From `formatVersion` 7. Default `false`. The instance is a floating marking (see "Floating type").                                                                                                                |
+| `appliesTo`       | no       | From `formatVersion` 7. `["marking"]`, `["arrow"]` or both; default `["marking"]` (see "Where the type applies").                                                                                                 |
+| `structural`      | no       | From `formatVersion` 15. Default `false`. `true`: the type groups and does not draw (no `component`); the marking does not show the name and the outline appears only on mouse hover or when selected.            |
+| `notices`         | no       | From `formatVersion` 10. Notices about the type (see "Notices (notices)").                                                                                                                                        |
 
-### Campo
+### Field
 
-| Propriedade   | Obrigatória        | Descrição                                                                                                                                                                                                   |
-| ------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `key`         | sim                | Chave gravada no JSON. `[A-Za-z0-9_]`, **não pode começar com `_`** (reservado). Única dentro do tipo.                                                                                                      |
-| `label`       | não                | Rótulo exibido (pode ter acentos). Padrão: `key`.                                                                                                                                                           |
-| `type`        | sim                | `string`, `number`, `date`, `enum`, `table` ou `ref`.                                                                                                                                                       |
-| `required`    | não                | Padrão `false`. Vazio é permitido ao salvar, mas a anotação fica **incompleta**.                                                                                                                            |
-| `default`     | não                | Valor inicial. Precisa ser válido para o tipo. Não existe para `table` nem `ref`.                                                                                                                           |
-| `options`     | só `enum`          | Lista não vazia de strings únicas.                                                                                                                                                                          |
-| `linkedRef`   | só `string`        | A partir da `formatVersion` 8. `key` de um campo `ref` do mesmo tipo (ou de uma coluna `ref` da mesma `table`): as declarações mapeadas que o `ref` aceita entram na lista (ver "Alvos mapeados na lista"). |
-| `suggestions` | só `string`        | A partir da `formatVersion` 8. Lista de sugestões de texto (ver "Sugestões de texto"); vale também numa coluna `string` de `table`.                                                                         |
-| `columns`     | só `table`         | Campos com a mesma estrutura, **apenas** `string`, `number`, `date` ou `enum` e, a partir da `formatVersion` 7, `ref` (com `accepts`). `table` dentro de `table` não existe.                                |
-| `tags`        | não                | Etiquetas que tornam o campo **alvo de referências** (`[a-z0-9-]+`). Em `table`, cada **linha** vira um alvo.                                                                                               |
-| `rowLabel`    | `table` com `tags` | Chave de uma coluna `string` que nomeia cada linha como alvo.                                                                                                                                               |
-| `accepts`     | só `ref`           | `{ "tags": [...], "free": true\|false, "annotations": [...] }`. Precisa de pelo menos uma etiqueta, `free: true` ou `annotations` (ver "Referências e etiquetas").                                          |
-| `description` | não                | Texto de ajuda exibido no editor.                                                                                                                                                                           |
-| `sources`     | não                | A partir da `formatVersion` 3. Propriedades de origem do campo, inclusive em colunas; na v4, `path` em sistema declarado em `origins` (ver "Origens (sources)").                                            |
-| `notices`     | não                | A partir da `formatVersion` 10. Avisos sobre o campo; vale também numa coluna de `table` (ver "Avisos (notices)").                                                                                          |
+| Property      | Required            | Description                                                                                                                                                                                                     |
+| ------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `key`         | yes                 | Key written to the JSON. `[A-Za-z0-9_]`, **cannot start with `_`** (reserved). Unique within the type.                                                                                                          |
+| `label`       | no                  | Displayed label (can have accents). Default: `key`.                                                                                                                                                             |
+| `type`        | yes                 | `string`, `number`, `date`, `enum`, `table` or `ref`.                                                                                                                                                           |
+| `required`    | no                  | Default `false`. Empty is allowed on save, but the annotation becomes **incomplete**.                                                                                                                           |
+| `default`     | no                  | Initial value. Must be valid for the type. Does not exist for `table` or `ref`.                                                                                                                                 |
+| `options`     | `enum` only         | Non-empty list of unique strings.                                                                                                                                                                               |
+| `linkedRef`   | `string` only       | From `formatVersion` 8. `key` of a `ref` field of the same type (or of a `ref` column of the same `table`): the mapped declarations that the `ref` accepts go into the list (see "Mapped targets in the list"). |
+| `suggestions` | `string` only       | From `formatVersion` 8. List of text suggestions (see "Text suggestions"); also valid on a `string` column of `table`.                                                                                          |
+| `columns`     | `table` only        | Fields with the same structure, **only** `string`, `number`, `date` or `enum` and, from `formatVersion` 7, `ref` (with `accepts`). `table` inside `table` does not exist.                                       |
+| `tags`        | no                  | Tags that make the field a **reference target** (`[a-z0-9-]+`). In `table`, each **row** becomes a target.                                                                                                      |
+| `rowLabel`    | `table` with `tags` | Key of a `string` column that names each row as a target.                                                                                                                                                       |
+| `accepts`     | `ref` only          | `{ "tags": [...], "free": true\|false, "annotations": [...] }`. Needs at least one tag, `free: true` or `annotations` (see "References and tags").                                                              |
+| `description` | no                  | Help text shown in the editor.                                                                                                                                                                                  |
+| `sources`     | no                  | From `formatVersion` 3. Source properties of the field, including in columns; in v4, `path` on a system declared in `origins` (see "Sources (sources)").                                                        |
+| `notices`     | no                  | From `formatVersion` 10. Notices about the field; also valid on a `table` column (see "Notices (notices)").                                                                                                     |
 
-## Tipos de valor
+## Value types
 
-- `string`: texto.
-- `number`: número, inteiro ou decimal.
-- `date`: data ISO `AAAA-MM-DD`.
-- `enum`: uma das `options`. Booleanos são `enum` (ex: `["sim", "não"]`). **Estados de um componente:** o desenho é um quadro parado: sem animação, ripple animado nem troca de estado pelo mouse. A **aparência** de um estado de interação (hover, foco, pressionado, arrastado) é desenhável e, quando a origem a define (tokens de estado do design system), entra como um campo `enum` opcional do tipo, fora do `code`, como o desabilitado e o selecionado. Ao listar o que fica fora num plano ou na Fidelidade, separe movimento (fora) de aparência de estado (campo).
-- `table`: lista de linhas; cada linha é um objeto com as chaves das `columns` (mais o id interno `_id`).
-- `ref`: **referência forte** a uma tupla de outra anotação. O valor do campo é a referência.
+- `string`: text.
+- `number`: number, integer or decimal.
+- `date`: ISO date `YYYY-MM-DD`.
+- `enum`: one of the `options`. Booleans are `enum` (e.g. `["yes", "no"]`). **Component states:** the drawing is a still frame: no animation, animated ripple or state change by the mouse. The **appearance** of an interaction state (hover, focus, pressed, dragged) is drawable and, when the source defines it (state tokens of the design system), it comes in as an optional `enum` field of the type, outside the `code`, like disabled and selected. When listing what stays out in a plan or in Fidelity, separate motion (out) from state appearance (field).
+- `table`: list of rows; each row is an object with the keys of the `columns` (plus the internal id `_id`).
+- `ref`: **strong reference** to a tuple of another annotation. The value of the field is the reference.
 
-**Lista de referências: coluna `ref` numa `table`.** Quando o tipo precisa apontar para vários alvos (ou levar dado junto com cada alvo), declare uma `table` com uma coluna `ref` (a partir da `formatVersion` 7; o `accepts` é o mesmo de um campo `ref`). Cada linha é uma referência e pode ter outras colunas ao lado; a linha tem `_id`, é alvo de referências como qualquer linha e entra nas migrações da biblioteca (`tabela.coluna`) e na comparação por linha das propostas. A coluna `ref` é **dado**: não desenha seta nem liga marcações (quem liga uma marcação a outra é a seta). Uma célula vazia é `null`; numa coluna obrigatória, vazia é pendência; alvo que sumiu é `broken-ref`; alvo que a coluna não aceita é `ref-not-accepted`. O componente do tipo lê a célula pelo rótulo do alvo (ver `repeat` em `docs/COMPONENT-FORMAT.md`).
+**Reference list: `ref` column in a `table`.** When the type needs to point to several targets (or carry data with each target), declare a `table` with a `ref` column (from `formatVersion` 7; the `accepts` is the same as that of a `ref` field). Each row is a reference and can have other columns beside it; the row has `_id`, is a reference target like any row and takes part in the library migrations (`table.column`) and in the per-row comparison of proposals. The `ref` column is **data**: it does not draw an arrow or link markings (what links one marking to another is the arrow). An empty cell is `null`; in a required column, empty is a pending item; a target that disappeared is `broken-ref`; a target that the column does not accept is `ref-not-accepted`. The type's component reads the cell by the target's label (see `repeat` in `docs/COMPONENT-FORMAT.md`).
 
-**Tipo de campo removido: `codeRef`.** Até a etapa 9 existia o tipo `codeRef` (o lugar da solução em que a instância foi escrita, por plataforma). Ele saiu do formato: a especialização guarda só o que ajuda a **instanciar** o tipo (o `code` dos tipos, com `symbol` e `path`), nunca onde a instância ficou. Um arquivo antigo com um campo `"type": "codeRef"` continua válido: a importação da app e o `validate_specialization` **leem e ignoram** o campo (ele sai do tipo, junto com as chaves de `params` do `code` que o citam) e dão um aviso com o caminho (`ignored-field`). Nenhuma `formatVersion` nova; as cópias em `specs/` dos projetos existentes continuam abrindo. O JSON Schema ([`spec.schema.json`](spec.schema.json)) descreve só o formato atual e recusa o campo. Ao encontrar um, remova-o do arquivo.
+**Removed field type: `codeRef`.** Until stage 9 there was the `codeRef` type (the place in the solution where the instance was written, per platform). It left the format: the specialization stores only what helps to **instantiate** the type (the types' `code`, with `symbol` and `path`), never where the instance ended up. An old file with a field `"type": "codeRef"` is still valid: the app's import and `validate_specialization` **read and ignore** the field (it leaves the type, along with the `params` keys of the `code` that cite it) and give a warning with the path (`ignored-field`). No new `formatVersion`; the copies in `specs/` of existing projects keep opening. The JSON Schema ([`spec.schema.json`](spec.schema.json)) describes only the current format and rejects the field. When you find one, remove it from the file.
 
-## Sugestões de texto
+## Text suggestions
 
-A `formatVersion` 8 deixa um campo `string` (ou uma coluna `string` de `table`) oferecer um **vocabulário sugerido** com `suggestions`: ao digitar, a pessoa vê uma lista com as sugestões que combinam com a palavra sob o cursor e pode escolher uma. É para texto **aberto** com palavras recorrentes, como o tipo de uma propriedade de código (`String`, `Int`, `List`), que também aceita `String?` e `List<Endereco>`.
+`formatVersion` 8 lets a `string` field (or a `string` column of `table`) offer a **suggested vocabulary** with `suggestions`: while typing, the person sees a list with the suggestions that match the word under the cursor and can pick one. It is meant for **open** text with recurring words, such as the type of a code property (`String`, `Int`, `List`), which also accepts `String?` and `List<Endereco>`.
 
-**`suggestions` não restringe o valor.** Qualquer texto continua aceito: o que não está na lista não é erro, aviso nem pendência, e um `default` não precisa estar nela. Para um conjunto **fechado** de valores use `enum` (`options`), que trava o valor.
+**`suggestions` does not restrict the value.** Any text is still accepted: what is not in the list is not an error, warning or pending item, and a `default` does not need to be in it. For a **closed** set of values use `enum` (`options`), which locks the value.
 
 ```json
 {
@@ -152,14 +152,14 @@ A `formatVersion` 8 deixa um campo `string` (ou uma coluna `string` de `table`) 
 }
 ```
 
-- `suggestions`: lista não vazia, até 200 itens, de textos únicos, não vazios e sem espaço no começo nem no fim. Só em campo ou coluna `string`: em `number`, `date`, `enum`, `ref` ou `table` o erro é `só é permitido em campo ou coluna string`, no caminho `…fields[n].suggestions`. Numa versão anterior à 8 o erro é `só é permitido com formatVersion 8`, no mesmo caminho (`…columns[m].suggestions` numa coluna).
-- **Contrato de versão:** incluir, mudar ou tirar `suggestions` é compatível e nunca pede migração (ver "Contrato de versão"); um pacote pode passar da `formatVersion` 7 à 8 entre versões.
+- `suggestions`: non-empty list, up to 200 items, of unique, non-empty texts with no leading or trailing space. Only on a `string` field or column: on `number`, `date`, `enum`, `ref` or `table` the error is `only allowed in a string field or column`, at the path `…fields[n].suggestions`. In a version earlier than 8 the error is `only allowed with formatVersion 8`, at the same path (`…columns[m].suggestions` in a column).
+- **Version contract:** adding, changing or removing `suggestions` is compatible and never requires a migration (see "Version contract"); a package can go from `formatVersion` 7 to 8 between versions.
 
-## Alvos mapeados na lista (`linkedRef`)
+## Mapped targets in the list (`linkedRef`)
 
-Também na `formatVersion` 8, um campo `string` (ou coluna `string` de `table`) pode trazer `linkedRef`: a `key` de um campo `ref` **do mesmo tipo** (na coluna, de uma coluna `ref` **da mesma `table`**). Ao digitar, a lista mostra, antes das `suggestions`, as declarações já mapeadas que esse `ref` aceita, cada uma com o nome do tipo dela ao lado. O texto inserido é o **nome** da declaração (o valor do campo `name` do alvo, como `Usuario`). Escolher só troca a palavra sob o cursor; ao confirmar (Enter ou sair do campo), a app grava o texto **e** o `ref` irmão juntos, numa entrada do desfazer (um Ctrl+Z desfaz os dois), desde que o nome escolhido ainda seja uma palavra do texto (`List<Usuario>` serve). O Esc descarta os dois. Digitar o nome à mão sem escolher não mexe no `ref`, apagar o texto não limpa o `ref` (ele tem o próprio botão de limpar) e um `ref` já preenchido com outro alvo é trocado pela escolha.
+Also in `formatVersion` 8, a `string` field (or `string` column of `table`) can carry `linkedRef`: the `key` of a `ref` field **of the same type** (in a column, of a `ref` column **of the same `table`**). While typing, the list shows, before the `suggestions`, the already mapped declarations that this `ref` accepts, each with the name of its type beside it. The inserted text is the declaration's **name** (the value of the target's `name` field, such as `Usuario`). Choosing only replaces the word under the cursor; on confirm (Enter or leaving the field), the app writes the text **and** the sibling `ref` together, in a single undo entry (one Ctrl+Z undoes both), as long as the chosen name is still a word of the text (`List<Usuario>` works). Esc discards both. Typing the name by hand without choosing does not touch the `ref`, clearing the text does not clear the `ref` (it has its own clear button), and a `ref` already filled with another target is replaced by the choice.
 
-`linkedRef` **não restringe o valor** e é independente de `suggestions`: um campo pode ter os dois, só `suggestions`, só `linkedRef` ou nenhum. No Catálogo e na revisão (sem projeto ou somente leitura) não há alvos para listar.
+`linkedRef` **does not restrict the value** and is independent of `suggestions`: a field can have both, only `suggestions`, only `linkedRef` or neither. In the Catalog and in review (no project or read-only) there are no targets to list.
 
 ```json
 [
@@ -173,20 +173,20 @@ Também na `formatVersion` 8, um campo `string` (ou coluna `string` de `table`) 
 ]
 ```
 
-- `linkedRef`: só em campo ou coluna `string` (em outro tipo o erro é `só é permitido em campo ou coluna string`) e só a partir da `formatVersion` 8 (antes, `só é permitido com formatVersion 8`, no caminho `…fields[n].linkedRef` ou `…columns[m].linkedRef`). A `key` precisa existir no mesmo nível (os campos do tipo, ou as colunas da mesma `table`) e ser um campo ou coluna `ref`; senão o erro aponta o `linkedRef`.
-- **Contrato de versão:** incluir, mudar ou tirar `linkedRef` é compatível e nunca pede migração (ver "Contrato de versão").
+- `linkedRef`: only on a `string` field or column (on another type the error is `only allowed in a string field or column`) and only from `formatVersion` 8 (before that, `only allowed with formatVersion 8`, at the path `…fields[n].linkedRef` or `…columns[m].linkedRef`). The `key` must exist at the same level (the type's fields, or the columns of the same `table`) and be a `ref` field or column; otherwise the error points at the `linkedRef`.
+- **Version contract:** adding, changing or removing `linkedRef` is compatible and never requires a migration (see "Version contract").
 
-## Relações entre anotações
+## Relations between annotations
 
-Sempre dentro da mesma especialização.
+Always within the same specialization.
 
-- `allowedChildren`: tipos que podem ser vinculados (via `parentAnnotationId`) a este. Um dono pode ter N filhos, inclusive do mesmo tipo. Os filhos devem estar em **outra camada** (a partir da `formatVersion` 13, também na **mesma camada** do dono: ver "Filhos por camada e grupo"). Cada item é o id de um tipo ou, a partir da `formatVersion` 11, uma cláusula `{ layer, groups? }` que cobre uma camada ou os grupos dela (ver "Filhos por camada e grupo").
-- `requiresOwner: true`: a anotação precisa de exatamente um dono, de um tipo que a liste em `allowedChildren` (por id ou pela cláusula que a cobre).
-- `childRoles` (`formatVersion` 11): os papéis em que um filho se liga ao dono (ver "Papéis no vínculo (childRoles)").
+- `allowedChildren`: types that can be linked (via `parentAnnotationId`) to this one. An owner can have N children, including of the same type. The children must be in **another layer** (from `formatVersion` 13, also in the owner's **same layer**: see "Children by layer and group"). Each item is the id of a type or, from `formatVersion` 11, a `{ layer, groups? }` clause that covers a layer or its groups (see "Children by layer and group").
+- `requiresOwner: true`: the annotation needs exactly one owner, of a type that lists it in `allowedChildren` (by id or by the clause that covers it).
+- `childRoles` (`formatVersion` 11): the roles in which a child links to the owner (see "Link roles (childRoles)").
 
-## Filhos por camada e grupo
+## Children by layer and group
 
-Até a v10, `allowedChildren` lista os filhos **um a um**, por id. Uma camada de eventos com trinta tipos obriga cada dono a repetir os trinta ids, e um tipo novo na camada pede a edição de todos os donos. A `formatVersion` 11 deixa um item de `allowedChildren` ser, em vez do id, uma **cláusula** `{ "layer": "<id da camada>", "groups": ["<id>", …] }` (`groups` é opcional), e deixa a camada declarar **grupos** (`layers[].groups`) a que os tipos dela pertencem (`annotationTypes[].groups`).
+Up to v10, `allowedChildren` lists the children **one by one**, by id. An events layer with thirty types forces each owner to repeat the thirty ids, and a new type in the layer requires editing all the owners. `formatVersion` 11 lets an item of `allowedChildren` be, instead of the id, a **clause** `{ "layer": "<layer id>", "groups": ["<id>", …] }` (`groups` is optional), and lets the layer declare **groups** (`layers[].groups`) that its types belong to (`annotationTypes[].groups`).
 
 ```json
 {
@@ -194,7 +194,7 @@ Até a v10, `allowedChildren` lista os filhos **um a um**, por id. Uma camada de
   "layers": [
     {
       "id": "componentes",
-      "name": "Componentes",
+      "name": "Components",
       "color": "#1E88E5",
       "annotationTypes": [
         {
@@ -213,14 +213,14 @@ Até a v10, `allowedChildren` lista os filhos **um a um**, por id. Uma camada de
     },
     {
       "id": "eventos",
-      "name": "Eventos",
+      "name": "Events",
       "color": "#E53935",
       "groups": [
-        { "id": "navegacao", "name": "Navegação" },
+        { "id": "navegacao", "name": "Navigation" },
         {
           "id": "dados",
-          "name": "Dados",
-          "description": "Eventos que leem ou gravam dados."
+          "name": "Data",
+          "description": "Events that read or write data."
         }
       ],
       "annotationTypes": [
@@ -251,18 +251,18 @@ Até a v10, `allowedChildren` lista os filhos **um a um**, por id. Uma camada de
 }
 ```
 
-- **A cláusula.** Sem `groups`, cobre **todos os tipos da camada** (o Button acima aceita todo evento, inclusive os que forem acrescentados depois). Com `groups`, cobre os tipos da camada que estão em **algum** dos grupos listados (o Card aceita `navigate` e `back`, mais o `submit` citado por id). A cláusula só tem `layer` e `groups`; qualquer outra propriedade é erro, e `groups: []` também (para a camada inteira, omita `groups`).
-- **O conjunto resolvido.** Os tipos que um dono aceita como filhos são a **união dos itens, na ordem deles**; dentro de uma cláusula, os tipos vêm na ordem da camada; um tipo que aparece mais de uma vez fica na **primeira** posição. Um id de texto continua sendo um tipo só, em outra camada, como antes. Toda leitura de "quem pode ser filho de quem" (o editor do dono, a validação do vínculo, `requiresOwner`) usa esse mesmo conjunto.
-- **Os grupos.** `layers[].groups` é uma lista de `{ id, name, description? }`: `id` não vazio e único **dentro da camada**, `name` não vazio, `description` opcional. A ordem da lista é a ordem dos cabeçalhos com que a app apresenta os tipos. `annotationTypes[].groups` é a lista, não vazia e sem repetição, dos ids de grupo da **própria camada** a que o tipo pertence; um tipo pode estar em vários grupos, e um tipo sem `groups` só entra por uma cláusula da camada inteira ou pelo próprio id. Um grupo é só um agrupamento: não muda o que o tipo é nem onde ele vive.
-- **Outra camada, como sempre (até a 12).** A `layer` da cláusula precisa existir e, até a `formatVersion` 12, **não pode ser a camada do próprio dono** (o erro é o de sempre: `filhos devem estar em outra camada`); um `group` precisa existir **na camada da cláusula**. A 13 muda só essa regra (ver abaixo).
-- **`requiresOwner`** é conferido no conjunto resolvido: o tipo precisa estar no conjunto de algum dono, seja por id, por camada inteira ou por grupo. O dono precisa ser **outro** tipo: se o único tipo que o lista é ele mesmo (na `formatVersion` 13, que aceita filhos da própria camada), nenhuma anotação poderia ser a dona e o erro é `"t" exige dono, mas nenhum outro tipo o aceita como filho (só ele mesmo o lista em allowedChildren)`, no caminho `…annotationTypes[n].requiresOwner`.
-- **Avisos** (`specWarnings`; não bloqueiam): `allowedChildren` com 20 ids ou mais **em texto** avisa `N tipos listados um a um; uma cláusula { layer, groups } cobre a camada ou os grupos` (com 19, não); grupo declarado que nenhum tipo usa também avisa.
-- **Fora do contrato de versão:** incluir, mudar ou tirar `groups`, e trocar uma lista de ids por uma cláusula, é compatível e nunca pede migração (ver "Contrato de versão"). `diffSpecs` não gera diferença para `allowedChildren`, como hoje, nem para `groups`.
-- Só a partir da `formatVersion` 11: a cláusula, `layers[n].groups` e `annotationTypes[m].groups` numa versão anterior são o erro `só é permitido com formatVersion 11`, no caminho exato (`layers[0].annotationTypes[0].allowedChildren[0]`, `layers[1].groups`, `layers[1].annotationTypes[0].groups`).
+- **The clause.** Without `groups`, it covers **all the types of the layer** (the Button above accepts every event, including ones added later). With `groups`, it covers the types of the layer that are in **any** of the listed groups (the Card accepts `navigate` and `back`, plus the `submit` cited by id). The clause only has `layer` and `groups`; any other property is an error, and so is `groups: []` (for the whole layer, omit `groups`).
+- **The resolved set.** The types an owner accepts as children are the **union of the items, in their order**; within a clause, the types come in the layer's order; a type that appears more than once stays in the **first** position. A text id is still a single type, in another layer, as before. Every read of "who can be a child of whom" (the owner's editor, link validation, `requiresOwner`) uses this same set.
+- **The groups.** `layers[].groups` is a list of `{ id, name, description? }`: `id` non-empty and unique **within the layer**, `name` non-empty, `description` optional. The order of the list is the order of the headers with which the app presents the types. `annotationTypes[].groups` is the non-empty, duplicate-free list of ids of groups of the **type's own layer** that the type belongs to; a type can be in several groups, and a type without `groups` only gets in through a whole-layer clause or through its own id. A group is just a grouping: it does not change what the type is or where it lives.
+- **Another layer, as always (up to 12).** The clause's `layer` must exist and, up to `formatVersion` 12, **cannot be the owner's own layer** (the error is the usual one: `children must be in another layer`); a `group` must exist **in the clause's layer**. Version 13 changes only this rule (see below).
+- **`requiresOwner`** is checked against the resolved set: the type must be in the set of some owner, whether by id, by whole layer or by group. The owner must be **another** type: if the only type that lists it is itself (in `formatVersion` 13, which accepts children of the own layer), no annotation could be the owner and the error is `"t" requires an owner, but no other type accepts it as a child (only itself lists it in allowedChildren)`, at the path `…annotationTypes[n].requiresOwner`.
+- **Warnings** (`specWarnings`; they do not block): `allowedChildren` with 20 ids or more **as text** warns `N types listed one by one; a { layer, groups } clause covers the layer or the groups` (with 19, it does not); a declared group that no type uses also warns.
+- **Outside the version contract:** adding, changing or removing `groups`, and replacing a list of ids with a clause, is compatible and never requires a migration (see "Version contract"). `diffSpecs` produces no difference for `allowedChildren`, as today, nor for `groups`.
+- Only from `formatVersion` 11: the clause, `layers[n].groups` and `annotationTypes[m].groups` in an earlier version are the error `only allowed with formatVersion 11`, at the exact path (`layers[0].annotationTypes[0].allowedChildren[0]`, `layers[1].groups`, `layers[1].annotationTypes[0].groups`).
 
-### Filhos da própria camada (`formatVersion` 13)
+### Children of the layer itself (`formatVersion` 13)
 
-Alguns tipos se encadeiam **na mesma camada**: um evento que dispara outro (a chamada `send-http-request` tem o resultado Sucesso e o resultado Falha, e cada um dispara um próximo evento da mesma camada de eventos). Até a 12, isso obrigava a duplicar a camada ou a criar campos no tipo (`chainedAfter`, `trigger`). A `formatVersion` 13 deixa `allowedChildren` aceitar a camada do próprio dono: a **cláusula** `{ "layer": "<a camada do próprio tipo>" }` (com ou sem `groups`) e o **id de um tipo da mesma camada**, **inclusive o do próprio tipo**.
+Some types chain **in the same layer**: an event that triggers another (the `send-http-request` call has the Success result and the Failure result, and each one triggers a next event of the same events layer). Up to 12, this forced duplicating the layer or creating fields on the type (`chainedAfter`, `trigger`). `formatVersion` 13 lets `allowedChildren` accept the owner's own layer: the **clause** `{ "layer": "<the type's own layer>" }` (with or without `groups`) and the **id of a type in the same layer**, **including the type's own id**.
 
 ```json
 {
@@ -270,23 +270,23 @@ Alguns tipos se encadeiam **na mesma camada**: um evento que dispara outro (a ch
   "layers": [
     {
       "id": "eventos",
-      "name": "Eventos",
+      "name": "Events",
       "color": "#E53935",
       "annotationTypes": [
         {
           "id": "click",
-          "name": "Clique",
+          "name": "Click",
           "allowedChildren": ["send-http-request"],
           "fields": []
         },
         {
           "id": "send-http-request",
-          "name": "Enviar requisição HTTP",
+          "name": "Send HTTP request",
           "requiresOwner": true,
           "allowedChildren": [{ "layer": "eventos" }],
           "childRoles": [
-            { "id": "success", "name": "Sucesso" },
-            { "id": "failure", "name": "Falha" }
+            { "id": "success", "name": "Success" },
+            { "id": "failure", "name": "Failure" }
           ],
           "fields": [{ "key": "url", "type": "string", "required": true }]
         }
@@ -296,25 +296,25 @@ Alguns tipos se encadeiam **na mesma camada**: um evento que dispara outro (a ch
 }
 ```
 
-No projeto, a árvore de vínculos fica assim (o evento `e1` é dono de três filhos, cada um no seu papel, na mesma camada de `Clique`):
+In the project, the link tree looks like this (event `e1` owns three children, each in its own role, in the same layer as `Click`):
 
 ```text
-Clique
-└── e1  send-http-request          (role: click, no Clique do botão)
+Click
+└── e1  send-http-request          (role: click, in the button's Click)
     ├── e2  send-http-request      (role: success)
     ├── e4  send-http-request      (role: success)
     └── e3  send-http-request      (role: failure)
 ```
 
-- **O que muda no projeto.** A anotação **tipada** pode ter dona da **mesma camada** quando o tipo da dona aceita o tipo dela (por id ou pela cláusula da própria camada); a anotação **livre** continua só com dona de **outra camada** (o schema v15 do `mapping.json` descreve a regra). Um dono de outra camada continua valendo como antes.
-- **Sem ciclo.** A cadeia de donas nunca volta a uma anotação já visitada: um tipo que aceita a si mesmo permite `e1` dono de `e2`, mas `e2` não pode ser dona de `e1` nem uma anotação ser dona de si mesma (`invalid-annotation-parent`).
-- **`requiresOwner`** é conferido no conjunto resolvido, também com a camada do próprio dono: o `send-http-request` acima só existe ligado a um `Clique` ou a outro `send-http-request`.
-- **O "quando" é papel.** Para encadear, o filho se liga ao evento anterior num `childRoles` do tipo dono (Sucesso, Falha), em vez de um campo `chainedAfter` ou `trigger` no filho (ver "Papéis no vínculo (childRoles)").
-- Só a partir da `formatVersion` 13: numa versão anterior, a cláusula da própria camada é o erro `camada "eventos" é a do próprio tipo; filhos devem estar em outra camada` (no caminho `….allowedChildren[k].layer`) e o id de um tipo da mesma camada é `tipo "x" está na mesma camada; filhos devem estar em outra camada`.
+- **What changes in the project.** The **typed** annotation can have an owner in the **same layer** when the owner's type accepts its type (by id or by the own-layer clause); the **free** annotation still only has an owner in **another layer** (the `mapping.json` schema v15 describes the rule). An owner in another layer is still valid as before.
+- **No cycle.** The chain of owners never returns to an annotation already visited: a type that accepts itself allows `e1` to own `e2`, but `e2` cannot own `e1`, nor can an annotation own itself (`invalid-annotation-parent`).
+- **`requiresOwner`** is checked against the resolved set, also with the owner's own layer: the `send-http-request` above only exists linked to a `Click` or to another `send-http-request`.
+- **The "when" is a role.** To chain, the child links to the previous event in a `childRoles` of the owner type (Success, Failure), instead of a `chainedAfter` or `trigger` field on the child (see "Link roles (childRoles)").
+- Only from `formatVersion` 13: in an earlier version, the own-layer clause is the error `layer "eventos" is the type's own; children must be in another layer` (at the path `….allowedChildren[k].layer`) and the id of a type in the same layer is `type "x" is in the same layer; children must be in another layer`.
 
-## Papéis no vínculo (childRoles)
+## Roles on the link (childRoles)
 
-Um dono às vezes liga o mesmo tipo de filho em **pontos diferentes** dele: o Button tem um evento de clique e um de pressionar, e os dois são do tipo `navigate`. Quando o filho precisa dizer **em que ponto do dono se liga**, isso é um **papel**, não um campo do filho nem um id de tipo (quando só o ponto de ligação muda, não crie um tipo por gatilho, como `onClick` e `onHold`, nem um campo `trigger` em cada evento). A `formatVersion` 11 declara os papéis no **dono**, com `childRoles`, e um nome para o seletor, com `childRolesLabel`.
+An owner sometimes links the same child type at **different points** of itself: the Button has a click event and a press event, and both are of type `navigate`. When the child needs to say **at which point of the owner it links**, that is a **role**, not a field of the child nor a type id (when only the link point changes, do not create a type per trigger, such as `onClick` and `onHold`, nor a `trigger` field on each event). `formatVersion` 11 declares the roles on the **owner**, with `childRoles`, and a name for the selector, with `childRolesLabel`.
 
 ```json
 {
@@ -323,22 +323,22 @@ Um dono às vezes liga o mesmo tipo de filho em **pontos diferentes** dele: o Bu
   "allowedChildren": [{ "layer": "eventos" }],
   "childRolesLabel": "Trigger",
   "childRoles": [
-    { "id": "click", "name": "Clique" },
-    { "id": "hold", "name": "Pressionar", "description": "Toque longo no botão." }
+    { "id": "click", "name": "Click" },
+    { "id": "hold", "name": "Press", "description": "Long press on the button." }
   ],
   "fields": []
 }
 ```
 
-- `childRoles`: lista **não vazia** de `{ id, name, description? }`, com `id` não vazio e **único no tipo** e `name` não vazio. O papel pertence ao **vínculo** entre o dono e o filho, não ao filho: o mesmo tipo de filho pode ocupar papéis diferentes no mesmo dono (um `navigate` no clique, outro no pressionar) e em donos diferentes.
-- `childRoles` só vale em um tipo **com `allowedChildren`** (sem filhos não há vínculo para levar papel): em outro caso é erro.
-- `childRolesLabel`: texto não vazio, o nome com que a app chama o seletor do papel ("Trigger", "Slot", "Posição"). Só vale com `childRoles` (senão é erro). Sem ele, a app usa **Papel** (pt-BR) e **Role** (en-US).
-- **No contrato de versão (toda versão com papéis, da `formatVersion` 11 em diante; o passo que cobre a quebra é da `formatVersion` 12):** o `id` do papel é dado que as anotações guardam (`parentRole`). **Tirar** um papel de um tipo, ou dar `childRoles` a um tipo que não tinha, é **quebra** e pede um passo `rename-role`, `remove-role` ou `set-role` em `migrations`; **acrescentar** um papel a um tipo que já tinha papéis é aditivo (ver "Contrato de versão"). Continuam fora do contrato o `name` e a `description` do papel, a ordem dos `childRoles` e o `childRolesLabel`.
-- Só a partir da `formatVersion` 11 (numa versão anterior o erro é `só é permitido com formatVersion 11`, no caminho `layers[0].annotationTypes[0].childRoles` ou `….childRolesLabel`). Os passos de migração dos papéis (`rename-role`, `remove-role` e `set-role`) são da `formatVersion` 12.
+- `childRoles`: **non-empty** list of `{ id, name, description? }`, with `id` non-empty and **unique within the type** and `name` non-empty. The role belongs to the **link** between the owner and the child, not to the child: the same child type can occupy different roles in the same owner (one `navigate` on click, another on press) and in different owners.
+- `childRoles` is only valid on a type **with `allowedChildren`** (without children there is no link to carry a role): otherwise it is an error.
+- `childRolesLabel`: non-empty text, the name the app uses for the role selector ("Trigger", "Slot", "Position"). Only valid with `childRoles` (otherwise it is an error). Without it, the app uses **Papel** (pt-BR) and **Role** (en-US).
+- **In the version contract (every version with roles, from `formatVersion` 11 on; the step that covers the breaking change is from `formatVersion` 12):** the role's `id` is data that annotations store (`parentRole`). **Removing** a role from a type, or giving `childRoles` to a type that had none, is **breaking** and requires a `rename-role`, `remove-role` or `set-role` step in `migrations`; **adding** a role to a type that already had roles is additive (see "Version contract"). The role's `name` and `description`, the order of the `childRoles` and the `childRolesLabel` remain outside the contract.
+- Only from `formatVersion` 11 (in an earlier version the error is `only allowed with formatVersion 11`, at the path `layers[0].annotationTypes[0].childRoles` or `….childRolesLabel`). The role migration steps (`rename-role`, `remove-role` and `set-role`) are from `formatVersion` 12.
 
-## Documento em repositório externo (docRepos)
+## Document in an external repository (docRepos)
 
-Até a v10, o `doc` de um tipo é um arquivo `.md` **dentro do pacote**. Quando a documentação do componente vive no repositório do design system ou do contrato, e não na pasta da especialização, copiá-la para o pacote cria uma segunda fonte que envelhece. A `formatVersion` 11 declara na raiz os repositórios de documentos (`docRepos`) e deixa o `doc` do tipo apontar para um arquivo de um deles.
+Up to v10, a type's `doc` is an `.md` file **inside the package**. When the component's documentation lives in the design system's or the contract's repository, and not in the specialization folder, copying it into the package creates a second source that goes stale. `formatVersion` 11 declares the document repositories (`docRepos`) at the root and lets the type's `doc` point to a file in one of them.
 
 ```json
 {
@@ -353,7 +353,7 @@ Até a v10, o `doc` de um tipo é um arquivo `.md` **dentro do pacote**. Quando 
   "layers": [
     {
       "id": "componentes",
-      "name": "Componentes",
+      "name": "Components",
       "color": "#1E88E5",
       "annotationTypes": [
         {
@@ -363,8 +363,8 @@ Até a v10, o `doc` de um tipo é um arquivo `.md` **dentro do pacote**. Quando 
           "allowedChildren": [{ "layer": "eventos" }],
           "childRolesLabel": "Trigger",
           "childRoles": [
-            { "id": "click", "name": "Clique" },
-            { "id": "hold", "name": "Pressionar" }
+            { "id": "click", "name": "Click" },
+            { "id": "hold", "name": "Press" }
           ],
           "fields": []
         }
@@ -372,9 +372,9 @@ Até a v10, o `doc` de um tipo é um arquivo `.md` **dentro do pacote**. Quando 
     },
     {
       "id": "eventos",
-      "name": "Eventos",
+      "name": "Events",
       "color": "#E53935",
-      "groups": [{ "id": "navegacao", "name": "Navegação" }],
+      "groups": [{ "id": "navegacao", "name": "Navigation" }],
       "annotationTypes": [
         {
           "id": "navigate",
@@ -389,23 +389,23 @@ Até a v10, o `doc` de um tipo é um arquivo `.md` **dentro do pacote**. Quando 
 }
 ```
 
-- `docRepos`: lista de `{ id, url, urlTemplate?, ref? }`, com as **mesmas regras do `repo` de uma plataforma** (ver "Plataformas e code"): `url` obrigatória, `http://` ou `https://`, sem espaços; `urlTemplate` opcional, `http(s)://` e com `{path}`; `ref` opcional, texto não vazio, informativa; qualquer outra propriedade é recusada. `id` no formato `[a-z0-9-]+` (o do id de plataforma) e **único** na lista.
-- `doc` com **dois jeitos**: **texto** (`"docs/button.md"`) é o arquivo `.md` do pacote, como desde a v4; **objeto** `{ "repo": "<id de docRepos>", "path": "<caminho>" }` é um arquivo do repositório declarado. O `repo` precisa existir em `docRepos`, e o objeto não tem outra propriedade.
-- `path` segue as regras do `path` de `code`: relativo à raiz do repositório, `/` como separador, sem `.`, `..` nem `/` no começo. Além disso termina em **`.md`** e **não tem `#`** (a âncora dentro do documento não faz parte do caminho do arquivo).
-- **O pacote não leva o documento.** O `doc` objeto não conta como arquivo citado do pacote: uma especialização cujos únicos arquivos citados são documentos externos vale como **arquivo isolado** (ver "Biblioteca: o pacote"), e o nível 1 da validação do pacote não confere o documento externo (a app não o baixa; quem o lê chega a ele pelo repositório).
-- **Fora do contrato de versão:** incluir, mudar ou tirar `docRepos`, e trocar o `doc` entre texto e objeto, é compatível e nunca pede migração (ver "Contrato de versão"); `diffSpecs` não gera diferença.
-- **Aviso** (`specWarnings`; não bloqueia): um repositório de `docRepos` que nenhum `doc` usa.
-- Só a partir da `formatVersion` 11 (numa versão anterior o erro é `só é permitido com formatVersion 11`, no caminho `docRepos` ou `layers[0].annotationTypes[0].doc`, este quando o `doc` é objeto).
+- `docRepos`: list of `{ id, url, urlTemplate?, ref? }`, with the **same rules as a platform's `repo`** (see "Platforms and code"): `url` required, `http://` or `https://`, no spaces; `urlTemplate` optional, `http(s)://` and with `{path}`; `ref` optional, non-empty text, informational; any other property is rejected. `id` in the format `[a-z0-9-]+` (that of the platform id) and **unique** in the list.
+- `doc` in **two ways**: **text** (`"docs/button.md"`) is the package's `.md` file, as since v4; an **object** `{ "repo": "<docRepos id>", "path": "<path>" }` is a file in the declared repository. The `repo` must exist in `docRepos`, and the object has no other property.
+- `path` follows the rules of `code`'s `path`: relative to the repository root, `/` as the separator, no `.`, `..` or leading `/`. In addition it ends in **`.md`** and **has no `#`** (the anchor inside the document is not part of the file path).
+- **The package does not carry the document.** The `doc` object does not count as a cited package file: a specialization whose only cited files are external documents is valid as a **standalone file** (see "Library: the package"), and level 1 of package validation does not check the external document (the app does not download it; whoever reads it reaches it through the repository).
+- **Outside the version contract:** adding, changing or removing `docRepos`, and switching the `doc` between text and object, is compatible and never requires a migration (see "Version contract"); `diffSpecs` produces no difference.
+- **Warning** (`specWarnings`; it does not block): a `docRepos` repository that no `doc` uses.
+- Only from `formatVersion` 11 (in an earlier version the error is `only allowed with formatVersion 11`, at the path `docRepos` or `layers[0].annotationTypes[0].doc`, the latter when the `doc` is an object).
 
-## Referências e etiquetas
+## References and tags
 
-Um campo `ref` aponta para um **alvo**. São alvos válidos:
+A `ref` field points to a **target**. Valid targets are:
 
-- tuplas de anotações **livres**, se `accepts.free` for `true`;
-- campos de anotações tipadas (qualquer especialização aplicada) cujo `tags` contenha alguma etiqueta de `accepts.tags`; numa `table` com `tags`, cada linha é um alvo, nomeada pela coluna `rowLabel`;
-- a **anotação inteira** de um dos tipos de `accepts.annotations` (a partir da `formatVersion` 14).
+- tuples of **free** annotations, if `accepts.free` is `true`;
+- fields of typed annotations (any applied specialization) whose `tags` contains some tag of `accepts.tags`; in a `table` with `tags`, each row is a target, named by the `rowLabel` column;
+- the **whole annotation** of one of the types in `accepts.annotations` (from `formatVersion` 14).
 
-**`accepts.annotations` (`formatVersion` 14).** Lista não vazia de itens com a sintaxe do `allowedChildren`: o id de um tipo ou uma cláusula `{ "layer": "<id>", "groups": ["<id>", …] }` (sem `groups`, cobre todos os tipos da camada), todos da **mesma especialização**, e o resolvedor é o mesmo (`resolveTypeItems`). A camada do próprio tipo vale. Com `annotations`, a referência aponta para a anotação, e não para um campo dela; pode vir junto de `tags` e `free`. Erros, com os textos do `allowedChildren`: `camada "x" não existe na especialização`, `grupo "g" não existe na camada "c"` e `tipo "t" não existe na especialização`; `annotations: []` é erro (`não pode ser vazio`); antes da 14 é `só é permitido com formatVersion 14`, no caminho `layers[i].annotationTypes[j].fields[k].accepts.annotations` (e `….columns[m].accepts.annotations` numa coluna).
+**`accepts.annotations` (`formatVersion` 14).** Non-empty list of items with the syntax of `allowedChildren`: the id of a type or a clause `{ "layer": "<id>", "groups": ["<id>", …] }` (without `groups`, it covers all the types of the layer), all from the **same specialization**, and the resolver is the same (`resolveTypeItems`). The type's own layer is valid. With `annotations`, the reference points to the annotation, not to a field of it; it can come together with `tags` and `free`. Errors, with the texts of `allowedChildren`: `layer "x" does not exist in the specialization`, `group "g" does not exist in layer "c"` and `type "t" does not exist in the specialization`; `annotations: []` is an error (`cannot be empty`); before 14 it is `only allowed with formatVersion 14`, at the path `layers[i].annotationTypes[j].fields[k].accepts.annotations` (and `….columns[m].accepts.annotations` in a column).
 
 ```json
 {
@@ -416,38 +416,38 @@ Um campo `ref` aponta para um **alvo**. São alvos válidos:
 }
 ```
 
-Etiqueta recomendada (reutilize em novas especializações): **`data-field`** — atributo de um modelo de dados (classe, entidade, DTO).
+Recommended tag (reuse it in new specializations): **`data-field`** — attribute of a data model (class, entity, DTO).
 
-## Plataformas e code
+## Platforms and code
 
-O `code` de um tipo diz como se cria uma instância dele em cada plataforma: `symbol` é o que se chama, `path` é o arquivo que o define, `params` e `values` dizem como passar os campos, `notes` orienta. O agente lê o arquivo para saber a assinatura e escreve a chamada na solução. O mapeamento não guarda nada sobre a solução: ele não sabe onde ela está nem o que foi escrito nela, e o `code` não é o código gerado para uma anotação.
+A type's `code` says how to create an instance of it on each platform: `symbol` is what is called, `path` is the file that defines it, `params` and `values` say how to pass the fields, `notes` gives guidance. The agent reads the file to learn the signature and writes the call in the solution. The mapping stores nothing about the solution: it does not know where it is or what was written in it, and the `code` is not the code generated for an annotation.
 
-Uma **plataforma** é um alvo de código em que o agente escreve a solução: o app Android, o app iOS, o BFF que gera o JSON de uma tela de SDUI. A `formatVersion` 2 declara as plataformas e o `code` dos tipos; a 5 acrescenta o `repo`, o repositório da biblioteca naquela plataforma. A `formatVersion` 1 continua válida: é a 2 sem plataformas e sem `code`. O núcleo da app é genérico; plataformas, linguagens e código de instanciação entram só por estas propriedades.
+A **platform** is a code target where the agent writes the solution: the Android app, the iOS app, the BFF that generates the JSON of an SDUI screen. `formatVersion` 2 declares the platforms and the types' `code`; 5 adds the `repo`, the library's repository on that platform. `formatVersion` 1 is still valid: it is 2 without platforms and without `code`. The app core is generic; platforms, languages and instantiation code come in only through these properties.
 
-| Propriedade | Onde                            | Descrição                                                                                                                                                                                                                                                            |
-| ----------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `platforms` | raiz (opcional)                 | Lista de `{ id, name, language, repo? }`: os alvos de código em que o agente escreve a solução. `id` no formato `[a-z0-9-]+` e único na especialização; `name` é exibido; `language` é informativo (diz ao agente em que linguagem escrever a chamada).              |
-| `repo`      | entrada de `platforms` (v5)     | Opcional, só na `formatVersion` 5. O repositório da biblioteca naquela plataforma, onde estão os arquivos citados nos `path`: `{ url, urlTemplate?, ref? }` (abaixo). Sem ele, o agente só chega ao arquivo pelo clone local que o projeto informar.                 |
-| `code`      | tipo de anotação (opcional)     | Objeto por **id de plataforma declarada**: como se cria uma instância do tipo em cada uma. Cada entrada tem as propriedades abaixo.                                                                                                                                  |
-| `symbol`    | entrada de `code` (obrigatória) | O que se chama para criar uma instância do tipo naquela plataforma: um composable, uma view, uma classe, a função do BFF que gera o JSON do componente. O agente escreve a chamada a esse símbolo.                                                                   |
-| `path`      | entrada de `code` (opcional)    | O arquivo que define o `symbol`, **relativo à raiz do `repo` da plataforma** (`/` como separador, sem `.`, `..`, `/` no começo nem letra de unidade, sem linha). O agente o lê para saber a assinatura antes de escrever a chamada; sem `path`, o `symbol` localiza. |
-| `params`    | entrada de `code` (opcional)    | Com que nome cada campo do tipo é passado na chamada: chave de um campo do tipo → nome do parâmetro. Campos fora de `params` não são passados.                                                                                                                       |
-| `values`    | entrada de `code` (opcional)    | Como cada valor de `enum` é escrito no código: chave de um campo `enum` → (valor no mapping → texto no código). Valor sem tradução é passado como está.                                                                                                              |
-| `notes`     | entrada de `code` (opcional)    | Orientação livre para o agente que escreve a chamada: o que passar além dos campos, ordem, cuidados.                                                                                                                                                                 |
-| `variants`  | entrada de `code` (opcional)    | A partir da `formatVersion` 9. Um campo `enum` do tipo escolhe a variante do código, que troca `symbol`, `path` e `notes` e soma `params` e `values` (ver "Variantes do código").                                                                                    |
+| Property    | Where                      | Description                                                                                                                                                                                                                                                                 |
+| ----------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `platforms` | root (optional)            | List of `{ id, name, language, repo? }`: the code targets where the agent writes the solution. `id` in the format `[a-z0-9-]+` and unique in the specialization; `name` is displayed; `language` is informational (it tells the agent which language to write the call in). |
+| `repo`      | `platforms` entry (v5)     | Optional, only in `formatVersion` 5. The library's repository on that platform, where the files cited in the `path`s are: `{ url, urlTemplate?, ref? }` (below). Without it, the agent only reaches the file through the local clone that the project reports.              |
+| `code`      | annotation type (optional) | Object keyed by **declared platform id**: how to create an instance of the type on each one. Each entry has the properties below.                                                                                                                                           |
+| `symbol`    | `code` entry (required)    | What is called to create an instance of the type on that platform: a composable, a view, a class, the BFF function that generates the component's JSON. The agent writes the call to this symbol.                                                                           |
+| `path`      | `code` entry (optional)    | The file that defines the `symbol`, **relative to the root of the platform's `repo`** (`/` as the separator, no `.`, `..`, leading `/` or drive letter, no line). The agent reads it to learn the signature before writing the call; without `path`, the `symbol` locates.  |
+| `params`    | `code` entry (optional)    | The name each field of the type is passed under in the call: key of a field of the type → parameter name. Fields not in `params` are not passed.                                                                                                                            |
+| `values`    | `code` entry (optional)    | How each `enum` value is written in code: key of an `enum` field → (value in the mapping → text in code). A value without a translation is passed as is.                                                                                                                    |
+| `notes`     | `code` entry (optional)    | Free guidance for the agent writing the call: what to pass beyond the fields, order, cautions.                                                                                                                                                                              |
+| `variants`  | `code` entry (optional)    | From `formatVersion` 9. An `enum` field of the type chooses the code variant, which replaces `symbol`, `path` and `notes` and adds to `params` and `values` (see "Code variants").                                                                                          |
 
-O `repo` de uma plataforma tem três propriedades:
+A platform's `repo` has three properties:
 
-| Propriedade   | Obrigatória | Descrição                                                                                                                                                                                                                                                                                   |
-| ------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `url`         | sim         | Endereço do repositório da biblioteca naquela plataforma (`http://` ou `https://`, sem espaços).                                                                                                                                                                                            |
-| `urlTemplate` | não         | Modelo do endereço de **um arquivo**, com `{path}` (ex: `https://github.com/org/app-android/blob/v3/{path}`). Serve a GitHub, GitLab, Bitbucket ou um servidor interno. Um `{line}` é aceito e sai do link, porque o `path` não tem linha. Sem ele, a app e o servidor MCP não montam link. |
-| `ref`         | não         | A revisão (tag, branch ou commit) da biblioteca a que o `code` corresponde. Informativa: a app e o servidor MCP a mostram, mas não a usam para montar o link (quem a quer no link a escreve no `urlTemplate`). Texto não vazio.                                                             |
+| Property      | Required | Description                                                                                                                                                                                                                                                                                                                 |
+| ------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `url`         | yes      | Address of the library's repository on that platform (`http://` or `https://`, no spaces).                                                                                                                                                                                                                                  |
+| `urlTemplate` | no       | Template for the address of **one file**, with `{path}` (e.g. `https://github.com/org/app-android/blob/v3/{path}`). It suits GitHub, GitLab, Bitbucket or an internal server. A `{line}` is accepted and dropped from the link, because the `path` has no line. Without it, the app and the MCP server do not build a link. |
+| `ref`         | no       | The revision (tag, branch or commit) of the library that the `code` corresponds to. Informational: the app and the MCP server show it, but do not use it to build the link (whoever wants it in the link writes it in the `urlTemplate`). Non-empty text.                                                                   |
 
-- **Como o agente chega ao arquivo.** Pelo endereço: o `urlTemplate` do `repo` da plataforma, na especialização dona do tipo, com `{path}` trocado pelo `path` (cada segmento codificado, as `/` mantidas). A app mostra a linha "Definição" nos Detalhes da anotação tipada com esse link logo depois de aplicar a especialização, e o servidor MCP devolve o endereço. Ou pelo clone local: o projeto pode guardar onde a biblioteca está clonada (`platformRepos[<plataforma>].localPath`, uma sobreposição local; ver o [`FORMAT.md`](FORMAT.md), "Campos da v11"), e o caminho local do arquivo é o `localPath` mais o `path`.
-- Plataformas com o **mesmo `id`** em especializações diferentes são o mesmo alvo de código (o projeto guarda um só clone local para elas). Cada especialização declara o `repo` da própria biblioteca, e eles podem diferir: o link de um tipo usa o `repo` da especialização dele.
-- `code` só vale em especializações que declaram `platforms`. Os ids citados em `code` precisam existir em `platforms`, e as chaves de `params` e `values` precisam ser campos do tipo.
-- Plataforma em que algum tipo tem `path` e que não declara `repo` gera um **aviso** da especialização (`path-without-repo`), não um erro: o arquivo é citado, mas o agente não sabe em que repositório procurá-lo. O uso de `code` pelo servidor MCP (`get_code_hints`, `find_by_code`) está no [`AGENT-GUIDE.md`](AGENT-GUIDE.md).
+- **How the agent reaches the file.** Through the address: the `urlTemplate` of the platform's `repo`, in the specialization that owns the type, with `{path}` replaced by the `path` (each segment encoded, the `/` kept). The app shows the "Definition" row in the typed annotation's Details with this link right after the specialization is applied, and the MCP server returns the address. Or through the local clone: the project can store where the library is cloned (`platformRepos[<platform>].localPath`, a local overlay; see [`FORMAT.md`](FORMAT.md), "Fields of v11"), and the file's local path is the `localPath` plus the `path`.
+- Platforms with the **same `id`** in different specializations are the same code target (the project stores a single local clone for them). Each specialization declares the `repo` of its own library, and they can differ: a type's link uses the `repo` of its specialization.
+- `code` is only valid in specializations that declare `platforms`. The ids cited in `code` must exist in `platforms`, and the keys of `params` and `values` must be fields of the type.
+- A platform on which some type has a `path` and which does not declare `repo` produces a specialization **warning** (`path-without-repo`), not an error: the file is cited, but the agent does not know which repository to look for it in. The MCP server's use of `code` (`get_code_hints`, `find_by_code`) is in [`AGENT-GUIDE.md`](AGENT-GUIDE.md).
 
 ```json
 {
@@ -481,7 +481,7 @@ O `repo` de uma plataforma tem três propriedades:
   "layers": [
     {
       "id": "componentes",
-      "name": "Componentes",
+      "name": "Components",
       "color": "#1E88E5",
       "annotationTypes": [
         {
@@ -514,7 +514,7 @@ O `repo` de uma plataforma tem três propriedades:
                   "secondary": "ButtonStyle.Secondary"
                 }
               },
-              "notes": "Chame o composable DSButton; o id vai em testId."
+              "notes": "Call the DSButton composable; the id goes in testId."
             },
             "bff": {
               "symbol": "com.app.bff.sdui.button",
@@ -523,7 +523,7 @@ O `repo` de uma plataforma tem três propriedades:
                 "id": "id",
                 "estilo": "variant"
               },
-              "notes": "A função devolve o nó do componente no JSON da tela."
+              "notes": "The function returns the component node in the screen JSON."
             }
           }
         }
@@ -533,28 +533,28 @@ O `repo` de uma plataforma tem três propriedades:
 }
 ```
 
-- `android.symbol` é o composable que se chama para criar um Button; `android.path` é o arquivo que o define, e o agente o lê para ver a assinatura antes de escrever a chamada.
-- `bff` é uma plataforma como as outras: o `symbol` é a **função Kotlin que gera o nó JSON** do Button (`com.app.bff.sdui.button`), com o arquivo dela em `path`, e não o nome do nó (`"button"`) que sai no JSON.
-- `params` diz o nome do parâmetro que recebe cada campo (`estilo` vai em `style` no Android e em `variant` no BFF); `values` diz como o valor `primary` é escrito no Android (`ButtonStyle.Primary`).
-- Cada plataforma declara o `repo` da biblioteca dela; os arquivos de `path` são relativos à raiz desse repositório.
+- `android.symbol` is the composable that is called to create a Button; `android.path` is the file that defines it, and the agent reads it to see the signature before writing the call.
+- `bff` is a platform like the others: the `symbol` is the **Kotlin function that generates the JSON node** of the Button (`com.app.bff.sdui.button`), with its file in `path`, and not the name of the node (`"button"`) that appears in the JSON.
+- `params` says the name of the parameter that receives each field (`estilo` goes in `style` on Android and in `variant` on the BFF); `values` says how the value `primary` is written on Android (`ButtonStyle.Primary`).
+- Each platform declares its library's `repo`; the `path` files are relative to the root of that repository.
 
-### Variantes do código (`variants`)
+### Code variants (`variants`)
 
-Em algumas plataformas a variante de um componente troca **o que se chama**, não um parâmetro: em Compose, o botão preenchido é `Button`, o contornado é `OutlinedButton` e o de texto é `TextButton`. A `formatVersion` 9 deixa a entrada de `code` de uma plataforma declarar `variants`: um campo `enum` do tipo escolhe, pelo valor que a anotação tem, o que muda no `code`.
+On some platforms the variant of a component changes **what is called**, not a parameter: in Compose, the filled button is `Button`, the outlined one is `OutlinedButton` and the text one is `TextButton`. `formatVersion` 9 lets a platform's `code` entry declare `variants`: an `enum` field of the type chooses, by the value the annotation has, what changes in the `code`.
 
-| Propriedade      | Onde                         | Descrição                                                                                                                                                                         |
-| ---------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `variants`       | entrada de `code` (opcional) | A partir da `formatVersion` 9. `{ field, cases }`: o campo que escolhe a variante e o que muda em cada valor dele.                                                                |
-| `variants.field` | obrigatória                  | A `key` de um campo `enum` do tipo, do nível de cima. Coluna de `table` não conta.                                                                                                |
-| `variants.cases` | obrigatória                  | Objeto de valor do campo (uma das `options` dele) → caso, com ao menos um caso. O caso tem `symbol`, `path`, `params`, `values` e `notes`, todos opcionais, e não pode ser vazio. |
+| Property         | Where                   | Description                                                                                                                                                                    |
+| ---------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `variants`       | `code` entry (optional) | From `formatVersion` 9. `{ field, cases }`: the field that chooses the variant and what changes for each of its values.                                                        |
+| `variants.field` | required                | The `key` of an `enum` field of the type, at the top level. A `table` column does not count.                                                                                   |
+| `variants.cases` | required                | Object of field value (one of its `options`) → case, with at least one case. The case has `symbol`, `path`, `params`, `values` and `notes`, all optional, and cannot be empty. |
 
-**Como o caso se combina com a base** (a entrada de `code` sem `variants`):
+**How the case combines with the base** (the `code` entry without `variants`):
 
-- `symbol`, `path` e `notes` do caso **substituem** os da base (só os que o caso declara; o resto vem da base).
-- `params` e `values` do caso **se somam** aos da base, chave por chave: o caso acrescenta ou troca a entrada daquela chave (em `values`, a tradução do caso para um campo substitui a da base para aquele campo).
-- Quando a anotação tem um valor no campo, esse valor escolhe o caso. Sem valor, vale o `default` do campo; sem `default`, a base. Valor sem caso também usa a base.
-- **Um nível só.** Um campo escolhe a variante e o caso não tem `variants`. Duas dimensões (por exemplo, estilo e tamanho) viram um `enum` que as junta (`filled-large`) ou dois tipos, como o FAB e o Extended FAB do Compose.
-- O resultado resolvido nunca traz `variants`: o servidor MCP (`get_code_hints`, `get_marking`, `get_annotation`, `find_by_code`) e a "Definição" dos Detalhes mostram o código **já resolvido** para a variante da anotação; `get_specialization`, `get_component` e o Catálogo mostram o JSON cru (o Catálogo ainda lista a tabela variante → símbolo). O detalhe do uso está no [`AGENT-GUIDE.md`](AGENT-GUIDE.md).
+- The case's `symbol`, `path` and `notes` **replace** those of the base (only the ones the case declares; the rest comes from the base).
+- The case's `params` and `values` **add to** those of the base, key by key: the case adds or replaces the entry for that key (in `values`, the case's translation for a field replaces the base's for that field).
+- When the annotation has a value in the field, that value chooses the case. Without a value, the field's `default` applies; without `default`, the base. A value without a case also uses the base.
+- **One level only.** One field chooses the variant and the case has no `variants`. Two dimensions (for example, style and size) become an `enum` that joins them (`filled-large`) or two types, like the FAB and the Extended FAB in Compose.
+- The resolved result never carries `variants`: the MCP server (`get_code_hints`, `get_marking`, `get_annotation`, `find_by_code`) and the Details' "Definition" show the code **already resolved** for the annotation's variant; `get_specialization`, `get_component` and the Catalog show the raw JSON (the Catalog also lists the variant → symbol table). The usage detail is in [`AGENT-GUIDE.md`](AGENT-GUIDE.md).
 
 ```json
 {
@@ -583,7 +583,7 @@ Em algumas plataformas a variante de um componente troca **o que se chama**, nã
           "text": { "symbol": "androidx.compose.material3.TextButton" },
           "tonal": {
             "symbol": "androidx.compose.material3.FilledTonalButton",
-            "notes": "content = { Text(label) }; a cor vem do tema tonal."
+            "notes": "content = { Text(label) }; the color comes from the tonal theme."
           }
         }
       }
@@ -592,39 +592,39 @@ Em algumas plataformas a variante de um componente troca **o que se chama**, nã
 }
 ```
 
-Uma anotação com `style = outlined` é instanciada com `OutlinedButton` (o `path` e o `params` são os da base, porque o caso só trocou o `symbol`); uma com `style = filled` (o `default`, sem caso) usa `Button`. A especialização precisa declarar `formatVersion: 9` e a plataforma `compose` em `platforms`.
+An annotation with `style = outlined` is instantiated with `OutlinedButton` (the `path` and the `params` are those of the base, because the case only replaced the `symbol`); one with `style = filled` (the `default`, with no case) uses `Button`. The specialization must declare `formatVersion: 9` and the `compose` platform in `platforms`.
 
-**Regras de validação:** `variants` só a partir da `formatVersion` 9 (`só é permitido com formatVersion 9`, no caminho `…code.<plataforma>.variants`); `field` obrigatório, a `key` de um campo `enum` do tipo (`"x" não é um campo do tipo` ou `"x" deve ser um campo enum do tipo`, no caminho `…variants.field`); `cases` com ao menos um caso (`declare ao menos um caso`); cada chave de `cases` uma das `options` do campo (`"v" não está nas options de "field"`, no caminho `…variants.cases.<v>`); caso vazio é erro (`caso vazio: declare symbol, path, params, values ou notes`); `params` e `values` do caso seguem as regras dos da base (chaves de campos do tipo; `values` só de campo `enum` e só com opções dele); `path` do caso, a mesma regra do `path` da base; qualquer outra propriedade em `variants` ou no caso é recusada.
+**Validation rules:** `variants` only from `formatVersion` 9 (`only allowed with formatVersion 9`, at the path `…code.<platform>.variants`); `field` required, the `key` of an `enum` field of the type (`"x" is not a field of the type` or `"x" must be an enum field of the type`, at the path `…variants.field`); `cases` with at least one case (`declare at least one case`); each key of `cases` one of the field's `options` (`"v" is not in the options of "field"`, at the path `…variants.cases.<v>`); an empty case is an error (`empty case: declare symbol, path, params, values or notes`); the case's `params` and `values` follow the rules of the base's (keys of fields of the type; `values` only for an `enum` field and only with its options); the case's `path`, the same rule as the base's `path`; any other property in `variants` or in the case is rejected.
 
-## Assinaturas e modelos de campo
+## Signatures and field models
 
-A `formatVersion` 16 liga o `code` de um tipo à **assinatura** do que ele chama. A assinatura é uma **ficha** `mapping-signature` ([`SIGNATURE-FORMAT.md`](SIGNATURE-FORMAT.md)): um JSON no pacote da biblioteca com os parâmetros do componente (nome, papel, tipo na fonte, padrão), escrito pelo agente ou por um extrator e **derivado** do código. O servidor nunca lê o código, só esse JSON. Com a ficha, o Mapping sabe o que o tipo ainda não cobre (o `unmapped` abaixo) e confere se o `params` aponta para parâmetros que existem.
+`formatVersion` 16 links a type's `code` to the **signature** of what it calls. The signature is a `mapping-signature` **sheet** ([`SIGNATURE-FORMAT.md`](SIGNATURE-FORMAT.md)): a JSON in the library package with the component's parameters (name, role, type in the source, default), written by the agent or by an extractor and **derived** from the code. The server never reads the code, only this JSON. With the sheet, Mapping knows what the type does not cover yet (the `unmapped` below) and checks that `params` points to parameters that exist.
 
-As chaves a seguir valem **só na `formatVersion` 16**; em uma versão anterior cada uma é o erro `só é permitido com formatVersion 16`, no caminho exato (`…code.compose.signature`, `fieldModels`).
+The following keys are valid **only in `formatVersion` 16**; in an earlier version each one is the error `only allowed with formatVersion 16`, at the exact path (`…code.compose.signature`, `fieldModels`).
 
-| Chave         | Onde                                                              | Descrição                                                                                                                                                                                                                                                                                                                               |
-| ------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `signature`   | entrada de `code` e caso de `variants`; entrada de `sources`      | Caminho da ficha `.json` no pacote, relativo à especialização: `signatures/<tipo>.<plataforma>.json` (no caso, `signatures/<tipo>.<caso>.<plataforma>.json`). No `code`, é a ficha de código; em `sources`, a de design.                                                                                                                |
-| `ignore`      | entrada de `code` e caso de `variants`; `sources` com `signature` | Nomes de parâmetro da ficha que ficam de fora **de propósito** (`modifier`, `interactionSource`): não viram campo, não entram no `unmapped` e não geram aviso. Nome repetido é erro. Em `sources`, o `ignore` que já existia continua com o significado de sempre e, com `signature`, também vale para os parâmetros fora de propósito. |
-| `calls`       | entrada de `code` e caso de `variants`                            | Parâmetro que se preenche por uma **fábrica**: `{ "<parâmetro>": "<símbolo da fábrica>" }` (`{ "colors": "androidx.compose.material3.ButtonDefaults.buttonColors" }`). Os campos do tipo chegam a ela por caminho em `params`.                                                                                                          |
-| `formats`     | entrada de `code` e caso de `variants`                            | Como o valor de um campo é escrito: `{ "<chave do campo>": "<molde com {value}>" }`, como `{ "width": "{value}.dp" }` (o valor `16` sai `16.dp`). O molde precisa conter `{value}`; a chave é de um campo do tipo.                                                                                                                      |
-| `fieldModels` | raiz                                                              | O modelo de campo de cada tipo da fonte (abaixo): id da plataforma ou do sistema → tipo na fonte → modelo.                                                                                                                                                                                                                              |
+| Key           | Where                                                        | Description                                                                                                                                                                                                                                                                                                                                               |
+| ------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `signature`   | `code` entry and `variants` case; `sources` entry            | Path of the `.json` sheet in the package, relative to the specialization: `signatures/<type>.<platform>.json` (in a case, `signatures/<type>.<case>.<platform>.json`). In `code`, it is the code sheet; in `sources`, the design one.                                                                                                                     |
+| `ignore`      | `code` entry and `variants` case; `sources` with `signature` | Names of sheet parameters left out **on purpose** (`modifier`, `interactionSource`): they do not become fields, do not enter the `unmapped` and do not produce a warning. A repeated name is an error. In `sources`, the `ignore` that already existed keeps its usual meaning and, with `signature`, also applies to the parameters left out on purpose. |
+| `calls`       | `code` entry and `variants` case                             | Parameter that is filled by a **factory**: `{ "<parameter>": "<factory symbol>" }` (`{ "colors": "androidx.compose.material3.ButtonDefaults.buttonColors" }`). The type's fields reach it by path in `params`.                                                                                                                                            |
+| `formats`     | `code` entry and `variants` case                             | How a field's value is written: `{ "<field key>": "<template with {value}>" }`, such as `{ "width": "{value}.dp" }` (the value `16` comes out as `16.dp`). The template must contain `{value}`; the key is that of a field of the type.                                                                                                                   |
+| `fieldModels` | root                                                         | The field model of each type in the source (below): platform or system id → type in the source → model.                                                                                                                                                                                                                                                   |
 
-### Alvo em `params`
+### Target in `params`
 
-Em uma especialização `formatVersion` 16, o valor de `code.<plataforma>.params` tem três formas:
+In a `formatVersion` 16 specialization, the value of `code.<platform>.params` has three forms:
 
-- **nome** (`text`): o parâmetro de mesmo nome, como sempre;
-- **caminho** (`colors.containerColor`): o argumento `containerColor` da fábrica de `calls.colors`. O primeiro segmento precisa estar em `calls` (senão, o erro `"colors" não está em calls`, no caminho do campo em `params`);
-- **posicional** (`#0`): o argumento sem nome na posição 0, o parâmetro de rótulo externo `_` do Swift (`Text("…")`).
+- **name** (`text`): the parameter of the same name, as always;
+- **path** (`colors.containerColor`): the `containerColor` argument of the `calls.colors` factory. The first segment must be in `calls` (otherwise, the error `"colors" is not in calls`, at the path of the field in `params`);
+- **positional** (`#0`): the unnamed argument at position 0, Swift's external label `_` parameter (`Text("…")`).
 
-Antes da 16 o valor é um texto opaco (nome de parâmetro, de campo JSON…) e nada muda: `.` e `#0` não são interpretados.
+Before 16 the value is opaque text (parameter name, JSON field name…) and nothing changes: `.` and `#0` are not interpreted.
 
-### `variants`: o que o caso troca e o que soma
+### `variants`: what the case replaces and what it adds
 
-No caso de `variants`, `signature` e `ignore` **substituem** os da base (o caso aponta para a ficha do outro símbolo, como `OutlinedButton`). `params`, `values`, `calls` e `formats` se **somam**, chave por chave, e o `calls` do caso troca o da base para o mesmo parâmetro. O `unmapped` e o `code` que o MCP devolve já saem resolvidos pelo caso.
+In a `variants` case, `signature` and `ignore` **replace** those of the base (the case points to the sheet of the other symbol, such as `OutlinedButton`). `params`, `values`, `calls` and `formats` **add up**, key by key, and the case's `calls` replaces the base's for the same parameter. The `unmapped` and the `code` that the MCP returns already come out resolved by the case.
 
-### Exemplo
+### Example
 
 ```json
 {
@@ -674,79 +674,79 @@ No caso de `variants`, `signature` e `ignore` **substituem** os da base (o caso 
 }
 ```
 
-(O exemplo mostra só as chaves da 16; uma especialização completa tem `format`, `id`, `name` e `version`.)
+(The example shows only the keys of 16; a complete specialization has `format`, `id`, `name` and `version`.)
 
-### Modelos de campo (`fieldModels`)
+### Field models (`fieldModels`)
 
-`fieldModels` diz como um parâmetro de um **tipo na fonte** vira campo do tipo de anotação. A chave de fora é o `id` da plataforma (ou o `system` de uma origem), a de dentro é o texto exato do tipo na fonte (`Dp`, `Color`; para o booleano, `boolean`), e o valor é um modelo, com **uma** forma:
+`fieldModels` says how a parameter of a **type in the source** becomes a field of the annotation type. The outer key is the platform `id` (or the `system` of an origin), the inner one is the exact text of the type in the source (`Dp`, `Color`; for the boolean, `boolean`), and the value is a model, with **one** form:
 
-| Forma                                        | O que diz                                                                                                                             |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `{ "like": "<tipo>.<campo>" }`               | Igual ao campo `<campo>` do tipo `<tipo>` da especialização. O campo precisa existir.                                                 |
-| `{ "type": "number\|string\|enum", ... }`    | Um campo novo do tipo dado, com `options` (obrigatório em `enum`, só nele) e `format` (molde com `{value}`) opcionais.                |
-| `{ "expand": { "call?", "params": { … } } }` | O tipo na fonte é composto: vira uma fábrica (`call`, opcional) com os `params` (nome → tipo na fonte), cada um com o próprio modelo. |
-| `{ "ignore": true }`                         | Esse tipo na fonte nunca vira campo.                                                                                                  |
+| Form                                         | What it says                                                                                                                                         |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `{ "like": "<type>.<field>" }`               | Same as the `<field>` field of the specialization's `<type>` type. The field must exist.                                                             |
+| `{ "type": "number\|string\|enum", ... }`    | A new field of the given type, with optional `options` (required on `enum`, only there) and `format` (template with `{value}`).                      |
+| `{ "expand": { "call?", "params": { … } } }` | The type in the source is composite: it becomes a factory (`call`, optional) with the `params` (name → type in the source), each with its own model. |
+| `{ "ignore": true }`                         | This type in the source never becomes a field.                                                                                                       |
 
-### Validação
+### Validation
 
-Erros de validação, sempre com o caminho:
+Validation errors, always with the path:
 
-- `só é permitido com formatVersion 16`: qualquer chave da tabela acima, ou `signature` em `sources`, numa versão anterior;
-- `like` que não acha o campo: `"<tipo>.<campo>" não é um campo de um tipo da especialização`;
-- `format` (em `fieldModels`) ou molde (em `formats`) sem `{value}`; `formats` com chave que não é campo do tipo;
-- caminho em `params` cujo primeiro segmento não está em `calls`: `"<x>" não está em calls`;
-- forma duplicada ou ausente no modelo, `options` fora de `enum`, `ignore` repetido, `expand` sem `params`.
+- `only allowed with formatVersion 16`: any key of the table above, or `signature` in `sources`, in an earlier version;
+- `like` that does not find the field: `"<type>.<field>" is not a field of a type in the specialization`;
+- `format` (in `fieldModels`) or template (in `formats`) without `{value}`; `formats` with a key that is not a field of the type;
+- path in `params` whose first segment is not in `calls`: `"<x>" is not in calls`;
+- duplicate or missing form in the model, `options` outside `enum`, repeated `ignore`, `expand` without `params`.
 
-No `validate_library` (que lê os arquivos do pacote), além disso:
+In `validate_library` (which reads the package files), in addition:
 
-- a ficha citada que não existe (`arquivo não encontrado`) ou é inválida (os erros da ficha, com o caminho dentro dela);
-- `source.symbol` ou `source.path` da ficha diferentes do `symbol` ou do `path` do `code`;
-- **aviso** `parâmetro fora da ficha: "<nome>"`: o `params` mapeia um parâmetro (nome, argumento de fábrica ou posicional) que a ficha não tem; o parâmetro saiu do código ou o nome está errado.
+- the cited sheet that does not exist (`file not found`) or is invalid (the sheet's errors, with the path inside it);
+- the sheet's `source.symbol` or `source.path` different from the `code`'s `symbol` or `path`;
+- **warning** `parameter not in the sheet: "<name>"`: the `params` maps a parameter (name, factory argument or positional) that the sheet does not have; the parameter left the code or the name is wrong.
 
-### O que sobra: `unmapped`
+### What is left: `unmapped`
 
-Com `signature`, o `code` que o MCP entrega (`get_code_hints`, `get_marking`, `get_annotation`, `get_component`, `find_by_code`) traz `unmapped`: a lista, na ordem da ficha, dos parâmetros que **nenhum campo liga e o `ignore` não dispensa**, cada um com `name`, `role`, `type`, `required` e `default?`. Um parâmetro com algum campo da fábrica ligado por caminho conta como ligado. `callback`, `modifier`, `state` e `slot` também entram: é assim que o agente sabe, por exemplo, que `onClick` é obrigatório. Os `value` sem campo são o rastro do que a tela ainda não modela. O servidor só lê o JSON da ficha no pacote aplicado (`specs/<id>/signatures/…`); nunca o código. Detalhes em [`MCP.md`](MCP.md).
+With `signature`, the `code` that the MCP delivers (`get_code_hints`, `get_marking`, `get_annotation`, `get_component`, `find_by_code`) carries `unmapped`: the list, in the sheet's order, of the parameters that **no field links and the `ignore` does not dismiss**, each with `name`, `role`, `type`, `required` and `default?`. A parameter with some factory field linked by path counts as linked. `callback`, `modifier`, `state` and `slot` also enter: that is how the agent knows, for example, that `onClick` is required. The `value`s without a field are the trace of what the screen does not model yet. The server only reads the sheet's JSON in the applied package (`specs/<id>/signatures/…`); never the code. Details in [`MCP.md`](MCP.md).
 
-### O importador e os avisos que ele regrava
+### The importer and the notices it rewrites
 
-A ficha vira campos, `code` (ou `sources`) e avisos pela tool `plan_signature_import` (`planSignatureImport`, puro, em `src/model/signatures/`; fluxo em [`AGENT-GUIDE.md`](AGENT-GUIDE.md), "Importar parâmetros da assinatura"). O importador não grava arquivo: devolve a especialização importada e quem grava é o agente, que valida com `validate_library`.
+The sheet becomes fields, `code` (or `sources`) and notices through the `plan_signature_import` tool (`planSignatureImport`, pure, in `src/model/signatures/`; flow in [`AGENT-GUIDE.md`](AGENT-GUIDE.md), "Importar parâmetros da assinatura"). The importer does not write a file: it returns the imported specialization and the agent is the one who writes it, validating with `validate_library`.
 
-**O que vira campo** (o `fieldModels` da biblioteca tem precedência sobre a regra):
+**What becomes a field** (the library's `fieldModels` takes precedence over the rule):
 
-| Parâmetro da ficha                        | Resultado                                                                                                                                                                   |
-| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `callback`, `modifier`, `state`           | nunca viram campo; ficam na ficha e no `unmapped`                                                                                                                           |
-| `slot`                                    | sem campo, salvo quando o `fieldModels` tem modelo para o tipo exato (`@Composable () -> Unit` como `string` com um `format`)                                               |
-| `value` `text`                            | `string`                                                                                                                                                                    |
-| `value` `boolean`                         | `enum` com as opções do modelo `boolean` (padrão `["true", "false"]`)                                                                                                       |
-| `value` `number`, `integer`, `dimension`  | `number` (a dimensão em unidades do componente)                                                                                                                             |
-| `value` `enum`                            | `enum` com as `options`; o texto da fonte que difere da opção vai para `code.values` (ou `sources[].values`)                                                                |
-| `value` `color`, `opaque`                 | só com modelo no `fieldModels`; sem ele, o parâmetro fica fora e o tipo ganha um `pending`                                                                                  |
-| parâmetro composto (padrão é uma fábrica) | um campo **opcional** por parâmetro da fábrica, cada um pela mesma regra; a chave é o nome do parâmetro da fábrica ou, se colidir, `<param><Nome>` (`colorsContainerColor`) |
+| Sheet parameter                            | Result                                                                                                                                                                    |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `callback`, `modifier`, `state`            | never become a field; they stay in the sheet and in the `unmapped`                                                                                                        |
+| `slot`                                     | no field, unless the `fieldModels` has a model for the exact type (`@Composable () -> Unit` as `string` with a `format`)                                                  |
+| `value` `text`                             | `string`                                                                                                                                                                  |
+| `value` `boolean`                          | `enum` with the options of the `boolean` model (default `["true", "false"]`)                                                                                              |
+| `value` `number`, `integer`, `dimension`   | `number` (the dimension in component units)                                                                                                                               |
+| `value` `enum`                             | `enum` with the `options`; the source text that differs from the option goes to `code.values` (or `sources[].values`)                                                     |
+| `value` `color`, `opaque`                  | only with a model in the `fieldModels`; without it, the parameter stays out and the type gets a `pending`                                                                 |
+| composite parameter (default is a factory) | one **optional** field per factory parameter, each by the same rule; the key is the factory parameter's name or, if it collides, `<param><Name>` (`colorsContainerColor`) |
 
-- **`default`:** o literal representável vira `default` do campo; o padrão não literal (`ButtonDefaults.shape`) fica sem `default`, e o argumento não é passado.
-- **Obrigatório:** só em **tipo novo** (o tipo ainda sem campos e sem ficha gravada). Em tipo que já tem campos, o campo novo nasce **opcional** (campo novo obrigatório é quebra) e o parâmetro obrigatório no código ganha `diverges` ("obrigatório no código").
-- **Chave do campo:** o nome do parâmetro, normalizado para `[A-Za-z0-9_]`; o nome original (e o rótulo externo do Swift) vai para o `code.params`.
-- **Ligação a campo existente**, nesta ordem: (a) o `code.params` (ou `sources[].name`) que já cita o parâmetro; (b) o campo cuja `key` normalizada (minúsculas, só letras e dígitos) é igual à do nome; (c) um campo novo. No Figma a ligação (b) é a regra normal (`Style` casa com `style`); as opções de um `VARIANT` casam com as `options` pelo texto normalizado e entram em `sources[].values`, e a que não casa ganha `diverges`. Alvo de design nunca acrescenta opção a campo existente (só avisa); alvo de código acrescenta a opção nova.
-- **Idempotente:** importar a mesma ficha duas vezes dá a mesma especialização.
+- **`default`:** the representable literal becomes the field's `default`; a non-literal default (`ButtonDefaults.shape`) stays without `default`, and the argument is not passed.
+- **Required:** only on a **new type** (the type still without fields and without a stored sheet). On a type that already has fields, the new field is born **optional** (a new required field is breaking) and the parameter required in code gets `diverges` ("required in code").
+- **Field key:** the parameter's name, normalized to `[A-Za-z0-9_]`; the original name (and Swift's external label) goes to `code.params`.
+- **Linking to an existing field**, in this order: (a) the `code.params` (or `sources[].name`) that already cites the parameter; (b) the field whose normalized `key` (lowercase, letters and digits only) is equal to that of the name; (c) a new field. In Figma, link (b) is the normal rule (`Style` matches `style`); the options of a `VARIANT` match the `options` by normalized text and go into `sources[].values`, and the one that does not match gets `diverges`. A design target never adds an option to an existing field (it only warns); a code target adds the new option.
+- **Idempotent:** importing the same sheet twice gives the same specialization.
 
-**Avisos que o importador escreve.** Todos levam `ref` igual ao caminho da ficha (`signatures/button.compose.json`) e a `message` começa pelo id da plataforma ou do sistema (`compose: …`, a regra do prefixo de "Avisos de fidelidade e origens do aviso"). A cada importação ele **regrava todos os avisos com esse `ref`** e não toca nos outros (os curados à mão, com o `ref` do doc do tipo, ficam):
+**Notices the importer writes.** All carry a `ref` equal to the sheet's path (`signatures/button.compose.json`) and the `message` starts with the platform or system id (`compose: …`, the prefix rule of "Fidelity notices and notice origins"). On each import it **rewrites all the notices with that `ref`** and does not touch the others (the hand-curated ones, with the `ref` of the type's doc, stay):
 
-- `pending` no tipo, um por parâmetro `value` sem campo e fora do `ignore` ("compose: o parâmetro `windowInsets` (WindowInsets) ainda não é campo"); na ficha de um caso de `variants` a `message` leva o caso ("compose: caso `outlined`: o parâmetro `windowInsets` …"), para a base e o caso não gerarem o mesmo aviso duas vezes, e a ficha reimportada ocupa o lugar dos avisos antigos, sem reordenar a lista;
-- `removed` no campo cujo parâmetro sumiu da fonte (o campo fica);
-- `diverges` no campo: o `value.kind` do parâmetro mudou; uma opção do campo não existe mais na fonte; o código exige e o campo é opcional; renome provável (um parâmetro saiu e outro entrou com o mesmo tipo e na mesma posição: o `removed` do campo antigo dá lugar a `diverges` "renome provável de `a` para `b`").
+- `pending` on the type, one per `value` parameter without a field and outside the `ignore` ("compose: the parameter `windowInsets` (WindowInsets) is not a field yet"); on the sheet of a `variants` case the `message` carries the case ("compose: case `outlined`: the parameter `windowInsets` …"), so that the base and the case do not produce the same notice twice, and the re-imported sheet takes the place of the old notices, without reordering the list;
+- `removed` on the field whose parameter disappeared from the source (the field stays);
+- `diverges` on the field: the parameter's `value.kind` changed; an option of the field no longer exists in the source; the code requires it and the field is optional; probable rename (one parameter left and another came in with the same type and in the same position: the old field's `removed` gives way to `diverges` "probable rename from `a` to `b`").
 
-**Sincronizar.** Com a ficha anterior gravada no pacote, a importação compara as duas (`changes`: `added`, `removed`, `changed` e `renamed`) e o `spec` devolvido traz só o que é **aditivo**: campo novo opcional, opção nova de `enum`, `default` atualizado (só quando a ficha mudou o padrão: a primeira importação não grava `default` em campo que já existia sem ele) e as ligações. O `removed` já gravado não volta em `changes` nem em `suggestedMigrations` a cada reimportação. Nunca remove nem renomeia campo e nunca escreve `migrations`: `suggestedMigrations` (`remove-field`, `rename-field`) é a sugestão, e o agente só a escreve se a pessoa pedir. `versionBump` é `true` quando o contrato mudou (o `diffSpecs` entre a especialização de antes e a de depois não é vazio); um `default` atualizado ou uma mudança só de avisos não sobe a versão.
+**Syncing.** With the previous sheet stored in the package, the import compares the two (`changes`: `added`, `removed`, `changed` and `renamed`) and the returned `spec` carries only what is **additive**: a new optional field, a new `enum` option, an updated `default` (only when the sheet changed the default: the first import does not write a `default` on a field that already existed without it) and the links. The `removed` already stored does not come back in `changes` or in `suggestedMigrations` on every re-import. It never removes or renames a field and never writes `migrations`: `suggestedMigrations` (`remove-field`, `rename-field`) is the suggestion, and the agent only writes it if the person asks. `versionBump` is `true` when the contract changed (the `diffSpecs` between the before and after specialization is not empty); an updated `default` or a notices-only change does not bump the version.
 
-## Containers (tamanhos prontos)
+## Containers (ready-made sizes)
 
-A `formatVersion` 6 deixa a especialização oferecer **tamanhos prontos de container**: o objeto de topo do canvas (uma tela de app, um painel, um cartão) criado sem arquivo, só com tamanho e cor de fundo. No diálogo **Novo container**, a lista **Tamanho predefinido** traz **Personalizado** e **Tamanho da seleção** (do núcleo; este é o retângulo da marcação selecionada e fica desabilitado sem seleção) e, abaixo, os `containers` de cada especialização aplicada, agrupados pelo nome dela. Tamanhos de dispositivo (celular, tablet, desktop) são de domínio: vêm da especialização, não do núcleo. A biblioteca Material 3 do repositório traz Celular 360 × 800, Celular grande 412 × 915, Tablet 800 × 1280 e Desktop 1440 × 900.
+`formatVersion` 6 lets the specialization offer **preset container sizes**: the canvas's top-level object (an app screen, a panel, a card) created without a file, with just a size and a background color. In the **New container** dialog, the **Preset size** list brings **Custom** and **Selection size** (from the core; the latter is the selected marking's rectangle and is disabled without a selection) and, below, the `containers` of each applied specialization, grouped by its name. Device sizes (phone, tablet, desktop) are domain-specific: they come from the specialization, not from the core. The repository's Material 3 library brings Phone 360 × 800, Large phone 412 × 915, Tablet 800 × 1280 and Desktop 1440 × 900.
 
 ```json
 {
   "formatVersion": 6,
   "containers": [
-    { "id": "phone", "name": "Celular", "width": 360, "height": 800 },
+    { "id": "phone", "name": "Phone", "width": 360, "height": 800 },
     {
       "id": "tablet",
       "name": "Tablet",
@@ -758,21 +758,21 @@ A `formatVersion` 6 deixa a especialização oferecer **tamanhos prontos de cont
 }
 ```
 
-Na raiz, opcional; lista de objetos com:
+At the root, optional; list of objects with:
 
-- `containers`: a lista. Escolher um tamanho preenche largura, altura e cor de fundo do diálogo; a pessoa ainda pode editá-los antes de criar. O agente lê a lista em `get_specialization` (campo `containers`) e a usa nos tamanhos de `add_container`.
-- `id`: obrigatório; no formato `[a-z0-9-]+` e único na especialização.
-- `name`: obrigatório, não vazio; é o texto da opção na lista.
-- `width` e `height`: obrigatórios; inteiros de 1 a 20000 (pixels).
-- `background`: opcional; cor `#RRGGBB`. Sem ele, o container nasce branco (`#FFFFFF`).
+- `containers`: the list. Choosing a size fills in the dialog's width, height and background color; the person can still edit them before creating. The agent reads the list in `get_specialization` (`containers` field) and uses it for the sizes in `add_container`.
+- `id`: required; in the format `[a-z0-9-]+` and unique in the specialization.
+- `name`: required, non-empty; it is the option's text in the list.
+- `width` and `height`: required; integers from 1 to 20000 (pixels).
+- `background`: optional; `#RRGGBB` color. Without it, the container is born white (`#FFFFFF`).
 
-A 5 continua aceita: uma especialização sem `containers` só aparece na lista com **Personalizado** e **Tamanho da seleção**. A lista está fora do contrato de versão (acrescentar, mudar ou remover tamanhos nunca é quebra nem pede migração).
+Version 5 is still accepted: a specialization without `containers` only appears in the list with **Custom** and **Selection size**. The list is outside the version contract (adding, changing or removing sizes is never breaking and never requires a migration).
 
-## Tipo flutuante
+## Floating type
 
-A `formatVersion` 7 deixa um tipo de anotação ser **flutuante** (`floating: true`). A instância de um tipo flutuante é uma **marcação flutuante**: um comentário solto, como um post-it, que vive só no canvas (`containerId` nulo, `rect` em unidades do canvas) e fica **fora do pertencimento** nos dois sentidos: nunca é filha de um container ou de uma marcação e nunca é mãe. É desenhada acima de tudo, inclusive sobre fotos mesmo com **Mostrar componentes sobre fotos** desligado, e arrastá-la move só ela: nada a carrega nem é carregado por ela. **Adicionar** (botão da Paleta) cria sempre no canvas, no centro da vista (**Adicionar no canvas**); arrastar da Paleta solta onde cair. A relação com uma tela ou um elemento é uma seta, não o pertencimento.
+`formatVersion` 7 lets an annotation type be **floating** (`floating: true`). The instance of a floating type is a **floating marking**: a loose comment, like a sticky note, that lives only on the canvas (`containerId` null, `rect` in canvas units) and stays **outside containment** in both directions: it is never the child of a container or of a marking and is never a parent. It is drawn above everything, including over photos even with **Show components over photos** turned off, and dragging it moves only it: nothing carries it and it carries nothing. **Add** (Palette button) always creates on the canvas, at the center of the view (**Add to canvas**); dragging from the Palette drops it where it lands. The relation to a screen or an element is an arrow, not containment.
 
-Use `floating` só para o que é comentário ou anotação solta que não pertence a uma tela (uma nota, um recado, uma regra de negócio); nunca para componentes de interface, que pertencem à tela onde estão.
+Use `floating` only for what is a comment or loose annotation that does not belong to a screen (a note, a message, a business rule); never for interface components, which belong to the screen where they are.
 
 ```json
 {
@@ -780,15 +780,15 @@ Use `floating` só para o que é comentário ou anotação solta que não perten
   "layers": [
     {
       "id": "notas",
-      "name": "Notas",
+      "name": "Notes",
       "color": "#F5C400",
       "annotationTypes": [
         {
           "id": "nota",
-          "name": "Nota",
+          "name": "Note",
           "floating": true,
           "fields": [
-            { "key": "texto", "label": "Texto", "type": "string", "required": true }
+            { "key": "texto", "label": "Text", "type": "string", "required": true }
           ]
         }
       ]
@@ -797,13 +797,13 @@ Use `floating` só para o que é comentário ou anotação solta que não perten
 }
 ```
 
-- `floating`: booleano, opcional; o padrão é `false`. Só a partir da `formatVersion` 7 (numa versão anterior o erro é `só é permitido com formatVersion 7`, no caminho `layers[0].annotationTypes[0].floating`).
-- A biblioteca de **notas** do repositório (`libraries/notas/`: camada **Notas**, tipos `nota` com `titulo` e `texto` e `tabela` com `titulo` e `linhas` chave/valor, componentes no estilo post-it) é um pacote comum, embutido na app e **aplicado por padrão**: o projeto novo nasce com ela, e o projeto aberto de um schema anterior ao 13 a ganha ao abrir. Ela se remove por **Especializações › Remover**, como qualquer outra, e não volta.
-- Campos `string` do tipo aceitam várias linhas na interface (o editor abre em várias linhas quando o texto tem quebra ou passa de 60 caracteres, ou com Shift+Enter; enquanto o texto não tem quebra, o Enter grava e o Shift+Enter quebra a linha).
+- `floating`: boolean, optional; the default is `false`. Only from `formatVersion` 7 (in an earlier version the error is `only allowed with formatVersion 7`, at the path `layers[0].annotationTypes[0].floating`).
+- The repository's **notes** library (`libraries/notas/`: **Notes** layer, types `nota` with `titulo` and `texto` and `tabela` with `titulo` and key/value `linhas`, components in the sticky-note style) is an ordinary package, embedded in the app and **applied by default**: the new project is born with it, and a project opened from a schema earlier than 13 gets it on opening. It is removed through **Specializations › Remove**, like any other, and does not come back.
+- `string` fields of the type accept multiple lines in the interface (the editor opens in multi-line mode when the text has a line break or exceeds 60 characters, or with Shift+Enter; while the text has no line break, Enter saves and Shift+Enter breaks the line).
 
-## Onde o tipo se aplica
+## What the type applies to
 
-A `formatVersion` 7 diz a que uma anotação se aplica com `appliesTo` no tipo: `"marking"` (uma marcação, o padrão), `"arrow"` (uma **seta**, que liga duas marcações e pode ter anotações por camada, como uma marcação) ou os dois. O painel de anotações oferece, para a marcação selecionada, só os tipos que se aplicam a marcações e, para a seta, só os que se aplicam a setas. Um tipo **só de seta** (`appliesTo: ["arrow"]`) não tem `component` nem `floating`: a seta não tem desenho de componente. Restrições de origem e destino por tipo (por exemplo, "só liga uma marcação Tela a um Botão") ficam fora do formato.
+`formatVersion` 7 says what an annotation applies to with `appliesTo` on the type: `"marking"` (a marking, the default), `"arrow"` (an **arrow**, which links two markings and can have annotations per layer, like a marking) or both. The annotations panel offers, for the selected marking, only the types that apply to markings and, for the arrow, only those that apply to arrows. An **arrow-only** type (`appliesTo: ["arrow"]`) has no `component` or `floating`: the arrow has no component drawing. Source and target restrictions per type (for example, "only links a Screen marking to a Button") are outside the format.
 
 ```json
 {
@@ -814,15 +814,15 @@ A `formatVersion` 7 diz a que uma anotação se aplica com `appliesTo` no tipo: 
 }
 ```
 
-- `appliesTo`: lista de `"marking"` e/ou `"arrow"`, opcional; não vazia e sem repetição. Só a partir da `formatVersion` 7 (numa versão anterior o erro é `só é permitido com formatVersion 7`, no caminho `layers[0].annotationTypes[0].appliesTo`).
-- Pela API do modelo, `typeAppliesTo(tipo, 'marking' | 'arrow')` responde se o tipo se aplica ao item.
+- `appliesTo`: list of `"marking"` and/or `"arrow"`, optional; non-empty and duplicate-free. Only from `formatVersion` 7 (in an earlier version the error is `only allowed with formatVersion 7`, at the path `layers[0].annotationTypes[0].appliesTo`).
+- Through the model API, `typeAppliesTo(type, 'marking' | 'arrow')` answers whether the type applies to the item.
 
-**O padrão "flutuante que aponta".** Uma tabela de dados (eventos disparados, propriedades) que descreve um elemento de uma tela é um tipo **flutuante** cujo componente desenha a tabela (`repeat`, ver `docs/COMPONENT-FORMAT.md`). Ela fica ao lado da tela e é ligada ao elemento (um botão) por uma **seta**; o dado mora na anotação da tabela flutuante, e quem lê o mapeamento chega a ela pelas setas que saem do elemento. Se a relação em si tem dado (o deep link que a transição abre, o evento que ela dispara), é um tipo aplicado à seta. A biblioteca de **notas** traz a **Tabela** genérica (título e linhas chave/valor) para isso, sem especialização.
+**The "floating that points" pattern.** A data table (fired events, properties) that describes an element of a screen is a **floating** type whose component draws the table (`repeat`, see `docs/COMPONENT-FORMAT.md`). It sits beside the screen and is linked to the element (a button) by an **arrow**; the data lives in the floating table's annotation, and whoever reads the mapping reaches it through the arrows leaving the element. If the relation itself has data (the deep link that the transition opens, the event that it fires), it is a type applied to the arrow. The **notes** library brings the generic **Table** (title and key/value rows) for this, without a specialization.
 
 ```json
 {
   "id": "tabela-eventos",
-  "name": "Tabela de eventos",
+  "name": "Events table",
   "floating": true,
   "component": "components/tabela-eventos.json",
   "fields": [
@@ -838,9 +838,9 @@ A `formatVersion` 7 diz a que uma anotação se aplica com `appliesTo` no tipo: 
 }
 ```
 
-## Avisos (notices)
+## Notices (notices)
 
-A `formatVersion` 10 deixa a especialização **avisar** sobre um tipo, um campo ou uma coluna de `table` com `notices`: uma lista de avisos curtos, escritos por quem gera a especialização, para quem a usa saber que ali há algo a considerar. É o lugar de registrar que duas fontes **discordam** (o contrato diz uma coisa e o código outra), que algo está **pendente** numa delas, ficou **obsoleto** ou **saiu** do contrato. A pessoa vê o aviso na app ao lado do tipo, do campo ou da coluna; o agente o lê ao instanciar o tipo.
+`formatVersion` 10 lets the specialization **warn** about a type, a field, or a `table` column with `notices`: a list of short notices, written by whoever generates the specialization, so that the people using it know there is something to consider there. It is the place to record that two sources **disagree** (the contract says one thing and the code another), that something is **pending** in one of them, became **deprecated**, or was **removed** from the contract. The person sees the notice in the app next to the type, the field, or the column; the agent reads it when instantiating the type.
 
 ```json
 {
@@ -849,7 +849,7 @@ A `formatVersion` 10 deixa a especialização **avisar** sobre um tipo, um campo
   "notices": [
     {
       "kind": "pending",
-      "message": "O contrato aceita avatarVariant; o SDK do BFF ainda não tem.",
+      "message": "The contract accepts avatarVariant; the BFF SDK does not have it yet.",
       "since": "2026-11-04",
       "ref": "cross/sdui/all/pe-core/base/plugins/alert.md"
     }
@@ -864,57 +864,57 @@ A `formatVersion` 10 deixa a especialização **avisar** sobre um tipo, um campo
 }
 ```
 
-Cada aviso é um objeto estrito:
+Each notice is a strict object:
 
-| Propriedade | Obrigatória | Descrição                                                                               |
-| ----------- | ----------- | --------------------------------------------------------------------------------------- |
-| `kind`      | sim         | Um de `pending`, `deprecated`, `diverges` ou `removed` (tabela abaixo).                 |
-| `message`   | sim         | O que a pessoa precisa saber. Texto não vazio e que não seja só espaços.                |
-| `since`     | não         | Desde quando o aviso vale: data real no formato `AAAA-MM-DD`.                           |
-| `ref`       | não         | De onde o aviso vem, texto livre não vazio (a página do contrato, o arquivo do código). |
+| Property  | Required | Description                                                                          |
+| --------- | -------- | ------------------------------------------------------------------------------------ |
+| `kind`    | yes      | One of `pending`, `deprecated`, `diverges`, or `removed` (table below).              |
+| `message` | yes      | What the person needs to know. Non-empty text that is not only whitespace.           |
+| `since`   | no       | Since when the notice applies: a real date in the `YYYY-MM-DD` format.               |
+| `ref`     | no       | Where the notice comes from, free non-empty text (the contract page, the code file). |
 
-Os quatro `kind` têm **gravidade fixa**, na ordem `removed` > `deprecated` = `diverges` > `pending`; a lista é exibida na ordem `removed`, `deprecated`, `diverges`, `pending` e, dentro do mesmo `kind`, na ordem do arquivo.
+The four `kind` values have a **fixed severity**, in the order `removed` > `deprecated` = `diverges` > `pending`; the list is shown in the order `removed`, `deprecated`, `diverges`, `pending` and, within the same `kind`, in file order.
 
-| `kind`       | Rótulo (pt-BR / en-US) | Significa                                                                                                                                                  |
-| ------------ | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `removed`    | Removido / Removed     | Saiu do contrato e não deve ser usado.                                                                                                                     |
-| `deprecated` | Obsoleto / Deprecated  | Obsoleto; a `message` diz o que usar no lugar.                                                                                                             |
-| `diverges`   | Diverge / Diverges     | As fontes discordam; a `message` diz em quê.                                                                                                               |
-| `pending`    | Pendente / Pending     | Uma fonte já tem e a outra ainda não; o nome da plataforma ou da origem abre a `message`, como `compose: …` (o núcleo da app não leva nome de plataforma). |
+| `kind`       | Label (pt-BR / en-US) | Means                                                                                                                                                                     |
+| ------------ | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `removed`    | Removido / Removed    | Left the contract and must not be used.                                                                                                                                   |
+| `deprecated` | Obsoleto / Deprecated | Deprecated; the `message` says what to use instead.                                                                                                                       |
+| `diverges`   | Diverge / Diverges    | The sources disagree; the `message` says on what.                                                                                                                         |
+| `pending`    | Pendente / Pending    | One source already has it and the other does not yet; the name of the platform or source opens the `message`, as in `compose: …` (the app core carries no platform name). |
 
-- `notices`: lista (pode ser vazia) no tipo (`layers[n].annotationTypes[m].notices`), no campo (`…fields[k].notices`) e na coluna de `table` (`…fields[k].columns[j].notices`). Dois avisos com o mesmo `kind` e a mesma `message` na lista são o erro `aviso repetido`, no caminho do segundo. Um `kind` fora dos quatro, uma `message` vazia ou só de espaços, uma `since` que não é data real, uma `ref` vazia e qualquer outra propriedade são erros. Numa versão anterior à 10 o erro é `só é permitido com formatVersion 10`, no caminho exato.
-- **O aviso só informa.** Nenhum aviso, nem `removed`, impede importar a especialização, aplicá-la, criar uma anotação do tipo ou aceitar uma proposta que o use. O aviso também não é pendência: a janela **Incompletas** e os códigos de problema das anotações não mudam. Os Detalhes mostram o aviso do campo mesmo vazio; a janela Avisos e a contagem só contam o campo com valor.
-- **Fora do contrato de versão:** incluir, mudar ou tirar `notices` é compatível e nunca pede migração (ver "Contrato de versão"). `diffSpecs` ignora `notices` e não gera diferença, então quem gera a especialização regrava todos os avisos da sua origem (o mesmo `ref`; ver "Avisos de fidelidade e origens do aviso"), e o aviso some sozinho quando a diferença entre as fontes some. Atualizar a especialização só por avisos não mostra impacto.
+- `notices`: a list (it may be empty) on the type (`layers[n].annotationTypes[m].notices`), on the field (`…fields[k].notices`), and on the `table` column (`…fields[k].columns[j].notices`). Two notices with the same `kind` and the same `message` in the list are the error `aviso repetido`, at the path of the second one. A `kind` outside the four, an empty or whitespace-only `message`, a `since` that is not a real date, an empty `ref`, and any other property are errors. In a version earlier than 10 the error is `só é permitido com formatVersion 10`, at the exact path.
+- **The notice only informs.** No notice, not even `removed`, prevents importing the specialization, applying it, creating an annotation of the type, or accepting a proposal that uses it. The notice is also not a pending item: the **Incomplete** window and the problem codes of the annotations do not change. The Details show the field's notice even when the field is empty; the Notices window and the count only count the field with a value.
+- **Outside the version contract:** adding, changing, or removing `notices` is compatible and never requires a migration (see "Version contract"). `diffSpecs` ignores `notices` and produces no difference, so whoever generates the specialization rewrites all the notices from its source (the same `ref`; see "Fidelity notices and notice sources"), and the notice disappears by itself when the difference between the sources disappears. Updating the specialization only because of notices shows no impact.
 
-### Avisos de fidelidade e origens do aviso
+### Fidelity notices and notice sources
 
-Os `notices` também registram a **fidelidade**: onde o desenho ou o comportamento de uma biblioteca aproxima a plataforma. Esta subseção vale para qualquer biblioteca e plataforma.
+`notices` also record **fidelity**: where the design or behavior of a library approximates the platform. This subsection applies to any library and platform.
 
-**Critério.** Vira aviso a divergência de **desenho** ou de **comportamento** entre a biblioteca e a plataforma que **muda uma decisão** de quem marca (como recortar, que tipo ou campo escolher, o que esperar do desenho) ou de quem escreve o código (que parâmetro passar, que composable ou view trocar, o que conferir na tela). O resto fica **só no doc** do componente: estados interativos que o desenho estático não mostra (pressionado, foco, passar o mouse), valores literais em vez de token, diferenças de subpixel e a referência dos arquivos usados. Parâmetro que não é campo não é assunto desta regra: é do importador de assinaturas.
+**Criterion.** A divergence in **design** or **behavior** between the library and the platform becomes a notice when it **changes a decision** of whoever marks (how to crop, which type or field to choose, what to expect from the design) or of whoever writes the code (which parameter to pass, which composable or view to swap, what to check on screen). The rest stays **only in the doc** of the component: interactive states that the static design does not show (pressed, focus, hover), literal values instead of tokens, subpixel differences, and the reference of the files used. A parameter that is not a field is not a matter for this rule: it belongs to the signature importer.
 
-- **Exemplo que vira aviso:** `compose: as filhas de um slot não têm weight; marque a largura real de cada uma`. **Exemplo que fica no doc:** `sem o estado pressionado`.
-- **`ref`:** o caminho, dentro do pacote, do documento que descreve a diferença, normalmente o `doc` do tipo (`docs/<tipo>.md`).
-- **`kind`:** `diverges`. Use `pending` só quando o limite tem um **pedido registrado** (uma issue, um ticket da biblioteca), citado na `message`.
-- **Prefixo da plataforma (regra):** a `message` de um aviso ligado a uma plataforma ou a uma origem **começa com o id dela e dois-pontos** (`compose: …`). O `notices` não tem campo de plataforma e o núcleo não filtra por texto: quem lê (a pessoa ou o agente) ignora o aviso cujo prefixo é de outra plataforma.
+- **Example that becomes a notice:** `compose: the children of a slot have no weight; mark the real width of each one`. **Example that stays in the doc:** `without the pressed state`.
+- **`ref`:** the path, inside the package, of the document that describes the difference, normally the type's `doc` (`docs/<type>.md`).
+- **`kind`:** `diverges`. Use `pending` only when the limit has a **registered request** (an issue, a library ticket), cited in the `message`.
+- **Platform prefix (rule):** the `message` of a notice tied to a platform or to a source **starts with its id and a colon** (`compose: …`). `notices` has no platform field and the core does not filter by text: whoever reads it (the person or the agent) ignores the notice whose prefix belongs to another platform.
 
-**Duas origens de aviso**, diferenciadas pelo `ref`:
+**Two sources of notices**, told apart by the `ref`:
 
-| Origem                    | `ref`                                                                                                        | Quem grava                                                                                                                                            |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Gerado por ferramenta** | O arquivo de entrada da ferramenta que produz o aviso (por exemplo, a ficha de assinatura de um importador). | A ferramenta **regrava todos** os avisos com esse `ref` a cada rodada e não toca nos outros.                                                          |
-| **Curado à mão**          | Qualquer outro `ref`, como o doc do tipo.                                                                    | O autor (ou a skill `spec-author`), ao escrever ou rever o doc. A ferramenta nunca o apaga; ele só sai quando o autor revê o doc e a diferença sumiu. |
+| Source             | `ref`                                                                                                  | Who writes it                                                                                                                                                                        |
+| ------------------ | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Tool-generated** | The input file of the tool that produces the notice (for example, the signature sheet of an importer). | The tool **rewrites all** the notices with that `ref` on every run and does not touch the others.                                                                                    |
+| **Hand-curated**   | Any other `ref`, such as the type's doc.                                                               | The author (or the `spec-author` skill), when writing or reviewing the doc. The tool never deletes it; it only goes away when the author reviews the doc and the difference is gone. |
 
-- Ninguém escreve à mão um aviso com o `ref` de uma ferramenta: ele sumiria na próxima rodada dela.
-- Um aviso de fidelidade não repete o que um `pending` gerado por ferramenta já diz.
+- Nobody hand-writes a notice with a tool's `ref`: it would disappear on the tool's next run.
+- A fidelity notice does not repeat what a tool-generated `pending` already says.
 
-**Como a app mostra os dois (sem controle novo):**
+**How the app shows the two (no new control):**
 
-- **Janela Avisos:** os avisos de fidelidade e os gerados por ferramenta são `notices` da especialização e entram na **mesma lista**, agrupados por aviso e ordenados por gravidade. O filtro de `kind` separa `diverges` de `pending`, mas **não** separa o `pending` curado (de doc) do `pending` gerado (de ficha): os dois são `pending`. O cabeçalho do grupo mostra o selo, o lugar, a mensagem, o `since` e a contagem, **não o `ref`**.
-- **A origem só aparece nos Detalhes:** `Origem: <ref>`, no aviso do tipo (`NoticeBlock`, no topo da anotação) e no do campo e da coluna (`NoticeLine`, abaixo do controle). Escolher a linha de um grupo na janela abre os Detalhes da anotação, onde a origem está.
+- **Notices window:** fidelity notices and tool-generated ones are `notices` of the specialization and go into the **same list**, grouped by notice and sorted by severity. The `kind` filter separates `diverges` from `pending`, but it does **not** separate the curated `pending` (from a doc) from the generated `pending` (from a sheet): both are `pending`. The group header shows the badge, the place, the message, the `since`, and the count, **not the `ref`**.
+- **The source only appears in the Details:** `Source: <ref>`, on the type's notice (`NoticeBlock`, at the top of the annotation) and on the field's and the column's (`NoticeLine`, below the control). Choosing a group's row in the window opens the annotation's Details, where the source is.
 
-## Origens (sources)
+## Sources (sources)
 
-A `formatVersion` 3 diz a que elementos de um **sistema externo** (uma ferramenta de design, outro catálogo de componentes…) cada tipo corresponde e de que propriedade de origem vem cada campo. É o que um agente de importação usa para saber que componente vira que tipo, sem deduzir pelo nome. O núcleo não interpreta `system` nem os nomes: só valida a estrutura e devolve os dados a quem pedir.
+`formatVersion` 3 says which elements of an **external system** (a design tool, another component catalog…) each type corresponds to and which source property each field comes from. This is what an import agent uses to know which component becomes which type, without deducing it from the name. The core does not interpret `system` or the names: it only validates the structure and returns the data to whoever asks for it.
 
 ```json
 {
@@ -943,27 +943,27 @@ A `formatVersion` 3 diz a que elementos de um **sistema externo** (uma ferrament
 }
 ```
 
-| Propriedade | Onde                                  | Descrição                                                                                                                                                                    |
-| ----------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `sources`   | tipo de anotação (opcional)           | Lista de `{ system, id?, name? }`, cada uma com pelo menos `id` ou `name`. Um tipo pode corresponder a vários elementos (ex: variantes antigas e novas do mesmo componente). |
-| `sources`   | campo ou coluna de `table` (opcional) | Lista de `{ system, name, values? }`: a propriedade de origem do valor.                                                                                                      |
-| `values`    | origem de um campo (opcional)         | Só em campos `enum`: valor de origem → uma das `options` (os destinos precisam existir em `options`).                                                                        |
+| Property  | Where                              | Description                                                                                                                                                        |
+| --------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `sources` | annotation type (optional)         | List of `{ system, id?, name? }`, each with at least `id` or `name`. A type can correspond to several elements (e.g., old and new variants of the same component). |
+| `sources` | field or `table` column (optional) | List of `{ system, name, values? }`: the source property of the value.                                                                                             |
+| `values`  | source of a field (optional)       | Only on `enum` fields: source value → one of the `options` (the targets must exist in `options`).                                                                  |
 
-- `system`, `id` e `name` são textos não vazios; comparações são exatas (maiúsculas contam).
-- `sources` só existe a partir da `formatVersion` 3: nas versões 1 e 2 o arquivo é recusado com a mensagem de versão, em vez de ignorar as origens.
-- Em código TypeScript, `findTypesBySource(specs, system, { id?, name? })` (em `src/model/`) devolve os tipos que correspondem a um elemento de origem: os que casam pelo `id` primeiro, depois os que casam só pelo `name`. Cada resultado traz `executable` (o `system` está em `origins` daquela especialização), e `isExecutableSystem(spec, system)` diz o mesmo para um sistema: quem monta uma resposta lê o `path` dos campos só onde ele existe. A busca nunca casa pelo `path`.
+- `system`, `id`, and `name` are non-empty text; comparisons are exact (case matters).
+- `sources` only exists from `formatVersion` 3: in versions 1 and 2 the file is rejected with the version message, instead of ignoring the sources.
+- In TypeScript code, `findTypesBySource(specs, system, { id?, name? })` (in `src/model/`) returns the types that correspond to a source element: the ones that match by `id` first, then the ones that match only by `name`. Each result carries `executable` (the `system` is in that specialization's `origins`), and `isExecutableSystem(spec, system)` says the same for a system: whoever builds a response reads the `path` of the fields only where it exists. The search never matches by `path`.
 
-### Origem executável (`formatVersion` 4)
+### Executable source (`formatVersion` 4)
 
-A v4 deixa uma origem ser **executável**: a especialização declara em `origins` como ler o JSON de um sistema externo (o de um backend de SDUI, por exemplo) e transformá-lo numa tela de componentes. O núcleo executa a **declaração**, que é dado, e nunca código vindo da especialização; `system` continua sendo só um nome. Um sistema é executável quando o seu `system` aparece em `origins`. Isso muda o que as `sources` pedem:
+v4 lets a source be **executable**: the specialization declares in `origins` how to read the JSON of an external system (that of an SDUI backend, for example) and turn it into a screen of components. The core executes the **declaration**, which is data, and never code coming from the specialization; `system` is still just a name. A system is executable when its `system` appears in `origins`. This changes what `sources` ask for:
 
-| Propriedade | Onde                                      | Descrição                                                                                                                                                                                        |
-| ----------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `path`      | `sources` de campo ou coluna              | O caminho do valor dentro das `props` do nó externo (`a.b[0].c`; sem `[*]`). **Obrigatório** em sistema declarado em `origins`; **proibido** nos demais.                                         |
-| `name`      | `sources` de campo ou coluna              | Só o **nome** da propriedade de origem (exibição). Opcional em sistema executável; obrigatório nos demais, como na v3. Nunca é lido como caminho: um nome com `.` ou `[` não é mal interpretado. |
-| `name`      | `sources` do tipo                         | Em sistema executável é o **nome do tipo externo** (a chave `node.type` do nó): é por ele que o nó vira o tipo. O `id` não participa da tradução.                                                |
-| `slot`      | `sources` do tipo (só sistema executável) | Nome do nó `slot` do componente que recebe os filhos do nó externo (não vazio; o validador da biblioteca confere que o componente tem esse slot).                                                |
-| `ignore`    | `sources` do tipo (só sistema executável) | Props que o nó externo traz e o desenho não usa (textos não vazios, sem repetição). Uma prop que não é caminho de campo nem está em `ignore` gera o aviso `propriedade desconhecida`.            |
+| Property | Where                                          | Description                                                                                                                                                                                         |
+| -------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `path`   | `sources` of a field or column                 | The path of the value inside the `props` of the external node (`a.b[0].c`; no `[*]`). **Required** for a system declared in `origins`; **forbidden** for the others.                                |
+| `name`   | `sources` of a field or column                 | Only the **name** of the source property (display). Optional for an executable system; required for the others, as in v3. It is never read as a path: a name with `.` or `[` is not misinterpreted. |
+| `name`   | `sources` of the type                          | For an executable system it is the **name of the external type** (the `node.type` key of the node): it is how the node becomes the type. The `id` does not take part in the translation.            |
+| `slot`   | `sources` of the type (executable system only) | Name of the component's `slot` node that receives the children of the external node (non-empty; the library validator checks that the component has that slot).                                     |
+| `ignore` | `sources` of the type (executable system only) | Props that the external node carries and the design does not use (non-empty texts, no repeats). A prop that is neither a field path nor in `ignore` produces the notice `propriedade desconhecida`. |
 
 ```json
 {
@@ -990,27 +990,27 @@ A v4 deixa uma origem ser **executável**: a especialização declara em `origin
       "type": "enum",
       "options": ["elevated", "filled", "outlined"],
       "default": "elevated",
-      "sources": [{ "system": "sdui", "path": "style", "name": "Estilo" }]
+      "sources": [{ "system": "sdui", "path": "style", "name": "Style" }]
     }
   ]
 }
 ```
 
-A declaração é a chave `origins` da raiz: uma lista, uma entrada por sistema (`system` único). Ela é **estrita**: chave desconhecida é problema, com o caminho (`origins[0].screen.roots[1].path: …`).
+The declaration is the root `origins` key: a list, one entry per system (unique `system`). It is **strict**: an unknown key is a problem, with the path (`origins[0].screen.roots[1].path: …`).
 
-**Origem medida (`kind: "measured"`, v15).** Para uma tela que já existe e pode ser medida (uma página web aberta num navegador, a hierarquia de views de um app), a origem não lê um documento de backend: o MCP recebe a árvore `{ type, id?, classes?, rect: { x, y, width, height }, props?, children? }` na op `import_measured` e cria uma marcação por nó. As `sources` dos tipos e dos campos casam assim: no tipo, o `id` do nó contra o `id` da source, depois cada classe contra o `name`, depois o `type` contra o `name`; no campo, o `path` da source é lido nas `props` do nó (com `values` para `enum`). O pertencimento sai da geometria, não da árvore. Exemplo: `{ "system": "dom", "kind": "measured" }`; biblioteca em `examples/libraries/medido/`.
+**Measured source (`kind: "measured"`, v15).** For a screen that already exists and can be measured (a web page open in a browser, the view hierarchy of an app), the source does not read a backend document: the MCP receives the tree `{ type, id?, classes?, rect: { x, y, width, height }, props?, children? }` in the `import_measured` op and creates one marking per node. The `sources` of the types and fields match as follows: on the type, the node's `id` against the source's `id`, then each class against the `name`, then the `type` against the `name`; on the field, the source's `path` is read in the node's `props` (with `values` for `enum`). Belonging comes from the geometry, not from the tree. Example: `{ "system": "dom", "kind": "measured" }`; library in `examples/libraries/medido/`.
 
-| Propriedade | Descrição                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `system`    | Obrigatório. O nome do sistema (o mesmo `system` das `sources`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `name`      | Texto de exibição, opcional.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `node`      | Obrigatório. `{ type, props, children }`: os nomes das chaves do nó externo que guardam o tipo, as props e os filhos. Os três são obrigatórios nesta versão.                                                                                                                                                                                                                                                                                                                                                                                  |
-| `screen`    | Obrigatório. Onde ficam os valores da tela: `width` e `height` (obrigatórios; sem eles não há tela), `id`, `name`, `background`, `direction` e `roots` (ao menos uma raiz). Cada valor é um **literal** ou `{ path, values?, default? }`, exceto `direction`, que só aceita o literal.                                                                                                                                                                                                                                                        |
-| `direction` | Em `screen`, opcional: a direção de leitura da tela, `ltr` (padrão) ou `rtl`. Só o literal (`"direction": "rtl"`): ao contrário dos outros valores da tela, não aceita `{ path, values?, default? }`, e qualquer outro texto é erro. Em `rtl` as fileiras, as grades, as âncoras lógicas (`top-start`, `start`, `bottom-start`, `top-end`, `end`, `bottom-end`), o `font.align` padrão e os nós `mirror` espelham; o `padding` continua físico. Ver [`COMPONENT-FORMAT.md`](COMPONENT-FORMAT.md), "Direção de leitura".                       |
-| `roots`     | Em `screen`. Lista de `{ path, anchor?, margin?, scrim? }`: `path` é o caminho da raiz no documento (`[*]` faz cada elemento virar uma raiz; raiz que não existe é ignorada, sem aviso); `anchor` é uma das nove âncoras da tela (`top-start`, `top`, `top-end`, `start`, `center`, `end`, `bottom-start`, `bottom`, `bottom-end`), literal ou caminho relativo ao nó da raiz; `margin` é a distância das bordas em px; `scrim` é o `id` de um tipo desenhado por baixo da raiz (a película de um modal). Sem `anchor` a raiz entra no fluxo. |
-| `kind`      | `tree` (padrão: o JSON de um backend, lido por `node` e `screen`) ou `measured` (`formatVersion` 15: uma árvore de retângulos medidos, importada pela op `import_measured` do MCP). A origem `measured` aceita só `system`, `kind`, `name` e `booleans`; `node`, `screen` e `examples` são erro.                                                                                                                                                                                                                                              |
-| `booleans`  | `{ "true": texto, "false": texto }`: como um booleano do JSON vira texto nos campos sem `values` próprio (ex: `sim`/`não`).                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `examples`  | Lista de `{ name, file }`: telas de exemplo (o JSON de uma tela inteira) do sistema; `name` não vazio e único na origem, `file` caminho do pacote `.json`.                                                                                                                                                                                                                                                                                                                                                                                    |
+| Property    | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `system`    | Required. The name of the system (the same `system` as in the `sources`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `name`      | Display text, optional.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `node`      | Required. `{ type, props, children }`: the names of the keys of the external node that hold the type, the props, and the children. All three are required in this version.                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `screen`    | Required. Where the screen values live: `width` and `height` (required; without them there is no screen), `id`, `name`, `background`, `direction`, and `roots` (at least one root). Each value is a **literal** or `{ path, values?, default? }`, except `direction`, which only accepts the literal.                                                                                                                                                                                                                                                                           |
+| `direction` | In `screen`, optional: the reading direction of the screen, `ltr` (default) or `rtl`. Only the literal (`"direction": "rtl"`): unlike the other screen values, it does not accept `{ path, values?, default? }`, and any other text is an error. In `rtl` the rows, the grids, the logical anchors (`top-start`, `start`, `bottom-start`, `top-end`, `end`, `bottom-end`), the default `font.align`, and the `mirror` nodes are mirrored; `padding` stays physical. See [`COMPONENT-FORMAT.md`](COMPONENT-FORMAT.md), "Reading direction".                                      |
+| `roots`     | In `screen`. List of `{ path, anchor?, margin?, scrim? }`: `path` is the path of the root in the document (`[*]` makes each element become a root; a root that does not exist is ignored, with no notice); `anchor` is one of the nine screen anchors (`top-start`, `top`, `top-end`, `start`, `center`, `end`, `bottom-start`, `bottom`, `bottom-end`), literal or a path relative to the root node; `margin` is the distance from the edges in px; `scrim` is the `id` of a type drawn beneath the root (the backdrop of a modal). Without `anchor` the root enters the flow. |
+| `kind`      | `tree` (default: the JSON of a backend, read by `node` and `screen`) or `measured` (`formatVersion` 15: a tree of measured rectangles, imported by the MCP `import_measured` op). The `measured` source accepts only `system`, `kind`, `name`, and `booleans`; `node`, `screen`, and `examples` are errors.                                                                                                                                                                                                                                                                     |
+| `booleans`  | `{ "true": text, "false": text }`: how a JSON boolean becomes text in fields without their own `values` (e.g., `yes`/`no`).                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `examples`  | List of `{ name, file }`: example screens (the JSON of a whole screen) of the system; `name` non-empty and unique in the source, `file` a `.json` package path.                                                                                                                                                                                                                                                                                                                                                                                                                 |
 
 ```json
 {
@@ -1038,49 +1038,49 @@ A declaração é a chave `origins` da raiz: uma lista, uma entrada por sistema 
           { "path": "modal", "anchor": "bottom", "scrim": "sdui-scrim" }
         ]
       },
-      "booleans": { "true": "sim", "false": "não" },
-      "examples": [{ "name": "Configurações", "file": "examples/settings.sdui.json" }]
+      "booleans": { "true": "yes", "false": "no" },
+      "examples": [{ "name": "Settings", "file": "examples/settings.sdui.json" }]
     }
   ]
 }
 ```
 
-Como o desenho é calculado (tamanhos `fill`/`hug`, âncoras da tela, avisos do motor) está no [`COMPONENT-FORMAT.md`](COMPONENT-FORMAT.md). **Limites conhecidos**: um slot por componente; props só dentro de `props` (não há origem com as props no próprio nó); listas do JSON externo que viram campos numerados (`items[0].label` vira `label1`) são frágeis, e campo de tabela no lugar delas é uma evolução; só a direção externo → tela (não há saída da tela para o sistema externo).
+How the design is computed (`fill`/`hug` sizes, screen anchors, engine notices) is in [`COMPONENT-FORMAT.md`](COMPONENT-FORMAT.md). **Known limits**: one slot per component; props only inside `props` (there is no source with the props on the node itself); lists in the external JSON that become numbered fields (`items[0].label` becomes `label1`) are fragile, and a table field in their place is a future evolution; only the external → screen direction (there is no output from the screen to the external system).
 
-## Biblioteca: o pacote
+## Library: the package
 
-Com a v4, uma especialização é uma **biblioteca**: um **pacote**, que é a **pasta da especialização**, com tudo o que ela cita. O arquivo da especialização fica na raiz da pasta.
+With v4, a specialization is a **library**: a **package**, which is the **specialization folder**, with everything it cites. The specialization file sits at the root of the folder.
 
 ```
 sdui-backend/
-  sdui-backend.spec.json       a especialização (formatVersion 9)
-  components/sdui-button.json  um arquivo por componente (mapping-component)
-  docs/sdui-button.md          o documento markdown do tipo
-  examples/settings.sdui.json  uma tela de exemplo de um sistema externo
-  fonts/Roboto-Regular.woff2   as fontes do desenho (opcional)
+  sdui-backend.spec.json       the specialization (formatVersion 9)
+  components/sdui-button.json  one file per component (mapping-component)
+  docs/sdui-button.md          the type's markdown document
+  examples/settings.sdui.json  an example screen of an external system
+  fonts/Roboto-Regular.woff2   the design fonts (optional)
 ```
 
-Os nomes das pastas (`components/`, `docs/`, `examples/`, `fonts/`) são convenção; o que vale é o caminho citado. **Todo caminho citado** pela especialização é relativo ao arquivo dela, com `/`, **sem `..`**, sem `/` no começo e sem letra de unidade (a mesma regra do `path` do `code`), e termina na extensão esperada. Na leitura da biblioteca (componentes, fontes, ícones e `componentPaths`), um `..` que sai da pasta do pacote é problema da biblioteca, `caminho fora da biblioteca: <ref>`, no caminho de quem cita (`<tipo>`, `fonts[i]` ou `icons`), e não é mais descartado em silêncio. Uma raiz de `origins[].screen.roots` com `margin` e sem `anchor` é erro: `margin só vale com anchor` (caminho `…roots[i].margin`):
+The folder names (`components/`, `docs/`, `examples/`, `fonts/`) are a convention; what counts is the cited path. **Every path cited** by the specialization is relative to its file, with `/`, **without `..`**, without a leading `/`, and without a drive letter (the same rule as the `path` of `code`), and ends with the expected extension. When reading the library (components, fonts, icons, and `componentPaths`), a `..` that leaves the package folder is a library problem, `caminho fora da biblioteca: <ref>`, at the path of whoever cites it (`<type>`, `fonts[i]`, or `icons`), and is no longer silently discarded. A root of `origins[].screen.roots` with `margin` and without `anchor` is an error: `margin só vale com anchor` (path `…roots[i].margin`):
 
-| Chave                       | Onde             | Extensão                             |
-| --------------------------- | ---------------- | ------------------------------------ |
-| `component`                 | tipo de anotação | `.json` (um componente)              |
-| `doc` (texto)               | tipo de anotação | `.md`                                |
-| `examples[].file`           | tipo de anotação | `.json` (o nó de um sistema externo) |
-| `origins[].examples[].file` | origem           | `.json` (uma tela inteira)           |
-| `fonts[].file`              | raiz             | `.ttf`, `.otf`, `.woff` ou `.woff2`  |
+| Key                         | Where           | Extension                                |
+| --------------------------- | --------------- | ---------------------------------------- |
+| `component`                 | annotation type | `.json` (one component)                  |
+| `doc` (text)                | annotation type | `.md`                                    |
+| `examples[].file`           | annotation type | `.json` (the node of an external system) |
+| `origins[].examples[].file` | source          | `.json` (a whole screen)                 |
+| `fonts[].file`              | root            | `.ttf`, `.otf`, `.woff`, or `.woff2`     |
 
-O formato do arquivo de componente está no [`COMPONENT-FORMAT.md`](COMPONENT-FORMAT.md). As chaves novas da v4:
+The format of the component file is in [`COMPONENT-FORMAT.md`](COMPONENT-FORMAT.md). The new v4 keys:
 
-| Propriedade  | Onde             | Descrição                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| ------------ | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `component`  | tipo de anotação | O arquivo do componente que desenha o tipo. Opcional: um tipo sem componente continua valendo, só não tem desenho.                                                                                                                                                                                                                                                                                                                                                                                                               |
-| `doc`        | tipo de anotação | O documento markdown do tipo (quando usar, variantes, exemplos de uso). Na `formatVersion` 11 também pode ser `{ repo, path }`, um documento em repositório externo, que **não** faz parte do pacote (ver "Documento em repositório externo (docRepos)").                                                                                                                                                                                                                                                                        |
-| `examples`   | tipo de anotação | Lista de exemplos. `name` (não vazio e único no tipo) e `description` opcional, mais **um** de dois modos: `values` (valores dos campos do tipo) ou `system` com `file` (o JSON de **um nó** de um sistema externo declarado em `origins`: um componente, não uma tela).                                                                                                                                                                                                                                                         |
-| `values`     | exemplo          | Chave de um campo do próprio tipo (coluna não vale) → valor. `null` é sempre aceito; `string` pede texto, `date` pede `AAAA-MM-DD` válido, `number` pede número finito e `enum` pede uma das `options`. Campo `table` aceita **só a lista de linhas**, no formato do `preview` do componente: objetos coluna → texto, número ou `null`, cada célula conferida pelo tipo da coluna (`_id` e chave que não é coluna são erro; coluna `ref` só aceita `null`; a lista vazia vale), e o campo `ref` **não** aceita valor em exemplo. |
-| `fonts`      | raiz             | Lista de `{ family, file, weight?, style? }`. `family` não vazio; `weight` é um inteiro de 100 a 1000 ou uma faixa `"100 900"` (dois inteiros, o primeiro menor); `style` é `normal` (padrão) ou `italic`. O par `family` + `weight` + `style` não pode se repetir.                                                                                                                                                                                                                                                              |
-| `origins`    | raiz             | A declaração de origem executável (ver "Origens (sources)").                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `migrations` | raiz             | O contrato de versão (ver "Contrato de versão").                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Property     | Where           | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ------------ | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `component`  | annotation type | The component file that draws the type. Optional: a type without a component stays valid, it just has no design.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `doc`        | annotation type | The type's markdown document (when to use, variants, usage examples). In `formatVersion` 11 it can also be `{ repo, path }`, a document in an external repository, which is **not** part of the package (see "Document in an external repository (docRepos)").                                                                                                                                                                                                                                                                                                                                                 |
+| `examples`   | annotation type | List of examples. `name` (non-empty and unique in the type) and an optional `description`, plus **one** of two modes: `values` (values of the type's fields) or `system` with `file` (the JSON of **one node** of an external system declared in `origins`: a component, not a screen).                                                                                                                                                                                                                                                                                                                        |
+| `values`     | example         | Key of a field of the type itself (a column does not count) → value. `null` is always accepted; `string` asks for text, `date` asks for a valid `YYYY-MM-DD`, `number` asks for a finite number, and `enum` asks for one of the `options`. A `table` field accepts **only the list of rows**, in the format of the component's `preview`: column → text, number, or `null` objects, each cell checked against the column's type (`_id` and a key that is not a column are errors; a `ref` column only accepts `null`; the empty list is valid), and the `ref` field does **not** accept a value in an example. |
+| `fonts`      | root            | List of `{ family, file, weight?, style? }`. `family` non-empty; `weight` is an integer from 100 to 1000 or a range `"100 900"` (two integers, the first smaller); `style` is `normal` (default) or `italic`. The `family` + `weight` + `style` triple cannot repeat.                                                                                                                                                                                                                                                                                                                                          |
+| `origins`    | root            | The declaration of the executable source (see "Sources").                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `migrations` | root            | The version contract (see "Version contract").                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 
 ```json
 {
@@ -1099,29 +1099,29 @@ O formato do arquivo de componente está no [`COMPONENT-FORMAT.md`](COMPONENT-FO
     }
   ],
   "examples": [
-    { "name": "Preenchido", "values": { "label": "Salvar", "variant": "filled" } },
+    { "name": "Filled", "values": { "label": "Save", "variant": "filled" } },
     {
-      "name": "Contornado",
-      "description": "Botão com borda.",
-      "values": { "label": "Cancelar", "variant": "outlined" }
+      "name": "Outlined",
+      "description": "Button with a border.",
+      "values": { "label": "Cancel", "variant": "outlined" }
     }
   ]
 }
 ```
 
-**Fontes.** O arquivo de uma fonte declarada pode não estar no pacote (as fontes têm licença e peso; o pacote de exemplo não leva os `.ttf`). A fonte ausente **avisa** e o desenho cai na fonte do sistema; o pacote continua válido.
+**Fonts.** The file of a declared font may be missing from the package (fonts have licenses and weight; the example package does not carry the `.ttf` files). The missing font **warns** and the design falls back to the system font; the package stays valid.
 
-**Aplicar a um projeto.** Aplicar uma biblioteca **copia a pasta inteira** para `specs/<id>/` (a cópia de uma especialização v1 a v3 continua sendo o arquivo `specs/<id>.json`). Na app, **Especializações** aceita a pasta (`showDirectoryPicker`, Chrome/Edge) ou um zip do pacote (com ou sem uma pasta-raiz única), confere os três níveis e mostra erros (bloqueiam) e avisos (deixam aplicar); **Atualizar de pasta…/zip…** passa a versão aplicada como `previous` ao contrato de versão (quebra sem migração é erro) e regrava a pasta, e **Remover** a apaga. Uma especialização v4 ou v5 que **não cita nenhum arquivo do pacote** (nenhum tipo com `component`, `doc` em texto ou `examples`, e sem `fonts`, `origins` nem `icons` na raiz; `migrations` não conta, e o `doc` objeto da v11, que é um documento em repositório externo, também não) vale como arquivo isolado, como a v1 a v3: a app a aplica e atualiza com o `.json` e a cópia é `specs/<id>.json`. Um `.json` v4 ou v5 que cita arquivos do pacote é **recusado** na app: ele pede a pasta (ou o zip). Ao abrir o projeto, o Diagnóstico mostra os problemas dos níveis 1 e 2 da cópia. As tools do servidor MCP e a skill que escreve o pacote são da B2 também.
+**Applying to a project.** Applying a library **copies the whole folder** to `specs/<id>/` (the copy of a v1 to v3 specialization is still the file `specs/<id>.json`). In the app, **Specializations** accepts the folder (`showDirectoryPicker`, Chrome/Edge) or a zip of the package (with or without a single root folder), checks the three levels, and shows errors (they block) and warnings (they let you apply); **Update from folder…/zip…** passes the applied version as `previous` to the version contract (a break without a migration is an error) and rewrites the folder, and **Remove** deletes it. A v4 or v5 specialization that **cites no file of the package** (no type with `component`, text `doc`, or `examples`, and no `fonts`, `origins`, or `icons` at the root; `migrations` does not count, nor does the v11 object `doc`, which is a document in an external repository) is valid as a standalone file, like v1 to v3: the app applies and updates it with the `.json` and the copy is `specs/<id>.json`. A v4 or v5 `.json` that cites files of the package is **rejected** in the app: it asks for the folder (or the zip). When the project is opened, Diagnostics shows the level 1 and 2 problems of the copy. The MCP server tools and the skill that writes the package are also part of B2.
 
-**Pacote embutido.** `libraries/notas/` (especialização v7: a camada Notas, o tipo flutuante `nota` e o componente post-it) é um pacote comum que a app traz dentro do build e **aplica por padrão** em projeto novo e em projeto aberto de um schema anterior ao 13 (ver "Tipo flutuante"). Para o resto do ciclo ele é uma biblioteca como as outras: a cópia vai para `specs/notas/` e a pessoa pode removê-la.
+**Built-in package.** `libraries/notas/` (v7 specialization: the Notes layer, the floating type `nota`, and the sticky-note component) is an ordinary package that the app ships inside the build and **applies by default** to a new project and to an open project of a schema earlier than 13 (see "Floating type"). For the rest of the cycle it is a library like the others: the copy goes to `specs/notas/` and the person can remove it.
 
-**Pacote de exemplo.** `libraries/material3-compose/` é o Material Design 3 (baseline, tema claro e escuro) para o Jetpack Compose, pronto para uso: a especialização v15 (biblioteca v2) com cinquenta tipos, cada um com `component`, `doc` e de um a três exemplos, os componentes, os tamanhos de container, os `tokens` nos modos `light` e `dark`, o conjunto de ícones em `icons/` e a Roboto em `fonts/`. A origem executável (`origins`, `sources`, `migrations` e a tela de exemplo `examples/settings.sdui.json`, uma tela de SDUI sem retângulos, traduzida pela `origins`) está em `examples/libraries/sdui-backend/`. Os testes usam uma cópia congelada de um pacote antigo de quinze tipos, em `tests/fixtures/material3/` (não é um exemplo distribuído).
+**Example package.** `libraries/material3-compose/` is Material Design 3 (baseline, light and dark theme) for Jetpack Compose, ready to use: the v15 specialization (library v2) with fifty types, each with `component`, `doc`, and one to three examples, the components, the container sizes, the `tokens` in the `light` and `dark` modes, the icon set in `icons/`, and Roboto in `fonts/`. The executable source (`origins`, `sources`, `migrations`, and the example screen `examples/settings.sdui.json`, an SDUI screen without rectangles, translated by `origins`) is in `examples/libraries/sdui-backend/`. The tests use a frozen copy of an old fifteen-type package, in `tests/fixtures/material3/` (it is not a distributed example).
 
-## Tokens de design
+## Design tokens
 
-`tokens` (`formatVersion` 15, opcional, na raiz) guarda os **valores de design** da biblioteca com nome: cores, raios, espaçamentos e famílias de fonte. Os componentes de formato 4 leem cada valor com `{ "$token": "nome" }` (ver `docs/COMPONENT-FORMAT.md`), em vez de repetir o literal em cada nó. Trocar o valor num lugar só muda o desenho inteiro.
+`tokens` (`formatVersion` 15, optional, at the root) holds the library's named **design values**: colors, radii, spacings, and font families. Format 4 components read each value with `{ "$token": "name" }` (see `docs/COMPONENT-FORMAT.md`), instead of repeating the literal in each node. Changing the value in a single place changes the whole design.
 
-Na cor, `{ "$token": "scrim", "alpha": 0.32 }` multiplica o alfa da cor do token (a opacidade sem duplicar o token na especialização; `alpha` é número de 0 a 1 ou `$token` de número). O token também vale em `shadow.x`/`y`/`blur`, em cada item de `cornerRadius` e de `stroke.dash` e em `stroke.offset` (ver `docs/COMPONENT-FORMAT.md`).
+For color, `{ "$token": "scrim", "alpha": 0.32 }` multiplies the alpha of the token's color (the opacity without duplicating the token in the specialization; `alpha` is a number from 0 to 1 or a number `$token`). The token is also valid in `shadow.x`/`y`/`blur`, in each item of `cornerRadius` and `stroke.dash`, and in `stroke.offset` (see `docs/COMPONENT-FORMAT.md`).
 
 ```json
 {
@@ -1139,17 +1139,17 @@ Na cor, `{ "$token": "scrim", "alpha": 0.32 }` multiplica o alfa da cor do token
 }
 ```
 
-- `modes`: lista **não vazia** de nomes distintos no formato `[a-z0-9][a-z0-9-]*`. A convenção é `["light", "dark"]`.
-- `values`: o nome do token (`[a-z0-9][a-z0-9-]*`) aponta para um valor, que é **texto** (cor `#rrggbb`, `rgba(…)`, ou família de fonte) ou **número** (raio, espaçamento, tamanho, peso).
-- Um valor **simples** vale em todos os modos (`"radius-md": 12`). Um valor **por modo** é um objeto com **todos** os modos de `modes` (e só eles) e todos do **mesmo tipo**: misturar cor num modo e número no outro é erro.
-- **Embutidos:** `font-sans` e `font-mono` (famílias de fonte) existem em toda biblioteca, mesmo sem `tokens`, e valem a fonte do hospedeiro (na app, o `--font-sans` e o `--font-mono` do tema; no visualizador, a pilha dos tokens da app ou a opção `fonts`; no MCP, a Mapping Sans embutida). A especialização pode redefini-los em `values`, e a definição dela vence a do hospedeiro. O texto sem `font.family` usa `font-sans`.
-- **Chaves de `tokens`:** só `modes` e `values` existem. Qualquer outra chave é erro de validação, no caminho dela: `tokens.<chave>: chave desconhecida: <chave>`. Como o `tokens` já era lido pelo validador, uma biblioteca que trazia uma chave a mais e passava antes agora é recusada (a `formatVersion` continua 15).
-- **Modo do desenho:** o desenho segue o modo do projeto e do container (`drawingMode`, ver `docs/FORMAT.md`); sem modo escolhido, usa o **primeiro** de `modes`, e um modo não declarado cai no primeiro, sem aviso.
-- Erros de validação, com o caminho em `tokens`: `só é permitido com formatVersion 15`, nome fora do padrão, `modes` vazio ou com nome repetido, valor por modo sem algum modo (ou com modo que não existe em `modes`) e valores de tipos diferentes entre os modos. No `validate_library` (nível 2), `$token` com nome inexistente é `o token "x" não existe nos tokens da especialização` e com tipo errado é `o token "primary" é cor, mas aqui se espera número`.
+- `modes`: a **non-empty** list of distinct names in the format `[a-z0-9][a-z0-9-]*`. The convention is `["light", "dark"]`.
+- `values`: the token name (`[a-z0-9][a-z0-9-]*`) points to a value, which is **text** (a `#rrggbb` color, `rgba(…)`, or a font family) or a **number** (radius, spacing, size, weight).
+- A **simple** value applies in all modes (`"radius-md": 12`). A **per-mode** value is an object with **all** the modes of `modes` (and only them) and all of the **same type**: mixing a color in one mode and a number in the other is an error.
+- **Built-in:** `font-sans` and `font-mono` (font families) exist in every library, even without `tokens`, and take the host's font (in the app, the theme's `--font-sans` and `--font-mono`; in the viewer, the app tokens' stack or the `fonts` option; in the MCP, the built-in Mapping Sans). The specialization can redefine them in `values`, and its definition wins over the host's. Text without `font.family` uses `font-sans`.
+- **Keys of `tokens`:** only `modes` and `values` exist. Any other key is a validation error, at its path: `tokens.<chave>: chave desconhecida: <chave>`. Since `tokens` was already read by the validator, a library that carried an extra key and passed before is now rejected (the `formatVersion` is still 15).
+- **Drawing mode:** the design follows the mode of the project and of the container (`drawingMode`, see `docs/FORMAT.md`); with no mode chosen, it uses the **first** of `modes`, and an undeclared mode falls back to the first, without a notice.
+- Validation errors, with the path in `tokens`: `só é permitido com formatVersion 15`, a name outside the pattern, empty `modes` or with a repeated name, a per-mode value missing some mode (or with a mode that does not exist in `modes`), and values of different types across modes. In `validate_library` (level 2), a `$token` with a nonexistent name is `o token "x" não existe nos tokens da especialização` and with the wrong type is `o token "primary" é cor, mas aqui se espera número`.
 
-## Conjunto de ícones
+## Icon set
 
-`icons` (`formatVersion` 15, opcional, na raiz) é o caminho de **um** arquivo `.json` do pacote, relativo ao arquivo da especialização (como `component`, `doc` e `fonts[].file`: sem `.`, `..` nem unidade, com `/`). O arquivo guarda os ícones da biblioteca; o nó `icon` dos componentes de formato 4 (`docs/COMPONENT-FORMAT.md`) escolhe um pelo nome. Isso substitui o `$switch` que repetia todos os caminhos dentro de cada componente que mostra um ícone escolhido pela pessoa.
+`icons` (`formatVersion` 15, optional, at the root) is the path of **one** `.json` file of the package, relative to the specialization file (like `component`, `doc`, and `fonts[].file`: no `.`, `..`, or drive, with `/`). The file holds the library's icons; the `icon` node of format 4 components (`docs/COMPONENT-FORMAT.md`) picks one by name. This replaces the `$switch` that repeated all the paths inside each component that shows an icon chosen by the person.
 
 ```json
 {
@@ -1180,37 +1180,37 @@ Na cor, `{ "$token": "scrim", "alpha": 0.32 }` multiplica o alfa da cor do token
 }
 ```
 
-- `format` é `mapping-icons` e `formatVersion` é `1` ou `2` (a `2` é a `1` mais o `mirror` por ícone; outra é o erro `formatVersion: deve ser 1 ou 2`). A `1` continua aceita sem mudança. `viewBox` (`[largura, altura]` positivos) é obrigatório e vale para todos os ícones que não trazem o seu.
-- `mirror` (`formatVersion` 2 do arquivo, por ícone, padrão `false`): o ícone **vira na horizontal** quando a direção de leitura é `rtl` (uma seta, um chevron, um "desfazer"; um relógio ou uma câmera, não). Quem espelha é marcado uma vez, aqui, e todo componente aproveita; o nó `icon` pode vencê-lo com o `mirror` dele (ver [`COMPONENT-FORMAT.md`](COMPONENT-FORMAT.md), "Direção de leitura"). `mirror` num arquivo `formatVersion` 1 é o erro `só é permitido com formatVersion 2`, e um valor que não é booleano, `esperava true ou false`.
-- `icons`: o nome do ícone (`^[a-z0-9][a-z0-9-_]*$`; `Check` é erro) aponta para `{ viewBox?, mirror?, paths }`. `paths` é uma lista **não vazia** de `{ d, fill?, stroke?, width?, cap?, join? }`: `d` são os dados SVG; `fill` e `stroke` são `true` (a cor do nó `icon`), `false` (nada) ou uma cor própria; `width` é a largura do traço em unidades do `viewBox` (padrão 1); `cap` (`butt`, `round`, `square`) e `join` (`miter`, `round`, `bevel`) como em `stroke` do componente. Um caminho sem `fill` nem `stroke` é preenchido com a cor do nó; com `stroke` e sem `fill`, só o traço aparece.
-- O arquivo faz parte do pacote: a app o copia com a pasta (`specs/<id>/`), a especialização que declara `icons` não vale como arquivo isolado, e o arquivo apontado não é "arquivo não referenciado".
-- **Validação da biblioteca.** Nível 1: o arquivo existe (`arquivo não encontrado: <caminho>`, no caminho `icons` da especialização) e é um `mapping-icons` válido (cada erro com o caminho dentro do arquivo, ex.: `icons.Check: nome inválido; use [a-z0-9][a-z0-9-_]*`). Nível 2: todo nome **literal** de um nó `icon` existe no conjunto (`o ícone "nuvem" não existe no conjunto de ícones (icons/set.json)`, no caminho do `name`); sem `icons` declarado o literal é erro (`o ícone "check" não pode ser conferido: a especialização não declara icons`). Nível 3: um campo `enum` lido pelo `name` de um nó `icon` com uma `option` que não está no conjunto gera aviso (`a opção "nuvem" do campo "icon" não está no conjunto de ícones; o desenho cai no reservado`), e a prova de desenho avisa `ícone desconhecido: <nome>`.
+- `format` is `mapping-icons` and `formatVersion` is `1` or `2` (`2` is `1` plus the per-icon `mirror`; any other is the error `formatVersion: deve ser 1 ou 2`). `1` is still accepted unchanged. `viewBox` (positive `[width, height]`) is required and applies to all the icons that do not carry their own.
+- `mirror` (`formatVersion` 2 of the file, per icon, default `false`): the icon **flips horizontally** when the reading direction is `rtl` (an arrow, a chevron, an "undo"; not a clock or a camera). Whoever mirrors is marked once, here, and every component benefits; the `icon` node can override it with its own `mirror` (see [`COMPONENT-FORMAT.md`](COMPONENT-FORMAT.md), "Reading direction"). `mirror` in a `formatVersion` 1 file is the error `só é permitido com formatVersion 2`, and a value that is not a boolean, `esperava true ou false`.
+- `icons`: the icon name (`^[a-z0-9][a-z0-9-_]*$`; `Check` is an error) points to `{ viewBox?, mirror?, paths }`. `paths` is a **non-empty** list of `{ d, fill?, stroke?, width?, cap?, join? }`: `d` is the SVG data; `fill` and `stroke` are `true` (the color of the `icon` node), `false` (nothing), or a color of their own; `width` is the stroke width in `viewBox` units (default 1); `cap` (`butt`, `round`, `square`) and `join` (`miter`, `round`, `bevel`) as in the component's `stroke`. A path with neither `fill` nor `stroke` is filled with the node's color; with `stroke` and without `fill`, only the stroke appears.
+- The file is part of the package: the app copies it with the folder (`specs/<id>/`), the specialization that declares `icons` is not valid as a standalone file, and the file pointed to is not an "unreferenced file".
+- **Library validation.** Level 1: the file exists (`arquivo não encontrado: <caminho>`, at the specialization's `icons` path) and is a valid `mapping-icons` (each error with the path inside the file, e.g., `icons.Check: nome inválido; use [a-z0-9][a-z0-9-_]*`). Level 2: every **literal** name of an `icon` node exists in the set (`o ícone "nuvem" não existe no conjunto de ícones (icons/set.json)`, at the path of the `name`); without a declared `icons` the literal is an error (`o ícone "check" não pode ser conferido: a especialização não declara icons`). Level 3: an `enum` field read by the `name` of an `icon` node with an `option` that is not in the set produces a warning (`a opção "nuvem" do campo "icon" não está no conjunto de ícones; o desenho cai no reservado`), and the design check warns `ícone desconhecido: <nome>`.
 
-## Contrato de versão
+## Version contract
 
-`version` (inteiro ≥ 1) é a **versão do pacote**. Subir a versão de uma biblioteca é uma decisão que pode quebrar os projetos que a aplicaram; o contrato diz o que é seguro e o que exige uma migração declarada. Duas versões do mesmo pacote são comparadas por `diffSpecs(anterior, nova)` (em `src/model/specVersions.ts`, função pura) e cada diferença é **aditiva** ou **quebra**. Tipo, campo e opção são identificados pelo `id`, pela `key` e pelo texto, nunca pela posição; as colunas de uma `table` contam como campos do tipo.
+`version` (integer ≥ 1) is the **package version**. Bumping a library's version is a decision that can break the projects that applied it; the contract says what is safe and what requires a declared migration. Two versions of the same package are compared by `diffSpecs(previous, new)` (in `src/model/specVersions.ts`, a pure function) and each difference is **additive** or **breaking**. Type, field, and option are identified by `id`, `key`, and text, never by position; the columns of a `table` count as fields of the type.
 
-**Aditiva** (só acrescenta; atualizar não perde nada):
+**Additive** (only adds; updating loses nothing):
 
-- um tipo novo, um campo **opcional** novo (coluna incluída), uma opção nova de `enum`;
-- um **papel** novo (`childRoles`) em um tipo que já tinha papéis (`added-role`: as anotações existentes ficam com o papel que tinham);
-- um `component`, um `doc`, um exemplo ou uma fonte novos, ou outro arquivo de componente para o tipo;
-- trocar o **desenho** (o template do componente) sem mudar os campos.
+- a new type, a new **optional** field (column included), a new `enum` option;
+- a new **role** (`childRoles`) on a type that already had roles (`added-role`: existing annotations keep the role they had);
+- a new `component`, `doc`, example, or font, or another component file for the type;
+- changing the **design** (the component's template) without changing the fields.
 
-**Quebra** (e só isto): remover ou renomear um **tipo**, um **campo** (ou coluna) ou uma **opção de `enum`**; tornar um campo **obrigatório**, inclusive um campo novo que já nasce obrigatório (os valores existentes ficam incompletos); mudar o `type` de um campo.
+**Breaking** (and only this): removing or renaming a **type**, a **field** (or column), or an **`enum` option**; making a field **required**, including a new field that is born required (existing values become incomplete); changing a field's `type`.
 
-**Quebra dos papéis** (comparando o tipo pelo mesmo `id`; vale para toda versão que tem papéis, da 11 em diante):
+**Role breaks** (comparing the type by the same `id`; applies to every version that has roles, from 11 on):
 
-- `removed-role`: um papel de `childRoles` que sumiu, inclusive o tipo que perde todos. As anotações guardam o `id` do papel em `parentRole`, e esse `id` deixa de existir.
-- `roles-required`: um tipo que não tinha `childRoles` e passou a ter. Os filhos que já estavam vinculados ficam sem papel, e agora o dono pede um.
+- `removed-role`: a `childRoles` role that is gone, including a type that loses all of them. Annotations store the role's `id` in `parentRole`, and that `id` ceases to exist.
+- `roles-required`: a type that had no `childRoles` and now has them. The children that were already linked are left without a role, and now the owner asks for one.
 
-Uma v11 que remove um papel é recusada até subir para a `formatVersion` 12 com o passo que o cobre. **Dono renomeado:** quando o tipo foi renomeado (`rename-type`), os papéis **não** são comparados entre o tipo antigo e o novo; um papel que as anotações usam e que não existe no tipo novo vira `unknown-role` ao migrar, e o autor pode declarar `rename-role` com o `id` novo, **depois** do `rename-type`.
+A v11 that removes a role is rejected until it moves up to `formatVersion` 12 with the step that covers it. **Renamed owner:** when the type was renamed (`rename-type`), the roles are **not** compared between the old and the new type; a role that annotations use and that does not exist in the new type becomes `unknown-role` when migrating, and the author can declare `rename-role` with the new `id`, **after** the `rename-type`.
 
-**Fora do contrato**, de propósito: `fieldModels`, `signature`, `ignore`, `calls`, `formats` e os caminhos e posicionais em `params` (`formatVersion` 16; o que a importação de uma assinatura acrescenta, um campo opcional ou uma opção de `enum`, é aditivo como qualquer outro), camadas, `labelField`, `allowedChildren` (inclusive a cláusula `{ layer, groups }` e, na 13, os filhos da própria camada), `requiresOwner`, `description`, `tags`, `code`, `platforms`, `containers`, `sources`, `suggestions`, `linkedRef`, `notices`, `accepts.annotations`, `groups` (da camada e do tipo), o `name` e a `description` de um papel, a ordem dos `childRoles`, `childRolesLabel` e `docRepos`, trocar o `doc` entre texto e objeto, e remover um `component`, um `doc`, um exemplo ou uma fonte. Nada disso gera diferença. Um renome é indistinguível de remover + acrescentar; quem renomeia **declara** isso num passo `rename-*`, e é isso que o diferencia de uma remoção.
+**Outside the contract**, on purpose: `fieldModels`, `signature`, `ignore`, `calls`, `formats`, and the paths and positionals in `params` (`formatVersion` 16; what a signature import adds, an optional field or an `enum` option, is additive like any other), layers, `labelField`, `allowedChildren` (including the `{ layer, groups }` clause and, in 13, the children of the layer itself), `requiresOwner`, `description`, `tags`, `code`, `platforms`, `containers`, `sources`, `suggestions`, `linkedRef`, `notices`, `accepts.annotations`, `groups` (of the layer and of the type), the `name` and `description` of a role, the order of `childRoles`, `childRolesLabel` and `docRepos`, switching the `doc` between text and object, and removing a `component`, a `doc`, an example, or a font. None of this produces a difference. A rename is indistinguishable from remove + add; whoever renames **declares** it in a `rename-*` step, and that is what sets it apart from a removal.
 
 ### `migrations`
 
-Toda quebra precisa de uma entrada em `migrations` na raiz da versão nova. Cada entrada liga duas versões do pacote e traz **passos declarativos**:
+Every break needs an entry in `migrations` at the root of the new version. Each entry links two versions of the package and carries **declarative steps**:
 
 ```json
 {
@@ -1236,58 +1236,58 @@ Toda quebra precisa de uma entrada em `migrations` na raiz da versão nova. Cada
 }
 ```
 
-`from` é um inteiro ≥ 1; `to` é maior que `from` e não passa de `version`; `steps` não é vazia; nenhum `from` se repete. Os nove passos e a quebra que cada um cobre (os três últimos, dos papéis, são da `formatVersion` 12):
+`from` is an integer ≥ 1; `to` is greater than `from` and does not exceed `version`; `steps` is not empty; no `from` repeats. The nine steps and the break each one covers (the last three, for roles, are from `formatVersion` 12):
 
-| Passo (`op`)   | Chaves                       | Cobre a quebra                                                                                                                                                                                                 |
-| -------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `rename-type`  | `from`, `to`                 | tipo removido (`from` é o tipo que saiu; `to` existe na versão nova).                                                                                                                                          |
-| `remove-type`  | `type`, `mode`               | tipo removido. `mode` (`convert` ou `delete`) diz o destino das anotações do tipo.                                                                                                                             |
-| `rename-field` | `type`, `from`, `to`         | campo removido (`from` é o que saiu; `to` existe no tipo).                                                                                                                                                     |
-| `remove-field` | `type`, `field`              | campo removido (o tipo continua existindo).                                                                                                                                                                    |
-| `map-values`   | `type`, `field`, `values`    | opção de `enum` removida: cada chave de `values` é uma opção antiga e o destino é uma `option` atual.                                                                                                          |
-| `fill-field`   | `type`, `field`, `default`   | campo que passou a obrigatório, campo novo obrigatório **ou** `type` trocado: o `default` (texto ou número, válido para o tipo do campo) entra no lugar; no `type` trocado os valores antigos são descartados. |
-| `rename-role`  | `type`, `from`, `to`         | `removed-role`: papel renomeado (`type` é o tipo **dono**; `from` é o papel que saiu; `to` existe no tipo). Se `to` já existia na versão anterior, os dois papéis se **juntam**.                               |
-| `remove-role`  | `type`, `role`, `mode`       | `removed-role`: papel removido (o tipo pode até não ter mais `childRoles`). `mode` (`clear` ou `unlink`) diz o destino dos filhos que usavam o papel.                                                          |
-| `set-role`     | `type`, `role`, `childType?` | `roles-required`: tipo que passou a ter `childRoles`. Dá o papel `role` aos filhos **sem papel** do dono (só aos do tipo `childType`, quando vem).                                                             |
+| Step (`op`)    | Keys                         | Covers the break                                                                                                                                                                                         |
+| -------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rename-type`  | `from`, `to`                 | removed type (`from` is the type that left; `to` exists in the new version).                                                                                                                             |
+| `remove-type`  | `type`, `mode`               | removed type. `mode` (`convert` or `delete`) says the destination of the type's annotations.                                                                                                             |
+| `rename-field` | `type`, `from`, `to`         | removed field (`from` is the one that left; `to` exists in the type).                                                                                                                                    |
+| `remove-field` | `type`, `field`              | removed field (the type still exists).                                                                                                                                                                   |
+| `map-values`   | `type`, `field`, `values`    | removed `enum` option: each key of `values` is an old option and the target is a current `option`.                                                                                                       |
+| `fill-field`   | `type`, `field`, `default`   | field that became required, new required field, **or** changed `type`: the `default` (text or number, valid for the field's type) goes in its place; with a changed `type` the old values are discarded. |
+| `rename-role`  | `type`, `from`, `to`         | `removed-role`: renamed role (`type` is the **owner** type; `from` is the role that left; `to` exists in the type). If `to` already existed in the previous version, the two roles **merge**.            |
+| `remove-role`  | `type`, `role`, `mode`       | `removed-role`: removed role (the type may even have no `childRoles` left). `mode` (`clear` or `unlink`) says the destination of the children that used the role.                                        |
+| `set-role`     | `type`, `role`, `childType?` | `roles-required`: type that started having `childRoles`. Gives the role `role` to the owner's children **without a role** (only to those of type `childType`, when present).                             |
 
-- **Papéis (v12).** Nos três passos de papel, `type` é o tipo do **dono** (o que tem `childRoles`), identificado pelo `id` que ele tem **naquele ponto da cadeia**: depois de um `rename-type` do dono, o id novo. `rename-role` e `set-role` só preenchem ou trocam o papel e nunca removem filho; `set-role` **preenche e nunca sobrescreve** (um filho que já tem papel fica como está). O `childType` do `set-role` pode ser um id antigo quando o passo vem **antes** do `rename-type` do filho. Cobertura: `removed-role` de um papel `r` do tipo `T` é coberto por `rename-role` com `type: T, from: r` ou por `remove-role` com `type: T, role: r`; `roles-required` de `T` é coberto por qualquer `set-role` com `type: T` (os filhos que nenhum passo alcança ficam com a pendência `missing-role`). Uma especialização v11 só declara esses passos depois de subir para a 12.
-- A chave de campo de um passo (`field`, `from`, `to`) é a `key` do campo **ou** `tabela.coluna`: a coluna de uma `table` também guarda dados, então mudar uma coluna (remover, trocar o `type`, torná-la obrigatória) é quebra e é coberta pelo mesmo passo.
-- O arquivo é conferido sozinho (nível 1 do validador): o **lado novo** do passo existe na versão (`rename-type.to` é um tipo daqui; o campo `to`/`field` existe no tipo; os destinos de `map-values` estão nas `options` de um campo `enum`; o `default` de `fill-field` é válido para o campo) e o **lado antigo** não existe mais (`rename-type.from`, `remove-type.type` não são tipos desta versão; `rename-field.from` e `remove-field.field` não são campos do tipo). Que o lado antigo existia na versão anterior é conferido quando se compara duas versões. Nos passos de papel: `rename-role.type` é um tipo desta versão **com** `childRoles`, `to` é um papel dele e `from` não é; `remove-role.type` é um tipo desta versão (pode não ter mais `childRoles`), `role` não é papel dele e `mode` é `clear` ou `unlink`; `set-role.type` tem `childRoles`, `role` é um papel dele e `childType`, quando vem, só confere o formato de id (um tipo que não existe é um no-op). Na comparação (nível 2) um `rename-role.from` ou `remove-role.role` que não era papel do tipo na versão anterior (considerando o `rename-type` do dono) é um **aviso**.
-- A **cadeia** liga as entradas por `from → to`, a partir da versão que o projeto aplicou até a `version` nova (`migrationChain`). Uma cadeia rompida (falta a entrada de uma versão) deixa **toda** quebra sem cobertura. `missingMigrations(anterior, nova)` devolve as quebras que nenhum passo da cadeia cobre; lista vazia é contrato cumprido, e `migrationFor` diz que passo cobre uma quebra.
-- O validador da biblioteca (nível 2) usa o contrato quando recebe a versão anterior: cada quebra sem passo vira um **erro**, e uma `version` que não cresceu também.
+- **Roles (v12).** In the three role steps, `type` is the type of the **owner** (the one with `childRoles`), identified by the `id` it has **at that point of the chain**: after a `rename-type` of the owner, the new id. `rename-role` and `set-role` only fill in or swap the role and never remove a child; `set-role` **fills in and never overwrites** (a child that already has a role stays as it is). The `childType` of `set-role` can be an old id when the step comes **before** the child's `rename-type`. Coverage: a `removed-role` of a role `r` of type `T` is covered by `rename-role` with `type: T, from: r` or by `remove-role` with `type: T, role: r`; `roles-required` of `T` is covered by any `set-role` with `type: T` (the children that no step reaches are left with the `missing-role` pending item). A v11 specialization only declares these steps after moving up to 12.
+- The field key of a step (`field`, `from`, `to`) is the field's `key` **or** `table.column`: the column of a `table` also stores data, so changing a column (removing it, changing its `type`, making it required) is a break and is covered by the same step.
+- The file is checked on its own (validator level 1): the **new side** of the step exists in the version (`rename-type.to` is a type here; the `to`/`field` field exists in the type; the `map-values` targets are in the `options` of an `enum` field; the `default` of `fill-field` is valid for the field) and the **old side** no longer exists (`rename-type.from` and `remove-type.type` are not types of this version; `rename-field.from` and `remove-field.field` are not fields of the type). That the old side existed in the previous version is checked when two versions are compared. In the role steps: `rename-role.type` is a type of this version **with** `childRoles`, `to` is a role of it and `from` is not; `remove-role.type` is a type of this version (it may no longer have `childRoles`), `role` is not a role of it, and `mode` is `clear` or `unlink`; `set-role.type` has `childRoles`, `role` is a role of it, and `childType`, when present, only has its id format checked (a type that does not exist is a no-op). In the comparison (level 2) a `rename-role.from` or `remove-role.role` that was not a role of the type in the previous version (considering the owner's `rename-type`) is a **warning**.
+- The **chain** links the entries by `from → to`, from the version the project applied up to the new `version` (`migrationChain`). A broken chain (an entry for some version is missing) leaves **every** break without coverage. `missingMigrations(previous, new)` returns the breaks that no step of the chain covers; an empty list means the contract is fulfilled, and `migrationFor` says which step covers a break.
+- The library validator (level 2) uses the contract when it receives the previous version: each break without a step becomes an **error**, and so does a `version` that did not grow.
 
-### Execução da migração
+### Migration execution
 
-Ao **atualizar** uma biblioteca aplicada (`updateSpecialization`, na app e no MCP), a app roda a cadeia `from → to` sobre as anotações do projeto (`runLibraryMigrations`, em `src/model/libraryMigrations.ts`, puro e sem APIs de navegador) e só então troca a cópia aplicada, as camadas e a versão. Tudo é uma só operação: na app, **Desfazer** devolve a pasta `specs/<id>/` e os dados juntos.
+When **updating** an applied library (`updateSpecialization`, in the app and in the MCP), the app runs the `from → to` chain over the project's annotations (`runLibraryMigrations`, in `src/model/libraryMigrations.ts`, pure and without browser APIs) and only then swaps the applied copy, the layers, and the version. It is all a single operation: in the app, **Undo** gives back the `specs/<id>/` folder and the data together.
 
-- **Encadeamento.** A cadeia parte da versão que o projeto aplicou e segue as entradas por `from → to` até a `version` nova; os passos rodam na ordem, e cada um opera sobre o resultado do anterior (o tipo é o que a anotação tem **naquele ponto**, depois dos renomes anteriores). Só as anotações da própria especialização são tocadas. Cadeia rompida (falta uma entrada) ou sem `migrations`: nada roda. Um passo que não acha nada é um no-op.
-- **Perda × pendência.** **Perda** é valor **não vazio** que o passo apagou ou sobrescreveu: aparece em destaque no diálogo antes de atualizar. **Pendência** é dado que a migração não consegue consertar e deixa como está: depois de atualizar ele aparece em **Incompletas**, sem apagar nada.
+- **Chaining.** The chain starts at the version the project applied and follows the entries by `from → to` up to the new `version`; the steps run in order, and each one operates on the result of the previous one (the type is what the annotation has **at that point**, after the earlier renames). Only the specialization's own annotations are touched. Broken chain (an entry is missing) or no `migrations`: nothing runs. A step that finds nothing is a no-op.
+- **Loss × pending item.** **Loss** is a **non-empty** value that the step erased or overwrote: it appears highlighted in the dialog before updating. A **pending item** is data that the migration cannot fix and leaves as it is: after updating it shows up in **Incomplete**, without erasing anything.
 
-| Passo          | O que faz nos dados                                                                                                                                                                                                                                                                                | Perda                                                                                   | Pendência                                                                                                                |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `rename-type`  | Troca o `typeId` das anotações do tipo. A camada **não** muda.                                                                                                                                                                                                                                     | não                                                                                     | `layer-mismatch` se a camada do tipo novo é outra                                                                        |
-| `remove-type`  | `convert`: a anotação vira **livre** (os valores viram pares chave-valor, o vínculo fica). `delete`: apaga a anotação **e as vinculadas a ela** (também de outros tipos e livres).                                                                                                                 | só no `delete`: cada anotação apagada                                                   | `layer-mismatch` no `convert` (ela fica na camada)                                                                       |
-| `rename-field` | Move o valor de `from` para `to`; em campo de nível superior reescreve também as referências (`ref`) do projeto inteiro que apontam para o campo ou para uma linha da tabela dele. Entre formas diferentes (campo × coluna, ou tabelas diferentes) não há como mover: o valor de `from` é apagado. | `to` já tinha valor (sobrescrito) ou a forma não permite mover                          | não                                                                                                                      |
-| `remove-field` | Apaga a chave de `values` (ou a coluna, em cada linha). Valor vazio não conta como perda.                                                                                                                                                                                                          | valor não vazio                                                                         | não                                                                                                                      |
-| `map-values`   | Troca o valor antigo da `enum` pelo destino de `values`.                                                                                                                                                                                                                                           | não                                                                                     | `unknown-option` para o valor que não está em `values` nem nas opções atuais                                             |
-| `fill-field`   | Valor **vazio ou ausente** recebe o `default`. Valor que não vale **nada** no tipo do campo (`invalid-value`, como o texto num campo que virou número) é trocado pelo `default`.                                                                                                                   | só o valor trocado por `invalid-value`                                                  | `unknown-option` (valor fora das opções) fica como está                                                                  |
-| `rename-role`  | Troca o `parentRole` dos filhos do dono que usavam o papel `from` pelo `to`. Se `to` já existia na versão anterior, os dois papéis se juntam.                                                                                                                                                      | não                                                                                     | não                                                                                                                      |
-| `remove-role`  | `clear`: o filho continua vinculado ao dono e fica sem papel (`parentRole: null`). `unlink`: o filho é desvinculado (`parentAnnotationId: null` e `parentRole: null`) e continua existindo.                                                                                                        | `clear`: `cleared-role` (o papel que estava no valor). `unlink`: `unlinked` (o vínculo) | `clear`: `missing-role` se o dono ainda tem papéis. `unlink`: `missing-owner` quando o tipo do filho tem `requiresOwner` |
-| `set-role`     | Dá o papel `role` aos filhos do dono que **não têm papel**; com `childType`, só aos desse tipo. Preenche e nunca sobrescreve.                                                                                                                                                                      | não (nunca gera perda)                                                                  | não                                                                                                                      |
+| Step           | What it does to the data                                                                                                                                                                                                                                                                        | Loss                                                                                      | Pending item                                                                                                              |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `rename-type`  | Swaps the `typeId` of the type's annotations. The layer does **not** change.                                                                                                                                                                                                                    | no                                                                                        | `layer-mismatch` if the new type's layer is another one                                                                   |
+| `remove-type`  | `convert`: the annotation becomes **free** (the values become key-value pairs, the link stays). `delete`: deletes the annotation **and those linked to it** (also of other types and free ones).                                                                                                | only with `delete`: each deleted annotation                                               | `layer-mismatch` with `convert` (it stays in the layer)                                                                   |
+| `rename-field` | Moves the value from `from` to `to`; on a top-level field it also rewrites the references (`ref`) in the whole project that point to the field or to a row of its table. Between different shapes (field × column, or different tables) there is no way to move: the value of `from` is erased. | `to` already had a value (overwritten) or the shape does not allow moving                 | no                                                                                                                        |
+| `remove-field` | Erases the key from `values` (or the column, in each row). An empty value does not count as a loss.                                                                                                                                                                                             | non-empty value                                                                           | no                                                                                                                        |
+| `map-values`   | Swaps the old `enum` value for the target in `values`.                                                                                                                                                                                                                                          | no                                                                                        | `unknown-option` for a value that is neither in `values` nor in the current options                                       |
+| `fill-field`   | An **empty or missing** value gets the `default`. A value that is **worth nothing** in the field's type (`invalid-value`, like text in a field that became a number) is swapped for the `default`.                                                                                              | only the value swapped because of `invalid-value`                                         | `unknown-option` (value outside the options) stays as it is                                                               |
+| `rename-role`  | Swaps the `parentRole` of the owner's children that used the role `from` for `to`. If `to` already existed in the previous version, the two roles merge.                                                                                                                                        | no                                                                                        | no                                                                                                                        |
+| `remove-role`  | `clear`: the child stays linked to the owner and is left without a role (`parentRole: null`). `unlink`: the child is unlinked (`parentAnnotationId: null` and `parentRole: null`) and keeps existing.                                                                                           | `clear`: `cleared-role` (the role that was in the value). `unlink`: `unlinked` (the link) | `clear`: `missing-role` if the owner still has roles. `unlink`: `missing-owner` when the child's type has `requiresOwner` |
+| `set-role`     | Gives the role `role` to the owner's children that **have no role**; with `childType`, only to those of that type. Fills in and never overwrites.                                                                                                                                               | no (never produces a loss)                                                                | no                                                                                                                        |
 
-A chave de campo de um passo é a `key` ou `tabela.coluna`; numa coluna o passo vale para cada linha da tabela.
+The field key of a step is the `key` or `table.column`; on a column the step applies to each row of the table.
 
-**Passos de papel (v12).** Os **filhos** do dono são as anotações cujo `parentAnnotationId` aponta para uma anotação da especialização cujo tipo, naquele ponto da cadeia, é o `type` do passo; o filho pode ser de qualquer tipo, de outra especialização ou livre. Invariante: `parentRole` não nulo exige `parentAnnotationId` não nulo. No relatório por passo, `annotations` conta os filhos alterados e `unlinked` conta os desvínculos.
+**Role steps (v12).** The owner's **children** are the annotations whose `parentAnnotationId` points to an annotation of the specialization whose type, at that point of the chain, is the step's `type`; the child can be of any type, of another specialization, or free. Invariant: a non-null `parentRole` requires a non-null `parentAnnotationId`. In the per-step report, `annotations` counts the changed children and `unlinked` counts the unlinks.
 
-**O que é recusado.** Com especialização v4 ou v5 e a cópia aplicada disponível, `updateSpecialization` **recusa** uma versão com quebra sem passo que a cubra (`spec-missing-migrations`, e na app o botão **Atualizar** fica desabilitado): nada é alterado. As versões 1 a 3 não têm `migrations` e **não são recusadas**: a atualização segue como era (os valores que deixam de valer viram pendência). Sem a cópia aplicada, nada é comparado.
+**What is rejected.** With a v4 or v5 specialization and the applied copy available, `updateSpecialization` **rejects** a version with a break without a step that covers it (`spec-missing-migrations`, and in the app the **Update** button is disabled): nothing is changed. Versions 1 to 3 have no `migrations` and are **not rejected**: the update proceeds as it used to (values that stop being valid become pending items). Without the applied copy, nothing is compared.
 
-**O que o impacto informa.** `specializationUpdateImpact` (em `src/model/specializations.ts`) devolve `changes`, `breaking`, `missingMigrations`, `migrations` e `comparable` e, com a execução simulada sobre o projeto, `additive` (nenhuma quebra: os dados ficam como estão), `refused` (quebra sem migração), `steps` (o relatório por passo: anotações, valores, convertidas, apagadas, referências e desvinculadas), `losses` (cada valor, anotação ou vínculo que a atualização apaga: inclui `papel limpo` e `vínculo desfeito`) e `pending` (o que vira pendência). O diálogo de atualização mostra isso: "Atualização aditiva: os dados ficam como estão.", ou **Passos da migração** com as contagens, as perdas em destaque ("Esta atualização apaga N valor(es) e M anotação(ões).", com "e K vínculo(s)" no fim quando há vínculo desfeito) e as pendências ("N pendência(s) ficam"). Depois de atualizar com pendências, a janela **Incompletas** abre sozinha.
+**What the impact reports.** `specializationUpdateImpact` (in `src/model/specializations.ts`) returns `changes`, `breaking`, `missingMigrations`, `migrations`, and `comparable` and, with the simulated execution over the project, `additive` (no break: the data stays as it is), `refused` (break without a migration), `steps` (the per-step report: annotations, values, converted, deleted, references, and unlinked), `losses` (each value, annotation, or link that the update erases: includes `papel limpo` and `vínculo desfeito`), and `pending` (what becomes a pending item). The update dialog shows this: "Additive update: the data stays as it is.", or **Migration steps** with the counts, the losses highlighted ("This update deletes N value(s) and M annotation(s).", with "and K link(s)" at the end when there is an undone link), and the pending items ("N pending item(s) remain"). After updating with pending items, the **Incomplete** window opens by itself.
 
-### Exemplos
+### Examples
 
-Os trechos são o que muda no arquivo da especialização (`version` e `migrations`); o resto do arquivo (camadas, tipos, componentes) segue a v4 normal.
+The excerpts are what changes in the specialization file (`version` and `migrations`); the rest of the file (layers, types, components) follows normal v4.
 
-**(a) Evolução aditiva, v1 → v2.** Um componente novo e um campo opcional novo: nenhuma quebra, então **nenhum** `migrations`. Os dados do projeto ficam como estão.
+**(a) Additive evolution, v1 → v2.** A new component and a new optional field: no break, so **no** `migrations`. The project data stays as it is.
 
 ```json
 {
@@ -1313,9 +1313,9 @@ Os trechos são o que muda no arquivo da especialização (`version` e `migratio
 }
 ```
 
-(`nota` e o tipo `cartao` são novos na v2; `texto` já existia.)
+(`nota` and the `cartao` type are new in v2; `texto` already existed.)
 
-**(b) Renomear um campo, v2 → v3.** O campo `texto` do `botao` passa a se chamar `rotulo`. Sem o passo, a v3 seria uma quebra recusada.
+**(b) Renaming a field, v2 → v3.** The `botao` field `texto` is now called `rotulo`. Without the step, v3 would be a rejected break.
 
 ```json
 {
@@ -1332,16 +1332,16 @@ Os trechos são o que muda no arquivo da especialização (`version` e `migratio
 }
 ```
 
-Numa anotação do `botao`, o `values` muda assim (as outras chaves ficam; uma `ref` que apontava para `texto` passa a apontar para `rotulo`):
+On a `botao` annotation, the `values` changes like this (the other keys stay; a `ref` that pointed to `texto` now points to `rotulo`):
 
 ```json
 {
-  "antes": { "texto": "Cadastrar", "nota": "primário" },
-  "depois": { "rotulo": "Cadastrar", "nota": "primário" }
+  "antes": { "texto": "Sign up", "nota": "primary" },
+  "depois": { "rotulo": "Sign up", "nota": "primary" }
 }
 ```
 
-**(c) Cadeia de duas entradas, aplicada a um projeto na v1.** A v3 traz as duas entradas (a v1 → v2 e a v2 → v3) e a atualização roda as duas em ordem:
+**(c) Chain of two entries, applied to a project on v1.** v3 carries both entries (v1 → v2 and v2 → v3) and the update runs both in order:
 
 ```json
 {
@@ -1369,7 +1369,7 @@ Numa anotação do `botao`, o `values` muda assim (as outras chaves ficam; uma `
 }
 ```
 
-Antes (projeto na v1) e depois (v3), para uma anotação de `chip`:
+Before (project on v1) and after (v3), for a `chip` annotation:
 
 ```json
 {
@@ -1378,9 +1378,9 @@ Antes (projeto na v1) e depois (v3), para uma anotação de `chip`:
 }
 ```
 
-Uma anotação com `"estilo": "outline"` (que não está em `values` nem nas opções da v3) fica com o valor e vira a pendência `unknown-option`, que abre em **Incompletas**. Se o projeto já estivesse na v2, só a segunda entrada rodaria; se faltasse a v1 → v2, nada rodaria e a atualização seria recusada.
+An annotation with `"estilo": "outline"` (which is neither in `values` nor in the v3 options) keeps the value and becomes the `unknown-option` pending item, which opens in **Incomplete**. If the project were already on v2, only the second entry would run; if the v1 → v2 entry were missing, nothing would run and the update would be rejected.
 
-**(d) Remover um tipo: `convert` e `delete`.** O tipo `selo` sai da v2. As duas formas cobrem a quebra; a diferença é o destino das anotações.
+**(d) Removing a type: `convert` and `delete`.** The `selo` type leaves in v2. Both forms cover the break; the difference is the destination of the annotations.
 
 ```json
 {
@@ -1395,7 +1395,7 @@ Uma anotação com `"estilo": "outline"` (que não está em `values` nem nas op�
 }
 ```
 
-Com `convert`, a anotação de `selo` vira **livre**: `{ "texto": "Novo" }` passa a ser o par `texto` = `Novo`. Nada se perde (o diálogo mostra "1 convertida(s)"); a anotação fica na camada em que estava, e se a camada é da especialização ela entra em **Incompletas** (`layer-mismatch`).
+With `convert`, the `selo` annotation becomes **free**: `{ "texto": "New" }` becomes the pair `texto` = `New`. Nothing is lost (the dialog shows "1 converted"); the annotation stays in the layer it was in, and if the layer belongs to the specialization it goes into **Incomplete** (`layer-mismatch`).
 
 ```json
 {
@@ -1410,21 +1410,21 @@ Com `convert`, a anotação de `selo` vira **livre**: `{ "texto": "Novo" }` pass
 }
 ```
 
-Com `delete`, a anotação de `selo` é **apagada, e as vinculadas a ela também**. Isso é perda: antes de atualizar o diálogo avisa em destaque "Esta atualização apaga 0 valor(es) e 2 anotação(ões)." (uma por anotação apagada, com a lista de qual marcação e qual nome), e **Desfazer** traz tudo de volta.
+With `delete`, the `selo` annotation is **deleted, and so are those linked to it**. That is a loss: before updating, the dialog warns, highlighted, "This update deletes 0 value(s) and 2 annotation(s)." (one per deleted annotation, with the list of which marking and which name), and **Undo** brings everything back.
 
-**(e) Papéis (`formatVersion` 12).** Na v3 da especialização `loja`, o `button` renomeou o papel `tap` para `click` e deixou de ter o papel `legado`, e o `card`, que não tinha papéis, passou a ter o papel `abrir`. Sem os três passos, a v3 seria recusada (`removed-role` e `roles-required`). Este é um arquivo completo, porque a `formatVersion` 12 é a que aceita os passos:
+**(e) Roles (`formatVersion` 12).** In v3 of the `loja` specialization, `button` renamed the role `tap` to `click` and no longer has the role `legado`, and `card`, which had no roles, now has the role `abrir`. Without the three steps, v3 would be rejected (`removed-role` and `roles-required`). This is a complete file, because `formatVersion` 12 is the one that accepts the steps:
 
 ```json
 {
   "format": "mapping-spec",
   "formatVersion": 12,
   "id": "loja",
-  "name": "Loja",
+  "name": "Store",
   "version": 3,
   "layers": [
     {
       "id": "componentes",
-      "name": "Componentes",
+      "name": "Components",
       "color": "#1E88E5",
       "annotationTypes": [
         {
@@ -1432,8 +1432,8 @@ Com `delete`, a anotação de `selo` é **apagada, e as vinculadas a ela também
           "name": "Button",
           "allowedChildren": [{ "layer": "eventos" }],
           "childRoles": [
-            { "id": "click", "name": "Clique" },
-            { "id": "hold", "name": "Pressionar" }
+            { "id": "click", "name": "Click" },
+            { "id": "hold", "name": "Hold" }
           ],
           "fields": []
         },
@@ -1441,14 +1441,14 @@ Com `delete`, a anotação de `selo` é **apagada, e as vinculadas a ela também
           "id": "card",
           "name": "Card",
           "allowedChildren": [{ "layer": "eventos" }],
-          "childRoles": [{ "id": "abrir", "name": "Abrir" }],
+          "childRoles": [{ "id": "abrir", "name": "Open" }],
           "fields": []
         }
       ]
     },
     {
       "id": "eventos",
-      "name": "Eventos",
+      "name": "Events",
       "color": "#43A047",
       "annotationTypes": [
         { "id": "navigate", "name": "Navigate", "requiresOwner": true, "fields": [] }
@@ -1469,7 +1469,7 @@ Com `delete`, a anotação de `selo` é **apagada, e as vinculadas a ela também
 }
 ```
 
-Num projeto na v2, a atualização muda só o vínculo dos filhos (`parentRole`), nunca o filho em si:
+On a project on v2, the update changes only the children's link (`parentRole`), never the child itself:
 
 ```json
 {
@@ -1486,15 +1486,15 @@ Num projeto na v2, a atualização muda só o vínculo dos filhos (`parentRole`)
 }
 ```
 
-- `rename-role` troca `tap` por `click` sem perda nem pendência. Se `click` já existisse na v2, os filhos dos dois papéis passariam a ocupar o mesmo: é assim que se **juntam** dois papéis.
-- `remove-role` com `clear` mantém o filho vinculado e apaga o papel: isso é **perda** (`cleared-role`, o `legado` que estava no valor, mostrada em destaque no diálogo) e, como o `button` ainda tem papéis, o filho fica em **Incompletas** (`missing-role`) até a pessoa escolher um. Com `unlink`, o filho seria desvinculado do `button` (perda `unlinked`) e, como o `navigate` tem `requiresOwner`, ficaria pendente de dono (`missing-owner`).
-- `set-role` dá `abrir` só aos filhos de `navigate` do `card` que **não tinham papel**; um filho que já tivesse papel fica como está, e o passo nunca gera perda. O `childType` pode ser o id **antigo** do filho quando o passo vem antes do `rename-type` dele: dar o papel **antes** do renome é o que mantém a informação de um tipo que vai ser renomeado.
+- `rename-role` swaps `tap` for `click` with no loss or pending item. If `click` already existed in v2, the children of both roles would end up occupying the same one: that is how two roles **merge**.
+- `remove-role` with `clear` keeps the child linked and erases the role: that is a **loss** (`cleared-role`, the `legado` that was in the value, shown highlighted in the dialog) and, since `button` still has roles, the child ends up in **Incomplete** (`missing-role`) until the person chooses one. With `unlink`, the child would be unlinked from `button` (loss `unlinked`) and, since `navigate` has `requiresOwner`, it would be left pending an owner (`missing-owner`).
+- `set-role` gives `abrir` only to the `navigate` children of `card` that **had no role**; a child that already had a role stays as it is, and the step never produces a loss. The `childType` can be the child's **old** id when the step comes before its `rename-type`: giving the role **before** the rename is what preserves the information of a type that is going to be renamed.
 
-## Validação da biblioteca
+## Library validation
 
-`validateLibrary` (em `src/model/library.ts`) valida um pacote **já lido**: recebe a lista de arquivos (`{ path, text? }` para `.json` e `.md`, `{ path, binary: true }` para uma fonte presente), o caminho da especialização (sem ele, procura o único arquivo com `"format": "mapping-spec"`), opcionalmente a versão anterior (`previous`, que liga o contrato de versão) e até que nível ir (`level`, padrão 3). É puro: não lê disco nem rede.
+`validateLibrary` (in `src/model/library.ts`) validates a package that has **already been read**: it receives the list of files (`{ path, text? }` for `.json` and `.md`, `{ path, binary: true }` for a present font), the path of the specialization (without it, it looks for the single file with `"format": "mapping-spec"`), optionally the previous version (`previous`, which turns on the version contract), and how far to go (`level`, default 3). It is pure: it reads neither disk nor network.
 
-**Erro impede usar, aviso deixa usar.** Cada problema é `{ file, path, message, severity }` (`severity` é `error` ou `warning`; `file` é o arquivo do problema e `path` o caminho dentro dele, ambos podem ser vazios):
+**An error prevents use, a warning allows use.** Each problem is `{ file, path, message, severity }` (`severity` is `error` or `warning`; `file` is the problem's file and `path` the path inside it, both can be empty):
 
 ```json
 {
@@ -1505,63 +1505,63 @@ Num projeto na v2, a atualização muda só o vínculo dos filhos (`parentRole`)
 }
 ```
 
-O relatório traz `ok` (sem nenhum erro), `issues` (todos, na ordem dos níveis), `errors`, `warnings`, a `spec` lida e um `summary` (nível alcançado e contagens de tipos, componentes, documentos, exemplos e fontes). Os níveis rodam em ordem e cada um só roda se o anterior deixou o que ele precisa: sem especialização legível não há nível 2; um componente inválido não impede os outros de passar pelos níveis 2 e 3.
+The report carries `ok` (no errors at all), `issues` (all of them, in level order), `errors`, `warnings`, the `spec` read, and a `summary` (level reached and counts of types, components, documents, examples, and fonts). The levels run in order and each one only runs if the previous one left what it needs: without a readable specialization there is no level 2; an invalid component does not prevent the others from going through levels 2 and 3.
 
-1. **Cada arquivo isolado, estrito.** A especialização (`parseSpec`; os avisos de `specWarnings`), cada componente citado (`parseComponent`, com o caminho dentro do arquivo), cada documento (`.md` vazio avisa). Um arquivo citado que não está no pacote é **erro** (`arquivo não encontrado`); um `.json` ou `.md` do pacote que ninguém cita é **aviso** (`arquivo não referenciado pela especialização`).
-2. **Coerência entre arquivos.** O `slot` declarado nas `sources` do tipo existe no componente (erro); todo campo que o desenho usa existe no tipo (**erro**: o desenho não acha o valor); campo do `preview` que o tipo não tem, campo do tipo que o desenho não usa e dois tipos com o mesmo arquivo de componente são **avisos**; os arquivos dos exemplos de sistema externo existem e são JSON (erro quando não); o `scrim` das raízes é um tipo da especialização (erro); o arquivo de cada fonte existe (**aviso** quando falta: o desenho usa a fonte do sistema); e, com `previous`, o contrato de versão (erro para a quebra sem passo e para a `version` que não cresceu; aviso para um passo que cita o que não existia na versão anterior).
-3. **Prova de desenho.** Cada componente é instanciado com os valores do `preview` (ou os padrões dos campos) e de **cada exemplo de valores**, no `size` (o `minSize` não é desenhado): cada aviso do motor vira um aviso do pacote com `(aproximado)` no fim, porque aqui o texto é medido de forma **aproximada** (a medida real é a do navegador). Uma falha ao desenhar é erro. Cada exemplo de sistema externo (o do tipo, `system` + `file`, e cada tela de `origins[].examples`) passa pela declaração de origem: erro do resultado é erro, e propriedade desconhecida e os outros avisos da origem são avisos. A lista de avisos está no [`COMPONENT-FORMAT.md`](COMPONENT-FORMAT.md), "Avisos do motor".
+1. **Each file in isolation, strict.** The specialization (`parseSpec`; the warnings from `specWarnings`), each cited component (`parseComponent`, with the path inside the file), each document (an empty `.md` warns). A cited file that is not in the package is an **error** (`arquivo não encontrado`); a `.json` or `.md` in the package that nobody cites is a **warning** (`arquivo não referenciado pela especialização`).
+2. **Coherence between files.** The `slot` declared in the type's `sources` exists in the component (error); every field the design uses exists in the type (**error**: the design cannot find the value); a `preview` field that the type does not have, a type field that the design does not use, and two types with the same component file are **warnings**; the external-system example files exist and are JSON (error when not); the `scrim` of the roots is a type of the specialization (error); the file of each font exists (**warning** when missing: the design uses the system font); and, with `previous`, the version contract (error for a break without a step and for a `version` that did not grow; warning for a step that cites something that did not exist in the previous version).
+3. **Design check.** Each component is instantiated with the `preview` values (or the fields' defaults) and with **each values example**, at the `size` (the `minSize` is not drawn): each engine notice becomes a package warning with `(aproximado)` at the end, because here the text is measured **approximately** (the real measurement is the browser's). A failure to draw is an error. Each external-system example (the type's, `system` + `file`, and each screen of `origins[].examples`) goes through the source declaration: an error in the result is an error, and unknown property and the source's other warnings are warnings. The list of notices is in [`COMPONENT-FORMAT.md`](COMPONENT-FORMAT.md), "Engine notices".
 
-As três portas — **o aplicativo, o servidor MCP e a skill `spec-author`** — chamam a **mesma função** e mostram o mesmo relatório. Isso é da fase B2 da etapa Biblioteca; hoje a função existe e é coberta por testes, mas nenhuma porta a chama ainda.
+The three entry points — **the application, the MCP server, and the `spec-author` skill** — call the **same function** and show the same report. This belongs to phase B2 of the Library stage; today the function exists and is covered by tests, but no entry point calls it yet.
 
-Os pacotes `libraries/material3-compose/` e `examples/libraries/sdui-backend/` passam pelo validador com **zero erros e zero avisos** (`tests/model/material3ComposeLibrary.test.ts` e `tests/examples/sduiBackendLibrary.test.ts` fixam o resultado). A prova de desenho só desenha o tamanho inicial (`size`): o `minSize` não é desenhado, porque o aviso nele só serviria a quem escreve o componente.
+The packages `libraries/material3-compose/` and `examples/libraries/sdui-backend/` pass the validator with **zero errors and zero warnings** (`tests/model/material3ComposeLibrary.test.ts` and `tests/examples/sduiBackendLibrary.test.ts` pin the result). The design check only draws the initial size (`size`): the `minSize` is not drawn, because the warning on it would only serve whoever writes the component.
 
-## Regras de validação
+## Validation rules
 
-As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[2].type: "numero" inválido; use "string", "number", "date", "enum", "table" ou "ref"`.
+Error messages carry the path, e.g.: `layers[1].annotationTypes[0].fields[2].type: "numero" inválido; use "string", "number", "date", "enum", "table" ou "ref"`.
 
-- `format`, `formatVersion` (1 a 16), `id`, `name` e `version` obrigatórios; `version` inteiro ≥ 1;
-- ids de camada únicos; ids de tipo únicos na especialização inteira; `key` única no tipo e nas colunas; nenhuma `key` começando com `_`;
-- `allowedChildren` só referencia tipos existentes **em outra camada** (a partir da `formatVersion` 13, também na camada do próprio dono, inclusive o próprio tipo);
-- todo tipo com `requiresOwner: true` aparece no `allowedChildren` de algum **outro** tipo (na v11, no conjunto **resolvido** dos filhos de algum dono: por id, por camada inteira ou por grupo); o tipo que só ele mesmo lista não atende (`nenhum outro tipo o aceita como filho`);
-- `default` compatível com o tipo (e presente em `options` no `enum`); `ref` sem `default`;
-- `columns` só com tipos simples ou, na `formatVersion` 7, `ref` (com `accepts`); `table` dentro de `table` é recusado; `rowLabel` obrigatório em `table` com `tags` e apontando para uma coluna `string`;
-- `labelField` aponta para um campo `string` do tipo;
-- `accepts` com pelo menos uma etiqueta, `free: true` ou `annotations`; etiquetas no formato `[a-z0-9-]+`;
-- **v14, `accepts.annotations`:** só a partir da `formatVersion` 14 (antes, `só é permitido com formatVersion 14`, no caminho `…accepts.annotations` do campo ou da coluna); lista não vazia de ids de tipo ou cláusulas `{ layer, groups }` da mesma especialização; camada, grupo e tipo inexistentes são os erros do `allowedChildren`;
-- **v15, `structural`:** só a partir da `formatVersion` 15 (antes, `só é permitido com formatVersion 15`, no caminho `…annotationTypes[n].structural`); booleano; `true` com `component` no mesmo tipo é erro;
-- **v15, `origins[].kind`:** só a partir da `formatVersion` 15 (antes, `só é permitido com formatVersion 15`, no caminho `origins[n].kind`); `tree` (padrão) ou `measured`; a `measured` aceita só `system`, `kind`, `name` e `booleans` (`node`, `screen` e `examples` são erro, com o caminho).
-- **v15, `tokens`:** só a partir da `formatVersion` 15 (antes, `só é permitido com formatVersion 15`, no caminho `tokens`); `modes` lista não vazia de nomes distintos `[a-z0-9][a-z0-9-]*`; nome de token no mesmo padrão; cada valor é texto ou número, simples ou com todos os modos (e só eles) do mesmo tipo (ver "Tokens de design");
-- **v16:** `fieldModels`, `signature`, `ignore`, `calls` e `formats` (no `code`, no caso de `variants` e, para `signature`, em `sources`) só a partir da `formatVersion` 16 (antes, `só é permitido com formatVersion 16`, no caminho da chave); `like` aponta para `<tipo>.<campo>` existente; `format` e molde têm `{value}`; o primeiro segmento de um caminho em `params` está em `calls`; ver "Assinaturas e modelos de campo";
-- `platforms`: `id` no formato `[a-z0-9-]+` e único, `name` obrigatório, `language` e `repo` opcionais; `platforms` e `code` a partir da `formatVersion` 2;
-- **v5, `repo`:** só na `formatVersion` 5, dentro de uma entrada de `platforms` (numa versão anterior o erro é `só é permitido com formatVersion 5`, no caminho `platforms[0].repo`); `url` obrigatória, começando com `http://` ou `https://`, sem espaços; `urlTemplate` opcional, também `http(s)://` e com `{path}`; `ref` opcional, texto não vazio; qualquer outra propriedade em `repo` é recusada;
-- **v11, filhos por camada e grupo:** só a partir da `formatVersion` 11 (numa versão anterior o erro é `só é permitido com formatVersion 11`, no caminho `…annotationTypes[n].allowedChildren[k]` para a cláusula, `layers[n].groups` e `…annotationTypes[m].groups`); cada item de `allowedChildren` é um id de tipo ou uma cláusula `{ layer, groups? }` estrita (outra propriedade é erro, e `groups: []` também); erros: `layer` que não é uma camada da especialização, `layer` que é a camada do próprio dono (`filhos devem estar em outra camada`) e grupo inexistente na camada da cláusula; `requiresOwner` é conferido no conjunto resolvido; `layers[n].groups`: `id` não vazio e único na camada, `name` não vazio; `annotationTypes[m].groups`: lista não vazia, sem repetição, só de grupos da própria camada (grupo inexistente na camada é erro); **avisos:** 20 ids ou mais em texto no mesmo `allowedChildren` (`N tipos listados um a um; uma cláusula { layer, groups } cobre a camada ou os grupos`; com 19, não) e grupo declarado que nenhum tipo usa (ver "Filhos por camada e grupo");
-- **v13, filhos da própria camada:** a cláusula `{ layer }` da camada do próprio tipo e o id de um tipo da mesma camada (inclusive o do próprio tipo) só são aceitos a partir da `formatVersion` 13; numa versão anterior os erros são `camada "x" é a do próprio tipo; filhos devem estar em outra camada` (no caminho `…allowedChildren[k].layer`) e `tipo "x" está na mesma camada; filhos devem estar em outra camada`; o resto das regras de `allowedChildren` (camada e grupos inexistentes, `requiresOwner` no conjunto resolvido) não muda (ver "Filhos por camada e grupo");
-- **v12, passos de papel em `migrations`:** `rename-role`, `remove-role` e `set-role` só a partir da `formatVersion` 12 (numa versão de 4 a 11 o erro é `só é permitido com formatVersion 12`, no caminho `migrations[i].steps[j].op`); a mensagem de um `op` inválido lista os nove passos; chaves estritas (`rename-role`: `type`, `from`, `to`; `remove-role`: `type`, `role`, `mode`; `set-role`: `type`, `role`, `childType` opcional); `rename-role`: `type` é um tipo desta versão com `childRoles`, `to` é um papel dele e `from` não é; `remove-role`: `type` é um tipo desta versão (pode não ter mais `childRoles`), `role` não é papel dele e `mode` é `clear` ou `unlink`; `set-role`: `type` tem `childRoles`, `role` é um papel dele e `childType`, se vier, só confere o formato de id (tipo inexistente é um no-op); **aviso** (nível 2, com a versão anterior): `rename-role.from` ou `remove-role.role` que não era papel do tipo naquela versão, considerando o `rename-type` do dono; contrato: `removed-role`, `roles-required` e `added-role` (ver "Contrato de versão");
-- **v11, `childRoles` e `childRolesLabel`:** só a partir da `formatVersion` 11 (`só é permitido com formatVersion 11`, no caminho `…annotationTypes[n].childRoles` ou `….childRolesLabel`); `childRoles` não vazia, de `{ id, name, description? }` estritos, com `id` não vazio e único no tipo e `name` não vazio; só em tipo com `allowedChildren` (senão é erro); `childRolesLabel` texto não vazio e só com `childRoles` (senão é erro); sem ele a app usa "Papel" / "Role" (ver "Papéis no vínculo (childRoles)");
-- **v11, `docRepos` e `doc` objeto:** só a partir da `formatVersion` 11 (`só é permitido com formatVersion 11`, no caminho `docRepos` ou `…annotationTypes[n].doc`); `docRepos[n]` com as regras do `repo` de plataforma (`url` obrigatória `http(s)://` sem espaços, `urlTemplate` opcional com `{path}`, `ref` opcional não vazio, nenhuma outra propriedade), `id` no formato `[a-z0-9-]+` e único na lista (id repetido e `urlTemplate` sem `{path}` são erro); `doc` objeto `{ repo, path }` estrito: `repo` precisa estar em `docRepos`, `path` relativo (sem `.`, `..` nem `/` no começo), terminando em `.md` e sem `#`; o `doc` texto continua valendo da v4 em diante; **aviso:** repositório de `docRepos` que nenhum `doc` usa (ver "Documento em repositório externo (docRepos)");
-- **v10, `notices`:** só a partir da `formatVersion` 10 (numa versão anterior o erro é `só é permitido com formatVersion 10`, no caminho `…annotationTypes[n].notices`, `…fields[n].notices` ou `…columns[m].notices`); lista (pode ser vazia) de objetos estritos com `kind` (`pending`, `deprecated`, `diverges` ou `removed`) e `message` (não vazia nem só espaços) obrigatórios, `since` (data real `AAAA-MM-DD`) e `ref` (texto não vazio) opcionais; dois avisos com o mesmo `kind` e a mesma `message` na lista são o erro `aviso repetido`, no caminho do segundo; qualquer outra propriedade é recusada; o aviso só informa (ver "Avisos (notices)");
-- **v9, `variants`:** só a partir da `formatVersion` 9 (numa versão anterior o erro é `só é permitido com formatVersion 9`, no caminho `…code.<plataforma>.variants`); `field` é a `key` de um campo `enum` do tipo (nível de cima); `cases` não vazio, com chaves nas `options` do campo e casos não vazios; `params` e `values` dos casos como os da base; um nível só (o caso não tem `variants`); qualquer outra propriedade é recusada (ver "Variantes do código");
-- **v8, `suggestions`:** só a partir da `formatVersion` 8 (numa versão anterior o erro é `só é permitido com formatVersion 8`, no caminho `…fields[n].suggestions` ou `…columns[m].suggestions`); só em campo ou coluna `string`; lista não vazia, até 200 itens, de textos únicos, não vazios e sem espaço nas pontas; não restringe o valor, e o `default` pode ficar fora da lista;
-- **v8, `linkedRef`:** só a partir da `formatVersion` 8 (numa versão anterior o erro é `só é permitido com formatVersion 8`, no caminho `…fields[n].linkedRef` ou `…columns[m].linkedRef`); só em campo ou coluna `string`; a `key` precisa ser a de um campo `ref` do mesmo tipo (na coluna, de uma coluna `ref` da mesma `table`); não restringe o valor e independe de `suggestions`;
-- **v7, `floating`, `appliesTo` e coluna `ref`:** só a partir da `formatVersion` 7 (numa versão anterior o erro é `só é permitido com formatVersion 7`, no caminho exato: `…annotationTypes[n].floating`, `…annotationTypes[n].appliesTo`, `…fields[n].columns[m].type`); `floating` booleano; `appliesTo` não vazio, sem repetição, só com `marking` e `arrow`, e um tipo que não se aplica a marcações (só `arrow`) não pode ter `component` nem `floating`;
-- **v6, `containers`:** só a partir da `formatVersion` 6 (numa versão anterior o erro é `só é permitido com formatVersion 6`, no caminho `containers`); `id` no formato `[a-z0-9-]+` e único na lista; `name` não vazio; `width` e `height` inteiros de 1 a 20000; `background` opcional no formato `#RRGGBB`; qualquer outra propriedade é recusada;
-- `sources` a partir da `formatVersion` 3; origem de tipo com `system` e pelo menos `id` ou `name`; origem de campo com `system` e `name` (ou `path`, na v4, em sistema de `origins`); `values` só em campos `enum` e com destinos que existam em `options`;
-- **v4, chaves novas:** `fonts`, `origins`, `migrations` (raiz), `component`, `doc` e `examples` (tipo) só a partir da `formatVersion` 4: numa versão anterior o erro é `só é permitido com formatVersion 4`, no caminho da chave;
-- **v4, caminhos do pacote:** `component` e `examples[].file` com extensão `.json`, `doc` (texto) com `.md`, `fonts[].file` com `.ttf`, `.otf`, `.woff` ou `.woff2`, e `origins[].examples[].file` com `.json`; todos relativos, normalizados, com `/`, sem `.`, `..`, `/` no começo nem unidade;
-- **v4, `fonts`:** `family` não vazio; `weight` inteiro de 100 a 1000 ou faixa `"100 900"` (o primeiro número menor); `style` `normal` ou `italic`; o par `family` + `weight` + `style` não se repete;
-- **v4, `examples`:** `name` não vazio e único no tipo; ou `values` ou `system` com `file`, nunca os dois modos nem nenhum; as chaves de `values` são campos do tipo, com valor `null` ou compatível com o tipo (o campo `table` aceita só a lista de linhas, em cada linha um objeto coluna → valor com as chaves sendo colunas da tabela e cada célula compatível com a coluna, e a coluna `ref` só `null`, sem mudar a `formatVersion`: uma app ou MCP anterior ao épico recusa a biblioteca com a mensagem de hoje; o campo `ref` não aceita valor); `system` precisa estar em `origins`;
-- **v4, `sources`:** `path` só em sistema declarado em `origins` (e obrigatório nele), com sintaxe válida (`a.b[0].c`) e sem `[*]`; fora de `origins`, `name` é obrigatório e `path` é proibido; `slot` e `ignore` só em sistema declarado em `origins`, e `ignore` sem repetição;
-- **v4, `origins`:** conferido por `parseOrigins`, estrito: `system` único, `node` com `type`, `props` e `children`, `screen` com `width`, `height` e ao menos uma raiz, caminhos e âncoras válidos, `booleans` com `true` e `false`, `examples` com `name` único e `file` `.json`;
-- **v4, `migrations`:** `from` inteiro ≥ 1 e único, `to` maior que `from` e no máximo `version`, `steps` não vazia, `op` conhecido e chaves estritas por passo; o lado novo de cada passo existe nesta versão e o lado antigo não existe mais (ver "Contrato de versão");
-- `code` só em especializações que declaram `platforms`; os ids de `code` precisam existir em `platforms`;
-- `symbol` obrigatório em cada entrada de `code`; `path`, se houver, não vazio e relativo à raiz do `repo` da plataforma (normalizado, com `/`, sem `.`, `..`, `/` no começo nem unidade); chaves de `params` e `values` precisam ser campos do tipo; `values` só para campos `enum`, com chaves que existam em `options`;
-- `color` no formato `#RRGGBB`;
-- propriedades desconhecidas são rejeitadas (o `platforms` de um campo só existia no tipo removido `codeRef`);
-- um campo do tipo removido `codeRef` (fora de `columns`) não é erro: é lido, ignorado e vira aviso (ver "Tipos de valor").
+- `format`, `formatVersion` (1 to 16), `id`, `name`, and `version` are required; `version` is an integer ≥ 1;
+- layer ids are unique; type ids are unique across the whole specialization; `key` is unique in the type and in the columns; no `key` starting with `_`;
+- `allowedChildren` only references existing types **in another layer** (from `formatVersion` 13, also in the owner's own layer, including the type itself);
+- every type with `requiresOwner: true` appears in the `allowedChildren` of some **other** type (in v11, in the **resolved** set of children of some owner: by id, by whole layer, or by group); a type that only lists itself does not satisfy this (`nenhum outro tipo o aceita como filho`);
+- `default` compatible with the type (and present in `options` for `enum`); `ref` without `default`;
+- `columns` only with simple types or, in `formatVersion` 7, `ref` (with `accepts`); a `table` inside a `table` is rejected; `rowLabel` is required in a `table` with `tags` and must point to a `string` column;
+- `labelField` points to a `string` field of the type;
+- `accepts` with at least one tag, `free: true`, or `annotations`; tags in the format `[a-z0-9-]+`;
+- **v14, `accepts.annotations`:** only from `formatVersion` 14 (before that, `só é permitido com formatVersion 14`, at the path `…accepts.annotations` of the field or column); a non-empty list of type ids or `{ layer, groups }` clauses of the same specialization; a nonexistent layer, group, or type are the `allowedChildren` errors;
+- **v15, `structural`:** only from `formatVersion` 15 (before that, `só é permitido com formatVersion 15`, at the path `…annotationTypes[n].structural`); boolean; `true` with a `component` on the same type is an error;
+- **v15, `origins[].kind`:** only from `formatVersion` 15 (before that, `só é permitido com formatVersion 15`, at the path `origins[n].kind`); `tree` (default) or `measured`; `measured` accepts only `system`, `kind`, `name`, and `booleans` (`node`, `screen`, and `examples` are errors, with the path).
+- **v15, `tokens`:** only from `formatVersion` 15 (before that, `só é permitido com formatVersion 15`, at the path `tokens`); `modes` a non-empty list of distinct names `[a-z0-9][a-z0-9-]*`; a token name in the same pattern; each value is text or a number, simple or with all the modes (and only them) of the same type (see "Design tokens");
+- **v16:** `fieldModels`, `signature`, `ignore`, `calls`, and `formats` (in `code`, for `variants` and, for `signature`, in `sources`) only from `formatVersion` 16 (before that, `só é permitido com formatVersion 16`, at the path of the key); `like` points to an existing `<type>.<field>`; `format` and template have `{value}`; the first segment of a path in `params` is in `calls`; see "Signatures and field models";
+- `platforms`: `id` in the format `[a-z0-9-]+` and unique, `name` required, `language` and `repo` optional; `platforms` and `code` from `formatVersion` 2;
+- **v5, `repo`:** only in `formatVersion` 5, inside an entry of `platforms` (in an earlier version the error is `só é permitido com formatVersion 5`, at the path `platforms[0].repo`); `url` required, starting with `http://` or `https://`, no spaces; `urlTemplate` optional, also `http(s)://` and with `{path}`; `ref` optional, non-empty text; any other property in `repo` is rejected;
+- **v11, children by layer and group:** only from `formatVersion` 11 (in an earlier version the error is `só é permitido com formatVersion 11`, at the path `…annotationTypes[n].allowedChildren[k]` for the clause, `layers[n].groups`, and `…annotationTypes[m].groups`); each item of `allowedChildren` is a type id or a strict `{ layer, groups? }` clause (another property is an error, and so is `groups: []`); errors: a `layer` that is not a layer of the specialization, a `layer` that is the owner's own layer (`filhos devem estar em outra camada`), and a nonexistent group in the clause's layer; `requiresOwner` is checked against the resolved set; `layers[n].groups`: `id` non-empty and unique in the layer, `name` non-empty; `annotationTypes[m].groups`: a non-empty list, without repeats, only of groups of the layer itself (a group that does not exist in the layer is an error); **warnings:** 20 or more ids as text in the same `allowedChildren` (`N tipos listados um a um; uma cláusula { layer, groups } cobre a camada ou os grupos`; with 19, no) and a declared group that no type uses (see "Children by layer and group");
+- **v13, children in the layer itself:** the `{ layer }` clause of the type's own layer and the id of a type in the same layer (including the type itself) are only accepted from `formatVersion` 13; in an earlier version the errors are `camada "x" é a do próprio tipo; filhos devem estar em outra camada` (at the path `…allowedChildren[k].layer`) and `tipo "x" está na mesma camada; filhos devem estar em outra camada`; the rest of the `allowedChildren` rules (nonexistent layer and groups, `requiresOwner` in the resolved set) does not change (see "Children by layer and group");
+- **v12, role steps in `migrations`:** `rename-role`, `remove-role`, and `set-role` only from `formatVersion` 12 (in a version from 4 to 11 the error is `só é permitido com formatVersion 12`, at the path `migrations[i].steps[j].op`); the message of an invalid `op` lists the nine steps; strict keys (`rename-role`: `type`, `from`, `to`; `remove-role`: `type`, `role`, `mode`; `set-role`: `type`, `role`, optional `childType`); `rename-role`: `type` is a type of this version with `childRoles`, `to` is a role of it and `from` is not; `remove-role`: `type` is a type of this version (it may no longer have `childRoles`), `role` is not a role of it, and `mode` is `clear` or `unlink`; `set-role`: `type` has `childRoles`, `role` is a role of it, and `childType`, if present, only has its id format checked (a nonexistent type is a no-op); **warning** (level 2, with the previous version): `rename-role.from` or `remove-role.role` that was not a role of the type in that version, considering the owner's `rename-type`; contract: `removed-role`, `roles-required`, and `added-role` (see "Version contract");
+- **v11, `childRoles` and `childRolesLabel`:** only from `formatVersion` 11 (`só é permitido com formatVersion 11`, at the path `…annotationTypes[n].childRoles` or `….childRolesLabel`); `childRoles` non-empty, of strict `{ id, name, description? }`, with `id` non-empty and unique in the type and `name` non-empty; only on a type with `allowedChildren` (otherwise it is an error); `childRolesLabel` non-empty text and only with `childRoles` (otherwise it is an error); without it the app uses "Papel" / "Role" (see "Link roles (childRoles)");
+- **v11, `docRepos` and object `doc`:** only from `formatVersion` 11 (`só é permitido com formatVersion 11`, at the path `docRepos` or `…annotationTypes[n].doc`); `docRepos[n]` with the rules of the platform `repo` (`url` required `http(s)://` without spaces, `urlTemplate` optional with `{path}`, `ref` optional non-empty, no other property), `id` in the format `[a-z0-9-]+` and unique in the list (a repeated id and a `urlTemplate` without `{path}` are errors); object `doc` `{ repo, path }` strict: `repo` must be in `docRepos`, `path` relative (no `.`, `..`, or leading `/`), ending in `.md` and without `#`; the text `doc` stays valid from v4 on; **warning:** a `docRepos` repository that no `doc` uses (see "Document in an external repository (docRepos)");
+- **v10, `notices`:** only from `formatVersion` 10 (in an earlier version the error is `só é permitido com formatVersion 10`, at the path `…annotationTypes[n].notices`, `…fields[n].notices`, or `…columns[m].notices`); a list (it may be empty) of strict objects with `kind` (`pending`, `deprecated`, `diverges`, or `removed`) and `message` (non-empty and not only spaces) required, `since` (a real `YYYY-MM-DD` date) and `ref` (non-empty text) optional; two notices with the same `kind` and the same `message` in the list are the error `aviso repetido`, at the path of the second; any other property is rejected; the notice only informs (see "Notices");
+- **v9, `variants`:** only from `formatVersion` 9 (in an earlier version the error is `só é permitido com formatVersion 9`, at the path `…code.<platform>.variants`); `field` is the `key` of an `enum` field of the type (top level); `cases` non-empty, with keys in the field's `options` and non-empty cases; `params` and `values` of the cases like those of the base; one level only (the case has no `variants`); any other property is rejected (see "Code variants");
+- **v8, `suggestions`:** only from `formatVersion` 8 (in an earlier version the error is `só é permitido com formatVersion 8`, at the path `…fields[n].suggestions` or `…columns[m].suggestions`); only on a `string` field or column; a non-empty list, up to 200 items, of unique, non-empty texts without leading or trailing spaces; it does not restrict the value, and the `default` can be outside the list;
+- **v8, `linkedRef`:** only from `formatVersion` 8 (in an earlier version the error is `só é permitido com formatVersion 8`, at the path `…fields[n].linkedRef` or `…columns[m].linkedRef`); only on a `string` field or column; the `key` must be that of a `ref` field of the same type (on a column, of a `ref` column of the same `table`); it does not restrict the value and is independent of `suggestions`;
+- **v7, `floating`, `appliesTo`, and `ref` column:** only from `formatVersion` 7 (in an earlier version the error is `só é permitido com formatVersion 7`, at the exact path: `…annotationTypes[n].floating`, `…annotationTypes[n].appliesTo`, `…fields[n].columns[m].type`); `floating` boolean; `appliesTo` non-empty, without repeats, only with `marking` and `arrow`, and a type that does not apply to markings (only `arrow`) cannot have `component` or `floating`;
+- **v6, `containers`:** only from `formatVersion` 6 (in an earlier version the error is `só é permitido com formatVersion 6`, at the path `containers`); `id` in the format `[a-z0-9-]+` and unique in the list; `name` non-empty; `width` and `height` integers from 1 to 20000; `background` optional in the format `#RRGGBB`; any other property is rejected;
+- `sources` from `formatVersion` 3; a type source with `system` and at least `id` or `name`; a field source with `system` and `name` (or `path`, in v4, for a system in `origins`); `values` only on `enum` fields and with targets that exist in `options`;
+- **v4, new keys:** `fonts`, `origins`, `migrations` (root), `component`, `doc`, and `examples` (type) only from `formatVersion` 4: in an earlier version the error is `só é permitido com formatVersion 4`, at the path of the key;
+- **v4, package paths:** `component` and `examples[].file` with a `.json` extension, `doc` (text) with `.md`, `fonts[].file` with `.ttf`, `.otf`, `.woff`, or `.woff2`, and `origins[].examples[].file` with `.json`; all relative, normalized, with `/`, without `.`, `..`, a leading `/`, or a drive;
+- **v4, `fonts`:** `family` non-empty; `weight` an integer from 100 to 1000 or a range `"100 900"` (the first number smaller); `style` `normal` or `italic`; the `family` + `weight` + `style` triple does not repeat;
+- **v4, `examples`:** `name` non-empty and unique in the type; either `values` or `system` with `file`, never both modes and never neither; the keys of `values` are fields of the type, with value `null` or compatible with the type (the `table` field accepts only the list of rows, each row an object column → value with the keys being columns of the table and each cell compatible with the column, and the `ref` column only `null`, without changing the `formatVersion`: an app or MCP prior to the epic rejects the library with today's message; the `ref` field does not accept a value); `system` must be in `origins`;
+- **v4, `sources`:** `path` only for a system declared in `origins` (and required for it), with valid syntax (`a.b[0].c`) and without `[*]`; outside `origins`, `name` is required and `path` is forbidden; `slot` and `ignore` only for a system declared in `origins`, and `ignore` without repeats;
+- **v4, `origins`:** checked by `parseOrigins`, strict: unique `system`, `node` with `type`, `props`, and `children`, `screen` with `width`, `height`, and at least one root, valid paths and anchors, `booleans` with `true` and `false`, `examples` with unique `name` and `.json` `file`;
+- **v4, `migrations`:** `from` an integer ≥ 1 and unique, `to` greater than `from` and at most `version`, `steps` non-empty, known `op`, and strict keys per step; the new side of each step exists in this version and the old side no longer exists (see "Version contract");
+- `code` only in specializations that declare `platforms`; the `code` ids must exist in `platforms`;
+- `symbol` required in each `code` entry; `path`, if present, non-empty and relative to the root of the platform's `repo` (normalized, with `/`, without `.`, `..`, a leading `/`, or a drive); keys of `params` and `values` must be fields of the type; `values` only for `enum` fields, with keys that exist in `options`;
+- `color` in the format `#RRGGBB`;
+- unknown properties are rejected (a field's `platforms` only existed on the removed type `codeRef`);
+- a field of the removed type `codeRef` (outside `columns`) is not an error: it is read, ignored, and becomes a warning (see "Value types").
 
-**Validar antes de importar.** A importação da app e o servidor MCP usam a mesma validação (`parseSpecText`, em `src/model/`). A tool `validate_specialization` do servidor (um `path` dentro das raízes ou o `text` JSON) devolve exatamente esses erros, com o caminho, sem aplicar a nenhum projeto, e ainda avisa o que não impede a importação mas costuma ser descuido: plataforma declarada e não usada (`unused-platform`), tipo sem `code` numa especialização com plataformas (`type-without-code`: nenhuma plataforma diz como criar uma instância dele), plataforma em que algum tipo tem `path` e que não declara `repo` (`path-without-repo`), o `format` antigo (`mapeador-spec`) e o campo do tipo removido `codeRef`, ignorado (`ignored-field`). A importação da app mostra o aviso dos campos ignorados.
+**Validate before importing.** The app's import and the MCP server use the same validation (`parseSpecText`, in `src/model/`). The server's `validate_specialization` tool (a `path` inside the roots or the JSON `text`) returns exactly these errors, with the path, without applying to any project, and also warns about what does not prevent the import but is usually an oversight: a declared platform that is not used (`unused-platform`), a type without `code` in a specialization with platforms (`type-without-code`: no platform says how to create an instance of it), a platform in which some type has `path` and that does not declare `repo` (`path-without-repo`), the old `format` (`mapeador-spec`), and the field of the removed type `codeRef`, ignored (`ignored-field`). The app's import shows the warning about the ignored fields.
 
-## Exemplo comentado: SDUI
+## Annotated example: SDUI
 
 ```json
 {
@@ -1595,7 +1595,7 @@ As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[
   "layers": [
     {
       "id": "componentes",
-      "name": "Componentes",
+      "name": "Components",
       "color": "#1E88E5",
       "annotationTypes": [
         {
@@ -1637,7 +1637,7 @@ As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[
                 "id": "id",
                 "estilo": "variant"
               },
-              "notes": "A função devolve o nó do componente no JSON da tela."
+              "notes": "The function returns the component node in the screen JSON."
             }
           }
         },
@@ -1673,7 +1673,7 @@ As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[
               "params": {
                 "id": "id"
               },
-              "notes": "A função devolve o nó do componente no JSON da tela."
+              "notes": "The function returns the component node in the screen JSON."
             }
           }
         }
@@ -1681,7 +1681,7 @@ As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[
     },
     {
       "id": "eventos",
-      "name": "Eventos",
+      "name": "Events",
       "color": "#FB8C00",
       "annotationTypes": [
         {
@@ -1710,7 +1710,7 @@ As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[
               "params": {
                 "acao": "action"
               },
-              "notes": "A função devolve o nó do evento no JSON da tela."
+              "notes": "The function returns the event node in the screen JSON."
             }
           }
         }
@@ -1720,15 +1720,15 @@ As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[
 }
 ```
 
-- Duas camadas: Componentes e Eventos, cada uma com seus tipos.
-- `Button`: `id` é obrigatório (sem ele a anotação fica incompleta) e `estilo` já vem como `primary` (`default`).
-- `Button` lista `onClick` em `allowedChildren`, e `onClick` tem `requiresOwner`: um `onClick` só existe ligado a um `Button`.
-- `Input.dado` é um `ref`: aceita atributos com a etiqueta `data-field` (ex: as linhas de atributos da Classe, do Modelo de dados) e também tuplas de anotações livres.
-- `platforms` declara os dois alvos de código em que o agente escreve a solução, o `android` e o `bff`, cada um com o `repo` da sua biblioteca (`url`, o `urlTemplate` do link de um arquivo e a `ref` a que o `code` corresponde).
-- `code` diz como se cria uma instância de cada tipo: no `android`, o `symbol` é o composable a chamar (`com.app.ds.DSButton`) e o `path` é o arquivo que o define, relativo à raiz do `repo`; no `bff`, o `symbol` é a função Kotlin que gera o nó JSON (`com.app.bff.sdui.button`), e não o nome do nó. O agente lê o arquivo para ver a assinatura e escreve a chamada.
-- `params` diz com que nome o campo é passado (`estilo` vai em `style` no Android e em `variant` no BFF) e `values` como o valor do `enum` é escrito no código (`primary` vira `ButtonStyle.Primary`); `notes` orienta (a função do BFF devolve o nó do componente no JSON da tela).
+- Two layers: Components and Events, each with its own types.
+- `Button`: `id` is required (without it the annotation is incomplete) and `estilo` comes as `primary` by default (`default`).
+- `Button` lists `onClick` in `allowedChildren`, and `onClick` has `requiresOwner`: an `onClick` only exists attached to a `Button`.
+- `Input.dado` is a `ref`: it accepts attributes with the `data-field` tag (e.g., the attribute rows of Class, of the Data Model) and also free-annotation tuples.
+- `platforms` declares the two code targets in which the agent writes the solution, `android` and `bff`, each with the `repo` of its library (`url`, the `urlTemplate` of a file's link, and the `ref` the `code` corresponds to).
+- `code` says how to create an instance of each type: on `android`, the `symbol` is the composable to call (`com.app.ds.DSButton`) and the `path` is the file that defines it, relative to the `repo` root; on `bff`, the `symbol` is the Kotlin function that generates the JSON node (`com.app.bff.sdui.button`), not the name of the node. The agent reads the file to see the signature and writes the call.
+- `params` says by what name the field is passed (`estilo` goes in `style` on Android and in `variant` on the BFF) and `values` how the `enum` value is written in code (`primary` becomes `ButtonStyle.Primary`); `notes` guides (the BFF function returns the component node in the screen JSON).
 
-## Exemplos completos
+## Complete examples
 
-- [`examples/specs/sdui.json`](../examples/specs/sdui.json) (`formatVersion` 12): `string`, `number`, `enum`, `table` e `ref`; `required`, `default`, `label`, `description`; `allowedChildren` e `requiresOwner`; referência por etiqueta (`dado`) que também aceita tuplas livres; plataformas `android`, `ios` e `bff` (a função Kotlin que gera o JSON), cada uma com o `repo` da sua biblioteca, `code` em todos os tipos de componentes e eventos e a camada Telas com o `Screen` (sem `code`).
-- [`examples/specs/modelo-de-dados.json`](../examples/specs/modelo-de-dados.json) (`formatVersion` 1, sem plataformas): `date`, `labelField`, `table` com etiqueta `data-field` e `rowLabel` (cada atributo vira um alvo de referência).
+- [`examples/specs/sdui.json`](../examples/specs/sdui.json) (`formatVersion` 12): `string`, `number`, `enum`, `table`, and `ref`; `required`, `default`, `label`, `description`; `allowedChildren` and `requiresOwner`; reference by tag (`dado`) that also accepts free tuples; platforms `android`, `ios`, and `bff` (the Kotlin function that generates the JSON), each with the `repo` of its library, `code` on all component and event types, and the Screens layer with the `Screen` (without `code`).
+- [`examples/specs/modelo-de-dados.json`](../examples/specs/modelo-de-dados.json) (`formatVersion` 1, no platforms): `date`, `labelField`, `table` with the `data-field` tag and `rowLabel` (each attribute becomes a reference target).
