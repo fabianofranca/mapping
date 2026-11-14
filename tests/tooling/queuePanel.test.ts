@@ -388,174 +388,174 @@ describe('Resilient CI: phase, check and dist ceiling (CR1)', () => {
     }
   });
 
-  it('o briefing do Merge aponta para a Leitura do CI e não repete a definição (decisão 10)', () => {
-    const conferencia = between(
+  it('the Merge briefing points to the Reading CI and does not repeat the definition (decision 10)', () => {
+    const check = between(
       skill,
-      'Quem confere o CI e se o PR pode ser mesclado',
+      'Whoever checks the CI and whether the PR can be merged',
       '\n\n',
     );
-    expect(conferencia).toContain('Leitura do CI');
-    expect(conferencia).toContain('docs/FLOW.md');
-    expect(conferencia).not.toContain('nenhum outro com');
-    expect(conferencia).not.toMatch(/ignore os `skipped`/i);
+    expect(check).toContain('Reading CI');
+    expect(check).toContain('docs/FLOW.md');
+    expect(check).not.toContain('no other with');
+    expect(check).not.toMatch(/ignore the `skipped`/i);
     expect(skill).not.toMatch(/Ignore the `skipped` check runs/);
     expect(flow).not.toMatch(/Ignore the `skipped` check runs/);
   });
 
-  it('PR que espera o coordenador: send_later, gatilhos, log do aviso e merge no mesmo turno (#1476, decisões 12 a 15)', () => {
-    const espera = between(skill, '**PR que espera o coordenador:**', '\n\n');
-    expect(espera).toMatch(/`send_later` de 4 min/);
-    expect(espera).toMatch(/de 2 em 2 min até 20 min/);
-    expect(espera).toMatch(/de 8 em 8/);
-    expect(espera).toMatch(/push do coordenador/);
-    expect(espera).toMatch(/deixou o merge/);
-    expect(espera).toMatch(/recomeça a cadeia/);
-    expect(espera).toMatch(/Leitura do CI/);
-    expect(reserva).toMatch(/`send_later` por PR que espera o coordenador/);
-    expect(reserva).toMatch(/Nada de `send_later` por filha/);
-    expect(reserva).toMatch(/Pior caso de detecção:[^\n]*PR que espera o coordenador/);
-    expect(reserva).toMatch(/não usa `subscribe_pr_activity`/);
-    const economia = section(skill, '## Economia de contexto');
-    const item7 = economia.split('\n').find((l) => l.startsWith('7. '));
-    expect(item7).toMatch(/outro ciclo/);
-    expect(item7).toMatch(/linha no `log`/);
-    expect(item7).toMatch(/mesmo turno/);
-    const fases = between(skill, '2. **Fases**', '3. **Testador.**');
-    expect(fases).toMatch(/mescla[^\n]*mesmo turno/);
+  it('PR that waits for the coordinator: send_later, triggers, notice log and merge in the same turn (#1476, decisions 12 to 15)', () => {
+    const waiting = between(skill, '**PR that waits for the coordinator:**', '\n\n');
+    expect(waiting).toMatch(/`send_later` 4 min after/);
+    expect(waiting).toMatch(/every 2 min up to 20 min/);
+    expect(waiting).toMatch(/then every 8/);
+    expect(waiting).toMatch(/push by the coordinator/);
+    expect(waiting).toMatch(/left the merge/);
+    expect(waiting).toMatch(/restarts the chain/);
+    expect(waiting).toMatch(/Reading CI/);
+    expect(fallback).toMatch(/`send_later` is per PR that waits for the coordinator/);
+    expect(fallback).toMatch(/No `send_later` per child/);
+    expect(fallback).toMatch(/Worst case of detection:[^\n]*PR that waits for the coordinator/);
+    expect(fallback).toMatch(/does not use `subscribe_pr_activity`/);
+    const economy = section(skill, '## Context economy');
+    const item7 = economy.split('\n').find((l) => l.startsWith('7. '));
+    expect(item7).toMatch(/another cycle/);
+    expect(item7).toMatch(/`log` line/);
+    expect(item7).toMatch(/same turn/);
+    const phases = between(skill, '2. **Phases**', '3. **Tester.**');
+    expect(phases).toMatch(/merges[^\n]*same turn/);
   });
 
-  it('"Para o dono, nos três chats": resumos do Depende de, do paralelo e da conferência (#1442, decisão 18)', () => {
-    const dono = section(flow, '## Para o dono, nos três chats');
-    expect(dono).toMatch(/`Depende de`[^\n]*`docs\/TESTING\.md` por roteiro/);
-    expect(dono).toContain('docs/TESTING-NUVEM.md#blocos');
-    expect(dono).toMatch(/`paralelo=N`[^\n]*`Vagas k\/N`/);
-    expect(dono).not.toMatch(/arquivos disjuntos/);
-    expect(dono).toMatch(/conferência de hora em hora[^\n]*contexto[^\n]*35%/);
+  it('"For the owner, in the three chats": summaries of Depende de, of parallel and of the check (#1442, decision 18)', () => {
+    const owner = section(flow, '## For the owner, in the three chats');
+    expect(owner).toMatch(/`Depende de`[^\n]*`docs\/TESTING\.md` per script/);
+    expect(owner).toContain('docs/TESTING-NUVEM.md#full-round-in-blocks');
+    expect(owner).toMatch(/`paralelo=N`[^\n]*`Vagas k\/N`/);
+    expect(owner).not.toMatch(/disjoint files/);
+    expect(owner).toMatch(/hourly check[^\n]*context[^\n]*35%/);
   });
 
-  it('"Para a sessão da fase": margem e teto do dist para a fase (decisões 3, 6, 7 e 8)', () => {
+  it('"For the phase session": margin and dist ceiling for the phase (decisions 3, 6, 7 and 8)', () => {
     expect(item6).toMatch(/abaixo de 2 KiB/);
-    expect(item6).toMatch(/enxugar/);
+    expect(item6).toMatch(/trim/);
     expect(item6).toContain('node scripts/ci/distBudget.mjs raise');
-    // Etapa #1614 (decisão 5): o teto mora no `scripts/ci/dist-budget.json`; o `--ci` saiu do comando.
+    // Stage #1614 (decision 5): the ceiling lives in `scripts/ci/dist-budget.json`; the `--ci` left the command.
     expect(item6).toContain('scripts/ci/dist-budget.json');
     expect(item6).not.toContain('--ci .github/workflows/ci.yml');
-    expect(item6).not.toMatch(/INDEX_HTML_MAX_BYTES[^\n]*do `ci\.yml`/);
-    // Decisão 6: a transição de um branch que subiu o teto no `ci.yml` antes da etapa.
-    expect(item6).toMatch(/ficando com o `ci\.yml` da `main`/);
+    expect(item6).not.toMatch(/INDEX_HTML_MAX_BYTES[^\n]*of `ci\.yml`/);
+    // Decision 6: the transition of a branch that raised the ceiling in `ci.yml` before the stage.
+    expect(item6).toMatch(/keeping the `ci\.yml` from `main`/);
     expect(item6).toMatch(/`history`/);
     expect(item6).toMatch(/16 KiB/);
-    expect(item6).toMatch(/até 14 KiB/);
+    expect(item6).toMatch(/up to 14 KiB/);
     expect(item6).toMatch(/32 KiB/);
     expect(item6).toMatch(/64 KiB/);
     expect(item6).toMatch(/`send_message`/);
   });
 
-  it('"Para a sessão da fase": o teto sempre sobe e a fase abre o `bug` do teto (#1802, decisões 1 a 6)', () => {
-    const teto = between(item6, '   - **Teto do `dist/index.html`:**', '**Transição:**');
-    expect(teto).not.toMatch(/chama o dono/);
-    expect(teto).not.toContain('peça a autorização ao dono');
-    expect(teto).toMatch(/sempre sobe/);
-    expect(teto).toContain('`bug:`');
-    expect(teto).toContain('Teto do dist/index.html acima dos limites');
-    expect(teto).toContain('`severity: low`');
-    expect(teto).toContain('is:issue in:title');
-    expect(teto).toMatch(/um por subida/);
-    expect(teto).toMatch(/depois do commit[^\n]*antes do aviso/);
-    expect(teto).toContain('Teto do `dist/index.html` subiu');
-    expect(teto).toContain('acima dos limites, `bug` #<n> para o dono revisar');
-    // o número do `bug` só existe depois de aberto: o 1º commit leva a linha sem ele, e o 2º o completa antes do push
-    expect(teto).toMatch(/termina em "; acima dos limites, `bug` para o dono revisar"/);
-    expect(teto).toMatch(/segundo commit completa a linha[^\n]*só então o push/);
-    expect(teto).toMatch(/sem `PushNotification`|o dono olha depois/);
-    expect(teto).toContain('#1493');
-    expect(teto).toMatch(/outra falha/);
+  it('"For the phase session": the ceiling always goes up and the phase opens the ceiling `bug` (#1802, decisions 1 to 6)', () => {
+    const ceiling = between(item6, '   - **Ceiling of `dist/index.html`:**', '**Transition:**');
+    expect(ceiling).not.toMatch(/calls the owner/);
+    expect(ceiling).not.toContain('ask the owner for authorization');
+    expect(ceiling).toMatch(/always raises/);
+    expect(ceiling).toContain('`bug:`');
+    expect(ceiling).toContain('Teto do dist/index.html acima dos limites');
+    expect(ceiling).toContain('`severity: low`');
+    expect(ceiling).toContain('is:issue in:title');
+    expect(ceiling).toMatch(/one per raise/);
+    expect(ceiling).toMatch(/after the commit[^\n]*before the notice/);
+    expect(ceiling).toContain('Teto do `dist/index.html` subiu');
+    expect(ceiling).toContain('acima dos limites, `bug` #<n> para o dono revisar');
+    // the `bug` number only exists after it is opened: the 1st commit carries the line without it, and the 2nd completes it before the push
+    expect(ceiling).toMatch(/the commit ends it in "; acima dos limites, `bug` para o dono revisar"/);
+    expect(ceiling).toMatch(/second commit completes the line[^\n]*only then the push/);
+    expect(ceiling).toMatch(/no `PushNotification`|the owner looks later/);
+    expect(ceiling).toContain('#1493');
+    expect(ceiling).toMatch(/another failure/);
   });
 
-  it('o CI de uma fase fica só no item 6 (decisão do dono)', () => {
-    const outros = fase
+  it("a phase's CI stays only in item 6 (owner's decision)", () => {
+    const others = phase
       .split('\n')
       .filter((l) => /^\d+\. /.test(l) && !l.startsWith('6. '));
-    expect(outros.length).toBeGreaterThan(0);
-    for (const linha of outros) {
-      expect(linha).not.toContain('send_later');
-      expect(linha).not.toContain('ci-rerun.yml');
-      expect(linha).not.toContain('distBudget.mjs');
+    expect(others.length).toBeGreaterThan(0);
+    for (const line of others) {
+      expect(line).not.toContain('send_later');
+      expect(line).not.toContain('ci-rerun.yml');
+      expect(line).not.toContain('distBudget.mjs');
     }
   });
 
-  it('"Conferências de reserva": 30 min, review_ready/idle sem aviso e send_message antes de recriar (decisão 5)', () => {
-    expect(reserva).toMatch(/mais de 30 min/);
-    expect(reserva).not.toMatch(/mais de 60 min/);
-    expect(reserva).toContain('`review_ready`');
-    expect(reserva).toContain('`idle`');
+  it('"Fallback checks": 30 min, review_ready/idle with no notice and send_message before recreating (decision 5)', () => {
+    expect(fallback).toMatch(/more than 30 min/);
+    expect(fallback).not.toMatch(/more than 60 min/);
+    expect(fallback).toContain('`review_ready`');
+    expect(fallback).toContain('`idle`');
     const msg = 'Conferência da fila: a fase não avisou. Retome do ponto em que parou';
-    expect(reserva).toContain(msg);
-    expect(reserva).toMatch(
+    expect(fallback).toContain(msg);
+    expect(fallback).toMatch(
       new RegExp(
-        `${msg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[\\s\\S]*crie a sessão de novo`,
+        `${msg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[\\s\\S]*create the session again`,
       ),
     );
-    expect(reserva).toMatch(/conferência seguinte/);
+    expect(fallback).toMatch(/the check after the `send_message`/);
   });
 
-  it('"Por etapa" › 2 e "Painel" dizem quando o wait é gravado e limpo (RS1, decisão 5)', () => {
-    const fases = between(skill, '2. **Fases**', '3. **Testador.**');
-    expect(fases).toContain('espera o coordenador');
-    expect(fases).toContain('CI travado');
-    expect(fases).toContain(
-      'A subida do teto não espera mais o dono (etapa #1802): traga a `main` (`git merge origin/main`), rode o `raise --write` de novo e siga o item 6 da "Para a sessão da fase".',
+  it('"Per stage" › 2 and "Panel" say when the wait is written and cleared (RS1, decision 5)', () => {
+    const phases = between(skill, '2. **Phases**', '3. **Tester.**');
+    expect(phases).toContain('waits for the coordinator');
+    expect(phases).toContain('CI travado');
+    expect(phases).toContain(
+      'Raising the ceiling no longer waits for the owner (stage #1802): bring in `main` (`git merge origin/main`), run `raise --write` again and follow item 6 of "For the phase session".',
     );
-    expect(fases).toContain('row \'#n\' wait="<motivo curto>"');
-    expect(fases).toContain('wait= childAt=now');
-    const painel = section(skill, '## Painel');
-    expect(painel).toContain('wait="<motivo>"');
+    expect(phases).toContain('row \'#n\' wait="<short reason>"');
+    expect(phases).toContain('wait= childAt=now');
+    const panel = section(skill, '## Panel');
+    expect(panel).toContain('wait="<reason>"');
   });
 
-  it('"Conferências de reserva": send_later pendente é espera legítima, e o pior caso está escrito (RS1, decisões 6 e 7)', () => {
-    expect(reserva).toMatch(/`send_later`[^\n]*ainda por disparar/);
-    expect(reserva).toMatch(/há menos de 5 min/);
-    expect(reserva).toMatch(/`row '#n' childAt=now`, sem mensagem/);
-    expect(reserva).toMatch(/~60 min/);
-    expect(reserva).toMatch(/~90 min/);
-    expect(reserva).toMatch(
-      /espera do CI da própria fase \(4 min, de 2 em 2 min até 20 min, depois de 8 em 8\)/,
+  it('"Fallback checks": a pending send_later is a legitimate wait, and the worst case is written (RS1, decisions 6 and 7)', () => {
+    expect(fallback).toMatch(/`send_later` still to fire/);
+    expect(fallback).toMatch(/less than 5 min ago/);
+    expect(fallback).toMatch(/`row '#n' childAt=now`, no message/);
+    expect(fallback).toMatch(/~60 min/);
+    expect(fallback).toMatch(/~90 min/);
+    expect(fallback).toMatch(
+      /phase's own CI wait \(4 min, every 2 min up to 20 min, then every 8\)/,
     );
-    expect(reserva).toMatch(/frequência e o corte não mudam/);
+    expect(fallback).toMatch(/frequency and the cutoff do not change/);
   });
 
-  it('o coordenador não roda o CI de novo; chama o dono (decisão 4)', () => {
-    expect(skill).not.toMatch(/roda de novo uma vez se morreu antes de testar/);
-    expect(ciVermelho).toMatch(/não roda o CI de novo/);
+  it('the coordinator does not rerun the CI; it calls the owner (decision 4)', () => {
+    expect(skill).not.toMatch(/reruns once if it died before testing/);
+    expect(redCi).toMatch(/does not rerun the CI/);
     expect(ciVermelho).toContain('ci-rerun.yml');
     expect(ciVermelho).toContain('CI travado');
     expect(ciVermelho).toContain('esperando dono');
     expect(ciVermelho).toContain('PushNotification');
   });
 
-  it('"CI vermelho no PR do épico": regra do teto, script e roadmap (decisões 6 a 9)', () => {
+  it('"Red CI on the epic PR": ceiling rule, script and roadmap (decisions 6 to 9)', () => {
     expect(ciVermelho).toContain('Tamanho do dist/index.html');
     expect(ciVermelho).toMatch(/16 KiB/);
-    expect(ciVermelho).toContain('até 14 KiB (14.336 bytes)');
-    expect(ciVermelho).toContain('excesso acima de 14 KiB');
+    expect(ciVermelho).toContain('up to 14 KiB (14,336 bytes)');
+    expect(ciVermelho).toContain('excess above 14 KiB');
     expect(ciVermelho).toMatch(/32 KiB/);
     expect(ciVermelho).toMatch(/64 KiB/);
-    expect(ciVermelho).toMatch(/worktree descartável/);
+    expect(ciVermelho).toMatch(/disposable worktree/);
     expect(ciVermelho).toContain('npm ci && npm run build');
     expect(ciVermelho).toContain('node scripts/ci/distBudget.mjs raise');
     expect(ciVermelho).toContain('scripts/ci/dist-budget.json');
     expect(ciVermelho).not.toContain('--ci .github/workflows/ci.yml');
-    expect(ciVermelho).not.toMatch(/INDEX_HTML_MAX_BYTES[^\n]*do `ci\.yml`/);
-    expect(ciVermelho).toMatch(/ficando com o `ci\.yml` da `main`/);
+    expect(redCi).not.toMatch(/INDEX_HTML_MAX_BYTES[^\n]*of `ci\.yml`/);
+    expect(redCi).toMatch(/keeping `main`'s `ci\.yml`/);
     expect(ciVermelho).toMatch(/`history`/);
-    expect(ciVermelho).toContain('changelog/<nome>.md');
+    expect(ciVermelho).toContain('changelog/<name>.md');
     expect(ciVermelho).toContain('Orçamento do dist/index.html');
     expect(ciVermelho).toContain('Teto na última revisão do dono');
-    expect(ciVermelho).toMatch(/primeira subida/);
-    expect(ciVermelho).toMatch(/inclusive as da fase|subida feita pela fase/);
+    expect(ciVermelho).toMatch(/first raise/);
+    expect(ciVermelho).toMatch(/including the phases'|raise done by the phase/);
   });
 
-  it('"CI vermelho no PR do épico": o teto sempre sobe, o `bug` sai pelo subagente da subida (#1802, decisões 2, 3 e 6)', () => {
+  it('"Red CI on the epic PR": the ceiling always goes up, the `bug` comes from the raise subagent (#1802, decisions 2, 3 and 6)', () => {
     const teto = between(
       ciVermelho,
       '- **Teto do `dist/index.html`',
@@ -578,30 +578,30 @@ describe('Resilient CI: phase, check and dist ceiling (CR1)', () => {
     expect(teto).toMatch(/#1493[^\n]*cita o `bug`|cita o `bug`[^\n]*#1493/);
     expect(teto).toContain('Teto do `dist/index.html` subiu');
     expect(teto).toMatch(/segundo commit[^\n]*antes do push/);
-    expect(teto).toContain('até 14 KiB (14.336 bytes)');
+    expect(teto).toContain('up to 14 KiB (14,336 bytes)');
     expect(teto).toMatch(/32 KiB/);
     expect(teto).toMatch(/64 KiB/);
   });
 
-  it('detalhar-backlog: "1. Candidatas" deixa de fora o `bug` do teto do dist (#1802, decisão 10)', () => {
-    const candidatas = section(detalhar, '## 1. Candidatas');
-    const passo2 = between(candidatas, '2. ', '\n3. ');
-    expect(passo2).toContain('Teto do dist/index.html acima dos limites');
-    expect(passo2).toContain('chat do supervisor');
-    expect(passo2).toMatch(/título começa por/);
+  it('detalhar-backlog: "1. Candidates" leaves out the dist ceiling `bug` (#1802, decision 10)', () => {
+    const candidates = section(detalhar, '## 1. Candidates');
+    const step2 = between(candidates, '2. ', '\n3. ');
+    expect(step2).toContain('Teto do dist/index.html acima dos limites');
+    expect(step2).toContain("supervisor's chat");
+    expect(step2).toMatch(/title starts with/);
   });
 
-  it('PROCESS.md, "Rótulos": o `bug` admite a subida do teto acima dos limites, severity: low (#1802, decisão 9)', () => {
-    const rotulos = between(processDoc, '**Rótulos:**', '\n');
-    expect(rotulos).toContain('subida do teto do `dist/index.html` acima dos limites');
-    expect(rotulos).toContain('pedido de revisão do dono');
-    expect(rotulos).toContain('severity: low');
-    expect(rotulos).toContain('`docs/FLOW.md`, item 6');
+  it('PROCESS.md, "Labels": the `bug` admits the ceiling raise above the limits, severity: low (#1802, decision 9)', () => {
+    const labels = between(processDoc, '**Labels:**', '\n');
+    expect(labels).toContain('raising the `dist/index.html` ceiling above the limits');
+    expect(labels).toContain('a review request to the owner');
+    expect(labels).toContain('severity: low');
+    expect(labels).toContain('`docs/FLOW.md`, item 6');
   });
 
-  it('detalhar-backlog: gatilhos de risco (a) e reclassificação (b) (decisão 11)', () => {
-    const esforco = section(detalhar, '## Esforço do detalhamento');
-    for (const gatilho of [
+  it('detalhar-backlog: risk triggers (a) and reclassification (b) (decision 11)', () => {
+    const effort = section(detalhar, '## Detailing effort');
+    for (const trigger of [
       '`implementar-fila`',
       'painel.py',
       '.github/workflows/',
@@ -612,60 +612,56 @@ describe('Resilient CI: phase, check and dist ceiling (CR1)', () => {
       'pwa/csp.ts',
       '`/code-review high`',
     ]) {
-      expect(esforco).toContain(gatilho);
+      expect(effort).toContain(trigger);
     }
-    expect(esforco).toMatch(/qualquer que seja o tamanho/);
-    expect(esforco).toMatch(/gatilho/);
-    expect(esforco).toMatch(/reclassifica/);
+    expect(effort).toMatch(/whatever the size/);
+    expect(effort).toMatch(/trigger/);
+    expect(effort).toMatch(/reclassif/);
   });
 
-  it('implementar-fila: /code-review high no diff do épico, no Fechamento (decisão 11, c)', () => {
-    const fechamento = between(skill, '5. **Fechamento**', '6. **Merge**');
-    expect(fechamento).toContain('/code-review high');
-    expect(fechamento).toMatch(/diff inteiro do épico/);
-    expect(fechamento).toMatch(/base `main`/);
-    expect(fechamento).toMatch(/antes do merge/);
-    expect(fechamento).toMatch(/teste primeiro/);
-    expect(fechamento).toMatch(/mesmo que as fases tenham sido medium/);
+  it('implementar-fila: /code-review high on the epic diff, in the Closing (decision 11, c)', () => {
+    const closing = between(skill, '5. **Closing**', '6. **Merge**');
+    expect(closing).toContain('/code-review high');
+    expect(closing).toMatch(/epic's whole diff/);
+    expect(closing).toMatch(/base `main`/);
+    expect(closing).toMatch(/before the merge/);
+    expect(closing).toMatch(/test first/);
+    expect(closing).toMatch(/even if the phases were medium/);
   });
 
-  it('o item "rede de segurança" decide pela saída do riskTriggers, sem lista de caminhos própria (RS1, decisão 3)', () => {
-    const fechamento = between(skill, '5. **Fechamento**', '6. **Merge**');
-    const item = fechamento.split('\n').find((l) => l.includes('**rede de segurança'));
+  it('the "safety net" item decides by the riskTriggers output, with no path list of its own (RS1, decision 3)', () => {
+    const closing = between(skill, '5. **Closing**', '6. **Merge**');
+    const item = closing.split('\n').find((l) => l.includes('**safety net'));
     expect(item).toBeDefined();
     expect(item).toContain('node scripts/ci/riskTriggers.mjs --base origin/main');
     expect(item).toContain('`log`');
     expect(item).toContain('`gatilho:`');
     expect(item).toContain('`nenhum gatilho`');
-    for (const caminho of [
+    for (const filePath of [
       'src/store/session.ts',
       'pwa/csp.ts',
       'scripts/release/',
       'mcp/version.ts',
       '.github/workflows/',
     ]) {
-      expect(item).not.toContain(caminho);
+      expect(item).not.toContain(filePath);
     }
-    expect(fechamento).toContain('git diff --name-only origin/main...HEAD'); // a escolha da versão do MCP fica
+    expect(closing).toContain('git diff --name-only origin/main...HEAD'); // the choice of the MCP version stays
   });
 
-  it('versão do schema escolhida ao criar o épico, como a do MCP (decisão do dono de 2026-11-10)', () => {
-    const regra = between(
-      skill,
-      '3. **Uma versão do MCP por épico',
-      '## Economia de contexto',
-    );
-    expect(regra).toMatch(/Versão do schema/);
-    expect(regra).toMatch(/origin\/main/);
-    expect(regra).toMatch(/próxima/);
-    expect(regra).toMatch(/comente na issue/);
-    expect(regra).toMatch(/mensagem da primeira fase/);
+  it("schema version chosen when creating the epic, like the MCP's (owner's decision of 2026-11-10)", () => {
+    const rule = between(skill, '3. **One MCP version per epic', '## Context economy');
+    expect(rule).toMatch(/[Ss]chema version/);
+    expect(rule).toMatch(/origin\/main/);
+    expect(rule).toMatch(/next/);
+    expect(rule).toMatch(/comment on the issue/);
+    expect(rule).toMatch(/first phase's message/);
   });
 
-  it('PROCESS.md: a linha do ci-rerun.yml na regra da main (decisão 10)', () => {
+  it('PROCESS.md: the ci-rerun.yml line in the main rule (decision 10)', () => {
     const item = processDoc
       .split('\n')
-      .find((l) => l.includes('A `main` só aceita PR de `epic/*`'));
+      .find((l) => l.includes('`main` only accepts PRs from `epic/*`'));
     expect(item).toContain('ci-rerun.yml');
   });
 });
