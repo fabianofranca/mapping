@@ -14,11 +14,11 @@ describe('CLAUDE.md enxuto', () => {
   it('aponta para o docs/PROCESS.md no topo e no resumo do fluxo', () => {
     const claude = read('CLAUDE.md');
     const projeto = claude.slice(
-      claude.indexOf('## Projeto'),
+      claude.indexOf('## Project'),
       claude.indexOf('## Stack'),
     );
     expect(projeto).toContain('docs/PROCESS.md');
-    const resumo = claude.slice(claude.indexOf('## Fluxo de trabalho (resumo)'));
+    const resumo = claude.slice(claude.indexOf('## Workflow (summary)'));
     expect(resumo).toContain('docs/PROCESS.md');
   });
 

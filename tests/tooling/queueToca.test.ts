@@ -76,7 +76,7 @@ const VALIDAS = [
   'docs/TESTING.md#8-roteiros',
   'docs/TESTING.md#inicio',
   'docs/ARCHITECTURE.md#desempenho',
-  'CLAUDE.md#regras-de-arquitetura',
+  'CLAUDE.md#architecture-rules',
   'CLAUDE.md#inicio',
   '.claude/skills/implementar-fila/SKILL.md#paralelo',
   'docs/nao-existe.md',
